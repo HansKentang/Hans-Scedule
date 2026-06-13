@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Havën">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Havën Schedule — Schedule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* ─── SCHEDULE: IMMERSIVE CALENDAR ───────────────────── */
+    /* Sidebar — built-in Hub layout from style.css */
+    /* (sch-whiteboard-item stays for whiteboard-specific styles) */
+    .sch-whiteboard-item {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2) var(--space-3); border-radius: 5px;
+      background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+      cursor: grab; font-size: 0.78rem; font-weight: 500; transition: all var(--t-fast);
+      user-select: none;
+    }
+    .sch-whiteboard-item:hover { border-color: var(--border-color); }
+    .sch-whiteboard-item .w-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+    .sch-whiteboard-item .w-del { opacity: 0; width: 16px; height: 16px; border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 2px; transition: all var(--t-fast); }
+    .sch-whiteboard-item:hover .w-del { opacity: 0.5; }
+    .sch-whiteboard-item .w-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
+
+    /* Mini week overview */
+    .sch-mini-week { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-color); }
+    .sch-mini-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); margin-bottom: var(--space-2); opacity: 0.6; }
+    .sch-mini-days { display: flex; gap: 4px; }
+    .sch-mini-day {
+      flex: 1; text-align: center; padding: 6px 2px;
+      border-radius: 6px; font-size: 0.7rem; font-weight: 600;
+      color: var(--text-tertiary); cursor: pointer; transition: all var(--t-fast);
+      position: relative;
+    }
+    .sch-mini-day:hover { background: var(--accent-soft); color: var(--text-primary); }
+    .sch-mini-day.today { background: var(--accent); color: var(--text-inverse); font-weight: 700; }
+    .sch-mini-day.has-tasks::after {
+      content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px; border-radius: 50%; background: var(--accent);
+    }
+    .sch-mini-day.today.has-tasks::after { background: var(--text-inverse); }
+
+    /* Whiteboard in sidebar */
+    .sch-sidebar-section {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .sch-sidebar-section:last-of-type { border-bottom: none; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .sch-section-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2);
+    }
+    .sch-section-header h3 { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); opacity: 0.6; }
+    .sch-whiteboard-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-2); padding: 0 0 var(--space-1) 0; }
+    /* Calendar header — thin breadcrumb style */
+    .sch-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-3) var(--space-6);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-primary); flex-shrink: 0;
+      min-height: 48px;
+    }
+    .sch-header-left { display: flex; align-items: center; gap: var(--space-4); }
+    .sch-header-left h2 { font-size: 0.85rem; font-weight: 600; letter-spacing: -0.01em; }
+    .sch-header-right { display: flex; align-items: center; gap: var(--space-3); }
+    .sch-api-badge {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.65rem; padding: 2px 8px; border-radius: 12px;
+      background: var(--accent-soft); color: var(--text-tertiary);
+    }
+    .sch-api-badge.active { background: color-mix(in srgb, #2a8a4a 12%, transparent); color: #2a8a4a; }
+
+    /* Calendar container */
+    #calendarContainer { flex: 1; overflow: auto; position: relative; }
+    #calendarGrid {
+      display: grid;
+      grid-template-columns: var(--time-axis-width) repeat(7, 1fr);
+      position: relative; min-width: fit-content;
+    }
+
+    /* Floating command bar */
+    .sch-cmd-bar {
+      position: absolute; bottom: var(--space-5); right: var(--space-5);
+      z-index: 50;
+    }
+    .sch-cmd-btn {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--accent); color: var(--text-inverse);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-lg);
+      transition: all var(--t-base);
+    }
+    .sch-cmd-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-xl); }
+    .sch-cmd-btn:active { transform: scale(0.95); }
+
+    /* ─── FILTER TOOLBAR ─────────────────────────────────── */
+    .sch-filter-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-2) var(--space-6);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      flex-shrink: 0;
+      gap: var(--space-4);
+      overflow-x: auto;
+    }
+    .sch-filter-tags {
+      display: flex; align-items: center; gap: var(--space-1);
+      flex: 1;
+    }
+    .sch-filter-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.72rem; font-family: var(--font-family); font-weight: 500;
+      cursor: pointer;
+      transition: all var(--t-fast);
+      white-space: nowrap;
+    }
+    .sch-filter-pill:hover {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+      background: var(--accent-soft);
+    }
+    .sch-filter-pill.active {
+      background: var(--accent);
+      color: var(--text-inverse);
+      border-color: var(--accent);
+    }
+    .sch-filter-pill .pill-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--tag-color, var(--gray-300));
+      flex-shrink: 0;
+    }
+    .sch-filter-pill.active .pill-dot { background: currentColor; }
+    .sch-filter-pill svg { flex-shrink: 0; }
+    .sch-filter-toggles {
+      display: flex; align-items: center; gap: var(--space-1);
+      flex-shrink: 0;
+    }
+    .sch-toggle-label {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px;
+      border-radius: 14px;
+      font-size: 0.7rem; font-family: var(--font-family); font-weight: 500;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: all var(--t-fast);
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+    .sch-toggle-label:hover {
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+    .sch-toggle-label input[type="checkbox"] {
+      width: 12px; height: 12px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      display: none;
+    }
+    .sch-toggle-label svg { opacity: 0.5; }
+    .sch-toggle-label:has(input:checked) { color: var(--text-primary); }
+    .sch-toggle-label:has(input:checked) svg { opacity: 1; }
+    .sch-filter-divider {
+      width: 1px; height: 16px;
+      background: var(--border-color);
+      margin: 0 var(--space-1);
+    }
+    .sch-filter-action {
+      padding: 3px 10px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.7rem; font-family: var(--font-family); font-weight: 600;
+      cursor: pointer;
+      transition: all var(--t-fast);
+      white-space: nowrap;
+    }
+    .sch-filter-action:hover {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+      background: var(--accent-soft);
+    }
+
+    /* Filter pill dot colors */
+    .sch-filter-pill[data-tag="deep-work"] .pill-dot { background: var(--tag-deep-work-text); }
+    .sch-filter-pill[data-tag="meeting"] .pill-dot { background: var(--tag-meeting-text); }
+    .sch-filter-pill[data-tag="exercise"] .pill-dot { background: var(--tag-exercise-text); }
+    .sch-filter-pill[data-tag="study"] .pill-dot { background: var(--tag-study-text); }
+    .sch-filter-pill[data-tag="hobby"] .pill-dot { background: var(--tag-hobby-text); }
+
+    /* ─── SEARCH BAR ────────────────────────────────────── */
+    .sch-search-wrapper {
+      position: relative;
+      display: flex; align-items: center;
+    }
+    .sch-search-icon {
+      position: absolute;
+      left: 8px;
+      color: var(--text-tertiary);
+      pointer-events: none;
+      flex-shrink: 0;
+    }
+    .sch-search-input {
+      width: 130px;
+      padding: 4px 24px 4px 26px;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 0.72rem;
+      font-family: var(--font-family);
+      font-weight: 500;
+      outline: none;
+      transition: all var(--t-fast);
+    }
+    .sch-search-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
+    .sch-search-input:focus {
+      width: 180px;
+      border-color: var(--text-primary);
+      background: var(--bg-primary);
+    }
+    .sch-search-clear {
+      position: absolute;
+      right: 4px;
+      width: 16px; height: 16px;
+      border: none; background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      transition: all var(--t-fast);
+    }
+    .sch-search-clear:hover { background: var(--accent-soft); color: var(--text-primary); }
+
+    /* ─── QUICK ADD BAR ─────────────────────────────────── */
+    .sch-quickadd {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2) var(--space-6);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    .sch-quickadd-label {
+      font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-tertiary); opacity: 0.6;
+      margin-right: var(--space-2); white-space: nowrap;
+    }
+    .sch-quickadd-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px 3px 8px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-size: 0.7rem; font-family: var(--font-family); font-weight: 500;
+      cursor: grab;
+      transition: all var(--t-fast);
+      white-space: nowrap;
+      user-select: none;
+    }
+    .sch-quickadd-pill:hover {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+    }
+    .sch-quickadd-pill:active { cursor: grabbing; }
+    .sch-quickadd-pill .qa-plus {
+      width: 14px; height: 14px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 0.65rem; font-weight: 700;
+    }
+    .sch-quickadd-pill[data-tag="deep-work"] .qa-plus { background: var(--tag-deep-work-text); color: #fff; }
+    .sch-quickadd-pill[data-tag="meeting"] .qa-plus { background: var(--tag-meeting-text); color: #fff; }
+    .sch-quickadd-pill[data-tag="exercise"] .qa-plus { background: var(--tag-exercise-text); color: #fff; }
+    .sch-quickadd-pill[data-tag="study"] .qa-plus { background: var(--tag-study-text); color: #fff; }
+    .sch-quickadd-pill[data-tag="hobby"] .qa-plus { background: var(--tag-hobby-text); color: #fff; }
+
+    /* ─── MOBILE HAMBURGER ───────────────────────────────── */
+    .sch-hamburger {
+      display: none; width: 32px; height: 32px; border: none; background: none;
+      color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm);
+      align-items: center; justify-content: center;
+      transition: all var(--t-fast); flex-shrink: 0; padding: 0;
+    }
+    .sch-hamburger:hover { background: var(--accent-soft); color: var(--text-primary); }
+    .sch-hamburger svg { width: 18px; height: 18px; }
+
+    .sch-sidebar-overlay {
+      position: fixed; inset: 0; z-index: 9;
+      background: var(--bg-overlay); opacity: 0; visibility: hidden;
+      transition: opacity 200ms ease, visibility 200ms ease; pointer-events: none;
+    }
+    .sch-sidebar-overlay.active {
+      opacity: 1; visibility: visible; pointer-events: auto;
+    }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .hub-sidebar { width: 56px; min-width: 56px; }
+      .hub-snav-item .snav-label,
+      .hub-sidebar-footer .btn span,
+      .sch-mini-week, .sch-sidebar-section .sch-section-header h3,
+      .sch-whiteboard-list .sch-whiteboard-item .w-title { display: none; }
+      .hub-snav-item { justify-content: center; padding: var(--space-1); }
+      .sch-whiteboard-item { justify-content: center; padding: var(--space-2); }
+      .hub-sidebar-footer .btn { padding: var(--space-1); }
+    }
+    @media (max-width: 640px) {
+      .sch-hamburger { display: flex; }
+      .hub-sidebar {
+        position: fixed; left: 0; top: 0; width: 240px; min-width: 240px;
+        transform: translateX(-100%); transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 10; box-shadow: none;
+      }
+      .hub-sidebar.open {
+        transform: translateX(0);
+        box-shadow: 8px 0 32px rgba(0,0,0,0.15);
+      }
+      .hub-sidebar .hub-workspace-name,
+      .hub-sidebar .hub-snav-item .snav-label,
+      .hub-sidebar .hub-sidebar-section-label,
+      .hub-sidebar .hub-sidebar-footer .btn span { display: block; }
+      .hub-sidebar .hub-snav-item { justify-content: flex-start; padding: var(--space-1) var(--space-2); }
+      .hub-sidebar .hub-sidebar-footer .btn { padding: var(--space-2); }
+      .sch-mini-week, .sch-sidebar-section .sch-section-header h3,
+      .sch-whiteboard-list .sch-whiteboard-item .w-title { display: block !important; }
+      .sch-whiteboard-item { justify-content: flex-start !important; padding: var(--space-2) var(--space-3) !important; }
+
+      /* Header mobile */
+      .sch-header { padding: var(--space-2) var(--space-3); gap: var(--space-2); min-height: 42px; }
+      .sch-header-left { gap: var(--space-2); }
+      .sch-header-left h2 { font-size: 0.78rem; }
+      #todayBtn { font-size: 0.72rem; padding: 2px var(--space-2); }
+      .nav-arrows .btn { width: 24px; height: 24px; }
+      .sch-header-right { gap: var(--space-1); }
+      .sch-api-badge { font-size: 0.6rem; padding: 1px 6px; }
+
+      /* Filter bar mobile — horizontal scroll */
+      .sch-filter-bar {
+        padding: var(--space-2) var(--space-3);
+        gap: var(--space-2);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .sch-filter-bar::-webkit-scrollbar { display: none; }
+      .sch-filter-tags { flex: 0 0 auto; gap: var(--space-1); }
+      .sch-filter-pill { padding: 2px 8px; font-size: 0.65rem; }
+      .sch-filter-toggles { flex: 0 0 auto; gap: var(--space-1); }
+      .sch-toggle-label span { display: none; }
+      .sch-toggle-label { padding: 3px 6px; }
+      .sch-search-input { width: 100px; font-size: 0.68rem; }
+      .sch-search-input:focus { width: 140px; }
+
+      /* Quick add bar mobile — horizontal scroll */
+      .sch-quickadd {
+        padding: var(--space-2) var(--space-3);
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: var(--space-1);
+      }
+      .sch-quickadd::-webkit-scrollbar { display: none; }
+      .sch-quickadd-label { font-size: 0.55rem; margin-right: var(--space-1); }
+      .sch-quickadd-pill { padding: 2px 8px 2px 6px; font-size: 0.65rem; }
+
+      /* Calendar grid mobile */
+      #calendarContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+      /* Command palette button */
+      .sch-cmd-bar { bottom: var(--space-3); right: var(--space-3); }
+      .sch-cmd-btn { width: 42px; height: 42px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hub-layout">
+    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────────── -->
+    <div class="sch-sidebar-overlay" id="schSidebarOverlay"></div>
+
+    <!-- ─── SIDEBAR (Hub workspace) ────────────────────── -->
+    <aside class="hub-sidebar" id="schSidebar">
+      <div class="hub-workspace">
+        <div class="hub-workspace-icon">H</div>
+        <span class="hub-workspace-name">Havën</span>
+        <button id="quickTaskBtn" class="btn btn-small" title="Quick task (Q)" style="margin-left:auto">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+
+      <nav class="hub-sidebar-nav">
+        <div class="hub-sidebar-section-label">Pages</div>
+        <div class="hub-snav-stagger">
+          <a href="index.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span class="snav-label">Hub</span>
+          </a>
+          <a href="schedule.html" class="hub-snav-item active">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </span>
+            <span class="snav-label">Schedule</span>
+          </a>
+          <a href="activities.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </span>
+            <span class="snav-label">Activities</span>
+          </a>
+          <a href="tags.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            </span>
+            <span class="snav-label">Tags</span>
+          </a>
+          <a href="analytics.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </span>
+            <span class="snav-label">Analytics</span>
+          </a>
+        </div>
+      </nav>
+
+      <!-- Mini week overview -->
+      <div class="sch-mini-week">
+        <div class="sch-mini-label">Week</div>
+        <div class="sch-mini-days" id="miniWeekDays"></div>
+      </div>
+
+      <!-- Sidebar decorative image -->
+      <div class="sch-sidebar-section" style="padding:0;overflow:hidden">
+        <img data-image-id="schedule-coffee" src="" alt=""
+             style="width:100%;height:120px;object-fit:cover;opacity:0.8;display:block;transition:opacity 0.5s"
+             
+>
+      </div>
+
+      <!-- Whiteboard mini -->
+      <div class="sch-sidebar-section">
+        <div class="sch-section-header">
+          <h3>Whiteboard</h3>
+          <button id="addIdeaBtn" class="btn btn-small" title="Add idea"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+        </div>
+        <div id="whiteboardList" class="sch-whiteboard-list">
+          <div class="whiteboard-empty" style="font-size:0.7rem">Drag ideas here</div>
+        </div>
+      </div>
+
+      <div class="spotify-player" id="spPlayer">
+        <div id="spLoggedOut">
+          <div class="sp-row">
+            <div class="sp-icon">
+              <svg viewBox="0 0 24 24" fill="#1db954" width="22" height="22"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            </div>
+            <div class="sp-info">
+              <div class="sp-title">Not connected</div>
+              <div class="sp-artist">Sign in via Spotify</div>
+            </div>
+          </div>
+          <button class="sp-login-btn" onclick="spLogin()">
+            <svg viewBox="0 0 48 48" fill="none"><path fill="#4285F4" d="M24 4C12.95 4 4 12.95 4 24s8.95 20 20 20 20-8.95 20-20S35.05 4 24 4z"/><path fill="#FFF" d="M26.48 14.5c-.86 1.8-1.22 3.82-.88 5.9.68 4.2 4.02 7.44 8.22 8.1 2.1.34 4.12-.02 5.92-.88l.26 1.76c-2.48 2.48-5.94 3.52-9.52 2.82-4.88-.9-8.88-4.9-9.78-9.78-.7-3.58.34-7.04 2.82-9.52l1.76.26 1.2.34z"/><path fill="#FFF" d="M19 22h-3v-3h3v3zm8 0h-3v-3h3v3zm8 0h-3v-3h3v3z"/></svg>
+            Sign in with Google
+          </button>
+        </div>
+        <div id="spLoggedIn" class="hidden">
+          <div class="sp-row">
+            <div class="sp-art" id="spArt"></div>
+            <div class="sp-info">
+              <div class="sp-title" id="spTitle">—</div>
+              <div class="sp-artist" id="spArtist">—</div>
+            </div>
+            <button class="sp-logout-icon" onclick="spLogout()" title="Disconnect">&times;</button>
+          </div>
+          <div class="sp-controls">
+            <button class="sp-btn" id="spPrevBtn" onclick="spPrev()" title="Previous">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button class="sp-btn sp-btn-play" id="spPlayBtn" title="Play" onclick="spTogglePlay()">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button class="sp-btn" id="spNextBtn" onclick="spNext()" title="Next">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+            <button class="sp-btn sp-btn-like" id="spLikeBtn" title="Like" onclick="spLike()">♡</button>
+          </div>
+          <div class="sp-progress">
+            <div class="sp-progress-fill" id="spProgressFill"></div>
+          </div>
+          <div class="sp-times">
+            <span id="spProgressCur">0:00</span>
+            <span id="spStatusMsg"></span>
+            <span id="spProgressTot">0:00</span>
+          </div>
+          <div class="sp-profile" id="spProfile"></div>
+        </div>
+        <div id="spSetupOverlay" class="sp-setup-overlay hidden" onclick="if(event.target===this)spCloseSetup()"></div>
+        <div id="spSetupModal" class="sp-setup-modal hidden">
+          <div class="sp-setup-header">
+            <svg viewBox="0 0 24 24" fill="#1db954" width="24" height="24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            <span>Connect Spotify</span>
+            <button class="sp-setup-close" onclick="spCloseSetup()">&times;</button>
+          </div>
+          <div class="sp-setup-body">
+            <p style="margin:0 0 8px;font-size:0.65rem;color:var(--text-secondary);line-height:1.4">
+              You need a free Spotify Client ID to connect.
+              <a href="https://developer.spotify.com/dashboard/create" target="_blank" rel="noopener" style="color:var(--primary)">Create App →</a>
+              <br>Add redirect URI: <code style="background:var(--surface-container-high);padding:1px 4px;border-radius:3px;font-size:0.6rem">http://localhost</code>
+              <br>Copy the Client ID and paste it below.
+            </p>
+            <div class="form-group" style="margin:0">
+              <label for="spSetupCidInput" style="font-size:0.6rem;color:var(--text-tertiary);display:block;margin-bottom:4px">Spotify Client ID</label>
+              <input type="text" id="spSetupCidInput" class="form-input" placeholder="Paste your Client ID" style="font-size:0.7rem;padding:4px 8px">
+            </div>
+            <button class="sp-connect-btn" onclick="spSaveCidAndLogin()">Connect</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hub-sidebar-footer">
+        <button id="aiChatBtnSidebar" class="btn btn-ghost" title="AI Assistant"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg><span>AI</span></button>
+        <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg><span>Theme</span></button>
+        <button id="settingsBtnSidebar" class="hamburger-settings-btn" title="Customize">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+          </svg>
+        </button>
+        <button id="helpBtn" class="btn btn-ghost" title="Help"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2z"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Help</span></button>
+      </div>
+    </aside>
+
+    <!-- Main calendar -->
+    <div class="hub-main">
+      <!-- ─── SCHEDULE HERO BANNER ────────────────────────── -->
+      <section style="position:relative;height:180px;overflow:hidden;flex-shrink:0">
+        <img data-image-id="schedule-hero" src="" alt=""
+             style="width:100%;height:100%;object-fit:cover;opacity:0.7"
+             
+>
+        <div style="position:absolute;inset:0;background:linear-gradient(to top, var(--bg-primary) 0%, transparent 60%)"></div>
+        <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding)">
+          <h1 style="font-family:var(--font-serif);font-size:36px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)">Schedule</h1>
+          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
+            <span id="weekLabelHero"></span>
+          </div>
+        </div>
+      </section>
+      <header class="sch-header hub-anim-in hub-anim-in-1">
+        <div class="sch-header-left">
+          <button class="sch-hamburger" id="schHamburger" aria-label="Menu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <button id="todayBtn" class="btn btn-outline" style="font-size:0.78rem;padding:var(--space-1) var(--space-3)">Today</button>
+          <div class="nav-arrows">
+            <button id="prevWeek" class="btn btn-ghost" style="width:28px;height:28px;padding:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <button id="nextWeek" class="btn btn-ghost" style="width:28px;height:28px;padding:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
+          <h2 id="weekLabel">June 2026</h2>
+        </div>
+        <div class="sch-header-center">
+          <button class="view-toggle-btn active" data-view="week" onclick="switchView('week')" title="Week view">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="month" onclick="switchView('month')" title="Month view">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="agenda" onclick="switchView('agenda')" title="Agenda view">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="sch-header-right">
+          <span class="sch-api-badge" id="apiStatus">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg>
+            <span id="apiStatusText">No key</span>
+          </span>
+          <span class="sch-api-badge" id="taskCountBadge" style="cursor:default">
+            <span id="taskCount">0</span> tasks
+          </span>
+          <button id="schVisualsBtn" class="btn btn-ghost" title="Edit Mode — click any image to customize" style="margin-left:2px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+          <button id="schSettingsBtn" class="btn btn-ghost" title="Customize" style="margin-left:4px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Filter toolbar -->
+      <div class="sch-filter-bar hub-anim-in hub-anim-in-2" id="filterBar">
+        <div class="sch-filter-tags" id="filterTagList">
+          <button class="sch-filter-pill active" data-tag="" title="Show all tasks">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            All
+          </button>
+          <button class="sch-filter-pill" data-tag="deep-work">
+            <span class="pill-dot"></span>Deep Work
+          </button>
+          <button class="sch-filter-pill" data-tag="meeting">
+            <span class="pill-dot"></span>Meeting
+          </button>
+          <button class="sch-filter-pill" data-tag="exercise">
+            <span class="pill-dot"></span>Exercise
+          </button>
+          <button class="sch-filter-pill" data-tag="study">
+            <span class="pill-dot"></span>Study
+          </button>
+          <button class="sch-filter-pill" data-tag="hobby">
+            <span class="pill-dot"></span>Hobby
+          </button>
+        </div>
+        <div class="sch-filter-toggles">
+          <label class="sch-toggle-label" title="Show weekends">
+            <input type="checkbox" id="filterShowWeekends" checked>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+            <span>Weekends</span>
+          </label>
+          <label class="sch-toggle-label" title="Show completed tasks">
+            <input type="checkbox" id="filterShowCompleted" checked>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span>Done</span>
+          </label>
+          <span class="sch-filter-divider"></span>
+          <button id="filterTodayBtn" class="sch-filter-action" title="Today">Today</button>
+          <span class="sch-filter-divider"></span>
+          <div class="sch-search-wrapper">
+            <svg class="sch-search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="filterSearchInput" class="sch-search-input" placeholder="Search tasks..." autocomplete="off">
+            <button id="filterSearchClear" class="sch-search-clear hidden" title="Clear search">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Templates bar -->
+      <div class="hub-anim-in hub-anim-in-3" style="display:flex;align-items:center;gap:var(--space-2);padding:2px var(--space-6);border-bottom:1px solid var(--border-color);background:var(--bg-primary);flex-shrink:0;overflow-x:auto" id="schTemplatesBar">
+        <span style="font-size:0.6rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-tertiary);opacity:0.6;white-space:nowrap">Templates</span>
+        <div class="template-pills" id="schTemplatePills"></div>
+      </div>
+
+      <!-- Quick add bar (drag-to-create) -->
+      <div class="sch-quickadd hub-anim-in hub-anim-in-3" id="quickAddBar">
+        <span class="sch-quickadd-label">Drag to add</span>
+        <button class="sch-quickadd-pill" data-tag="deep-work" title="Drag to calendar to create a Deep Work session">
+          <span class="qa-plus">+</span> Deep Work
+        </button>
+        <button class="sch-quickadd-pill" data-tag="meeting" title="Drag to calendar to create a Meeting">
+          <span class="qa-plus">+</span> Meeting
+        </button>
+        <button class="sch-quickadd-pill" data-tag="exercise" title="Drag to calendar to create an Exercise session">
+          <span class="qa-plus">+</span> Exercise
+        </button>
+        <button class="sch-quickadd-pill" data-tag="study" title="Drag to calendar to create a Study session">
+          <span class="qa-plus">+</span> Study
+        </button>
+        <button class="sch-quickadd-pill" data-tag="hobby" title="Drag to calendar to create a Hobby task">
+          <span class="qa-plus">+</span> Hobby
+        </button>
+      </div>
+
+      <div id="calendarContainer" class="hub-anim-in hub-anim-in-4">
+        <div id="calendarGrid"><!-- Populated by JS --></div>
+      </div>
+
+      <!-- FAB Quick Menu -->
+      <div class="fab-container hub-anim-in hub-anim-in-5" id="fabContainer">
+        <div class="fab-menu" id="fabMenu">
+          <div class="fab-item" data-action="template" id="fabTemplates">
+            <span class="fab-icon" style="background:var(--tag-deep-work-bg);color:var(--tag-deep-work-text)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </span>
+            Templates
+          </div>
+          <div class="fab-item" data-action="focus" id="fabFocus">
+            <span class="fab-icon" style="background:var(--tag-study-bg);color:var(--tag-study-text)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+            </span>
+            Focus Mode
+          </div>
+          <div class="fab-item" data-action="whiteboard" id="fabWhiteboard">
+            <span class="fab-icon" style="background:var(--tag-hobby-bg);color:var(--tag-hobby-text)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </span>
+            New Idea
+          </div>
+          <div class="fab-item" data-action="today" id="fabToday">
+            <span class="fab-icon" style="background:var(--tag-meeting-bg);color:var(--tag-meeting-text)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            Go Today
+          </div>
+
+        </div>
+        <button class="fab-main" id="fabMain" aria-label="Quick menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Pomodoro Timer (floating) -->
+      <div class="pomodoro-floating" id="pomodoroFloating">
+        <div class="pomodoro-card hidden" id="pomodoroCard">
+          <div class="pomodoro-header">
+            <h4>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Focus Timer
+            </h4>
+            <button class="pomodoro-close" id="pomodoroClose" aria-label="Close timer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="pomodoro-display">
+            <div class="pomodoro-time" id="pomodoroTime">25:00</div>
+            <div class="pomodoro-task-name" id="pomodoroTaskName">Deep Work Session</div>
+          </div>
+          <div class="pomodoro-progress">
+            <div class="pomodoro-progress-fill" id="pomodoroProgress" style="width:0%"></div>
+          </div>
+          <div class="pomodoro-actions">
+            <button class="btn btn-primary" id="pomodoroStartBtn" style="flex:1;justify-content:center">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Start
+            </button>
+            <button class="btn btn-outline" id="pomodoroResetBtn" style="flex:0;padding:var(--space-1) var(--space-3)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            </button>
+          </div>
+          <div class="pomodoro-status" id="pomodoroStatus">Ready to focus</div>
+        </div>
+        <button class="pomodoro-trigger" id="pomodoroTrigger" title="Focus timer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="cmdOverlay" class="overlay hidden"></div>
+    <div id="cmdPalette" class="modal cmd-modal hidden" role="dialog" aria-label="Command Palette">
+      <div class="cmd-modal-inner">
+        <div class="cmd-input-wrapper">
+          <svg class="cmd-prefix" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><polyline points="15 10 20 15 15 20"/></svg>
+          <input type="text" id="cmdInput" class="cmd-input" placeholder='Type a command...' autocomplete="off" spellcheck="false">
+          <kbd class="cmd-shortcut">&#8629;</kbd>
+        </div>
+        <div id="cmdResults" class="cmd-results">
+          <div class="cmd-hint"><div class="cmd-hint-grid">
+            <div class="cmd-example"><span class="cmd-example-text">"Team standup tomorrow 9am 30m"</span></div>
+            <div class="cmd-example"><span class="cmd-example-text">"Design review Friday 2pm 1hr"</span></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="taskOverlay" class="overlay hidden"></div>
+    <div id="taskModal" class="modal modal-sm hidden" role="dialog" aria-label="Task Details">
+      <div class="modal-header"><h3 id="taskModalTitle">Task Details</h3><button id="taskModalClose" class="btn btn-ghost modal-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="modal-body">
+        <form id="taskForm">
+          <div class="form-group"><label for="taskTitle">Title</label><input type="text" id="taskTitle" class="form-input" placeholder="Task title"></div>
+          <div class="form-row">
+            <div class="form-group"><label for="taskDate">Date</label><input type="date" id="taskDate" class="form-input"></div>
+            <div class="form-group"><label for="taskTag">Tag</label><div class="tag-select-wrap"><span id="taskTagColor" class="tag-color-dot"></span><select id="taskTag" class="form-input"><option value="meeting">Meeting</option><option value="deep-work">Deep Work</option><option value="exercise">Exercise</option><option value="study">Study</option><option value="hobby">Hobby</option></select></div></div>
+          </div>
+          <div class="form-group"><label>Priority</label><div class="priority-select-group" id="prioritySelectGroup">
+            <div class="priority-option p1 active" data-priority="1">P1</div>
+            <div class="priority-option p2" data-priority="2">P2</div>
+            <div class="priority-option p3" data-priority="3">P3</div>
+            <div class="priority-option p4" data-priority="4">P4</div>
+          </div></div>
+          <div class="form-row">
+            <div class="form-group"><label for="taskStart">Start</label><input type="time" id="taskStart" class="form-input" value="09:00"></div>
+            <div class="form-group"><label for="taskEnd">End</label><input type="time" id="taskEnd" class="form-input" value="10:00"></div>
+          </div>
+          <div class="form-group"><label for="taskNotes">Notes</label><textarea id="taskNotes" class="form-input" rows="2" placeholder="Optional notes..."></textarea></div>
+          <div class="form-row">
+            <div class="form-group"><label for="taskRepeat">Repeat</label><select id="taskRepeat" class="form-input"><option value="none">No repeat</option><option value="daily">Daily</option><option value="weekdays">Weekdays</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
+            <div class="form-group"><label for="taskReminder">Reminder</label><select id="taskReminder" class="form-input"><option value="0">None</option><option value="5">5 min before</option><option value="15">15 min before</option><option value="30">30 min before</option><option value="60">1 hour before</option><option value="1440">1 day before</option></select></div>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="taskDeleteBtn" class="btn btn-danger hidden">Delete</button>
+            <div class="form-actions-right"><button type="button" id="taskCancelBtn" class="btn btn-outline">Cancel</button><button type="submit" id="taskSaveBtn" class="btn btn-primary">Save</button></div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+
+    <div id="helpOverlay" class="overlay hidden"></div>
+    <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Keyboard Shortcuts">
+      <div class="modal-header"><h3>Keyboard Shortcuts</h3><button id="helpModalClose" class="btn btn-ghost modal-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="modal-body"><div class="shortcuts-grid" id="helpShortcutsGrid">
+      </div></div>
+    </div>
+
+    <div id="tzTooltip" class="tz-tooltip hidden"></div>
+
+    <!-- Undo Toast -->
+    <div id="undoToast" class="undo-toast hidden">
+      <span id="undoToastMsg">Action undone</span>
+      <button id="undoToastClose" class="btn btn-ghost" style="font-size:0.72rem;padding:2px 6px">✕</button>
+    </div>
+
+    <!-- Image Picker -->
+    <div id="imagePickerOverlay" class="image-picker-overlay hidden">
+      <div class="image-picker-card" onclick="event.stopPropagation()">
+        <h3>Customize Image</h3>
+        <img id="imagePickerPreview" class="image-picker-preview" src="" alt="">
+        <div class="image-picker-pastezone" id="imagePickerPasteZone" tabindex="0" onpaste="handleImagePickerPaste(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div>Paste image (Ctrl+V) or drag &amp; drop</div>
+        </div>
+        <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()" onpaste="setTimeout(handleImagePickerUrlInput,50)">
+        <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
+        <div class="image-picker-actions">
+          <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
+          <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
+          <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visuals Panel (edit mode) -->
+  <div id="visualsPanelOverlay" class="hidden" onclick="toggleEditMode()"></div>
+  <div id="visualsPanel" class="hidden">
+    <div class="vp-header">
+      <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Edit Mode
+      </h3>
+      <div class="vp-header-actions">
+        <span class="vp-badge">21 images</span>
+        <button class="vp-close-btn" onclick="toggleEditMode()" aria-label="Close edit mode">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="visualsPanelContent"></div>
+  </div>
+
+  <!-- Settings Drawer -->
+    <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
+    <div id="settingsDrawer" class="settings-drawer hidden">
+      <div class="settings-drawer-header">
+        <div class="settings-drawer-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </div>
+        <h3>Customize</h3>
+        <button id="settingsDrawerClose" class="settings-drawer-close" onclick="closeSettingsDrawer()" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="settings-drawer-body" id="settingsDrawerBody">
+        <div id="settingsContent">
+          <form id="settingsForm" onsubmit="handleSettingsSubmit(event)">
+            <div class="drawer-section">
+              <div class="drawer-section-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg>
+                <span class="drawer-section-title">AI Provider</span>
+              </div>
+              <div class="form-group">
+                <label for="drawerProvider">Provider</label>
+                <select id="drawerProvider" class="form-input">
+                  <option value="groq">Groq (Gemma2-9B)</option>
+                  <option value="gemini">Gemini (1.5 Flash)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="drawerModel">Model</label>
+                <select id="drawerModel" class="form-input"></select>
+              </div>
+              <div class="form-group">
+                <label for="drawerApiKey">API Key</label>
+                <input type="password" id="drawerApiKey" class="form-input" placeholder="sk-...">
+              </div>
+              <div id="drawerKeyStatus">
+                <span id="drawerKeyStatusText" class="drawer-status"></span>
+              </div>
+              <div id="drawerAIUsage" class="drawer-status"></div>
+            </div>
+            <div class="drawer-section">
+              <div class="drawer-section-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <span class="drawer-section-title">Daily Routine</span>
+              </div>
+              <div class="form-group">
+                <textarea id="drawerRoutine" class="form-input" rows="3" placeholder="Describe your daily routine..."></textarea>
+              </div>
+            </div>
+            <div class="drawer-section" id="settingsCardColors">
+              <div class="drawer-section-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.5-4.5-10-10-10z"/></svg>
+                <span class="drawer-section-title">Tag Colors</span>
+              </div>
+            </div>
+            <div class="drawer-section">
+              <div class="drawer-section-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                <span class="drawer-section-title">Data</span>
+              </div>
+              <div class="drawer-actions-row">
+                <button type="button" class="drawer-btn" onclick="exportData()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export
+                </button>
+                <button type="button" class="drawer-btn" onclick="document.getElementById('drawerImportFile').click()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Import
+                </button>
+                <button type="button" class="drawer-btn danger" onclick="handleSettingsClear()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                  Clear Key
+                </button>
+              </div>
+              <input type="file" id="drawerImportFile" accept=".json" style="display:none" onchange="importData(event)">
+            </div>
+            <div class="drawer-save-wrap">
+              <button type="submit" class="drawer-save-btn">Save Settings</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Chat Modal -->
+    <div id="aiChatOverlay" class="overlay hidden"></div>
+    <div id="aiChatModal" class="modal ai-modal hidden" role="dialog" aria-label="AI Assistant">
+      <div class="ai-modal-header">
+        <h3>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
+          </svg>
+          Havën AI
+        </h3>
+        <button id="aiChatClose" class="btn btn-ghost modal-close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="ai-modal-body">
+        <div class="ai-messages" id="aiChatMessages"></div>
+        <div class="ai-input-wrapper" id="aiChatInputWrapper">
+          <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your schedule..." autocomplete="off">
+          <button id="aiChatSend" class="ai-send-btn" aria-label="Send">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+  </script>
+  <script src="shared.js"></script>
+  <script src="schedule.js"></script>
+</body>
+</html>

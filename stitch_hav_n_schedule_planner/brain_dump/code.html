@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Brain Dump &amp; Notes | Havën Schedule</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600&amp;family=EB+Garamond:ital,wght@0,500;1,500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#e5e2e1",
+                        "surface-tint": "#b4ccbc",
+                        "on-secondary": "#3f2d1a",
+                        "on-primary-fixed-variant": "#364b3f",
+                        "surface-container-high": "#2a2a2a",
+                        "secondary-container": "#57432e",
+                        "primary-fixed": "#d0e8d7",
+                        "on-tertiary-fixed-variant": "#474746",
+                        "on-primary-fixed": "#0b1f15",
+                        "on-tertiary": "#313030",
+                        "inverse-surface": "#e5e2e1",
+                        "secondary-fixed": "#fcddc1",
+                        "surface-bright": "#3a3939",
+                        "on-surface": "#e5e2e1",
+                        "tertiary-container": "#3e3d3d",
+                        "on-error": "#690005",
+                        "outline-variant": "#424844",
+                        "on-error-container": "#ffdad6",
+                        "secondary": "#dfc1a6",
+                        "surface-container-highest": "#353534",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "primary": "#b4ccbc",
+                        "background": "#131313",
+                        "error-container": "#93000a",
+                        "surface": "#131313",
+                        "inverse-on-surface": "#313030",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-background": "#e5e2e1",
+                        "surface-container-low": "#1c1b1b",
+                        "on-tertiary-container": "#aaa8a7",
+                        "inverse-primary": "#4d6356",
+                        "primary-fixed-dim": "#b4ccbc",
+                        "on-secondary-fixed-variant": "#57432e",
+                        "error": "#ffb4ab",
+                        "tertiary": "#c8c6c5",
+                        "surface-variant": "#353534",
+                        "primary-container": "#2d4236",
+                        "outline": "#8c928d",
+                        "on-secondary-container": "#ccb096",
+                        "surface-container": "#201f1f",
+                        "secondary-fixed-dim": "#dfc1a6",
+                        "on-primary-container": "#96ae9e",
+                        "surface-dim": "#131313",
+                        "on-surface-variant": "#c2c8c2",
+                        "on-primary": "#203529",
+                        "on-secondary-fixed": "#281807",
+                        "on-tertiary-fixed": "#1c1b1b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-padding": "24px",
+                        "base": "8px",
+                        "gutter": "16px",
+                        "stack-sm": "4px",
+                        "section-gap": "48px",
+                        "stack-md": "12px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Hanken Grotesk"],
+                        "label-md": ["Hanken Grotesk"],
+                        "headline-lg": ["EB Garamond"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["EB Garamond"],
+                        "headline-md": ["EB Garamond"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "title-sm": ["Hanken Grotesk"],
+                        "display-lg": ["EB Garamond"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "title-sm": ["14px", { "lineHeight": "20px", "letterSpacing": "0.1em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "500" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .masonry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-auto-rows: 20px;
+            gap: 16px;
+        }
+        .masonry-item {
+            grid-row-end: span 10;
+        }
+        .masonry-item-large {
+            grid-row-end: span 18;
+        }
+        .masonry-item-xl {
+            grid-row-end: span 25;
+        }
+        /* Custom scrollbar for dark mode */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #131313; }
+        ::-webkit-scrollbar-thumb { background: #2d4236; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary/30 selection:text-primary">
+<!-- Side Navigation Shell -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest dark:bg-surface-container-lowest flex flex-col py-base px-gutter border-r border-outline-variant/10 z-40 hidden md:flex">
+<div class="mb-section-gap">
+<h1 class="font-headline-md text-headline-md text-on-surface tracking-tight mb-stack-sm">Havën Schedule</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Personal Sanctuary</p>
+</div>
+<nav class="flex-1 space-y-stack-sm overflow-y-auto">
+<div class="space-y-1">
+<a class="flex items-center gap-base p-base text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg group" href="#">
+<span class="material-symbols-outlined text-primary">home</span>
+<span class="font-label-md text-label-md">Home Page</span>
+</a>
+<a class="flex items-center gap-base p-base text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-label-md text-label-md">Life Calendar</span>
+</a>
+<a class="flex items-center gap-base p-base text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">star</span>
+<span class="font-label-md text-label-md">Goals &amp; Resolutions</span>
+</a>
+<a class="flex items-center gap-base p-base text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">format_list_bulleted</span>
+<span class="font-label-md text-label-md">Bucket List</span>
+</a>
+<a class="flex items-center gap-base p-base text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-label-md text-label-md">Notes</span>
+</a>
+<a class="flex items-center gap-base p-base text-primary dark:text-primary font-bold bg-primary-container/20 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">archive</span>
+<span class="font-label-md text-label-md">Brain Dump</span>
+</a>
+</div>
+</nav>
+<div class="mt-auto pt-gutter border-t border-outline-variant/10 space-y-1">
+<a class="flex items-center gap-base p-base text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-base p-base text-on-surface-variant hover:bg-surface-container-low transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-label-md text-label-md">Updates</span>
+</a>
+<div class="mt-base flex items-center gap-base px-base py-base">
+<img alt="Profile avatar of Dede" class="w-8 h-8 rounded-full border border-primary/20" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDBo3Ug93jbl9LwhDEkX_hVK3XHQ-SfqVlGXbaMEStWgjNENMPDLlPOjZLfhMMHjflxKDKxKIuCy3a4bIMz_hheyzWc3Rb6tOcVGrfE1EOOgNUZw-ehKmobqt5CUxkjrEzJtv2h8gGmTTzPkwaa7h7GCEJgeIQWireK00KlM5_CCLQhzDJTDJK23O3nxaptj5pckgZSZyxP9jOU6rZfM0jftVkDsEzJgZlmtk26tRfx9f_vyfklD9AxtYocNMVutdSGN70sqjYQ6Fcw"/>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface">Dede</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="md:ml-64 min-h-screen transition-all duration-300">
+<!-- Top App Bar -->
+<header class="docked full-width top-0 sticky z-50 bg-background/80 backdrop-blur-md flex justify-between items-center w-full px-container-padding h-16">
+<div class="flex items-center gap-section-gap">
+<span class="font-display-lg text-headline-md md:text-display-lg text-on-surface">Brain Dump</span>
+<nav class="hidden lg:flex items-center gap-gutter">
+<a class="text-outline dark:text-outline font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="text-outline dark:text-outline font-label-sm text-label-sm hover:text-primary transition-colors" href="#">Weekly</a>
+<a class="text-on-surface border-b border-primary pb-1 font-label-sm text-label-sm" href="#">Brain Dump</a>
+</nav>
+</div>
+<div class="flex items-center gap-base">
+<button class="p-base hover:bg-surface-container-low transition-colors rounded-full text-primary">
+<span class="material-symbols-outlined">share</span>
+</button>
+<button class="p-base hover:bg-surface-container-low transition-colors rounded-full text-primary">
+<span class="material-symbols-outlined">star</span>
+</button>
+<button class="p-base hover:bg-surface-container-low transition-colors rounded-full text-primary">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+</header>
+<!-- Content Area -->
+<div class="px-container-padding py-gutter max-w-7xl mx-auto space-y-section-gap">
+<!-- Editor Interface -->
+<section class="w-full">
+<div class="bg-surface-container-low rounded-xl border border-outline-variant/10 overflow-hidden focus-within:ring-1 focus-within:ring-primary/40 transition-all duration-300">
+<div class="flex items-center justify-between px-gutter py-base bg-surface-container-highest/50 border-b border-outline-variant/5">
+<div class="flex items-center gap-base">
+<span class="font-title-sm text-title-sm text-primary uppercase tracking-widest">Morning Reflection</span>
+<span class="text-outline text-label-sm">— Oct 24, 2023</span>
+</div>
+<div class="flex items-center gap-stack-md">
+<button class="material-symbols-outlined text-outline text-[20px] hover:text-primary transition-colors">format_bold</button>
+<button class="material-symbols-outlined text-outline text-[20px] hover:text-primary transition-colors">format_italic</button>
+<button class="material-symbols-outlined text-outline text-[20px] hover:text-primary transition-colors">format_list_bulleted</button>
+<button class="material-symbols-outlined text-outline text-[20px] hover:text-primary transition-colors">image</button>
+</div>
+</div>
+<textarea class="w-full bg-transparent border-none focus:ring-0 font-body-lg text-body-lg p-gutter text-on-surface placeholder:text-outline-variant resize-none h-48" placeholder="What's currently inhabiting your headspace?"></textarea>
+<div class="px-gutter py-base flex justify-end">
+<button class="bg-primary text-on-primary px-gutter py-2 rounded-lg font-label-md text-label-md hover:opacity-90 active:scale-95 transition-all">
+                            Save to Archive
+                        </button>
+</div>
+</div>
+</section>
+<!-- Masonry Grid of Thoughts -->
+<section class="masonry-grid pb-section-gap">
+<!-- Quote Card -->
+<div class="masonry-item-large flex flex-col justify-center p-gutter bg-primary-container/20 border border-primary/10 rounded-xl relative overflow-hidden group">
+<span class="material-symbols-outlined text-primary/10 absolute -top-4 -left-4 text-display-lg" style="font-variation-settings: 'FILL' 1;">format_quote</span>
+<p class="font-headline-md text-headline-md italic text-primary relative z-10 leading-relaxed">
+                        "It takes discipline to be the person you want to be."
+                    </p>
+<div class="mt-gutter h-[1px] w-12 bg-primary/30"></div>
+</div>
+<!-- Reflection Card -->
+<div class="masonry-item-xl bg-surface-container-low border border-outline-variant/10 rounded-xl p-gutter hover:border-primary/30 transition-colors group">
+<div class="flex items-center gap-base mb-stack-md">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<h3 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">Morning Thoughts</h3>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-gutter">
+                        Today started with a quiet coffee. I noticed how the light hits the monstera leaves at 7:45 AM. There's a certain stillness before the day demands things from me. I want to carry this grounded energy into my 10 AM meeting. Reminder: focus on the breath when things get hectic.
+                    </p>
+<div class="flex flex-wrap gap-stack-sm">
+<span class="px-2 py-0.5 bg-surface-container-highest text-outline text-label-sm rounded border border-outline-variant/10">Mindfulness</span>
+<span class="px-2 py-0.5 bg-surface-container-highest text-outline text-label-sm rounded border border-outline-variant/10">Routine</span>
+</div>
+</div>
+<!-- Night Reflections Card -->
+<div class="masonry-item bg-secondary-container/10 border border-secondary/10 rounded-xl p-gutter">
+<div class="flex items-center gap-base mb-stack-md">
+<span class="material-symbols-outlined text-secondary text-[18px]">dark_mode</span>
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-wider">Night Reflections</h3>
+</div>
+<p class="font-headline-md text-headline-md text-on-surface italic opacity-80">
+                        The mind is a sanctuary if you let it be.
+                    </p>
+</div>
+<!-- Visual Anchor -->
+<div class="masonry-item-large relative rounded-xl overflow-hidden group">
+<img alt="Serene spa-like atmosphere with soft lighting" class="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105" data-alt="A cinematic, high-detail photograph of a minimalist sanctuary space. Soft natural light filters through sheer linen curtains onto a dark wood surface holding a ceramic bowl of water and a single green leaf. The palette is dominated by deep forest greens, charcoal greys, and warm off-white highlights. The atmosphere is quiet, sophisticated, and deeply calming, embodying a cozy productivity aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKrZx6UfxKy4621EcJFc_-HEPrnbMnnq499Q57dwiR5EKVNvewE48Mru1qSN_v9m_PmfzgdUFpg17fC5NYxYBT3Adq5eX7fuZFEgUY3u8IUDDY0RGJEYbYlb9q9Vvh-pjv1XBZqI4HPF54aPFBsYZEuis66GNVhlqE1G3oYip1r8OptVQIEO-J3jtKq2dEqW8RYlc0ta747hMNEQKWIGs2yFsh95zqKtVXJQX-75wJxiqM573B6WwTFA9FoMWbyttnADAdQoGxij5a"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent"></div>
+<div class="absolute bottom-base left-base right-base">
+<p class="text-label-sm font-label-sm text-primary/70">Perspective Shift</p>
+</div>
+</div>
+<!-- Brain Dump Note -->
+<div class="masonry-item-large bg-surface-container-low border border-outline-variant/10 rounded-xl p-gutter">
+<div class="flex justify-between items-start mb-gutter">
+<h3 class="font-title-sm text-title-sm text-on-surface uppercase">Unfiltered Ideas</h3>
+<span class="material-symbols-outlined text-outline text-[18px]">push_pin</span>
+</div>
+<ul class="space-y-stack-md font-body-md text-body-md text-on-surface-variant">
+<li class="flex gap-base">
+<span class="text-primary font-bold">01</span>
+                            Researching sustainable garden layouts for the balcony project next spring.
+                        </li>
+<li class="flex gap-base">
+<span class="text-primary font-bold">02</span>
+                            Digital minimalism: how to reduce notification noise without losing connectivity?
+                        </li>
+<li class="flex gap-base">
+<span class="text-primary font-bold">03</span>
+                            The correlation between evening stretching and deep sleep cycles. Needs data.
+                        </li>
+</ul>
+</div>
+<!-- Emotional Maturity Card -->
+<div class="masonry-item bg-primary-container/10 border border-primary/20 rounded-xl p-gutter">
+<p class="font-headline-md text-headline-md text-primary/90 leading-tight">
+                        Develop emotional maturity as a priority, not a byproduct.
+                    </p>
+</div>
+<!-- Task List Card -->
+<div class="masonry-item-large bg-surface-container-low border border-outline-variant/10 rounded-xl p-gutter">
+<h3 class="font-label-md text-label-md text-outline uppercase tracking-widest mb-gutter border-b border-outline-variant/20 pb-2">Admin Tasks</h3>
+<div class="space-y-stack-md">
+<div class="flex items-center gap-base">
+<div class="w-5 h-5 rounded border border-primary/40 flex items-center justify-center"></div>
+<span class="font-body-md text-body-md text-on-surface-variant">Update medical records</span>
+</div>
+<div class="flex items-center gap-base">
+<div class="w-5 h-5 rounded bg-primary/20 border border-primary/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[16px]">check</span>
+</div>
+<span class="font-body-md text-body-md text-outline line-through">Renew driver's license</span>
+</div>
+<div class="flex items-center gap-base">
+<div class="w-5 h-5 rounded border border-primary/40 flex items-center justify-center"></div>
+<span class="font-body-md text-body-md text-on-surface-variant">Car insurance comparison</span>
+</div>
+</div>
+</div>
+<!-- Atmospheric Image -->
+<div class="masonry-item-xl rounded-xl overflow-hidden relative">
+<img alt="Morning light over a desk" class="w-full h-full object-cover" data-alt="An ethereal editorial-style photograph capturing the first golden hour rays hitting a dark, organized desk. A glass of water with cucumber slices sits next to a stack of linen-bound journals. The background features soft, out-of-focus green plants. The image has a low-contrast, moody aesthetic with a focus on textures and natural morning light, aligning with the sanctuary theme of Havën." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjcamR_2JX6L6XStE1Vf_5bVmabf752voxHL0zxc8VXwn0yc6cd6ZLGVyBniSECb_uEfsq9kjwkyBeB3Zbr60aATwru2sq7LqczZsnsg1z0kKDJaV5r-eguPlB13pxPFswY1X5ky-chJsNhuO8Esdcv6h_JrDwylbaXyLZKPm4nnyrzLQoIP6Wv4VUl_bk61A-zm1ybpSPcWXE5AUbPmEhUY9O0TuhnpR0jxvhcrme6u49PwzzJlP4Qe7aPv6Aa5Ga1AEzYwT9P-FI"/>
+<div class="absolute inset-0 bg-background/20"></div>
+</div>
+</section>
+</div>
+<!-- FAB for Mobile Navigation / Quick Action -->
+<button class="fixed bottom-gutter right-gutter w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-50 md:hidden">
+<span class="material-symbols-outlined">add</span>
+</button>
+</main>
+<!-- Global Background Shader Overlay (Subtle Atmospheric Effect) -->
+<div class="fixed inset-0 pointer-events-none opacity-5 z-[-1]">
+
+</div>
+<script>
+        // Simple Micro-interaction for Editor
+        const textarea = document.querySelector('textarea');
+        textarea.addEventListener('focus', () => {
+            textarea.closest('section').style.transform = 'translateY(-2px)';
+        });
+        textarea.addEventListener('blur', () => {
+            textarea.closest('section').style.transform = 'translateY(0)';
+        });
+
+        // Masonry item expansion on click
+        document.querySelectorAll('.masonry-item, .masonry-item-large, .masonry-item-xl').forEach(item => {
+            item.addEventListener('click', () => {
+                // Future expansion logic
+                console.log('Opening detailed note view...');
+            });
+        });
+    </script>
+</body></html>

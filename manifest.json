@@ -1,0 +1,29 @@
+{
+  "name": "Havën Schedule",
+  "short_name": "Havën",
+  "description": "A beautiful, AI-powered time-blocking calendar app",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#0a0a0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "lifestyle"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "scope": "/",
+  "id": "/"
+}
