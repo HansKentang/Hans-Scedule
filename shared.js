@@ -1666,7 +1666,7 @@ document.addEventListener('click', function(e) {
   openImagePicker(img.dataset.imageId);
 });
 
-// ─── SPOTIFY REAL CONNECTION ──────────────────────────────────
+// ─── SPOTIFY REAL CONNECTION ──────────────────────────────
 const SPOTIFY_STORAGE = 'haven-schedule-spotify';
 const SPOTIFY_CID_STORAGE = 'haven-schedule-spotify-cid';
 const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize';
@@ -1682,10 +1682,7 @@ let _spPT = null, _spXT = null, _spPStart = 0, _spPPos = 0;
 function _spFmt(t) { return t ? `${Math.floor(t/60000)}:${String(Math.floor(t/1000)%60).padStart(2,'0')}` : '0:00'; }
 
 function _spLoad() {
-  try {
-    const d = JSON.parse(localStorage.getItem(SPOTIFY_STORAGE));
-    if (d) { _spAT = d.at; _spRT = d.rt; _spExp = d.exp; }
-  } catch(e) {}
+  try { const d = JSON.parse(localStorage.getItem(SPOTIFY_STORAGE)); if (d) { _spAT = d.at; _spRT = d.rt; _spExp = d.exp; } } catch(e) {}
 }
 function _spSave(at, rt, exp) {
   _spAT = at; _spRT = rt; _spExp = Date.now() + (exp - 60) * 1000;
@@ -1859,10 +1856,7 @@ function spPoll() {
     if (c) c.textContent = _spFmt(_spPos);
   }, 500);
 }
-function spStopPoll() {
-  if (_spPT) { clearInterval(_spPT); _spPT = null; }
-  if (_spXT) { clearInterval(_spXT); _spXT = null; }
-}
+function spStopPoll() { if (_spPT) { clearInterval(_spPT); _spPT = null; } if (_spXT) { clearInterval(_spXT); _spXT = null; } }
 
 function spTogglePlay() {
   if (!_spDev) { showToast('No active Spotify device', 'warning'); return; }
@@ -1914,7 +1908,7 @@ function spRender() {
   if (!ok) {
     lo.classList.remove('hidden'); li.classList.add('hidden');
     const s = lo.querySelector('.sp-artist');
-    if (s) s.textContent = spGetCid() ? 'Tap to connect Spotify' : 'Set Client ID in Settings';
+    if (s) s.textContent = spGetCid() ? 'Tap to connect Spotify' : 'Enter your Client ID to connect';
     return;
   }
   lo.classList.add('hidden'); li.classList.remove('hidden');
@@ -1924,8 +1918,13 @@ function spRender() {
         ct = document.getElementById('spProgressCur'), tt = document.getElementById('spProgressTot'),
         sm = document.getElementById('spStatusMsg'), pp = document.getElementById('spProfile');
   if (art) {
-    if (_spTrack?.art) { art.innerHTML = `<img src="${_spTrack.art}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`; art.style.background = 'none'; }
-    else { art.innerHTML = '<svg viewBox="0 0 24 24" fill="#fff" width="18" height="18"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>'; art.style.background = ''; }
+    if (_spTrack?.art) {
+      art.innerHTML = `<img src="${_spTrack.art}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+      art.style.background = 'none';
+    } else {
+      art.innerHTML = '<svg viewBox="0 0 24 24" fill="#fff" width="18" height="18"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>';
+      art.style.background = '';
+    }
   }
   if (t) t.textContent = _spTrack?.name || '—';
   if (a) a.textContent = _spTrack?.artist || '—';
@@ -2620,7 +2619,7 @@ function toggleAISendBtn() {
 }
 
 function showAIChat() {
-  if (!dom.aiChatModal) return;
+  if (!dom.aiChatPanel) return;
   const provider = state.apiProvider || 'groq';
   const pLabel = PROVIDER_LABELS[provider] || 'Groq';
   const pLink = PROVIDER_LINKS[provider] || PROVIDER_LINKS.groq;
@@ -2697,11 +2696,11 @@ function showAIChat() {
   // Show file badge if file is attached
   updateFileBadge();
 
-  dom.aiChatModal.classList.remove('hidden');
+  dom.aiChatPanel.classList.remove('hidden');
   dom.aiChatOverlay.classList.remove('hidden');
   requestAnimationFrame(() => {
     dom.aiChatOverlay.classList.add('active');
-    dom.aiChatModal.classList.add('active');
+    dom.aiChatPanel.classList.add('open');
   });
   state.aiChatOpen = true;
   dom.aiChatInput?.focus();
@@ -2781,11 +2780,11 @@ function formatFileSize(bytes) {
 }
 
 function hideAIChat() {
-  if (!dom.aiChatModal) return;
+  if (!dom.aiChatPanel) return;
   dom.aiChatOverlay.classList.remove('active');
-  dom.aiChatModal.classList.remove('active');
+  dom.aiChatPanel.classList.remove('open');
   setTimeout(() => {
-    dom.aiChatModal.classList.add('hidden');
+    dom.aiChatPanel.classList.add('hidden');
     dom.aiChatOverlay.classList.add('hidden');
   }, 200);
   state.aiChatOpen = false;

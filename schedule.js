@@ -66,7 +66,7 @@ dom.filterTodayBtn = $('#filterTodayBtn');
   dom.importDataBtn  = $('#importDataBtn');
   dom.importFileInput= $('#importFileInput');
   dom.aiChatBtn      = $('#aiChatBtnSidebar');
-  dom.aiChatModal    = $('#aiChatModal');
+  dom.aiChatPanel    = $('#aiChatPanel');
   dom.aiChatOverlay  = $('#aiChatOverlay');
   dom.aiChatMessages = $('#aiChatMessages');
   dom.aiChatInput    = $('#aiChatInput');
@@ -1900,7 +1900,6 @@ function getPreferredTitle(tag) {
 function init() {
   loadState();
   applyTheme();
-  spInit();
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
   if (dom.filterShowWeekends) dom.filterShowWeekends.checked = state.showWeekends;
   if (dom.filterShowCompleted) dom.filterShowCompleted.checked = state.showCompleted;
@@ -1913,6 +1912,7 @@ function init() {
   requestNotifPermission();
   scheduleReminderCheck();
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.darkMode === null) applyTheme(); });
+  spInit();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

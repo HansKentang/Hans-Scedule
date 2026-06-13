@@ -137,7 +137,7 @@ function renderActivities() {
 function setupPage() {
   dom.importFileInput = document.getElementById('importFileInput');
   dom.aiChatBtn = document.getElementById('aiChatBtnSidebar');
-  dom.aiChatModal = document.getElementById('aiChatModal');
+  dom.aiChatPanel = document.getElementById('aiChatPanel');
   dom.aiChatOverlay = document.getElementById('aiChatOverlay');
   dom.aiChatMessages = document.getElementById('aiChatMessages');
   dom.aiChatInput = document.getElementById('aiChatInput');
@@ -177,7 +177,6 @@ function setupPage() {
 function init() {
   loadState();
   applyTheme();
-  spInit();
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
   renderActivities();
 
@@ -187,6 +186,7 @@ function init() {
   setupPage();
   document.getElementById('exportBtn')?.addEventListener('click', exportData);
   document.getElementById('importBtn')?.addEventListener('click', () => { document.getElementById('importFileInput')?.click(); });
+  spInit();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
