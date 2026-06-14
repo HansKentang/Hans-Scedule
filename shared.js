@@ -9,6 +9,7 @@ const SETTINGS_KEY = 'haven-schedule-settings';
 const API_KEY_STORAGE = 'haven-schedule-apikey';
 const API_MODEL_STORAGE = 'haven-schedule-model';
 const ROUTINE_STORAGE = 'haven-schedule-routine';
+const CHAT_HISTORY_KEY = 'haven-schedule-chat';
 
 const IS_MAC = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 const MOD_KEY = IS_MAC ? '⌘' : 'Ctrl';
@@ -245,9 +246,16 @@ function createPomodoroSession(taskId, taskTitle, durationMinutes) {
 const FOCUS_MODE_KEY = 'haven-schedule-focus';
 let focusModeActive = false;
 
+function updateFocusModeBubble() {
+  const el = document.getElementById('accessFocusMode');
+  if (!el) return;
+  el.classList.toggle('active', focusModeActive);
+}
+
 function toggleFocusMode() {
   focusModeActive = !focusModeActive;
   document.documentElement.classList.toggle('focus-mode', focusModeActive);
+  updateFocusModeBubble();
   try {
     localStorage.setItem(FOCUS_MODE_KEY, JSON.stringify(focusModeActive));
   } catch (e) { /* ignore */ }
@@ -260,6 +268,7 @@ function loadFocusMode() {
     if (focusModeActive) {
       document.documentElement.classList.add('focus-mode');
     }
+    updateFocusModeBubble();
   } catch (e) {
     focusModeActive = false;
   }
@@ -539,6 +548,15 @@ let state = {
   darkMode: null,
   userProfile: null,
   editMode: false,
+  accessBubbles: {},
+};
+
+const DEFAULT_BUBBLES = {
+  'focus-timer': { visible: true, label: 'Focus', color: '#fff' },
+  'templates': { visible: true, label: 'Templates', color: '#fff' },
+  'focus-mode': { visible: true, label: 'Focus', color: '#fff' },
+  'today': { visible: true, label: 'Today', color: '#fff' },
+  'idea': { visible: true, label: 'Idea', color: '#fff' },
 };
 
 // ─── USER PROFILE / LEARNING ENGINE ───────────────────────
@@ -919,6 +937,7 @@ function saveState() {
       showWeekends: state.showWeekends,
       showCompleted: state.showCompleted,
       darkMode: state.darkMode,
+      accessBubbles: state.accessBubbles,
     }));
   } catch (e) { /* ignore */ }
 }
@@ -933,6 +952,7 @@ function loadState() {
       state.showWeekends = s.showWeekends ?? true;
       state.showCompleted = s.showCompleted ?? true;
       state.darkMode = s.darkMode !== undefined ? s.darkMode : null;
+      state.accessBubbles = s.accessBubbles || {};
     }
     const key = localStorage.getItem(API_KEY_STORAGE);
     if (key) state.apiKey = key;
@@ -972,7 +992,9 @@ const DEFAULT_IMAGES = {
   'tags-hero': 'https://picsum.photos/seed/haven-tags-hero/1200/500',
   'tags-studio': 'https://picsum.photos/seed/haven-tags-studio/400/400',
   'analytics-hero': 'https://picsum.photos/seed/haven-analytics-hero/1200/400',
-  'analytics-data': 'https://picsum.photos/seed/haven-analytics-data/400/400'
+  'analytics-data': 'https://picsum.photos/seed/haven-analytics-data/400/400',
+  'finance-hero': 'https://picsum.photos/seed/haven-finance-hero/1200/400',
+  'finance-ceramic': 'https://picsum.photos/seed/haven-finance-ceramic/400/400'
 };
 
 function loadImages() {
@@ -1025,7 +1047,8 @@ function imageLabel(id) {
     'schedule-hero': 'Schedule Hero', 'schedule-coffee': 'Schedule Coffee',
     'activities-hero': 'Activities Hero', 'activities-desk': 'Activities Desk',
     'tags-hero': 'Tags Hero', 'tags-studio': 'Tags Studio',
-    'analytics-hero': 'Analytics Hero', 'analytics-data': 'Analytics Data'
+    'analytics-hero': 'Analytics Hero', 'analytics-data': 'Analytics Data',
+    'finance-hero': 'Finance Hero', 'finance-ceramic': 'Finance Avatar'
   };
   return map[id] || id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -1448,6 +1471,7 @@ function importData(e) {
 // ─── HELP MODAL ────────────────────────────────────────────
 function showHelpModal() {
   if (!dom.helpModal) return;
+  populateShortcuts();
   dom.helpModal.classList.remove('hidden');
   dom.helpOverlay.classList.remove('hidden');
   requestAnimationFrame(() => {
@@ -1466,6 +1490,22 @@ function hideHelpModal() {
     dom.helpOverlay.classList.add('hidden');
   }, 200);
   state.helpModalOpen = false;
+}
+
+// ─── HELP SHORTCUTS POPULATOR ────────────────────────────
+function populateShortcuts() {
+  const grid = document.getElementById('helpShortcutsGrid');
+  if (!grid) return;
+  const mk = (k, d) => `<div class="shortcut-row"><kbd class="shortcut-key">${k}</kbd><span class="shortcut-desc">${d}</span></div>`;
+  grid.innerHTML = [
+    mk(shortcutDisplay('K'), 'Open command palette'),
+    mk(shortcutDisplay('I'), 'Open AI Assistant'),
+    mk('?', 'Toggle this help panel'),
+    mk('Q', 'Quick new task'),
+    mk('T', 'Toggle dark/light theme'),
+    mk('F', 'Toggle focus mode'),
+    mk('Esc', 'Close any open modal'),
+  ].join('');
 }
 
 // ─── SETTINGS DRAWER ───────────────────────────────────────
@@ -1557,6 +1597,7 @@ function openSettingsDrawer() {
   try { loadAIUsage(); } catch (e) { console.warn('drawer: loadAIUsage', e); }
   try { renderAIUsage(); } catch (e) { console.warn('drawer: renderAIUsage', e); }
   try { renderCardColorsInSettings(); } catch (e) { console.warn('drawer: renderCardColorsInSettings', e); }
+  try { renderBubbleConfigInSettings(); } catch (e) { console.warn('drawer: renderBubbleConfigInSettings', e); }
   overlay.classList.remove('hidden');
   drawer.classList.remove('hidden');
   requestAnimationFrame(() => {
@@ -1593,6 +1634,23 @@ function handleSettingsSubmit(e) {
   try { localStorage.setItem('haven-schedule-model', model); } catch (e) { /* ignore */ }
   saveRoutine(routine);
   updateSettingsKeyStatus();
+  // Save bubble config from settings form
+  const bubbleConfig = {};
+  document.querySelectorAll('[data-bubble-config]').forEach(el => {
+    const key = el.dataset.bubbleConfig;
+    const visibleEl = document.getElementById(`bubble-visible-${key}`);
+    const labelEl = document.getElementById(`bubble-label-${key}`);
+    const colorEl = document.getElementById(`bubble-color-${key}`);
+    if (!visibleEl && !labelEl && !colorEl) return;
+    const overrides = {};
+    if (visibleEl) overrides.visible = visibleEl.checked;
+    if (labelEl) overrides.label = labelEl.value.trim() || DEFAULT_BUBBLES[key]?.label || key;
+    if (colorEl) overrides.color = colorEl.value;
+    if (Object.keys(overrides).length) bubbleConfig[key] = overrides;
+  });
+  state.accessBubbles = bubbleConfig;
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles })); } catch (e) {}
+  applyAccessHubConfig();
   showToast('Settings saved', 'success');
   closeSettingsDrawer();
 }
@@ -1610,52 +1668,106 @@ function handleSettingsClear() {
 }
 
 // ─── EDIT MODE ──────────────────────────────────────────────
+function ensureEditModeIndicator() {
+  let indicator = document.getElementById('editModeIndicator');
+  if (indicator) return indicator;
+  indicator = document.createElement('div');
+  indicator.id = 'editModeIndicator';
+  indicator.className = 'hidden';
+  indicator.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+      <path d="m15 5 4 4"/>
+    </svg>
+    <span>Edit Mode — tap any image to change</span>
+    <button class="em-close" title="Exit edit mode">✕</button>
+  `;
+  document.body.appendChild(indicator);
+  // Close button handler
+  indicator.querySelector('.em-close').addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (state.editMode) toggleEditMode();
+  });
+  return indicator;
+}
+
 function toggleEditMode() {
   state.editMode = !state.editMode;
   document.documentElement.classList.toggle('edit-mode', state.editMode);
-  const panel = document.getElementById('visualsPanel');
-  const overlay = document.getElementById('visualsPanelOverlay');
+  
+  // Toggle floating indicator
+  const indicator = ensureEditModeIndicator();
   if (state.editMode) {
-    if (panel) {
-      renderVisualsPanel();
-      panel.classList.remove('hidden');
-      requestAnimationFrame(() => panel.classList.add('open'));
-    }
-    if (overlay) {
-      overlay.classList.remove('hidden');
-      requestAnimationFrame(() => overlay.classList.add('active'));
-    }
-    showToast('Edit mode ON — click any image to customize', 'info');
+    indicator.classList.remove('hidden');
+    requestAnimationFrame(() => indicator.classList.add('active'));
   } else {
-    if (panel) {
-      panel.classList.remove('open');
-      setTimeout(() => panel.classList.add('hidden'), 300);
-    }
-    if (overlay) {
-      overlay.classList.remove('active');
-      setTimeout(() => overlay.classList.add('hidden'), 300);
-    }
-    showToast('Edit mode OFF', 'info');
+    indicator.classList.remove('active');
+    setTimeout(() => indicator.classList.add('hidden'), 300);
   }
+  
+  if (state.editMode) {
+    showToast('🖊️ Edit mode ON — tap any image to customize', 'info', 2500);
+  } else {
+    showToast('Edit mode OFF', 'info', 1500);
+  }
+
+  updateSectionHandles();
 }
 
-function renderVisualsPanel() {
-  const container = document.getElementById('visualsPanelContent');
-  if (!container) return;
-  let html = '';
-  for (const id of Object.keys(DEFAULT_IMAGES)) {
-    const url = getImage(id);
-    const label = imageLabel(id);
-    html += `<div class="vp-item" onclick="openImagePicker('${id}')" title="${label}">
-      <img src="${url}" alt="${label}" loading="lazy">
-      <span>${label}</span>
-    </div>`;
-  }
-  container.innerHTML = html;
+function updateSectionHandles() {
+  const handles = document.querySelectorAll('.hub-section-drag-handle');
+  if (!handles.length) return;
+  const isEdit = state.editMode;
+  handles.forEach(h => {
+    h.classList.toggle('hub-section-drag-handle-visible', isEdit);
+  });
 }
 
-// Delegated click: edit mode on-page image picker
+
+
+// Delegated click: sidebar buttons + edit mode image picker
 document.addEventListener('click', function(e) {
+  const visualsBtn = e.target.closest('#bcVisualsBtn');
+  if (visualsBtn) { toggleEditMode(); return; }
+  const settingsBtn = e.target.closest('.hamburger-settings-btn');
+  if (settingsBtn) { openSettingsDrawer(); return; }
+
+  // Hamburger sidebar toggle
+  const hamburger = e.target.closest('.hub-hamburger');
+  if (hamburger) {
+    const layout = hamburger.closest('.hub-layout');
+    if (!layout) return;
+    const sidebar = layout.querySelector('.hub-sidebar');
+    const overlay = layout.querySelector('.hub-sidebar-overlay');
+    if (!sidebar) return;
+    const isOpen = sidebar.classList.toggle('open');
+    overlay?.classList.toggle('active', isOpen);
+    return;
+  }
+
+  // Overlay click closes sidebar
+  const overlayEl = e.target.closest('.hub-sidebar-overlay');
+  if (overlayEl) {
+    const layout = overlayEl.closest('.hub-layout');
+    if (!layout) return;
+    const sidebar = layout.querySelector('.hub-sidebar');
+    if (!sidebar) return;
+    sidebar.classList.remove('open');
+    overlayEl.classList.remove('active');
+    return;
+  }
+
+  // Nav item click closes sidebar on mobile
+  const navItem = e.target.closest('.hub-snav-item');
+  if (navItem && window.innerWidth <= 768) {
+    const sidebar = navItem.closest('.hub-sidebar');
+    if (!sidebar) return;
+    const layout = sidebar.closest('.hub-layout');
+    if (!layout) return;
+    sidebar.classList.remove('open');
+    layout.querySelector('.hub-sidebar-overlay')?.classList.remove('active');
+  }
+
   if (!state.editMode) return;
   let img = e.target.closest('img[data-image-id]');
   // If click is on an overlay sibling (e.g. gradient div), check parent for hero img
@@ -1958,11 +2070,14 @@ function spInit() {
 }
 
 // ─── TASK MODAL ────────────────────────────────────────────
-function updateTagColorDot(tag) {
-  if (dom.taskTagColor && tag) {
-    const meta = TAG_COLORS[tag] || TAG_COLORS.meeting;
-    dom.taskTagColor.style.background = meta.text;
-  }
+function selectTagPill(tag) {
+  document.querySelectorAll('.tf-tag').forEach(b => b.classList.remove('active'));
+  const pill = document.querySelector(`.tf-tag[data-tag="${tag}"]`);
+  if (pill) pill.classList.add('active');
+  if (dom.taskTag) dom.taskTag.value = tag;
+  const meta = TAG_COLORS[tag] || TAG_COLORS.meeting;
+  const icon = document.getElementById('taskModalIcon');
+  if (icon) icon.style.color = meta.text;
 }
 
 function openNewTaskModal(date, startMins) {
@@ -1972,15 +2087,16 @@ function openNewTaskModal(date, startMins) {
   const sr = roundToNearest(startMins, SNAP_MINUTES);
   dom.taskModalTitle.textContent = 'New Task';
   dom.taskTitle.value = '';
+  dom.taskTitle.dispatchEvent(new Event('input'));
   dom.taskDate.value = date || formatDate(new Date());
   dom.taskStart.value = toTimeStr(sr);
   dom.taskEnd.value = toTimeStr(sr + 60);
-  dom.taskTag.value = 'meeting';
-  updateTagColorDot('meeting');
+  selectTagPill('meeting');
   dom.taskNotes.value = '';
   if (dom.taskRepeat) dom.taskRepeat.value = 'none';
   if (dom.taskReminder) dom.taskReminder.value = '0';
   dom.taskDeleteBtn.classList.add('hidden');
+  document.getElementById('taskModalId').textContent = '';
   updatePriorityUI();
   showTaskModal();
 }
@@ -1993,15 +2109,16 @@ function openTaskModal(id) {
   state._selectedPriority = task.priority || 3;
   dom.taskModalTitle.textContent = 'Edit Task';
   dom.taskTitle.value = task.title;
+  dom.taskTitle.dispatchEvent(new Event('input'));
   dom.taskDate.value = task.date || formatDate(new Date());
   dom.taskStart.value = task.startTime;
   dom.taskEnd.value = task.endTime;
-  dom.taskTag.value = task.tag;
-  updateTagColorDot(task.tag);
+  selectTagPill(task.tag);
   dom.taskNotes.value = task.notes || '';
   if (dom.taskRepeat) dom.taskRepeat.value = task.repeat ? task.repeat.type : 'none';
   if (dom.taskReminder) dom.taskReminder.value = String(task.reminder || '0');
   dom.taskDeleteBtn.classList.remove('hidden');
+  document.getElementById('taskModalId').textContent = `#${id.slice(0, 6)}`;
   updatePriorityUI();
   showTaskModal();
 }
@@ -2009,7 +2126,7 @@ function openTaskModal(id) {
 function updatePriorityUI() {
   const group = document.getElementById('prioritySelectGroup');
   if (!group) return;
-  group.querySelectorAll('.priority-option').forEach(o => {
+  group.querySelectorAll('.tf-pr').forEach(o => {
     o.classList.toggle('active', parseInt(o.dataset.priority) === (state._selectedPriority || 3));
   });
 }
@@ -2040,16 +2157,17 @@ function hideTaskModal() {
 
 function handleTaskFormSubmit(e) {
   e.preventDefault();
+  const activePill = document.querySelector('.tf-tag.active');
+  const tag = activePill ? activePill.dataset.tag : 'meeting';
   const data = {
     title: dom.taskTitle.value.trim(),
     date: dom.taskDate.value,
     startTime: dom.taskStart.value,
     endTime: dom.taskEnd.value,
-    tag: dom.taskTag.value,
+    tag: tag,
     notes: dom.taskNotes.value.trim(),
     priority: state._selectedPriority || 3,
   };
-  // Optional fields (repeat, reminder) — only if they exist on this page
   if (dom.taskRepeat) {
     const val = dom.taskRepeat.value;
     data.repeat = val === 'none' ? null : { type: val, interval: 1, endAfter: null, endDate: null };
@@ -2610,6 +2728,20 @@ function confirmCmdTask(taskData) {
 let aiChatHistory = [];
 let attachedFile = null;
 
+function saveChatHistory() {
+  try {
+    const recent = aiChatHistory.slice(-50);
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(recent));
+  } catch (e) { /* storage full or unavailable */ }
+}
+
+function loadChatHistory() {
+  try {
+    const data = localStorage.getItem(CHAT_HISTORY_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) { return []; }
+}
+
 function toggleAISendBtn() {
   const btn = dom.aiChatSend;
   const input = dom.aiChatInput;
@@ -2641,32 +2773,41 @@ function showAIChat() {
     dom.aiChatInput.placeholder = 'Configure an API key in Settings to chat...';
     document.getElementById('aiSetupBtn')?.addEventListener('click', () => { window.open(`${pLink.url}`, '_blank'); });
   } else {
-    dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
-      <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg></div>
-      <div class="ai-bubble">
-        <p>Hi! Ask me anything about your schedule or tell me what to do.</p>
-        <div class="ai-suggestions">
-          <button class="ai-chip" data-prompt="What does my week look like?">What does my week look like?</button>
-          <button class="ai-chip" data-prompt="Create a deep work session tomorrow at 9am for 2 hours">Schedule deep work tomorrow</button>
-          <button class="ai-chip" data-prompt="Find a 1 hour gap for a meeting today">Find a gap today</button>
-          <button class="ai-chip" data-prompt="How many tasks do I have this week?">Task count this week</button>
+    attachedFile = null;
+    aiChatHistory = loadChatHistory();
+    if (aiChatHistory.length > 0) {
+      dom.aiChatMessages.innerHTML = '';
+      aiChatHistory.forEach(msg => {
+        if (msg.role === 'user') appendAIMessage('user', msg.text);
+        else if (msg.role === 'assistant') appendAIMessage('assistant', msg.text);
+      });
+    } else {
+      dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
+        <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg></div>
+        <div class="ai-bubble">
+          <p>Hi! Ask me anything about your schedule or tell me what to do.</p>
+          <div class="ai-suggestions">
+            <button class="ai-chip" data-prompt="What does my week look like?">What does my week look like?</button>
+            <button class="ai-chip" data-prompt="Create a deep work session tomorrow at 9am for 2 hours">Schedule deep work tomorrow</button>
+            <button class="ai-chip" data-prompt="Find a 1 hour gap for a meeting today">Find a gap today</button>
+            <button class="ai-chip" data-prompt="How many tasks do I have this week?">Task count this week</button>
+          </div>
         </div>
-      </div>
-    </div>`;
+      </div>`;
+      aiChatHistory = [];
+      // Bind suggestion chips
+      dom.aiChatMessages.querySelectorAll('.ai-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          dom.aiChatInput.value = chip.dataset.prompt;
+          toggleAISendBtn();
+          sendAIMessage();
+        });
+      });
+    }
     dom.aiChatInputWrapper.classList.remove('disabled');
     dom.aiChatInput.disabled = false;
     dom.aiChatInput.placeholder = 'Ask about your schedule...';
-    aiChatHistory = [];
-    attachedFile = null;
     toggleAISendBtn();
-    // Bind suggestion chips
-    dom.aiChatMessages.querySelectorAll('.ai-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        dom.aiChatInput.value = chip.dataset.prompt;
-        toggleAISendBtn();
-        sendAIMessage();
-      });
-    });
   }
 
   // Add file upload button dynamically
@@ -2781,6 +2922,7 @@ function formatFileSize(bytes) {
 
 function hideAIChat() {
   if (!dom.aiChatPanel) return;
+  saveChatHistory();
   dom.aiChatOverlay.classList.remove('active');
   dom.aiChatPanel.classList.remove('open');
   setTimeout(() => {
@@ -2965,6 +3107,7 @@ function sendAIMessage() {
   trackAIUsage('chat');
   trackAIUsage('api');
   aiChatHistory.push({ role: 'user', text });
+  saveChatHistory();
   callAIAgent(text).then(response => {
     typingEl.remove();
 
@@ -2999,6 +3142,7 @@ function sendAIMessage() {
 
       appendAIMessage('assistant', planHtml);
       aiChatHistory.push({ role: 'assistant', text: response.text });
+      saveChatHistory();
 
       // Wire up confirm/cancel buttons
       const msgEl = dom.aiChatMessages.lastElementChild;
@@ -3015,6 +3159,7 @@ function sendAIMessage() {
       // No actions — just show the response
       appendAIMessage('assistant', response.text);
       aiChatHistory.push({ role: 'assistant', text: response.text });
+      saveChatHistory();
     }
   }).catch(err => {
     typingEl.remove();
@@ -3425,76 +3570,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// ─── FLOATING AI CHAT BUTTON ───────────────────────────────
-function initFloatingAIBtn() {
-  // Only add if not already present
-  if (document.getElementById('floatingAIBtn')) return;
-  
-  // Detect if we're on the schedule page (has command palette button)
-  const hasCmdBar = document.querySelector('.sch-cmd-bar') !== null;
-  const aiBtnBottom = hasCmdBar ? '90px' : '28px';
-  
-  const btn = document.createElement('button');
-  btn.id = 'floatingAIBtn';
-  btn.className = 'floating-ai-btn';
-  btn.title = `AI Assistant (${shortcutDisplay('I')})`;
-  btn.setAttribute('aria-label', 'Open AI Assistant');
-  btn.innerHTML = `
-    <svg class="floating-ai-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/>
-      <path d="M12 6v6l4 2"/>
-    </svg>
-  `;
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (!state.aiChatOpen) showAIChat();
-  });
-  document.body.appendChild(btn);
-  
-  // Add styles if not already present
-  if (!document.getElementById('floating-ai-style')) {
-    const style = document.createElement('style');
-    style.id = 'floating-ai-style';
-    style.textContent = `
-      .floating-ai-btn {
-        position: fixed; bottom: ${aiBtnBottom}; right: 28px;
-        width: 48px; height: 48px; border-radius: 50%;
-        background: var(--accent); color: var(--text-inverse);
-        border: none; cursor: pointer; z-index: 999;
-        display: flex; align-items: center; justify-content: center;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
-        animation: floatIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      }
-      @keyframes floatIn {
-        from { opacity: 0; transform: translateY(12px) scale(0.9); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-      }
-      .floating-ai-btn:hover {
-        transform: scale(1.08);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-      }
-      .floating-ai-btn:active { transform: scale(0.95); }
-      .floating-ai-btn .floating-ai-icon {
-        transition: transform 200ms ease;
-      }
-      .floating-ai-btn:hover .floating-ai-icon {
-        transform: rotate(-10deg);
-      }
-      html.dark .floating-ai-btn {
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      }
-      html.dark .floating-ai-btn:hover {
-        box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-      }
-      @media (max-width: 768px) {
-        .floating-ai-btn { bottom: 16px; right: 16px; width: 44px; height: 44px; }
-      }
-    `;
-    document.head.appendChild(style);
-  }
-}
-
 // ─── FIT TEXT: auto-scale text to container ────────────────
 // Shrinks .task-title text to fit within the container when text overflows.
 // Only sets inline font-size when a shrink is actually needed.
@@ -3527,17 +3602,122 @@ function fitTextAll(selector, maxSize, minSize) {
 window.fitTextAll = fitTextAll;
 window.fitText = fitText;
 
-// ─── INIT FLOATING BUTTON ON PAGE LOAD ─────────────────────
-// Run after DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initFloatingAIBtn);
-} else {
-  initFloatingAIBtn();
+// ─── ACCESS HUB: position items in an auto‑adjusting arc ──
+function positionAccessItems() {
+  const hub = document.getElementById('accessHub');
+  const allItems = document.querySelectorAll('.access-item');
+  if (!hub || !allItems.length) return;
+  const btn = document.getElementById('accessMain');
+  if (!btn) return;
+  const items = Array.from(allItems).filter(el => el.style.display !== 'none');
+  if (!items.length) return;
+
+  const S = 40;
+  const N = items.length;
+  const br = btn.getBoundingClientRect();
+  const cx = br.left + br.width / 2;
+  const cy = br.top + br.height / 2;
+
+  const maxL = cx - S / 2;
+  const maxT = cy - S / 2;
+
+  // 90-degree arc to the north-west (from 180° left to 270° up)
+  const startAngle = Math.PI;      // 180° — left
+  const arcSpan = Math.PI / 2;     // 90° — north-west quadrant
+  const step = N > 1 ? arcSpan / (N - 1) : 0;
+  let maxR = Infinity;
+  for (let i = 0; i < N; i++) {
+    const a = startAngle + i * step;
+    const dx = Math.cos(a), dy = Math.sin(a);
+    let r = Infinity;
+    if (dx < -0.001) r = Math.min(r, maxL / -dx);
+    if (dy < -0.001) r = Math.min(r, maxT / -dy);
+    maxR = Math.min(maxR, r);
+  }
+
+  const R = Math.round(Math.max(48, Math.min(100, maxR)));
+
+  const hr = hub.getBoundingClientRect();
+  const ox = hr.right - 26;
+  const oy = hr.bottom - 26;
+
+  // Hide positions for invisible items
+  allItems.forEach(el => { if (el.style.display === 'none') { el.style.setProperty('--x', '0px'); el.style.setProperty('--y', '0px'); } });
+  for (let i = 0; i < N; i++) {
+    const a = startAngle + i * step;
+    items[i].style.setProperty('--x', Math.round(cx + Math.cos(a) * R + S / 2 - ox) + 'px');
+    items[i].style.setProperty('--y', Math.round(cy + Math.sin(a) * R + S / 2 - oy) + 'px');
+    items[i].style.setProperty('--dl-open', (0.02 + i * 0.035).toFixed(3) + 's');
+    items[i].style.setProperty('--dl', ((N - 1 - i) * 0.035 + 0.02).toFixed(3) + 's');
+  }
 }
 
-// Also re-initialize if the DOM changes (for SPA-like behavior)
-// Export so pages can call it
-window.initFloatingAIBtn = initFloatingAIBtn;
+// Call on load and resize — items reposition so nothing clips
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', positionAccessItems);
+} else {
+  positionAccessItems();
+}
+window.addEventListener('resize', positionAccessItems);
+window.positionAccessItems = positionAccessItems;
+
+// ─── ACCESS HUB: apply user config from settings ────────────
+function applyAccessHubConfig() {
+  const items = document.querySelectorAll('.access-item');
+  if (!items.length) return;
+  const cfg = state.accessBubbles || {};
+  items.forEach(el => {
+    const key = el.dataset.action;
+    const overrides = cfg[key];
+    if (!overrides) {
+      el.style.display = '';
+      const icon = el.querySelector('.access-item-icon');
+      if (icon) icon.style.background = '';
+      const label = el.querySelector('.access-item-label');
+      if (label) label.textContent = el.title || '';
+      return;
+    }
+    el.style.display = overrides.visible === false ? 'none' : '';
+    const icon = el.querySelector('.access-item-icon');
+    if (icon && overrides.color) icon.style.background = overrides.color;
+    const label = el.querySelector('.access-item-label');
+    if (label && overrides.label) label.textContent = overrides.label;
+  });
+  positionAccessItems();
+}
+
+// Re-apply after DOM is ready (catches any config from loadState)
+const _origLoadState = loadState;
+loadState = function() {
+  _origLoadState();
+  if (document.querySelector('.access-item')) applyAccessHubConfig();
+};
+
+window.applyAccessHubConfig = applyAccessHubConfig;
+
+function renderBubbleConfigInSettings() {
+  const container = document.getElementById('bubbleConfigList');
+  if (!container) return;
+  const cfg = state.accessBubbles || {};
+  container.innerHTML = '';
+  Object.entries(DEFAULT_BUBBLES).forEach(([key, def]) => {
+    const overrides = cfg[key] || {};
+    const visible = overrides.visible !== false;
+    const label = overrides.label || def.label;
+    const color = overrides.color || def.color;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surface);border-radius:8px;border:1px solid var(--border);';
+    row.innerHTML = `
+      <label style="display:flex;align-items:center;gap:4px;cursor:pointer;flex-shrink:0;font-size:13px;">
+        <input type="checkbox" id="bubble-visible-${key}" data-bubble-config="${key}" ${visible ? 'checked' : ''}>
+        Show
+      </label>
+      <input type="text" id="bubble-label-${key}" data-bubble-config="${key}" value="${label}" placeholder="${def.label}" style="flex:1;min-width:0;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);font-size:13px;">
+      <input type="color" id="bubble-color-${key}" data-bubble-config="${key}" value="${color}" style="width:32px;height:28px;padding:0;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:none;">
+    `;
+    container.appendChild(row);
+  });
+}
 
 // ─── COLOR PICKER COMPONENT ────────────────────────────────
 function renderHueStrip(canvas) {

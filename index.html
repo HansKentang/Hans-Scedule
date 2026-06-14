@@ -18,6 +18,37 @@
   <style>
     /* ─── HUB FAB ──────────────────────────────────────── */
     .hub-fab-main { position:fixed; bottom:24px; right:24px; z-index:55; }
+    /* ─── HUB EDIT MODE ──────────────────────────────────── */
+    .hub-edit-btn { border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all var(--t-fast); padding:0; flex-shrink:0; }
+    .hub-edit-btn:hover { background:var(--accent-soft); color:var(--text-primary); }
+    .hub-edit-btn.active { color:var(--primary); background:color-mix(in srgb, var(--primary) 15%, transparent); }
+    .hub-edit-btn svg { width:15px; height:15px; }
+    .hub-section-vis-toggle { border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; width:22px; height:22px; border-radius:4px; display:flex; align-items:center; justify-content:center; padding:0; font-size:0.75rem; line-height:1; transition:all var(--t-fast); margin-left:auto; opacity:0.5; }
+    .hub-section-vis-toggle:hover { opacity:1; color:var(--text-primary); background:var(--accent-soft); }
+    .hub-section-wrap.hidden-section { display:none; }
+    .hub-section-wrap.hidden-section .hub-section-label { text-decoration:line-through; opacity:0.4; }
+    .hub-editable { cursor:text; border-radius:3px; transition:background var(--t-fast); padding:1px 3px; margin:-1px -3px; }
+    .hub-editable:hover { background:color-mix(in srgb, var(--primary) 8%, transparent); }
+    .hub-editable:focus { outline:2px solid var(--primary); outline-offset:1px; background:transparent; }
+    .hub-edit-overlay { position:absolute; top:4px; right:4px; display:flex; gap:2px; opacity:0; transition:opacity var(--t-fast); }
+    .hub-section-wrap:hover .hub-edit-overlay { opacity:1; }
+    .hub-edit-item-btn { border:none; background:var(--surface-container); color:var(--text-tertiary); cursor:pointer; width:20px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; padding:0; font-size:0.6rem; line-height:1; transition:all var(--t-fast); }
+    .hub-edit-item-btn:hover { color:var(--text-primary); background:var(--accent-soft); }
+    .hub-edit-item-btn.del:hover { color:#ef4444; background:color-mix(in srgb, #ef4444 12%, transparent); }
+    .hub-add-btn { border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:600; transition:all var(--t-fast); display:inline-flex; align-items:center; gap:4px; margin-top:4px; }
+    .hub-add-btn:hover { color:var(--primary); background:color-mix(in srgb, var(--primary) 10%, transparent); }
+    .hub-edit-badge { position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:6px; background:var(--primary); color:var(--text-inverse); display:flex; align-items:center; justify-content:center; font-size:0.65rem; opacity:0; transition:opacity var(--t-fast); cursor:pointer; z-index:2; }
+    .hub-gallery-card { position:relative; }
+    .hub-gallery-card:hover .hub-edit-badge { opacity:1; }
+    .hub-edit-popup { position:fixed; z-index:999; background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--space-4); box-shadow:0 8px 32px rgba(0,0,0,0.12); min-width:240px; }
+    .hub-edit-popup input { display:block; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-family:var(--font-family); font-size:0.78rem; margin-bottom:var(--space-2); outline:none; }
+    .hub-edit-popup input:focus { border-color:var(--primary); }
+    .hub-edit-popup-actions { display:flex; gap:var(--space-2); justify-content:flex-end; margin-top:var(--space-2); }
+    .hub-edit-popup-actions button { border:none; padding:6px 14px; border-radius:8px; font-weight:600; font-size:0.72rem; cursor:pointer; transition:all var(--t-fast); }
+    .hub-edit-popup-actions .primary { background:var(--primary); color:var(--text-inverse); }
+    .hub-edit-popup-actions .primary:hover { filter:brightness(1.1); }
+    .hub-edit-popup-actions .cancel { background:transparent; color:var(--text-secondary); }
+    .hub-edit-popup-actions .cancel:hover { color:var(--text-primary); background:var(--accent-soft); }
   </style>
 </head>
 <body>
@@ -34,6 +65,9 @@
     <!-- ─── SIDEBAR (Notion workspace) ──────────────────── -->
     <aside class="hub-sidebar" id="hubSidebar">
       <div class="hub-workspace">
+        <button class="hub-hamburger" id="hubHamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div class="hub-workspace-icon">H</div>
         <span class="hub-workspace-name">Havën</span>
       </div>
@@ -65,14 +99,6 @@
             </span>
             <span class="snav-label">Activities</span>
           </a>
-          <a href="tags.html" class="hub-snav-item">
-            <span class="snav-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
-              </svg>
-            </span>
-            <span class="snav-label">Tags</span>
-          </a>
           <a href="analytics.html" class="hub-snav-item">
             <span class="snav-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -80,6 +106,14 @@
               </svg>
             </span>
             <span class="snav-label">Analytics</span>
+          </a>
+          <a href="finance.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              </svg>
+            </span>
+            <span class="snav-label">Finance</span>
           </a>
         </div>
       </nav>
@@ -168,6 +202,10 @@
           </svg>
           <span>AI</span>
         </button>
+        <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>Visuals</span>
+        </button>
         <button id="settingsBtnSidebar" class="hamburger-settings-btn" title="Customize">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
@@ -178,49 +216,9 @@
 
     <!-- ─── MAIN ─────────────────────────────────────────── -->
     <div class="hub-main">
-      <!-- Breadcrumb bar -->
-      <div class="hub-breadcrumb hub-anim-in hub-anim-in-1">
-        <div class="hub-breadcrumb-inner">
-          <button class="hub-hamburger" id="hubHamburger" aria-label="Menu">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          </button>
-          <a href="index.html">Havën</a>
-          <span class="bc-sep">/</span>
-          <span class="bc-current">Hub</span>
-        </div>
-        <div class="hub-bc-actions">
-          <button id="bcThemeBtn" class="btn btn-ghost" title="Toggle theme">
-            <svg class="theme-icon-light" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-            <svg class="theme-icon-dark" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-            </svg>
-          </button>
 
-          <button id="bcAiChatBtn" class="btn btn-ghost" title="AI Assistant">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
-            </svg>
-          </button>
-          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — click any image to customize">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
-          </button>
-          <button id="bcSettingsBtn" class="btn btn-ghost" title="Customize">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Scrollable page content -->
-      <div class="hub-content hub-page-transition">
-
-        <!-- ─── HUB HERO ────────────────────────────────── -->
-        <section class="hub-hero-section fade-in" style="position:relative;height:220px;overflow:hidden;border-radius:var(--radius-xl);margin-bottom:var(--section-gap)">
+      <!-- ─── HUB HERO ────────────────────────────────── -->
+      <section style="position:relative;height:220px;overflow:hidden;flex-shrink:0">
           <img data-image-id="hub-hero" src="" alt="Hero" style="width:100%;height:100%;object-fit:cover;opacity:0.85">
           <div style="position:absolute;inset:0;background:linear-gradient(to right, var(--bg-primary) 0%, transparent 55%)"></div>
           <div style="position:absolute;inset:0;display:flex;align-items:center;padding:0 var(--container-padding)">
@@ -243,114 +241,136 @@
                   <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;color:var(--primary);line-height:1.2"><span class="stat-value" id="statWeek" data-target="0">0</span></div>
                   <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);margin-top:1px">WEEK</div>
                 </div>
+                <button class="hub-edit-btn" id="hubEditToggle" title="Customize hub layout and content">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                </button>
               </div>
             </div>
           </div>
         </section>
 
 
-        <!-- ─── BENTO GRID ─────────────────────────────────── -->
-        <div class="bento-grid fade-in" style="margin-bottom:var(--section-gap)">
-          <!-- Goals -->
-          <div style="grid-column:span 4;background:var(--surface-container-low);border-top:2px solid var(--primary);border-radius:var(--radius-lg);padding:var(--gutter);border:1px solid var(--border-color)">
-            <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:var(--gutter)">Goals</div>
-            <ul id="hubGoalsList" style="list-style:none;padding:0;margin:0;font-family:var(--font-sans);font-size:0.9rem;line-height:1.6;color:var(--text-primary)">
-              <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">1.</span> develop emotional maturity</li>
-              <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">2.</span> go to the gym + workout consistently</li>
-              <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">3.</span> eat intentionally</li>
-              <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">4.</span> learn finances via books</li>
-            </ul>
+        <div class="hub-section-wrap" data-hub-section="bento">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label">Goals &amp; Priorities</span>
           </div>
-          <!-- Image + Priorities -->
-          <div style="grid-column:span 4;display:flex;flex-direction:column;gap:var(--gutter)">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--gutter)">
-              <img data-image-id="hub-tulips" src="" alt="" style="aspect-ratio:1;object-fit:cover;border-radius:var(--radius-lg);width:100%;filter:grayscale(1);transition:all 0.7s;cursor:pointer" onmouseover="this.style.filter='grayscale(0)'" onmouseout="this.style.filter='grayscale(1)'" >
-              <img data-image-id="hub-desk-water" src="" alt="" style="aspect-ratio:1;object-fit:cover;border-radius:var(--radius-lg);width:100%;filter:grayscale(1);transition:all 0.7s;cursor:pointer" onmouseover="this.style.filter='grayscale(0)'" onmouseout="this.style.filter='grayscale(1)'" >
+          <div class="bento-grid fade-in" style="margin-bottom:var(--section-gap)">
+            <!-- Goals -->
+            <div style="grid-column:span 4;background:var(--surface-container-low);border-top:2px solid var(--primary);border-radius:var(--radius-lg);padding:var(--gutter);border:1px solid var(--border-color)">
+              <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:var(--gutter)">Goals</div>
+              <ul id="hubGoalsList" style="list-style:none;padding:0;margin:0;font-family:var(--font-sans);font-size:0.9rem;line-height:1.6;color:var(--text-primary)">
+                <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">1.</span> develop emotional maturity</li>
+                <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">2.</span> go to the gym + workout consistently</li>
+                <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">3.</span> eat intentionally</li>
+                <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">4.</span> learn finances via books</li>
+              </ul>
             </div>
-            <div style="background:var(--surface-container-low);border-radius:var(--radius-lg);padding:var(--gutter);border:1px solid var(--border-color)">
-              <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Priorities</div>
-              <div id="hubPrioritiesList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
-                <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm)">
-                  <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
-                  <span style="font-size:0.82rem">mental and physical health</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm)">
-                  <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
-                  <span style="font-size:0.82rem">academics</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm)">
-                  <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
-                  <span style="font-size:0.82rem">self-development</span>
+            <!-- Image + Priorities -->
+            <div style="grid-column:span 4;display:flex;flex-direction:column;gap:var(--gutter)">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--gutter)">
+                <img data-image-id="hub-tulips" src="" alt="" style="aspect-ratio:1;object-fit:cover;border-radius:var(--radius-lg);width:100%;filter:grayscale(1);transition:all 0.7s;cursor:pointer" onmouseover="this.style.filter='grayscale(0)'" onmouseout="this.style.filter='grayscale(1)'" >
+                <img data-image-id="hub-desk-water" src="" alt="" style="aspect-ratio:1;object-fit:cover;border-radius:var(--radius-lg);width:100%;filter:grayscale(1);transition:all 0.7s;cursor:pointer" onmouseover="this.style.filter='grayscale(0)'" onmouseout="this.style.filter='grayscale(1)'" >
+              </div>
+              <div style="background:var(--surface-container-low);border-radius:var(--radius-lg);padding:var(--gutter);border:1px solid var(--border-color)">
+                <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Priorities</div>
+                <div id="hubPrioritiesList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
+                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm)">
+                    <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
+                    <span style="font-size:0.82rem">mental and physical health</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm)">
+                    <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
+                    <span style="font-size:0.82rem">academics</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm)">
+                    <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
+                    <span style="font-size:0.82rem">self-development</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <!-- Quote + To-Dos -->
-          <div style="grid-column:span 4;display:flex;flex-direction:column;gap:var(--gutter)">
-            <div style="background:var(--surface-container-lowest);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:var(--gutter)">
-              <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Quote</div>
-              <div style="font-family:var(--font-serif);font-size:1.1rem;font-style:italic;line-height:1.5;color:var(--secondary);padding:var(--stack-md) 0">"It takes discipline to be the person you want to be."</div>
-              <div style="width:48px;height:1px;background:var(--outline);margin-top:var(--stack-md)"></div>
-            </div>
-            <div style="background:var(--surface-container-low);border-radius:var(--radius-lg);padding:var(--gutter);border:1px solid var(--border-color)">
-              <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">To Do's</div>
-              <div id="hubTodoList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
-                <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem">
-                  <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">1.</span> get driver's license
-                </div>
-                <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem">
-                  <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">2.</span> get gym membership
-                </div>
-                <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;font-size:0.85rem;opacity:0.4">
-                  <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">3.</span> <em>Add new item...</em>
+            <!-- Quote + To-Dos -->
+            <div style="grid-column:span 4;display:flex;flex-direction:column;gap:var(--gutter)">
+              <div style="background:var(--surface-container-lowest);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:var(--gutter)">
+                <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Quote</div>
+                <div class="hub-bento-quote" style="font-family:var(--font-serif);font-size:1.1rem;font-style:italic;line-height:1.5;color:var(--secondary);padding:var(--stack-md) 0">&ldquo;It takes discipline to be the person you want to be.&rdquo;</div>
+                <div style="width:48px;height:1px;background:var(--outline);margin-top:var(--stack-md)"></div>
+              </div>
+              <div style="background:var(--surface-container-low);border-radius:var(--radius-lg);padding:var(--gutter);border:1px solid var(--border-color)">
+                <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">To Do's</div>
+                <div id="hubTodoList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
+                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem">
+                    <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">1.</span> get driver's license
+                  </div>
+                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem">
+                    <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">2.</span> get gym membership
+                  </div>
+                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;font-size:0.85rem;opacity:0.4">
+                    <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">3.</span> <em>Add new item...</em>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ─── WEEKLY PLANNER SECTION ───────────────────────── -->
-        <section class="fade-in" style="background:var(--surface-container-low);border-radius:var(--radius-xl);padding:var(--gutter) var(--container-padding);margin-bottom:var(--section-gap);border:1px solid var(--border-color)">
-          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--gutter);padding-bottom:var(--space-2);border-bottom:1px solid var(--border-color)">
-            <h2 style="font-family:var(--font-serif);font-size:1.3rem;font-weight:500;color:var(--text-primary)">weekly planner</h2>
-            <span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-tertiary);opacity:0.5"><span id="hubMonthYear"></span></span>
+        <div class="hub-section-wrap" data-hub-section="weekly-planner">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label">Weekly Planner</span>
           </div>
-          <div id="hubWeeklyGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:var(--space-2)">
-            <!-- Populated by JS -->
+          <section class="fade-in" style="background:var(--surface-container-low);border-radius:var(--radius-xl);padding:var(--gutter) var(--container-padding);margin-bottom:var(--section-gap);border:1px solid var(--border-color)">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--gutter);padding-bottom:var(--space-2);border-bottom:1px solid var(--border-color)">
+              <h2 style="font-family:var(--font-serif);font-size:1.3rem;font-weight:500;color:var(--text-primary)">weekly planner</h2>
+              <span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-tertiary);opacity:0.5"><span id="hubMonthYear"></span></span>
+            </div>
+            <div id="hubWeeklyGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:var(--space-2)">
+              <!-- Populated by JS -->
+            </div>
+          </section>
+        </div>
+
+        <div class="hub-section-wrap" data-hub-section="sleep">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label">Sleep</span>
           </div>
-        <!-- ─── SLEEP TRACKING ──────────────────────────────────── -->
-        <section class="fade-in sleep-section" style="margin-bottom:var(--section-gap)">
-          <div class="sleep-card">
-            <div class="sleep-header">
-              <h3>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-                </svg>
-                Sleep
-              </h3>
-              <div class="sleep-header-actions">
-                <button class="btn btn-outline" onclick="openSleepLogModal()" style="font-size:0.72rem;padding:var(--space-1) var(--space-3)">Log Sleep</button>
+          <section class="fade-in sleep-section" style="margin-bottom:var(--section-gap)">
+            <div class="sleep-card">
+              <div class="sleep-header">
+                <h3>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                  </svg>
+                  Sleep
+                </h3>
+                <div class="sleep-header-actions">
+                  <button class="btn btn-outline" onclick="openSleepLogModal()" style="font-size:0.72rem;padding:var(--space-1) var(--space-3)">Log Sleep</button>
+                </div>
+              </div>
+              <div id="sleepSummary" class="sleep-summary">
+                <div class="sleep-stat"><div class="val" id="sleepLastDur">—</div><div class="lbl">Last Night</div></div>
+                <div class="sleep-stat"><div class="val" id="sleepAvgDur">—</div><div class="lbl">7-Day Avg</div></div>
+                <div class="sleep-stat">
+                  <div class="val" id="sleepAvgQuality">—</div>
+                  <div class="sleep-quality-stars" id="sleepQualityStars"></div>
+                  <div class="lbl">Avg Quality</div>
+                </div>
+              </div>
+              <div id="sleepWeekChart" class="sleep-week-chart">
+                <div style="width:100%;text-align:center;font-size:0.72rem;color:var(--text-tertiary);padding:var(--space-4)">No sleep data this week</div>
               </div>
             </div>
-            <div id="sleepSummary" class="sleep-summary">
-              <div class="sleep-stat"><div class="val" id="sleepLastDur">—</div><div class="lbl">Last Night</div></div>
-              <div class="sleep-stat"><div class="val" id="sleepAvgDur">—</div><div class="lbl">7-Day Avg</div></div>
-              <div class="sleep-stat">
-                <div class="val" id="sleepAvgQuality">—</div>
-                <div class="sleep-quality-stars" id="sleepQualityStars"></div>
-                <div class="lbl">Avg Quality</div>
-              </div>
-            </div>
-            <div id="sleepWeekChart" class="sleep-week-chart">
-              <div style="width:100%;text-align:center;font-size:0.72rem;color:var(--text-tertiary);padding:var(--space-4)">No sleep data this week</div>
-            </div>
+          </section>
+        </div>
+
+        <div class="hub-section-wrap" data-hub-section="briefing">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label">Daily Briefing</span>
           </div>
-        </section>
-
-        </section>
-
-        <!-- ─── Callout ─────────────────────────────────────── -->
-        <div id="hubBriefing" class="hub-callout hidden hub-anim-in hub-anim-in-4">
+          <div id="hubBriefing" class="hub-callout hidden hub-anim-in hub-anim-in-4">
           <div class="hub-callout-icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -358,60 +378,85 @@
           </div>
           <div class="hub-callout-body"></div>
         </div>
-
-        <!-- ─── Template Pills ───────────────────────────────── -->
-        <div class="template-pills hub-anim-in hub-anim-in-4" id="hubTemplates" style="margin-bottom:var(--space-4)"></div>
-
-        <!-- ─── Quick Add ───────────────────────────────────── -->
-        <div class="hub-quickadd hub-anim-in hub-anim-in-4">
-          <div class="hub-quickadd-inner">
-            <span class="hub-quickadd-icon">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-            </span>
-            <input type="text" class="hub-quickadd-input" id="hubQuickAddInput" placeholder="Add a task...">
-            <span class="hub-quickadd-tag" id="hubQuickAddTag">meeting</span>
-            <button class="hub-quickadd-submit" id="hubQuickAddSubmit" aria-label="Add task">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-              </svg>
-            </button>
-          </div>
         </div>
 
-        <!-- Database: Today's Schedule (Notion inline database list) -->
-        <div class="hub-anim-in hub-anim-in-5" style="margin-bottom:var(--space-5)">
-          <div class="hub-db-header">
-            <div class="hub-db-title">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-              </svg>
-              Today's Schedule
+        <div class="hub-section-wrap" data-hub-section="templates">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label">Templates</span>
+          </div>
+          <div class="template-pills hub-anim-in hub-anim-in-4" id="hubTemplates" style="margin-bottom:var(--space-4)"></div>
+        </div>
+
+        <div class="hub-section-wrap" data-hub-section="quick-add">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label">Quick Add</span>
+          </div>
+          <div class="hub-quickadd hub-anim-in hub-anim-in-4">
+            <div class="hub-quickadd-inner">
+              <span class="hub-quickadd-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </span>
+              <input type="text" class="hub-quickadd-input" id="hubQuickAddInput" placeholder="Add a task...">
+              <span class="hub-quickadd-tag" id="hubQuickAddTag">meeting</span>
+              <button class="hub-quickadd-submit" id="hubQuickAddSubmit" aria-label="Add task">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
             </div>
-            <span class="hub-db-count"><strong id="statWeekDayCount">0</strong> tasks</span>
-          </div>
-          <div id="hubTimeline" class="hub-db-list">
-            <div class="hub-db-empty">No tasks today</div>
           </div>
         </div>
 
-        <!-- Weekly Overview -->
-        <div class="hub-weekly hub-anim-in hub-anim-in-6">
-          <div class="hub-db-header" style="margin-bottom:var(--space-3)">
-            <div class="hub-db-title">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              This Week
+        <div class="hub-section-wrap" data-hub-section="today-schedule">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label">Today's Schedule</span>
+          </div>
+          <div class="hub-anim-in hub-anim-in-5" style="margin-bottom:var(--space-5)">
+            <div class="hub-db-header">
+              <div class="hub-db-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+                Today's Schedule
+              </div>
+              <span class="hub-db-count"><strong id="statWeekDayCount">0</strong> tasks</span>
             </div>
-            <span class="hub-db-count"><strong id="statWeekDayCount2">0</strong> tasks</span>
+            <div id="hubTimeline" class="hub-db-list">
+              <div class="hub-db-empty">No tasks today</div>
+            </div>
           </div>
-          <div class="hub-weekly-chart" id="hubWeeklyChart"></div>
         </div>
 
-        <!-- Gallery (Notion gallery database view) -->
-        <div class="hub-anim-in hub-anim-in-7" style="margin-top:var(--space-5)">
+        <div class="hub-section-wrap" data-hub-section="this-week">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label">This Week</span>
+          </div>
+          <div class="hub-weekly hub-anim-in hub-anim-in-6">
+            <div class="hub-db-header" style="margin-bottom:var(--space-3)">
+              <div class="hub-db-title">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                This Week
+              </div>
+              <span class="hub-db-count"><strong id="statWeekDayCount2">0</strong> tasks</span>
+            </div>
+            <div class="hub-weekly-chart" id="hubWeeklyChart"></div>
+          </div>
+        </div>
+
+        <div class="hub-section-wrap" data-hub-section="gallery">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label">Views</span>
+          </div>
+          <div class="hub-anim-in hub-anim-in-7" style="margin-top:var(--space-5)">
           <div class="hub-db-header">
             <div class="hub-db-title">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -455,7 +500,7 @@
               </div>
             </a>
 
-            <a href="tags.html" class="hub-gallery-card">
+            <a href="activities.html" class="hub-gallery-card">
               <div class="hub-gallery-cover" style="background:var(--tag-study-bg)">
                 <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, var(--tag-study-text), transparent)"></div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tag-study-text)">
@@ -463,11 +508,11 @@
                 </svg>
               </div>
               <div class="hub-gallery-body">
-                <div class="hub-gallery-title">Tags</div>
-                <p class="hub-gallery-desc">Kanban-style tag management with per-category stats and task cards.</p>
+                <div class="hub-gallery-title">Activities + Board</div>
+                <p class="hub-gallery-desc">Timeline and Kanban board merged into one page with a view toggle.</p>
                 <div class="hub-gallery-meta">
                   <span class="hub-gallery-count" id="hubTagCount">5 categories</span>
-                  <span class="hub-gallery-link">Manage <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+                  <span class="hub-gallery-link">View <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
                 </div>
               </div>
             </a>
@@ -490,8 +535,7 @@
             </a>
           </nav>
         </div>
-
-      </div>
+        </div>
 
       <!-- Minimal footer -->
       <footer class="hub-minifooter hub-anim-in hub-anim-in-8">
@@ -603,9 +647,7 @@
     }
 
     // ─── GREETING & DATE ─────────────────────────────────
-    const greetH = new Date().getHours();
-    const greet = greetH < 12 ? 'Good morning' : greetH < 17 ? 'Good afternoon' : 'Good evening';
-    document.getElementById('hubGreeting').textContent = greet;
+    // (handled by initHubEditMode)
     document.getElementById('hubDateLine').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
     // ─── UPDATE HUB ──────────────────────────────────────
@@ -621,8 +663,10 @@
       // Update displays
       document.getElementById('statWeekDayCount').textContent = todayTasks.length;
       document.getElementById('statWeekDayCount2').textContent = weekTasks.length;
-      document.getElementById('hubWeekTasks').textContent = weekTasks.length + ' this week';
-      document.getElementById('hubTotalTasks').textContent = all.length + ' total';
+      const weekTasksEl = document.getElementById('hubWeekTasks');
+      if (weekTasksEl) weekTasksEl.textContent = weekTasks.length + ' this week';
+      const totalTasksEl = document.getElementById('hubTotalTasks');
+      if (totalTasksEl) totalTasksEl.textContent = all.length + ' total';
 
       // Animate counters
       animateAllCounters(todayTasks.length, weekTasks.length);
@@ -823,19 +867,7 @@
       document.getElementById('settingsBtnSidebar')?.addEventListener('click', openSettingsDrawer);
       dom.aiChatBtn?.addEventListener('click', showAIChat);
 
-      // Mobile hamburger
-      const hamburger = document.getElementById('hubHamburger');
-      const sidebar = document.getElementById('hubSidebar');
-      const sidebarOverlay = document.getElementById('hubSidebarOverlay');
-      function closeSidebar() { sidebar?.classList.remove('open'); sidebarOverlay?.classList.remove('active'); }
-      hamburger?.addEventListener('click', () => {
-        const isOpen = sidebar?.classList.toggle('open');
-        sidebarOverlay?.classList.toggle('active', isOpen);
-      });
-      sidebarOverlay?.addEventListener('click', closeSidebar);
-      sidebar?.querySelectorAll('.hub-snav-item').forEach(item => {
-        item.addEventListener('click', closeSidebar);
-      });
+      // Mobile sidebar handled globally via shared.js
 
       // Breadcrumb action buttons (always visible, also on mobile)
       document.getElementById('bcThemeBtn')?.addEventListener('click', toggleTheme);
@@ -856,11 +888,487 @@
       const observer = new MutationObserver(() => { /* gallery colors update via CSS vars */ });
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
+      initHubLayout();
+      initHubEditMode();
       spInit();
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
+
+    // ════════════════════════════════════════════════════════════
+    // Hub Layout Drag & Drop
+    // ════════════════════════════════════════════════════════════
+
+    const HUB_LAYOUT_KEY = 'haven-schedule-hub-layout';
+
+    function initHubLayout() {
+      const container = document.querySelector('.hub-layout');
+      if (!container) return;
+
+      // Apply saved order to section wraps
+      const savedOrder = loadHubLayout();
+      if (savedOrder && savedOrder.length) {
+        const wraps = container.querySelectorAll('.hub-section-wrap');
+        const wrapMap = {};
+        wraps.forEach(w => { wrapMap[w.dataset.hubSection] = w; });
+        // Reorder based on saved order
+        savedOrder.forEach(id => {
+          const w = wrapMap[id];
+          if (w) container.appendChild(w);
+        });
+      }
+
+      // Attach drag events to all drag handles
+      container.querySelectorAll('.hub-section-drag-handle').forEach(handle => {
+        handle.addEventListener('dragstart', onDragStart);
+        handle.addEventListener('dragend', onDragEnd);
+      });
+
+      // Register drop zone on each section wrap
+      container.querySelectorAll('.hub-section-wrap').forEach(wrap => {
+        wrap.addEventListener('dragover', onDragOver);
+        wrap.addEventListener('dragenter', onDragEnter);
+        wrap.addEventListener('dragleave', onDragLeave);
+        wrap.addEventListener('drop', onDrop);
+      });
+
+      updateSectionHandles();
+    }
+
+    function loadHubLayout() {
+      try {
+        const raw = localStorage.getItem(HUB_LAYOUT_KEY);
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    }
+
+    function saveHubLayout(order) {
+      localStorage.setItem(HUB_LAYOUT_KEY, JSON.stringify(order));
+    }
+
+    let dragSrcWrap = null;
+
+    function onDragStart(e) {
+      dragSrcWrap = e.target.closest('.hub-section-wrap');
+      if (!dragSrcWrap) return;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', dragSrcWrap.dataset.hubSection);
+      dragSrcWrap.classList.add('hub-section-dragging');
+    }
+
+    function onDragEnd(e) {
+      e.target.closest('.hub-section-wrap')?.classList.remove('hub-section-dragging');
+      document.querySelectorAll('.hub-section-drag-over').forEach(el => el.classList.remove('hub-section-drag-over'));
+      dragSrcWrap = null;
+    }
+
+    function onDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function onDragEnter(e) {
+      e.preventDefault();
+      const wrap = e.target.closest('.hub-section-wrap');
+      if (wrap && wrap !== dragSrcWrap) wrap.classList.add('hub-section-drag-over');
+    }
+
+    function onDragLeave(e) {
+      const wrap = e.target.closest('.hub-section-wrap');
+      if (wrap && wrap !== dragSrcWrap) wrap.classList.remove('hub-section-drag-over');
+    }
+
+    function onDrop(e) {
+      e.preventDefault();
+      const targetWrap = e.target.closest('.hub-section-wrap');
+      if (!targetWrap || !dragSrcWrap || targetWrap === dragSrcWrap) return;
+      targetWrap.classList.remove('hub-section-drag-over');
+
+      const container = document.querySelector('.hub-layout');
+      if (!container) return;
+
+      // Move the dragged section before the target in the DOM
+      container.insertBefore(dragSrcWrap, targetWrap);
+
+      // Persist new order
+      const order = [];
+      container.querySelectorAll('.hub-section-wrap').forEach(w => order.push(w.dataset.hubSection));
+      saveHubLayout(order);
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // HUB EDIT MODE
+    // ════════════════════════════════════════════════════════════
+
+    const HUB_EDIT_KEY = 'haven-hub-edit';
+    const HUB_VIS_KEY = 'haven-hub-visibility';
+    const HUB_CONTENT_KEY = 'haven-hub-content';
+
+    let hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true';
+
+    function loadHubContent() {
+      const defaults = {
+        greeting: '',
+        goals: ['develop emotional maturity', 'go to the gym + workout consistently', 'eat intentionally', 'learn finances via books'],
+        priorities: ['mental and physical health', 'academics', 'self-development'],
+        quote: { text: 'It takes discipline to be the person you want to be.', author: '' },
+        todos: [{ text: 'get driver\'s license', done: false }, { text: 'get gym membership', done: false }],
+        gallery: [
+          { label: 'Schedule', desc: 'Time-blocking grid with drag & drop, AI command palette, and week/month/agenda views.', href: 'schedule.html', icon: 'calendar', color: 'var(--tag-deep-work-text)', bg: 'var(--tag-deep-work-bg)' },
+          { label: 'Activities', desc: 'Chronological feed grouped by day with tag and date filters.', href: 'activities.html', icon: 'checklist', color: 'var(--tag-meeting-text)', bg: 'var(--tag-meeting-bg)' },
+          { label: 'Activities + Board', desc: 'Timeline and Kanban board merged into one page with a view toggle.', href: 'activities.html', icon: 'tag', color: 'var(--tag-study-text)', bg: 'var(--tag-study-bg)' },
+          { label: 'Analytics', desc: 'Charts with category distribution, daily breakdowns, and day-by-day metrics.', href: 'analytics.html', icon: 'chart', color: 'var(--tag-hobby-text)', bg: 'var(--tag-hobby-bg)' }
+        ]
+      };
+      try {
+        const raw = localStorage.getItem(HUB_CONTENT_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch {}
+      return defaults;
+    }
+
+    let hubContent = loadHubContent();
+
+    function saveHubContent() {
+      try { localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(hubContent)); } catch {}
+    }
+
+    function loadHubVisibility() {
+      try {
+        const raw = localStorage.getItem(HUB_VIS_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch {}
+      return {};
+    }
+
+    function saveHubVisibility(vis) {
+      try { localStorage.setItem(HUB_VIS_KEY, JSON.stringify(vis)); } catch {}
+    }
+
+    function toggleHubEdit() {
+      hubEditMode = !hubEditMode;
+      localStorage.setItem(HUB_EDIT_KEY, hubEditMode);
+      applyHubEditMode();
+    }
+
+    function applyHubEditMode() {
+      const btn = document.getElementById('hubEditToggle');
+      if (btn) btn.classList.toggle('active', hubEditMode);
+      document.documentElement.classList.toggle('hub-edit', hubEditMode);
+      document.querySelectorAll('.hub-section-header').forEach(h => {
+        h.classList.toggle('visible', hubEditMode);
+      });
+      const greetEl = document.getElementById('hubGreeting');
+      if (greetEl) greetEl.contentEditable = hubEditMode ? 'true' : 'false';
+      if (hubEditMode) greetEl?.classList.add('hub-editable');
+      else greetEl?.classList.remove('hub-editable');
+      updateSectionHandles();
+      renderHubBento();
+      renderHubGallery();
+      applyHubVisibility();
+    }
+
+    function applyHubVisibility() {
+      const vis = loadHubVisibility();
+      document.querySelectorAll('.hub-section-wrap').forEach(wrap => {
+        const id = wrap.dataset.hubSection;
+        const hidden = vis[id] === false;
+        wrap.classList.toggle('hidden-section', hidden);
+        const toggle = wrap.querySelector('.hub-section-vis-toggle');
+        if (toggle) toggle.textContent = hidden ? '\u25CB' : '\u25C9';
+      });
+    }
+
+    function toggleSectionVis(id) {
+      const vis = loadHubVisibility();
+      vis[id] = vis[id] === false ? true : false;
+      saveHubVisibility(vis);
+      applyHubVisibility();
+    }
+
+    function renderHubGreeting() {
+      const el = document.getElementById('hubGreeting');
+      if (!el) return;
+      if (hubContent.greeting) {
+        el.textContent = hubContent.greeting;
+      } else {
+        const h = new Date().getHours();
+        el.textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+      }
+    }
+
+    function renderHubBento() {
+      const goalsList = document.getElementById('hubGoalsList');
+      const priorList = document.getElementById('hubPrioritiesList');
+      const quoteEl = document.querySelector('.hub-bento-quote');
+      const todoList = document.getElementById('hubTodoList');
+      if (!goalsList || !priorList || !todoList) return;
+
+      const isEdit = hubEditMode;
+
+      // Quote text
+      if (quoteEl) quoteEl.textContent = '\u201C' + hubContent.quote.text + '\u201D';
+
+      // Goals
+      goalsList.innerHTML = hubContent.goals.map((g, i) =>
+        `<li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0;align-items:center;position:relative" data-idx="${i}">
+          <span style="color:var(--primary);font-weight:700">${i+1}.</span>
+          <span class="${isEdit ? 'hub-editable' : ''}" data-edit="goals" data-idx="${i}">${escapeHtml(g)}</span>
+          ${isEdit ? `<button class="hub-edit-item-btn del" data-del="goals" data-idx="${i}" title="Delete">\u00D7</button>` : ''}
+        </li>`
+      ).join('');
+      if (isEdit) {
+        goalsList.insertAdjacentHTML('beforeend', `<li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="goals">+ Add goal</button></li>`);
+      }
+
+      // Priorities
+      priorList.innerHTML = hubContent.priorities.map((p, i) =>
+        `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm);position:relative" data-idx="${i}">
+          <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
+          <span class="${isEdit ? 'hub-editable' : ''}" style="font-size:0.82rem" data-edit="priorities" data-idx="${i}">${escapeHtml(p)}</span>
+          ${isEdit ? `<button class="hub-edit-item-btn del" data-del="priorities" data-idx="${i}" title="Delete">\u00D7</button>` : ''}
+        </div>`
+      ).join('');
+      if (isEdit) {
+        priorList.insertAdjacentHTML('beforeend', `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="priorities">+ Add priority</button></div>`);
+      }
+
+      // Quote
+      if (isEdit) {
+        if (quoteEl) { quoteEl.contentEditable = 'true'; quoteEl.classList.add('hub-editable'); }
+      } else {
+        if (quoteEl) { quoteEl.contentEditable = 'false'; quoteEl.classList.remove('hub-editable'); }
+      }
+
+      // To-dos
+      todoList.innerHTML = hubContent.todos.map((t, i) =>
+        `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem;position:relative" data-idx="${i}">
+          <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">${i+1}.</span>
+          <span class="${isEdit ? 'hub-editable' : ''}" data-edit="todos" data-idx="${i}" style="${t.done ? 'text-decoration:line-through;opacity:0.5' : ''}">${escapeHtml(t.text)}</span>
+          ${isEdit ? `<button class="hub-edit-item-btn del" data-del="todos" data-idx="${i}" title="Delete">\u00D7</button>` : ''}
+        </div>`
+      ).join('');
+      if (isEdit) {
+        todoList.insertAdjacentHTML('beforeend', `<div style="padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="todos">+ Add to-do</button></div>`);
+      }
+    }
+
+    function renderHubGallery() {
+      const nav = document.querySelector('.hub-gallery');
+      if (!nav) return;
+      const icons = {
+        calendar: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+        checklist: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
+        tag: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+        chart: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'
+      };
+      const isEdit = hubEditMode;
+      nav.innerHTML = hubContent.gallery.map((c, i) =>
+        `<a href="${escapeHtml(c.href)}" class="hub-gallery-card" data-idx="${i}">
+          <div class="hub-gallery-cover" style="background:${c.bg}">
+            <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, ${c.color}, transparent)"></div>
+            ${icons[c.icon] || icons.calendar}
+          </div>
+          <div class="hub-gallery-body">
+            <div class="hub-gallery-title">${escapeHtml(c.label)}</div>
+            <p class="hub-gallery-desc">${escapeHtml(c.desc)}</p>
+            <div class="hub-gallery-meta">
+              <span class="hub-gallery-link">Open <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+            </div>
+          </div>
+          ${isEdit ? `<div class="hub-edit-badge" data-edit-gallery="${i}" title="Edit card">\u270E</div>` : ''}
+        </a>`
+      ).join('');
+      if (isEdit) {
+        nav.insertAdjacentHTML('beforeend', `<div style="display:flex;align-items:center;justify-content:center;min-height:100px"><button class="hub-add-btn" data-add="gallery">+ Add card</button></div>`);
+      }
+    }
+
+    function setupHubEditEvents() {
+      // Edit toggle
+      document.getElementById('hubEditToggle')?.addEventListener('click', toggleHubEdit);
+
+      // Inline editing (contenteditable save on blur)
+      document.addEventListener('blur', function(e) {
+        const span = e.target.closest('[data-edit]');
+        if (!span || !hubEditMode) return;
+        const field = span.dataset.edit;
+        const idx = parseInt(span.dataset.idx);
+        if (field === 'goals' && !isNaN(idx)) {
+          hubContent.goals[idx] = span.textContent.trim();
+          saveHubContent();
+        } else if (field === 'priorities' && !isNaN(idx)) {
+          hubContent.priorities[idx] = span.textContent.trim();
+          saveHubContent();
+        } else if (field === 'todos' && !isNaN(idx)) {
+          hubContent.todos[idx].text = span.textContent.trim();
+          saveHubContent();
+        }
+      }, true);
+
+      // Quote editing
+      const quoteEl = document.querySelector('.hub-bento-quote');
+      if (quoteEl) quoteEl.addEventListener('blur', function() {
+        if (!hubEditMode) return;
+        hubContent.quote.text = this.textContent.trim().replace(/^["\u201C]|["\u201D]$/g, '');
+        saveHubContent();
+      });
+
+      // Greeting editing
+      document.getElementById('hubGreeting')?.addEventListener('blur', function() {
+        if (!hubEditMode) return;
+        hubContent.greeting = this.textContent.trim();
+        hubContent.greeting = hubContent.greeting === 'Good morning' || hubContent.greeting === 'Good afternoon' || hubContent.greeting === 'Good evening' ? '' : hubContent.greeting;
+        saveHubContent();
+      });
+
+      // Delete buttons (delegated)
+      document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
+        const delBtn = e.target.closest('[data-del]');
+        if (!delBtn || !hubEditMode) return;
+        const field = delBtn.dataset.del;
+        const idx = parseInt(delBtn.dataset.idx);
+        if (isNaN(idx)) return;
+        if (field === 'goals') { hubContent.goals.splice(idx, 1); saveHubContent(); renderHubBento(); }
+        else if (field === 'priorities') { hubContent.priorities.splice(idx, 1); saveHubContent(); renderHubBento(); }
+        else if (field === 'todos') { hubContent.todos.splice(idx, 1); saveHubContent(); renderHubBento(); }
+      });
+
+      // Add buttons (delegated)
+      document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
+        const addBtn = e.target.closest('[data-add]');
+        if (!addBtn || !hubEditMode) return;
+        const field = addBtn.dataset.add;
+        if (field === 'goals') { hubContent.goals.push('new goal'); saveHubContent(); renderHubBento(); }
+        else if (field === 'priorities') { hubContent.priorities.push('new priority'); saveHubContent(); renderHubBento(); }
+        else if (field === 'todos') { hubContent.todos.push({ text: 'new item', done: false }); saveHubContent(); renderHubBento(); }
+      });
+
+      // Section visibility toggles (delegated)
+      document.querySelector('.hub-layout')?.addEventListener('click', function(e) {
+        const toggle = e.target.closest('.hub-section-vis-toggle');
+        if (!toggle || !hubEditMode) return;
+        const wrap = toggle.closest('.hub-section-wrap');
+        if (wrap) toggleSectionVis(wrap.dataset.hubSection);
+      });
+
+      // Gallery edit (delegated)
+      document.querySelector('.hub-gallery')?.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('[data-edit-gallery]');
+        if (!editBtn || !hubEditMode) return;
+        const idx = parseInt(editBtn.dataset.editGallery);
+        if (isNaN(idx)) return;
+        showGalleryPopup(idx, editBtn);
+      });
+
+      // Gallery add
+      document.querySelector('.hub-gallery')?.addEventListener('click', function(e) {
+        const addBtn = e.target.closest('[data-add="gallery"]');
+        if (!addBtn || !hubEditMode) return;
+        hubContent.gallery.push({ label: 'New View', desc: 'Description', href: '#', icon: 'chart', color: 'var(--text-secondary)', bg: 'var(--surface-container)' });
+        saveHubContent();
+        renderHubGallery();
+        setupGalleryEditEvents();
+      });
+
+      // Setup visibility toggles in section headers
+      document.querySelectorAll('.hub-section-wrap').forEach(wrap => {
+        let toggle = wrap.querySelector('.hub-section-vis-toggle');
+        if (!toggle) {
+          toggle = document.createElement('button');
+          toggle.className = 'hub-section-vis-toggle';
+          toggle.title = 'Toggle section visibility';
+          wrap.querySelector('.hub-section-header')?.appendChild(toggle);
+        }
+      });
+    }
+
+    let _galleryPopupOpen = false;
+
+    function showGalleryPopup(idx, anchor) {
+      if (_galleryPopupOpen) { document.querySelector('.hub-edit-popup')?.remove(); _galleryPopupOpen = false; return; }
+      const card = hubContent.gallery[idx];
+      const popup = document.createElement('div');
+      popup.className = 'hub-edit-popup';
+      popup.innerHTML = `
+        <input type="text" id="gpLabel" value="${escapeHtml(card.label)}" placeholder="Label">
+        <input type="text" id="gpDesc" value="${escapeHtml(card.desc)}" placeholder="Description">
+        <input type="text" id="gpHref" value="${escapeHtml(card.href)}" placeholder="Link URL">
+        <input type="text" id="gpColor" value="${card.color}" placeholder="Accent color (CSS var)">
+        <div class="hub-edit-popup-actions">
+          <button class="cancel" id="gpCancel">Cancel</button>
+          <button class="primary" id="gpSave">Save</button>
+        </div>
+      `;
+      document.body.appendChild(popup);
+      _galleryPopupOpen = true;
+      const rect = anchor.getBoundingClientRect();
+      popup.style.top = Math.min(rect.bottom + 4, window.innerHeight - 260) + 'px';
+      popup.style.right = '24px';
+
+      document.getElementById('gpCancel')?.addEventListener('click', () => { popup.remove(); _galleryPopupOpen = false; });
+      document.getElementById('gpSave')?.addEventListener('click', () => {
+        hubContent.gallery[idx] = {
+          label: document.getElementById('gpLabel')?.value || card.label,
+          desc: document.getElementById('gpDesc')?.value || card.desc,
+          href: document.getElementById('gpHref')?.value || card.href,
+          icon: card.icon,
+          color: document.getElementById('gpColor')?.value || card.color,
+          bg: card.bg
+        };
+        saveHubContent();
+        renderHubGallery();
+        popup.remove();
+        _galleryPopupOpen = false;
+      });
+    }
+
+    function setupGalleryEditEvents() {
+      document.querySelectorAll('[data-edit-gallery]').forEach(el => {
+        el.addEventListener('click', function(e) {
+          e.preventDefault();
+          const idx = parseInt(this.dataset.editGallery);
+          if (!isNaN(idx)) showGalleryPopup(idx, this);
+        });
+      });
+      document.querySelectorAll('[data-add="gallery"]').forEach(el => {
+        el.addEventListener('click', function() {
+          hubContent.gallery.push({ label: 'New View', desc: 'Description', href: '#', icon: 'chart', color: 'var(--text-secondary)', bg: 'var(--surface-container)' });
+          saveHubContent();
+          renderHubGallery();
+          setupGalleryEditEvents();
+        });
+      });
+    }
+
+    function initHubEditMode() {
+      document.querySelectorAll('.hub-section-wrap').forEach(wrap => {
+        const header = wrap.querySelector('.hub-section-header');
+        if (header && !header.querySelector('.hub-section-vis-toggle')) {
+          const toggle = document.createElement('button');
+          toggle.className = 'hub-section-vis-toggle';
+          toggle.title = 'Toggle section visibility';
+          header.appendChild(toggle);
+        }
+      });
+      setupHubEditEvents();
+      renderHubGreeting();
+      renderHubBento();
+      renderHubGallery();
+      applyHubEditMode();
+    }
+
+    // Patch updateSectionHandles to respect hub edit mode
+    const _origUpdateHandles = updateSectionHandles;
+    updateSectionHandles = function() {
+      if (typeof _origUpdateHandles === 'function') _origUpdateHandles();
+      if (hubEditMode) {
+        document.querySelectorAll('.hub-section-header').forEach(h => h.classList.add('visible'));
+        document.querySelectorAll('.hub-section-drag-handle').forEach(h => h.classList.add('hub-section-drag-handle-visible'));
+      }
+    };
+
   </script>
 
   <!-- Sleep Log Modal -->
@@ -1152,25 +1660,7 @@
     </div>
   </div>
 
-  <!-- Visuals Panel (edit mode) -->
-  <div id="visualsPanelOverlay" class="hidden" onclick="toggleEditMode()"></div>
-  <div id="visualsPanel" class="hidden">
-    <div class="vp-header">
-      <h3>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Edit Mode
-      </h3>
-      <div class="vp-header-actions">
-        <span class="vp-badge">21 images</span>
-        <button class="vp-close-btn" onclick="toggleEditMode()" aria-label="Close edit mode">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>
-    <div id="visualsPanelContent"></div>
-  </div>
-
-  <!-- Settings Drawer -->
+<!-- Settings Drawer -->
   <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
   <div id="settingsDrawer" class="settings-drawer hidden">
     <div class="settings-drawer-header">

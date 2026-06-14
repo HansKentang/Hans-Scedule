@@ -301,15 +301,6 @@
     .sch-hamburger:hover { background: var(--accent-soft); color: var(--text-primary); }
     .sch-hamburger svg { width: 18px; height: 18px; }
 
-    .sch-sidebar-overlay {
-      position: fixed; inset: 0; z-index: 9;
-      background: var(--bg-overlay); opacity: 0; visibility: hidden;
-      transition: opacity 200ms ease, visibility 200ms ease; pointer-events: none;
-    }
-    .sch-sidebar-overlay.active {
-      opacity: 1; visibility: visible; pointer-events: auto;
-    }
-
     /* ─── RESPONSIVE ─────────────────────────────────────── */
     @media (max-width: 900px) {
       .hub-sidebar { width: 56px; min-width: 56px; }
@@ -392,11 +383,14 @@
 <body>
   <div class="hub-layout">
     <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────────── -->
-    <div class="sch-sidebar-overlay" id="schSidebarOverlay"></div>
+    <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
 
     <!-- ─── SIDEBAR (Hub workspace) ────────────────────── -->
-    <aside class="hub-sidebar" id="schSidebar">
+    <aside class="hub-sidebar" id="hubSidebar">
       <div class="hub-workspace">
+        <button class="hub-hamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div class="hub-workspace-icon">H</div>
         <span class="hub-workspace-name">Havën</span>
         <button id="quickTaskBtn" class="btn btn-small" title="Quick task (Q)" style="margin-left:auto">
@@ -425,17 +419,19 @@
             </span>
             <span class="snav-label">Activities</span>
           </a>
-          <a href="tags.html" class="hub-snav-item">
-            <span class="snav-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            </span>
-            <span class="snav-label">Tags</span>
-          </a>
           <a href="analytics.html" class="hub-snav-item">
             <span class="snav-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             </span>
             <span class="snav-label">Analytics</span>
+          </a>
+          <a href="finance.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              </svg>
+            </span>
+            <span class="snav-label">Finance</span>
           </a>
         </div>
       </nav>
@@ -538,6 +534,10 @@
       <div class="hub-sidebar-footer">
         <button id="aiChatBtnSidebar" class="btn btn-ghost" title="AI Assistant"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg><span>AI</span></button>
         <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg><span>Theme</span></button>
+        <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>Visuals</span>
+        </button>
         <button id="settingsBtnSidebar" class="hamburger-settings-btn" title="Customize">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
@@ -594,9 +594,6 @@
           <span class="sch-api-badge" id="taskCountBadge" style="cursor:default">
             <span id="taskCount">0</span> tasks
           </span>
-          <button id="schVisualsBtn" class="btn btn-ghost" title="Edit Mode — click any image to customize" style="margin-left:2px">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          </button>
           <button id="schSettingsBtn" class="btn btn-ghost" title="Customize" style="margin-left:4px">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
@@ -682,75 +679,121 @@
         <div id="calendarGrid"><!-- Populated by JS --></div>
       </div>
 
-      <!-- FAB Quick Menu -->
-      <div class="fab-container hub-anim-in hub-anim-in-5" id="fabContainer">
-        <div class="fab-menu" id="fabMenu">
-          <div class="fab-item" data-action="template" id="fabTemplates">
-            <span class="fab-icon" style="background:var(--tag-deep-work-bg);color:var(--tag-deep-work-text)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <!-- Access Hub (Accessibility menu) -->
+      <div class="access-hub hub-anim-in hub-anim-in-5" id="accessHub">
+        <div class="access-items" id="accessItems">
+          <button class="access-item" data-action="focus-timer" id="accessFocusTimer" title="Focus Timer">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             </span>
-            Templates
-          </div>
-          <div class="fab-item" data-action="focus" id="fabFocus">
-            <span class="fab-icon" style="background:var(--tag-study-bg);color:var(--tag-study-text)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
-            </span>
-            Focus Mode
-          </div>
-          <div class="fab-item" data-action="whiteboard" id="fabWhiteboard">
-            <span class="fab-icon" style="background:var(--tag-hobby-bg);color:var(--tag-hobby-text)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            </span>
-            New Idea
-          </div>
-          <div class="fab-item" data-action="today" id="fabToday">
-            <span class="fab-icon" style="background:var(--tag-meeting-bg);color:var(--tag-meeting-text)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </span>
-            Go Today
-          </div>
+            <span class="access-item-label">Focus</span>
+          </button>
 
+          <button class="access-item" data-action="templates" id="accessTemplates" title="Templates">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </span>
+            <span class="access-item-label">Templates</span>
+          </button>
+          <button class="access-item" data-action="focus-mode" id="accessFocusMode" title="Focus Mode">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+            </span>
+            <span class="access-item-label">Focus</span>
+          </button>
+          <button class="access-item" data-action="today" id="accessToday" title="Go Today">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <span class="access-item-label">Today</span>
+          </button>
+          <button class="access-item" data-action="idea" id="accessIdea" title="New Idea">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </span>
+            <span class="access-item-label">Idea</span>
+          </button>
         </div>
-        <button class="fab-main" id="fabMain" aria-label="Quick menu">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button class="access-main" id="accessMain" aria-label="Accessibility menu">
+          <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
         </button>
       </div>
 
-      <!-- Pomodoro Timer (floating) -->
-      <div class="pomodoro-floating" id="pomodoroFloating">
-        <div class="pomodoro-card hidden" id="pomodoroCard">
-          <div class="pomodoro-header">
-            <h4>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Focus Timer
-            </h4>
-            <button class="pomodoro-close" id="pomodoroClose" aria-label="Close timer">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <div class="pomodoro-display">
-            <div class="pomodoro-time" id="pomodoroTime">25:00</div>
-            <div class="pomodoro-task-name" id="pomodoroTaskName">Deep Work Session</div>
-          </div>
-          <div class="pomodoro-progress">
-            <div class="pomodoro-progress-fill" id="pomodoroProgress" style="width:0%"></div>
-          </div>
-          <div class="pomodoro-actions">
-            <button class="btn btn-primary" id="pomodoroStartBtn" style="flex:1;justify-content:center">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              Start
-            </button>
-            <button class="btn btn-outline" id="pomodoroResetBtn" style="flex:0;padding:var(--space-1) var(--space-3)">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-            </button>
-          </div>
-          <div class="pomodoro-status" id="pomodoroStatus">Ready to focus</div>
+      <!-- Quick Template Picker -->
+      <div class="quick-tpl hidden" id="quickTpl">
+        <div class="quick-tpl-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>Quick Templates</span>
+          <button class="quick-tpl-close" id="quickTplClose" aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
-        <button class="pomodoro-trigger" id="pomodoroTrigger" title="Focus timer">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        </button>
+        <div class="quick-tpl-body" id="quickTplList"></div>
+      </div>
+
+      <!-- Quick Idea Popup -->
+      <div class="quick-idea hidden" id="quickIdea">
+        <div class="quick-idea-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span>New Idea</span>
+          <button class="quick-idea-close" id="quickIdeaClose" aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="quick-idea-body">
+          <input type="text" id="quickIdeaInput" class="form-input" placeholder="What's on your mind?" autocomplete="off">
+          <div class="quick-idea-tags" id="quickIdeaTags">
+            <button class="quick-idea-tag" data-tag="deep-work" style="--tag-bg:var(--tag-deep-work-text)">deep-work</button>
+            <button class="quick-idea-tag" data-tag="meeting" style="--tag-bg:var(--tag-meeting-text)">meeting</button>
+            <button class="quick-idea-tag" data-tag="exercise" style="--tag-bg:var(--tag-exercise-text)">exercise</button>
+            <button class="quick-idea-tag" data-tag="study" style="--tag-bg:var(--tag-study-text)">study</button>
+            <button class="quick-idea-tag" data-tag="hobby" style="--tag-bg:var(--tag-hobby-text)">hobby</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pomodoro Timer (floating card) -->
+      <div class="pomodoro-card hidden" id="pomodoroCard">
+        <div class="pomodoro-header">
+          <h4>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Focus Timer
+          </h4>
+          <button class="pomodoro-close" id="pomodoroClose" aria-label="Close timer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="pomodoro-ring-wrap">
+          <svg class="pomodoro-ring" viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="pomodoro-ring-bg" cx="50" cy="50" r="45"/>
+            <circle class="pomodoro-ring-fg" id="pomodoroRingFg" cx="50" cy="50" r="45" stroke-dasharray="282.74" stroke-dashoffset="0"/>
+          </svg>
+          <div class="pomodoro-ring-inner">
+            <div class="pomodoro-time" id="pomodoroTime">25:00</div>
+            <div class="pomodoro-period-icon" id="pomodoroPeriodIcon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="pomodoro-task-name" id="pomodoroTaskName">Deep Work Session</div>
+        <div class="pomodoro-presets" id="pomodoroPresets">
+          <button class="pomodoro-preset" data-minutes="5">5</button>
+          <button class="pomodoro-preset" data-minutes="10">10</button>
+          <button class="pomodoro-preset active" data-minutes="25">25</button>
+          <button class="pomodoro-preset" data-minutes="50">50</button>
+        </div>
+        <div class="pomodoro-actions">
+          <button class="btn btn-primary" id="pomodoroStartBtn" style="flex:1;justify-content:center">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Start
+          </button>
+          <button class="btn btn-outline" id="pomodoroResetBtn" style="flex:0;padding:var(--space-1) var(--space-3)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          </button>
+        </div>
+        <div class="pomodoro-status" id="pomodoroStatus">Ready to focus</div>
       </div>
     </div>
 
@@ -774,32 +817,129 @@
 
     <div id="taskOverlay" class="overlay hidden"></div>
     <div id="taskModal" class="modal modal-sm hidden" role="dialog" aria-label="Task Details">
-      <div class="modal-header"><h3 id="taskModalTitle">Task Details</h3><button id="taskModalClose" class="btn btn-ghost modal-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <span class="modal-header-icon" id="taskModalIcon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <h3 id="taskModalTitle">New Task</h3>
+        </div>
+        <div class="modal-header-actions">
+          <span class="modal-task-id" id="taskModalId"></span>
+          <button id="taskModalClose" class="modal-close-btn" aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
       <div class="modal-body">
         <form id="taskForm">
-          <div class="form-group"><label for="taskTitle">Title</label><input type="text" id="taskTitle" class="form-input" placeholder="Task title"></div>
-          <div class="form-row">
-            <div class="form-group"><label for="taskDate">Date</label><input type="date" id="taskDate" class="form-input"></div>
-            <div class="form-group"><label for="taskTag">Tag</label><div class="tag-select-wrap"><span id="taskTagColor" class="tag-color-dot"></span><select id="taskTag" class="form-input"><option value="meeting">Meeting</option><option value="deep-work">Deep Work</option><option value="exercise">Exercise</option><option value="study">Study</option><option value="hobby">Hobby</option></select></div></div>
+          <!-- Title -->
+          <div class="tf-group tf-title-group">
+            <input type="text" id="taskTitle" class="tf-title-input" placeholder="What are you working on?" autocomplete="off">
+            <div class="tf-title-char" id="taskTitleChar"></div>
           </div>
-          <div class="form-group"><label>Priority</label><div class="priority-select-group" id="prioritySelectGroup">
-            <div class="priority-option p1 active" data-priority="1">P1</div>
-            <div class="priority-option p2" data-priority="2">P2</div>
-            <div class="priority-option p3" data-priority="3">P3</div>
-            <div class="priority-option p4" data-priority="4">P4</div>
-          </div></div>
-          <div class="form-row">
-            <div class="form-group"><label for="taskStart">Start</label><input type="time" id="taskStart" class="form-input" value="09:00"></div>
-            <div class="form-group"><label for="taskEnd">End</label><input type="time" id="taskEnd" class="form-input" value="10:00"></div>
+
+          <!-- Tags as pills -->
+          <div class="tf-group">
+            <label class="tf-label">Category</label>
+            <div class="tf-tags" id="taskTagPills">
+              <button type="button" class="tf-tag" data-tag="deep-work" style="--tag-c:var(--tag-deep-work-text);--tag-b:var(--tag-deep-work-bg)">Deep Work</button>
+              <button type="button" class="tf-tag active" data-tag="meeting" style="--tag-c:var(--tag-meeting-text);--tag-b:var(--tag-meeting-bg)">Meeting</button>
+              <button type="button" class="tf-tag" data-tag="exercise" style="--tag-c:var(--tag-exercise-text);--tag-b:var(--tag-exercise-bg)">Exercise</button>
+              <button type="button" class="tf-tag" data-tag="study" style="--tag-c:var(--tag-study-text);--tag-b:var(--tag-study-bg)">Study</button>
+              <button type="button" class="tf-tag" data-tag="hobby" style="--tag-c:var(--tag-hobby-text);--tag-b:var(--tag-hobby-bg)">Hobby</button>
+            </div>
+            <select id="taskTag" class="tf-hidden-select" style="display:none"></select>
           </div>
-          <div class="form-group"><label for="taskNotes">Notes</label><textarea id="taskNotes" class="form-input" rows="2" placeholder="Optional notes..."></textarea></div>
-          <div class="form-row">
-            <div class="form-group"><label for="taskRepeat">Repeat</label><select id="taskRepeat" class="form-input"><option value="none">No repeat</option><option value="daily">Daily</option><option value="weekdays">Weekdays</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select></div>
-            <div class="form-group"><label for="taskReminder">Reminder</label><select id="taskReminder" class="form-input"><option value="0">None</option><option value="5">5 min before</option><option value="15">15 min before</option><option value="30">30 min before</option><option value="60">1 hour before</option><option value="1440">1 day before</option></select></div>
+
+          <!-- Date + Time row -->
+          <div class="tf-group">
+            <div class="tf-row tf-row-3">
+              <div class="tf-field">
+                <label class="tf-label">Date</label>
+                <div class="tf-input-wrap">
+                  <svg class="tf-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <input type="date" id="taskDate" class="tf-input">
+                </div>
+              </div>
+              <div class="tf-field">
+                <label class="tf-label">Start</label>
+                <div class="tf-input-wrap">
+                  <svg class="tf-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <input type="time" id="taskStart" class="tf-input" value="09:00">
+                </div>
+              </div>
+              <div class="tf-field">
+                <label class="tf-label">End</label>
+                <div class="tf-input-wrap">
+                  <svg class="tf-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <input type="time" id="taskEnd" class="tf-input" value="10:00">
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="form-actions">
-            <button type="button" id="taskDeleteBtn" class="btn btn-danger hidden">Delete</button>
-            <div class="form-actions-right"><button type="button" id="taskCancelBtn" class="btn btn-outline">Cancel</button><button type="submit" id="taskSaveBtn" class="btn btn-primary">Save</button></div>
+
+          <!-- Priority -->
+          <div class="tf-group">
+            <label class="tf-label">Priority</label>
+            <div class="tf-priority" id="prioritySelectGroup">
+              <button type="button" class="tf-pr" data-priority="1" style="--pr-c:#ef4444">Urgent</button>
+              <button type="button" class="tf-pr" data-priority="2" style="--pr-c:#f59e0b">High</button>
+              <button type="button" class="tf-pr active" data-priority="3" style="--pr-c:#6366f1">Medium</button>
+              <button type="button" class="tf-pr" data-priority="4" style="--pr-c:#6b7280">Low</button>
+            </div>
+          </div>
+
+          <!-- Repeat + Reminder row -->
+          <div class="tf-group">
+            <div class="tf-row tf-row-2">
+              <div class="tf-field">
+                <label class="tf-label">Repeat</label>
+                <div class="tf-input-wrap tf-select-wrap">
+                  <select id="taskRepeat" class="tf-input">
+                    <option value="none">No repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekdays">Weekdays</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+              </div>
+              <div class="tf-field">
+                <label class="tf-label">Reminder</label>
+                <div class="tf-input-wrap tf-select-wrap">
+                  <select id="taskReminder" class="tf-input">
+                    <option value="0">None</option>
+                    <option value="5">5 min before</option>
+                    <option value="15">15 min before</option>
+                    <option value="30">30 min before</option>
+                    <option value="60">1 hour before</option>
+                    <option value="1440">1 day before</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="tf-group">
+            <label class="tf-label">Notes <span class="tf-label-opt">optional</span></label>
+            <textarea id="taskNotes" class="tf-textarea" rows="3" placeholder="Add details, links, or context..."></textarea>
+          </div>
+
+          <!-- Footer actions -->
+          <div class="tf-footer">
+            <button type="button" id="taskDeleteBtn" class="tf-btn tf-btn-danger hidden">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              Delete
+            </button>
+            <div class="tf-footer-right">
+              <button type="button" id="taskCancelBtn" class="tf-btn tf-btn-ghost">Cancel</button>
+              <button type="submit" id="taskSaveBtn" class="tf-btn tf-btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save
+              </button>
+            </div>
           </div>
         </form>
       </div>
@@ -808,13 +948,52 @@
 
 
     <div id="helpOverlay" class="overlay hidden"></div>
-    <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Keyboard Shortcuts">
-      <div class="modal-header"><h3>Keyboard Shortcuts</h3><button id="helpModalClose" class="btn btn-ghost modal-close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-      <div class="modal-body"><div class="shortcuts-grid" id="helpShortcutsGrid">
-      </div></div>
+    <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+      <div class="modal-header">
+        <h3>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Help and Shortcuts
+        </h3>
+        <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/></svg>
+            Keyboard Shortcuts
+          </div>
+          <div class="shortcuts-grid" id="helpShortcutsGrid"></div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Tips and Tricks
+          </div>
+          <div class="help-tips" id="helpTipsGrid">
+            <div class="help-tip">
+              <span class="help-tip-icon">💡</span>
+              <div class="help-tip-text">Type natural language like <em>"Team standup tomorrow at 9am"</em> in the command palette (<kbd>Ctrl+K</kbd>)</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">🔄</span>
+              <div class="help-tip-text">Drag tasks on the calendar to reschedule — other tasks shift to avoid conflicts</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">📎</span>
+              <div class="help-tip-text">Attach images to AI chat for visual analysis of schedules and screenshots</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">🎯</span>
+              <div class="help-tip-text">Press <kbd>F</kbd> to toggle Focus Mode — hides sidebar and reduces clutter</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <div id="tzTooltip" class="tz-tooltip hidden"></div>
 
     <!-- Undo Toast -->
     <div id="undoToast" class="undo-toast hidden">
@@ -841,25 +1020,7 @@
       </div>
     </div>
 
-    <!-- Visuals Panel (edit mode) -->
-  <div id="visualsPanelOverlay" class="hidden" onclick="toggleEditMode()"></div>
-  <div id="visualsPanel" class="hidden">
-    <div class="vp-header">
-      <h3>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Edit Mode
-      </h3>
-      <div class="vp-header-actions">
-        <span class="vp-badge">21 images</span>
-        <button class="vp-close-btn" onclick="toggleEditMode()" aria-label="Close edit mode">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>
-    <div id="visualsPanelContent"></div>
-  </div>
-
-  <!-- Settings Drawer -->
+<!-- Settings Drawer -->
     <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
     <div id="settingsDrawer" class="settings-drawer hidden">
       <div class="settings-drawer-header">
@@ -914,6 +1075,16 @@
               <div class="drawer-section-header">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.5-4.5-10-10-10z"/></svg>
                 <span class="drawer-section-title">Tag Colors</span>
+              </div>
+            </div>
+            <div class="drawer-section" id="settingsAccessBubbles">
+              <div class="drawer-section-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span class="drawer-section-title">Access Hub Bubbles</span>
+              </div>
+              <div class="form-group" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Customize bubble labels, colors, and visibility.</div>
+              <div id="bubbleConfigContainer">
+                <div style="display:grid;gap:8px;" id="bubbleConfigList"></div>
               </div>
             </div>
             <div class="drawer-section">
@@ -989,30 +1160,7 @@
         <span>Natural language scheduling</span>
       </div>
     </div>
-  </div><div id="aiChatModal" class="modal ai-modal hidden" role="dialog" aria-label="AI Assistant">
-      <div class="ai-modal-header">
-        <h3>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
-          </svg>
-          Havën AI
-        </h3>
-        <button id="aiChatClose" class="btn btn-ghost modal-close" aria-label="Close">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="ai-modal-body">
-        <div class="ai-messages" id="aiChatMessages"></div>
-        <div class="ai-input-wrapper" id="aiChatInputWrapper">
-          <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your schedule..." autocomplete="off">
-          <button id="aiChatSend" class="ai-send-btn" aria-label="Send">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
+  </div>
   </div>
 
   <script>
@@ -1021,6 +1169,9 @@
     }
   </script>
   <script src="shared.js"></script>
+  <script>
+    document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
+  </script>
   <script src="schedule.js"></script>
 </body>
 </html>

@@ -170,10 +170,178 @@
     }
     .act-filters select:focus { border-color: var(--border-focus); }
 
+    /* ─── ACTIVITY STATS DASHBOARD ────────────────────────── */
+    .act-stats {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-3); margin-bottom: var(--space-5);
+    }
+    .act-stat-card {
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      transition: all var(--t-base);
+      position: relative; overflow: hidden;
+    }
+    .act-stat-card:hover {
+      border-color: var(--border-color);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-1px);
+    }
+    .act-stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--stat-accent, var(--accent));
+      opacity: 0.6;
+    }
+    .act-stat-value {
+      font-size: 1.4rem; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums; line-height: 1.2;
+    }
+    .act-stat-label {
+      font-size: 0.62rem; color: var(--text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.05em;
+      font-weight: 600; margin-top: 2px;
+    }
+    .act-stat-sub {
+      font-size: 0.6rem; color: var(--text-tertiary);
+      margin-top: 1px; opacity: 0.7;
+    }
+    .act-stat-icon {
+      position: absolute; top: var(--space-3); right: var(--space-3);
+      width: 20px; height: 20px; color: var(--stat-accent, var(--accent));
+      opacity: 0.3;
+    }
+
+    /* ─── SEARCH BAR ────────────────────────────────────────── */
+    .act-search-wrap {
+      position: relative; margin-bottom: var(--space-4);
+    }
+    .act-search {
+      width: 100%; padding: var(--space-2) var(--space-4) var(--space-2) 36px;
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      font-size: 0.8rem; font-family: var(--font-family);
+      background: var(--bg-secondary); color: var(--text-primary);
+      outline: none; transition: all var(--t-base);
+    }
+    .act-search:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+    .act-search::placeholder { color: var(--text-tertiary); }
+    .act-search-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--text-tertiary);
+      pointer-events: none;
+    }
+    .act-search-clear {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 20px; height: 20px; border-radius: 50%;
+      border: none; background: var(--surface-container-high);
+      color: var(--text-tertiary); cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      font-size: 0.6rem; padding: 0;
+    }
+    .act-search-clear.visible { display: flex; }
+    .act-search-clear:hover { background: var(--border-color); color: var(--text-primary); }
+
+    /* ─── INSIGHTS CHIPS ────────────────────────────────────── */
+    .act-insights {
+      display: flex; gap: var(--space-2); flex-wrap: wrap;
+      margin-bottom: var(--space-4);
+    }
+    .act-insight {
+      display: inline-flex; align-items: center; gap: var(--space-1);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-full);
+      font-size: 0.68rem; font-weight: 500;
+      border: 1px solid var(--border-subtle);
+      background: var(--accent-soft);
+      color: var(--text-secondary);
+      animation: insightPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes insightPop {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .act-insight:nth-child(1) { animation-delay: 0s; }
+    .act-insight:nth-child(2) { animation-delay: 0.08s; }
+    .act-insight:nth-child(3) { animation-delay: 0.16s; }
+    .act-insight svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .act-insight strong { color: var(--text-primary); font-weight: 600; }
+
+    /* ─── INLINE EDITING ────────────────────────────────────── */
+    .act-card-title-inline {
+      flex: 1; overflow: hidden;
+    }
+    .act-card-title-inline input {
+      width: 100%; border: none; background: transparent;
+      font-size: 0.88rem; font-weight: 500; color: var(--text-primary);
+      font-family: var(--font-family); outline: none;
+      border-bottom: 1px solid var(--border-focus);
+      padding: 0; margin: 0;
+    }
+    .act-card-title-inline .act-card-title-display {
+      width: 100%; cursor: text;
+      font-size: 0.88rem; font-weight: 500; color: var(--text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      transition: color var(--t-fast);
+    }
+    .act-card:hover .act-card-title-display {
+      color: var(--accent);
+    }
+
+    /* ─── MINI DURATION BAR ──────────────────────────────────── */
+    .act-card-bar {
+      height: 3px; border-radius: 2px;
+      margin-top: var(--space-2); width: 60%;
+      background: color-mix(in srgb, var(--act-accent, var(--gray-300)) 30%, transparent);
+      transition: width var(--t-slow);
+    }
+    .act-card.completed .act-card-bar {
+      background: color-mix(in srgb, var(--gray-400) 20%, transparent);
+    }
+
+    /* ─── CONFETTI / CELEBRATION ────────────────────────────── */
+    .act-confetti-container {
+      position: fixed; inset: 0; z-index: 9999;
+      pointer-events: none; overflow: hidden;
+    }
+    .confetti-piece {
+      position: absolute; width: 8px; height: 8px;
+      border-radius: 2px;
+      animation: confettiFall var(--cf-dur, 2s) ease-out forwards;
+      opacity: 0;
+    }
+    @keyframes confettiFall {
+      0% {
+        opacity: 1;
+        transform: translateY(-20px) rotate(0deg) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(100vh) rotate(720deg) scale(0.3);
+      }
+    }
+    .act-celebration {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      z-index: 10000; pointer-events: none;
+      font-size: 3rem; font-weight: 700;
+      animation: celebBurst 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      color: var(--accent);
+    }
+    @keyframes celebBurst {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+      30% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+      70% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8) translateY(-30px); }
+    }
+
     @media (max-width: 768px) {
-      .hub-content { padding: var(--space-4) var(--space-4) var(--space-6); }
+      .act-stats { grid-template-columns: repeat(2, 1fr); }
       .act-card { padding: var(--space-3) var(--space-4); }
       .act-card-time { width: 45px; font-size: 0.65rem; }
+      .act-stat-value { font-size: 1.1rem; }
     }
   </style>
 </head>
@@ -185,9 +353,14 @@
   </div>
 
   <div class="hub-layout">
+    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────────── -->
+    <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
     <!-- ─── SIDEBAR (Notion workspace) ──────────────────── -->
-    <aside class="hub-sidebar">
+    <aside class="hub-sidebar" id="hubSidebar">
       <div class="hub-workspace">
+        <button class="hub-hamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div class="hub-workspace-icon">H</div>
         <span class="hub-workspace-name">Havën</span>
       </div>
@@ -218,14 +391,6 @@
             </span>
             <span class="snav-label">Activities</span>
           </a>
-          <a href="tags.html" class="hub-snav-item">
-            <span class="snav-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
-              </svg>
-            </span>
-            <span class="snav-label">Tags</span>
-          </a>
           <a href="analytics.html" class="hub-snav-item">
             <span class="snav-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -233,6 +398,14 @@
               </svg>
             </span>
             <span class="snav-label">Analytics</span>
+          </a>
+          <a href="finance.html" class="hub-snav-item active">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              </svg>
+            </span>
+            <span class="snav-label">Finance</span>
           </a>
         </div>
       </nav>
@@ -319,6 +492,10 @@
           </svg>
           <span>AI</span>
         </button>
+        <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>Visuals</span>
+        </button>
         <button id="settingsBtnSidebar" class="hamburger-settings-btn" title="Customize">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
@@ -329,43 +506,9 @@
 
     <!-- ─── MAIN ─────────────────────────────────────────── -->
     <div class="hub-main">
-      <!-- Breadcrumb bar -->
-      <div class="hub-breadcrumb hub-anim-in hub-anim-in-1">
-        <div class="hub-breadcrumb-inner">
-          <a href="index.html">Havën</a>
-          <span class="bc-sep">/</span>
-          <span class="bc-current">Activities</span>
-        </div>
-        <div class="hub-bc-actions">
-          <button id="bcThemeBtn" class="btn btn-ghost" title="Toggle theme">
-            <svg class="theme-icon-light" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-            <svg class="theme-icon-dark" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-            </svg>
-          </button>
 
-          <button id="bcAiChatBtn" class="btn btn-ghost" title="AI Assistant">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
-            </svg>
-          </button>
-          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — click any image to customize">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          </button>
-          <button id="bcSettingsBtn" class="btn btn-ghost" title="Customize">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Scrollable page content -->
-      <div class="hub-content hub-page-transition">
-        <!-- ─── ACTIVITIES HERO ────────────────────────────── -->
-        <section class="hub-hero-section fade-in" style="position:relative;height:300px;overflow:hidden;border-radius:var(--radius-xl);margin-bottom:var(--section-gap)">
+      <!-- ─── ACTIVITIES HERO ────────────────────────────── -->
+      <section style="position:relative;height:300px;overflow:hidden;flex-shrink:0">
           <img data-image-id="activities-hero" src="" alt=""
                style="width:100%;height:100%;object-fit:cover;opacity:0.8"
                >
@@ -387,6 +530,8 @@
           </div>
         </section>
 
+      <div class="hub-content hub-page-transition">
+
         <!-- Page Header (Notion page title with icon) -->
         <div class="hub-page-header hub-anim-in hub-anim-in-2">
           <div class="hub-page-icon">
@@ -400,32 +545,98 @@
           </div>
         </div>
 
-        <!-- Filters -->
-        <div class="act-filters hub-anim-in hub-anim-in-3">
-          <select id="actTagFilter">
-            <option value="">All Tags</option>
-            <option value="deep-work">Deep Work</option>
-            <option value="meeting">Meeting</option>
-            <option value="exercise">Exercise</option>
-            <option value="study">Study</option>
-            <option value="hobby">Hobby</option>
-          </select>
-          <select id="actDateFilter">
-            <option value="all">All Time</option>
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-          </select>
+        <!-- View toggle -->
+        <div class="act-view-toggle hub-anim-in hub-anim-in-3">
+          <button class="act-view-btn active" data-view="timeline">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Timeline
+          </button>
+          <button class="act-view-btn" data-view="board">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            Board
+          </button>
         </div>
 
-        <!-- Activity feed -->
-        <div class="act-feed hub-anim-in hub-anim-in-4" id="activitiesList">
-          <div class="act-empty">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-            </svg>
-            <p>No activities yet</p>
-            <p class="sub">Create tasks in the Schedule view</p>
+        <!-- Stats Dashboard -->
+        <div class="act-stats hub-anim-in hub-anim-in-3" id="actStatsDashboard">
+          <div class="act-stat-card" style="--stat-accent:var(--tag-deep-work-text)">
+            <svg class="act-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            <div class="act-stat-value" id="actStatTotal">0</div>
+            <div class="act-stat-label">Total Tasks</div>
+          </div>
+          <div class="act-stat-card" style="--stat-accent:var(--tag-exercise-text)">
+            <svg class="act-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <div class="act-stat-value" id="actStatCompleted">0</div>
+            <div class="act-stat-label">Completed</div>
+            <div class="act-stat-sub" id="actStatRate">0% rate</div>
+          </div>
+          <div class="act-stat-card" style="--stat-accent:var(--tag-study-text)">
+            <svg class="act-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <div class="act-stat-value" id="actStatStreak">0</div>
+            <div class="act-stat-label">Day Streak</div>
+            <div class="act-stat-sub" id="actStatBestStreak">Best: 0</div>
+          </div>
+          <div class="act-stat-card" style="--stat-accent:var(--tag-meeting-text)">
+            <svg class="act-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <div class="act-stat-value" id="actStatTopTag">—</div>
+            <div class="act-stat-label">Best Tag</div>
+            <div class="act-stat-sub" id="actStatTopCount">0 hours</div>
+          </div>
+        </div>
+
+        <!-- Insights -->
+        <div class="act-insights hub-anim-in hub-anim-in-3" id="actInsights"></div>
+
+        <!-- ─── TIMELINE VIEW ────────────────────────────── -->
+        <div id="activitiesView">
+          <!-- Search -->
+          <div class="act-search-wrap hub-anim-in hub-anim-in-3">
+            <svg class="act-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="actSearch" class="act-search" placeholder="Search activities by title or notes..." autocomplete="off">
+            <button class="act-search-clear" id="actSearchClear" aria-label="Clear search">✕</button>
+          </div>
+
+          <!-- Filters -->
+          <div class="act-filters hub-anim-in hub-anim-in-3">
+            <select id="actTagFilter">
+              <option value="">All Tags</option>
+              <option value="deep-work">Deep Work</option>
+              <option value="meeting">Meeting</option>
+              <option value="exercise">Exercise</option>
+              <option value="study">Study</option>
+              <option value="hobby">Hobby</option>
+            </select>
+            <select id="actDateFilter">
+              <option value="all">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </select>
+            <span style="font-size:0.68rem;color:var(--text-tertiary);margin-left:auto" id="actResultCount"></span>
+          </div>
+
+          <!-- Activity feed -->
+          <div class="act-feed hub-anim-in hub-anim-in-4" id="activitiesList">
+            <div class="act-empty">
+              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+              </svg>
+              <p>No activities found</p>
+              <p class="sub">Create tasks in the Schedule view</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── BOARD VIEW (Tags kanban) ─────────────────── -->
+        <div id="boardView" class="hidden">
+          <div class="tags-board hub-anim-in hub-anim-in-3" id="tagsBoard">
+            <div class="tags-board-inner" id="tagsBoardInner">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+          <div class="tags-summary hub-anim-in hub-anim-in-4">
+            <span>Click a card to edit</span>
+            <span id="tagsSummaryTotal">0 tasks across all categories</span>
           </div>
         </div>
       </div>
@@ -463,25 +674,7 @@
     </div>
   </div>
 
-  <!-- Visuals Panel (edit mode) -->
-  <div id="visualsPanelOverlay" class="hidden" onclick="toggleEditMode()"></div>
-  <div id="visualsPanel" class="hidden">
-    <div class="vp-header">
-      <h3>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Edit Mode
-      </h3>
-      <div class="vp-header-actions">
-        <span class="vp-badge">21 images</span>
-        <button class="vp-close-btn" onclick="toggleEditMode()" aria-label="Close edit mode">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>
-    <div id="visualsPanelContent"></div>
-  </div>
-
-  <!-- Settings Drawer -->
+<!-- Settings Drawer -->
   <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
   <div id="settingsDrawer" class="settings-drawer hidden">
     <div class="settings-drawer-header">
@@ -568,28 +761,96 @@
     </div>
   </div>
 
-  <div id="aiChatOverlay" class="overlay hidden"></div>
-  <div id="aiChatModal" class="modal ai-modal hidden" role="dialog" aria-label="AI Assistant">
-    <div class="ai-modal-header">
-      <h3>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
-        </svg>
-          Havën AI
+        <!-- HELP MODAL -->
+    <div id="helpOverlay" class="overlay hidden"></div>
+    <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+      <div class="modal-header">
+        <h3>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Help and Shortcuts
         </h3>
-      <button id="aiChatClose" class="btn btn-ghost modal-close" aria-label="Close">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+        <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/></svg>
+            Keyboard Shortcuts
+          </div>
+          <div class="shortcuts-grid" id="helpShortcutsGrid"></div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Tips and Tricks
+          </div>
+          <div class="help-tips">
+            <div class="help-tip">
+              <span class="help-tip-icon">💡</span>
+              <div class="help-tip-text">Type natural language in the command palette (Ctrl+K) to schedule tasks</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">🔄</span>
+              <div class="help-tip-text">Drag tasks to reschedule - other tasks automatically shift to avoid conflicts</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">📎</span>
+              <div class="help-tip-text">Attach images to AI chat for visual analysis of schedules and screenshots</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">🎯</span>
+              <div class="help-tip-text">Press F to toggle Focus Mode - hides sidebar and reduces visual clutter</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="ai-modal-body">
+
+<!-- AI CHAT PANEL (right-side drawer) -->
+  <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
+  <div id="aiChatPanel" class="ai-panel hidden" role="dialog" aria-label="AI Assistant">
+    <div class="ai-panel-header">
+      <div class="ai-panel-header-left">
+        <div class="ai-panel-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <div>
+          <div class="ai-panel-title">Haven AI</div>
+          <div class="ai-panel-subtitle">Schedule assistant</div>
+        </div>
+      </div>
+      <div class="ai-panel-header-actions">
+        <button id="aiChatSettingsBtn" class="ai-panel-icon-btn" title="Settings" onclick="openSettingsDrawer()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+        <button id="aiChatClose" class="ai-panel-icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="ai-panel-body">
       <div class="ai-messages" id="aiChatMessages"></div>
+    </div>
+    <div class="ai-panel-footer">
       <div class="ai-input-wrapper" id="aiChatInputWrapper">
         <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your schedule..." autocomplete="off">
-        <button id="aiChatSend" class="ai-send-btn" aria-label="Send">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button id="aiChatSend" class="ai-send-btn show" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
         </button>
+      </div>
+      <div class="ai-panel-footer-hint">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg>
+        <span>Natural language scheduling</span>
       </div>
     </div>
   </div>
@@ -598,9 +859,11 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
     }
-    document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
   </script>
   <script src="shared.js"></script>
+  <script>
+    document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
+  </script>
   <script src="activities.js"></script>
 </body>
 </html>

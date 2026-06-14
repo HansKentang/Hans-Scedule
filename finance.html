@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Havën">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Havën Schedule — Finance</title>
+  <style>
+    :root {
+      --fin-income: #22c55e;
+      --fin-expense: #ef4444;
+      --fin-accent: var(--primary);
+    }
+    .fin-kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
+    .fin-kpi { padding: var(--space-5); border-radius: var(--radius-xl); border: 1px solid var(--border-color); background: var(--bg-card); position: relative; overflow: hidden; transition: all var(--t-base); cursor: default; }
+    .fin-kpi:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+    .fin-kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+    .fin-kpi.income::before { background: var(--fin-income); }
+    .fin-kpi.income .fin-kpi-icon { background: color-mix(in srgb, var(--fin-income) 12%, transparent); color: var(--fin-income); }
+    .fin-kpi.income .fin-kpi-value { color: var(--fin-income); }
+    .fin-kpi.expense::before { background: var(--fin-expense); }
+    .fin-kpi.expense .fin-kpi-icon { background: color-mix(in srgb, var(--fin-expense) 12%, transparent); color: var(--fin-expense); }
+    .fin-kpi.expense .fin-kpi-value { color: var(--fin-expense); }
+    .fin-kpi.net::before { background: var(--fin-accent); }
+    .fin-kpi.net .fin-kpi-icon { background: color-mix(in srgb, var(--fin-accent) 12%, transparent); color: var(--fin-accent); }
+    .fin-kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+    .fin-kpi-icon { width: 32px; height: 32px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .fin-kpi-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
+    .fin-kpi-value { font-size: 1.8rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+    .fin-kpi-sub { font-size: 0.7rem; color: var(--text-tertiary); margin-top: var(--space-1); }
+
+    .fin-toolbar { display:flex; align-items:center; justify-content:space-between; gap: var(--space-3); margin-bottom: var(--space-4); flex-wrap: wrap; }
+    .fin-toolbar-left { display: flex; align-items: center; gap: var(--space-2); }
+    .fin-toolbar-right { display: flex; align-items: center; gap: var(--space-2); }
+    .fin-tabs { display: inline-flex; gap: 4px; background: var(--surface-container-low); border: 1px solid var(--border-color); padding: 4px; border-radius: 12px; }
+    .fin-tab { border: none; background: transparent; color: var(--text-secondary); padding: 6px 12px; border-radius: 10px; font-weight: 600; font-size: 0.72rem; cursor: pointer; transition: all var(--t-fast); }
+    .fin-tab:hover { color: var(--text-primary); background: var(--accent-soft); }
+    .fin-tab.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 0 rgba(0,0,0,0.06); }
+    .fin-count { font-size: 0.68rem; color: var(--text-tertiary); font-weight: 600; white-space: nowrap; }
+    .fin-export-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); padding: 0; }
+    .fin-export-btn:hover { background: var(--accent-soft); color: var(--text-primary); }
+    .fin-export-btn svg { width: 16px; height: 16px; }
+    .fin-rates-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: var(--space-4) var(--space-5); margin-bottom: var(--space-4); }
+    .fin-rates-card:hover { border-color: var(--text-primary); }
+    .fin-rates-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
+    .fin-rates-title { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); }
+    .fin-rates-main { display: flex; align-items: center; gap: var(--space-4); }
+    .fin-rates-main-left { display: flex; flex-direction: column; min-width: 130px; }
+    .fin-rates-pair { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+    .fin-rates-price { font-size: 1.4rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+    .fin-rates-chg-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-top: 2px; }
+    .fin-rates-chg-badge.up { color: #fff; background: var(--fin-income); }
+    .fin-rates-chg-badge.down { color: #fff; background: var(--fin-expense); }
+    .fin-rates-chg-badge.flat { color: var(--text-tertiary); background: var(--bg-secondary); }
+    .fin-rates-chart-wrap { flex: 1; height: 100px; position: relative; }
+    .fin-rates-chart-wrap svg { width: 100%; height: 100%; }
+    .fin-rates-others { display: flex; gap: var(--space-3); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--border-subtle); }
+    .fin-rate-row { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+    .fin-rate-code { font-weight: 700; font-size: 0.68rem; color: var(--text-primary); flex-shrink: 0; }
+    .fin-rate-spark { width: 72px; height: 20px; flex-shrink: 0; }
+    .fin-rate-val { font-weight: 700; font-size: 0.72rem; color: var(--text-primary); font-variant-numeric: tabular-nums; text-align: right; flex-shrink: 0; }
+    .fin-rate-chg { font-size: 0.58rem; font-weight: 700; white-space: nowrap; }
+    .fin-rate-chg.up { color: var(--fin-income); }
+    .fin-rate-chg.down { color: var(--fin-expense); }
+    .fin-rate-chg.flat { color: var(--text-tertiary); }
+    .fin-rates-loading { font-size: 0.7rem; color: var(--text-tertiary); padding: 8px 0; }
+    .fin-refresh-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); padding: 0; flex-shrink: 0; }
+    .fin-refresh-btn:hover { background: var(--accent-soft); color: var(--text-primary); }
+    .fin-refresh-btn svg { width: 14px; height: 14px; }
+    .fin-refresh-btn.loading svg { animation: finSpin 0.7s linear infinite; }
+    .fin-refresh-btn.loaded svg { animation: finPop 0.3s ease; }
+    @keyframes finSpin { to { transform: rotate(360deg); } }
+    @keyframes finPop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    .fin-kpi-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 999px; }
+    .fin-kpi-delta.up { color: var(--fin-income); background: color-mix(in srgb, var(--fin-income) 10%, transparent); }
+    .fin-kpi-delta.down { color: var(--fin-expense); background: color-mix(in srgb, var(--fin-expense) 10%, transparent); }
+    .fin-kpi-delta.neutral { color: var(--text-tertiary); background: var(--bg-secondary); }
+
+    .fin-panels { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space-4); margin-bottom: var(--space-6); }
+    @media (max-width: 900px) { .fin-panels { grid-template-columns: 1fr; } .fin-kpi-row { grid-template-columns: 1fr; } }
+
+    .fin-table-wrap { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); overflow: hidden; }
+    .fin-table-wrap:hover { border-color: var(--text-primary); }
+    .fin-table-head { display:grid; grid-template-columns: 0.9fr 1fr 0.9fr 1.1fr 0.7fr 0.7fr; gap: var(--space-3); padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
+    .fin-table { max-height: 420px; overflow-y: auto; }
+    .fin-row { display:grid; grid-template-columns: 0.9fr 1fr 0.9fr 1.1fr 0.7fr 0.7fr; gap: var(--space-3); padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); align-items: center; font-size: 0.85rem; transition: background var(--t-fast); position: relative; cursor: pointer; }
+    .fin-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: transparent; transition: background var(--t-fast); }
+    .fin-row:hover { background: var(--accent-soft); }
+    .fin-row:hover::before { background: var(--primary); }
+    .fin-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .fin-amount.income { color: var(--fin-income); }
+    .fin-amount.expense { color: var(--fin-expense); }
+    .fin-category-pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.68rem; font-weight: 600; background: var(--accent-soft); color: var(--text-primary); border: 1px solid var(--border-color); }
+    .fin-row-actions { display: flex; gap: 4px; }
+    .fin-row-edit { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); padding: 0; }
+    .fin-row-edit:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+    .fin-row-edit svg, .fin-row-del svg { width: 14px; height: 14px; }
+    .fin-row-del { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); padding: 0; }
+    .fin-row-del:hover { background: color-mix(in srgb, #e04040 12%, transparent); color: #e04040; }
+    .fin-row.editing { background: var(--accent-soft); }
+    .fin-row.editing::before { background: var(--primary); }
+    .fin-row-edit.editing { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+
+    .fin-form-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: var(--space-5); position: sticky; top: 12px; }
+    .fin-form-panel:hover { border-color: var(--text-primary); }
+    .fin-form-panel h2 { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); margin-bottom: var(--space-4); }
+    .fin-form-stack { display:flex; flex-direction:column; gap: var(--space-3); }
+    .fin-form-stack .form-group { display:flex; flex-direction:column; gap: 4px; }
+    .fin-form-stack label { font-size: 0.7rem; color: var(--text-tertiary); font-weight: 600; }
+    .fin-form-stack input, .fin-form-stack select { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-family); font-size: 0.85rem; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+    .fin-form-stack input:focus, .fin-form-stack select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent); }
+    .fin-toggle { display: inline-flex; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 999px; padding: 3px; }
+    .fin-toggle button { border: none; background: transparent; color: var(--text-secondary); padding: 7px 12px; border-radius: 999px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: all var(--t-fast); }
+    .fin-toggle button:hover { color: var(--text-primary); }
+    .fin-toggle button.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+    .fin-btn { width: 100%; padding: 10px 14px; border-radius: 12px; border: none; background: var(--primary); color: var(--text-inverse); font-weight: 700; cursor: pointer; font-size: 0.85rem; letter-spacing: 0.02em; transition: all var(--t-fast); }
+    .fin-btn:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .fin-btn:active { transform: translateY(0); }
+    .fin-btn.secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); }
+    .fin-btn.secondary:hover { border-color: var(--text-primary); background: var(--accent-soft); filter: none; }
+
+    .fin-charts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); }
+    .fin-chart-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: var(--space-5); transition: all var(--t-base); }
+    .fin-chart-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .fin-chart-title { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); margin-bottom: var(--space-4); }
+    .fin-bar-chart { height: 160px; display:flex; align-items:flex-end; gap: 3px; padding-bottom: 20px; }
+    .fin-bar-group { position: relative; display: flex; align-items: flex-end; gap: 2px; }
+    .fin-bar { border-radius: 4px 4px 0 0; min-width: 8px; position: relative; transition: all 0.2s; cursor: pointer; }
+    .fin-bar.income-bar { background: linear-gradient(to top, color-mix(in srgb, var(--fin-income) 25%, transparent), var(--fin-income)); }
+    .fin-bar.expense-bar { background: linear-gradient(to top, color-mix(in srgb, var(--fin-expense) 25%, transparent), var(--fin-expense)); }
+    .fin-bar:hover { opacity: 0.8; transform: scaleY(1.03); transform-origin: bottom; }
+    .fin-bar-value { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 0.5rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .fin-category-bars { display:flex; flex-direction:column; gap: 12px; }
+    .fin-cat-row { display:flex; align-items:center; gap: 10px; font-size: 0.78rem; }
+    .fin-cat-name { width: 100px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+    .fin-cat-track { flex: 1; height: 10px; background: var(--bg-secondary); border-radius: 999px; overflow: hidden; }
+    .fin-cat-fill { height: 100%; border-radius: 999px; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    .fin-cat-val { width: 60px; text-align: right; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+.fin-empty { padding: var(--space-8) var(--space-5); text-align: center; color: var(--text-tertiary); display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+    .fin-empty svg { opacity: 0.15; width: 32px; height: 32px; }
+    .fin-empty p { font-size: 0.8rem; margin: 0; }
+    .fin-empty .sub { font-size: 0.68rem; opacity: 0.6; }
+    .fin-tip { font-size: 0.7rem; color: var(--text-tertiary); margin-top: var(--space-3); line-height: 1.4; }
+
+    .fin-hero-decor { position: absolute; right: 10px; top: 10px; width: 120px; height: 120px; opacity: 0.12; pointer-events: none; }
+    .fin-hero-decor svg { width: 100%; height: 100%; }
+
+    @keyframes finRowIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+    .fin-row { animation: finRowIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .fin-row:nth-child(1) { animation-delay: 0.02s; }
+    .fin-row:nth-child(2) { animation-delay: 0.04s; }
+    .fin-row:nth-child(3) { animation-delay: 0.06s; }
+    .fin-row:nth-child(4) { animation-delay: 0.08s; }
+    .fin-row:nth-child(5) { animation-delay: 0.10s; }
+    .fin-row:nth-child(6) { animation-delay: 0.12s; }
+    .fin-row:nth-child(7) { animation-delay: 0.14s; }
+    .fin-row:nth-child(8) { animation-delay: 0.16s; }
+  </style>
+</head>
+<body>
+  <!-- Ambient background -->
+  <div class="hub-ambient">
+    <div class="hub-ambient-gradient"></div>
+    <div class="hub-ambient-dots"></div>
+  </div>
+
+  <div class="hub-layout">
+    <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
+    <aside class="hub-sidebar" id="hubSidebar">
+      <div class="hub-workspace">
+        <button class="hub-hamburger" id="hubHamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="hub-workspace-icon">H</div>
+        <span class="hub-workspace-name">Havën</span>
+      </div>
+      <nav class="hub-sidebar-nav">
+        <div class="hub-sidebar-section-label">Pages</div>
+        <div class="hub-snav-stagger">
+          <a href="index.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="snav-label">Hub</span></a>
+          <a href="schedule.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="snav-label">Schedule</span></a>
+          <a href="activities.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span><span class="snav-label">Activities</span></a>
+          <a href="analytics.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="snav-label">Analytics</span></a>
+          <a href="finance.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="snav-label">Finance</span></a>
+        </div>
+      </nav>
+      <div class="spotify-player" id="spPlayer">
+        <div id="spLoggedOut">
+          <div class="sp-row">
+            <div class="sp-icon">
+              <svg viewBox="0 0 24 24" fill="#1db954" width="22" height="22"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            </div>
+            <div class="sp-info">
+              <div class="sp-title">Not connected</div>
+              <div class="sp-artist">Sign in via Spotify</div>
+            </div>
+          </div>
+          <button class="sp-login-btn" onclick="spLogin()">
+            <svg viewBox="0 0 24 24" fill="#1db954" width="16" height="16"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            Connect Spotify
+          </button>
+        </div>
+        <div id="spLoggedIn" class="hidden">
+          <div class="sp-row">
+            <div class="sp-art" id="spArt"></div>
+            <div class="sp-info">
+              <div class="sp-title" id="spTitle">—</div>
+              <div class="sp-artist" id="spArtist">—</div>
+            </div>
+            <button class="sp-logout-icon" onclick="spLogout()" title="Disconnect">&times;</button>
+          </div>
+          <div class="sp-controls">
+            <button class="sp-btn" id="spPrevBtn" onclick="spPrev()" title="Previous">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button class="sp-btn sp-btn-play" id="spPlayBtn" title="Play" onclick="spTogglePlay()">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <button class="sp-btn" id="spNextBtn" onclick="spNext()" title="Next">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+            <button class="sp-btn sp-btn-like" id="spLikeBtn" title="Like" onclick="spLike()">♡</button>
+          </div>
+          <div class="sp-progress">
+            <div class="sp-progress-fill" id="spProgressFill"></div>
+          </div>
+          <div class="sp-times">
+            <span id="spProgressCur">0:00</span>
+            <span id="spStatusMsg"></span>
+            <span id="spProgressTot">0:00</span>
+          </div>
+          <div class="sp-profile" id="spProfile"></div>
+        </div>
+        <div id="spSetupOverlay" class="sp-setup-overlay hidden" onclick="if(event.target===this)spCloseSetup()"></div>
+        <div id="spSetupModal" class="sp-setup-modal hidden">
+          <div class="sp-setup-header">
+            <svg viewBox="0 0 24 24" fill="#1db954" width="24" height="24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            <span>Connect Spotify</span>
+            <button class="sp-setup-close" onclick="spCloseSetup()">&times;</button>
+          </div>
+          <div class="sp-setup-body">
+            <p style="margin:0 0 8px;font-size:0.65rem;color:var(--text-secondary);line-height:1.4">
+              You need a free Spotify Client ID to connect.
+              <a href="https://developer.spotify.com/dashboard/create" target="_blank" rel="noopener" style="color:var(--primary)">Create App →</a>
+              <br>Add redirect URI: <code style="background:var(--surface-container-high);padding:1px 4px;border-radius:3px;font-size:0.6rem">http://localhost</code>
+              <br>Copy the Client ID and paste it below.
+            </p>
+            <div class="form-group" style="margin:0">
+              <label for="spSetupCidInput" style="font-size:0.6rem;color:var(--text-tertiary);display:block;margin-bottom:4px">Spotify Client ID</label>
+              <input type="text" id="spSetupCidInput" class="form-input" placeholder="Paste your Client ID" style="font-size:0.7rem;padding:4px 8px">
+            </div>
+            <button class="sp-connect-btn" onclick="spSaveCidAndLogin()">Connect</button>
+          </div>
+        </div>
+      </div>
+      <div class="hub-sidebar-footer">
+        <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><span>Theme</span></button>
+        <button id="aiChatBtnSidebar" class="btn btn-ghost" title="AI Assistant"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg><span>AI</span></button>
+        <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Visuals</span></button>
+        <button id="settingsBtnSidebar" class="hamburger-settings-btn" title="Customize"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+      </div>
+    </aside>
+    <div class="hub-main">
+
+      <!-- ─── FINANCE HERO BANNER ────────────────────────── -->
+      <section style="position:relative;height:180px;overflow:hidden;flex-shrink:0">
+        <img data-image-id="finance-hero" src="" alt=""
+             style="width:100%;height:100%;object-fit:cover;opacity:0.7">
+        <div style="position:absolute;inset:0;background:linear-gradient(to top, var(--bg-primary) 0%, transparent 60%)"></div>
+        <div class="fin-hero-decor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+        <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding);display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <h1 style="font-family:var(--font-serif);font-size:32px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)">Finance</h1>
+            <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
+              <span id="finHeroTitle">Your money, clearer.</span>
+            </div>
+          </div>
+          <div style="width:56px;height:56px;border-radius:50%;border:2px solid var(--primary);overflow:hidden;flex-shrink:0">
+            <img data-image-id="finance-ceramic" src="" alt=""
+                 style="width:100%;height:100%;object-fit:cover">
+          </div>
+        </div>
+      </section>
+
+      <div class="hub-content hub-page-transition">
+
+        <!-- Page Header -->
+        <div class="hub-page-header hub-anim-in hub-anim-in-2">
+          <div class="hub-page-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+            </svg>
+          </div>
+          <h1 class="hub-page-title">Finance</h1>
+          <div class="hub-page-meta">
+            <span style="font-size:0.72rem;color:var(--text-tertiary)" id="finPageMeta">Track your spending</span>
+          </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="fin-kpi-row hub-anim-in hub-anim-in-3">
+          <div class="fin-kpi income">
+            <div class="fin-kpi-header">
+              <span class="fin-kpi-label">Income</span>
+              <span class="fin-kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
+            </div>
+            <div class="fin-kpi-value" id="finIncome">—</div>
+            <div class="fin-kpi-sub" id="finIncomeDelta">This period <span id="finIncomeDeltaKpi"></span></div>
+          </div>
+          <div class="fin-kpi expense">
+            <div class="fin-kpi-header">
+              <span class="fin-kpi-label">Expenses</span>
+              <span class="fin-kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></span>
+            </div>
+            <div class="fin-kpi-value" id="finExpenses">—</div>
+            <div class="fin-kpi-sub" id="finExpensesDelta">— <span id="finExpensesDeltaKpi"></span></div>
+          </div>
+          <div class="fin-kpi net">
+            <div class="fin-kpi-header">
+              <span class="fin-kpi-label">Savings</span>
+              <span class="fin-kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+            </div>
+            <div class="fin-kpi-value" id="finNet">—</div>
+            <div class="fin-kpi-sub" id="finNetNote">Based on current filters <span id="finNetDeltaKpi"></span></div>
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="fin-toolbar hub-anim-in hub-anim-in-4">
+          <div class="fin-toolbar-left">
+            <div class="fin-tabs">
+              <button class="fin-tab" data-range="7d">7D</button>
+              <button class="fin-tab active" data-range="30d">30D</button>
+              <button class="fin-tab" data-range="month">Month</button>
+              <button class="fin-tab" data-range="all">All</button>
+            </div>
+            <span class="fin-count" id="finCount"></span>
+          </div>
+          <div class="fin-toolbar-right">
+            <input class="fin-search" id="finSearch" placeholder="Search transactions..." style="padding:8px 12px;border-radius:12px;border:1px solid var(--border-color);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font-family);font-size:0.8rem;min-width:200px;outline:none">
+            <button class="fin-export-btn" id="finExportBtn" title="Export CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+          </div>
+        </div>
+
+        <!-- Live Exchange Rates Card -->
+        <div class="fin-rates-card hub-anim-in hub-anim-in-4">
+          <div class="fin-rates-header">
+            <span class="fin-rates-title">Live Exchange Rates</span>
+            <button class="fin-refresh-btn" id="finRefreshBtn" title="Refresh rates">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            </button>
+          </div>
+          <div id="finRatesBody">
+            <div class="fin-rates-loading">Loading rates…</div>
+          </div>
+        </div>
+
+        <!-- Panels: Table + Form -->
+        <div class="fin-panels hub-anim-in hub-anim-in-5">
+          <div>
+            <div class="fin-table-wrap">
+              <div class="fin-table-head">
+                <div>Date</div>
+                <div>Category</div>
+                <div>Type</div>
+                <div>Amount</div>
+                <div>Note</div>
+                <div></div>
+              </div>
+              <div class="fin-table" id="finTable">
+                <div class="fin-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg><p>No transactions yet.</p><span class="sub">Add your first transaction using the form.</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="fin-form-panel">
+            <h2>Add transaction</h2>
+            <div class="fin-form-stack">
+              <div class="form-group">
+                <label>Type</label>
+                <div class="fin-toggle">
+                  <button id="finTypeExpense" class="active">Expense</button>
+                  <button id="finTypeIncome">Income</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Amount</label>
+                <input type="number" id="finAmount" placeholder="0.00" step="0.01">
+              </div>
+              <div class="form-group">
+                <label>Category</label>
+                <select id="finCategory">
+                  <option>Food</option>
+                  <option>Transport</option>
+                  <option>Bills</option>
+                  <option>Shopping</option>
+                  <option>Entertainment</option>
+                  <option>Health</option>
+                  <option>Income</option>
+                  <option>Salary</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="finDate">
+              </div>
+              <div class="form-group">
+                <label>Note</label>
+                <input type="text" id="finNote" placeholder="optional">
+              </div>
+              <button class="fin-btn" id="finAddBtn">Add transaction</button>
+              <button class="fin-btn secondary hidden" id="finCancelEditBtn">Cancel</button>
+              <button class="fin-btn secondary" id="finClearBtn">Clear all data</button>
+            </div>
+            <div class="fin-tip">Tip: use consistent categories to unlock better monthly insights.</div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="fin-charts hub-anim-in hub-anim-in-6">
+          <div class="fin-chart-card">
+            <div class="fin-chart-title">Spending by category</div>
+            <div class="fin-category-bars" id="finCategoryBars">
+              <div class="fin-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><p>Add expenses to see your category mix.</p></div>
+            </div>
+          </div>
+          <div class="fin-chart-card">
+            <div class="fin-chart-title">Daily spending</div>
+            <div class="fin-bar-chart" id="finChart">
+              <div class="fin-empty" style="position:static;height:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>Add transactions to see the trend.</p></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <script src="shared.js"></script>
+  <script>
+    const FIN_STORAGE = 'haven-schedule-finance';
+    const FIN_RATES_CACHE = 'haven-schedule-rates-cache';
+    let CURRENCY_RATES = { IDR: 1, USD: 18000, AUD: 13000, MYR: 3800, CNY: 2500 };
+    let currentRange = '30d';
+    let currentType = 'expense';
+    let editingId = null;
+    let historicalRates = null;
+    const FIN_CAT_COLORS = ['#6366f1','#f59e0b','#ef4444','#22c55e','#06b6d4','#ec4899','#f97316','#8b5cf6','#14b8a6'];
+
+    function uid() { return 'fin_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+    function loadFin() { try { const raw = localStorage.getItem(FIN_STORAGE); return raw ? JSON.parse(raw) : []; } catch (e) { return []; } }
+    function saveFin(list) { try { localStorage.setItem(FIN_STORAGE, JSON.stringify(list)); } catch (e) { /* ignore */ } }
+    function fmtMoney(n) {
+      const num = Number(n);
+      if (!Number.isFinite(num)) return '—';
+      return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+    }
+    function fmtPct(n) { return (Number(n) || 0).toFixed(1) + '%'; }
+    function fmtDelta(n) { if (!Number.isFinite(n)) return '—'; const sign = n > 0 ? '+' : ''; return sign + fmtMoney(n); }
+    function escapeHtml(str) { return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
+    function dayKey(d) { return new Date(d).toISOString().slice(0,10); }
+    function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+    // ─── CURRENCY RATES (Live + Cached) ──────────────────────
+
+    function loadCachedRates() {
+      try {
+        const raw = localStorage.getItem(FIN_RATES_CACHE);
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (data.rates && data.timestamp && Date.now() - data.timestamp < 3600000) {
+          CURRENCY_RATES = data.rates;
+          if (data.historical) historicalRates = data.historical;
+          return true;
+        }
+      } catch (e) { /* ignore */ }
+      return false;
+    }
+
+    function saveRatesCache(rates, historical) {
+      try {
+        localStorage.setItem(FIN_RATES_CACHE, JSON.stringify({ rates, historical, timestamp: Date.now() }));
+      } catch (e) { /* ignore */ }
+    }
+
+    let lastRateUpdate = null;
+
+    function generateSparklineData() {
+      const dates = [];
+      const usdVals = [], audVals = [], myrVals = [], cnyVals = [];
+      const codes = ['USD','AUD','MYR','CNY'];
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        dates.push(d.toISOString().slice(0,10));
+        const noise = 1 + (Math.random() - 0.5) * 0.06;
+        usdVals.push(Math.round(CURRENCY_RATES.USD * noise));
+        audVals.push(Math.round(CURRENCY_RATES.AUD * noise));
+        myrVals.push(Math.round(CURRENCY_RATES.MYR * noise));
+        cnyVals.push(Math.round(CURRENCY_RATES.CNY * noise));
+      }
+      historicalRates = { dates, usd: usdVals, aud: audVals, myr: myrVals, cny: cnyVals };
+    }
+
+    async function fetchLiveRates() {
+      const btn = document.getElementById('finRefreshBtn');
+      if (btn) btn.classList.add('loading');
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        if (data.result !== 'success') throw new Error('API result: ' + data.result);
+        const r = data.rates;
+        CURRENCY_RATES = { IDR: 1, USD: r.IDR, AUD: r.IDR / r.AUD, MYR: r.IDR / r.MYR, CNY: r.IDR / r.CNY };
+        lastRateUpdate = data.time_last_update_utc || new Date().toUTCString();
+        generateSparklineData();
+        saveRatesCache(CURRENCY_RATES, historicalRates);
+        renderAll();
+        if (btn) { btn.classList.remove('loading'); btn.classList.add('loaded'); setTimeout(() => btn.classList.remove('loaded'), 300); }
+      } catch (e) {
+        if (btn) btn.classList.remove('loading');
+        if (!loadCachedRates()) generateSparklineData();
+        renderAll();
+        showToast('Using cached rates — ' + e.message, 'info', 3000);
+      }
+    }
+
+    function renderRateCard() {
+      const body = document.getElementById('finRatesBody');
+      if (!body) return;
+
+      const sparkSvg = (code, vals, w, h, opts) => {
+        if (!vals || vals.length < 2) return `<span style="color:var(--text-tertiary);font-size:0.6rem">—</span>`;
+        const min = Math.min(...vals), max = Math.max(...vals);
+        const range = max - min || 1;
+        const pad = 3;
+        const padH = h - pad * 2;
+        const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${pad + ((max - v) / range) * padH}`).join(' ');
+        const fillPts = `0,${h} ${pts} ${w},${h}`;
+        const lastX = w;
+        const lastY = pad + ((max - vals[vals.length - 1]) / range) * padH;
+        const color = opts?.color || 'var(--primary)';
+        return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block;overflow:visible">
+          <defs><linearGradient id="spk${code}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.15"/><stop offset="100%" stop-color="${color}" stop-opacity="0.01"/></linearGradient></defs>
+          <polygon points="${fillPts}" fill="url(#spk${code})"/>
+          <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${opts?.lineWidth || 1.5}" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="${lastX}" cy="${lastY}" r="${opts?.dotSize || 0}" fill="${color}" stroke="var(--bg-card)" stroke-width="1.5"/>
+        </svg>`;
+      };
+
+      const changeInfo = (vals) => {
+        if (!vals || vals.length < 2) return { str: '\u2014', cls: 'flat' };
+        const chg = ((vals[vals.length - 1] - vals[0]) / vals[0]) * 100;
+        if (chg > 0.01) return { str: `\u25B2 ${chg.toFixed(1)}%`, cls: 'up' };
+        if (chg < -0.01) return { str: `\u25BC ${Math.abs(chg).toFixed(1)}%`, cls: 'down' };
+        return { str: `\u2014 ${chg.toFixed(1)}%`, cls: 'flat' };
+      };
+
+      const CURRENCY_COLORS = { USD: '#6366f1', AUD: '#f59e0b', MYR: '#22c55e', CNY: '#06b6d4' };
+
+      body.innerHTML = ['USD','AUD','MYR','CNY'].map((code, idx) => {
+        const key = code.toLowerCase();
+        const vals = historicalRates?.[key];
+        const price = vals?.length ? Math.round(vals[vals.length - 1]).toLocaleString('id-ID') : '—';
+        const chg = changeInfo(vals);
+        const color = CURRENCY_COLORS[code] || 'var(--primary)';
+        return `<div class="fin-rates-main" style="${idx > 0 ? 'margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--border-subtle)' : ''}">
+          <div class="fin-rates-main-left">
+            <div class="fin-rates-pair">1 ${code} =</div>
+            <div class="fin-rates-price">Rp ${price}</div>
+            <div class="fin-rates-chg-badge ${chg.cls}">${chg.str}</div>
+          </div>
+          <div class="fin-rates-chart-wrap" style="flex:1;height:80px">${sparkSvg(code, vals, 400, 80, { lineWidth: 2.5, dotSize: 3.5, color })}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // ─── FINANCE DATA ────────────────────────────────────────
+
+    function rangeBounds(range) {
+      const now = new Date();
+      const from = new Date(1970,0,1);
+      if (range === '7d') { from.setTime(now.getTime()); from.setDate(now.getDate() - 6); }
+      else if (range === '30d') { from.setTime(now.getTime()); from.setDate(now.getDate() - 29); }
+      else if (range === 'month') { from.setTime(now.getTime()); from.setFullYear(now.getFullYear(), now.getMonth(), 1); return { from, to: new Date(now.getFullYear(), now.getMonth()+1, 1) }; }
+      return { from, to: now };
+    }
+
+    function prevRangeBounds(range) {
+      const now = new Date();
+      let from, to;
+      if (range === '7d') { from = new Date(now); from.setDate(now.getDate() - 13); to = new Date(now); to.setDate(now.getDate() - 7); }
+      else if (range === '30d') { from = new Date(now); from.setDate(now.getDate() - 59); to = new Date(now); to.setDate(now.getDate() - 29); }
+      else if (range === 'month') { from = new Date(now.getFullYear(), now.getMonth()-1, 1); to = new Date(now.getFullYear(), now.getMonth(), 1); }
+      else { from = new Date(0); to = new Date(0); }
+      return { from, to };
+    }
+
+    function filterByRange(items, range) {
+      const { from, to } = rangeBounds(range);
+      return items.filter(x => { const d = new Date(x.date); return d >= from && d <= to; });
+    }
+
+    function getSummary() {
+      const all = loadFin();
+      const filtered = filterByRange(all, currentRange);
+      const income = filtered.filter(x => x.type === 'income').reduce((a,b) => a + Number(b.amount || 0), 0);
+      const expenses = filtered.filter(x => x.type === 'expense').reduce((a,b) => a + Number(b.amount || 0), 0);
+      const net = income - expenses;
+      const rate = income ? ((net / income) * 100) : (expenses ? -999 : 0);
+      return { income, expenses, net, rate };
+    }
+
+    function getPrevSummary() {
+      const all = loadFin();
+      const { from, to } = prevRangeBounds(currentRange);
+      if (!from.getTime() && !to.getTime()) return { income: 0, expenses: 0, net: 0 };
+      const filtered = all.filter(x => { const d = new Date(x.date); return d >= from && d < to; });
+      return {
+        income: filtered.filter(x => x.type === 'income').reduce((a,b) => a + Number(b.amount || 0), 0),
+        expenses: filtered.filter(x => x.type === 'expense').reduce((a,b) => a + Number(b.amount || 0), 0),
+        net: filtered.filter(x => x.type === 'income').reduce((a,b) => a + Number(b.amount || 0), 0) - filtered.filter(x => x.type === 'expense').reduce((a,b) => a + Number(b.amount || 0), 0)
+      };
+    }
+
+    // ─── RENDER FUNCTIONS ────────────────────────────────────
+
+    function renderCards() {
+      const s = getSummary();
+      const prev = getPrevSummary();
+      set('finHeroTitle', s.rate === -999 ? 'No income data' : `${fmtPct(s.rate)} savings rate`);
+      set('finIncome', fmtMoney(s.income));
+      set('finExpenses', fmtMoney(s.expenses));
+      set('finPageMeta', s.income || s.expenses ? 'Track your spending' : 'No transactions yet');
+      const netEl = document.getElementById('finNet');
+      if (netEl) {
+        netEl.textContent = s.rate === -999 ? '—' : fmtPct(s.rate);
+        netEl.style.color = s.rate >= 0 ? 'inherit' : '#ef4444';
+      }
+      set('finIncomeDelta', (currentRange === 'month' ? 'This month' : 'Selected range') + ' ');
+      set('finExpensesDelta', fmtDelta(s.expenses) + ' ');
+      set('finNetNote', (s.income || s.expenses ? 'Based on current filters' : 'No data') + ' ');
+
+      const renderDelta = (id, curr, prevVal) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (prevVal === 0 && curr === 0) { el.innerHTML = ''; return; }
+        let dp;
+        if (prevVal === 0) dp = curr > 0 ? 100 : -100;
+        else dp = ((curr - prevVal) / prevVal) * 100;
+        const cls = dp > 0.01 ? 'up' : dp < -0.01 ? 'down' : 'neutral';
+        const sign = dp > 0.01 ? '\u25B2' : dp < -0.01 ? '\u25BC' : '\u2014';
+        el.innerHTML = `<span class="fin-kpi-delta ${cls}">${sign} ${Math.abs(dp).toFixed(1)}%</span>`;
+      };
+      renderDelta('finIncomeDeltaKpi', s.income, prev.income);
+      renderDelta('finExpensesDeltaKpi', s.expenses, prev.expenses);
+      renderDelta('finNetDeltaKpi', s.net, prev.net);
+    }
+
+    function renderCount() {
+      const all = loadFin();
+      const filtered = filterByRange(all, currentRange);
+      const el = document.getElementById('finCount');
+      if (!el) return;
+      el.textContent = filtered.length ? `${filtered.length} transaction${filtered.length !== 1 ? 's' : ''}` : '';
+    }
+
+    function renderTable() {
+      const wrap = document.getElementById('finTable');
+      if (!wrap) return;
+      const query = (document.getElementById('finSearch')?.value || '').trim().toLowerCase();
+      let items = filterByRange(loadFin(), currentRange);
+      if (currentType === 'income') items = items.filter(x => x.type === 'income');
+      else items = items.filter(x => x.type === 'expense');
+      if (query) items = items.filter(x => [x.category, x.note, x.date].some(v => String(v).toLowerCase().includes(query)));
+      items.sort((a,b) => String(b.date).localeCompare(String(a.date)));
+      if (!items.length) { wrap.innerHTML = '<div class="fin-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>No transactions found.</p></div>'; return; }
+      wrap.innerHTML = items.map(x => `
+        <div class="fin-row${editingId === x.id ? ' editing' : ''}" data-id="${x.id}">
+          <div>${escapeHtml(x.date)}</div>
+          <div><span class="fin-category-pill">${escapeHtml(x.category || 'Other')}</span></div>
+          <div>${x.type === 'income' ? 'Income' : 'Expense'}</div>
+          <div class="fin-amount ${x.type}">${x.type === 'income' ? '+' : '-'}${fmtMoney(x.amount)}</div>
+          <div>${escapeHtml(x.note || '')}</div>
+          <div><div class="fin-row-actions"><button class="fin-row-edit${editingId === x.id ? ' editing' : ''}" data-id="${x.id}" title="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button><button class="fin-row-del" data-id="${x.id}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button></div></div>
+        </div>
+      `).join('');
+      wrap.querySelectorAll('.fin-row-del').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          const id = btn.getAttribute('data-id');
+          if (!id) return;
+          saveFin(loadFin().filter(x => x.id !== id));
+          if (editingId === id) cancelEdit();
+          renderAll();
+        });
+      });
+      wrap.querySelectorAll('.fin-row-edit').forEach(btn => {
+        btn.addEventListener('click', e => {
+          e.stopPropagation();
+          startEdit(btn.getAttribute('data-id'));
+        });
+      });
+      wrap.querySelectorAll('.fin-row').forEach(row => {
+        row.addEventListener('click', e => {
+          if (e.target.closest('.fin-row-actions')) return;
+          startEdit(row.getAttribute('data-id'));
+        });
+      });
+    }
+
+    function startEdit(id) {
+      if (!id) return;
+      const list = loadFin();
+      const item = list.find(x => x.id === id);
+      if (!item) return;
+      editingId = id;
+      document.getElementById('finAmount').value = item.amount;
+      document.getElementById('finDate').value = item.date;
+      document.getElementById('finNote').value = item.note || '';
+      const catEl = document.getElementById('finCategory');
+      if (catEl && item.category) catEl.value = item.category;
+      const expBtn = document.getElementById('finTypeExpense');
+      const incBtn = document.getElementById('finTypeIncome');
+      if (item.type === 'income') { incBtn?.classList.add('active'); expBtn?.classList.remove('active'); currentType = 'income'; }
+      else { expBtn?.classList.add('active'); incBtn?.classList.remove('active'); currentType = 'expense'; }
+      document.getElementById('finAddBtn').textContent = 'Update transaction';
+      document.getElementById('finCancelEditBtn').classList.remove('hidden');
+      renderTable();
+    }
+
+    function cancelEdit() {
+      editingId = null;
+      document.getElementById('finAmount').value = '';
+      document.getElementById('finNote').value = '';
+      document.getElementById('finDate').value = new Date().toISOString().slice(0,10);
+      document.getElementById('finAddBtn').textContent = 'Add transaction';
+      document.getElementById('finCancelEditBtn').classList.add('hidden');
+      renderTable();
+    }
+
+    function addTransaction() {
+      const amtEl = document.getElementById('finAmount');
+      const dateEl = document.getElementById('finDate');
+      const noteEl = document.getElementById('finNote');
+      const catEl = document.getElementById('finCategory');
+      if (!amtEl || !dateEl) return;
+      const amount = Number.parseFloat(amtEl.value);
+      if (!Number.isFinite(amount) || amount <= 0) { amtEl.focus(); return; }
+      const list = loadFin();
+      if (editingId) {
+        const idx = list.findIndex(x => x.id === editingId);
+        if (idx !== -1) {
+          list[idx] = { ...list[idx], date: dateEl.value || new Date().toISOString().slice(0,10), category: catEl ? catEl.value : 'Other', amount, note: noteEl ? noteEl.value.trim() : '', type: currentType };
+          saveFin(list);
+          cancelEdit();
+          renderAll();
+        }
+        return;
+      }
+      list.push({ id: uid(), date: dateEl.value || new Date().toISOString().slice(0,10), category: catEl ? catEl.value : 'Other', amount, note: noteEl ? noteEl.value.trim() : '', type: currentType });
+      saveFin(list);
+      if (amtEl) amtEl.value = '';
+      if (noteEl) noteEl.value = '';
+      renderAll();
+    }
+
+    function exportCSV() {
+      const items = loadFin();
+      if (!items.length) { showToast('No data to export', 'info', 2000); return; }
+      const rows = [['Date','Category','Type','Amount','Note']];
+      items.sort((a,b) => String(b.date).localeCompare(String(a.date))).forEach(x => { rows.push([x.date, x.category || 'Other', x.type, x.amount, (x.note || '').replace(/,/g, ' ') ]); });
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'haven-finance.csv'; a.click();
+      URL.revokeObjectURL(a.href);
+      showToast('CSV exported', 'success', 2000);
+    }
+
+    function renderCharts() {
+      renderBarChart();
+      renderCategoryBars();
+    }
+
+    function renderBarChart() {
+      const wrap = document.getElementById('finChart');
+      if (!wrap) return;
+      const items = loadFin();
+      if (!items.length) {
+        wrap.innerHTML = '<div class="fin-empty" style="position:static;height:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>Add transactions to see the trend.</p></div>';
+        return;
+      }
+      const days = [];
+      const now = new Date();
+      for (let i = 29; i >= 0; i--) { const d = new Date(now); d.setDate(now.getDate() - i); days.push(dayKey(d)); }
+      const incMap = new Map(days.map(k => [k, 0]));
+      const expMap = new Map(days.map(k => [k, 0]));
+      items.forEach(x => {
+        if (x.type === 'income' && incMap.has(x.date)) incMap.set(x.date, incMap.get(x.date) + Number(x.amount || 0));
+        if (x.type === 'expense' && expMap.has(x.date)) expMap.set(x.date, expMap.get(x.date) + Number(x.amount || 0));
+      });
+      const allVals = [...Array.from(incMap.values()), ...Array.from(expMap.values())];
+      const max = Math.max(...allVals, 1);
+      wrap.innerHTML = days.map(k => {
+        const iv = incMap.get(k) || 0;
+        const ev = expMap.get(k) || 0;
+        const ih = Math.max((iv / max) * 100, iv ? 4 : 0);
+        const eh = Math.max((ev / max) * 100, ev ? 4 : 0);
+        return `<div class="fin-bar-group" style="flex:1;display:flex;align-items:flex-end;gap:2px;height:100%;position:relative">
+          ${iv ? `<div class="fin-bar income-bar" style="height:${ih}%"><div class="fin-bar-value">${fmtMoney(iv)}</div></div>` : ''}
+          ${ev ? `<div class="fin-bar expense-bar" style="height:${eh}%"><div class="fin-bar-value">${fmtMoney(ev)}</div></div>` : ''}
+          <div class="fin-bar-label" style="position:absolute;bottom:-16px;left:0;right:0;text-align:center;font-size:0.55rem;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${k.slice(5)}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderCategoryBars() {
+      const wrap = document.getElementById('finCategoryBars');
+      if (!wrap) return;
+      const items = loadFin().filter(x => x.type === 'expense');
+      const totals = {};
+      items.forEach(x => { const k = x.category || 'Other'; totals[k] = (totals[k] || 0) + Number(x.amount || 0); });
+      const entries = Object.entries(totals).sort((a,b) => b[1] - a[1]);
+      if (!entries.length) { wrap.innerHTML = '<div class="fin-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><p>Add expenses to see your category mix.</p></div>'; return; }
+      const max = entries[0][1];
+      wrap.innerHTML = entries.map(([k,v], i) => {
+        const pct = (v / max) * 100;
+        const color = FIN_CAT_COLORS[i % FIN_CAT_COLORS.length];
+        return `<div class="fin-cat-row"><div class="fin-cat-name" title="${escapeHtml(k)}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>${escapeHtml(k)}</div><div class="fin-cat-track"><div class="fin-cat-fill" style="width:${pct}%;background:${color}"></div></div><div class="fin-cat-val">${fmtMoney(v)}</div></div>`;
+      }).join('');
+    }
+
+    function renderAll() { renderCards(); renderCount(); renderTable(); renderCharts(); renderRateCard(); }
+
+    // ─── INIT ────────────────────────────────────────────────
+
+    function init() {
+      loadImages();
+      loadCachedRates();
+      if (!historicalRates) generateFallbackRates();
+      const dateEl = document.getElementById('finDate');
+      if (dateEl) dateEl.value = new Date().toISOString().slice(0,10);
+      document.getElementById('finAddBtn').addEventListener('click', addTransaction);
+      document.getElementById('finCancelEditBtn').addEventListener('click', cancelEdit);
+      document.getElementById('finExportBtn').addEventListener('click', exportCSV);
+      document.getElementById('finRefreshBtn').addEventListener('click', fetchLiveRates);
+
+      const expBtn = document.getElementById('finTypeExpense');
+      const incBtn = document.getElementById('finTypeIncome');
+      const catEl2 = document.getElementById('finCategory');
+      const setTypeButtons = () => {
+        currentType = expBtn.classList.contains('active') ? 'expense' : 'income';
+        if (currentType === 'income' && catEl2) {
+          const opt = Array.from(catEl2.options).find(o => o.value === 'Salary');
+          if (opt) catEl2.value = 'Salary';
+          else { const idx = catEl2.selectedIndex; catEl2.selectedIndex = Math.min(catEl2.options.length - 1, idx); }
+        }
+      };
+      expBtn?.addEventListener('click', () => { expBtn.classList.add('active'); incBtn?.classList.remove('active'); setTypeButtons(); renderTable(); });
+      incBtn?.addEventListener('click', () => { incBtn.classList.add('active'); expBtn?.classList.remove('active'); setTypeButtons(); renderTable(); });
+
+      document.querySelectorAll('.fin-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.fin-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          currentRange = tab.getAttribute('data-range') || '30d';
+          if (editingId) cancelEdit();
+          renderAll();
+        });
+      });
+
+      const search = document.getElementById('finSearch');
+      if (search) search.addEventListener('input', renderTable);
+
+      document.getElementById('finClearBtn').addEventListener('click', () => {
+        if (!confirm('Delete all finance data? This cannot be undone.')) return;
+        saveFin([]);
+        if (editingId) cancelEdit();
+        renderAll();
+      });
+
+      document.querySelectorAll('img[data-image-id]').forEach(el => {
+        el.src = getImage(el.dataset.imageId) || '';
+      });
+      renderAll();
+      fetchLiveRates();
+    }
+
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+  </script>
+
+  <!-- Image Picker -->
+  <div id="imagePickerOverlay" class="image-picker-overlay hidden">
+    <div class="image-picker-card" onclick="event.stopPropagation()">
+      <h3>Customize Image</h3>
+      <img id="imagePickerPreview" class="image-picker-preview" src="" alt="">
+      <div class="image-picker-pastezone" id="imagePickerPasteZone" tabindex="0" onpaste="handleImagePickerPaste(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div>Paste image (Ctrl+V) or drag &amp; drop</div>
+      </div>
+      <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()" onpaste="setTimeout(handleImagePickerUrlInput,50)">
+      <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
+      <div class="image-picker-actions">
+        <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
+        <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
+        <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Drawer -->
+  <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
+  <div id="settingsDrawer" class="settings-drawer hidden">
+    <div class="settings-drawer-header">
+      <div class="settings-drawer-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+      </div>
+      <h3>Customize</h3>
+      <button id="settingsDrawerClose" class="settings-drawer-close" onclick="closeSettingsDrawer()" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="settings-drawer-body" id="settingsDrawerBody">
+      <div id="settingsContent">
+        <form id="settingsForm" onsubmit="handleSettingsSubmit(event)">
+          <div class="drawer-section">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg>
+              <span class="drawer-section-title">AI Provider</span>
+            </div>
+            <div class="form-group">
+              <label for="drawerProvider">Provider</label>
+              <select id="drawerProvider" class="form-input">
+                <option value="groq">Groq (Gemma2-9B)</option>
+                <option value="gemini">Gemini (1.5 Flash)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="drawerModel">Model</label>
+              <select id="drawerModel" class="form-input"></select>
+            </div>
+            <div class="form-group">
+              <label for="drawerApiKey">API Key</label>
+              <input type="password" id="drawerApiKey" class="form-input" placeholder="sk-...">
+            </div>
+            <div id="drawerKeyStatus">
+              <span id="drawerKeyStatusText" class="drawer-status"></span>
+            </div>
+            <div id="drawerAIUsage" class="drawer-status"></div>
+          </div>
+          <div class="drawer-section">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span class="drawer-section-title">Daily Routine</span>
+            </div>
+            <div class="form-group">
+              <textarea id="drawerRoutine" class="form-input" rows="3" placeholder="Describe your daily routine..."></textarea>
+            </div>
+          </div>
+          <div class="drawer-section" id="settingsCardColors">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.5-4.5-10-10-10z"/></svg>
+              <span class="drawer-section-title">Tag Colors</span>
+            </div>
+          </div>
+
+          <div class="drawer-section">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="drawer-section-title">Data</span>
+            </div>
+            <div class="drawer-actions-row">
+              <button type="button" class="drawer-btn" onclick="exportData()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+              <button type="button" class="drawer-btn" onclick="document.getElementById('drawerImportFile').click()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import
+              </button>
+              <button type="button" class="drawer-btn danger" onclick="handleSettingsClear()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                Clear Key
+              </button>
+            </div>
+            <input type="file" id="drawerImportFile" accept=".json" style="display:none" onchange="importData(event)">
+          </div>
+          <div class="drawer-save-wrap">
+            <button type="submit" class="drawer-save-btn">Save Settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP MODAL -->
+  <div id="helpOverlay" class="overlay hidden"></div>
+  <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+    <div class="modal-header">
+      <h3>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Help and Shortcuts
+      </h3>
+      <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="help-section">
+        <div class="help-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/></svg>
+          Keyboard Shortcuts
+        </div>
+        <div class="shortcuts-grid" id="helpShortcutsGrid"></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          Tips and Tricks
+        </div>
+        <div class="help-tips">
+          <div class="help-tip">
+            <span class="help-tip-icon">💡</span>
+            <div class="help-tip-text">Type natural language in the command palette (Ctrl+K) to schedule tasks</div>
+          </div>
+          <div class="help-tip">
+            <span class="help-tip-icon">🔄</span>
+            <div class="help-tip-text">Drag tasks to reschedule - other tasks automatically shift to avoid conflicts</div>
+          </div>
+          <div class="help-tip">
+            <span class="help-tip-icon">📎</span>
+            <div class="help-tip-text">Attach images to AI chat for visual analysis of schedules and screenshots</div>
+          </div>
+          <div class="help-tip">
+            <span class="help-tip-icon">🎯</span>
+            <div class="help-tip-text">Press F to toggle Focus Mode - hides sidebar and reduces visual clutter</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI CHAT PANEL (right-side drawer) -->
+  <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
+  <div id="aiChatPanel" class="ai-panel hidden" role="dialog" aria-label="AI Assistant">
+    <div class="ai-panel-header">
+      <div class="ai-panel-header-left">
+        <div class="ai-panel-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <div>
+          <div class="ai-panel-title">Haven AI</div>
+          <div class="ai-panel-subtitle">Schedule assistant</div>
+        </div>
+      </div>
+      <div class="ai-panel-header-actions">
+        <button id="aiChatSettingsBtn" class="ai-panel-icon-btn" title="Settings" onclick="openSettingsDrawer()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+        <button id="aiChatClose" class="ai-panel-icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="ai-panel-body">
+      <div class="ai-messages" id="aiChatMessages"></div>
+    </div>
+    <div class="ai-panel-footer">
+      <div class="ai-input-wrapper" id="aiChatInputWrapper">
+        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your schedule..." autocomplete="off">
+        <button id="aiChatSend" class="ai-send-btn show" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ai-panel-footer-hint">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg>
+        <span>Natural language scheduling</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+  </script>
+  <script src="shared.js"></script>
+  <script>
+    document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
+  </script>
+</body>
+</html>

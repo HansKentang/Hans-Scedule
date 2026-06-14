@@ -148,6 +148,16 @@ function setupPage() {
   dom.aiChatSend = document.getElementById('aiChatSend');
   dom.aiChatClose = document.getElementById('aiChatClose');
 
+  // Help modal
+  dom.helpBtn = document.getElementById('helpBtn');
+  dom.helpOverlay = document.getElementById('helpOverlay');
+  dom.helpModal = document.getElementById('helpModal');
+  dom.helpModalClose = document.getElementById('helpModalClose');
+  dom.helpBtn?.addEventListener('click', showHelpModal);
+  dom.helpOverlay?.addEventListener('click', hideHelpModal);
+  dom.helpModalClose?.addEventListener('click', hideHelpModal);
+  populateShortcuts();
+
   document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
   document.getElementById('settingsBtnSidebar')?.addEventListener('click', openSettingsDrawer);
   document.getElementById('bcThemeBtn')?.addEventListener('click', toggleTheme);

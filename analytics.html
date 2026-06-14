@@ -270,7 +270,6 @@
     .an-empty .sub { font-size: 0.78rem; margin-top: var(--space-2); color: var(--text-tertiary); opacity: 0.6; }
 
     @media (max-width: 768px) {
-      .hub-content { padding: var(--space-4); }
       .an-kpi-row { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
       .an-kpi { padding: var(--space-4); }
       .an-kpi-value { font-size: 1.3rem; }
@@ -289,11 +288,15 @@
     <div class="hub-ambient-dots"></div>
   </div>
 
-  <div class="hub-sidebar-overlay" id="anSidebarOverlay"></div>
   <div class="hub-layout">
+    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────────── -->
+    <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
     <!-- ─── SIDEBAR (Notion workspace) ──────────────────── -->
-    <aside class="hub-sidebar" id="anSidebar">
+    <aside class="hub-sidebar" id="hubSidebar">
       <div class="hub-workspace">
+        <button class="hub-hamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
         <div class="hub-workspace-icon">H</div>
         <span class="hub-workspace-name">Havën</span>
       </div>
@@ -324,14 +327,6 @@
             </span>
             <span class="snav-label">Activities</span>
           </a>
-          <a href="tags.html" class="hub-snav-item">
-            <span class="snav-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
-              </svg>
-            </span>
-            <span class="snav-label">Tags</span>
-          </a>
           <a href="analytics.html" class="hub-snav-item active">
             <span class="snav-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -339,6 +334,14 @@
               </svg>
             </span>
             <span class="snav-label">Analytics</span>
+          </a>
+          <a href="finance.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              </svg>
+            </span>
+            <span class="snav-label">Finance</span>
           </a>
         </div>
       </nav>
@@ -425,6 +428,10 @@
           </svg>
           <span>AI</span>
         </button>
+        <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>Visuals</span>
+        </button>
         <button id="settingsBtnSidebar" class="hamburger-settings-btn" title="Customize">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
@@ -435,46 +442,9 @@
 
     <!-- ─── MAIN ─────────────────────────────────────────── -->
     <div class="hub-main">
-      <!-- Breadcrumb bar -->
-      <div class="hub-breadcrumb hub-anim-in hub-anim-in-1">
-        <button class="hub-hamburger" id="anHamburger" aria-label="Menu">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-        <div class="hub-breadcrumb-inner">
-          <a href="index.html">Havën</a>
-          <span class="bc-sep">/</span>
-          <span class="bc-current">Analytics</span>
-        </div>
-        <div class="hub-bc-actions">
-          <button id="bcThemeBtn" class="btn btn-ghost" title="Toggle theme">
-            <svg class="theme-icon-light" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-            <svg class="theme-icon-dark" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-            </svg>
-          </button>
 
-          <button id="bcAiChatBtn" class="btn btn-ghost" title="AI Assistant">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
-            </svg>
-          </button>
-          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — click any image to customize">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          </button>
-          <button id="bcSettingsBtn" class="btn btn-ghost" title="Customize">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Scrollable page content -->
-      <div class="hub-content hub-page-transition">
-        <!-- ─── ANALYTICS HERO BANNER ──────────────────────── -->
-        <section style="position:relative;height:180px;overflow:hidden;border-radius:var(--radius-xl);margin-bottom:var(--section-gap)">
+      <!-- ─── ANALYTICS HERO BANNER ──────────────────────── -->
+      <section style="position:relative;height:180px;overflow:hidden;flex-shrink:0">
           <img data-image-id="analytics-hero" src="" alt=""
                style="width:100%;height:100%;object-fit:cover;opacity:0.7"
                >
@@ -493,6 +463,8 @@
             </div>
           </div>
         </section>
+
+      <div class="hub-content hub-page-transition">
 
         <!-- Page Header -->
         <div class="hub-page-header hub-anim-in hub-anim-in-2">
@@ -676,25 +648,7 @@
     </div>
   </div>
 
-  <!-- Visuals Panel (edit mode) -->
-  <div id="visualsPanelOverlay" class="hidden" onclick="toggleEditMode()"></div>
-  <div id="visualsPanel" class="hidden">
-    <div class="vp-header">
-      <h3>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        Edit Mode
-      </h3>
-      <div class="vp-header-actions">
-        <span class="vp-badge">21 images</span>
-        <button class="vp-close-btn" onclick="toggleEditMode()" aria-label="Close edit mode">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    </div>
-    <div id="visualsPanelContent"></div>
-  </div>
-
-  <!-- Settings Drawer -->
+<!-- Settings Drawer -->
   <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
   <div id="settingsDrawer" class="settings-drawer hidden">
     <div class="settings-drawer-header">
@@ -781,28 +735,96 @@
     </div>
   </div>
 
-  <div id="aiChatOverlay" class="overlay hidden"></div>
-  <div id="aiChatModal" class="modal ai-modal hidden" role="dialog" aria-label="AI Assistant">
-    <div class="ai-modal-header">
-      <h3>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
-        </svg>
-          Havën AI
+        <!-- HELP MODAL -->
+    <div id="helpOverlay" class="overlay hidden"></div>
+    <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+      <div class="modal-header">
+        <h3>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Help and Shortcuts
         </h3>
-      <button id="aiChatClose" class="btn btn-ghost modal-close" aria-label="Close">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+        <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/></svg>
+            Keyboard Shortcuts
+          </div>
+          <div class="shortcuts-grid" id="helpShortcutsGrid"></div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Tips and Tricks
+          </div>
+          <div class="help-tips">
+            <div class="help-tip">
+              <span class="help-tip-icon">💡</span>
+              <div class="help-tip-text">Type natural language in the command palette (Ctrl+K) to schedule tasks</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">🔄</span>
+              <div class="help-tip-text">Drag tasks to reschedule - other tasks automatically shift to avoid conflicts</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">📎</span>
+              <div class="help-tip-text">Attach images to AI chat for visual analysis of schedules and screenshots</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">🎯</span>
+              <div class="help-tip-text">Press F to toggle Focus Mode - hides sidebar and reduces visual clutter</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="ai-modal-body">
+
+<!-- AI CHAT PANEL (right-side drawer) -->
+  <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
+  <div id="aiChatPanel" class="ai-panel hidden" role="dialog" aria-label="AI Assistant">
+    <div class="ai-panel-header">
+      <div class="ai-panel-header-left">
+        <div class="ai-panel-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
+          </svg>
+        </div>
+        <div>
+          <div class="ai-panel-title">Haven AI</div>
+          <div class="ai-panel-subtitle">Schedule assistant</div>
+        </div>
+      </div>
+      <div class="ai-panel-header-actions">
+        <button id="aiChatSettingsBtn" class="ai-panel-icon-btn" title="Settings" onclick="openSettingsDrawer()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+        <button id="aiChatClose" class="ai-panel-icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="ai-panel-body">
       <div class="ai-messages" id="aiChatMessages"></div>
+    </div>
+    <div class="ai-panel-footer">
       <div class="ai-input-wrapper" id="aiChatInputWrapper">
         <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your schedule..." autocomplete="off">
-        <button id="aiChatSend" class="ai-send-btn" aria-label="Send">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button id="aiChatSend" class="ai-send-btn show" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
         </button>
+      </div>
+      <div class="ai-panel-footer-hint">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg>
+        <span>Natural language scheduling</span>
       </div>
     </div>
   </div>
@@ -811,9 +833,11 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
     }
-    document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
   </script>
   <script src="shared.js"></script>
+  <script>
+    document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
+  </script>
   <script src="analytics.js"></script>
 </body>
 </html>
