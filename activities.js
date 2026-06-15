@@ -19,6 +19,100 @@ let currentView = 'timeline';
 let searchDebounceTimer = null;
 let _lastSearchQuery = '';
 
+// ─── BATCH MODE ─────────────────────────────────────────────────
+let batchMode = false;
+let batchSelected = new Set();
+
+// ─── UNDO ───────────────────────────────────────────────────────
+let _undoTimer = null;
+
+// ─── DAY COLLAPSE STATE ────────────────────────────────────────
+let collapsedDays = new Set();
+
+// ─── DAY JOURNAL STORAGE ───────────────────────────────────────
+const DAY_JOURNAL_KEY = 'haven-activities-journal';
+function loadDayJournals() {
+  try { return JSON.parse(localStorage.getItem(DAY_JOURNAL_KEY)) || {}; }
+  catch(e) { return {}; }
+}
+function saveDayJournals(j) {
+  try { localStorage.setItem(DAY_JOURNAL_KEY, JSON.stringify(j)); }
+  catch(e) {}
+}
+
+// ─── UNDO TOAST ─────────────────────────────────────────────────
+function showUndoToast(msg, onUndo) {
+  const el = document.getElementById('actUndoToast');
+  const msgEl = document.getElementById('actUndoMsg');
+  const btn = document.getElementById('actUndoBtn');
+  if (!el || !msgEl || !btn) return;
+  if (_undoTimer) clearTimeout(_undoTimer);
+  msgEl.textContent = msg;
+  el.classList.remove('hidden');
+  const handler = () => {
+    if (typeof onUndo === 'function') onUndo();
+    el.classList.add('hidden');
+    btn.removeEventListener('click', handler);
+  };
+  btn.addEventListener('click', handler, { once: true });
+  _undoTimer = setTimeout(() => { el.classList.add('hidden'); }, 5000);
+}
+
+// ─── BATCH MODE ─────────────────────────────────────────────────
+function enterBatchMode() {
+  batchMode = true;
+  batchSelected.clear();
+  document.body.classList.add('act-batch-mode');
+  document.getElementById('actBatchBar')?.classList.remove('hidden');
+  updateBatchCount();
+  renderActivities();
+}
+function exitBatchMode() {
+  batchMode = false;
+  batchSelected.clear();
+  document.body.classList.remove('act-batch-mode');
+  document.getElementById('actBatchBar')?.classList.add('hidden');
+  renderActivities();
+}
+function toggleBatchSelect(id) {
+  if (batchSelected.has(id)) batchSelected.delete(id);
+  else batchSelected.add(id);
+  updateBatchCount();
+  const cards = document.querySelectorAll(`.act-card[data-task-id="${id}"]`);
+  cards.forEach(c => {
+    const chk = c.querySelector('.act-bchk');
+    if (chk) chk.classList.toggle('sel', batchSelected.has(id));
+  });
+}
+function updateBatchCount() {
+  const el = document.getElementById('actBatchCount');
+  if (el) el.textContent = `${batchSelected.size} selected`;
+}
+function batchComplete() {
+  const ids = [...batchSelected];
+  if (ids.length === 0) return;
+  const prev = JSON.parse(JSON.stringify(state.tasks));
+  ids.forEach(id => { const t = getTask(id); if (t && !t.completed) toggleComplete(id); });
+  exitBatchMode();
+  showUndoToast(`Completed ${ids.length} task${ids.length > 1 ? 's' : ''}`, () => {
+    state.tasks = prev;
+    saveState();
+    renderCurrentView();
+  });
+}
+function batchDelete() {
+  const ids = [...batchSelected];
+  if (ids.length === 0) return;
+  const prev = JSON.parse(JSON.stringify(state.tasks));
+  ids.forEach(id => deleteTask(id));
+  exitBatchMode();
+  showUndoToast(`Deleted ${ids.length} task${ids.length > 1 ? 's' : ''}`, () => {
+    state.tasks = prev;
+    saveState();
+    renderCurrentView();
+  });
+}
+
 // ─── CONFETTI POOL ─────────────────────────────────────────
 const CONFETTI_COLORS = ['#6366f1','#3b82f6','#ef4444','#10b981','#f59e0b','#b4ccbc','#dfc1a6','#a5b4fc','#fca5a5','#6ee7b7','#fcd34d'];
 function fireConfetti(originX, originY) {
@@ -138,6 +232,7 @@ function renderActivities() {
   const groups = [];
   let currentDate = null;
   let currentGroup = null;
+  const journals = loadDayJournals();
 
   for (const task of tasks) {
     if (task.date !== currentDate) {
@@ -151,25 +246,48 @@ function renderActivities() {
   let html = '';
   for (const group of groups) {
     const d = new Date(group.date + 'T12:00:00');
-    const dayLabel = isToday(d) ? 'Today' : getDayName(d, false);
+    const dayLabel = isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : getDayName(d, false);
     const dateLabel = `${dayLabel}, ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
     const isPast = d < new Date(new Date().toDateString());
+    const isCollapsed = collapsedDays.has(group.date);
+    const dayJournal = journals[group.date] || '';
+    const totalDayMins = group.tasks.reduce((sum, t) => sum + getDurationMinutes(t), 0);
+    const dayHrs = Math.floor(totalDayMins / 60);
+    const dayMins = totalDayMins % 60;
+    const dayTimeStr = dayHrs > 0 ? `${dayHrs}h${dayMins > 0 ? ` ${dayMins}m` : ''}` : `${dayMins}m`;
 
-    html += `<div class="act-day">
+    html += `<div class="act-day${isCollapsed ? ' collapsed' : ''}" data-date="${group.date}">
       <div class="act-day-stamp">
-        <span class="act-day-label">${dateLabel}</span>
+        <div class="act-day-toggle" data-toggle-day="${group.date}">
+          <svg class="act-day-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span class="act-day-label">${dateLabel}</span>
+        </div>
         <span class="act-day-meta">
           <span class="act-day-dot${isToday(d) ? ' today' : isPast ? ' past' : ''}"></span>
-          ${group.tasks.length} tasks
+          ${group.tasks.length} tasks · ${dayTimeStr}
         </span>
-      </div>`;
+      </div>
+      <div class="act-day-body">
+        ${dayJournal ? `<div class="act-day-notes" data-day-journal="${group.date}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <span class="act-dn-display">${escapeHtml(dayJournal)}</span>
+          <textarea class="act-dn-input" rows="1" placeholder="Journal entry for this day...">${escapeHtml(dayJournal)}</textarea>
+        </div>` : `<div class="act-day-notes" data-day-journal="${group.date}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <span class="act-dn-display">${group.date === formatDate(new Date()) ? 'Write a note for today...' : 'Add a note for this day...'}</span>
+          <textarea class="act-dn-input" rows="1" placeholder="Journal entry for this day..."></textarea>
+        </div>`}
+        <div style="position:relative">
+          <div class="act-tl-line"></div>`;
 
     for (const task of group.tasks) {
       const meta = getTagMeta(task.tag);
       const isCompleted = task.completed;
       const durMins = getDurationMinutes(task);
       const durPct = Math.min(durMins / 240 * 100, 100);
-      html += `<div class="act-card tag-${task.tag}${isCompleted ? ' completed' : ''}" data-task-id="${task.id}">
+      const pr = task.priority || 3;
+      html += `<div class="act-card tag-${task.tag}${isCompleted ? ' completed' : ''}${batchMode ? ' batch-mode' : ''}" data-task-id="${task.id}">
+        <span class="act-bchk${batchSelected.has(task.id) ? ' sel' : ''}" data-batch-toggle="${task.id}"></span>
         <div class="act-card-time">${task.startTime}<br>${task.endTime}</div>
         <div class="act-card-body">
           <div class="act-card-header">
@@ -177,6 +295,7 @@ function renderActivities() {
             <div class="act-card-title-inline">
               <span class="act-card-title-display" data-inline-edit="${task.id}">${escapeHtml(task.title)}</span>
             </div>
+            <span class="act-pr p${pr}">${PRIORITY_SHORT[pr] || 'P3'}</span>
             <span class="act-card-tag" style="background:color-mix(in srgb, ${meta.text} 15%, transparent);color:${meta.text}">${task.tag}</span>
           </div>
           ${task.notes ? `<div class="act-card-notes">${escapeHtml(task.notes)}</div>` : ''}
@@ -187,7 +306,7 @@ function renderActivities() {
         </button>
       </div>`;
     }
-    html += '</div>';
+    html += '</div></div></div>';
   }
 
   activitiesList.innerHTML = html;
@@ -195,53 +314,139 @@ function renderActivities() {
   // Fit text to activity cards
   requestAnimationFrame(() => { fitTextAll('.act-card', 14, 9); });
 
-  // Event listeners
-  activitiesList.querySelectorAll('.act-card').forEach(el => {
-    const taskId = el.dataset.taskId;
-    el.addEventListener('click', (e) => {
-      if (e.target.closest('.act-card-check')) return;
-      if (e.target.closest('.act-card-del')) return;
-      openTaskModal(taskId);
+  // ─── EVENT LISTENERS ──────────────────────────────────────
+  // Collapse toggle
+  activitiesList.querySelectorAll('.act-day-toggle').forEach(el => {
+    el.addEventListener('click', () => {
+      const date = el.dataset.toggleDay;
+      if (!date) return;
+      const day = el.closest('.act-day');
+      if (!day) return;
+      if (collapsedDays.has(date)) collapsedDays.delete(date);
+      else collapsedDays.add(date);
+      day.classList.toggle('collapsed');
     });
   });
+
+  // Day journal
+  activitiesList.querySelectorAll('.act-day-notes').forEach(el => {
+    const display = el.querySelector('.act-dn-display');
+    const input = el.querySelector('.act-dn-input');
+    if (!display || !input) return;
+    display.addEventListener('click', (e) => {
+      if (e.target.closest('.act-dn-input')) return;
+      el.classList.add('editing');
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    });
+    input.addEventListener('blur', () => { saveDayJournal(el); el.classList.remove('editing'); });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { e.preventDefault(); saveDayJournal(el, true); el.classList.remove('editing'); }
+    });
+  });
+
+  // Batch select
+  if (batchMode) {
+    activitiesList.querySelectorAll('.act-bchk').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = el.dataset.batchToggle;
+        if (id) toggleBatchSelect(id);
+      });
+    });
+    activitiesList.querySelectorAll('.act-card').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.act-bchk')) return;
+        if (e.target.closest('.act-card-check')) return;
+        if (e.target.closest('.act-card-del')) return;
+        const id = el.dataset.taskId;
+        if (id) toggleBatchSelect(id);
+      });
+    });
+  }
+
+  // Card events (only when NOT in batch mode)
+  if (!batchMode) {
+    activitiesList.querySelectorAll('.act-card').forEach(el => {
+      const taskId = el.dataset.taskId;
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.act-card-check')) return;
+        if (e.target.closest('.act-card-del')) return;
+        if (e.target.closest('.act-bchk')) return;
+        openTaskModal(taskId);
+      });
+    });
+  }
+
   activitiesList.querySelectorAll('.act-card-check').forEach(el => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       const tid = el.dataset.toggleComplete;
       const task = getTask(tid);
       const wasCompleted = task?.completed;
+      const prev = JSON.parse(JSON.stringify(state.tasks));
       toggleComplete(tid);
       if (!wasCompleted && task) {
-        // Just completed — celebrate!
         setTimeout(() => celebrateComplete(), 100);
       }
       renderActivities();
     });
   });
-    activitiesList.querySelectorAll('.act-card-del').forEach(el => {
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const tid = el.dataset.taskId;
-        deleteTask(tid);
-        renderActivities();
+
+  activitiesList.querySelectorAll('.act-card-del').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tid = el.dataset.taskId;
+      const task = getTask(tid);
+      if (!task) return;
+      const prev = JSON.parse(JSON.stringify(state.tasks));
+      const title = task.title;
+      deleteTask(tid);
+      renderActivities();
+      showUndoToast(`Deleted "${title.length > 30 ? title.slice(0, 30) + '...' : title}"`, () => {
+        state.tasks = prev;
+        saveState();
+        renderCurrentView();
       });
     });
+  });
 
-    // Inline edit: double-click to edit title
-    activitiesList.querySelectorAll('.act-card-title-display').forEach(el => {
-      el.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        const card = el.closest('.act-card');
-        if (!card) return;
-        const taskId = card.dataset.taskId;
-        startInlineEdit(taskId, el);
-      });
+  // Inline edit: double-click to edit title
+  activitiesList.querySelectorAll('.act-card-title-display').forEach(el => {
+    el.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const card = el.closest('.act-card');
+      if (!card) return;
+      const taskId = card.dataset.taskId;
+      startInlineEdit(taskId, el);
     });
+  });
 
-    updateActCount();
-    renderActivityStats();
-    renderInsights();
+  updateActCount();
+  renderActivityStats();
+  renderInsights();
+}
+
+// ─── DAY JOURNAL SAVE ────────────────────────────────────────
+function saveDayJournal(el, revert) {
+  const date = el.dataset.dayJournal;
+  if (!date) return;
+  const input = el.querySelector('.act-dn-input');
+  const display = el.querySelector('.act-dn-display');
+  if (!input || !display) return;
+  if (revert) { input.value = display.textContent; return; }
+  const val = input.value.trim();
+  const journals = loadDayJournals();
+  if (val) {
+    journals[date] = val;
+    display.textContent = val;
+  } else {
+    delete journals[date];
+    display.textContent = date === formatDate(new Date()) ? 'Write a note for today...' : 'Add a note for this day...';
   }
+  saveDayJournals(journals);
+}
 
 // ─── INLINE EDIT (module-level) ──────────────────────────────
 function startInlineEdit(taskId, displayEl) {
@@ -412,6 +617,39 @@ function renderTags() {
   });
 }
 
+// ─── IS YESTERDAY ─────────────────────────────────────────
+function isYesterday(d) {
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  return d.getFullYear() === y.getFullYear() && d.getMonth() === y.getMonth() && d.getDate() === y.getDate();
+}
+
+// ─── WEEKLY SPARKLINE ──────────────────────────────────────────
+function renderWeeklySparkline() {
+  const el = document.getElementById('actWeeklySpark');
+  if (!el) return;
+  const today = new Date();
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    days.push(formatDate(d));
+  }
+  const vals = days.map(ds => {
+    const dayTasks = state.tasks.filter(t => t.date === ds && !isWhiteboardTask(t));
+    return dayTasks.reduce((sum, t) => sum + getDurationMinutes(t), 0);
+  });
+  const max = Math.max(...vals, 1);
+  const w = 140, h = 28;
+  const points = vals.map((v, i) => {
+    const x = (i / (vals.length - 1)) * w;
+    const y = h - (v / max) * h;
+    return `${x},${y}`;
+  }).join(' ');
+  el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polyline points="${points}" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+    <polyline points="${points}" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.15"/>
+  </svg>`;
+}
+
 // ─── ACTIVITY STATS ──────────────────────────────────────────
 function computeActivityStats() {
   const tasks = state.tasks.filter(t => !isWhiteboardTask(t));
@@ -515,6 +753,7 @@ function renderActivityStats() {
     elTopTag.innerHTML = `<span style="color:${TAG_COLORS[stats.bestTag]?.text || 'var(--text-primary)'}">${TAG_LABELS[stats.bestTag] || stats.bestTag}</span>`;
   }
   if (elTopCount) elTopCount.textContent = `${stats.bestTagHours}h total`;
+  renderWeeklySparkline();
 }
 
 // ─── INSIGHTS ─────────────────────────────────────────────────
@@ -608,6 +847,52 @@ function updateActCount() {
   if (hero) hero.textContent = `${count} tasks`;
 }
 
+// ─── FAB & QUICK ADD ──────────────────────────────────────
+function toggleQuickAdd() {
+  const form = document.getElementById('actQuickForm');
+  const overlay = document.getElementById('actQuickOverlay');
+  const fab = document.getElementById('actFab');
+  if (!form || !overlay) return;
+  const isOpen = form.classList.contains('open');
+  if (isOpen) {
+    closeQuickAdd();
+  } else {
+    form.classList.add('open');
+    overlay.classList.add('active');
+    fab?.classList.add('open');
+    document.getElementById('qfTitle')?.focus();
+    // Set default times
+    const now = new Date();
+    const currentMins = now.getHours() * 60 + now.getMinutes();
+    const snap = roundToNearest(currentMins + 30, SNAP_MINUTES);
+    document.getElementById('qfStart').value = toTimeStr(snap);
+    document.getElementById('qfEnd').value = toTimeStr(snap + 60);
+  }
+}
+function closeQuickAdd() {
+  const form = document.getElementById('actQuickForm');
+  const overlay = document.getElementById('actQuickOverlay');
+  const fab = document.getElementById('actFab');
+  form?.classList.remove('open');
+  overlay?.classList.remove('active');
+  fab?.classList.remove('open');
+}
+function submitQuickAdd() {
+  const title = document.getElementById('qfTitle')?.value?.trim();
+  if (!title) { document.getElementById('qfTitle')?.focus(); return; }
+  const startTime = document.getElementById('qfStart')?.value || '09:00';
+  const endTime = document.getElementById('qfEnd')?.value || '10:00';
+  const activeTag = document.querySelector('.qf-tag.active');
+  const tag = activeTag ? activeTag.dataset.tag : 'meeting';
+  const today = formatDate(new Date());
+  pushUndo();
+  createTask({ title, date: today, startTime, endTime, tag });
+  closeQuickAdd();
+  document.getElementById('qfTitle').value = '';
+  renderCurrentView();
+  showToast(`✨ Added "${title}"`, 'success', 2000);
+}
+
 // ─── SETUP ────────────────────────────────────────────
 function setupPage() {
   dom.importFileInput = document.getElementById('importFileInput');
@@ -643,6 +928,19 @@ function setupPage() {
   dom.aiChatClose?.addEventListener('click', hideAIChat);
   dom.aiChatSend?.addEventListener('click', sendAIMessage);
   dom.aiChatInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); } });
+
+  // ─── Quick Add tag pills ───────────────────────────────
+  document.querySelectorAll('.qf-tag').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.qf-tag').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    });
+  });
+
+  // ─── Quick Add keyboard: Enter to submit ───────────────
+  document.getElementById('qfTitle')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); submitQuickAdd(); }
+  });
 
   const viewToggleEls = document.querySelectorAll('.act-view-btn');
   viewToggleEls.forEach(btn => {
@@ -704,7 +1002,41 @@ function init() {
   setupPage();
   document.getElementById('exportBtn')?.addEventListener('click', exportData);
   document.getElementById('importBtn')?.addEventListener('click', () => { document.getElementById('importFileInput')?.click(); });
+
+  // ─── FAB ──────────────────────────────────────────────────
+  document.getElementById('actFab')?.addEventListener('click', toggleQuickAdd);
+  document.getElementById('actQuickOverlay')?.addEventListener('click', closeQuickAdd);
+  document.getElementById('qfCancel')?.addEventListener('click', closeQuickAdd);
+  document.getElementById('qfSubmit')?.addEventListener('click', submitQuickAdd);
+
+  // ─── Batch toolbar ───────────────────────────────────────
+  document.getElementById('actBatchComplete')?.addEventListener('click', batchComplete);
+  document.getElementById('actBatchDelete')?.addEventListener('click', batchDelete);
+  document.getElementById('actBatchExit')?.addEventListener('click', exitBatchMode);
+
+  // ─── Keyboard shortcuts ──────────────────────────────────
+  document.addEventListener('keydown', (e) => {
+    // Escape closes quick-add
+    if (e.key === 'Escape') {
+      const qf = document.getElementById('actQuickForm');
+      if (qf?.classList.contains('open')) { closeQuickAdd(); e.preventDefault(); return; }
+      if (batchMode) { exitBatchMode(); e.preventDefault(); return; }
+    }
+    // B for batch mode (only in timeline view)
+    if (e.key === 'b' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (currentView === 'timeline') {
+        e.preventDefault();
+        if (batchMode) exitBatchMode(); else enterBatchMode();
+      }
+    }
+  });
+
   spInit();
+  initHubLayout();
+  initHubEditMode();
+  renderHubBento();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

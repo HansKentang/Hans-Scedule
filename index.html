@@ -16,39 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
-    /* ─── HUB FAB ──────────────────────────────────────── */
-    .hub-fab-main { position:fixed; bottom:24px; right:24px; z-index:55; }
-    /* ─── HUB EDIT MODE ──────────────────────────────────── */
-    .hub-edit-btn { border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all var(--t-fast); padding:0; flex-shrink:0; }
-    .hub-edit-btn:hover { background:var(--accent-soft); color:var(--text-primary); }
-    .hub-edit-btn.active { color:var(--primary); background:color-mix(in srgb, var(--primary) 15%, transparent); }
-    .hub-edit-btn svg { width:15px; height:15px; }
-    .hub-section-vis-toggle { border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; width:22px; height:22px; border-radius:4px; display:flex; align-items:center; justify-content:center; padding:0; font-size:0.75rem; line-height:1; transition:all var(--t-fast); margin-left:auto; opacity:0.5; }
-    .hub-section-vis-toggle:hover { opacity:1; color:var(--text-primary); background:var(--accent-soft); }
-    .hub-section-wrap.hidden-section { display:none; }
-    .hub-section-wrap.hidden-section .hub-section-label { text-decoration:line-through; opacity:0.4; }
-    .hub-editable { cursor:text; border-radius:3px; transition:background var(--t-fast); padding:1px 3px; margin:-1px -3px; }
-    .hub-editable:hover { background:color-mix(in srgb, var(--primary) 8%, transparent); }
-    .hub-editable:focus { outline:2px solid var(--primary); outline-offset:1px; background:transparent; }
-    .hub-edit-overlay { position:absolute; top:4px; right:4px; display:flex; gap:2px; opacity:0; transition:opacity var(--t-fast); }
-    .hub-section-wrap:hover .hub-edit-overlay { opacity:1; }
-    .hub-edit-item-btn { border:none; background:var(--surface-container); color:var(--text-tertiary); cursor:pointer; width:20px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; padding:0; font-size:0.6rem; line-height:1; transition:all var(--t-fast); }
-    .hub-edit-item-btn:hover { color:var(--text-primary); background:var(--accent-soft); }
-    .hub-edit-item-btn.del:hover { color:#ef4444; background:color-mix(in srgb, #ef4444 12%, transparent); }
-    .hub-add-btn { border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:600; transition:all var(--t-fast); display:inline-flex; align-items:center; gap:4px; margin-top:4px; }
-    .hub-add-btn:hover { color:var(--primary); background:color-mix(in srgb, var(--primary) 10%, transparent); }
-    .hub-edit-badge { position:absolute; top:6px; right:6px; width:22px; height:22px; border-radius:6px; background:var(--primary); color:var(--text-inverse); display:flex; align-items:center; justify-content:center; font-size:0.65rem; opacity:0; transition:opacity var(--t-fast); cursor:pointer; z-index:2; }
-    .hub-gallery-card { position:relative; }
-    .hub-gallery-card:hover .hub-edit-badge { opacity:1; }
-    .hub-edit-popup { position:fixed; z-index:999; background:var(--bg-card); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:var(--space-4); box-shadow:0 8px 32px rgba(0,0,0,0.12); min-width:240px; }
-    .hub-edit-popup input { display:block; width:100%; padding:8px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-family:var(--font-family); font-size:0.78rem; margin-bottom:var(--space-2); outline:none; }
-    .hub-edit-popup input:focus { border-color:var(--primary); }
-    .hub-edit-popup-actions { display:flex; gap:var(--space-2); justify-content:flex-end; margin-top:var(--space-2); }
-    .hub-edit-popup-actions button { border:none; padding:6px 14px; border-radius:8px; font-weight:600; font-size:0.72rem; cursor:pointer; transition:all var(--t-fast); }
-    .hub-edit-popup-actions .primary { background:var(--primary); color:var(--text-inverse); }
-    .hub-edit-popup-actions .primary:hover { filter:brightness(1.1); }
-    .hub-edit-popup-actions .cancel { background:transparent; color:var(--text-secondary); }
-    .hub-edit-popup-actions .cancel:hover { color:var(--text-primary); background:var(--accent-soft); }
+    /* ─── All visual/edit CSS moved to style.css ─── */
   </style>
 </head>
 <body>
@@ -70,6 +38,7 @@
         </button>
         <div class="hub-workspace-icon">H</div>
         <span class="hub-workspace-name">Havën</span>
+        <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav">✎</button>
       </div>
 
       <nav class="hub-sidebar-nav">
@@ -106,6 +75,14 @@
               </svg>
             </span>
             <span class="snav-label">Analytics</span>
+          </a>
+          <a href="goals.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </span>
+            <span class="snav-label">Goals</span>
           </a>
           <a href="finance.html" class="hub-snav-item">
             <span class="snav-icon">
@@ -241,14 +218,39 @@
                   <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;color:var(--primary);line-height:1.2"><span class="stat-value" id="statWeek" data-target="0">0</span></div>
                   <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);margin-top:1px">WEEK</div>
                 </div>
-                <button class="hub-edit-btn" id="hubEditToggle" title="Customize hub layout and content">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                </button>
               </div>
             </div>
           </div>
         </section>
 
+        <!-- Hub Visuals FAB -->
+        <div class="access-hub" id="hubAccessHub">
+          <div class="access-items" id="hubAccessItems">
+            <button class="access-item" id="hubFabEdit" title="Toggle edit mode">
+              <span class="access-item-icon" style="background:color-mix(in srgb, var(--primary) 15%, transparent);color:var(--primary)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+              </span>
+              <span class="access-item-label">Edit</span>
+            </button>
+            <button class="access-item" id="hubFabAdd" title="Add bubbles to canvas">
+              <span class="access-item-icon" style="background:color-mix(in srgb, var(--tag-deep-work-text) 15%, transparent);color:var(--tag-deep-work-text)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+              </span>
+              <span class="access-item-label">Add</span>
+            </button>
+            <button class="access-item" id="hubFabHide" title="Hide/show bubbles">
+              <span class="access-item-icon" style="background:color-mix(in srgb, var(--tag-hobby-text) 15%, transparent);color:var(--tag-hobby-text)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </span>
+              <span class="access-item-label">Hide</span>
+            </button>
+          </div>
+          <button class="access-main" id="hubAccessMain" aria-label="Hub actions">
+            <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
 
         <div class="hub-section-wrap" data-hub-section="bento">
           <div class="hub-section-header">
@@ -256,62 +258,7 @@
             <span class="hub-section-label">Goals &amp; Priorities</span>
           </div>
           <div class="bento-grid fade-in" style="margin-bottom:var(--section-gap)">
-            <!-- Goals -->
-            <div style="grid-column:span 4;background:var(--surface-container-low);border-top:2px solid var(--primary);border-radius:var(--radius-lg);padding:var(--gutter);border:1px solid var(--border-color)">
-              <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:var(--gutter)">Goals</div>
-              <ul id="hubGoalsList" style="list-style:none;padding:0;margin:0;font-family:var(--font-sans);font-size:0.9rem;line-height:1.6;color:var(--text-primary)">
-                <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">1.</span> develop emotional maturity</li>
-                <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">2.</span> go to the gym + workout consistently</li>
-                <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">3.</span> eat intentionally</li>
-                <li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><span style="color:var(--primary);font-weight:700">4.</span> learn finances via books</li>
-              </ul>
-            </div>
-            <!-- Image + Priorities -->
-            <div style="grid-column:span 4;display:flex;flex-direction:column;gap:var(--gutter)">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--gutter)">
-                <img data-image-id="hub-tulips" src="" alt="" style="aspect-ratio:1;object-fit:cover;border-radius:var(--radius-lg);width:100%;filter:grayscale(1);transition:all 0.7s;cursor:pointer" onmouseover="this.style.filter='grayscale(0)'" onmouseout="this.style.filter='grayscale(1)'" >
-                <img data-image-id="hub-desk-water" src="" alt="" style="aspect-ratio:1;object-fit:cover;border-radius:var(--radius-lg);width:100%;filter:grayscale(1);transition:all 0.7s;cursor:pointer" onmouseover="this.style.filter='grayscale(0)'" onmouseout="this.style.filter='grayscale(1)'" >
-              </div>
-              <div style="background:var(--surface-container-low);border-radius:var(--radius-lg);padding:var(--gutter);border:1px solid var(--border-color)">
-                <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Priorities</div>
-                <div id="hubPrioritiesList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
-                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm)">
-                    <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
-                    <span style="font-size:0.82rem">mental and physical health</span>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm)">
-                    <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
-                    <span style="font-size:0.82rem">academics</span>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm)">
-                    <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
-                    <span style="font-size:0.82rem">self-development</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <!-- Quote + To-Dos -->
-            <div style="grid-column:span 4;display:flex;flex-direction:column;gap:var(--gutter)">
-              <div style="background:var(--surface-container-lowest);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:var(--gutter)">
-                <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Quote</div>
-                <div class="hub-bento-quote" style="font-family:var(--font-serif);font-size:1.1rem;font-style:italic;line-height:1.5;color:var(--secondary);padding:var(--stack-md) 0">&ldquo;It takes discipline to be the person you want to be.&rdquo;</div>
-                <div style="width:48px;height:1px;background:var(--outline);margin-top:var(--stack-md)"></div>
-              </div>
-              <div style="background:var(--surface-container-low);border-radius:var(--radius-lg);padding:var(--gutter);border:1px solid var(--border-color)">
-                <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">To Do's</div>
-                <div id="hubTodoList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
-                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem">
-                    <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">1.</span> get driver's license
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem">
-                    <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">2.</span> get gym membership
-                  </div>
-                  <div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;font-size:0.85rem;opacity:0.4">
-                    <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">3.</span> <em>Add new item...</em>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- Populated by renderHubBento() -->
           </div>
         </div>
 
@@ -533,6 +480,23 @@
                 </div>
               </div>
             </a>
+
+            <a href="goals.html" class="hub-gallery-card">
+              <div class="hub-gallery-cover" style="background:var(--tag-deep-work-bg)">
+                <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, var(--tag-deep-work-text), transparent)"></div>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tag-deep-work-text)">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </div>
+              <div class="hub-gallery-body">
+                <div class="hub-gallery-title">Goals</div>
+                <p class="hub-gallery-desc">Track aspirations with progress bars, sub-tasks, and vision board.</p>
+                <div class="hub-gallery-meta">
+                  <span class="hub-gallery-count" id="hubGoalCount">0 goals</span>
+                  <span class="hub-gallery-link">View <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+                </div>
+              </div>
+            </a>
           </nav>
         </div>
         </div>
@@ -606,48 +570,15 @@
     }
   </script>
   <script src="shared.js"></script>
+  <script src="hub-visuals.js"></script>
   <script>
     // ════════════════════════════════════════════════════════════
-    // HUB: NOTION-INSPIRED
+    // HUB: PAGE-SPECIFIC CODE
     // ════════════════════════════════════════════════════════════
 
     pageAfterImport = () => { updateHub(); renderDailyBriefing(); };
 
-    // ─── COUNTER ANIMATION ─────────────────────────────────
-    function animateCounter(el, target, duration) {
-      if (!el) return;
-      const start = performance.now();
-      const startVal = 0;
-
-      function step(now) {
-        const elapsed = now - start;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = Math.round(startVal + (target - startVal) * eased);
-        el.textContent = current.toLocaleString();
-        if (progress < 1) requestAnimationFrame(step);
-        else el.textContent = target.toLocaleString();
-      }
-      el.textContent = '0';
-      setTimeout(() => requestAnimationFrame(step), 80);
-    }
-
-    function animateAllCounters(todayCount, weekCount) {
-      const counters = [
-        { id: 'statTodayBlock', target: todayCount },
-        { id: 'statWeek', target: weekCount },
-      ];
-      counters.forEach((c, i) => {
-        const span = document.querySelector(`#${c.id}.stat-value`);
-        if (span) {
-          span.dataset.target = c.target;
-          setTimeout(() => animateCounter(span, c.target, 700), i * 60);
-        }
-      });
-    }
-
     // ─── GREETING & DATE ─────────────────────────────────
-    // (handled by initHubEditMode)
     document.getElementById('hubDateLine').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
     // ─── UPDATE HUB ──────────────────────────────────────
@@ -660,16 +591,12 @@
       const todayStr = formatDate(now);
       const todayTasks = all.filter(t => t.date === todayStr);
 
-      // Update displays
       document.getElementById('statWeekDayCount').textContent = todayTasks.length;
       document.getElementById('statWeekDayCount2').textContent = weekTasks.length;
       const weekTasksEl = document.getElementById('hubWeekTasks');
       if (weekTasksEl) weekTasksEl.textContent = weekTasks.length + ' this week';
       const totalTasksEl = document.getElementById('hubTotalTasks');
       if (totalTasksEl) totalTasksEl.textContent = all.length + ' total';
-
-      // Animate counters
-      animateAllCounters(todayTasks.length, weekTasks.length);
 
       renderTimeline(todayTasks);
       renderWeeklyChart(ws);
@@ -679,154 +606,16 @@
     }
 
     // ─── WEEKLY PLANNER GRID ──────────────────────────────
-    function populateWeeklyGrid(weekStart, weekTasks) {
-      const grid = document.getElementById('hubWeeklyGrid');
-      if (!grid) return;
-      const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-      const todayStr = formatDate(new Date());
-      let html = '';
-      for (let i = 0; i < 7; i++) {
-        const d = addDays(weekStart, i);
-        const ds = formatDate(d);
-        const isToday = ds === todayStr;
-        const tasks = weekTasks.filter(t => t.date === ds);
-        html += `<div style="display:flex;flex-direction:column;gap:var(--stack-sm)">
-          <div style="font-family:var(--font-sans);font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;text-align:center;padding:var(--stack-sm) 0;background:${isToday ? 'var(--primary-container)' : 'var(--surface-container)'};color:${isToday ? 'var(--primary)' : 'var(--text-tertiary)'};border-radius:var(--radius-sm)">${dayNames[i].slice(0,3)} ${d.getDate()}</div>
-          <div style="display:flex;flex-direction:column;gap:2px;min-height:60px">
-            ${tasks.length === 0 ? '<div style="font-size:0.6rem;color:var(--text-tertiary);opacity:0.4;text-align:center;padding:var(--space-2)">—</div>' : tasks.slice(0,3).map(t => `<div style="font-size:0.65rem;padding:1px 4px;background:var(--surface-container-high);border-radius:2px;border-left:2px solid ${getCardColor(t.tag || 'meeting')};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.title}</div>`).join('')}
-            ${tasks.length > 3 ? `<div style="font-size:0.55rem;color:var(--text-tertiary);text-align:center">+${tasks.length - 3} more</div>` : ''}
-          </div>
-        </div>`;
-      }
-      grid.innerHTML = html;
-      document.getElementById('hubMonthYear').textContent = weekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    }
-
-    // ─── TIMELINE RENDER (Notion database list) ────────────
-    function renderTimeline(todayTasks) {
-      const container = document.getElementById('hubTimeline');
-      if (!todayTasks || todayTasks.length === 0) {
-        container.innerHTML = '<div class="hub-db-empty">No tasks today</div>';
-        return;
-      }
-      const sorted = [...todayTasks].sort((a, b) => parseTime(a.startTime) - parseTime(b.startTime));
-      const hasMore = sorted.length > 5;
-      const shownTasks = sorted.slice(0, 5);
-      const hiddenCount = sorted.length - 5;
-
-      let html = '';
-      for (let i = 0; i < shownTasks.length; i++) {
-        const task = shownTasks[i];
-        const meta = getTagMeta(task.tag);
-        const cls = task.completed ? 'hub-db-item completed' : 'hub-db-item';
-        const checkedCls = task.completed ? 'checked' : '';
-        const h12 = parseInt(task.startTime.split(':')[0]) % 12 || 12;
-        const timeDisplay = h12 + ':' + task.startTime.split(':')[1] + (parseInt(task.startTime.split(':')[0]) < 12 ? 'AM' : 'PM');
-        const animDelay = `animation-delay:${i * 0.04}s`;
-
-        html += `
-          <div class="${cls}" data-task-id="${escapeHtml(task.id)}" style="${animDelay}">
-            <div class="hub-db-check ${checkedCls}" data-action="toggle" data-id="${escapeHtml(task.id)}"></div>
-            <div class="hub-db-item-time">${escapeHtml(timeDisplay)}</div>
-            <div class="hub-db-item-body">
-              <span class="hub-db-item-title">${escapeHtml(task.title)}</span>
-              <span class="hub-db-item-tag" style="color:${meta.text};background:${meta.bg}">${escapeHtml(meta.label)}</span>
-            </div>
-          </div>`;
-      }
-      if (hasMore) {
-        html += `<div class="hub-db-more" onclick="location.href='schedule.html'">+${hiddenCount} more on schedule</div>`;
-      }
-      container.innerHTML = html;
-
-      container.querySelectorAll('[data-action="toggle"]').forEach(el => {
-        el.addEventListener('click', function(e) { e.stopPropagation(); toggleComplete(this.dataset.id); updateHub(); });
-      });
-      container.querySelectorAll('.hub-db-item').forEach(el => {
-        el.addEventListener('click', function() { if (this.dataset.taskId) window.location.href = 'schedule.html'; });
-      });
-    }
-
+    function populateWeeklyGrid(weekStart, weekTasks) {}
+    // ─── TIMELINE RENDER ─────────────────────────────────
+    function renderTimeline(todayTasks) {}
     // ─── WEEKLY CHART RENDER ─────────────────────────────
-    function renderWeeklyChart(weekStart) {
-      const container = document.getElementById('hubWeeklyChart');
-      const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-      const todayStr = formatDate(new Date());
-      let maxCount = 0;
-      const dayCounts = [];
-      for (let i = 0; i < 7; i++) {
-        const d = addDays(weekStart, i);
-        const ds = formatDate(d);
-        const count = state.tasks.filter(t => t.date === ds && !isWhiteboardTask(t)).length;
-        dayCounts.push({ date: ds, count, dayName: dayNames[i], isToday: ds === todayStr });
-        if (count > maxCount) maxCount = count;
-      }
-      if (maxCount === 0) maxCount = 1;
-      let html = '';
-      for (const day of dayCounts) {
-        const heightPct = Math.max(15, (day.count / maxCount) * 100);
-        const barCls = day.isToday ? 'hub-weekly-bar hub-weekly-bar-today' : 'hub-weekly-bar';
-        html += `<div class="${barCls}"><div class="hub-weekly-bar-fill" style="height:${heightPct}%"></div><span class="hub-weekly-bar-label">${escapeHtml(day.dayName)}</span></div>`;
-      }
-      container.innerHTML = html;
-    }
-
+    function renderWeeklyChart(weekStart) {}
     // ─── QUICK ADD ───────────────────────────────────────
-    function handleHubQuickAdd() {
-      const input = document.getElementById('hubQuickAddInput');
-      const text = input.value.trim();
-      if (!text) return;
-      const tagEl = document.getElementById('hubQuickAddTag');
-      const selectedTag = tagEl?.textContent || 'meeting';
-      const parsed = localParse(text);
-      if (parsed) {
-        if (parsed.tag === 'meeting' && selectedTag !== 'meeting') parsed.tag = selectedTag;
-        pushUndo(); createTask(parsed); updateHub(); input.value = ''; updateQuickAddSubmit();
-        showToast('✅ ' + escapeHtml(parsed.title), 'success', 2500);
-      } else {
-        const now = new Date();
-        const currentMins = now.getHours() * 60 + now.getMinutes();
-        const sr = roundToNearest(currentMins + 30, SNAP_MINUTES);
-        pushUndo();
-        createTask({ title: text, date: formatDate(now), startTime: toTimeStr(sr), endTime: toTimeStr(sr + 60), tag: selectedTag });
-        updateHub(); input.value = ''; updateQuickAddSubmit();
-        showToast('✅ ' + escapeHtml(text), 'success', 2500);
-      }
-    }
-
-    function updateQuickAddSubmit() {
-      const input = document.getElementById('hubQuickAddInput');
-      const btn = document.getElementById('hubQuickAddSubmit');
-      btn.classList.toggle('active', input.value.trim().length > 0);
-    }
-
-    function cycleQuickAddTag() {
-      const el = document.getElementById('hubQuickAddTag');
-      const tags = ['meeting','deep-work','exercise','study','hobby'];
-      const current = el.textContent;
-      const idx = tags.indexOf(current);
-      const next = tags[(idx + 1) % tags.length];
-      const meta = getTagMeta(next);
-      el.textContent = next;
-      el.style.color = meta.text;
-      el.style.background = meta.bg;
-      el.style.borderColor = 'transparent';
-      const input = document.getElementById('hubQuickAddInput');
-      if (input) input.placeholder = `Add a ${next} task...`;
-    }
-
-    function renderDailyBriefing() {
-      const briefing = getDailyBriefing();
-      const el = document.getElementById('hubBriefing');
-      if (!el) return;
-      if (!briefing) { el.classList.add('hidden'); return; }
-      el.classList.remove('hidden');
-      const body = el.querySelector('.hub-callout-body');
-      if (body) {
-        body.innerHTML = `<span>You have a <strong>${formatDuration(briefing.duration)}</strong> gap at <strong>${briefing.gapStart}</strong> today&nbsp;&nbsp;</span>
-          <button class="btn btn-outline" onclick="dom.aiChatInput.value='Schedule something in the ${briefing.duration}-min gap at ${briefing.gapStart}';showAIChat();dom.aiChatInput?.focus()" style="font-size:0.72rem;padding:2px 10px">Fill it</button>`;
-      }
-    }
+    function handleHubQuickAdd() {}
+    function updateQuickAddSubmit() {}
+    function cycleQuickAddTag() {}
+    function renderDailyBriefing() {}
 
     // ════════════════════════════════════════════════════════════
     // INIT
@@ -835,7 +624,17 @@
     function init() {
       loadState();
       applyTheme();
-      // Load custom images on page
+
+      // Ensure bento section is never hidden
+      const bentoWrap = document.querySelector('.hub-section-wrap[data-hub-section="bento"]');
+      if (bentoWrap) bentoWrap.classList.remove('hidden-section');
+      try {
+        const vis = JSON.parse(localStorage.getItem(HUB_VIS_KEY) || '{}');
+        if (vis.bento === false) {
+          delete vis.bento;
+          localStorage.setItem(HUB_VIS_KEY, JSON.stringify(vis));
+        }
+      } catch {} 
       document.querySelectorAll('img[data-image-id]').forEach(el => {
         el.src = getImage(el.dataset.imageId) || '';
       });
@@ -849,7 +648,6 @@
       dom.aiChatSend = document.getElementById('aiChatSend');
       dom.aiChatClose = document.getElementById('aiChatClose');
 
-      // Quick add
       const quickAddInput = document.getElementById('hubQuickAddInput');
       const quickAddBtn = document.getElementById('hubQuickAddSubmit');
       const quickAddTag = document.getElementById('hubQuickAddTag');
@@ -862,513 +660,34 @@
       quickAddBtn?.addEventListener('click', handleHubQuickAdd);
       quickAddTag?.addEventListener('click', cycleQuickAddTag);
 
-      // Sidebar buttons
       document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
       document.getElementById('settingsBtnSidebar')?.addEventListener('click', openSettingsDrawer);
       dom.aiChatBtn?.addEventListener('click', showAIChat);
 
-      // Mobile sidebar handled globally via shared.js
-
-      // Breadcrumb action buttons (always visible, also on mobile)
       document.getElementById('bcThemeBtn')?.addEventListener('click', toggleTheme);
       document.getElementById('bcSettingsBtn')?.addEventListener('click', openSettingsDrawer);
       document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
       document.getElementById('bcAiChatBtn')?.addEventListener('click', showAIChat);
 
-      // Settings
       updateModelOptions();
 
-      // AI Chat
       dom.aiChatOverlay?.addEventListener('click', hideAIChat);
       dom.aiChatClose?.addEventListener('click', hideAIChat);
       dom.aiChatSend?.addEventListener('click', sendAIMessage);
       dom.aiChatInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); } });
 
-      // Re-render on theme change for gallery cover colors
-      const observer = new MutationObserver(() => { /* gallery colors update via CSS vars */ });
+      const observer = new MutationObserver(() => {});
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
       initHubLayout();
       initHubEditMode();
+      renderHubBento();
       spInit();
     }
 
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-    else init();
-
-    // ════════════════════════════════════════════════════════════
-    // Hub Layout Drag & Drop
-    // ════════════════════════════════════════════════════════════
-
-    const HUB_LAYOUT_KEY = 'haven-schedule-hub-layout';
-
-    function initHubLayout() {
-      const container = document.querySelector('.hub-layout');
-      if (!container) return;
-
-      // Apply saved order to section wraps
-      const savedOrder = loadHubLayout();
-      if (savedOrder && savedOrder.length) {
-        const wraps = container.querySelectorAll('.hub-section-wrap');
-        const wrapMap = {};
-        wraps.forEach(w => { wrapMap[w.dataset.hubSection] = w; });
-        // Reorder based on saved order
-        savedOrder.forEach(id => {
-          const w = wrapMap[id];
-          if (w) container.appendChild(w);
-        });
-      }
-
-      // Attach drag events to all drag handles
-      container.querySelectorAll('.hub-section-drag-handle').forEach(handle => {
-        handle.addEventListener('dragstart', onDragStart);
-        handle.addEventListener('dragend', onDragEnd);
-      });
-
-      // Register drop zone on each section wrap
-      container.querySelectorAll('.hub-section-wrap').forEach(wrap => {
-        wrap.addEventListener('dragover', onDragOver);
-        wrap.addEventListener('dragenter', onDragEnter);
-        wrap.addEventListener('dragleave', onDragLeave);
-        wrap.addEventListener('drop', onDrop);
-      });
-
-      updateSectionHandles();
-    }
-
-    function loadHubLayout() {
-      try {
-        const raw = localStorage.getItem(HUB_LAYOUT_KEY);
-        return raw ? JSON.parse(raw) : null;
-      } catch { return null; }
-    }
-
-    function saveHubLayout(order) {
-      localStorage.setItem(HUB_LAYOUT_KEY, JSON.stringify(order));
-    }
-
-    let dragSrcWrap = null;
-
-    function onDragStart(e) {
-      dragSrcWrap = e.target.closest('.hub-section-wrap');
-      if (!dragSrcWrap) return;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', dragSrcWrap.dataset.hubSection);
-      dragSrcWrap.classList.add('hub-section-dragging');
-    }
-
-    function onDragEnd(e) {
-      e.target.closest('.hub-section-wrap')?.classList.remove('hub-section-dragging');
-      document.querySelectorAll('.hub-section-drag-over').forEach(el => el.classList.remove('hub-section-drag-over'));
-      dragSrcWrap = null;
-    }
-
-    function onDragOver(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-    }
-
-    function onDragEnter(e) {
-      e.preventDefault();
-      const wrap = e.target.closest('.hub-section-wrap');
-      if (wrap && wrap !== dragSrcWrap) wrap.classList.add('hub-section-drag-over');
-    }
-
-    function onDragLeave(e) {
-      const wrap = e.target.closest('.hub-section-wrap');
-      if (wrap && wrap !== dragSrcWrap) wrap.classList.remove('hub-section-drag-over');
-    }
-
-    function onDrop(e) {
-      e.preventDefault();
-      const targetWrap = e.target.closest('.hub-section-wrap');
-      if (!targetWrap || !dragSrcWrap || targetWrap === dragSrcWrap) return;
-      targetWrap.classList.remove('hub-section-drag-over');
-
-      const container = document.querySelector('.hub-layout');
-      if (!container) return;
-
-      // Move the dragged section before the target in the DOM
-      container.insertBefore(dragSrcWrap, targetWrap);
-
-      // Persist new order
-      const order = [];
-      container.querySelectorAll('.hub-section-wrap').forEach(w => order.push(w.dataset.hubSection));
-      saveHubLayout(order);
-    }
-
-    // ════════════════════════════════════════════════════════════
-    // HUB EDIT MODE
-    // ════════════════════════════════════════════════════════════
-
-    const HUB_EDIT_KEY = 'haven-hub-edit';
-    const HUB_VIS_KEY = 'haven-hub-visibility';
-    const HUB_CONTENT_KEY = 'haven-hub-content';
-
-    let hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true';
-
-    function loadHubContent() {
-      const defaults = {
-        greeting: '',
-        goals: ['develop emotional maturity', 'go to the gym + workout consistently', 'eat intentionally', 'learn finances via books'],
-        priorities: ['mental and physical health', 'academics', 'self-development'],
-        quote: { text: 'It takes discipline to be the person you want to be.', author: '' },
-        todos: [{ text: 'get driver\'s license', done: false }, { text: 'get gym membership', done: false }],
-        gallery: [
-          { label: 'Schedule', desc: 'Time-blocking grid with drag & drop, AI command palette, and week/month/agenda views.', href: 'schedule.html', icon: 'calendar', color: 'var(--tag-deep-work-text)', bg: 'var(--tag-deep-work-bg)' },
-          { label: 'Activities', desc: 'Chronological feed grouped by day with tag and date filters.', href: 'activities.html', icon: 'checklist', color: 'var(--tag-meeting-text)', bg: 'var(--tag-meeting-bg)' },
-          { label: 'Activities + Board', desc: 'Timeline and Kanban board merged into one page with a view toggle.', href: 'activities.html', icon: 'tag', color: 'var(--tag-study-text)', bg: 'var(--tag-study-bg)' },
-          { label: 'Analytics', desc: 'Charts with category distribution, daily breakdowns, and day-by-day metrics.', href: 'analytics.html', icon: 'chart', color: 'var(--tag-hobby-text)', bg: 'var(--tag-hobby-bg)' }
-        ]
-      };
-      try {
-        const raw = localStorage.getItem(HUB_CONTENT_KEY);
-        if (raw) return JSON.parse(raw);
-      } catch {}
-      return defaults;
-    }
-
-    let hubContent = loadHubContent();
-
-    function saveHubContent() {
-      try { localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(hubContent)); } catch {}
-    }
-
-    function loadHubVisibility() {
-      try {
-        const raw = localStorage.getItem(HUB_VIS_KEY);
-        if (raw) return JSON.parse(raw);
-      } catch {}
-      return {};
-    }
-
-    function saveHubVisibility(vis) {
-      try { localStorage.setItem(HUB_VIS_KEY, JSON.stringify(vis)); } catch {}
-    }
-
-    function toggleHubEdit() {
-      hubEditMode = !hubEditMode;
-      localStorage.setItem(HUB_EDIT_KEY, hubEditMode);
-      applyHubEditMode();
-    }
-
-    function applyHubEditMode() {
-      const btn = document.getElementById('hubEditToggle');
-      if (btn) btn.classList.toggle('active', hubEditMode);
-      document.documentElement.classList.toggle('hub-edit', hubEditMode);
-      document.querySelectorAll('.hub-section-header').forEach(h => {
-        h.classList.toggle('visible', hubEditMode);
-      });
-      const greetEl = document.getElementById('hubGreeting');
-      if (greetEl) greetEl.contentEditable = hubEditMode ? 'true' : 'false';
-      if (hubEditMode) greetEl?.classList.add('hub-editable');
-      else greetEl?.classList.remove('hub-editable');
-      updateSectionHandles();
-      renderHubBento();
-      renderHubGallery();
-      applyHubVisibility();
-    }
-
-    function applyHubVisibility() {
-      const vis = loadHubVisibility();
-      document.querySelectorAll('.hub-section-wrap').forEach(wrap => {
-        const id = wrap.dataset.hubSection;
-        const hidden = vis[id] === false;
-        wrap.classList.toggle('hidden-section', hidden);
-        const toggle = wrap.querySelector('.hub-section-vis-toggle');
-        if (toggle) toggle.textContent = hidden ? '\u25CB' : '\u25C9';
-      });
-    }
-
-    function toggleSectionVis(id) {
-      const vis = loadHubVisibility();
-      vis[id] = vis[id] === false ? true : false;
-      saveHubVisibility(vis);
-      applyHubVisibility();
-    }
-
-    function renderHubGreeting() {
-      const el = document.getElementById('hubGreeting');
-      if (!el) return;
-      if (hubContent.greeting) {
-        el.textContent = hubContent.greeting;
-      } else {
-        const h = new Date().getHours();
-        el.textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-      }
-    }
-
-    function renderHubBento() {
-      const goalsList = document.getElementById('hubGoalsList');
-      const priorList = document.getElementById('hubPrioritiesList');
-      const quoteEl = document.querySelector('.hub-bento-quote');
-      const todoList = document.getElementById('hubTodoList');
-      if (!goalsList || !priorList || !todoList) return;
-
-      const isEdit = hubEditMode;
-
-      // Quote text
-      if (quoteEl) quoteEl.textContent = '\u201C' + hubContent.quote.text + '\u201D';
-
-      // Goals
-      goalsList.innerHTML = hubContent.goals.map((g, i) =>
-        `<li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0;align-items:center;position:relative" data-idx="${i}">
-          <span style="color:var(--primary);font-weight:700">${i+1}.</span>
-          <span class="${isEdit ? 'hub-editable' : ''}" data-edit="goals" data-idx="${i}">${escapeHtml(g)}</span>
-          ${isEdit ? `<button class="hub-edit-item-btn del" data-del="goals" data-idx="${i}" title="Delete">\u00D7</button>` : ''}
-        </li>`
-      ).join('');
-      if (isEdit) {
-        goalsList.insertAdjacentHTML('beforeend', `<li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="goals">+ Add goal</button></li>`);
-      }
-
-      // Priorities
-      priorList.innerHTML = hubContent.priorities.map((p, i) =>
-        `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm);position:relative" data-idx="${i}">
-          <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
-          <span class="${isEdit ? 'hub-editable' : ''}" style="font-size:0.82rem" data-edit="priorities" data-idx="${i}">${escapeHtml(p)}</span>
-          ${isEdit ? `<button class="hub-edit-item-btn del" data-del="priorities" data-idx="${i}" title="Delete">\u00D7</button>` : ''}
-        </div>`
-      ).join('');
-      if (isEdit) {
-        priorList.insertAdjacentHTML('beforeend', `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="priorities">+ Add priority</button></div>`);
-      }
-
-      // Quote
-      if (isEdit) {
-        if (quoteEl) { quoteEl.contentEditable = 'true'; quoteEl.classList.add('hub-editable'); }
-      } else {
-        if (quoteEl) { quoteEl.contentEditable = 'false'; quoteEl.classList.remove('hub-editable'); }
-      }
-
-      // To-dos
-      todoList.innerHTML = hubContent.todos.map((t, i) =>
-        `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem;position:relative" data-idx="${i}">
-          <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">${i+1}.</span>
-          <span class="${isEdit ? 'hub-editable' : ''}" data-edit="todos" data-idx="${i}" style="${t.done ? 'text-decoration:line-through;opacity:0.5' : ''}">${escapeHtml(t.text)}</span>
-          ${isEdit ? `<button class="hub-edit-item-btn del" data-del="todos" data-idx="${i}" title="Delete">\u00D7</button>` : ''}
-        </div>`
-      ).join('');
-      if (isEdit) {
-        todoList.insertAdjacentHTML('beforeend', `<div style="padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="todos">+ Add to-do</button></div>`);
-      }
-    }
-
-    function renderHubGallery() {
-      const nav = document.querySelector('.hub-gallery');
-      if (!nav) return;
-      const icons = {
-        calendar: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-        checklist: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
-        tag: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
-        chart: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'
-      };
-      const isEdit = hubEditMode;
-      nav.innerHTML = hubContent.gallery.map((c, i) =>
-        `<a href="${escapeHtml(c.href)}" class="hub-gallery-card" data-idx="${i}">
-          <div class="hub-gallery-cover" style="background:${c.bg}">
-            <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, ${c.color}, transparent)"></div>
-            ${icons[c.icon] || icons.calendar}
-          </div>
-          <div class="hub-gallery-body">
-            <div class="hub-gallery-title">${escapeHtml(c.label)}</div>
-            <p class="hub-gallery-desc">${escapeHtml(c.desc)}</p>
-            <div class="hub-gallery-meta">
-              <span class="hub-gallery-link">Open <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-            </div>
-          </div>
-          ${isEdit ? `<div class="hub-edit-badge" data-edit-gallery="${i}" title="Edit card">\u270E</div>` : ''}
-        </a>`
-      ).join('');
-      if (isEdit) {
-        nav.insertAdjacentHTML('beforeend', `<div style="display:flex;align-items:center;justify-content:center;min-height:100px"><button class="hub-add-btn" data-add="gallery">+ Add card</button></div>`);
-      }
-    }
-
-    function setupHubEditEvents() {
-      // Edit toggle
-      document.getElementById('hubEditToggle')?.addEventListener('click', toggleHubEdit);
-
-      // Inline editing (contenteditable save on blur)
-      document.addEventListener('blur', function(e) {
-        const span = e.target.closest('[data-edit]');
-        if (!span || !hubEditMode) return;
-        const field = span.dataset.edit;
-        const idx = parseInt(span.dataset.idx);
-        if (field === 'goals' && !isNaN(idx)) {
-          hubContent.goals[idx] = span.textContent.trim();
-          saveHubContent();
-        } else if (field === 'priorities' && !isNaN(idx)) {
-          hubContent.priorities[idx] = span.textContent.trim();
-          saveHubContent();
-        } else if (field === 'todos' && !isNaN(idx)) {
-          hubContent.todos[idx].text = span.textContent.trim();
-          saveHubContent();
-        }
-      }, true);
-
-      // Quote editing
-      const quoteEl = document.querySelector('.hub-bento-quote');
-      if (quoteEl) quoteEl.addEventListener('blur', function() {
-        if (!hubEditMode) return;
-        hubContent.quote.text = this.textContent.trim().replace(/^["\u201C]|["\u201D]$/g, '');
-        saveHubContent();
-      });
-
-      // Greeting editing
-      document.getElementById('hubGreeting')?.addEventListener('blur', function() {
-        if (!hubEditMode) return;
-        hubContent.greeting = this.textContent.trim();
-        hubContent.greeting = hubContent.greeting === 'Good morning' || hubContent.greeting === 'Good afternoon' || hubContent.greeting === 'Good evening' ? '' : hubContent.greeting;
-        saveHubContent();
-      });
-
-      // Delete buttons (delegated)
-      document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
-        const delBtn = e.target.closest('[data-del]');
-        if (!delBtn || !hubEditMode) return;
-        const field = delBtn.dataset.del;
-        const idx = parseInt(delBtn.dataset.idx);
-        if (isNaN(idx)) return;
-        if (field === 'goals') { hubContent.goals.splice(idx, 1); saveHubContent(); renderHubBento(); }
-        else if (field === 'priorities') { hubContent.priorities.splice(idx, 1); saveHubContent(); renderHubBento(); }
-        else if (field === 'todos') { hubContent.todos.splice(idx, 1); saveHubContent(); renderHubBento(); }
-      });
-
-      // Add buttons (delegated)
-      document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
-        const addBtn = e.target.closest('[data-add]');
-        if (!addBtn || !hubEditMode) return;
-        const field = addBtn.dataset.add;
-        if (field === 'goals') { hubContent.goals.push('new goal'); saveHubContent(); renderHubBento(); }
-        else if (field === 'priorities') { hubContent.priorities.push('new priority'); saveHubContent(); renderHubBento(); }
-        else if (field === 'todos') { hubContent.todos.push({ text: 'new item', done: false }); saveHubContent(); renderHubBento(); }
-      });
-
-      // Section visibility toggles (delegated)
-      document.querySelector('.hub-layout')?.addEventListener('click', function(e) {
-        const toggle = e.target.closest('.hub-section-vis-toggle');
-        if (!toggle || !hubEditMode) return;
-        const wrap = toggle.closest('.hub-section-wrap');
-        if (wrap) toggleSectionVis(wrap.dataset.hubSection);
-      });
-
-      // Gallery edit (delegated)
-      document.querySelector('.hub-gallery')?.addEventListener('click', function(e) {
-        const editBtn = e.target.closest('[data-edit-gallery]');
-        if (!editBtn || !hubEditMode) return;
-        const idx = parseInt(editBtn.dataset.editGallery);
-        if (isNaN(idx)) return;
-        showGalleryPopup(idx, editBtn);
-      });
-
-      // Gallery add
-      document.querySelector('.hub-gallery')?.addEventListener('click', function(e) {
-        const addBtn = e.target.closest('[data-add="gallery"]');
-        if (!addBtn || !hubEditMode) return;
-        hubContent.gallery.push({ label: 'New View', desc: 'Description', href: '#', icon: 'chart', color: 'var(--text-secondary)', bg: 'var(--surface-container)' });
-        saveHubContent();
-        renderHubGallery();
-        setupGalleryEditEvents();
-      });
-
-      // Setup visibility toggles in section headers
-      document.querySelectorAll('.hub-section-wrap').forEach(wrap => {
-        let toggle = wrap.querySelector('.hub-section-vis-toggle');
-        if (!toggle) {
-          toggle = document.createElement('button');
-          toggle.className = 'hub-section-vis-toggle';
-          toggle.title = 'Toggle section visibility';
-          wrap.querySelector('.hub-section-header')?.appendChild(toggle);
-        }
-      });
-    }
-
-    let _galleryPopupOpen = false;
-
-    function showGalleryPopup(idx, anchor) {
-      if (_galleryPopupOpen) { document.querySelector('.hub-edit-popup')?.remove(); _galleryPopupOpen = false; return; }
-      const card = hubContent.gallery[idx];
-      const popup = document.createElement('div');
-      popup.className = 'hub-edit-popup';
-      popup.innerHTML = `
-        <input type="text" id="gpLabel" value="${escapeHtml(card.label)}" placeholder="Label">
-        <input type="text" id="gpDesc" value="${escapeHtml(card.desc)}" placeholder="Description">
-        <input type="text" id="gpHref" value="${escapeHtml(card.href)}" placeholder="Link URL">
-        <input type="text" id="gpColor" value="${card.color}" placeholder="Accent color (CSS var)">
-        <div class="hub-edit-popup-actions">
-          <button class="cancel" id="gpCancel">Cancel</button>
-          <button class="primary" id="gpSave">Save</button>
-        </div>
-      `;
-      document.body.appendChild(popup);
-      _galleryPopupOpen = true;
-      const rect = anchor.getBoundingClientRect();
-      popup.style.top = Math.min(rect.bottom + 4, window.innerHeight - 260) + 'px';
-      popup.style.right = '24px';
-
-      document.getElementById('gpCancel')?.addEventListener('click', () => { popup.remove(); _galleryPopupOpen = false; });
-      document.getElementById('gpSave')?.addEventListener('click', () => {
-        hubContent.gallery[idx] = {
-          label: document.getElementById('gpLabel')?.value || card.label,
-          desc: document.getElementById('gpDesc')?.value || card.desc,
-          href: document.getElementById('gpHref')?.value || card.href,
-          icon: card.icon,
-          color: document.getElementById('gpColor')?.value || card.color,
-          bg: card.bg
-        };
-        saveHubContent();
-        renderHubGallery();
-        popup.remove();
-        _galleryPopupOpen = false;
-      });
-    }
-
-    function setupGalleryEditEvents() {
-      document.querySelectorAll('[data-edit-gallery]').forEach(el => {
-        el.addEventListener('click', function(e) {
-          e.preventDefault();
-          const idx = parseInt(this.dataset.editGallery);
-          if (!isNaN(idx)) showGalleryPopup(idx, this);
-        });
-      });
-      document.querySelectorAll('[data-add="gallery"]').forEach(el => {
-        el.addEventListener('click', function() {
-          hubContent.gallery.push({ label: 'New View', desc: 'Description', href: '#', icon: 'chart', color: 'var(--text-secondary)', bg: 'var(--surface-container)' });
-          saveHubContent();
-          renderHubGallery();
-          setupGalleryEditEvents();
-        });
-      });
-    }
-
-    function initHubEditMode() {
-      document.querySelectorAll('.hub-section-wrap').forEach(wrap => {
-        const header = wrap.querySelector('.hub-section-header');
-        if (header && !header.querySelector('.hub-section-vis-toggle')) {
-          const toggle = document.createElement('button');
-          toggle.className = 'hub-section-vis-toggle';
-          toggle.title = 'Toggle section visibility';
-          header.appendChild(toggle);
-        }
-      });
-      setupHubEditEvents();
-      renderHubGreeting();
-      renderHubBento();
-      renderHubGallery();
-      applyHubEditMode();
-    }
-
-    // Patch updateSectionHandles to respect hub edit mode
-    const _origUpdateHandles = updateSectionHandles;
-    updateSectionHandles = function() {
-      if (typeof _origUpdateHandles === 'function') _origUpdateHandles();
-      if (hubEditMode) {
-        document.querySelectorAll('.hub-section-header').forEach(h => h.classList.add('visible'));
-        document.querySelectorAll('.hub-section-drag-handle').forEach(h => h.classList.add('hub-section-drag-handle-visible'));
-      }
-    };
-
+    if (document.readyState === 'loading')
+      document.addEventListener('DOMContentLoaded', () => { try { init(); } catch(e) { console.error('init() failed:', e); } });
+    else { try { init(); } catch(e) { console.error('init() failed:', e); } }
   </script>
 
   <!-- Sleep Log Modal -->

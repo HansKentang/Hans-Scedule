@@ -973,8 +973,9 @@ const IMAGES_STORAGE = 'haven-schedule-images';
 
 const DEFAULT_IMAGES = {
   'hub-hero': 'https://picsum.photos/seed/haven-hub-hero/1200/600',
-  'hub-tulips': 'https://picsum.photos/seed/haven-hub-tulips/600/400',
-  'hub-desk-water': 'https://picsum.photos/seed/haven-hub-desk/600/400',
+  'hub-tulips': '',
+  'hub-desk-water': '',
+  'hub-lamp': '',
   'hub-ceramic': 'https://picsum.photos/seed/haven-hub-ceramic/400/400',
   'hub-skyline': 'https://picsum.photos/seed/haven-hub-skyline/800/500',
   'hub-bedroom': 'https://picsum.photos/seed/haven-hub-bedroom/600/400',
@@ -994,7 +995,9 @@ const DEFAULT_IMAGES = {
   'analytics-hero': 'https://picsum.photos/seed/haven-analytics-hero/1200/400',
   'analytics-data': 'https://picsum.photos/seed/haven-analytics-data/400/400',
   'finance-hero': 'https://picsum.photos/seed/haven-finance-hero/1200/400',
-  'finance-ceramic': 'https://picsum.photos/seed/haven-finance-ceramic/400/400'
+  'finance-ceramic': 'https://picsum.photos/seed/haven-finance-ceramic/400/400',
+  'goals-hero': 'https://picsum.photos/seed/haven-goals-hero/1200/500',
+  'goals-ceramic': 'https://picsum.photos/seed/haven-goals-ceramic/400/400'
 };
 
 function loadImages() {
@@ -1008,8 +1011,8 @@ function loadImages() {
 function saveImages() {
   try {
     const custom = {};
-    for (const key of Object.keys(DEFAULT_IMAGES)) {
-      if (state.images[key] && state.images[key] !== DEFAULT_IMAGES[key]) {
+    for (const key of Object.keys(state.images || {})) {
+      if (state.images[key] && (!(key in DEFAULT_IMAGES) || state.images[key] !== DEFAULT_IMAGES[key])) {
         custom[key] = state.images[key];
       }
     }
@@ -1018,6 +1021,7 @@ function saveImages() {
 }
 
 function getImage(id) {
+  if (!state.images) loadImages();
   return (state.images && state.images[id]) || DEFAULT_IMAGES[id] || '';
 }
 
@@ -1025,8 +1029,15 @@ function setImage(id, url) {
   if (!state.images) loadImages();
   state.images[id] = url;
   saveImages();
-  // Update all img elements with this data-image-id
-  document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => { el.src = url; });
+  document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => {
+    el.src = url;
+    el.style.display = url ? 'block' : 'none';
+    const wrap = el.closest('.bento-img-wrap');
+    if (wrap) {
+      const placeholder = wrap.querySelector('.bento-img-placeholder');
+      if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
+    }
+  });
 }
 
 function resetImage(id) {
@@ -1034,12 +1045,20 @@ function resetImage(id) {
   delete state.images[id];
   saveImages();
   const url = DEFAULT_IMAGES[id] || '';
-  document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => { el.src = url; });
+  document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => {
+    el.src = url;
+    el.style.display = url ? 'block' : 'none';
+    const wrap = el.closest('.bento-img-wrap');
+    if (wrap) {
+      const placeholder = wrap.querySelector('.bento-img-placeholder');
+      if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
+    }
+  });
 }
 
 function imageLabel(id) {
   const map = {
-    'hub-hero': 'Hub Hero', 'hub-tulips': 'Hub Tulips', 'hub-desk-water': 'Hub Desk Water',
+    'hub-hero': 'Hub Hero', 'hub-tulips': 'Hub Tulips', 'hub-desk-water': 'Hub Desk Water', 'hub-lamp': 'Hub Lamp',
     'hub-ceramic': 'Hub Avatar', 'hub-skyline': 'Hub Skyline', 'hub-bedroom': 'Hub Bedroom',
     'weekly-coffee': 'Weekly Coffee', 'weekly-journal': 'Weekly Journal',
     'brain-linen': 'Brain Linen', 'brain-desk-light': 'Brain Desk Light',
@@ -1048,7 +1067,8 @@ function imageLabel(id) {
     'activities-hero': 'Activities Hero', 'activities-desk': 'Activities Desk',
     'tags-hero': 'Tags Hero', 'tags-studio': 'Tags Studio',
     'analytics-hero': 'Analytics Hero', 'analytics-data': 'Analytics Data',
-    'finance-hero': 'Finance Hero', 'finance-ceramic': 'Finance Avatar'
+    'finance-hero': 'Finance Hero', 'finance-ceramic': 'Finance Avatar',
+    'goals-hero': 'Goals Hero', 'goals-ceramic': 'Goals Avatar'
   };
   return map[id] || id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -1712,7 +1732,267 @@ function toggleEditMode() {
   }
 
   updateSectionHandles();
+
+  // Notify other pages (e.g. goals page) about edit mode change
+  document.dispatchEvent(new CustomEvent('editModeChange'));
 }
+
+// ─── SIDEBAR EDIT MODE ──────────────────────────────────────
+const SIDEBAR_CONFIG_KEY = 'haven-sidebar-config';
+
+let sidebarEditMode = false;
+
+function loadSidebarConfig() {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_CONFIG_KEY);
+    return raw ? JSON.parse(raw) : { order: [], visibility: {}, customLinks: [] };
+  } catch { return { order: [], visibility: {}, customLinks: [] }; }
+}
+
+function saveSidebarConfig(config) {
+  try { localStorage.setItem(SIDEBAR_CONFIG_KEY, JSON.stringify(config)); } catch {}
+}
+
+function applySidebarConfig() {
+  const stagger = document.querySelector('.hub-snav-stagger');
+  if (!stagger) return;
+  const config = loadSidebarConfig();
+
+  // Apply saved order — reorder the nav items
+  if (config.order && config.order.length > 0) {
+    const items = stagger.querySelectorAll('.hub-snav-item');
+    const itemMap = {};
+    items.forEach(item => {
+      const href = item.getAttribute('href');
+      if (href) itemMap[href] = item;
+    });
+    // Reorder based on saved order (only for items that exist in both)
+    for (const href of config.order) {
+      const item = itemMap[href];
+      if (item) stagger.appendChild(item);
+    }
+  }
+
+  // Apply saved visibility (true = hidden)
+  if (config.visibility) {
+    const items = stagger.querySelectorAll('.hub-snav-item');
+    items.forEach(item => {
+      const href = item.getAttribute('href');
+      if (href && config.visibility[href] === true) {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  // Inject custom links at the end
+  if (config.customLinks && config.customLinks.length > 0) {
+    config.customLinks.forEach(link => {
+      const existing = stagger.querySelector(`.hub-snav-item[href="${escapeHtml(link.url)}"]`);
+      if (!existing) {
+        const a = document.createElement('a');
+        a.href = link.url;
+        a.className = 'hub-snav-item hub-snav-custom';
+        a.innerHTML = `<span class="snav-icon">${link.icon || '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>'}</span><span class="snav-label">${escapeHtml(link.label)}</span>`;
+        stagger.appendChild(a);
+      }
+    });
+  }
+
+  // Re-mark the active page
+  const currentPage = location.pathname.split('/').pop() || 'index.html';
+  stagger.querySelectorAll('.hub-snav-item').forEach(item => {
+    item.classList.toggle('active', item.getAttribute('href') === currentPage);
+  });
+}
+
+function toggleSidebarEditMode() {
+  sidebarEditMode = !sidebarEditMode;
+  document.documentElement.classList.toggle('sidebar-edit-mode', sidebarEditMode);
+  const btn = document.getElementById('hubSidebarEditBtn');
+  if (btn) btn.classList.toggle('active', sidebarEditMode);
+
+  if (sidebarEditMode) {
+    renderSidebarEditControls();
+    showToast('✎ Sidebar edit ON — drag to reorder, click ● to hide', 'info', 2500);
+  } else {
+    removeSidebarEditControls();
+    showToast('Sidebar edit OFF', 'info', 1500);
+  }
+}
+
+function renderSidebarEditControls() {
+  const stagger = document.querySelector('.hub-snav-stagger');
+  if (!stagger) return;
+
+  // Remove any existing edit controls first
+  removeSidebarEditControls();
+
+  // Add drag handle + hide toggle to each nav item (except custom links)
+  stagger.querySelectorAll('.hub-snav-item').forEach(item => {
+    // Drag handle
+    const handle = document.createElement('span');
+    handle.className = 'snav-drag-handle';
+    handle.innerHTML = '⠿';
+    handle.draggable = true;
+    handle.title = 'Drag to reorder';
+    item.prepend(handle);
+
+    // Hide toggle
+    const hideBtn = document.createElement('button');
+    hideBtn.className = 'snav-hide-btn';
+    const href = item.getAttribute('href');
+    const config = loadSidebarConfig();
+    const isHidden = config.visibility && config.visibility[href] === true;
+    hideBtn.innerHTML = isHidden ? '○' : '●';
+    hideBtn.title = isHidden ? 'Show in sidebar' : 'Hide from sidebar';
+    item.appendChild(hideBtn);
+
+    // If hidden, dim it
+    if (isHidden) {
+      item.style.display = '';
+      item.style.opacity = '0.35';
+    }
+  });
+
+  // Add "Add link" button at the bottom of nav
+  const addBtn = document.createElement('button');
+  addBtn.className = 'snav-add-link-btn';
+  addBtn.innerHTML = '+ Add link';
+  addBtn.addEventListener('click', showAddLinkPopup);
+  stagger.appendChild(addBtn);
+
+  // Setup drag events
+  setupSidebarDrag();
+}
+
+function removeSidebarEditControls() {
+  document.querySelectorAll('.snav-drag-handle, .snav-hide-btn, .snav-add-link-btn').forEach(el => el.remove());
+  // Reset opacity on hidden items
+  document.querySelectorAll('.hub-snav-item').forEach(item => {
+    item.style.opacity = '';
+  });
+}
+
+let sidebarDragSrc = null;
+
+function setupSidebarDrag() {
+  const handles = document.querySelectorAll('.snav-drag-handle');
+  handles.forEach(handle => {
+    handle.addEventListener('dragstart', function(e) {
+      sidebarDragSrc = this.closest('.hub-snav-item');
+      e.dataTransfer.effectAllowed = 'move';
+      sidebarDragSrc.classList.add('snav-dragging');
+    });
+    handle.addEventListener('dragend', function() {
+      sidebarDragSrc?.classList.remove('snav-dragging');
+      sidebarDragSrc = null;
+      document.querySelectorAll('.snav-drag-over').forEach(el => el.classList.remove('snav-drag-over'));
+    });
+  });
+
+  const items = document.querySelectorAll('.hub-snav-item');
+  items.forEach(item => {
+    item.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+    item.addEventListener('dragenter', function(e) {
+      e.preventDefault();
+      if (this !== sidebarDragSrc) this.classList.add('snav-drag-over');
+    });
+    item.addEventListener('dragleave', function() {
+      this.classList.remove('snav-drag-over');
+    });
+    item.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('snav-drag-over');
+      if (!sidebarDragSrc || this === sidebarDragSrc) return;
+      const stagger = this.closest('.hub-snav-stagger');
+      if (!stagger) return;
+      stagger.insertBefore(sidebarDragSrc, this);
+      persistSidebarOrder();
+    });
+  });
+}
+
+function persistSidebarOrder() {
+  const stagger = document.querySelector('.hub-snav-stagger');
+  if (!stagger) return;
+  const config = loadSidebarConfig();
+  config.order = [];
+  stagger.querySelectorAll('.hub-snav-item').forEach(item => {
+    const href = item.getAttribute('href');
+    if (href) config.order.push(href);
+  });
+  saveSidebarConfig(config);
+}
+
+function showAddLinkPopup() {
+  const existing = document.querySelector('.snav-add-popup');
+  if (existing) { existing.remove(); return; }
+
+  const popup = document.createElement('div');
+  popup.className = 'hub-edit-popup snav-add-popup';
+  popup.innerHTML = `
+    <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);margin-bottom:10px">Add Shortcut</div>
+    <input type="text" id="snavLinkLabel" placeholder="Label (e.g. Journal)" autofocus>
+    <input type="text" id="snavLinkUrl" placeholder="URL or path (e.g. journal.html)">
+    <div class="hub-edit-popup-actions">
+      <button class="cancel" id="snavLinkCancel">Cancel</button>
+      <button class="primary" id="snavLinkSave">Add</button>
+    </div>
+  `;
+  document.body.appendChild(popup);
+
+  const addBtn = document.querySelector('.snav-add-link-btn');
+  if (addBtn) {
+    const rect = addBtn.getBoundingClientRect();
+    popup.style.top = Math.min(rect.bottom + 4, window.innerHeight - 160) + 'px';
+    popup.style.left = Math.max(8, Math.min(rect.left + rect.width / 2 - 120, window.innerWidth - 248)) + 'px';
+  }
+
+  document.getElementById('snavLinkCancel').addEventListener('click', () => popup.remove());
+  document.getElementById('snavLinkSave').addEventListener('click', function() {
+    const label = document.getElementById('snavLinkLabel').value.trim();
+    const url = document.getElementById('snavLinkUrl').value.trim();
+    if (!label || !url) { showToast('Enter both a label and URL', 'warning'); return; }
+    const config = loadSidebarConfig();
+    if (!config.customLinks) config.customLinks = [];
+    config.customLinks.push({ label, url });
+    saveSidebarConfig(config);
+    popup.remove();
+    applySidebarConfig();
+    if (sidebarEditMode) renderSidebarEditControls();
+    showToast(`Added ${escapeHtml(label)}`, 'success');
+  });
+
+  function onKey(e) { if (e.key === 'Escape') popup.remove(); }
+  document.addEventListener('keydown', onKey);
+  popup._onKey = onKey;
+}
+
+// Delegated click: handle hide buttons in sidebar edit mode
+document.addEventListener('click', function(e) {
+  const hideBtn = e.target.closest('.snav-hide-btn');
+  if (!hideBtn) return;
+  const item = hideBtn.closest('.hub-snav-item');
+  if (!item) return;
+  const href = item.getAttribute('href');
+  const config = loadSidebarConfig();
+  if (!config.visibility) config.visibility = {};
+  const isHidden = config.visibility[href] === true;
+  config.visibility[href] = !isHidden;
+  saveSidebarConfig(config);
+  if (isHidden) {
+    item.style.opacity = '';
+    hideBtn.innerHTML = '●';
+    hideBtn.title = 'Hide from sidebar';
+  } else {
+    item.style.opacity = '0.35';
+    hideBtn.innerHTML = '○';
+    hideBtn.title = 'Show in sidebar';
+  }
+});
 
 function updateSectionHandles() {
   const handles = document.querySelectorAll('.hub-section-drag-handle');
@@ -1727,6 +2007,8 @@ function updateSectionHandles() {
 
 // Delegated click: sidebar buttons + edit mode image picker
 document.addEventListener('click', function(e) {
+  const sidebarEditBtn = e.target.closest('#hubSidebarEditBtn');
+  if (sidebarEditBtn) { toggleSidebarEditMode(); return; }
   const visualsBtn = e.target.closest('#bcVisualsBtn');
   if (visualsBtn) { toggleEditMode(); return; }
   const settingsBtn = e.target.closest('.hamburger-settings-btn');

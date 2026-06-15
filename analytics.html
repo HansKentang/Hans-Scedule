@@ -299,6 +299,7 @@
         </button>
         <div class="hub-workspace-icon">H</div>
         <span class="hub-workspace-name">Havën</span>
+        <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav">✎</button>
       </div>
       <nav class="hub-sidebar-nav">
         <div class="hub-sidebar-section-label">Pages</div>
@@ -334,6 +335,14 @@
               </svg>
             </span>
             <span class="snav-label">Analytics</span>
+          </a>
+          <a href="goals.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </span>
+            <span class="snav-label">Goals</span>
           </a>
           <a href="finance.html" class="hub-snav-item">
             <span class="snav-icon">
@@ -612,12 +621,49 @@
             <thead><tr><th>Date</th><th class="num">Tasks</th><th class="num">Total</th><th class="num">Deep Work</th><th class="num">Study</th><th class="num">Other</th></tr></thead>
             <tbody id="analyticsTableBody"></tbody>
           </table>
-        </div>
       </div>
 
-      <!-- Minimal footer -->
-      <footer class="hub-minifooter hub-anim-in hub-anim-in-8">
-        <span>Havën Schedule v1.0</span>
+      <div class="hub-section-wrap" data-hub-section="bento">
+        <div class="hub-section-header">
+          <span class="hub-section-drag-handle" draggable="true">⠿</span>
+          <span class="hub-section-label">Canvas</span>
+        </div>
+        <div class="bento-grid fade-in" style="margin-bottom:var(--section-gap)"></div>
+      </div>
+
+      <!-- Hub Visuals FAB -->
+      <div class="access-hub" id="hubAccessHub">
+        <div class="access-items" id="hubAccessItems">
+          <button class="access-item" id="hubFabEdit" title="Toggle edit mode">
+            <span class="access-item-icon" style="background:color-mix(in srgb, var(--primary) 15%, transparent);color:var(--primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </span>
+            <span class="access-item-label">Edit</span>
+          </button>
+          <button class="access-item" id="hubFabAdd" title="Add bubbles to canvas">
+            <span class="access-item-icon" style="background:color-mix(in srgb, var(--tag-deep-work-text) 15%, transparent);color:var(--tag-deep-work-text)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+            </span>
+            <span class="access-item-label">Add</span>
+          </button>
+          <button class="access-item" id="hubFabHide" title="Hide/show bubbles">
+            <span class="access-item-icon" style="background:color-mix(in srgb, var(--tag-hobby-text) 15%, transparent);color:var(--tag-hobby-text)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </span>
+            <span class="access-item-label">Hide</span>
+          </button>
+        </div>
+        <button class="access-main" id="hubAccessMain" aria-label="Hub actions">
+          <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Minimal footer -->
+    <footer class="hub-minifooter hub-anim-in hub-anim-in-8">
+      <span>Havën Schedule v1.0</span>
         <div class="hub-minifooter-actions">
           <button id="exportBtn" class="btn btn-ghost">Export</button>
           <button id="importBtn" class="btn btn-ghost">Import</button>
@@ -835,6 +881,7 @@
     }
   </script>
   <script src="shared.js"></script>
+  <script src="hub-visuals.js"></script>
   <script>
     document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
   </script>

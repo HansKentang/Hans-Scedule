@@ -49,37 +49,6 @@
     .fin-export-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); padding: 0; }
     .fin-export-btn:hover { background: var(--accent-soft); color: var(--text-primary); }
     .fin-export-btn svg { width: 16px; height: 16px; }
-    .fin-rates-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: var(--space-4) var(--space-5); margin-bottom: var(--space-4); }
-    .fin-rates-card:hover { border-color: var(--text-primary); }
-    .fin-rates-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
-    .fin-rates-title { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); }
-    .fin-rates-main { display: flex; align-items: center; gap: var(--space-4); }
-    .fin-rates-main-left { display: flex; flex-direction: column; min-width: 130px; }
-    .fin-rates-pair { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
-    .fin-rates-price { font-size: 1.4rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-    .fin-rates-chg-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-top: 2px; }
-    .fin-rates-chg-badge.up { color: #fff; background: var(--fin-income); }
-    .fin-rates-chg-badge.down { color: #fff; background: var(--fin-expense); }
-    .fin-rates-chg-badge.flat { color: var(--text-tertiary); background: var(--bg-secondary); }
-    .fin-rates-chart-wrap { flex: 1; height: 100px; position: relative; }
-    .fin-rates-chart-wrap svg { width: 100%; height: 100%; }
-    .fin-rates-others { display: flex; gap: var(--space-3); margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--border-subtle); }
-    .fin-rate-row { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
-    .fin-rate-code { font-weight: 700; font-size: 0.68rem; color: var(--text-primary); flex-shrink: 0; }
-    .fin-rate-spark { width: 72px; height: 20px; flex-shrink: 0; }
-    .fin-rate-val { font-weight: 700; font-size: 0.72rem; color: var(--text-primary); font-variant-numeric: tabular-nums; text-align: right; flex-shrink: 0; }
-    .fin-rate-chg { font-size: 0.58rem; font-weight: 700; white-space: nowrap; }
-    .fin-rate-chg.up { color: var(--fin-income); }
-    .fin-rate-chg.down { color: var(--fin-expense); }
-    .fin-rate-chg.flat { color: var(--text-tertiary); }
-    .fin-rates-loading { font-size: 0.7rem; color: var(--text-tertiary); padding: 8px 0; }
-    .fin-refresh-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); padding: 0; flex-shrink: 0; }
-    .fin-refresh-btn:hover { background: var(--accent-soft); color: var(--text-primary); }
-    .fin-refresh-btn svg { width: 14px; height: 14px; }
-    .fin-refresh-btn.loading svg { animation: finSpin 0.7s linear infinite; }
-    .fin-refresh-btn.loaded svg { animation: finPop 0.3s ease; }
-    @keyframes finSpin { to { transform: rotate(360deg); } }
-    @keyframes finPop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
     .fin-kpi-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 999px; }
     .fin-kpi-delta.up { color: var(--fin-income); background: color-mix(in srgb, var(--fin-income) 10%, transparent); }
     .fin-kpi-delta.down { color: var(--fin-expense); background: color-mix(in srgb, var(--fin-expense) 10%, transparent); }
@@ -155,6 +124,236 @@
     .fin-hero-decor { position: absolute; right: 10px; top: 10px; width: 120px; height: 120px; opacity: 0.12; pointer-events: none; }
     .fin-hero-decor svg { width: 100%; height: 100%; }
 
+    /* ─── ADVANCED CHARTS ──────────────────────────────── */
+    .fin-adv-section { margin-bottom: var(--space-6); }
+    .fin-adv-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-3);
+    }
+    .fin-adv-tabs {
+      display: inline-flex; gap: 3px; background: var(--surface-container-low);
+      border: 1px solid var(--border-color); padding: 3px; border-radius: 12px;
+    }
+    .fin-adv-tab {
+      display: inline-flex; align-items: center; gap: 5px;
+      border: none; background: transparent; color: var(--text-secondary);
+      padding: 5px 10px; border-radius: 10px; font-weight: 600;
+      font-size: 0.68rem; cursor: pointer; transition: all var(--t-fast);
+      white-space: nowrap; font-family: var(--font-family);
+    }
+    .fin-adv-tab:hover { color: var(--text-primary); background: var(--accent-soft); }
+    .fin-adv-tab.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 0 rgba(0,0,0,0.06); }
+    .fin-adv-tab svg { width: 14px; height: 14px; opacity: 0.7; }
+    .fin-adv-tab.active svg { opacity: 1; }
+    #finAdvBody { min-height: 280px; position: relative; }
+
+    /* ─── TREEMAP ────────────────────────────────────────── */
+    .fin-treemap-svg { width: 100%; height: 320px; }
+    .fin-treemap-rect { transition: opacity 200ms ease, transform 200ms ease; cursor: pointer; }
+    .fin-treemap-rect:hover { opacity: 0.85; transform: scale(1.02); }
+    .fin-treemap-label { pointer-events: none; font-family: var(--font-sans); }
+    .fin-treemap-tooltip {
+      position: fixed; z-index: 100; padding: 8px 14px;
+      background: var(--surface-container-high); border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); font-size: 0.72rem; font-weight: 500;
+      box-shadow: var(--shadow-lg); pointer-events: none;
+      display: none; color: var(--text-primary);
+    }
+    .fin-treemap-tooltip .tt-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .fin-treemap-tooltip .tt-pct { color: var(--text-tertiary); font-size: 0.65rem; }
+
+    /* ─── MONTH-OVER-MONTH ───────────────────────────────── */
+    .fin-mom-wrap { padding: var(--space-2) 0; }
+    .fin-mom-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-4); font-size: 0.72rem; color: var(--text-tertiary);
+    }
+    .fin-mom-months {
+      display: flex; gap: var(--space-3); align-items: center;
+    }
+    .fin-mom-month {
+      padding: 4px 12px; border-radius: 20px;
+      background: var(--accent-soft); font-weight: 600; color: var(--text-primary);
+      font-size: 0.72rem;
+    }
+    .fin-mom-chart { display: flex; flex-direction: column; gap: 10px; }
+    .fin-mom-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .fin-mom-cat {
+      width: 80px; font-size: 0.68rem; font-weight: 500;
+      color: var(--text-secondary); overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0;
+    }
+    .fin-mom-bars {
+      flex: 1; display: flex; align-items: center; gap: 4px;
+      height: 18px;
+    }
+    .fin-mom-bar {
+      height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      min-width: 2px; position: relative;
+    }
+    .fin-mom-bar.prev { opacity: 0.4; }
+    .fin-mom-bar.current { opacity: 0.85; }
+    .fin-mom-val {
+      font-size: 0.62rem; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums; width: 50px; text-align: right;
+    }
+    .fin-mom-delta {
+      font-size: 0.6rem; font-weight: 700; width: 30px; text-align: right;
+    }
+    .fin-mom-delta.up { color: var(--fin-expense); }
+    .fin-mom-delta.down { color: var(--fin-income); }
+
+    /* ─── CALENDAR HEATMAP ───────────────────────────────── */
+    .fin-heat-wrap { padding: var(--space-2) 0; }
+    .fin-heat-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-3);
+    }
+    .fin-heat-title { font-size: 0.72rem; color: var(--text-tertiary); }
+    .fin-heat-legend {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.6rem; color: var(--text-tertiary);
+    }
+    .fin-heat-swatch {
+      width: 12px; height: 12px; border-radius: 2px;
+    }
+    .fin-heat-grid {
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .fin-heat-week {
+      display: flex; gap: 3px; align-items: center;
+    }
+    .fin-heat-day {
+      width: 100%; aspect-ratio: 1; border-radius: 3px;
+      transition: all 150ms ease; cursor: pointer; position: relative;
+      min-width: 12px;
+    }
+    .fin-heat-day:hover {
+      transform: scale(1.3); z-index: 2;
+      box-shadow: 0 0 0 2px var(--text-primary);
+    }
+    .fin-heat-day-label {
+      font-size: 0.55rem; color: var(--text-tertiary); width: 16px;
+      flex-shrink: 0; text-align: center;
+    }
+    .fin-heat-month-label {
+      font-size: 0.6rem; color: var(--text-tertiary); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 2px 0 4px;
+    }
+    .fin-heat-tooltip {
+      position: fixed; z-index: 100; padding: 6px 12px;
+      background: var(--surface-container-high); border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); font-size: 0.68rem;
+      box-shadow: var(--shadow-lg); pointer-events: none;
+      display: none; color: var(--text-primary);
+    }
+
+    /* ─── WATERFALL CHART ────────────────────────────────── */
+    .fin-waterfall-wrap { padding: var(--space-2) 0; }
+    .fin-wf-chart {
+      display: flex; align-items: flex-end; gap: 8px;
+      height: 240px; padding: var(--space-6) 0 var(--space-8);
+      position: relative;
+    }
+    .fin-wf-bar-group {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; height: 100%; position: relative;
+      min-width: 30px;
+    }
+    .fin-wf-bar {
+      width: 100%; border-radius: 4px 4px 0 0; min-height: 4px;
+      transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative; cursor: pointer;
+    }
+    .fin-wf-bar.income { background: linear-gradient(to top, color-mix(in srgb, var(--fin-income) 40%, transparent), var(--fin-income)); }
+    .fin-wf-bar.expense { background: linear-gradient(to top, color-mix(in srgb, var(--fin-expense) 40%, transparent), var(--fin-expense)); }
+    .fin-wf-bar.total { background: linear-gradient(to top, color-mix(in srgb, var(--fin-accent) 40%, transparent), var(--fin-accent)); }
+    .fin-wf-bar.connector {
+      width: 2px; border-radius: 0; align-self: center;
+      background: var(--border-color); position: absolute;
+      min-height: 2px; cursor: default;
+    }
+    .fin-wf-value {
+      position: absolute; top: -18px; left: 50%;
+      transform: translateX(-50%); font-size: 0.55rem;
+      font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    .fin-wf-label {
+      position: absolute; bottom: -22px; left: 50%;
+      transform: translateX(-50%); font-size: 0.55rem;
+      color: var(--text-tertiary); white-space: nowrap;
+      text-align: center;
+    }
+    .fin-wf-total-line {
+      position: absolute; left: 0; right: 0;
+      border-top: 1px dashed var(--border-color);
+      pointer-events: none;
+    }
+    .fin-wf-total-label {
+      position: absolute; right: 0; font-size: 0.5rem;
+      color: var(--text-tertiary); transform: translateY(-50%);
+      padding-left: 6px; white-space: nowrap;
+    }
+
+    /* ─── TOP MERCHANTS ──────────────────────────────────── */
+    .fin-merch-wrap { padding: var(--space-2) 0; }
+    .fin-merch-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-4); font-size: 0.72rem; color: var(--text-tertiary);
+    }
+    .fin-merch-list { display: flex; flex-direction: column; gap: 4px; }
+    .fin-merch-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 12px; border-radius: var(--radius-md);
+      transition: background var(--t-fast);
+      cursor: pointer;
+    }
+    .fin-merch-item:hover { background: var(--accent-soft); }
+    .fin-merch-rank {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; font-weight: 700; flex-shrink: 0;
+      background: var(--bg-secondary); color: var(--text-tertiary);
+    }
+    .fin-merch-rank.top1 { background: #f59e0b; color: #fff; }
+    .fin-merch-rank.top2 { background: #9ca3af; color: #fff; }
+    .fin-merch-rank.top3 { background: #d97706; color: #fff; }
+    .fin-merch-icon {
+      width: 28px; height: 28px; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 0.7rem;
+      background: var(--accent-soft); color: var(--text-secondary);
+    }
+    .fin-merch-info { flex: 1; min-width: 0; }
+    .fin-merch-name {
+      font-size: 0.78rem; font-weight: 600; color: var(--text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .fin-merch-count {
+      font-size: 0.6rem; color: var(--text-tertiary); margin-top: 1px;
+    }
+    .fin-merch-track { flex: 0 0 120px; height: 6px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
+    .fin-merch-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    .fin-merch-amount {
+      font-size: 0.7rem; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums; width: 80px; text-align: right;
+    }
+
+    @media (max-width: 768px) {
+      .fin-adv-tabs { width: 100%; overflow-x: auto; }
+      .fin-adv-tab { font-size: 0.65rem; padding: 4px 8px; }
+      .fin-adv-tab svg { width: 12px; height: 12px; }
+      .fin-mom-cat { width: 60px; font-size: 0.62rem; }
+      .fin-merch-track { flex-basis: 60px; }
+      .fin-merch-amount { width: 60px; font-size: 0.62rem; }
+      .fin-wf-chart { height: 180px; }
+      .fin-treemap-svg { height: 240px; }
+    }
+
     @keyframes finRowIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
     .fin-row { animation: finRowIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
     .fin-row:nth-child(1) { animation-delay: 0.02s; }
@@ -183,6 +382,7 @@
         </button>
         <div class="hub-workspace-icon">H</div>
         <span class="hub-workspace-name">Havën</span>
+        <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav">✎</button>
       </div>
       <nav class="hub-sidebar-nav">
         <div class="hub-sidebar-section-label">Pages</div>
@@ -191,6 +391,7 @@
           <a href="schedule.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="snav-label">Schedule</span></a>
           <a href="activities.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span><span class="snav-label">Activities</span></a>
           <a href="analytics.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="snav-label">Analytics</span></a>
+          <a href="goals.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span class="snav-label">Goals</span></a>
           <a href="finance.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="snav-label">Finance</span></a>
         </div>
       </nav>
@@ -352,19 +553,6 @@
           </div>
         </div>
 
-        <!-- Live Exchange Rates Card -->
-        <div class="fin-rates-card hub-anim-in hub-anim-in-4">
-          <div class="fin-rates-header">
-            <span class="fin-rates-title">Live Exchange Rates</span>
-            <button class="fin-refresh-btn" id="finRefreshBtn" title="Refresh rates">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-            </button>
-          </div>
-          <div id="finRatesBody">
-            <div class="fin-rates-loading">Loading rates…</div>
-          </div>
-        </div>
-
         <!-- Panels: Table + Form -->
         <div class="fin-panels hub-anim-in hub-anim-in-5">
           <div>
@@ -442,18 +630,84 @@
           </div>
         </div>
 
+        <!-- ─── ADVANCED CHARTS ───────────────────────────── -->
+        <div class="fin-adv-section hub-anim-in hub-anim-in-7">
+          <div class="fin-adv-header">
+            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary)">Spending Intelligence</span>
+            <div class="fin-adv-tabs" id="finAdvTabs">
+              <button class="fin-adv-tab active" data-view="treemap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="15"/><rect x="3" y="14" width="7" height="4"/></svg>
+                Treemap
+              </button>
+              <button class="fin-adv-tab" data-view="mom">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                MoM
+              </button>
+              <button class="fin-adv-tab" data-view="heatmap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M2 12h20M12 2v20"/></svg>
+                Heatmap
+              </button>
+              <button class="fin-adv-tab" data-view="waterfall">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Flow
+              </button>
+              <button class="fin-adv-tab" data-view="merchants">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                Merchants
+              </button>
+            </div>
+          </div>
+          <div class="fin-chart-card" id="finAdvContainer">
+            <div id="finAdvBody"></div>
+          </div>
+      </div>
+
+      <div class="hub-section-wrap" data-hub-section="bento">
+        <div class="hub-section-header">
+          <span class="hub-section-drag-handle" draggable="true">⠿</span>
+          <span class="hub-section-label">Canvas</span>
+        </div>
+        <div class="bento-grid fade-in" style="margin-bottom:var(--section-gap)"></div>
+      </div>
+
+      <!-- Hub Visuals FAB -->
+      <div class="access-hub" id="hubAccessHub">
+        <div class="access-items" id="hubAccessItems">
+          <button class="access-item" id="hubFabEdit" title="Toggle edit mode">
+            <span class="access-item-icon" style="background:color-mix(in srgb, var(--primary) 15%, transparent);color:var(--primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </span>
+            <span class="access-item-label">Edit</span>
+          </button>
+          <button class="access-item" id="hubFabAdd" title="Add bubbles to canvas">
+            <span class="access-item-icon" style="background:color-mix(in srgb, var(--tag-deep-work-text) 15%, transparent);color:var(--tag-deep-work-text)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+            </span>
+            <span class="access-item-label">Add</span>
+          </button>
+          <button class="access-item" id="hubFabHide" title="Hide/show bubbles">
+            <span class="access-item-icon" style="background:color-mix(in srgb, var(--tag-hobby-text) 15%, transparent);color:var(--tag-hobby-text)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </span>
+            <span class="access-item-label">Hide</span>
+          </button>
+        </div>
+        <button class="access-main" id="hubAccessMain" aria-label="Hub actions">
+          <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
   <script src="shared.js"></script>
+  <script src="hub-visuals.js"></script>
+  <script src="finance.js"></script>
   <script>
     const FIN_STORAGE = 'haven-schedule-finance';
-    const FIN_RATES_CACHE = 'haven-schedule-rates-cache';
-    let CURRENCY_RATES = { IDR: 1, USD: 18000, AUD: 13000, MYR: 3800, CNY: 2500 };
     let currentRange = '30d';
     let currentType = 'expense';
     let editingId = null;
-    let historicalRates = null;
     const FIN_CAT_COLORS = ['#6366f1','#f59e0b','#ef4444','#22c55e','#06b6d4','#ec4899','#f97316','#8b5cf6','#14b8a6'];
 
     function uid() { return 'fin_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
@@ -469,119 +723,6 @@
     function escapeHtml(str) { return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
     function dayKey(d) { return new Date(d).toISOString().slice(0,10); }
     function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
-
-    // ─── CURRENCY RATES (Live + Cached) ──────────────────────
-
-    function loadCachedRates() {
-      try {
-        const raw = localStorage.getItem(FIN_RATES_CACHE);
-        if (!raw) return false;
-        const data = JSON.parse(raw);
-        if (data.rates && data.timestamp && Date.now() - data.timestamp < 3600000) {
-          CURRENCY_RATES = data.rates;
-          if (data.historical) historicalRates = data.historical;
-          return true;
-        }
-      } catch (e) { /* ignore */ }
-      return false;
-    }
-
-    function saveRatesCache(rates, historical) {
-      try {
-        localStorage.setItem(FIN_RATES_CACHE, JSON.stringify({ rates, historical, timestamp: Date.now() }));
-      } catch (e) { /* ignore */ }
-    }
-
-    let lastRateUpdate = null;
-
-    function generateSparklineData() {
-      const dates = [];
-      const usdVals = [], audVals = [], myrVals = [], cnyVals = [];
-      const codes = ['USD','AUD','MYR','CNY'];
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        dates.push(d.toISOString().slice(0,10));
-        const noise = 1 + (Math.random() - 0.5) * 0.06;
-        usdVals.push(Math.round(CURRENCY_RATES.USD * noise));
-        audVals.push(Math.round(CURRENCY_RATES.AUD * noise));
-        myrVals.push(Math.round(CURRENCY_RATES.MYR * noise));
-        cnyVals.push(Math.round(CURRENCY_RATES.CNY * noise));
-      }
-      historicalRates = { dates, usd: usdVals, aud: audVals, myr: myrVals, cny: cnyVals };
-    }
-
-    async function fetchLiveRates() {
-      const btn = document.getElementById('finRefreshBtn');
-      if (btn) btn.classList.add('loading');
-      try {
-        const res = await fetch('https://open.er-api.com/v6/latest/USD');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        if (data.result !== 'success') throw new Error('API result: ' + data.result);
-        const r = data.rates;
-        CURRENCY_RATES = { IDR: 1, USD: r.IDR, AUD: r.IDR / r.AUD, MYR: r.IDR / r.MYR, CNY: r.IDR / r.CNY };
-        lastRateUpdate = data.time_last_update_utc || new Date().toUTCString();
-        generateSparklineData();
-        saveRatesCache(CURRENCY_RATES, historicalRates);
-        renderAll();
-        if (btn) { btn.classList.remove('loading'); btn.classList.add('loaded'); setTimeout(() => btn.classList.remove('loaded'), 300); }
-      } catch (e) {
-        if (btn) btn.classList.remove('loading');
-        if (!loadCachedRates()) generateSparklineData();
-        renderAll();
-        showToast('Using cached rates — ' + e.message, 'info', 3000);
-      }
-    }
-
-    function renderRateCard() {
-      const body = document.getElementById('finRatesBody');
-      if (!body) return;
-
-      const sparkSvg = (code, vals, w, h, opts) => {
-        if (!vals || vals.length < 2) return `<span style="color:var(--text-tertiary);font-size:0.6rem">—</span>`;
-        const min = Math.min(...vals), max = Math.max(...vals);
-        const range = max - min || 1;
-        const pad = 3;
-        const padH = h - pad * 2;
-        const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${pad + ((max - v) / range) * padH}`).join(' ');
-        const fillPts = `0,${h} ${pts} ${w},${h}`;
-        const lastX = w;
-        const lastY = pad + ((max - vals[vals.length - 1]) / range) * padH;
-        const color = opts?.color || 'var(--primary)';
-        return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block;overflow:visible">
-          <defs><linearGradient id="spk${code}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.15"/><stop offset="100%" stop-color="${color}" stop-opacity="0.01"/></linearGradient></defs>
-          <polygon points="${fillPts}" fill="url(#spk${code})"/>
-          <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="${opts?.lineWidth || 1.5}" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="${lastX}" cy="${lastY}" r="${opts?.dotSize || 0}" fill="${color}" stroke="var(--bg-card)" stroke-width="1.5"/>
-        </svg>`;
-      };
-
-      const changeInfo = (vals) => {
-        if (!vals || vals.length < 2) return { str: '\u2014', cls: 'flat' };
-        const chg = ((vals[vals.length - 1] - vals[0]) / vals[0]) * 100;
-        if (chg > 0.01) return { str: `\u25B2 ${chg.toFixed(1)}%`, cls: 'up' };
-        if (chg < -0.01) return { str: `\u25BC ${Math.abs(chg).toFixed(1)}%`, cls: 'down' };
-        return { str: `\u2014 ${chg.toFixed(1)}%`, cls: 'flat' };
-      };
-
-      const CURRENCY_COLORS = { USD: '#6366f1', AUD: '#f59e0b', MYR: '#22c55e', CNY: '#06b6d4' };
-
-      body.innerHTML = ['USD','AUD','MYR','CNY'].map((code, idx) => {
-        const key = code.toLowerCase();
-        const vals = historicalRates?.[key];
-        const price = vals?.length ? Math.round(vals[vals.length - 1]).toLocaleString('id-ID') : '—';
-        const chg = changeInfo(vals);
-        const color = CURRENCY_COLORS[code] || 'var(--primary)';
-        return `<div class="fin-rates-main" style="${idx > 0 ? 'margin-top:var(--space-4);padding-top:var(--space-4);border-top:1px solid var(--border-subtle)' : ''}">
-          <div class="fin-rates-main-left">
-            <div class="fin-rates-pair">1 ${code} =</div>
-            <div class="fin-rates-price">Rp ${price}</div>
-            <div class="fin-rates-chg-badge ${chg.cls}">${chg.str}</div>
-          </div>
-          <div class="fin-rates-chart-wrap" style="flex:1;height:80px">${sparkSvg(code, vals, 400, 80, { lineWidth: 2.5, dotSize: 3.5, color })}</div>
-        </div>`;
-      }).join('');
-    }
 
     // ─── FINANCE DATA ────────────────────────────────────────
 
@@ -838,20 +979,17 @@
       }).join('');
     }
 
-    function renderAll() { renderCards(); renderCount(); renderTable(); renderCharts(); renderRateCard(); }
+    function renderAll() { renderCards(); renderCount(); renderTable(); renderCharts(); }
 
     // ─── INIT ────────────────────────────────────────────────
 
     function init() {
       loadImages();
-      loadCachedRates();
-      if (!historicalRates) generateFallbackRates();
       const dateEl = document.getElementById('finDate');
       if (dateEl) dateEl.value = new Date().toISOString().slice(0,10);
       document.getElementById('finAddBtn').addEventListener('click', addTransaction);
       document.getElementById('finCancelEditBtn').addEventListener('click', cancelEdit);
       document.getElementById('finExportBtn').addEventListener('click', exportCSV);
-      document.getElementById('finRefreshBtn').addEventListener('click', fetchLiveRates);
 
       const expBtn = document.getElementById('finTypeExpense');
       const incBtn = document.getElementById('finTypeIncome');
@@ -891,7 +1029,9 @@
         el.src = getImage(el.dataset.imageId) || '';
       });
       renderAll();
-      fetchLiveRates();
+      initHubLayout();
+      initHubEditMode();
+      renderHubBento();
     }
 
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
@@ -1103,6 +1243,7 @@
     }
   </script>
   <script src="shared.js"></script>
+  <script src="hub-visuals.js"></script>
   <script>
     document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
   </script>
