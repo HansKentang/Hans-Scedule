@@ -1012,7 +1012,7 @@ function saveImages() {
   try {
     const custom = {};
     for (const key of Object.keys(state.images || {})) {
-      if (state.images[key] && (!(key in DEFAULT_IMAGES) || state.images[key] !== DEFAULT_IMAGES[key])) {
+      if (state.images[key]) {
         custom[key] = state.images[key];
       }
     }
@@ -2168,6 +2168,11 @@ function spDoLogin(cid) {
 function spShowSetup() {
   const o = document.getElementById('spSetupOverlay'), m = document.getElementById('spSetupModal');
   if (!o || !m) return;
+  // Show the exact redirect URI for the current page
+  const uriEl = document.getElementById('spRedirectUri');
+  if (uriEl) {
+    uriEl.textContent = window.location.origin + window.location.pathname;
+  }
   o.classList.remove('hidden');
   m.classList.remove('hidden');
   setTimeout(() => { document.getElementById('spSetupCidInput')?.focus(); }, 100);

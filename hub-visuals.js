@@ -291,6 +291,8 @@ function renderHubGreeting() {
 
 /* ─── Bento render ─────────────────────────── */
 function renderHubBento() {
+  // Ensure images are loaded before rendering bubbles
+  if (typeof loadImages === 'function') loadImages();
   const grid = document.querySelector('.bento-grid');
   if (!grid) return;
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);

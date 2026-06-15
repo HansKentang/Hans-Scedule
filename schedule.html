@@ -526,7 +526,7 @@
             <p style="margin:0 0 8px;font-size:0.65rem;color:var(--text-secondary);line-height:1.4">
               You need a free Spotify Client ID to connect.
               <a href="https://developer.spotify.com/dashboard/create" target="_blank" rel="noopener" style="color:var(--primary)">Create App →</a>
-              <br>Add redirect URI: <code style="background:var(--surface-container-high);padding:1px 4px;border-radius:3px;font-size:0.6rem">http://localhost</code>
+              <br>Add redirect URI: <code id="spRedirectUri" style="background:var(--surface-container-high);padding:1px 4px;border-radius:3px;font-size:0.6rem">(auto-detected)</code>
               <br>Copy the Client ID and paste it below.
             </p>
             <div class="form-group" style="margin:0">
@@ -1177,9 +1177,6 @@
     }
   </script>
   <script src="shared.js"></script>
-  <script>
-    document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
-  </script>
   <script src="schedule.js"></script>
 </body>
 </html>

@@ -695,6 +695,7 @@ function init() {
   initHubLayout();
   initHubEditMode();
   renderHubBento();
+  spInit();
 }
 
 // Edit mode image picker (sidebar handling is in shared.js to avoid double-binding)
