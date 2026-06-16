@@ -1255,6 +1255,11 @@ function handleImagePickerSave() {
     else { setImage(id, val); }
   }
   if (status) { status.textContent = 'Saved!'; status.style.color = 'var(--primary)'; }
+  // Re-render image manager in settings drawer if open
+  var _settingsDrawer = document.getElementById('settingsDrawer');
+  if (_settingsDrawer && _settingsDrawer.classList.contains('open')) {
+    renderImageManagerInSettings();
+  }
   setTimeout(closeImagePicker, 400);
 }
 
@@ -1262,6 +1267,11 @@ function handleImagePickerReset() {
   const id = _pickerImageId;
   if (!id) return;
   resetImage(id);
+  // Re-render image manager in settings drawer if open
+  var _settingsDrawer = document.getElementById('settingsDrawer');
+  if (_settingsDrawer && _settingsDrawer.classList.contains('open')) {
+    renderImageManagerInSettings();
+  }
   closeImagePicker();
 }
 
@@ -1782,7 +1792,7 @@ function renderImageManagerInSettings() {
       _html += '<div class="img-mgr-item' + (_isCustom ? ' custom' : '') + '" data-image-id="' + _id + '" title="Click to customize ' + _label + '">';
       _html += '<div class="img-mgr-preview">';
       if (_url) {
-        _html += '<img src="' + escapeHtml(_url) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">';
+        _html += '<img src="' + escapeHtml(_url) + '" alt="" loading="lazy" data-image-id="' + _id + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">';
         _html += '<div class="img-mgr-preview-fallback" style="display:none">';
         _html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
         _html += '</div>';
@@ -2303,6 +2313,7 @@ document.addEventListener('click', function(e) {
   }
 
   if (!state.editMode) return;
+  if (document.documentElement.classList.contains('hub-edit')) return;
   let img = e.target.closest('img[data-image-id]');
   // If click is on an overlay sibling (e.g. gradient div), check parent for hero img
   if (!img && e.target.parentElement) {
