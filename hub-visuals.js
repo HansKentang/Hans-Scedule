@@ -246,8 +246,6 @@ function saveHubVisibility(vis) {
 function toggleHubEdit() {
   hubEditMode = !hubEditMode;
   localStorage.setItem(HUB_EDIT_KEY, hubEditMode);
-  // Sync shared state.editMode so other components stay consistent
-  if (typeof state !== 'undefined' && state) state.editMode = hubEditMode;
   try { applyHubEditMode(); } catch (e) { console.error('applyHubEditMode error:', e); }
 }
 
@@ -1109,8 +1107,6 @@ function toggleHubAccess() {
 
 /* ─── Edit mode toggle pill ─────────────────── */
 function showHubEditToggle() {
-  if (typeof state !== 'undefined' && state) hubEditMode = !!state.editMode;
-  // Toggle edit mode directly
   toggleHubEdit();
   // Show the toggle pill reflecting current state
   const existing = document.getElementById('hubEditTogglePill');
@@ -1155,19 +1151,7 @@ function initHubEditMode() {
   renderHubGallery();
   applyHubEditMode();
 
-  // Sync hubEditMode when shared edit mode changes (sidebar button, etc.)
-  document.addEventListener('editModeChange', function() {
-    const wasEdit = hubEditMode;
-    hubEditMode = typeof state !== 'undefined' && state ? !!state.editMode : hubEditMode;
-    if (wasEdit !== hubEditMode) {
-      localStorage.setItem(HUB_EDIT_KEY, hubEditMode);
-      document.documentElement.classList.toggle('hub-edit', hubEditMode);
-      renderHubBento();
-      renderHubGallery();
-      applyHubVisibility();
-      updateSectionHandles();
-    }
-  });
+  // (No longer syncing hubEditMode from state.editMode — they are independent)
 }
 
 /* ─── Initialize hub FAB positioning ────────── */

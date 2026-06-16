@@ -1779,7 +1779,7 @@ function renderImageManagerInSettings() {
       var _isCustom = _url && _url !== DEFAULT_IMAGES[_id];
       var _shortUrl = _url ? (_url.length > 50 ? _url.slice(0, 47) + '...' : _url) : '';
 
-      _html += '<div class="img-mgr-item' + (_isCustom ? ' custom' : '') + '" data-image-id="' + _id + '">';
+      _html += '<div class="img-mgr-item' + (_isCustom ? ' custom' : '') + '" data-image-id="' + _id + '" title="Click to customize ' + _label + '">';
       _html += '<div class="img-mgr-preview">';
       if (_url) {
         _html += '<img src="' + escapeHtml(_url) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">';
@@ -1816,6 +1816,16 @@ function renderImageManagerInSettings() {
   _html += '</div>';
 
   container.innerHTML = _html;
+
+  // Wire click on image manager items to open the image picker
+  container.querySelectorAll('.img-mgr-item').forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      // Don't open picker if clicking the reset button
+      if (e.target.closest('.img-mgr-reset-btn')) return;
+      var id2 = this.dataset.imageId;
+      if (id2) openImagePicker(id2);
+    });
+  });
 }
 
 function handleImageManagerReset(id) {
@@ -2265,18 +2275,9 @@ document.addEventListener('click', function(e) {
   const settingsBtn = e.target.closest('.hamburger-settings-btn');
   if (settingsBtn) { openSettingsDrawer(); return; }
 
-  // Hamburger sidebar toggle
+  // Hamburger opens settings drawer
   const hamburger = e.target.closest('.hub-hamburger');
-  if (hamburger) {
-    const layout = hamburger.closest('.hub-layout');
-    if (!layout) return;
-    const sidebar = layout.querySelector('.hub-sidebar');
-    const overlay = layout.querySelector('.hub-sidebar-overlay');
-    if (!sidebar) return;
-    const isOpen = sidebar.classList.toggle('open');
-    overlay?.classList.toggle('active', isOpen);
-    return;
-  }
+  if (hamburger) { openSettingsDrawer(); return; }
 
   // Overlay click closes sidebar
   const overlayEl = e.target.closest('.hub-sidebar-overlay');
