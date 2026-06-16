@@ -198,8 +198,10 @@ function loadHubContent() {
   const defaults = HUB_DEFAULTS;
   try {
     const raw = localStorage.getItem(HUB_CONTENT_KEY);
+    console.warn('[img] loadHubContent: raw from localStorage:', raw ? raw.slice(0, 200) + '...' : 'null');
     if (raw) {
       const hc = JSON.parse(raw);
+      console.warn('[img] loadHubContent: parsed, bentoLayout length:', hc.bentoLayout ? hc.bentoLayout.length : 0);
       hc.bentoLayout = normalizeBentoLayout(hc.bentoLayout, hc);
       if (!hc.bentoLayout || !hc.bentoLayout.length) hc.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
       if (!hc.gallery) hc.gallery = defaults.gallery.map(g => ({...g}));
@@ -210,16 +212,21 @@ function loadHubContent() {
       if (!hc.habits) hc.habits = [...defaults.habits];
       if (hc.notes === undefined) hc.notes = '';
       if (!hc.links) hc.links = defaults.links.map(l => ({...l}));
+      console.warn('[img] loadHubContent: returning custom layout');
       return hc;
     }
-  } catch {}
+  } catch(e) { console.warn('[img] loadHubContent: error:', e); }
+  console.warn('[img] loadHubContent: returning DEFAULTS');
   return JSON.parse(JSON.stringify(HUB_DEFAULTS));
 }
 
 function saveHubContent() {
   var _hadImages = hubContent._images;
   delete hubContent._images;
-  try { localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(hubContent)); } catch(e) { console.warn('[img] saveHubContent failed:', e); }
+  try {
+    localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(hubContent));
+    console.warn('[img] saveHubContent: SAVED, bentoLayout length:', (hubContent.bentoLayout || []).length);
+  } catch(e) { console.warn('[img] saveHubContent failed:', e); }
   if (_hadImages !== undefined) hubContent._images = _hadImages;
 }
 
