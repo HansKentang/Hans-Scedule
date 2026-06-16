@@ -1695,6 +1695,153 @@ function renderCardColorsInSettings() {
   });
 }
 
+// ─── IMAGE MANAGER (Settings Drawer) ────────────────────────
+const IMAGE_MANAGER_GROUPS = [
+  {
+    label: 'Hub',
+    ids: ['hub-hero', 'hub-ceramic', 'hub-tulips', 'hub-desk-water', 'hub-lamp', 'hub-skyline', 'hub-bedroom']
+  },
+  {
+    label: 'Weekly',
+    ids: ['weekly-coffee', 'weekly-journal']
+  },
+  {
+    label: 'Schedule',
+    ids: ['schedule-hero', 'schedule-coffee']
+  },
+  {
+    label: 'Activities',
+    ids: ['activities-hero', 'activities-desk']
+  },
+  {
+    label: 'Tags',
+    ids: ['tags-hero', 'tags-studio']
+  },
+  {
+    label: 'Analytics',
+    ids: ['analytics-hero', 'analytics-data']
+  },
+  {
+    label: 'Goals',
+    ids: ['goals-hero', 'goals-ceramic', 'goals-tulips', 'goals-book', 'goals-studio']
+  },
+  {
+    label: 'Finance',
+    ids: ['finance-hero', 'finance-ceramic']
+  },
+  {
+    label: 'Brain',
+    ids: ['brain-linen', 'brain-desk-light']
+  }
+];
+
+function renderImageManagerInSettings() {
+  const container = document.getElementById('settingsImageManager');
+  if (!container) return;
+
+  if (!state.images) loadImages();
+
+  // Count custom images
+  var _customCount = 0;
+  var _allImageIds = [];
+  for (var _g = 0; _g < IMAGE_MANAGER_GROUPS.length; _g++) {
+    var _group = IMAGE_MANAGER_GROUPS[_g];
+    for (var _i = 0; _i < _group.ids.length; _i++) {
+      var _id = _group.ids[_i];
+      _allImageIds.push(_id);
+      var _url = getImage(_id);
+      if (_url && _url !== DEFAULT_IMAGES[_id]) _customCount++;
+    }
+  }
+
+  var _html = '';
+
+  // Header bar with count + reset all button
+  _html += '<div class="img-mgr-header">';
+  _html += '<span class="img-mgr-count">' + _customCount + ' custom / ' + _allImageIds.length + ' total</span>';
+  if (_customCount > 0) {
+    _html += '<button type="button" class="img-mgr-reset-all drawer-btn" onclick="handleImageManagerResetAll()">Reset All</button>';
+  }
+  _html += '</div>';
+
+  // Grouped grid
+  _html += '<div class="img-mgr-groups">';
+  for (var _g = 0; _g < IMAGE_MANAGER_GROUPS.length; _g++) {
+    var _group = IMAGE_MANAGER_GROUPS[_g];
+    _html += '<div class="img-mgr-group">';
+    _html += '<div class="img-mgr-group-label">' + _group.label + '</div>';
+    _html += '<div class="img-mgr-grid" data-group="' + _group.label + '">';
+
+    for (var _i = 0; _i < _group.ids.length; _i++) {
+      var _id = _group.ids[_i];
+      var _label = imageLabel(_id);
+      var _url = getImage(_id);
+      var _isCustom = _url && _url !== DEFAULT_IMAGES[_id];
+      var _shortUrl = _url ? (_url.length > 50 ? _url.slice(0, 47) + '...' : _url) : '';
+
+      _html += '<div class="img-mgr-item' + (_isCustom ? ' custom' : '') + '" data-image-id="' + _id + '">';
+      _html += '<div class="img-mgr-preview">';
+      if (_url) {
+        _html += '<img src="' + escapeHtml(_url) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">';
+        _html += '<div class="img-mgr-preview-fallback" style="display:none">';
+        _html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+        _html += '</div>';
+      } else {
+        _html += '<div class="img-mgr-preview-fallback">';
+        _html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+        _html += '</div>';
+      }
+      _html += '</div>';
+      _html += '<div class="img-mgr-info">';
+      _html += '<div class="img-mgr-name">' + _label + '</div>';
+      _html += '<div class="img-mgr-meta">';
+      if (_isCustom) {
+        _html += '<span class="img-mgr-badge custom-badge">Custom</span>';
+      } else {
+        _html += '<span class="img-mgr-badge default-badge">Default</span>';
+      }
+      _html += '</div>';
+      _html += '</div>';
+      if (_isCustom) {
+        _html += '<button type="button" class="img-mgr-reset-btn" title="Reset to default" onclick="handleImageManagerReset(\'' + _id + '\')">';
+        _html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>';
+        _html += '</button>';
+      }
+      _html += '</div>';
+    }
+
+    _html += '</div>';
+    _html += '</div>';
+  }
+  _html += '</div>';
+
+  container.innerHTML = _html;
+}
+
+function handleImageManagerReset(id) {
+  resetImage(id);
+  renderImageManagerInSettings();
+  showToast('Reset ' + imageLabel(id) + ' to default', 'info');
+}
+
+function handleImageManagerResetAll() {
+  if (!state.images) loadImages();
+  var _count = 0;
+  for (var _g = 0; _g < IMAGE_MANAGER_GROUPS.length; _g++) {
+    var _group = IMAGE_MANAGER_GROUPS[_g];
+    for (var _i = 0; _i < _group.ids.length; _i++) {
+      var _id = _group.ids[_i];
+      var _url = getImage(_id);
+      if (_url && _url !== DEFAULT_IMAGES[_id]) {
+        resetImage(_id);
+        _count++;
+      }
+    }
+  }
+  renderImageManagerInSettings();
+  showToast('Reset ' + _count + ' custom images to default', 'info');
+}
+
 function openSettingsDrawer() {
   dom.settingsApiKey = document.getElementById('drawerApiKey');
   dom.settingsProvider = document.getElementById('drawerProvider');
@@ -1715,6 +1862,7 @@ function openSettingsDrawer() {
   try { loadAIUsage(); } catch (e) { console.warn('drawer: loadAIUsage', e); }
   try { renderAIUsage(); } catch (e) { console.warn('drawer: renderAIUsage', e); }
   try { renderCardColorsInSettings(); } catch (e) { console.warn('drawer: renderCardColorsInSettings', e); }
+  try { renderImageManagerInSettings(); } catch (e) { console.warn('drawer: renderImageManagerInSettings', e); }
   try { renderBubbleConfigInSettings(); } catch (e) { console.warn('drawer: renderBubbleConfigInSettings', e); }
   overlay.classList.remove('hidden');
   drawer.classList.remove('hidden');

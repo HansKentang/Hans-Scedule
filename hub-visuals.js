@@ -217,10 +217,10 @@ function loadHubContent() {
 }
 
 function saveHubContent() {
-  // Include images in hub content for reliable persistence
-  hubContent._images = typeof state !== 'undefined' && state && state.images ? { ...state.images } : {};
-  try { localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(hubContent)); console.warn('[img] saveHubContent wrote', Object.keys(hubContent._images).filter(function(k){return hubContent._images[k];}).length, 'truthy images'); } catch(e) { console.warn('[img] saveHubContent localStorage.setItem failed:', e); }
+  var _hadImages = hubContent._images;
   delete hubContent._images;
+  try { localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(hubContent)); } catch(e) { console.warn('[img] saveHubContent failed:', e); }
+  if (_hadImages !== undefined) hubContent._images = _hadImages;
 }
 
 function loadHubVisibility() {
