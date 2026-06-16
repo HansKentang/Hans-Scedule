@@ -937,14 +937,17 @@ function saveState() {
     if (state.images) {
       for (var _k of Object.keys(state.images)) { if (state.images[_k]) _imgs[_k] = state.images[_k]; }
     }
+    // Only persist custom images in settings (not defaults) to avoid localStorage quota pressure
+    var _customImgs = {};
+    for (var _ck of Object.keys(_imgs)) { if (isCustomImage(_ck, _imgs[_ck])) _customImgs[_ck] = _imgs[_ck]; }
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({
       showWeekends: state.showWeekends,
       showCompleted: state.showCompleted,
       darkMode: state.darkMode,
       accessBubbles: state.accessBubbles,
-      images: _imgs,
+      images: _customImgs,
     }));
-    console.warn('[img] saveState wrote', Object.keys(_imgs).length, 'images to settings');
+    console.warn('[img] saveState wrote', Object.keys(_customImgs).length, 'custom images to settings');
   } catch (e) { console.warn('[img] saveState failed:', e); }
 }
 
@@ -1056,14 +1059,22 @@ function restoreDirectImageKeys() {
   else console.warn('[img] restoreDirectImageKeys: no haven-image-* keys found');
 }
 
+function isCustomImage(key, url) {
+  // Returns true if the image differs from its default
+  return url && url !== DEFAULT_IMAGES[key];
+}
+
 function saveImages() {
   try {
     const custom = {};
     for (const key of Object.keys(state.images || {})) {
-      if (state.images[key]) {
-        custom[key] = state.images[key];
-        // Direct per-image key (simplest possible persistence)
-        try { localStorage.setItem('haven-image-' + key, state.images[key]); } catch(e) { console.warn('[img] saveImages direct key fail for', key, ':', e); }
+      const val = state.images[key];
+      if (!val) continue;
+      // Always persist via direct key (lean — one key per image)
+      try { localStorage.setItem('haven-image-' + key, val); } catch(e) { console.warn('[img] saveImages direct key fail for', key, ':', e); }
+      // Only include custom images in bulk storage (avoid bloat with default URLs + data URLs)
+      if (isCustomImage(key, val)) {
+        custom[key] = val;
       }
     }
     try { localStorage.setItem(IMAGES_STORAGE, JSON.stringify(custom)); console.warn('[img] saveImages wrote', Object.keys(custom).length, 'keys to', IMAGES_STORAGE); } catch(e) { console.warn('[img] saveImages setItem(IMAGES_STORAGE) failed:', e); }
@@ -1226,6 +1237,19 @@ function handleImagePickerPaste(e) {
     }
   }
 }
+
+// Global paste listener for the image picker — ensures Ctrl+V works even when the pastezone isn't focused
+(function initImagePasteListener() {
+  document.addEventListener('paste', function(e) {
+    var _overlay = document.getElementById('imagePickerOverlay');
+    if (!_overlay || _overlay.classList.contains('hidden')) return;
+    // Let the URL input handle its own paste
+    if (e.target && e.target.id === 'imagePickerUrl') return;
+    // Prevent text from appearing in the contenteditable paste zone
+    e.preventDefault();
+    handleImagePickerPaste(e);
+  });
+})();
 
 function handleImagePickerUrlInput() {
   const urlInput = document.getElementById('imagePickerUrl');
@@ -1935,10 +1959,10 @@ function handleSettingsSubmit(e) {
     if (Object.keys(overrides).length) bubbleConfig[key] = overrides;
   });
   state.accessBubbles = bubbleConfig;
-  // Preserve images when saving settings (don't wipe them out!)
+  // Preserve images when saving settings (only custom ones — not defaults)
   var _imgsForSettings = {};
   if (state.images) {
-    for (var _k of Object.keys(state.images)) { if (state.images[_k]) _imgsForSettings[_k] = state.images[_k]; }
+    for (var _k of Object.keys(state.images)) { if (state.images[_k] && isCustomImage(_k, state.images[_k])) _imgsForSettings[_k] = state.images[_k]; }
   }
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles, images: _imgsForSettings })); } catch (e) {}
   applyAccessHubConfig();
@@ -2401,6 +2425,13 @@ async function spDel(endpoint) {
 function spGetCid() { try { return localStorage.getItem(SPOTIFY_CID_STORAGE) || ''; } catch(e) { return ''; } }
 function spSetCid(v) { try { localStorage.setItem(SPOTIFY_CID_STORAGE, v); } catch(e) {} }
 
+// Canonical redirect URI for Spotify — always uses root path so it matches
+// what the user configured in their Spotify Dashboard regardless of which page
+// they're on when connecting.
+function spRedirectUri() {
+  return window.location.origin + '/';
+}
+
 function _spRand(n) {
   const a = new Uint8Array(n); crypto.getRandomValues(a);
   return btoa(String.fromCharCode(...a)).replace(/[+/=]/g,'').slice(0,n);
@@ -2420,7 +2451,7 @@ function spDoLogin(cid) {
   const verifier = _spRand(64), state = _spRand(16);
   try { sessionStorage.setItem('sp_v', verifier); sessionStorage.setItem('sp_s', state); } catch(e) {}
   _spSha(verifier).then(c => {
-    const uri = window.location.origin + window.location.pathname;
+    const uri = spRedirectUri();
     window.location.href = SPOTIFY_AUTH_URL + '?' + new URLSearchParams({
       client_id: cid, response_type: 'code', redirect_uri: uri,
       code_challenge_method: 'S256', code_challenge: c, state, scope: SPOTIFY_SCOPES
@@ -2434,7 +2465,7 @@ function spShowSetup() {
   // Show the exact redirect URI for the current page
   const uriEl = document.getElementById('spRedirectUri');
   if (uriEl) {
-    uriEl.textContent = window.location.origin + window.location.pathname;
+    uriEl.textContent = spRedirectUri();
   }
   o.classList.remove('hidden');
   m.classList.remove('hidden');
@@ -2468,7 +2499,7 @@ async function spHandleCb() {
     const r = await fetch(SPOTIFY_TOKEN_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ client_id: cid, grant_type: 'authorization_code', code, redirect_uri: window.location.origin + window.location.pathname, code_verifier: v })
+      body: new URLSearchParams({ client_id: cid, grant_type: 'authorization_code', code, redirect_uri: spRedirectUri(), code_verifier: v })
     });
     if (!r.ok) { showToast('Spotify auth failed', 'error'); return; }
     const d = await r.json();
