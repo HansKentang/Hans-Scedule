@@ -217,7 +217,10 @@ function loadHubContent() {
 }
 
 function saveHubContent() {
-  try { localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(hubContent)); } catch {}
+  // Include images in hub content for reliable persistence
+  hubContent._images = typeof state !== 'undefined' && state && state.images ? { ...state.images } : {};
+  try { localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(hubContent)); console.warn('[img] saveHubContent wrote', Object.keys(hubContent._images).filter(function(k){return hubContent._images[k];}).length, 'truthy images'); } catch(e) { console.warn('[img] saveHubContent localStorage.setItem failed:', e); }
+  delete hubContent._images;
 }
 
 function loadHubVisibility() {
@@ -291,8 +294,8 @@ function renderHubGreeting() {
 
 /* ─── Bento render ─────────────────────────── */
 function renderHubBento() {
-  // Ensure images are loaded before rendering bubbles
-  if (typeof loadImages === 'function') loadImages();
+  // Ensure images are loaded before rendering bubbles (only on first render)
+  if (!state.images && typeof loadImages === 'function') loadImages();
   const grid = document.querySelector('.bento-grid');
   if (!grid) return;
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
@@ -330,7 +333,7 @@ function renderHubBento() {
         </div>`;
       case 'images':
         const imgId = item.imageId || 'hub-tulips';
-        const imgUrl = getImage(imgId);
+        const imgUrl = item._imgUrl || getImage(imgId);
         const hasImg = !!imgUrl;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:var(--gutter);border:1px solid var(--border-color);background:var(--surface-container)">
           ${editUI}

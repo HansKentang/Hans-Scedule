@@ -933,13 +933,19 @@ function formatDuration(mins) {
 function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+    var _imgs = {};
+    if (state.images) {
+      for (var _k of Object.keys(state.images)) { if (state.images[_k]) _imgs[_k] = state.images[_k]; }
+    }
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({
       showWeekends: state.showWeekends,
       showCompleted: state.showCompleted,
       darkMode: state.darkMode,
       accessBubbles: state.accessBubbles,
+      images: _imgs,
     }));
-  } catch (e) { /* ignore */ }
+    console.warn('[img] saveState wrote', Object.keys(_imgs).length, 'images to settings');
+  } catch (e) { console.warn('[img] saveState failed:', e); }
 }
 
 function loadState() {
@@ -953,6 +959,8 @@ function loadState() {
       state.showCompleted = s.showCompleted ?? true;
       state.darkMode = s.darkMode !== undefined ? s.darkMode : null;
       state.accessBubbles = s.accessBubbles || {};
+      // Save settings.images for restore after loadImages
+      window._settingsImages = s.images && typeof s.images === 'object' ? s.images : null;
     }
     const key = localStorage.getItem(API_KEY_STORAGE);
     if (key) state.apiKey = key;
@@ -963,9 +971,18 @@ function loadState() {
     loadCardColors();
     loadUserProfile();
     loadImages();
+    // Restore images from settings as fallback (fills missing keys only)
+    if (window._settingsImages) {
+      var _filled = 0;
+      for (var _k of Object.keys(window._settingsImages)) {
+        if (window._settingsImages[_k] && !state.images[_k]) { state.images[_k] = window._settingsImages[_k]; _filled++; }
+      }
+      console.warn('[img] loadState settings fill-in:', _filled, 'keys restored from settings');
+      window._settingsImages = null;
+    }
     // Clean up deprecated ai mode storage
     try { localStorage.removeItem('haven-schedule-ai-mode'); } catch (e) { /* ignore */ }
-  } catch (e) { /* fresh start */ }
+  } catch (e) { console.warn('[img] loadState failed:', e); /* fresh start */ }
 }
 
 // ─── CUSTOM IMAGES ─────────────────────────────────────────
@@ -1003,9 +1020,40 @@ const DEFAULT_IMAGES = {
 function loadImages() {
   try {
     const data = localStorage.getItem(IMAGES_STORAGE);
-    if (data) state.images = Object.assign({}, DEFAULT_IMAGES, JSON.parse(data));
-    else state.images = { ...DEFAULT_IMAGES };
-  } catch (e) { state.images = { ...DEFAULT_IMAGES }; }
+    if (data) {
+      try { state.images = Object.assign({}, DEFAULT_IMAGES, JSON.parse(data)); } catch(e) { console.warn('[img] loadImages parse IMAGES_STORAGE failed:', e); state.images = { ...DEFAULT_IMAGES }; }
+    } else {
+      state.images = { ...DEFAULT_IMAGES };
+    }
+    // Also merge images from hub content for redundancy
+    try {
+      const hubRaw = localStorage.getItem('haven-hub-content');
+      if (hubRaw) {
+        const hc = JSON.parse(hubRaw);
+        if (hc._images) {
+          var _nBefore = Object.keys(state.images).length;
+          Object.assign(state.images, hc._images);
+          console.warn('[img] loadImages merged', Object.keys(hc._images).length, 'keys from hub-content._images, total now', Object.keys(state.images).length);
+        }
+      }
+    } catch (e) { console.warn('[img] loadImages hub-content merge failed:', e); }
+  } catch (e) { console.warn('[img] loadImages outer error:', e); state.images = { ...DEFAULT_IMAGES }; }
+  // Restore direct per-image keys (simplest fallback)
+  try { restoreDirectImageKeys(); } catch(e) { console.warn('[img] restoreDirectImageKeys failed:', e); }
+  console.warn('[img] loadImages final keys:', Object.keys(state.images).filter(function(k){return state.images[k];}).join(','));
+}
+
+function restoreDirectImageKeys() {
+  var _found = 0;
+  for (var _i = 0; _i < localStorage.length; _i++) {
+    var _k = localStorage.key(_i);
+    if (_k && _k.indexOf('haven-image-') === 0) {
+      var _id = _k.slice(12);
+      if (_id) { var _v = localStorage.getItem(_k); if (_v) { state.images[_id] = _v; _found++; } }
+    }
+  }
+  if (_found) console.warn('[img] restoreDirectImageKeys found', _found, 'keys');
+  else console.warn('[img] restoreDirectImageKeys: no haven-image-* keys found');
 }
 
 function saveImages() {
@@ -1014,36 +1062,79 @@ function saveImages() {
     for (const key of Object.keys(state.images || {})) {
       if (state.images[key]) {
         custom[key] = state.images[key];
+        // Direct per-image key (simplest possible persistence)
+        try { localStorage.setItem('haven-image-' + key, state.images[key]); } catch(e) { console.warn('[img] saveImages direct key fail for', key, ':', e); }
       }
     }
-    localStorage.setItem(IMAGES_STORAGE, JSON.stringify(custom));
-  } catch (e) { /* ignore */ }
+    try { localStorage.setItem(IMAGES_STORAGE, JSON.stringify(custom)); console.warn('[img] saveImages wrote', Object.keys(custom).length, 'keys to', IMAGES_STORAGE); } catch(e) { console.warn('[img] saveImages setItem(IMAGES_STORAGE) failed:', e); }
+    // Also write to hub content storage for redundancy
+    try {
+      const hubRaw = localStorage.getItem('haven-hub-content');
+      const hc = hubRaw ? JSON.parse(hubRaw) : {};
+      hc._images = custom;
+      localStorage.setItem('haven-hub-content', JSON.stringify(hc));
+      console.warn('[img] saveImages wrote', Object.keys(custom).length, 'keys to hub-content._images');
+    } catch (e) { console.warn('[img] saveImages hub-content write failed:', e); }
+  } catch (e) { console.warn('[img] saveImages outer error:', e); }
 }
 
 function getImage(id) {
   if (!state.images) loadImages();
-  return (state.images && state.images[id]) || DEFAULT_IMAGES[id] || '';
+  var url = state.images && state.images[id];
+  if (url) return url;
+  // Fallback to direct per-image key (simplest persistence)
+  try {
+    url = localStorage.getItem('haven-image-' + id);
+    if (url) console.warn('[img] getImage fallback: found', id, 'via direct key');
+  } catch(e) { console.warn('[img] getImage direct key read failed for', id, ':', e); }
+  return url || DEFAULT_IMAGES[id] || '';
 }
 
 function setImage(id, url) {
   if (!state.images) loadImages();
   state.images[id] = url;
+  console.warn('[img] setImage called for', id, 'url length:', url.length);
+  // Direct localStorage save (simplest — no serialization)
+  try { localStorage.setItem('haven-image-' + id, url); console.warn('[img] setImage direct key SAVED for', id); } catch(e) { console.warn('[img] setImage direct key FAILED for', id, ':', e); }
   saveImages();
-  document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => {
+  saveState();
+  // Also persist URL directly on the hub bubble item
+  if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
+    var _item = hubContent.bentoLayout.find(function(i){return i.imageId === id;});
+    if (_item) {
+      _item._imgUrl = url;
+      if (typeof saveHubContent === 'function') saveHubContent();
+      console.warn('[img] setImage saved to bubble item _imgUrl');
+    } else {
+      console.warn('[img] setImage: no bubble found with imageId', id, '(expected for non-bubble images)');
+    }
+  }
+  document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(function(el) {
     el.src = url;
     el.style.display = url ? 'block' : 'none';
-    const wrap = el.closest('.bento-img-wrap');
+    var wrap = el.closest('.bento-img-wrap');
     if (wrap) {
-      const placeholder = wrap.querySelector('.bento-img-placeholder');
+      var placeholder = wrap.querySelector('.bento-img-placeholder');
       if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
     }
   });
+  console.warn('[img] setImage DONE for', id);
 }
 
 function resetImage(id) {
   if (!state.images) loadImages();
   delete state.images[id];
+  try { localStorage.removeItem('haven-image-' + id); } catch(e) { /* ignore */ }
   saveImages();
+  saveState();
+  // Clear URL from the hub bubble item
+  if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
+    const item = hubContent.bentoLayout.find(i => i.imageId === id);
+    if (item && item._imgUrl) {
+      delete item._imgUrl;
+      if (typeof saveHubContent === 'function') saveHubContent();
+    }
+  }
   const url = DEFAULT_IMAGES[id] || '';
   document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => {
     el.src = url;
