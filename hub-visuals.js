@@ -1203,6 +1203,15 @@ if (document.getElementById('hubAccessHub')) {
   }
 }
 
+/* ─── Auto-save canvas on page unload ─────────── */
+(function initCanvasAutoSave() {
+  window.addEventListener('beforeunload', function() {
+    if (typeof saveHubContent === 'function') {
+      try { saveHubContent(); } catch(e) {}
+    }
+  });
+})();
+
 /* ─── Patch updateSectionHandles ────────────── */
 const _origUpdateHandles = typeof updateSectionHandles === 'function' ? updateSectionHandles : function() {};
 updateSectionHandles = function() {

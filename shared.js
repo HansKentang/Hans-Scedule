@@ -1071,6 +1071,12 @@ function saveImages() {
     try {
       const hubRaw = localStorage.getItem('haven-hub-content');
       const hc = hubRaw ? JSON.parse(hubRaw) : {};
+      // IMPORTANT: Preserve the bentoLayout so the canvas doesn't reset on reload.
+      // If the saved data lacks a bentoLayout but the in-memory hubContent has one, copy it.
+      if (!hc.bentoLayout && typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
+        hc.bentoLayout = hubContent.bentoLayout;
+        console.warn('[img] saveImages: preserved bentoLayout from in-memory hubContent');
+      }
       hc._images = custom;
       localStorage.setItem('haven-hub-content', JSON.stringify(hc));
       console.warn('[img] saveImages wrote', Object.keys(custom).length, 'keys to hub-content._images');
