@@ -1080,14 +1080,15 @@ function saveImages() {
 
 function getImage(id) {
   if (!state.images) loadImages();
+  // TRY DIRECT KEY FIRST — this is the single source of truth for custom images
+  try {
+    var _directUrl = localStorage.getItem('haven-image-' + id);
+    if (_directUrl) return _directUrl;
+  } catch(e) { console.warn('[img] getImage direct key read failed for', id, ':', e); }
+  // Fallback to state.images (or defaults)
   var url = state.images && state.images[id];
   if (url) return url;
-  // Fallback to direct per-image key (simplest persistence)
-  try {
-    url = localStorage.getItem('haven-image-' + id);
-    if (url) console.warn('[img] getImage fallback: found', id, 'via direct key');
-  } catch(e) { console.warn('[img] getImage direct key read failed for', id, ':', e); }
-  return url || DEFAULT_IMAGES[id] || '';
+  return DEFAULT_IMAGES[id] || '';
 }
 
 function setImage(id, url) {
@@ -1760,7 +1761,12 @@ function handleSettingsSubmit(e) {
     if (Object.keys(overrides).length) bubbleConfig[key] = overrides;
   });
   state.accessBubbles = bubbleConfig;
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles })); } catch (e) {}
+  // Preserve images when saving settings (don't wipe them out!)
+  var _imgsForSettings = {};
+  if (state.images) {
+    for (var _k of Object.keys(state.images)) { if (state.images[_k]) _imgsForSettings[_k] = state.images[_k]; }
+  }
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles, images: _imgsForSettings })); } catch (e) {}
   applyAccessHubConfig();
   showToast('Settings saved', 'success');
   closeSettingsDrawer();
