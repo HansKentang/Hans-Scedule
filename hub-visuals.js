@@ -594,6 +594,102 @@ function renderHubBento() {
     el.src = getImage(el.dataset.imageId) || '';
   });
 
+  // ─── Timer / Pomodoro wiring ──────────────────
+  if (!grid._timerWired) {
+    grid._timerWired = true;
+    grid.addEventListener('click', function(e) {
+      var toggleBtn = e.target.closest('[data-timer-action="toggle"]');
+      if (toggleBtn) {
+        var uid = toggleBtn.dataset.timerUid;
+        var s = _timerIntervals[uid];
+        if (!s) return;
+        if (s.running) {
+          s.elapsed = s.elapsed + (Date.now() - s.startTs);
+          s.startTs = null;
+          s.running = false;
+          _timerClearTickIfIdle();
+        } else {
+          s.startTs = Date.now();
+          s.running = true;
+          if (!_timerIntervals._tick) {
+            _timerIntervals._tick = setInterval(function() {
+              Object.keys(_timerIntervals).forEach(function(k) {
+                if (k === '_tick') return;
+                var ts = _timerIntervals[k];
+                if (ts.running && ts.startTs) {
+                  ts.elapsed = ts.elapsed + (Date.now() - ts.startTs);
+                  ts.startTs = Date.now();
+                  _renderTimer(k);
+                }
+              });
+            }, 200);
+          }
+        }
+        _renderTimer(uid);
+        return;
+      }
+      var resetBtn = e.target.closest('[data-timer-action="reset"]');
+      if (resetBtn) {
+        var uid2 = resetBtn.dataset.timerUid;
+        var s2 = _timerIntervals[uid2];
+        if (s2) { s2.elapsed = 0; s2.running = false; s2.startTs = null; }
+        _renderTimer(uid2);
+        return;
+      }
+      var pomoToggle = e.target.closest('[data-pomo-action="toggle"]');
+      if (pomoToggle) {
+        var puid = pomoToggle.dataset.pomoUid;
+        var ps = _pomodoroState[puid];
+        if (!ps) return;
+        if (ps.running) {
+          var delta = Math.floor((Date.now() - ps.startTs) / 1000);
+          ps.remaining = Math.max(0, ps.remaining - delta);
+          ps.startTs = null;
+          ps.running = false;
+          _pomoClearTickIfIdle();
+        } else {
+          if (ps.remaining <= 0) {
+            ps.remaining = ps.total;
+          }
+          ps.startTs = Date.now();
+          ps.running = true;
+          if (!_pomodoroState._tick) {
+            _pomodoroState._tick = setInterval(function() {
+              Object.keys(_pomodoroState).forEach(function(k) {
+                if (k === '_tick') return;
+                var ps2 = _pomodoroState[k];
+                if (!ps2.running || !ps2.startTs) return;
+                var delta = Math.floor((Date.now() - ps2.startTs) / 1000);
+                ps2.remaining = Math.max(0, ps2.remaining - delta);
+                ps2.startTs = Date.now();
+                if (ps2.remaining <= 0) {
+                  ps2.running = false;
+                  ps2.startTs = null;
+                  _advancePomoPhase(k);
+                }
+                _renderPomo(k);
+              });
+            }, 200);
+          }
+        }
+        _renderPomo(puid);
+        return;
+      }
+      var pomoSkip = e.target.closest('[data-pomo-action="skip"]');
+      if (pomoSkip) {
+        var puid2 = pomoSkip.dataset.pomoUid;
+        var ps2 = _pomodoroState[puid2];
+        if (ps2) {
+          ps2.running = false;
+          ps2.startTs = null;
+          _advancePomoPhase(puid2);
+        }
+        _renderPomo(puid2);
+        return;
+      }
+    });
+  }
+
   // ─── Clock updater ────────────────────────────
   if (_clockInterval) { clearInterval(_clockInterval); _clockInterval = null; }
   const clockFaces = grid.querySelectorAll('.clock-face[data-clock-uid]');
@@ -995,6 +1091,27 @@ function _renderTimer(uid) {
   }
 }
 
+function _timerClearTickIfIdle() {
+  var anyRunning = false;
+  for (var k in _timerIntervals) {
+    if (k !== '_tick' && _timerIntervals[k].running) { anyRunning = true; break; }
+  }
+  if (!anyRunning && _timerIntervals._tick) {
+    clearInterval(_timerIntervals._tick);
+    delete _timerIntervals._tick;
+  }
+}
+function _pomoClearTickIfIdle() {
+  var anyRunning = false;
+  for (var k in _pomodoroState) {
+    if (k !== '_tick' && _pomodoroState[k].running) { anyRunning = true; break; }
+  }
+  if (!anyRunning && _pomodoroState._tick) {
+    clearInterval(_pomodoroState._tick);
+    delete _pomodoroState._tick;
+  }
+}
+
 /* ─── ADD popup (hide-popup style) ──────────── */
 function showHubAddPopup(e) {
   const existing = document.querySelector('.hub-add-popup');
@@ -1011,8 +1128,8 @@ function showHubAddPopup(e) {
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   const has = t => layout.some(i => i.t === t);
 
-  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar' };
-  const types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','quote','text','notes','images','links'];
+  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
+  const types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','timer','pomodoro','spotify','quote','text','notes','images','links'];
 
   popup.innerHTML = `
     <div class="add-title">
@@ -1073,7 +1190,7 @@ function showHubAddPopup(e) {
         focus: ['goals','priorities','todos','clock'],
         tracker: ['habits','progress','todos','text'],
         creative: ['images','quote','notes','calendar'],
-        all: ['goals','images','priorities','quote','todos','text','habits','notes','links','progress','clock','weather','calendar']
+        all: ['goals','images','priorities','quote','todos','text','habits','notes','links','progress','clock','weather','calendar','timer','pomodoro','spotify']
       };
       addBubbleTypes(map[el.dataset.layout]);
       popup.remove();
@@ -1098,7 +1215,7 @@ function showHubHidePopup() {
   const popup = document.createElement('div');
   popup.className = 'hub-edit-popup hub-hide-popup';
 
-  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar' };
+  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
 
   popup.innerHTML = `
     <div class="hide-title">

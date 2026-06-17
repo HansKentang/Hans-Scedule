@@ -2917,6 +2917,150 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   font-weight: 700;
 }
 
+
+
+/* ─── Timer Widget ────────────────────────────────────── */
+.timer-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  padding: 8px 0;
+}
+.timer-display {
+  font-family: var(--font-mono);
+  font-size: 2.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+.timer-controls {
+  display: flex;
+  gap: 8px;
+}
+.timer-btn {
+  padding: 6px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-container);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all 150ms var(--curve);
+}
+.timer-btn:hover {
+  border-color: var(--primary);
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+.timer-btn:active {
+  transform: scale(0.94);
+}
+.timer-btn-active {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
+.timer-btn-active:hover {
+  opacity: 0.85;
+  border-color: var(--primary);
+  background: var(--primary);
+}
+.timer-btn-reset {
+  color: var(--text-tertiary);
+  border-color: transparent;
+}
+.timer-btn-reset:hover {
+  color: var(--error);
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+}
+
+/* ─── Pomodoro Widget ─────────────────────────────────── */
+.pomo-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  padding: 8px 0;
+}
+.pomo-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pomo-phase {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+}
+.pomo-cycle {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--surface-container);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.pomo-ring {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pomo-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.pomo-ring-bg {
+  fill: none;
+  stroke: var(--border-color);
+  stroke-width: 6;
+}
+.pomo-ring-fg {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+}
+.pomo-time {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  z-index: 1;
+}
+.pomo-controls {
+  display: flex;
+  gap: 8px;
+}
+
+/* ─── Spotify Widget ──────────────────────────────────── */
+.spotify-widget {
+  width: 100%;
+  height: 100%;
+}
+.spotify-widget iframe {
+  border: none;
+  display: block;
+}
 /* ─── SLEEP TRACKING ────────────────────────────────────────── */
 .sleep-section {
   margin-bottom: var(--section-gap);
