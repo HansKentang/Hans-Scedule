@@ -2439,6 +2439,7 @@ async function spHandleCb() {
     const d = await r.json();
     _spSave(d.access_token, d.refresh_token, d.expires_in);
     showToast('Connected to Spotify!', 'success');
+    spFetchMe();
     spPoll();
     spRender();
   } catch(e) { showToast('Spotify connection error', 'error'); }
@@ -2453,7 +2454,7 @@ async function spFetchMe() {
 async function spFetchPlay() {
   const d = await spGet('/me/player');
   if (!d) {
-    if (_spTrack) { _spTrack = null; _spPlaying = false; _spDev = false; spRender(); }
+    _spTrack = null; _spPlaying = false; _spDev = false; spRender();
     return;
   }
   _spDev = true;
