@@ -989,8 +989,6 @@ function loadState() {
 }
 
 // ─── CUSTOM IMAGES ─────────────────────────────────────────
-const IMAGES_STORAGE = 'haven-schedule-images';
-
 const DEFAULT_IMAGES = {
   'hub-hero': 'https://picsum.photos/seed/haven-hub-hero/1200/600',
   'hub-tulips': '',
@@ -1021,29 +1019,8 @@ const DEFAULT_IMAGES = {
 };
 
 function loadImages() {
-  try {
-    const data = localStorage.getItem(IMAGES_STORAGE);
-    if (data) {
-      try { state.images = Object.assign({}, DEFAULT_IMAGES, JSON.parse(data)); } catch(e) { console.warn('[img] loadImages parse IMAGES_STORAGE failed:', e); state.images = { ...DEFAULT_IMAGES }; }
-    } else {
-      state.images = { ...DEFAULT_IMAGES };
-    }
-    // Also merge images from hub content for redundancy
-    try {
-      const hubRaw = localStorage.getItem('haven-hub-content');
-      if (hubRaw) {
-        const hc = JSON.parse(hubRaw);
-        if (hc._images) {
-          var _nBefore = Object.keys(state.images).length;
-          Object.assign(state.images, hc._images);
-          console.warn('[img] loadImages merged', Object.keys(hc._images).length, 'keys from hub-content._images, total now', Object.keys(state.images).length);
-        }
-      }
-    } catch (e) { console.warn('[img] loadImages hub-content merge failed:', e); }
-  } catch (e) { console.warn('[img] loadImages outer error:', e); state.images = { ...DEFAULT_IMAGES }; }
-  // Restore direct per-image keys (simplest fallback)
-  try { restoreDirectImageKeys(); } catch(e) { console.warn('[img] restoreDirectImageKeys failed:', e); }
-  console.warn('[img] loadImages final keys:', Object.keys(state.images).filter(function(k){return state.images[k];}).join(','));
+  state.images = { ...DEFAULT_IMAGES };
+  try { restoreDirectImageKeys(); } catch(e) { /* skip */ }
 }
 
 function restoreDirectImageKeys() {
@@ -1065,34 +1042,11 @@ function isCustomImage(key, url) {
 }
 
 function saveImages() {
-  try {
-    const custom = {};
-    for (const key of Object.keys(state.images || {})) {
-      const val = state.images[key];
-      if (!val) continue;
-      // Always persist via direct key (lean — one key per image)
-      try { localStorage.setItem('haven-image-' + key, val); } catch(e) { console.warn('[img] saveImages direct key fail for', key, ':', e); }
-      // Only include custom images in bulk storage (avoid bloat with default URLs + data URLs)
-      if (isCustomImage(key, val)) {
-        custom[key] = val;
-      }
-    }
-    try { localStorage.setItem(IMAGES_STORAGE, JSON.stringify(custom)); console.warn('[img] saveImages wrote', Object.keys(custom).length, 'keys to', IMAGES_STORAGE); } catch(e) { console.warn('[img] saveImages setItem(IMAGES_STORAGE) failed:', e); }
-    // Also write to hub content storage for redundancy
-    try {
-      const hubRaw = localStorage.getItem('haven-hub-content');
-      const hc = hubRaw ? JSON.parse(hubRaw) : {};
-      // IMPORTANT: Preserve the bentoLayout so the canvas doesn't reset on reload.
-      // If the saved data lacks a bentoLayout but the in-memory hubContent has one, copy it.
-      if (!hc.bentoLayout && typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
-        hc.bentoLayout = hubContent.bentoLayout;
-        console.warn('[img] saveImages: preserved bentoLayout from in-memory hubContent');
-      }
-      hc._images = custom;
-      localStorage.setItem('haven-hub-content', JSON.stringify(hc));
-      console.warn('[img] saveImages wrote', Object.keys(custom).length, 'keys to hub-content._images');
-    } catch (e) { console.warn('[img] saveImages hub-content write failed:', e); }
-  } catch (e) { console.warn('[img] saveImages outer error:', e); }
+  for (const key of Object.keys(state.images || {})) {
+    const val = state.images[key];
+    if (!val) continue;
+    try { localStorage.setItem('haven-image-' + key, val); } catch(e) { /* skip */ }
+  }
 }
 
 function getImage(id) {
@@ -1111,21 +1065,10 @@ function getImage(id) {
 function setImage(id, url) {
   if (!state.images) loadImages();
   state.images[id] = url;
-  console.warn('[img] setImage called for', id, 'url length:', url.length);
-  // Direct localStorage save (simplest — no serialization)
-  try { localStorage.setItem('haven-image-' + id, url); console.warn('[img] setImage direct key SAVED for', id); } catch(e) { console.warn('[img] setImage direct key FAILED for', id, ':', e); }
-  saveImages();
-  saveState();
-  // Also persist URL directly on the hub bubble item
+  try { localStorage.setItem('haven-image-' + id, url); } catch(e) { /* skip */ }
   if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
     var _item = hubContent.bentoLayout.find(function(i){return i.imageId === id;});
-    if (_item) {
-      _item._imgUrl = url;
-      if (typeof saveHubContent === 'function') saveHubContent();
-      console.warn('[img] setImage saved to bubble item _imgUrl');
-    } else {
-      console.warn('[img] setImage: no bubble found with imageId', id, '(expected for non-bubble images)');
-    }
+    if (_item) _item._imgUrl = url;
   }
   document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(function(el) {
     el.src = url;
@@ -1136,22 +1079,15 @@ function setImage(id, url) {
       if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
     }
   });
-  console.warn('[img] setImage DONE for', id);
 }
 
 function resetImage(id) {
   if (!state.images) loadImages();
   delete state.images[id];
   try { localStorage.removeItem('haven-image-' + id); } catch(e) { /* ignore */ }
-  saveImages();
-  saveState();
-  // Clear URL from the hub bubble item
   if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
     const item = hubContent.bentoLayout.find(i => i.imageId === id);
-    if (item && item._imgUrl) {
-      delete item._imgUrl;
-      if (typeof saveHubContent === 'function') saveHubContent();
-    }
+    if (item && item._imgUrl) delete item._imgUrl;
   }
   const url = DEFAULT_IMAGES[id] || '';
   document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => {
@@ -2425,11 +2361,12 @@ async function spDel(endpoint) {
 function spGetCid() { try { return localStorage.getItem(SPOTIFY_CID_STORAGE) || ''; } catch(e) { return ''; } }
 function spSetCid(v) { try { localStorage.setItem(SPOTIFY_CID_STORAGE, v); } catch(e) {} }
 
-// Canonical redirect URI for Spotify — always uses root path so it matches
-// what the user configured in their Spotify Dashboard regardless of which page
-// they're on when connecting.
 function spRedirectUri() {
-  return window.location.origin + '/';
+  var p = window.location.pathname;
+  // Strip filename if present (e.g., /Hans-Scedule/index.html -> /Hans-Scedule/)
+  p = p.replace(/\/[^/]*\.html$/, '/');
+  if (!p.endsWith('/')) p += '/';
+  return window.location.origin + p;
 }
 
 function _spRand(n) {
@@ -2462,11 +2399,8 @@ function spDoLogin(cid) {
 function spShowSetup() {
   const o = document.getElementById('spSetupOverlay'), m = document.getElementById('spSetupModal');
   if (!o || !m) return;
-  // Show the exact redirect URI for the current page
   const uriEl = document.getElementById('spRedirectUri');
-  if (uriEl) {
-    uriEl.textContent = spRedirectUri();
-  }
+  if (uriEl) uriEl.textContent = spRedirectUri();
   o.classList.remove('hidden');
   m.classList.remove('hidden');
   setTimeout(() => { document.getElementById('spSetupCidInput')?.focus(); }, 100);

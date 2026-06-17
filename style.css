@@ -1902,122 +1902,52 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 }
 
 
-/* ─── SPOTIFY PLAYER (SIDEBAR WIDGET) ───────────────── */
+/* ─── SPOTIFY EMBED (SIDEBAR WIDGET) ─────────────── */
 .spotify-player {
   position: relative;
-  margin: 0; padding: var(--space-2) var(--space-3);
+  margin: 0;
+  padding: 0;
   border-top: 1px solid var(--border-subtle);
   background: var(--surface-container);
   flex-shrink: 0;
 }
-.sp-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
-.sp-row {
-  display: flex; align-items: center; gap: var(--space-2);
-  margin-bottom: var(--space-2); position: relative;
+.sp-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--t-fast);
 }
-.sp-art {
-  width: 36px; height: 36px; border-radius: 6px;
-  background: linear-gradient(135deg, var(--sp-accent, var(--primary)), #1db954);
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 1.1rem; overflow: hidden;
+.sp-header:hover {
+  background: var(--accent-soft);
 }
-.sp-info { flex: 1; overflow: hidden; min-width: 0; }
-.sp-title {
-  font-size: 0.72rem; font-weight: 600; color: var(--text-primary);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.sp-header:active {
+  transform: scale(0.98);
+  transition-duration: 50ms;
 }
-.sp-artist {
-  font-size: 0.62rem; color: var(--text-tertiary);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+.sp-header-label {
+  flex: 1;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
-.sp-controls {
-  display: flex; align-items: center; gap: var(--space-2);
-  justify-content: center; margin-bottom: var(--space-1);
+.sp-header-arrow {
+  font-size: 0.55rem;
+  color: var(--text-tertiary);
 }
-.sp-btn {
-  background: none; border: none; color: var(--text-tertiary);
-  cursor: pointer; padding: 2px; display: flex;
-  align-items: center; justify-content: center;
-  transition: color var(--t-fast); line-height: 1;
+.sp-body {
+  padding: 0 var(--space-3) var(--space-3);
+  max-height: 320px;
+  overflow: hidden;
 }
-.sp-btn:hover { color: var(--text-primary); }
-.sp-btn svg { width: 14px; height: 14px; }
-.sp-btn-play {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: var(--sp-accent, var(--text-primary));
-  color: var(--bg-primary);
-  display: flex; align-items: center; justify-content: center;
-  transition: transform var(--t-fast), box-shadow var(--t-fast);
-  box-shadow: 0 0 8px var(--sp-accent-dim, transparent);
+.sp-body iframe {
+  border-radius: 8px;
+  width: 100%;
+  height: 100%;
+  min-height: 270px;
 }
-.sp-btn-play:hover { transform: scale(1.08); box-shadow: 0 0 14px var(--sp-accent-dim, transparent); }
-.sp-btn-play svg { width: 12px; height: 12px; }
-.sp-btn-like { font-size: 0.85rem; transition: color var(--t-fast); }
-.sp-btn-like.active { color: #1db954; }
-.sp-progress {
-  width: 100%; height: 3px; background: var(--surface-container-high);
-  border-radius: 2px; overflow: hidden; cursor: pointer;
-}
-.sp-progress-fill {
-  height: 100%; width: 0%;
-  background: linear-gradient(90deg, var(--sp-accent, #1db954), #1db954);
-  border-radius: 2px; transition: width 0.3s linear;
-}
-.sp-times {
-  display: flex; justify-content: space-between;
-  font-size: 0.55rem; color: var(--text-tertiary);
-  margin-top: 2px;
-}
-.sp-msg { font-size: 0.55rem; color: var(--text-tertiary); text-align: center; }
-#spStatusMsg { color: var(--text-tertiary); font-style: italic; font-size: 0.55rem; }
-
-.sp-login-btn {
-  width: 100%; margin-top: var(--space-2); padding: 6px 12px; border-radius: 20px;
-  border: 1px solid var(--border-color); background: var(--bg-primary);
-  color: var(--text-primary); font-weight: 500;
-  font-size: 0.65rem; cursor: pointer; transition: background var(--t-fast);
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  box-sizing: border-box;
-}
-.sp-login-btn:hover { background: var(--surface-container-high); }
-.sp-login-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
-.sp-logout-icon {
-  background: none; border: none; color: var(--text-tertiary);
-  cursor: pointer; font-size: 0.75rem; padding: 0 2px;
-  transition: color var(--t-fast); line-height: 1;
-  opacity: 0.6;
-}
-.sp-logout-icon:hover { opacity: 1; color: var(--danger); }
-.sp-profile {
-  display: flex; align-items: center; gap: 4px; padding: 2px 0;
-}
-
-/* ─── SPOTIFY INLINE SETUP PANEL ───────────────── */
-.sp-setup-modal {
-  margin-top: var(--space-2); padding: var(--space-2) var(--space-2);
-  border-radius: 8px; border: 1px solid var(--border-subtle);
-  background: var(--surface-container-high);
-}
-.sp-setup-header {
-  display: flex; align-items: center; gap: var(--space-2);
-  font-size: 0.7rem; font-weight: 600; color: var(--text-primary);
-  margin-bottom: var(--space-2);
-}
-.sp-setup-close {
-  margin-left: auto; background: none; border: none;
-  color: var(--text-tertiary); cursor: pointer; font-size: 1rem;
-  line-height: 1; padding: 0 2px;
-}
-.sp-setup-close:hover { color: var(--text-primary); }
-.sp-connect-btn {
-  width: 100%; margin-top: var(--space-2); padding: 5px 0;
-  border-radius: 20px; border: none;
-  background: #1db954; color: #000; font-weight: 600;
-  font-size: 0.7rem; cursor: pointer; transition: opacity var(--t-fast);
-  display: block; box-sizing: border-box;
-}
-.sp-connect-btn:hover { opacity: 0.85; }
 
 /* ─── AI MESSAGE BUBBLES ───────────────────────────────── */
 .ai-message {

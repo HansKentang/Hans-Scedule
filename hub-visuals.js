@@ -338,7 +338,7 @@ function renderHubBento() {
         </div>`;
       case 'images':
         const imgId = item.imageId || 'hub-tulips';
-        const imgUrl = item._imgUrl || getImage(imgId);
+        const imgUrl = getImage(imgId);
         const hasImg = !!imgUrl;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:var(--gutter);border:1px solid var(--border-color);background:var(--surface-container)">
           ${editUI}

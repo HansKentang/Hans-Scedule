@@ -354,75 +354,7 @@
           </a>
         </div>
       </nav>
-      <div class="spotify-player" id="spPlayer">
-        <div id="spLoggedOut">
-          <div class="sp-row">
-            <div class="sp-icon">
-              <svg viewBox="0 0 24 24" fill="#1db954" width="22" height="22"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-            </div>
-            <div class="sp-info">
-              <div class="sp-title">Not connected</div>
-              <div class="sp-artist">Sign in via Spotify</div>
-            </div>
-          </div>
-          <button class="sp-login-btn" onclick="spLogin()">
-            <svg viewBox="0 0 24 24" fill="#1db954" width="16" height="16"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-            Connect Spotify
-          </button>
-        </div>
-        <div id="spLoggedIn" class="hidden">
-          <div class="sp-row">
-            <div class="sp-art" id="spArt"></div>
-            <div class="sp-info">
-              <div class="sp-title" id="spTitle">—</div>
-              <div class="sp-artist" id="spArtist">—</div>
-            </div>
-            <button class="sp-logout-icon" onclick="spLogout()" title="Disconnect">&times;</button>
-          </div>
-          <div class="sp-controls">
-            <button class="sp-btn" id="spPrevBtn" onclick="spPrev()" title="Previous">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-            </button>
-            <button class="sp-btn sp-btn-play" id="spPlayBtn" title="Play" onclick="spTogglePlay()">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-            </button>
-            <button class="sp-btn" id="spNextBtn" onclick="spNext()" title="Next">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-            </button>
-            <button class="sp-btn sp-btn-like" id="spLikeBtn" title="Like" onclick="spLike()">♡</button>
-          </div>
-          <div class="sp-progress">
-            <div class="sp-progress-fill" id="spProgressFill"></div>
-          </div>
-          <div class="sp-times">
-            <span id="spProgressCur">0:00</span>
-            <span id="spStatusMsg"></span>
-            <span id="spProgressTot">0:00</span>
-          </div>
-          <div class="sp-profile" id="spProfile"></div>
-        </div>
-        <div id="spSetupOverlay" class="sp-setup-overlay hidden" onclick="if(event.target===this)spCloseSetup()"></div>
-        <div id="spSetupModal" class="sp-setup-modal hidden">
-          <div class="sp-setup-header">
-            <svg viewBox="0 0 24 24" fill="#1db954" width="24" height="24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-            <span>Connect Spotify</span>
-            <button class="sp-setup-close" onclick="spCloseSetup()">&times;</button>
-          </div>
-          <div class="sp-setup-body">
-            <p style="margin:0 0 8px;font-size:0.65rem;color:var(--text-secondary);line-height:1.4">
-              You need a free Spotify Client ID to connect.
-              <a href="https://developer.spotify.com/dashboard/create" target="_blank" rel="noopener" style="color:var(--primary)">Create App →</a>
-              <br>Add redirect URI: <code id="spRedirectUri" style="background:var(--surface-container-high);padding:1px 4px;border-radius:3px;font-size:0.6rem">(auto-detected)</code>
-              <br>Copy the Client ID and paste it below.
-            </p>
-            <div class="form-group" style="margin:0">
-              <label for="spSetupCidInput" style="font-size:0.6rem;color:var(--text-tertiary);display:block;margin-bottom:4px">Spotify Client ID</label>
-              <input type="text" id="spSetupCidInput" class="form-input" placeholder="Paste your Client ID" style="font-size:0.7rem;padding:4px 8px">
-            </div>
-            <button class="sp-connect-btn" onclick="spSaveCidAndLogin()">Connect</button>
-          </div>
-        </div>
-      </div>
+      <div class="spotify-player" id="spPlayer"></div>
       <div class="hub-sidebar-footer">
         <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -623,42 +555,6 @@
           </table>
       </div>
 
-      <div class="hub-section-wrap" data-hub-section="bento">
-        <div class="hub-section-header">
-          <span class="hub-section-drag-handle" draggable="true">⠿</span>
-          <span class="hub-section-label">Canvas</span>
-        </div>
-        <div class="bento-grid fade-in" style="margin-bottom:var(--section-gap)"></div>
-      </div>
-
-      <!-- Hub Visuals FAB -->
-      <div class="access-hub" id="hubAccessHub">
-        <div class="access-items" id="hubAccessItems">
-          <button class="access-item" id="hubFabEdit" title="Toggle edit mode">
-            <span class="access-item-icon" style="background:color-mix(in srgb, var(--primary) 15%, transparent);color:var(--primary)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-            </span>
-            <span class="access-item-label">Edit</span>
-          </button>
-          <button class="access-item" id="hubFabAdd" title="Add bubbles to canvas">
-            <span class="access-item-icon" style="background:color-mix(in srgb, var(--tag-deep-work-text) 15%, transparent);color:var(--tag-deep-work-text)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-            </span>
-            <span class="access-item-label">Add</span>
-          </button>
-          <button class="access-item" id="hubFabHide" title="Hide/show bubbles">
-            <span class="access-item-icon" style="background:color-mix(in srgb, var(--tag-hobby-text) 15%, transparent);color:var(--tag-hobby-text)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-            </span>
-            <span class="access-item-label">Hide</span>
-          </button>
-        </div>
-        <button class="access-main" id="hubAccessMain" aria-label="Hub actions">
-          <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
-      </div>
     </div>
 
     <!-- Minimal footer -->
@@ -889,5 +785,6 @@
   <script src="shared.js"></script>
   <script src="hub-visuals.js"></script>
   <script src="analytics.js"></script>
+  <script>spInit();</script>
 </body>
 </html>
