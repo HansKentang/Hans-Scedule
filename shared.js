@@ -948,6 +948,10 @@ function saveState() {
       images: _customImgs,
     }));
     console.warn('[img] saveState wrote', Object.keys(_customImgs).length, 'custom images to settings');
+    // Persist each custom image to its own localStorage key for reliable restore on reload
+    for (var _ck2 of Object.keys(_customImgs)) {
+      try { localStorage.setItem('haven-image-' + _ck2, _customImgs[_ck2]); } catch(e) { /* skip */ }
+    }
   } catch (e) { console.warn('[img] saveState failed:', e); }
 }
 
@@ -978,7 +982,7 @@ function loadState() {
     if (window._settingsImages) {
       var _filled = 0;
       for (var _k of Object.keys(window._settingsImages)) {
-        if (window._settingsImages[_k] && !state.images[_k]) { state.images[_k] = window._settingsImages[_k]; _filled++; }
+        if (window._settingsImages[_k]) { state.images[_k] = window._settingsImages[_k]; _filled++; }
       }
       console.warn('[img] loadState settings fill-in:', _filled, 'keys restored from settings');
       window._settingsImages = null;
@@ -1015,7 +1019,17 @@ const DEFAULT_IMAGES = {
   'finance-hero': 'https://picsum.photos/seed/haven-finance-hero/1200/400',
   'finance-ceramic': 'https://picsum.photos/seed/haven-finance-ceramic/400/400',
   'goals-hero': 'https://picsum.photos/seed/haven-goals-hero/1200/500',
-  'goals-ceramic': 'https://picsum.photos/seed/haven-goals-ceramic/400/400'
+  'goals-ceramic': 'https://picsum.photos/seed/haven-goals-ceramic/400/400',
+  'hub-image-1': 'https://picsum.photos/seed/haven-canvas-1/600/400',
+  'hub-image-2': 'https://picsum.photos/seed/haven-canvas-2/600/400',
+  'hub-image-3': 'https://picsum.photos/seed/haven-canvas-3/600/400',
+  'hub-image-4': 'https://picsum.photos/seed/haven-canvas-4/600/400',
+  'hub-image-5': 'https://picsum.photos/seed/haven-canvas-5/600/400',
+  'hub-image-6': 'https://picsum.photos/seed/haven-canvas-6/600/400',
+  'hub-image-7': 'https://picsum.photos/seed/haven-canvas-7/600/400',
+  'hub-image-8': 'https://picsum.photos/seed/haven-canvas-8/600/400',
+  'hub-image-9': 'https://picsum.photos/seed/haven-canvas-9/600/400',
+  'hub-image-10': 'https://picsum.photos/seed/haven-canvas-10/600/400'
 };
 
 function loadImages() {
@@ -1703,6 +1717,11 @@ const IMAGE_MANAGER_GROUPS = [
   {
     label: 'Brain',
     ids: ['brain-linen', 'brain-desk-light']
+  },
+  {
+    label: 'Canvas',
+    ids: ['hub-image-1', 'hub-image-2', 'hub-image-3', 'hub-image-4', 'hub-image-5',
+           'hub-image-6', 'hub-image-7', 'hub-image-8', 'hub-image-9', 'hub-image-10']
   }
 ];
 
@@ -1902,6 +1921,10 @@ function handleSettingsSubmit(e) {
     for (var _k of Object.keys(state.images)) { if (state.images[_k] && isCustomImage(_k, state.images[_k])) _imgsForSettings[_k] = state.images[_k]; }
   }
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles, images: _imgsForSettings })); } catch (e) {}
+  // Persist each custom image to its own localStorage key for reliable restore
+  for (var _sk of Object.keys(_imgsForSettings)) {
+    try { localStorage.setItem('haven-image-' + _sk, _imgsForSettings[_sk]); } catch(e) { /* skip */ }
+  }
   applyAccessHubConfig();
   showToast('Settings saved', 'success');
   closeSettingsDrawer();

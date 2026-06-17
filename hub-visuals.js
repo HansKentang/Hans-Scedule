@@ -663,6 +663,12 @@ function addBubbleTypes(types) {
     if (t === 'images') {
       const existing = layout.filter(i => i.t === 'images').length;
       item.imageId = 'hub-image-' + (existing + 1);
+      // Ensure the image ID is registered in the image system with a default
+      if (typeof getImage === 'function' && !getImage(item.imageId)) {
+        if (typeof setImage === 'function') {
+          setImage(item.imageId, '');
+        }
+      }
     } else {
       if (layout.find(i => i.t === t)) return;
     }
