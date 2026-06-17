@@ -692,9 +692,6 @@ function init() {
 
   // Re-render on edit mode toggle
   document.addEventListener('editModeChange', () => renderBento());
-  initHubLayout();
-  initHubEditMode();
-  renderHubBento();
   spInit();
 }
 

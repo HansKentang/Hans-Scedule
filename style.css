@@ -1903,51 +1903,157 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 
 
 /* ─── SPOTIFY EMBED (SIDEBAR WIDGET) ─────────────── */
+/* ─── SPOTIFY WEB API PLAYER ─────────────────────────────── */
 .spotify-player {
-  position: relative;
-  margin: 0;
-  padding: 0;
+  padding: 8px 10px;
   border-top: 1px solid var(--border-subtle);
   background: var(--surface-container);
   flex-shrink: 0;
 }
-.sp-header {
+#spLoggedOut, #spLoggedIn { width: 100%; }
+#spLoggedOut .sp-row {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  cursor: pointer;
-  user-select: none;
-  transition: background var(--t-fast);
+  gap: 6px;
+  margin-bottom: 6px;
 }
-.sp-header:hover {
-  background: var(--accent-soft);
+#spLoggedOut .sp-icon {
+  width: 24px; height: 24px;
+  border-radius: 4px;
+  background: color-mix(in srgb, #1db954 10%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.sp-header:active {
-  transform: scale(0.98);
-  transition-duration: 50ms;
-}
-.sp-header-label {
-  flex: 1;
-  font-size: 0.72rem;
+#spLoggedOut .sp-icon svg { width: 14px; height: 14px; }
+#spLoggedOut .sp-info { flex: 1; min-width: 0; }
+#spLoggedOut .sp-title { font-size: 0.65rem; font-weight: 500; color: var(--text-primary); }
+#spLoggedOut .sp-artist { font-size: 0.58rem; color: var(--text-tertiary); }
+.sp-login-btn {
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  border-radius: 4px;
+  background: #1db954;
+  color: #fff;
+  font-size: 0.62rem;
   font-weight: 600;
-  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 150ms ease;
 }
-.sp-header-arrow {
-  font-size: 0.55rem;
-  color: var(--text-tertiary);
+.sp-login-btn:hover { background: #1ed760; }
+.sp-login-btn svg { width: 12px; height: 12px; }
+
+/* Logged in */
+#spLoggedIn .sp-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
 }
-.sp-body {
-  padding: 0 var(--space-3) var(--space-3);
-  max-height: 320px;
+.sp-art {
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  background: var(--surface-container-high);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   overflow: hidden;
 }
-.sp-body iframe {
-  border-radius: 8px;
-  width: 100%;
-  height: 100%;
-  min-height: 270px;
+#spLoggedIn .sp-info { flex: 1; min-width: 0; }
+#spLoggedIn .sp-title {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+#spLoggedIn .sp-artist {
+  font-size: 0.58rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sp-logout-icon {
+  width: 18px; height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+  transition: all var(--t-fast);
+}
+.sp-logout-icon:hover { color: #ef4444; }
+.sp-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  margin-bottom: 4px;
+}
+.sp-btn {
+  width: 24px; height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+}
+.sp-btn:hover { color: var(--text-primary); }
+.sp-btn svg { width: 12px; height: 12px; }
+.sp-play-btn {
+  width: 26px; height: 26px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-radius: 50%;
+}
+.sp-play-btn:hover { background: var(--primary); color: var(--text-inverse); }
+.sp-play-btn svg { width: 12px; height: 12px; margin-left: 1px; }
+.sp-like-btn { font-size: 0.75rem; }
+.sp-like-btn.active { color: #1db954; }
+.sp-progress { margin-bottom: 2px; }
+.sp-progress-bar {
+  width: 100%;
+  height: 2px;
+  background: var(--border-color);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.sp-progress-fill {
+  height: 100%;
+  background: var(--text-primary);
+  border-radius: 1px;
+  transition: width 0.3s linear;
+  width: 0%;
+}
+.sp-progress-time {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1px;
+  font-size: 0.5rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.sp-status { font-size: 0.52rem; color: var(--text-tertiary); text-align: center; }
+.sp-profile { font-size: 0.55rem; color: var(--text-tertiary); text-align: center; display: flex; align-items: center; justify-content: center; gap: 3px; }
 
 /* ─── AI MESSAGE BUBBLES ───────────────────────────────── */
 .ai-message {

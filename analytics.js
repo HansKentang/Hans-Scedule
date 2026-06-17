@@ -784,9 +784,6 @@ function init() {
     item.addEventListener('click', closeAnSidebar);
   });
   spInit();
-  initHubLayout();
-  initHubEditMode();
-  renderHubBento();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

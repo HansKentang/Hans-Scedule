@@ -1034,9 +1034,6 @@ function init() {
   });
 
   spInit();
-  initHubLayout();
-  initHubEditMode();
-  renderHubBento();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
