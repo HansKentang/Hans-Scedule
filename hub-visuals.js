@@ -680,7 +680,6 @@ function showHubAddPopup(e) {
 
   const overlay = document.createElement('div');
   overlay.className = 'hub-popup-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,0.3)';
   overlay.addEventListener('click', () => { overlay.remove(); popup.remove(); });
   document.body.appendChild(overlay);
 
@@ -759,7 +758,6 @@ function showHubAddPopup(e) {
     <div class="hub-edit-popup-actions" style="margin-top:8px"><button class="cancel" id="hubAddCancel">Done</button></div>
   `;
   document.body.appendChild(popup);
-  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1002';
 
   popup.querySelectorAll('.hub-add-grid-btn:not([disabled])').forEach(el => {
     el.addEventListener('click', () => {
@@ -791,7 +789,6 @@ function showHubHidePopup() {
 
   const overlay = document.createElement('div');
   overlay.className = 'hub-popup-overlay';
-  overlay.style.cssText = 'position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,0.3)';
   overlay.addEventListener('click', () => { overlay.remove(); popup.remove(); });
   document.body.appendChild(overlay);
 
@@ -819,7 +816,6 @@ function showHubHidePopup() {
     <div class="hub-edit-popup-actions"><button class="cancel" id="hubHideCancel">Done</button></div>
   `;
   document.body.appendChild(popup);
-  popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:1002';
 
   popup.querySelectorAll('.hide-row').forEach(row => {
     row.addEventListener('click', () => {

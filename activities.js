@@ -1033,7 +1033,6 @@ function init() {
     }
   });
 
-  spInit();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

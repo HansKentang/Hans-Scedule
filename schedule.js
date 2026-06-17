@@ -2095,7 +2095,6 @@ function init() {
   requestNotifPermission();
   scheduleReminderCheck();
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.darkMode === null) applyTheme(); });
-  spInit();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

@@ -447,47 +447,86 @@
           <a href="finance.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="snav-label">Finance</span></a>
         </div>
       </nav>
-      <div class="spotify-embed">
-        <div class="sp-embed-header">
-          <svg viewBox="0 0 24 24" fill="#1db954" width="16" height="16"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-          <span>Spotify</span>
-          <button class="sp-embed-expand" onclick="spOpenSettings()" title="Spotify settings">&#9881;</button>
+      <div class="hub-sidebar-body">
+      <!-- ─── SPOTIFY EMBED ───────────────────────── -->
+      <div class="sp-sidebar" id="spSidebar">
+        <div class="sp-header" onclick="spToggleSection()">
+          <button class="sp-toggle-btn" onclick="event.stopPropagation();spToggleSection()" title="Toggle player">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+          </button>
+          <span class="sp-header-text">Now Playing</span>
+          <svg class="sp-header-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <button class="sp-gear-btn" onclick="event.stopPropagation();spOpenSettings()" title="Manage playlists">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          </button>
         </div>
-        <div id="spSidePH" class="sp-sidebar-empty">
-          <div class="sp-sidebar-empty-icon">
-            <svg viewBox="0 0 24 24" fill="#1db954" width="20" height="20"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+        <div class="sp-body">
+        <div class="sp-player">
+          <div class="sp-empty" id="spEmpty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+            <span>No playlist linked</span>
+            <button onclick="spOpenSettings()">Add playlist</button>
           </div>
-          <div class="sp-sidebar-empty-text">No playlist linked</div>
-          <div class="sp-sidebar-empty-hint">Tap &#9881; to add</div>
+          <div class="sp-embed-wrap" id="spEmbedWrap">
+            <iframe id="spEmbed" src="" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+          </div>
         </div>
-        <div id="spSidePL" class="sp-sidebar-player hidden">
-          <div class="sp-sidebar-name" id="spSideName"></div>
-          <iframe class="sp-embed-iframe" src="" allow="encrypted-media; autoplay" loading="lazy"></iframe>
+        <div class="sp-controls" id="spControls">
+          <button class="sp-nav-btn" id="spNavPrev" onclick="spSidePrev()" title="Previous playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="sp-controls-label">Playlist</span>
+          <button class="sp-nav-btn" id="spNavNext" onclick="spSideNext()" title="Next playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="sp-transport">
+          <button class="sp-btn" onclick="spPostMessage('previous')" title="Previous track">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+          <button class="sp-play-btn" id="spPlayBtn" onclick="spTogglePlay()" title="Play/Pause">
+            <svg class="sp-play-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>
+            <svg class="sp-pause-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          </button>
+          <button class="sp-btn" onclick="spPostMessage('next')" title="Next track">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12h2V6h-2z"/></svg>
+          </button>
+        </div>
         </div>
       </div>
-
-      <div id="spOverlay" class="sp-overlay hidden" onclick="spCloseSettings(event)">
-        <div class="sp-modal" onclick="event.stopPropagation()">
-          <button class="sp-modal-close" onclick="spCloseSettings()">&times;</button>
-          <div class="sp-modal-header">
-            <svg viewBox="0 0 24 24" fill="#1db954" width="22" height="22"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-            <span>Spotify Playlists</span>
+        <div class="sp-player">
+          <div class="sp-empty" id="spEmpty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+            <span>No playlist linked</span>
+            <button onclick="spOpenSettings()">Add playlist</button>
           </div>
-          <div id="spModalPH" class="sp-modal-empty">
-            <svg viewBox="0 0 24 24" fill="#1db954" width="32" height="32"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-            <span>Add a playlist to get started</span>
+          <div class="sp-embed-wrap" id="spEmbedWrap">
+            <iframe id="spEmbed" src="" allow="encrypted-media; autoplay" allowfullscreen></iframe>
           </div>
-          <div id="spModalPL" class="hidden">
-            <iframe class="sp-modal-iframe" src="" allow="encrypted-media; autoplay" loading="lazy"></iframe>
-          </div>
-          <div class="sp-modal-add">
-            <input id="spAddInput" type="text" placeholder="Paste a Spotify playlist/album/track link..." />
-            <button class="sp-add-btn" onclick="spAddPlaylist()">+ Add</button>
-          </div>
-          <div class="sp-modal-hint">Works with playlists, albums, tracks &amp; podcasts &mdash; open.spotify.com/&hellip;</div>
-          <div class="sp-modal-section-title">Playlists</div>
-          <div id="spPlaylistList" class="sp-playlist-list"></div>
         </div>
+        <div class="sp-controls" id="spControls">
+          <button class="sp-nav-btn" id="spNavPrev" onclick="spSidePrev()" title="Previous playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="sp-controls-label">Playlist</span>
+          <button class="sp-nav-btn" id="spNavNext" onclick="spSideNext()" title="Next playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div class="sp-transport">
+          <button class="sp-btn" onclick="spPostMessage('previous')" title="Previous track">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+          <button class="sp-play-btn" id="spPlayBtn" onclick="spTogglePlay()" title="Play/Pause">
+            <svg class="sp-play-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>
+            <svg class="sp-pause-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+          </button>
+          <button class="sp-btn" onclick="spPostMessage('next')" title="Next track">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12h2V6h-2z"/></svg>
+          </button>
+        </div>
+
+      </div>
       </div>
       <div class="hub-sidebar-footer">
         <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><span>Theme</span></button>
@@ -640,6 +679,7 @@
             <div id="drawerKeyStatus"><span id="drawerKeyStatusText" class="drawer-status"></span></div>
             <div id="drawerAIUsage" class="drawer-status"></div>
           </div>
+
           <div class="drawer-section">
             <div class="drawer-section-header">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -737,8 +777,36 @@
     }
   </script>
   <script src="shared.js"></script>
+
   <script src="hub-visuals.js"></script>
   <script src="goals.js"></script>
+
+  <!-- ─── Spotify Settings Modal ──────────────── -->
+  <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
+    <div class="sp-modal">
+      <div class="sp-modal-header">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+        <h2>Playlists</h2>
+        <button class="sp-modal-close" onclick="spCloseSettings()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="sp-modal-body">
+        <div class="sp-add-row">
+          <input id="spAddInput" placeholder="Playlist URL or ID..." onkeydown="if(event.key==='Enter')spAddPlaylist()">
+          <button onclick="spAddPlaylist()">Add</button>
+        </div>
+        <div class="sp-search-row">
+          <input id="spSearchInput" placeholder="Search playlists..." oninput="spRenderList(this.value)">
+        </div>
+        <div class="sp-iframe-wrap">
+          <iframe id="spModalEmbed" src="" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+        </div>
+        <div class="sp-list" id="spList"></div>
+      </div>
+    </div>
+  </div>
+
   <script>spInit();</script>
 </body>
 </html>

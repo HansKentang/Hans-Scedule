@@ -783,7 +783,6 @@ function init() {
   anSidebar?.querySelectorAll('.hub-snav-item').forEach(item => {
     item.addEventListener('click', closeAnSidebar);
   });
-  spInit();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

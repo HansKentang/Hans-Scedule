@@ -2284,227 +2284,6 @@ document.addEventListener('click', function(e) {
   openImagePicker(img.dataset.imageId);
 });
 
-// ─── SPOTIFY EMBED ─────────────────────────────────
-const SP_PL_KEY = 'haven-spotify-playlists';
-const SP_ACT_KEY = 'haven-spotify-active';
-
-function spPl() { try { return JSON.parse(localStorage.getItem(SP_PL_KEY)) || []; } catch(e) { return []; } }
-function spSavePl(a) { localStorage.setItem(SP_PL_KEY, JSON.stringify(a)); }
-function spAct() { return localStorage.getItem(SP_ACT_KEY) || ''; }
-function spSetAct(v) { if (v) localStorage.setItem(SP_ACT_KEY, v); else localStorage.removeItem(SP_ACT_KEY); }
-
-function spFriendlyName(m) {
-  const map = { playlist: 'Playlist', track: 'Track', album: 'Album', artist: 'Artist', episode: 'Episode' };
-  return (map[m[1]] || m[1]) + ' ' + m[2].slice(0, 8);
-}
-
-function spInit() {
-  const list = spPl(), aid = spAct(), act = list.find(p => p.id === aid);
-  const url = act ? act.embedUrl : '';
-  const ph = document.getElementById('spSidePH'), pl = document.getElementById('spSidePL');
-  if (ph) ph.classList.toggle('hidden', !!url);
-  if (pl) pl.classList.toggle('hidden', !url);
-  const sn = document.getElementById('spSideName');
-  if (sn) sn.textContent = act ? act.name : '';
-  const sf = document.querySelector('.sp-embed-iframe');
-  if (sf) { sf.src = url; }
-  const mph = document.getElementById('spModalPH'), mpl = document.getElementById('spModalPL');
-  if (mph) mph.classList.toggle('hidden', !!url);
-  if (mpl) mpl.classList.toggle('hidden', !url);
-  const mf = document.querySelector('.sp-modal-iframe');
-  if (mf) { mf.src = url; }
-  spRenderList();
-}
-
-function spOpenSettings() {
-  const o = document.getElementById('spOverlay');
-  if (!o) return;
-  spInit();
-  o.classList.remove('hidden');
-  setTimeout(() => {
-    const inp = document.getElementById('spAddInput');
-    if (inp) inp.focus();
-  }, 300);
-}
-function spCloseSettings(e) {
-  if (e && e.target !== e.currentTarget) return;
-  const o = document.getElementById('spOverlay');
-  if (o) o.classList.add('hidden');
-}
-
-function spAddPlaylist() {
-  const inp = document.getElementById('spAddInput');
-  if (!inp) return;
-  const v = inp.value.trim();
-  if (!v) { showToast('Paste a Spotify link', 'warning'); return; }
-  const m = v.match(/open\.spotify\.com\/(playlist|track|album|artist|episode)\/([a-zA-Z0-9]+)/);
-  if (!m) { showToast('Invalid Spotify link', 'error'); return; }
-  const id = m[2], embed = 'https://open.spotify.com/embed/' + m[1] + '/' + id;
-  const list = spPl();
-  const newId = 'sp' + Date.now();
-  list.push({ id: newId, name: spFriendlyName(m), embedUrl: embed });
-  spSavePl(list);
-  spSetAct(newId);
-  inp.value = '';
-  spInit();
-  showToast('Playlist added!', 'success');
-}
-
-function spPlayPlaylist(id) {
-  spSetAct(id); spInit();
-}
-
-function spDeletePlaylist(id) {
-  let list = spPl();
-  list = list.filter(p => p.id !== id);
-  spSavePl(list);
-  if (spAct() === id) spSetAct(list.length ? list[0].id : '');
-  spInit();
-  showToast('Playlist removed', 'info');
-}
-
-function spRenamePlaylist(id) {
-  const list = spPl();
-  const item = list.find(p => p.id === id);
-  if (!item) return;
-  const el = document.querySelector(`.sp-list-item[data-id="${id}"] .sp-list-name`);
-  if (!el) return;
-  const cur = el.textContent;
-  const inp = document.createElement('input');
-  inp.className = 'sp-list-rename';
-  inp.value = cur;
-  inp.maxLength = 60;
-  el.replaceWith(inp);
-  inp.focus();
-  inp.select();
-  const finish = () => {
-    const val = inp.value.trim() || cur;
-    item.name = val;
-    spSavePl(list);
-    spInit();
-  };
-  inp.addEventListener('blur', finish);
-  inp.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { inp.blur(); }
-    if (e.key === 'Escape') { inp.value = cur; inp.blur(); }
-  });
-}
-
-function spRenderList() {
-  const c = document.getElementById('spPlaylistList');
-  if (!c) return;
-  const list = spPl(), aid = spAct();
-  if (!list.length) { c.innerHTML = '<div class="sp-list-empty">No playlists yet</div>'; return; }
-  c.innerHTML = list.map(p =>
-    '<div class="sp-list-item' + (p.id === aid ? ' active' : '') + '" data-id="' + p.id + '" draggable="true">' +
-      '<span class="sp-list-drag" title="Drag to reorder">&#x2630;</span>' +
-      '<span class="sp-list-indicator' + (p.id === aid ? ' on' : '') + '"></span>' +
-      '<span class="sp-list-name" ondblclick="spRenamePlaylist(\'' + p.id + '\')" title="Double-click to rename">' + escapeHtml(p.name) + '</span>' +
-      '<div class="sp-list-actions">' +
-        '<button class="sp-list-play" onclick="spPlayPlaylist(\'' + p.id + '\')" title="Play this playlist">\u25B6</button>' +
-        '<button class="sp-list-del" onclick="spDeletePlaylist(\'' + p.id + '\')" title="Remove playlist">\u2715</button>' +
-      '</div>' +
-    '</div>'
-  ).join('');
-  // scroll active into view
-  const active = c.querySelector('.sp-list-item.active');
-  if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  // drag/drop
-  let dragEl = null;
-  const items = c.querySelectorAll('.sp-list-item');
-  items.forEach(el => {
-    el.addEventListener('dragstart', function(e) {
-      dragEl = this;
-      this.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', this.dataset.id);
-    });
-    el.addEventListener('dragend', function() { this.classList.remove('dragging'); });
-    el.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      if (this === dragEl) return;
-      const rect = this.getBoundingClientRect();
-      const mid = rect.top + rect.height / 2;
-      if (e.clientY < mid) { c.insertBefore(dragEl, this); }
-      else { c.insertBefore(dragEl, this.nextSibling); }
-    });
-    el.addEventListener('drop', function(e) { e.preventDefault(); });
-  });
-  c.addEventListener('dragend', function() {
-    if (!dragEl) return;
-    const newOrder = [...this.querySelectorAll('.sp-list-item')].map(el => el.dataset.id);
-    const byId = {};
-    spPl().forEach(p => { byId[p.id] = p; });
-    spSavePl(newOrder.map(id => byId[id]).filter(Boolean));
-    dragEl = null;
-  });
-}
-
-// Enter key to add
-document.addEventListener('keydown', function spEnter(e) {
-  if (e.key === 'Enter' && document.activeElement && document.activeElement.id === 'spAddInput') {
-    spAddPlaylist();
-  }
-});
-
-function spOpenSettings() {
-  const o = document.getElementById('spOverlay');
-  if (!o) return;
-  spInit();
-  o.classList.remove('hidden');
-}
-function spCloseSettings(e) {
-  if (e && e.target !== e.currentTarget) return;
-  const o = document.getElementById('spOverlay');
-  if (o) o.classList.add('hidden');
-}
-
-function spAddPlaylist() {
-  const inp = document.getElementById('spAddInput');
-  if (!inp) return;
-  const v = inp.value.trim();
-  if (!v) { showToast('Paste a Spotify link', 'warning'); return; }
-  const m = v.match(/open\.spotify\.com\/(playlist|track|album|artist|episode)\/([a-zA-Z0-9]+)/);
-  if (!m) { showToast('Invalid Spotify link', 'error'); return; }
-  const id = m[2], embed = 'https://open.spotify.com/embed/' + m[1] + '/' + id;
-  const list = spPl();
-  const newId = 'sp' + Date.now();
-  list.push({ id: newId, name: m[1] + ' ' + id.slice(0, 8), embedUrl: embed });
-  spSavePl(list);
-  spSetAct(newId);
-  inp.value = '';
-  spInit();
-  showToast('Playlist added!', 'success');
-}
-
-function spPlayPlaylist(id) {
-  spSetAct(id); spInit();
-}
-function spDeletePlaylist(id) {
-  let list = spPl();
-  list = list.filter(p => p.id !== id);
-  spSavePl(list);
-  if (spAct() === id) spSetAct(list.length ? list[0].id : '');
-  spInit();
-  showToast('Playlist removed', 'info');
-}
-
-function spRenderList() {
-  const c = document.getElementById('spPlaylistList');
-  if (!c) return;
-  const list = spPl(), aid = spAct();
-  if (!list.length) { c.innerHTML = '<div class="sp-list-empty">No playlists yet</div>'; return; }
-  c.innerHTML = list.map(p =>
-    '<div class="sp-list-item' + (p.id === aid ? ' active' : '') + '">' +
-      '<span class="sp-list-name">' + escapeHtml(p.name) + '</span>' +
-      '<div class="sp-list-actions">' +
-        '<button class="sp-list-play" onclick="spPlayPlaylist(\'' + p.id + '\')" title="Play">\u25B6</button>' +
-        '<button class="sp-list-del" onclick="spDeletePlaylist(\'' + p.id + '\')" title="Remove">\u2715</button>' +
-      '</div>' +
-    '</div>'
-  ).join('');
-}
-
 // ─── TASK MODAL ────────────────────────────────────────────
 function selectTagPill(tag) {
   document.querySelectorAll('.tf-tag').forEach(b => b.classList.remove('active'));
@@ -4391,5 +4170,283 @@ function openCardColorPicker(anchorEl, tag, currentHex, onPick) {
       popover.remove();
       document.removeEventListener('click', closeOutside, true);
     }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   SPOTIFY EMBED MODULE
+   Minimal multi-playlist manager using Spotify Embed iframes
+   ════════════════════════════════════════════════════════════ */
+
+const SP_PLAYLISTS_KEY = 'haven-spotify-playlists';
+const SP_ACTIVE_KEY = 'haven-spotify-active';
+const SP_COLLAPSED_KEY = 'haven-spotify-collapsed';
+
+let spPlaylists = [];
+let spActiveId = null;
+let spIsPlaying = false;
+let spCollapsed = false;
+
+function spInit() {
+  spLoadState();
+  spRenderSidebar();
+  spRenderList();
+  spUpdateNav();
+  var el = document.getElementById('spSidebar');
+  if (el && spCollapsed) el.classList.add('collapsed');
+  document.addEventListener('keydown', spOnKey);
+}
+
+function spLoadState() {
+  try { spPlaylists = JSON.parse(localStorage.getItem(SP_PLAYLISTS_KEY)) || []; }
+  catch { spPlaylists = []; }
+  spActiveId = localStorage.getItem(SP_ACTIVE_KEY) || null;
+  spCollapsed = localStorage.getItem(SP_COLLAPSED_KEY) === '1';
+}
+
+function spSavePlaylists() {
+  localStorage.setItem(SP_PLAYLISTS_KEY, JSON.stringify(spPlaylists));
+}
+
+function spSaveActive() {
+  if (spActiveId) localStorage.setItem(SP_ACTIVE_KEY, spActiveId);
+  else localStorage.removeItem(SP_ACTIVE_KEY);
+}
+
+function spRenderSidebar() {
+  const empty = document.getElementById('spEmpty');
+  const wrap = document.getElementById('spEmbedWrap');
+  const embed = document.getElementById('spEmbed');
+  const controls = document.getElementById('spControls');
+  if (!empty || !wrap || !embed) return;
+  const active = spPlaylists.find(p => p.id === spActiveId);
+  if (active) {
+    empty.style.display = 'none';
+    wrap.style.display = 'block';
+    embed.src = active.embedUrl;
+    if (controls) controls.style.display = 'flex';
+  } else {
+    empty.style.display = 'flex';
+    wrap.style.display = 'none';
+    if (controls) controls.style.display = 'none';
+  }
+  spUpdateNav();
+}
+
+function spPostMessage(cmd) {
+  document.querySelectorAll('#spEmbed, #spModalEmbed').forEach(ifr => {
+    if (ifr.src && ifr.src.includes('spotify.com')) {
+      try { ifr.contentWindow.postMessage({command: cmd}, '*'); } catch {}
+    }
+  });
+}
+
+function spTogglePlay() {
+  spIsPlaying = !spIsPlaying;
+  const btn = document.getElementById('spPlayBtn');
+  if (btn) {
+    const playIcon = btn.querySelector('.sp-play-icon');
+    const pauseIcon = btn.querySelector('.sp-pause-icon');
+    if (playIcon) playIcon.style.display = spIsPlaying ? 'none' : '';
+    if (pauseIcon) pauseIcon.style.display = spIsPlaying ? '' : 'none';
+  }
+  spPostMessage('togglePlay');
+}
+
+function spSidePrev() { spSideNav(-1); }
+function spSideNext() { spSideNav(1); }
+
+function spSideNav(dir) {
+  if (!spPlaylists.length) return;
+  let idx = spPlaylists.findIndex(p => p.id === spActiveId);
+  if (idx < 0) idx = 0;
+  idx = (idx + dir + spPlaylists.length) % spPlaylists.length;
+  spActiveId = spPlaylists[idx].id;
+  spSaveActive();
+  spIsPlaying = false;
+  const btn = document.getElementById('spPlayBtn');
+  if (btn) {
+    const playIcon = btn.querySelector('.sp-play-icon');
+    const pauseIcon = btn.querySelector('.sp-pause-icon');
+    if (playIcon) playIcon.style.display = '';
+    if (pauseIcon) pauseIcon.style.display = 'none';
+  }
+  spRenderSidebar();
+  spRenderList();
+  spUpdateNav();
+  const modalEmbed = document.getElementById('spModalEmbed');
+  const playlist = spPlaylists.find(p => p.id === spActiveId);
+  if (modalEmbed && playlist) modalEmbed.src = playlist.embedUrl;
+}
+
+function spUpdateNav() {
+  const prev = document.getElementById('spNavPrev');
+  const next = document.getElementById('spNavNext');
+  if (prev) prev.style.display = spPlaylists.length > 1 ? '' : 'none';
+  if (next) next.style.display = spPlaylists.length > 1 ? '' : 'none';
+}
+
+function spToggleSection(force) {
+  spCollapsed = force !== undefined ? force : !spCollapsed;
+  localStorage.setItem(SP_COLLAPSED_KEY, spCollapsed ? '1' : '');
+  const sidebar = document.getElementById('spSidebar');
+  if (sidebar) sidebar.classList.toggle('collapsed', spCollapsed);
+}
+
+function spOpenSettings() {
+  const overlay = document.getElementById('spOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('hidden');
+  spRenderList();
+  const modalEmbed = document.getElementById('spModalEmbed');
+  const active = spPlaylists.find(p => p.id === spActiveId);
+  if (modalEmbed && active) modalEmbed.src = active.embedUrl;
+}
+
+function spCloseSettings() {
+  const overlay = document.getElementById('spOverlay');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+function spAddPlaylist() {
+  const input = document.getElementById('spAddInput');
+  if (!input) return;
+  let val = input.value.trim();
+  if (!val) return;
+  let playlistId = val;
+  let embedUrl = val;
+  const match = val.match(/(?:open\.spotify\.com\/(?:embed\/)?playlist\/|spotify:playlist:)([a-zA-Z0-9]+)/);
+  if (match) {
+    playlistId = match[1];
+    embedUrl = 'https://open.spotify.com/embed/playlist/' + playlistId;
+  } else if (/^[a-zA-Z0-9]{22}$/.test(val)) {
+    playlistId = val;
+    embedUrl = 'https://open.spotify.com/embed/playlist/' + playlistId;
+  } else if (val.includes('playlist')) {
+    const idMatch = val.match(/[a-zA-Z0-9]{22}/);
+    if (idMatch) { playlistId = idMatch[0]; embedUrl = 'https://open.spotify.com/embed/playlist/' + playlistId; }
+  }
+  if (!playlistId || spPlaylists.some(p => p.id === playlistId)) return;
+  spPlaylists.push({ id: playlistId, name: 'Playlist ' + playlistId.slice(0, 8), embedUrl });
+  spSavePlaylists();
+  input.value = '';
+  if (!spActiveId) {
+    spActiveId = playlistId;
+    spSaveActive();
+    spRenderSidebar();
+  }
+  spRenderList();
+  spUpdateNav();
+}
+
+function spPlayPlaylist(id) {
+  spActiveId = id;
+  spSaveActive();
+  spIsPlaying = false;
+  const btn = document.getElementById('spPlayBtn');
+  if (btn) {
+    const playIcon = btn.querySelector('.sp-play-icon');
+    const pauseIcon = btn.querySelector('.sp-pause-icon');
+    if (playIcon) playIcon.style.display = '';
+    if (pauseIcon) pauseIcon.style.display = 'none';
+  }
+  const modalEmbed = document.getElementById('spModalEmbed');
+  const playlist = spPlaylists.find(p => p.id === id);
+  if (modalEmbed && playlist) modalEmbed.src = playlist.embedUrl;
+  spRenderSidebar();
+  spRenderList();
+  spUpdateNav();
+}
+
+function spDeletePlaylist(id) {
+  spPlaylists = spPlaylists.filter(p => p.id !== id);
+  spSavePlaylists();
+  if (spActiveId === id) {
+    spActiveId = spPlaylists.length ? spPlaylists[0].id : null;
+    spSaveActive();
+    spRenderSidebar();
+  }
+  spRenderList();
+  spUpdateNav();
+}
+
+function spRenamePlaylist(id) {
+  const item = document.querySelector('#spList .sp-list-item[data-sp-id="' + id + '"] .sp-name');
+  if (!item) return;
+  const current = item.textContent;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = current;
+  input.className = 'sp-rename-input';
+  item.textContent = '';
+  item.appendChild(input);
+  input.focus();
+  input.select();
+  function done(name) {
+    const p = spPlaylists.find(x => x.id === id);
+    if (p) { p.name = name || current; spSavePlaylists(); }
+    spRenderList();
+  }
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); done(input.value.trim() || current); }
+    if (e.key === 'Escape') { done(current); }
+    e.stopPropagation();
+  });
+  input.addEventListener('blur', function() { done(input.value.trim() || current); });
+}
+
+function spRenderList(filter) {
+  const container = document.getElementById('spList');
+  if (!container) return;
+  const items = filter ? spPlaylists.filter(p => p.name.toLowerCase().includes(filter.toLowerCase())) : spPlaylists;
+  container.innerHTML = items.map(function(p, i) {
+    return '<div class="sp-list-item' + (p.id === spActiveId ? ' active' : '') + '" data-sp-id="' + p.id + '" draggable="true">' +
+      '<span class="sp-drag-handle" data-index="' + i + '">' +
+        '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>' +
+      '</span>' +
+      '<span class="sp-indicator-dot' + (p.id === spActiveId ? ' on' : '') + '"></span>' +
+      '<span class="sp-name" onclick="spRenamePlaylist(\'' + p.id + '\')">' + escapeHtml(p.name) + '</span>' +
+      '<button class="sp-list-play-btn" onclick="event.stopPropagation();spPlayPlaylist(\'' + p.id + '\')" title="Play">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 19,12 8,19"/></svg>' +
+      '</button>' +
+      '<button class="sp-list-del-btn" onclick="event.stopPropagation();spDeletePlaylist(\'' + p.id + '\')" title="Remove">' +
+        '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+      '</button>' +
+    '</div>';
+  }).join('');
+  spSetupDragReorder(container);
+}
+
+function spSetupDragReorder(container) {
+  let dragItem = null;
+  container.querySelectorAll('.sp-list-item').forEach(function(item) {
+    item.addEventListener('dragstart', function() { dragItem = this; this.style.opacity = '0.4'; });
+    item.addEventListener('dragend', function() { this.style.opacity = ''; dragItem = null; container.querySelectorAll('.sp-list-item').forEach(function(el) { el.style.borderTop = ''; }); });
+    item.addEventListener('dragover', function(e) { e.preventDefault(); if (dragItem && dragItem !== this) { container.querySelectorAll('.sp-list-item').forEach(function(el) { el.style.borderTop = ''; }); this.style.borderTop = '2px solid #1db954'; } });
+    item.addEventListener('dragleave', function() { this.style.borderTop = ''; });
+    item.addEventListener('drop', function(e) {
+      e.preventDefault(); this.style.borderTop = '';
+      if (dragItem && dragItem !== this) {
+        var fromId = dragItem.dataset.spId;
+        var toId = this.dataset.spId;
+        var fromIdx = spPlaylists.findIndex(function(p) { return p.id === fromId; });
+        var toIdx = spPlaylists.findIndex(function(p) { return p.id === toId; });
+        if (fromIdx >= 0 && toIdx >= 0) {
+          var moved = spPlaylists.splice(fromIdx, 1)[0];
+          spPlaylists.splice(toIdx, 0, moved);
+          spSavePlaylists();
+          spRenderList();
+        }
+      }
+    });
+  });
+}
+
+function spOnKey(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+  switch (e.key) {
+    case ' ': e.preventDefault(); spTogglePlay(); break;
+    case 'ArrowLeft': e.preventDefault(); spPostMessage('previous'); break;
+    case 'ArrowRight': e.preventDefault(); spPostMessage('next'); break;
   }
 }

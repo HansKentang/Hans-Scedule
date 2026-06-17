@@ -197,7 +197,6 @@ function init() {
   const origSave = pageAfterTaskSave;
   pageAfterTaskSave = () => { if (typeof origSave === 'function') origSave(); updateTagTotal(); };
   updateTagTotal();
-  spInit();
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

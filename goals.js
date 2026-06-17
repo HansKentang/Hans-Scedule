@@ -692,7 +692,6 @@ function init() {
 
   // Re-render on edit mode toggle
   document.addEventListener('editModeChange', () => renderBento());
-  spInit();
 }
 
 // Edit mode image picker (sidebar handling is in shared.js to avoid double-binding)
