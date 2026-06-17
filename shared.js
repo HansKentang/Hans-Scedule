@@ -1099,6 +1099,11 @@ function resetImage(id) {
   if (!state.images) loadImages();
   delete state.images[id];
   try { localStorage.removeItem('haven-image-' + id); } catch(e) { /* ignore */ }
+  // Also remove from SETTINGS_KEY so the old custom URL doesn't get restored on reload
+  try {
+    var _s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+    if (_s.images && _s.images[id]) { delete _s.images[id]; localStorage.setItem(SETTINGS_KEY, JSON.stringify(_s)); }
+  } catch(e) { /* skip */ }
   if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
     const item = hubContent.bentoLayout.find(i => i.imageId === id);
     if (item && item._imgUrl) delete item._imgUrl;
