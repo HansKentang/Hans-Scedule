@@ -354,43 +354,34 @@
           </a>
         </div>
       </nav>
-      <div class="spotify-player" id="spPlayer">
-        <div id="spLoggedOut">
-          <div class="sp-row">
-            <div class="sp-icon">
-              <svg viewBox="0 0 24 24" fill="#1db954" width="22" height="22"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-            </div>
-            <div class="sp-info">
-              <div class="sp-title">Not connected</div>
-              <div class="sp-artist">Enter your Client ID to connect</div>
-            </div>
-          </div>
-          <button class="sp-login-btn" onclick="spLogin()">
-            <svg viewBox="0 0 24 24" fill="#1db954" width="16" height="16"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
-            Connect Spotify
+      <div class="spotify-embed">
+        <div class="sp-embed-header">
+          <svg viewBox="0 0 24 24" fill="#1db954" width="16" height="16"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          <span>Spotify</span>
+          <button class="sp-embed-expand" onclick="spOpenSettings()" title="Spotify settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
         </div>
-        <div id="spLoggedIn" class="hidden">
-          <div class="sp-row">
-            <div class="sp-art" id="spArt"></div>
-            <div class="sp-info">
-              <div class="sp-title" id="spTitle">—</div>
-              <div class="sp-artist" id="spArtist">—</div>
+        <iframe class="sp-embed-iframe" src="" allow="encrypted-media; autoplay" loading="lazy"></iframe>
+      </div>
+
+      <!-- Spotify settings modal -->
+      <div id="spOverlay" class="sp-overlay hidden" onclick="spCloseSettings(event)">
+        <div class="sp-modal" onclick="event.stopPropagation()">
+          <button class="sp-modal-close" onclick="spCloseSettings()">&times;</button>
+          <div class="sp-modal-header">
+            <svg viewBox="0 0 24 24" fill="#1db954" width="22" height="22"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            <span>Spotify Player</span>
+          </div>
+          <iframe class="sp-modal-iframe" src="" allow="encrypted-media; autoplay" loading="lazy"></iframe>
+          <div class="sp-modal-body">
+            <input class="sp-embed-input" type="text" placeholder="Paste a playlist, album, or track link..." />
+            <div class="sp-modal-actions">
+              <button class="sp-embed-save" onclick="spSaveEmbed()">Save</button>
+              <button class="sp-embed-reset" onclick="spResetEmbed()">Clear</button>
             </div>
-            <button class="sp-logout-icon" onclick="spLogout()" title="Disconnect">&times;</button>
           </div>
-          <div class="sp-controls">
-            <button class="sp-btn" id="spPrevBtn" onclick="spPrev()" title="Previous"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
-            <button class="sp-btn sp-play-btn" id="spPlayBtn" onclick="spTogglePlay()" title="Play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
-            <button class="sp-btn" id="spNextBtn" onclick="spNext()" title="Next"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 18l8.5-6L4 6v12zm9-12v12h2V6h-2z"/></svg></button>
-            <button class="sp-btn sp-like-btn" id="spLikeBtn" onclick="spLike()" title="Like">♡</button>
-          </div>
-          <div class="sp-progress">
-            <div class="sp-progress-bar"><div class="sp-progress-fill" id="spProgressFill"></div></div>
-            <div class="sp-progress-time"><span id="spProgressCur">0:00</span><span id="spProgressTot">0:00</span></div>
-          </div>
-          <div class="sp-status" id="spStatusMsg"></div>
-          <div class="sp-profile" id="spProfile"></div>
+          <div class="sp-embed-status" id="spEmbedStatus"></div>
         </div>
       </div>
       <div class="hub-sidebar-footer">

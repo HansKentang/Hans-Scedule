@@ -1902,158 +1902,335 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 }
 
 
-/* ─── SPOTIFY EMBED (SIDEBAR WIDGET) ─────────────── */
-/* ─── SPOTIFY WEB API PLAYER ─────────────────────────────── */
-.spotify-player {
-  padding: 8px 10px;
+/* ─── SPOTIFY EMBED ─────────────────────────────── */
+.spotify-embed {
+  padding: 12px 12px 10px;
   border-top: 1px solid var(--border-subtle);
   background: var(--surface-container);
   flex-shrink: 0;
+  position: relative;
+  transition: background 0.3s ease;
 }
-#spLoggedOut, #spLoggedIn { width: 100%; }
-#spLoggedOut .sp-row {
+.spotify-embed::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(29,185,84,0.04) 0%, transparent 50%, rgba(29,185,84,0.02) 100%);
+  pointer-events: none;
+}
+.sp-embed-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  position: relative;
 }
-#spLoggedOut .sp-icon {
-  width: 24px; height: 24px;
-  border-radius: 4px;
-  background: color-mix(in srgb, #1db954 10%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.sp-embed-header svg:first-child {
+  filter: drop-shadow(0 0 4px rgba(29,185,84,0.3));
+  animation: spPulse 3s ease-in-out infinite;
   flex-shrink: 0;
 }
-#spLoggedOut .sp-icon svg { width: 14px; height: 14px; }
-#spLoggedOut .sp-info { flex: 1; min-width: 0; }
-#spLoggedOut .sp-title { font-size: 0.65rem; font-weight: 500; color: var(--text-primary); }
-#spLoggedOut .sp-artist { font-size: 0.58rem; color: var(--text-tertiary); }
-.sp-login-btn {
-  width: 100%;
-  padding: 5px 8px;
-  border: none;
-  border-radius: 4px;
-  background: #1db954;
-  color: #fff;
-  font-size: 0.62rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  transition: all 150ms ease;
+@keyframes spPulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(29,185,84,0.3)); }
+  50% { filter: drop-shadow(0 0 8px rgba(29,185,84,0.5)); }
 }
-.sp-login-btn:hover { background: #1ed760; }
-.sp-login-btn svg { width: 12px; height: 12px; }
-
-/* Logged in */
-#spLoggedIn .sp-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-.sp-art {
-  width: 28px; height: 28px;
-  border-radius: 4px;
-  background: var(--surface-container-high);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  overflow: hidden;
-}
-#spLoggedIn .sp-info { flex: 1; min-width: 0; }
-#spLoggedIn .sp-title {
+.sp-embed-header span {
+  flex: 1;
   font-size: 0.65rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: 0.02em;
 }
-#spLoggedIn .sp-artist {
+.sp-embed-expand {
+  width: 22px; height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  font-size: 0.65rem;
+}
+.sp-embed-expand:hover {
+  color: var(--text-primary);
+  background: var(--surface-container-highest);
+}
+
+/* Sidebar empty state */
+.sp-sidebar-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 0;
+  gap: 4px;
+}
+.sp-sidebar-empty-icon {
+  opacity: 0.5;
+  margin-bottom: 2px;
+}
+.sp-sidebar-empty-text {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+.sp-sidebar-empty-hint {
+  font-size: 0.52rem;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+
+/* Sidebar player */
+.sp-sidebar-player {}
+.sp-sidebar-player.hidden { display: none; }
+.sp-sidebar-name {
   font-size: 0.58rem;
   color: var(--text-tertiary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.sp-logout-icon {
-  width: 18px; height: 18px;
-  border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  flex-shrink: 0;
-  transition: all var(--t-fast);
-}
-.sp-logout-icon:hover { color: #ef4444; }
-.sp-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1px;
   margin-bottom: 4px;
+  padding-left: 2px;
+  font-weight: 500;
 }
-.sp-btn {
-  width: 24px; height: 24px;
+.sp-embed-iframe {
+  width: 100%;
+  height: 80px;
   border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: box-shadow 0.3s ease;
+}
+
+/* ─── SPOTIFY SETTINGS MODAL ──────────────────────────── */
+.sp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--t-fast);
+  z-index: 9999;
+  animation: spOverlayIn 200ms ease;
+}
+@keyframes spOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.sp-overlay.hidden { display: none; }
+.sp-modal {
+  background: var(--surface-container-high);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 24px;
+  width: 440px;
+  max-width: 92vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.3);
+  animation: spModalIn 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+@keyframes spModalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sp-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px; height: 28px;
+  border: none;
+  background: var(--surface-container-highest);
+  color: var(--text-tertiary);
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+.sp-modal-close:hover {
+  color: var(--text-primary);
+}
+.sp-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.sp-modal-header span {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Modal embed */
+.sp-modal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  background: var(--surface-container);
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.sp-modal-empty span {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+#spModalPL.hidden { display: none; }
+.sp-modal-iframe {
+  width: 100%;
+  height: 352px;
+  border: none;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Add playlist row */
+.sp-modal-add {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.sp-modal-add input {
+  flex: 1;
+  padding: 8px 10px;
+  font-size: 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--surface-container-highest);
+  color: var(--text-primary);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.sp-modal-add input:focus {
+  border-color: #1db954;
+  box-shadow: 0 0 0 3px rgba(29,185,84,0.15);
+}
+.sp-modal-add input::placeholder {
+  color: var(--text-tertiary);
+  font-style: italic;
+  opacity: 0.7;
+}
+.sp-add-btn {
+  padding: 8px 14px;
+  font-size: 0.7rem;
+  border: none;
+  border-radius: 8px;
+  background: #1db954;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.sp-add-btn:hover {
+  background: #1ed760;
+  box-shadow: 0 2px 8px rgba(29,185,84,0.3);
+  transform: translateY(-1px);
+}
+.sp-add-btn:active { transform: translateY(0); }
+
+/* Section title */
+.sp-modal-section-title {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+/* Playlist list */
+.sp-playlist-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sp-list-empty {
+  font-size: 0.62rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 12px 0;
+  opacity: 0.7;
+}
+.sp-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--surface-container);
+  transition: all 0.15s ease;
+}
+.sp-list-item:hover {
+  background: var(--surface-container-highest);
+}
+.sp-list-item.active {
+  background: rgba(29,185,84,0.08);
+  border: 1px solid rgba(29,185,84,0.2);
+}
+.sp-list-name {
+  flex: 1;
+  font-size: 0.65rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+.sp-list-item.active .sp-list-name {
+  color: #1db954;
+}
+.sp-list-actions {
+  display: flex;
+  gap: 4px;
   flex-shrink: 0;
 }
-.sp-btn:hover { color: var(--text-primary); }
-.sp-btn svg { width: 12px; height: 12px; }
-.sp-play-btn {
-  width: 26px; height: 26px;
-  background: var(--text-primary);
-  color: var(--bg-primary);
-  border-radius: 50%;
-}
-.sp-play-btn:hover { background: var(--primary); color: var(--text-inverse); }
-.sp-play-btn svg { width: 12px; height: 12px; margin-left: 1px; }
-.sp-like-btn { font-size: 0.75rem; }
-.sp-like-btn.active { color: #1db954; }
-.sp-progress { margin-bottom: 2px; }
-.sp-progress-bar {
-  width: 100%;
-  height: 2px;
-  background: var(--border-color);
-  border-radius: 1px;
-  overflow: hidden;
-}
-.sp-progress-fill {
-  height: 100%;
-  background: var(--text-primary);
-  border-radius: 1px;
-  transition: width 0.3s linear;
-  width: 0%;
-}
-.sp-progress-time {
+.sp-list-play, .sp-list-del {
+  width: 22px; height: 22px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
   display: flex;
-  justify-content: space-between;
-  margin-top: 1px;
-  font-size: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  transition: all 0.15s ease;
+  background: transparent;
   color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
 }
-.sp-status { font-size: 0.52rem; color: var(--text-tertiary); text-align: center; }
-.sp-profile { font-size: 0.55rem; color: var(--text-tertiary); text-align: center; display: flex; align-items: center; justify-content: center; gap: 3px; }
+.sp-list-play:hover {
+  background: #1db954;
+  color: #fff;
+}
+.sp-list-item.active .sp-list-play {
+  color: #1db954;
+}
+.sp-list-item.active .sp-list-play:hover {
+  background: #1db954;
+  color: #fff;
+}
+.sp-list-del:hover {
+  background: rgba(239,68,68,0.12);
+  color: #ef4444;
+}
 
 /* ─── AI MESSAGE BUBBLES ───────────────────────────────── */
 .ai-message {

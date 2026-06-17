@@ -592,7 +592,7 @@ function renderTasks() {
 function showGridEmptyState(count) {
   const existing = dom.grid.querySelector('.grid-empty-state');
   if (existing) existing.remove();
-  if (count > 0 || state.currentView !== 'week') return;
+  if (count > 0 || currentView !== 'week') return;
   const firstCol = dom.grid.querySelector('.day-column');
   if (!firstCol) return;
   const el = document.createElement('div');

@@ -1877,7 +1877,7 @@ function handleSettingsSubmit(e) {
   state.apiProvider = provider;
   state.apiModel = model;
   try { localStorage.setItem(API_KEY_STORAGE, key); } catch (e) { /* ignore */ }
-  setApiProvider(provider);
+  saveApiProvider(provider);
   try { localStorage.setItem('haven-schedule-model', model); } catch (e) { /* ignore */ }
   saveRoutine(routine);
   updateSettingsKeyStatus();
@@ -2284,314 +2284,90 @@ document.addEventListener('click', function(e) {
   openImagePicker(img.dataset.imageId);
 });
 
-// ─── SPOTIFY REAL CONNECTION ──────────────────────────────
-const SPOTIFY_STORAGE = 'haven-schedule-spotify';
-const SPOTIFY_CID_STORAGE = 'haven-schedule-spotify-cid';
-const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize';
-const SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token';
-const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
-const SPOTIFY_SCOPES = 'user-read-playback-state user-modify-playback-state user-read-currently-playing user-library-modify user-library-read user-read-private user-read-email';
-
-let _spAT = null, _spRT = null, _spExp = null;
-let _spUser = null, _spTrack = null, _spPlaying = false;
-let _spPos = 0, _spDur = 0, _spDev = false, _spLiked = false;
-let _spPT = null, _spXT = null, _spPStart = 0, _spPPos = 0, _spFetchErr = '';
-
-function _spFmt(t) { return t ? `${Math.floor(t/60000)}:${String(Math.floor(t/1000)%60).padStart(2,'0')}` : '0:00'; }
-
-function _spLoad() {
-  try { const d = JSON.parse(localStorage.getItem(SPOTIFY_STORAGE)); if (d) { _spAT = d.at; _spRT = d.rt; _spExp = d.exp; } } catch(e) {}
-}
-function _spSave(at, rt, exp) {
-  _spAT = at; _spRT = rt; _spExp = Date.now() + (exp - 60) * 1000;
-  try { localStorage.setItem(SPOTIFY_STORAGE, JSON.stringify({ at: _spAT, rt: _spRT, exp: _spExp })); } catch(e) {}
-}
-function _spClearAll() {
-  _spAT = _spRT = _spExp = null; _spUser = _spTrack = null;
-  _spPlaying = false; _spPos = _spDur = 0; _spDev = false; _spLiked = false;
-  try { localStorage.removeItem(SPOTIFY_STORAGE); } catch(e) {}
-  spStopPoll(); spRender();
-}
-function _spExpired() { return _spExp && Date.now() >= _spExp; }
-async function _spRefresh() {
-  if (!_spRT) return false;
-  try {
-    const r = await fetch(SPOTIFY_TOKEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: _spRT, client_id: spGetCid() })
-    });
-    if (!r.ok) { _spClearAll(); return false; }
-    const d = await r.json();
-    _spSave(d.access_token, d.refresh_token || _spRT, d.expires_in);
-    return true;
-  } catch(e) { return false; }
-}
-async function spValid() {
-  if (!_spAT) return false;
-  if (_spExpired() && !(await _spRefresh())) return false;
-  return true;
-}
-async function spGet(endpoint) {
-  if (!(await spValid())) { console.log('[sp] spGet: token invalid for', endpoint); return null; }
-  try {
-    const r = await fetch(SPOTIFY_API_BASE + endpoint, { headers: { 'Authorization': 'Bearer ' + _spAT } });
-    if (r.status === 401 && (await _spRefresh())) return spGet(endpoint);
-    if (r.status === 204) { console.log('[sp] spGet: 204 for', endpoint); return null; }
-    if (!r.ok) { console.log('[sp] spGet: HTTP', r.status, 'for', endpoint); return null; }
-    return r.json();
-  } catch(e) { console.log('[sp] spGet: fetch error', e); return null; }
-}
-async function spPut(endpoint) {
-  if (!(await spValid())) return 0;
-  try {
-    const r = await fetch(SPOTIFY_API_BASE + endpoint, { method: 'PUT', headers: { 'Authorization': 'Bearer ' + _spAT, 'Content-Type': 'application/json' } });
-    if (r.status === 401 && (await _spRefresh())) return spPut(endpoint);
-    return r.status;
-  } catch(e) { return 0; }
-}
-async function spDel(endpoint) {
-  if (!(await spValid())) return 0;
-  try {
-    const r = await fetch(SPOTIFY_API_BASE + endpoint, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + _spAT, 'Content-Type': 'application/json' } });
-    if (r.status === 401 && (await _spRefresh())) return spDel(endpoint);
-    return r.status;
-  } catch(e) { return 0; }
-}
-
-function spGetCid() { try { return localStorage.getItem(SPOTIFY_CID_STORAGE) || ''; } catch(e) { return ''; } }
-function spSetCid(v) { try { localStorage.setItem(SPOTIFY_CID_STORAGE, v); } catch(e) {} }
-
-function spRedirectUri() {
-  var p = window.location.pathname;
-  // Strip filename if present (e.g., /Hans-Scedule/index.html -> /Hans-Scedule/)
-  p = p.replace(/\/[^/]*\.html$/, '/');
-  if (!p.endsWith('/')) p += '/';
-  return window.location.origin + p;
-}
-
-function _spRand(n) {
-  const a = new Uint8Array(n); crypto.getRandomValues(a);
-  return btoa(String.fromCharCode(...a)).replace(/[+/=]/g,'').slice(0,n);
-}
-async function _spSha(s) {
-  return btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-
-function spLogin() {
-  const cid = spGetCid();
-  if (!cid) { spShowSetup(); return; }
-  spDoLogin(cid);
-}
-
-function spDoLogin(cid) {
-  const verifier = _spRand(64), state = _spRand(16);
-  try { sessionStorage.setItem('sp_v', verifier); sessionStorage.setItem('sp_s', state); } catch(e) {}
-  _spSha(verifier).then(c => {
-    const uri = spRedirectUri();
-    window.location.href = SPOTIFY_AUTH_URL + '?' + new URLSearchParams({
-      client_id: cid, response_type: 'code', redirect_uri: uri,
-      code_challenge_method: 'S256', code_challenge: c, state, scope: SPOTIFY_SCOPES
-    });
-  });
-}
-
-function spShowSetup() {
-  const o = document.getElementById('spSetupOverlay'), m = document.getElementById('spSetupModal');
-  if (!o || !m) return;
-  const uriEl = document.getElementById('spRedirectUri');
-  if (uriEl) uriEl.textContent = spRedirectUri();
-  o.classList.remove('hidden');
-  m.classList.remove('hidden');
-  setTimeout(() => { document.getElementById('spSetupCidInput')?.focus(); }, 100);
-}
-function spCloseSetup() {
-  document.getElementById('spSetupOverlay')?.classList.add('hidden');
-  document.getElementById('spSetupModal')?.classList.add('hidden');
-}
-function spSaveCidAndLogin() {
-  const input = document.getElementById('spSetupCidInput');
-  if (!input) return;
-  const cid = input.value.trim();
-  if (!cid) { showToast('Paste your Spotify Client ID', 'warning'); return; }
-  spSetCid(cid);
-  spCloseSetup();
-  spDoLogin(cid);
-}
-
-function spLogout() { _spClearAll(); showToast('Disconnected from Spotify', 'info'); }
-
-async function spHandleCb() {
-  const u = new URL(window.location.href);
-  const code = u.searchParams.get('code'), state = u.searchParams.get('state');
-  const ss = sessionStorage.getItem('sp_s');
-  if (!code || state !== ss) return;
-  window.history.replaceState({}, document.title, window.location.pathname);
-  const v = sessionStorage.getItem('sp_v'), cid = spGetCid();
-  if (!v || !cid) { showToast('Spotify login failed', 'error'); return; }
-  try {
-    const r = await fetch(SPOTIFY_TOKEN_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ client_id: cid, grant_type: 'authorization_code', code, redirect_uri: spRedirectUri(), code_verifier: v })
-    });
-    if (!r.ok) { showToast('Spotify auth failed', 'error'); return; }
-    const d = await r.json();
-    _spSave(d.access_token, d.refresh_token, d.expires_in);
-    console.log('[sp] OAuth success, token saved, AT length:', (d.access_token || '').length);
-    showToast('Connected to Spotify!', 'success');
-    spFetchMe();
-    spPoll();
-    spRender();
-  } catch(e) { showToast('Spotify connection error', 'error'); }
-}
-
-async function spFetchMe() {
-  const d = await spGet('/me');
-  if (d) _spUser = { name: d.display_name, img: d.images?.[0]?.url, id: d.id, email: d.email };
-  spRender();
-}
-
-async function spFetchPlay() {
-  const d = await spGet('/me/player');
-  console.log('[sp] spFetchPlay response:', d ? 'has data' : 'null', d ? 'item:' + (d.item?.name || 'none') + ' dev:' + (d.device?.name || 'none') : 'no data');
-  if (!d) {
-    _spTrack = null; _spPlaying = false; _spDev = false; _spFetchErr = 'No active device (API returned null/204)'; spRender();
-    return;
-  }
-  _spDev = !!d.device;
-  if (!_spDev) _spFetchErr = 'No active device (API 200, no device obj)';
-  else if (!d.item) _spFetchErr = 'Device idle — play something';
-  else _spFetchErr = '';
-  const changed = !_spTrack || _spTrack.id !== d.item?.id;
-  _spPlaying = d.is_playing;
-  _spPos = d.progress_ms || 0; _spDur = d.item?.duration_ms || 0;
-  _spPStart = Date.now(); _spPPos = _spPos;
-  if (changed && d.item) {
-    _spTrack = { id: d.item.id, name: d.item.name, artist: d.item.artists?.map(a=>a.name).join(', '), art: d.item.album?.images?.[0]?.url };
-    const l = await spGet('/me/tracks/contains?ids=' + d.item.id);
-    if (l) _spLiked = l[0];
-    if (_spTrack.art) _spExtractColor(_spTrack.art);
-  }
-  spRender();
-  if (!_spPT) spPoll();
-}
-
-function spPoll() {
-  spStopPoll();
-  _spPT = setInterval(spFetchPlay, 3000);
-  _spXT = setInterval(() => {
-    if (!_spPlaying || !_spTrack) return;
-    _spPos = _spPPos + (Date.now() - _spPStart);
-    if (_spPos > _spDur) _spPos = _spDur;
-    const f = document.getElementById('spProgressFill'), c = document.getElementById('spProgressCur');
-    if (f) f.style.width = _spDur > 0 ? `${(_spPos/_spDur)*100}%` : '0%';
-    if (c) c.textContent = _spFmt(_spPos);
-  }, 500);
-}
-function spStopPoll() { if (_spPT) { clearInterval(_spPT); _spPT = null; } if (_spXT) { clearInterval(_spXT); _spXT = null; } }
-
-function spTogglePlay() {
-  if (!_spDev) { showToast('No active Spotify device', 'warning'); return; }
-  if (!_spTrack) { showToast('Nothing playing', 'info'); return; }
-  const a = _spPlaying ? 'pause' : 'play';
-  spPut('/me/player/' + a).then(s => {
-    if (s === 403) { showToast('Spotify Premium required for remote control', 'info'); return; }
-    if (s === 204 || s === 200) {
-      _spPlaying = !_spPlaying;
-      if (_spPlaying) { _spPStart = Date.now(); _spPPos = _spPos; }
-      spRender();
-      setTimeout(spFetchPlay, 500);
-    }
-  });
-}
-function spPrev() { spPut('/me/player/previous'); setTimeout(spFetchPlay, 500); }
-function spNext() { spPut('/me/player/next'); setTimeout(spFetchPlay, 500); }
-function spLike() {
-  if (!_spTrack) return;
-  const p = _spLiked ? spDel('/me/tracks?ids=' + _spTrack.id) : spPut('/me/tracks?ids=' + _spTrack.id);
-  p.then(() => { _spLiked = !_spLiked; spRender(); });
-}
-
-function _spExtractColor(url) {
-  const i = new Image(); i.crossOrigin = 'Anonymous';
-  i.onload = function() {
-    try {
-      const c = document.createElement('canvas'), ctx = c.getContext('2d');
-      c.width = 40; c.height = 40; ctx.drawImage(i, 0, 0, 40, 40);
-      const d = ctx.getImageData(0, 0, 40, 40).data;
-      let r = 0, g = 0, b = 0, n = 0;
-      for (let j = 0; j < d.length; j += 4) { if (d[j+3] > 128) { r += d[j]; g += d[j+1]; b += d[j+2]; n++; } }
-      if (n) {
-        r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
-        document.documentElement.style.setProperty('--sp-accent', `rgb(${r},${g},${b})`);
-        document.documentElement.style.setProperty('--sp-accent-dim', `rgb(${Math.round(r*0.5)},${Math.round(g*0.5)},${Math.round(b*0.5)})`);
-      }
-    } catch(e) {}
-  };
-  i.onerror = function() {};
-  i.src = url;
-}
-
-function spRender() {
-  const lo = document.getElementById('spLoggedOut'), li = document.getElementById('spLoggedIn');
-  if (!lo || !li) return;
-  _spLoad();
-  const ok = !!_spAT;
-  if (!ok) {
-    lo.classList.remove('hidden'); li.classList.add('hidden');
-    const s = lo.querySelector('.sp-artist');
-    if (s) s.textContent = spGetCid() ? 'Tap to connect Spotify' : 'Enter your Client ID to connect';
-    return;
-  }
-  lo.classList.add('hidden'); li.classList.remove('hidden');
-  const art = document.getElementById('spArt'), t = document.getElementById('spTitle'),
-        a = document.getElementById('spArtist'), pb = document.getElementById('spPlayBtn'),
-        lb = document.getElementById('spLikeBtn'), pf = document.getElementById('spProgressFill'),
-        ct = document.getElementById('spProgressCur'), tt = document.getElementById('spProgressTot'),
-        sm = document.getElementById('spStatusMsg'), pp = document.getElementById('spProfile');
-  if (art) {
-    if (_spTrack?.art) {
-      art.innerHTML = `<img src="${_spTrack.art}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
-      art.style.background = 'none';
-    } else {
-      art.innerHTML = '<svg viewBox="0 0 24 24" fill="#fff" width="18" height="18"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>';
-      art.style.background = '';
-    }
-  }
-  if (t) t.textContent = _spTrack?.name || '—';
-  if (a) a.textContent = _spTrack?.artist || '—';
-  if (pb) {
-    pb.innerHTML = _spPlaying
-      ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-    pb.title = _spPlaying ? 'Pause' : 'Play';
-  }
-  if (lb) { lb.textContent = _spLiked ? '♥' : '♡'; lb.classList.toggle('active', _spLiked); }
-  if (pf) pf.style.width = _spDur > 0 ? `${(_spPos/_spDur)*100}%` : '0%';
-  if (ct) ct.textContent = _spFmt(_spPos);
-  if (tt) tt.textContent = _spFmt(_spDur);
-  if (sm) {
-    if (!_spDev && _spTrack) sm.textContent = 'No active device';
-    else if (!_spTrack && _spFetchErr) sm.textContent = _spFetchErr;
-    else if (!_spTrack) sm.textContent = 'Nothing playing';
-    else sm.textContent = '';
-  }
-  if (pp) {
-    if (_spUser?.img) pp.innerHTML = `<img src="${_spUser.img}" alt="" style="width:18px;height:18px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:4px"> <span style="font-size:0.62rem;color:var(--text-tertiary)">${_spUser.name || _spUser.id}</span>`;
-    else if (_spUser) pp.textContent = _spUser.name || _spUser.id || '';
-    else pp.textContent = '';
-  }
-}
+// ─── SPOTIFY EMBED ─────────────────────────────────
+const SP_PL_KEY = 'haven-spotify-playlists';
+const SP_ACT_KEY = 'haven-spotify-active';
+function spPl() { try { return JSON.parse(localStorage.getItem(SP_PL_KEY)) || []; } catch(e) { return []; } }
+function spSavePl(a) { localStorage.setItem(SP_PL_KEY, JSON.stringify(a)); }
+function spAct() { return localStorage.getItem(SP_ACT_KEY) || ''; }
+function spSetAct(v) { if (v) localStorage.setItem(SP_ACT_KEY, v); else localStorage.removeItem(SP_ACT_KEY); }
 
 function spInit() {
-  console.log('[sp] spInit called, has code param:', window.location.search.includes('code='));
-  if (window.location.search.includes('code=')) { spHandleCb(); return; }
-  _spLoad();
-  console.log('[sp] spInit: token exists:', !!_spAT);
-  if (_spAT) { spFetchMe(); spFetchPlay(); spPoll(); }
-  spRender();
+  const list = spPl(), aid = spAct(), act = list.find(p => p.id === aid);
+  const url = act ? act.embedUrl : '';
+  // sidebar
+  const ph = document.getElementById('spSidePH'), pl = document.getElementById('spSidePL');
+  if (ph) ph.classList.toggle('hidden', !!url);
+  if (pl) pl.classList.toggle('hidden', !url);
+  const sn = document.getElementById('spSideName');
+  if (sn) sn.textContent = act ? act.name : '';
+  const sf = document.querySelector('.sp-embed-iframe');
+  if (sf) { sf.src = url; }
+  // modal
+  const mph = document.getElementById('spModalPH'), mpl = document.getElementById('spModalPL');
+  if (mph) mph.classList.toggle('hidden', !!url);
+  if (mpl) mpl.classList.toggle('hidden', !url);
+  const mf = document.querySelector('.sp-modal-iframe');
+  if (mf) { mf.src = url; }
+  spRenderList();
+}
+
+function spOpenSettings() {
+  const o = document.getElementById('spOverlay');
+  if (!o) return;
+  spInit();
+  o.classList.remove('hidden');
+}
+function spCloseSettings(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const o = document.getElementById('spOverlay');
+  if (o) o.classList.add('hidden');
+}
+
+function spAddPlaylist() {
+  const inp = document.getElementById('spAddInput');
+  if (!inp) return;
+  const v = inp.value.trim();
+  if (!v) { showToast('Paste a Spotify link', 'warning'); return; }
+  const m = v.match(/open\.spotify\.com\/(playlist|track|album|artist|episode)\/([a-zA-Z0-9]+)/);
+  if (!m) { showToast('Invalid Spotify link', 'error'); return; }
+  const id = m[2], embed = 'https://open.spotify.com/embed/' + m[1] + '/' + id;
+  const list = spPl();
+  const newId = 'sp' + Date.now();
+  list.push({ id: newId, name: m[1] + ' ' + id.slice(0, 8), embedUrl: embed });
+  spSavePl(list);
+  spSetAct(newId);
+  inp.value = '';
+  spInit();
+  showToast('Playlist added!', 'success');
+}
+
+function spPlayPlaylist(id) {
+  spSetAct(id); spInit();
+}
+function spDeletePlaylist(id) {
+  let list = spPl();
+  list = list.filter(p => p.id !== id);
+  spSavePl(list);
+  if (spAct() === id) spSetAct(list.length ? list[0].id : '');
+  spInit();
+  showToast('Playlist removed', 'info');
+}
+
+function spRenderList() {
+  const c = document.getElementById('spPlaylistList');
+  if (!c) return;
+  const list = spPl(), aid = spAct();
+  if (!list.length) { c.innerHTML = '<div class="sp-list-empty">No playlists yet</div>'; return; }
+  c.innerHTML = list.map(p =>
+    '<div class="sp-list-item' + (p.id === aid ? ' active' : '') + '">' +
+      '<span class="sp-list-name">' + escapeHtml(p.name) + '</span>' +
+      '<div class="sp-list-actions">' +
+        '<button class="sp-list-play" onclick="spPlayPlaylist(\'' + p.id + '\')" title="Play">\u25B6</button>' +
+        '<button class="sp-list-del" onclick="spDeletePlaylist(\'' + p.id + '\')" title="Remove">\u2715</button>' +
+      '</div>' +
+    '</div>'
+  ).join('');
 }
 
 // ─── TASK MODAL ────────────────────────────────────────────
