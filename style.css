@@ -2767,6 +2767,156 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 
 
 
+
+/* ─── Clock Widget ────────────────────────────────────── */
+.clock-face {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 2px;
+  padding: 12px 0;
+}
+.clock-row {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.clock-time {
+  font-family: var(--font-serif);
+  font-size: 2.4rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.clock-seconds {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+  vertical-align: super;
+  margin-left: 2px;
+}
+.clock-date {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+/* ─── Weather Widget ──────────────────────────────────── */
+.weather-widget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.weather-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+}
+.weather-loading svg { animation: spin 1s linear infinite; }
+.weather-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.weather-main svg {
+  color: var(--primary);
+  margin-bottom: 2px;
+}
+.weather-temp {
+  font-family: var(--font-serif);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.weather-cond {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+.weather-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+  font-size: 0.68rem;
+  text-align: center;
+}
+.weather-error svg { color: var(--text-tertiary); opacity: 0.5; }
+
+/* ─── Calendar Widget ─────────────────────────────────── */
+.cal-widget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.cal-header {
+  font-family: var(--font-serif);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+.cal-year {
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  flex: 1;
+  align-content: start;
+}
+.cal-day-header {
+  text-align: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 0;
+  opacity: 0.6;
+}
+.cal-cell {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  padding: 4px 0;
+  border-radius: 4px;
+  transition: background 0.1s;
+  cursor: default;
+}
+.cal-cell.cal-empty { visibility: hidden; }
+.cal-cell:not(.cal-empty):hover { background: var(--accent-soft); }
+.cal-cell.cal-today {
+  color: var(--text-inverse);
+  background: var(--primary);
+  font-weight: 700;
+}
+
 /* ─── SLEEP TRACKING ────────────────────────────────────────── */
 .sleep-section {
   margin-bottom: var(--section-gap);
@@ -4470,6 +4620,7 @@ html.light .hub-add-popup {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   gap: 3px;
   height: 100%;
 }

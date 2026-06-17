@@ -15,6 +15,7 @@ const HUB_CONTENT_KEY = 'haven-hub-content';
 
 let hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true';
 let _bentoUidCounter = 0;
+let _clockInterval = null;
 function _nextUid() { return 'b' + (++_bentoUidCounter) + '_' + Date.now(); }
 
 /* ─── Section drag/drop reordering ─────────── */
@@ -450,6 +451,55 @@ function renderHubBento() {
           </div>
           <div class="prog-chart">${chartBars}</div>
         </div>`;
+      case 'clock':
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2,'0');
+        const mm = String(now.getMinutes()).padStart(2,'0');
+        const ss = String(now.getSeconds()).padStart(2,'0');
+        const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const dateStr = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="clock-face" data-clock-uid="${uid}">
+            <div class="clock-row"><span class="clock-time">${hh}:${mm}</span><span class="clock-seconds">${ss}</span></div>
+            <span class="clock-date">${dateStr}</span>
+          </div>
+        </div>`;
+      case 'weather':
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="weather-widget" data-weather-uid="${uid}">
+            <div class="weather-loading">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+              <span>Fetching weather...</span>
+            </div>
+          </div>
+        </div>`;
+      case 'calendar':
+        const calNow = new Date();
+        const calYear = calNow.getFullYear();
+        const calMonth = calNow.getMonth();
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const firstDay = new Date(calYear, calMonth, 1).getDay();
+        const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+        const today = calNow.getDate();
+        const dayHeaders = ['S','M','T','W','T','F','S'];
+        let cells = '';
+        for (let i = 0; i < firstDay; i++) { cells += '<span class="cal-cell cal-empty"></span>'; }
+        for (let d = 1; d <= daysInMonth; d++) {
+          cells += `<span class="cal-cell ${d === today ? 'cal-today' : ''}">${d}</span>`;
+        }
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="cal-widget">
+            <div class="cal-header">${monthNames[calMonth]} <span class="cal-year">${calYear}</span></div>
+            <div class="cal-grid">
+              ${dayHeaders.map(d => `<span class="cal-day-header">${d}</span>`).join('')}
+              ${cells}
+            </div>
+          </div>
+        </div>`;
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
           <div style="text-align:center;color:var(--text-tertiary);font-size:0.75rem">Unknown bubble</div>
@@ -500,6 +550,68 @@ function renderHubBento() {
   document.querySelectorAll('img[data-image-id]').forEach(el => {
     el.src = getImage(el.dataset.imageId) || '';
   });
+
+  // ─── Clock updater ────────────────────────────
+  if (_clockInterval) { clearInterval(_clockInterval); _clockInterval = null; }
+  const clockFaces = grid.querySelectorAll('.clock-face[data-clock-uid]');
+  if (clockFaces.length > 0) {
+    _clockInterval = setInterval(function() {
+      const n = new Date();
+      const hh = String(n.getHours()).padStart(2,'0');
+      const mm = String(n.getMinutes()).padStart(2,'0');
+      const ss = String(n.getSeconds()).padStart(2,'0');
+      const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const dateStr = days[n.getDay()] + ', ' + months[n.getMonth()] + ' ' + n.getDate();
+      document.querySelectorAll('.clock-face[data-clock-uid]').forEach(function(el) {
+        const timeEl = el.querySelector('.clock-time');
+        const secEl = el.querySelector('.clock-seconds');
+        const dateEl = el.querySelector('.clock-date');
+        if (timeEl) timeEl.textContent = hh + ':' + mm;
+        if (secEl) secEl.textContent = ss;
+        if (dateEl) dateEl.textContent = dateStr;
+      });
+    }, 1000);
+  }
+
+  // ─── Weather fetcher ──────────────────────────
+  const weatherWidgets = grid.querySelectorAll('.weather-widget[data-weather-uid]');
+  if (weatherWidgets.length > 0 && typeof navigator !== 'undefined' && navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const cacheKey = 'hub-weather-' + Math.round(lat * 10) + '-' + Math.round(lon * 10);
+      var cached = null;
+      try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) {}
+      if (cached && Date.now() - cached.ts < 600000) {
+        weatherWidgets.forEach(function(w) { updateWeatherWidget(w, cached.data); });
+        return;
+      }
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&timezone=auto';
+      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        if (!data || !data.current_weather) return;
+        var wd = {
+          temp: data.current_weather.temperature,
+          code: data.current_weather.weathercode,
+          wind: data.current_weather.windspeed
+        };
+        try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: wd})); } catch(e) {}
+        weatherWidgets.forEach(function(w) { updateWeatherWidget(w, wd); });
+      }).catch(function() {
+        weatherWidgets.forEach(function(w) {
+          w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Could not load weather</span></div>';
+        });
+      });
+    }, function() {
+      weatherWidgets.forEach(function(w) {
+        w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Location access needed</span></div>';
+      });
+    }, {timeout: 8000, enableHighAccuracy: false});
+  } else if (weatherWidgets.length > 0) {
+    weatherWidgets.forEach(function(w) {
+      w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Geolocation unavailable</span></div>';
+    });
+  }
 
   resetBentoInteractions();
   setupBubbleDragDrop();
@@ -669,9 +781,42 @@ function bubbleTypeIcon(t) {
     habits: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
     notes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
     links: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
-    progress: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
+    progress: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    weather: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
+    calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    timer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><line x1="22" y1="2" x2="18" y2="6"/></svg>',
+    pomodoro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/></svg>',
+    spotify: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>'
   };
   return icons[t] || '';
+}
+
+/* ─── Weather widget updater ────────────────── */
+function updateWeatherWidget(widget, data) {
+  var codes = {
+    0:'Clear',1:'Clear',2:'Cloudy',3:'Overcast',
+    45:'Foggy',48:'Foggy',
+    51:'Drizzle',53:'Drizzle',55:'Drizzle',
+    61:'Rain',63:'Rain',65:'Rain',
+    71:'Snow',73:'Snow',75:'Snow',
+    80:'Showers',81:'Showers',82:'Showers',
+    95:'Storm',96:'Storm',99:'Storm'
+  };
+  var icons = {
+    'Clear':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+    'Cloudy':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
+    'Overcast':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
+    'Foggy':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="21" y2="6"/></svg>',
+    'Drizzle':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><line x1="8" y1="16" x2="8" y2="18"/><line x1="12" y1="16" x2="12" y2="18"/><line x1="16" y1="16" x2="16" y2="18"/></svg>',
+    'Rain':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><line x1="8" y1="16" x2="8" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/><line x1="16" y1="16" x2="16" y2="20"/></svg>',
+    'Snow':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><line x1="8" y1="19" x2="8" y2="21"/><line x1="12" y1="19" x2="12" y2="21"/><line x1="16" y1="19" x2="16" y2="21"/></svg>',
+    'Showers':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg>',
+    'Storm':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="13 7 9 13 13 13 11 19"/></svg>'
+  };
+  var cond = codes[data.code] || 'Clear';
+  var icon = icons[cond] || icons['Clear'];
+  widget.innerHTML = '<div class="weather-main">' + icon + '<span class="weather-temp">' + Math.round(data.temp) + '&deg;</span></div><div class="weather-cond">' + cond + '</div>';
 }
 
 /* ─── Progress chart data generator ─────────── */
@@ -703,14 +848,18 @@ function addBubbleTypes(types) {
   types.forEach(t => {
     const item = {t, uid: _nextUid()};
     if (t === 'images') {
-      const existing = layout.filter(i => i.t === 'images').length;
-      item.imageId = 'hub-image-' + (existing + 1);
-      // Ensure the image ID is registered in the image system with a default
-      if (typeof getImage === 'function' && !getImage(item.imageId)) {
-        if (typeof setImage === 'function') {
-          setImage(item.imageId, '');
+      let maxNum = 0;
+      layout.filter(i => i.t === 'images').forEach(i => {
+        const m = parseInt((i.imageId || '').replace('hub-image-', ''), 10);
+        if (!isNaN(m) && m > maxNum) maxNum = m;
+      });
+      if (typeof state !== 'undefined' && state.images) {
+        for (const k of Object.keys(state.images)) {
+          const m = parseInt(k.replace('hub-image-', ''), 10);
+          if (!isNaN(m) && m > maxNum) maxNum = m;
         }
       }
+      item.imageId = 'hub-image-' + (maxNum + 1);
     } else {
       if (layout.find(i => i.t === t)) return;
     }
@@ -737,8 +886,8 @@ function showHubAddPopup(e) {
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   const has = t => layout.some(i => i.t === t);
 
-  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress' };
-  const types = ['goals','priorities','todos','habits','progress','quote','text','notes','images','links'];
+  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar' };
+  const types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','quote','text','notes','images','links'];
 
   popup.innerHTML = `
     <div class="add-title">
@@ -774,7 +923,7 @@ function showHubAddPopup(e) {
     <div class="add-list">
       ${types.map(t => {
         const disabled = t !== 'images' && has(t);
-        return `<button class="add-row" data-btype="${t}" ${disabled ? 'disabled' : ''}>
+        return `<button class="add-row" data-btype="${t}" ${disabled ? 'disabled' : ''} type="button">
           <span class="add-row-icon">${bubbleTypeIcon(t)}</span>
           <span class="add-row-label">${labels[t] || t}</span>
           ${disabled ? '<span class="add-row-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg></span>' : ''}
@@ -796,10 +945,10 @@ function showHubAddPopup(e) {
   popup.querySelectorAll('.hub-add-layout-btn').forEach(el => {
     el.addEventListener('click', () => {
       const map = {
-        focus: ['goals','priorities','todos'],
+        focus: ['goals','priorities','todos','clock'],
         tracker: ['habits','progress','todos','text'],
-        creative: ['images','quote','notes'],
-        all: ['goals','images','priorities','quote','todos','text','habits','notes','links','progress']
+        creative: ['images','quote','notes','calendar'],
+        all: ['goals','images','priorities','quote','todos','text','habits','notes','links','progress','clock','weather','calendar']
       };
       addBubbleTypes(map[el.dataset.layout]);
       popup.remove();
@@ -824,7 +973,7 @@ function showHubHidePopup() {
   const popup = document.createElement('div');
   popup.className = 'hub-edit-popup hub-hide-popup';
 
-  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress' };
+  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar' };
 
   popup.innerHTML = `
     <div class="hide-title">
