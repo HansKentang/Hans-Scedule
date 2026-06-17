@@ -4338,24 +4338,24 @@ html.dark .tf-pr.active {
 .sp-gear-btn svg { width:13px; height:13px; }
 
 /* Collapsible body */
-.sp-body { overflow:hidden; max-height:340px; opacity:1; transition:max-height 0.35s ease, opacity 0.25s ease; }
+.sp-body { overflow:hidden; max-height:200px; opacity:1; transition:max-height 0.35s ease, opacity 0.25s ease; }
 .sp-sidebar.collapsed .sp-body { max-height:0; opacity:0; }
 
-.sp-player { padding:6px 14px 6px; }
-.sp-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:16px 12px; border-radius:6px; background:var(--surface-container); text-align:center; }
-.sp-empty svg { width:26px; height:26px; opacity:0.2; color:var(--text-tertiary); }
-.sp-empty span { font-size:0.62rem; color:var(--text-tertiary); }
-.sp-empty button { border:none; background:transparent; color:#1db954; font-size:0.6rem; font-weight:500; cursor:pointer; padding:3px 8px; border-radius:4px; transition:background 0.12s; }
+.sp-player { padding:0 14px 4px; }
+.sp-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; padding:14px 10px; border-radius:6px; background:var(--surface-container); text-align:center; }
+.sp-empty svg { width:24px; height:24px; opacity:0.2; color:var(--text-tertiary); }
+.sp-empty span { font-size:0.58rem; color:var(--text-tertiary); }
+.sp-empty button { border:none; background:transparent; color:#1db954; font-size:0.58rem; font-weight:500; cursor:pointer; padding:2px 7px; border-radius:4px; transition:background 0.12s; }
 .sp-empty button:hover { background:rgba(29,185,84,0.1); }
 
-.sp-embed-wrap { display:none; border-radius:8px; overflow:hidden; background:#121212; clip-path:inset(0 round 8px); }
-.sp-embed-wrap iframe { width:100%; height:152px; display:block; border:none; background:#121212; }
+.sp-embed-wrap { display:none; border-radius:6px; overflow:hidden; background:#121212; clip-path:inset(0 round 6px); }
+.sp-embed-wrap iframe { width:100%; height:80px; display:block; border:none; background:#121212; }
 
-.sp-controls { display:none; align-items:center; justify-content:center; gap:8px; padding:6px 14px 4px; border-top:1px solid var(--border-subtle); margin-top:2px; }
-.sp-nav-btn { width:26px; height:22px; border:none; border-radius:4px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:color 0.12s,background 0.12s; }
+.sp-controls { display:none; align-items:center; justify-content:center; gap:6px; padding:3px 14px; }
+.sp-nav-btn { width:24px; height:20px; border:none; border-radius:4px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:color 0.12s,background 0.12s; }
 .sp-nav-btn:hover { background:var(--accent-soft); color:var(--text-primary); }
-.sp-nav-btn svg { width:11px; height:11px; }
-.sp-controls-label { font-size:0.52rem; color:var(--text-tertiary); font-weight:500; letter-spacing:0.05em; text-transform:uppercase; }
+.sp-nav-btn svg { width:10px; height:10px; }
+.sp-controls-label { font-size:0.5rem; color:var(--text-tertiary); font-weight:500; letter-spacing:0.04em; text-transform:uppercase; }
 
 .sp-transport { display:flex; align-items:center; justify-content:center; gap:5px; padding:2px 14px; }
 .sp-transport .sp-btn { width:20px; height:20px; border:none; border-radius:4px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:color 0.12s,background 0.12s; }
@@ -4389,17 +4389,17 @@ html.dark .tf-pr.active {
 .sp-iframe-wrap { border-radius:8px; overflow:hidden; background:#121212; clip-path:inset(0 round 8px); }
 .sp-iframe-wrap iframe { width:100%; height:232px; display:block; border:none; background:#121212; }
 .sp-list { display:flex; flex-direction:column; gap:1px; max-height:280px; overflow-y:auto; }
-.sp-list-item { display:flex; align-items:center; gap:6px; padding:6px 8px; border-radius:6px; cursor:default; transition:background 0.1s; }
+.sp-list-item { display:flex; align-items:center; gap:5px; padding:5px 7px; border-radius:5px; cursor:default; transition:background 0.1s; }
 .sp-list-item:hover { background:var(--accent-soft); }
 .sp-list-item.active { background:color-mix(in srgb, #1db954 8%, transparent); }
-.sp-drag-handle { cursor:grab; color:var(--text-tertiary); display:flex; align-items:center; flex-shrink:0; padding:2px; border-radius:3px; transition:color 0.12s; }
+.sp-drag-handle { cursor:grab; color:var(--text-tertiary); display:flex; align-items:center; flex-shrink:0; padding:1px; border-radius:3px; transition:color 0.12s; }
 .sp-drag-handle:hover { color:var(--text-primary); }
 .sp-drag-handle svg { width:10px; height:10px; }
-.sp-indicator-dot { width:6px; height:6px; border-radius:50%; background:transparent; flex-shrink:0; }
+.sp-indicator-dot { width:5px; height:5px; border-radius:50%; background:transparent; flex-shrink:0; }
 .sp-indicator-dot.on { background:#1db954; box-shadow:0 0 4px rgba(29,185,84,0.5); }
-.sp-name { flex:1; font-size:0.7rem; color:var(--text-primary); cursor:pointer; padding:2px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sp-name { flex:1; font-size:0.68rem; color:var(--text-primary); cursor:pointer; padding:1px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sp-name:hover { color:#1db954; }
-.sp-rename-input { width:100%; padding:2px 4px; border:1px solid #1db954; border-radius:3px; background:var(--bg-primary); color:var(--text-primary); font-family:var(--font-family); font-size:0.7rem; outline:none; box-sizing:border-box; }
+.sp-rename-input { width:100%; padding:1px 4px; border:1px solid #1db954; border-radius:3px; background:var(--bg-primary); color:var(--text-primary); font-family:var(--font-family); font-size:0.68rem; outline:none; box-sizing:border-box; }
 .sp-list-play-btn { width:22px; height:22px; border:none; border-radius:4px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.12s,color 0.12s,background 0.12s; flex-shrink:0; }
 .sp-list-item:hover .sp-list-play-btn { opacity:1; }
 .sp-list-play-btn:hover { color:#1db954; background:rgba(29,185,84,0.1); }
