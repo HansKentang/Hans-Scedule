@@ -2110,7 +2110,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .sp-modal-add {
   display: flex;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 4px;
 }
 .sp-modal-add input {
   flex: 1;
@@ -2151,6 +2151,14 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   transform: translateY(-1px);
 }
 .sp-add-btn:active { transform: translateY(0); }
+
+.sp-modal-hint {
+  font-size: 0.55rem;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+  margin: 0 0 12px 2px;
+  line-height: 1.4;
+}
 
 /* Section title */
 .sp-modal-section-title {

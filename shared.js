@@ -2406,6 +2406,9 @@ function spRenderList() {
       '</div>' +
     '</div>'
   ).join('');
+  // scroll active into view
+  const active = c.querySelector('.sp-list-item.active');
+  if (active) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   // drag/drop
   let dragEl = null;
   const items = c.querySelectorAll('.sp-list-item');
