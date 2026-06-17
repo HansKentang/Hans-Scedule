@@ -16,6 +16,8 @@ const HUB_CONTENT_KEY = 'haven-hub-content';
 let hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true';
 let _bentoUidCounter = 0;
 let _clockInterval = null;
+let _timerIntervals = {};
+let _pomodoroState = {};
 function _nextUid() { return 'b' + (++_bentoUidCounter) + '_' + Date.now(); }
 
 /* ─── Section drag/drop reordering ─────────── */
@@ -500,6 +502,47 @@ function renderHubBento() {
             </div>
           </div>
         </div>`;
+      case 'timer':
+        var ts = _timerState(uid);
+        var tDisplay = _fmtTime(ts.elapsed);
+        var tStatus = ts.running ? 'running' : (ts.elapsed > 0 ? 'paused' : 'idle');
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="timer-widget" data-timer-uid="${uid}">
+            <div class="timer-display">${tDisplay}</div>
+            <div class="timer-controls">
+              <button class="timer-btn ${tStatus === 'running' ? 'timer-btn-active' : ''}" data-timer-action="toggle" data-timer-uid="${uid}">${ts.running ? 'Pause' : 'Start'}</button>
+              <button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="${uid}">Reset</button>
+            </div>
+          </div>
+        </div>`;
+      case 'pomodoro':
+        var ps = _pomoState(uid);
+        var pDisplay = _fmtTime(ps.remaining);
+        var phaseLabels = { focus:'Focus', short:'Short Break', long:'Long Break' };
+        var pct = ps.total > 0 ? ((ps.total - ps.remaining) / ps.total) * 100 : 0;
+        var pPhase = phaseLabels[ps.phase] || 'Focus';
+        var pCycles = ps.cycle + 1;
+        var pRunning = ps.running;
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="pomo-widget" data-pomo-uid="${uid}">
+            <div class="pomo-header"><span class="pomo-phase">${pPhase}</span><span class="pomo-cycle">#${pCycles}</span></div>
+            <div class="pomo-ring"><svg viewBox="0 0 120 120"><circle class="pomo-ring-bg" cx="60" cy="60" r="52"/><circle class="pomo-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="${326.73 - (326.73 * pct / 100)}"/></svg><span class="pomo-time">${pDisplay}</span></div>
+            <div class="pomo-controls">
+              <button class="timer-btn ${pRunning ? 'timer-btn-active' : ''}" data-pomo-action="toggle" data-pomo-uid="${uid}">${pRunning ? 'Pause' : 'Start'}</button>
+              <button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="${uid}">Skip</button>
+            </div>
+          </div>
+        </div>`;
+      case 'spotify':
+        var spotUrl = hubContent.spotifyUrl || 'https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M?utm_source=generator';
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
+          ${editUI}
+          <div class="spotify-widget">
+            <iframe src="${e(spotUrl)}" width="100%" height="100%" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+          </div>
+        </div>`;
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
           <div style="text-align:center;color:var(--text-tertiary);font-size:0.75rem">Unknown bubble</div>
@@ -868,6 +911,88 @@ function addBubbleTypes(types) {
   hubContent.bentoLayout = layout;
   saveHubContent();
   renderHubBento();
+}
+
+/* ─── Timer / Pomodoro helpers ────────────────── */
+function _timerState(uid) {
+  if (!_timerIntervals[uid]) _timerIntervals[uid] = { elapsed: 0, running: false, startTs: null };
+  var s = _timerIntervals[uid];
+  if (s.running && s.startTs) {
+    s.elapsed = s.elapsed + (Date.now() - s.startTs);
+    s.startTs = Date.now();
+  }
+  return s;
+}
+function _pomoState(uid) {
+  if (!_pomodoroState[uid]) _pomodoroState[uid] = { phase:'focus', remaining:1500, total:1500, running:false, startTs:null, cycle:0 };
+  var s = _pomodoroState[uid];
+  if (s.running && s.startTs) {
+    var delta = Math.floor((Date.now() - s.startTs) / 1000);
+    s.remaining = Math.max(0, s.remaining - delta);
+    s.startTs = Date.now();
+    if (s.remaining <= 0) {
+      s.running = false;
+      s.startTs = null;
+      _advancePomoPhase(uid);
+      _renderPomo(uid);
+    }
+  }
+  return s;
+}
+function _advancePomoPhase(uid) {
+  var s = _pomodoroState[uid];
+  if (!s) return;
+  if (s.phase === 'focus') {
+    s.cycle++;
+    if (s.cycle % 4 === 0) {
+      s.phase = 'long';
+      s.total = 900; // 15 min
+    } else {
+      s.phase = 'short';
+      s.total = 300; // 5 min
+    }
+  } else {
+    s.phase = 'focus';
+    s.total = 1500; // 25 min
+  }
+  s.remaining = s.total;
+  s.startTs = null;
+}
+function _fmtTime(seconds) {
+  var m = Math.floor(seconds / 60);
+  var sec = seconds % 60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+function _renderPomo(uid) {
+  var el = document.querySelector('.pomo-widget[data-pomo-uid="' + uid + '"]');
+  if (!el) return;
+  var s = _pomodoroState[uid];
+  if (!s) return;
+  var phaseLabels = { focus:'Focus', short:'Short Break', long:'Long Break' };
+  var pct = s.total > 0 ? ((s.total - s.remaining) / s.total) * 100 : 0;
+  var pRunning = s.running;
+  el.querySelector('.pomo-time').textContent = _fmtTime(s.remaining);
+  el.querySelector('.pomo-phase').textContent = phaseLabels[s.phase] || 'Focus';
+  el.querySelector('.pomo-cycle').textContent = '#' + (s.cycle + 1);
+  var fg = el.querySelector('.pomo-ring-fg');
+  if (fg) fg.style.strokeDashoffset = 326.73 - (326.73 * pct / 100);
+  var btn = el.querySelector('[data-pomo-action="toggle"]');
+  if (btn) {
+    btn.textContent = pRunning ? 'Pause' : 'Start';
+    btn.classList.toggle('timer-btn-active', pRunning);
+  }
+}
+function _renderTimer(uid) {
+  var el = document.querySelector('.timer-widget[data-timer-uid="' + uid + '"]');
+  if (!el) return;
+  var s = _timerIntervals[uid];
+  if (!s) return;
+  el.querySelector('.timer-display').textContent = _fmtTime(s.elapsed);
+  var btn = el.querySelector('[data-timer-action="toggle"]');
+  if (btn) {
+    btn.textContent = s.running ? 'Pause' : 'Start';
+    btn.classList.toggle('timer-btn-active', s.running);
+  }
 }
 
 /* ─── ADD popup (hide-popup style) ──────────── */
