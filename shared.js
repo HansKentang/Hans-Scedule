@@ -1241,7 +1241,7 @@ function applyTheme() {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isDark = state.darkMode === null ? prefersDark : state.darkMode;
   document.documentElement.classList.toggle('light', !isDark);
-  document.documentElement.classList.remove('dark');
+  document.documentElement.classList.toggle('dark', isDark);
   applyCardColors();
 }
 
@@ -1256,6 +1256,7 @@ function toggleTheme() {
 
 // ─── TASK CRUD ─────────────────────────────────────────────
 function createTask(data) {
+  pushUndo();
   const task = {
     id: uid(),
     title: data.title || 'Untitled',
@@ -1875,7 +1876,7 @@ function handleSettingsSubmit(e) {
   state.apiKey = key;
   state.apiProvider = provider;
   state.apiModel = model;
-  try { localStorage.setItem('haven-schedule-key', key); } catch (e) { /* ignore */ }
+  try { localStorage.setItem(API_KEY_STORAGE, key); } catch (e) { /* ignore */ }
   setApiProvider(provider);
   try { localStorage.setItem('haven-schedule-model', model); } catch (e) { /* ignore */ }
   saveRoutine(routine);
@@ -1910,7 +1911,7 @@ function handleSettingsClear() {
   state.apiKey = '';
   state.apiProvider = 'groq';
   state.apiModel = 'llama-3.3-70b-versatile';
-  try { localStorage.removeItem('haven-schedule-key'); } catch (e) { /* ignore */ }
+  try { localStorage.removeItem(API_KEY_STORAGE); } catch (e) { /* ignore */ }
   try { localStorage.removeItem('haven-schedule-provider'); } catch (e) { /* ignore */ }
   try { localStorage.removeItem('haven-schedule-model'); } catch (e) { /* ignore */ }
   if (dom.settingsApiKey) dom.settingsApiKey.value = '';

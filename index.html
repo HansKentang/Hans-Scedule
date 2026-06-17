@@ -417,7 +417,7 @@
               </div>
             </a>
 
-            <a href="activities.html" class="hub-gallery-card">
+            <a href="tags.html" class="hub-gallery-card">
               <div class="hub-gallery-cover" style="background:var(--tag-study-bg)">
                 <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, var(--tag-study-text), transparent)"></div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tag-study-text)">
@@ -425,8 +425,8 @@
                 </svg>
               </div>
               <div class="hub-gallery-body">
-                <div class="hub-gallery-title">Activities + Board</div>
-                <p class="hub-gallery-desc">Timeline and Kanban board merged into one page with a view toggle.</p>
+                <div class="hub-gallery-title">Tags Board</div>
+                <p class="hub-gallery-desc">Kanban board view grouped by tag category with stats and color customization.</p>
                 <div class="hub-gallery-meta">
                   <span class="hub-gallery-count" id="hubTagCount">5 categories</span>
                   <span class="hub-gallery-link">View <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
@@ -576,16 +576,145 @@
     }
 
     // ─── WEEKLY PLANNER GRID ──────────────────────────────
-    function populateWeeklyGrid(weekStart, weekTasks) {}
+    function populateWeeklyGrid(weekStart, weekTasks) {
+      const grid = document.getElementById('hubWeeklyGrid');
+      if (!grid) return;
+      const monthYear = document.getElementById('hubMonthYear');
+      if (monthYear) monthYear.textContent = formatDateLabel(weekStart);
+      const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const todayStr = formatDate(new Date());
+      let html = '';
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(weekStart, i);
+        const ds = formatDate(d);
+        const dayTasks = weekTasks.filter(t => t.date === ds);
+        const isT = ds === todayStr;
+        html += `<div style="text-align:center;padding:var(--space-2);border-radius:var(--radius-md);${isT ? 'background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid color-mix(in srgb, var(--accent) 20%, transparent)' : ''}">
+          <div style="font-size:0.6rem;font-weight:600;color:var(--text-tertiary);text-transform:uppercase">${dayNames[i]}</div>
+          <div style="font-size:1rem;font-weight:600;color:${isT ? 'var(--accent)' : 'var(--text-primary)'};margin:2px 0">${d.getDate()}</div>
+          <div style="font-size:0.6rem;color:var(--text-tertiary)">${dayTasks.length} task${dayTasks.length !== 1 ? 's' : ''}</div>
+        </div>`;
+      }
+      grid.innerHTML = html;
+    }
     // ─── TIMELINE RENDER ─────────────────────────────────
-    function renderTimeline(todayTasks) {}
+    function renderTimeline(todayTasks) {
+      const list = document.getElementById('hubTimeline');
+      if (!list) return;
+      const countEl = document.getElementById('statWeekDayCount');
+      if (countEl) countEl.textContent = todayTasks.length;
+      if (todayTasks.length === 0) {
+        list.innerHTML = '<div class="hub-db-empty">No tasks today</div>';
+        return;
+      }
+      const sorted = [...todayTasks].sort((a, b) => parseTime(a.startTime) - parseTime(b.startTime));
+      let html = '';
+      for (const task of sorted) {
+        const meta = getTagMeta(task.tag);
+        const doneCls = task.completed ? ' completed' : '';
+        html += `<div class="hub-db-item${doneCls}" data-task-id="${task.id}">
+          <span class="hub-db-item-time">${task.startTime}</span>
+          <div class="hub-db-item-body">
+            <span class="task-check ${task.completed ? 'checked' : ''}" data-toggle-complete="${task.id}"></span>
+            <span class="hub-db-item-title">${escapeHtml(task.title)}</span>
+            <span class="hub-db-item-tag" style="color:${meta.text};background:color-mix(in srgb, ${meta.text} 15%, transparent)">${task.tag}</span>
+          </div>
+        </div>`;
+      }
+      list.innerHTML = html;
+      list.querySelectorAll('.hub-db-item').forEach(el => {
+        el.addEventListener('click', function(e) {
+          if (e.target.closest('[data-toggle-complete]')) {
+            const id = e.target.closest('[data-toggle-complete]').dataset.toggleComplete;
+            toggleComplete(id);
+            updateHub();
+            return;
+          }
+          openTaskModal(this.dataset.taskId);
+        });
+      });
+    }
     // ─── WEEKLY CHART RENDER ─────────────────────────────
-    function renderWeeklyChart(weekStart) {}
+    function renderWeeklyChart(weekStart) {
+      const chart = document.getElementById('hubWeeklyChart');
+      if (!chart) return;
+      const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const todayStr = formatDate(new Date());
+      const dayCounts = [];
+      let max = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(weekStart, i);
+        const ds = formatDate(d);
+        const count = state.tasks.filter(t => t.date === ds && !isWhiteboardTask(t) && !t.completed).length;
+        dayCounts.push(count);
+        if (count > max) max = count;
+      }
+      if (max === 0) {
+        chart.innerHTML = '';
+        return;
+      }
+      let html = '';
+      for (let i = 0; i < 7; i++) {
+        const pct = (dayCounts[i] / max) * 100;
+        const isT = formatDate(addDays(weekStart, i)) === todayStr;
+        html += `<div class="hub-weekly-bar ${isT ? 'hub-weekly-bar-today' : ''}">
+          <div class="hub-weekly-bar-fill" style="height:${Math.max(pct, 4)}%"></div>
+          <span class="hub-weekly-bar-label">${dayLabels[i]}</span>
+        </div>`;
+      }
+      chart.innerHTML = html;
+    }
     // ─── QUICK ADD ───────────────────────────────────────
-    function handleHubQuickAdd() {}
-    function updateQuickAddSubmit() {}
-    function cycleQuickAddTag() {}
-    function renderDailyBriefing() {}
+    const _hubQuickTags = ['meeting', 'deep-work', 'exercise', 'study', 'hobby'];
+    let _hubQuickTagIdx = 0;
+
+    function handleHubQuickAdd() {
+      const input = document.getElementById('hubQuickAddInput');
+      const tagEl = document.getElementById('hubQuickAddTag');
+      if (!input || !input.value.trim()) return;
+      const tag = tagEl ? tagEl.textContent : 'meeting';
+      const now = new Date();
+      const mins = roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES);
+      createTask({
+        title: input.value.trim(),
+        date: formatDate(now),
+        startTime: toTimeStr(mins),
+        endTime: toTimeStr(mins + 60),
+        tag: tag,
+      });
+      input.value = '';
+      updateQuickAddSubmit();
+      updateHub();
+      showToast('Task added!', 'success', 1500);
+    }
+    function updateQuickAddSubmit() {
+      const input = document.getElementById('hubQuickAddInput');
+      const btn = document.getElementById('hubQuickAddSubmit');
+      if (!input || !btn) return;
+      btn.classList.toggle('active', input.value.trim().length > 0);
+    }
+    function cycleQuickAddTag() {
+      const tagEl = document.getElementById('hubQuickAddTag');
+      if (!tagEl) return;
+      _hubQuickTagIdx = (_hubQuickTagIdx + 1) % _hubQuickTags.length;
+      const tag = _hubQuickTags[_hubQuickTagIdx];
+      tagEl.textContent = tag;
+      tagEl.style.background = `var(--tag-${tag}-bg)`;
+      tagEl.style.color = `var(--tag-${tag}-text)`;
+    }
+    function renderDailyBriefing() {
+      const el = document.getElementById('hubBriefing');
+      if (!el) return;
+      const briefing = getDailyBriefing();
+      if (!briefing) {
+        el.classList.add('hidden');
+        return;
+      }
+      el.classList.remove('hidden');
+      const body = el.querySelector('.hub-callout-body');
+      if (!body) return;
+      body.innerHTML = `You have <strong>${briefing.taskCount}</strong> task${briefing.taskCount !== 1 ? 's' : ''} today. Next free slot: <strong>${briefing.gapStart}</strong> – <strong>${briefing.gapEnd}</strong> (${formatDuration(briefing.duration)}).`;
+    }
 
     // ════════════════════════════════════════════════════════════
     // INIT
@@ -618,17 +747,18 @@
       dom.aiChatSend = document.getElementById('aiChatSend');
       dom.aiChatClose = document.getElementById('aiChatClose');
 
-      const quickAddInput = document.getElementById('hubQuickAddInput');
-      const quickAddBtn = document.getElementById('hubQuickAddSubmit');
-      const quickAddTag = document.getElementById('hubQuickAddTag');
+  const quickAddInput = document.getElementById('hubQuickAddInput');
+  const quickAddBtn = document.getElementById('hubQuickAddSubmit');
+  const quickAddTag = document.getElementById('hubQuickAddTag');
 
-      quickAddInput?.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); handleHubQuickAdd(); }
-        updateQuickAddSubmit();
-      });
-      quickAddInput?.addEventListener('input', updateQuickAddSubmit);
-      quickAddBtn?.addEventListener('click', handleHubQuickAdd);
-      quickAddTag?.addEventListener('click', cycleQuickAddTag);
+  quickAddInput?.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); handleHubQuickAdd(); }
+    updateQuickAddSubmit();
+  });
+  quickAddInput?.addEventListener('input', updateQuickAddSubmit);
+  quickAddBtn?.addEventListener('click', handleHubQuickAdd);
+  quickAddTag?.addEventListener('click', cycleQuickAddTag);
+
 
       document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
       document.getElementById('settingsBtnSidebar')?.addEventListener('click', openSettingsDrawer);
