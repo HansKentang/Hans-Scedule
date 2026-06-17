@@ -2332,14 +2332,14 @@ async function spValid() {
   return true;
 }
 async function spGet(endpoint) {
-  if (!(await spValid())) return null;
+  if (!(await spValid())) { console.log('[sp] spGet: token invalid for', endpoint); return null; }
   try {
     const r = await fetch(SPOTIFY_API_BASE + endpoint, { headers: { 'Authorization': 'Bearer ' + _spAT } });
     if (r.status === 401 && (await _spRefresh())) return spGet(endpoint);
-    if (r.status === 204) return null;
-    if (!r.ok) return null;
+    if (r.status === 204) { console.log('[sp] spGet: 204 for', endpoint); return null; }
+    if (!r.ok) { console.log('[sp] spGet: HTTP', r.status, 'for', endpoint); return null; }
     return r.json();
-  } catch(e) { return null; }
+  } catch(e) { console.log('[sp] spGet: fetch error', e); return null; }
 }
 async function spPut(endpoint) {
   if (!(await spValid())) return 0;
@@ -2438,6 +2438,7 @@ async function spHandleCb() {
     if (!r.ok) { showToast('Spotify auth failed', 'error'); return; }
     const d = await r.json();
     _spSave(d.access_token, d.refresh_token, d.expires_in);
+    console.log('[sp] OAuth success, token saved, AT length:', (d.access_token || '').length);
     showToast('Connected to Spotify!', 'success');
     spFetchMe();
     spPoll();
@@ -2453,11 +2454,12 @@ async function spFetchMe() {
 
 async function spFetchPlay() {
   const d = await spGet('/me/player');
+  console.log('[sp] spFetchPlay response:', d ? 'has data' : 'null', d ? 'item:' + (d.item?.name || 'none') + ' dev:' + (d.device?.name || 'none') : 'no data');
   if (!d) {
     _spTrack = null; _spPlaying = false; _spDev = false; spRender();
     return;
   }
-  _spDev = true;
+  _spDev = !!d.device;
   const changed = !_spTrack || _spTrack.id !== d.item?.id;
   _spPlaying = d.is_playing;
   _spPos = d.progress_ms || 0; _spDur = d.item?.duration_ms || 0;
@@ -2579,8 +2581,10 @@ function spRender() {
 }
 
 function spInit() {
+  console.log('[sp] spInit called, has code param:', window.location.search.includes('code='));
   if (window.location.search.includes('code=')) { spHandleCb(); return; }
   _spLoad();
+  console.log('[sp] spInit: token exists:', !!_spAT);
   if (_spAT) { spFetchMe(); spFetchPlay(); spPoll(); }
   spRender();
 }
