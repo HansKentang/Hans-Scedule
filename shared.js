@@ -2295,7 +2295,7 @@ const SPOTIFY_SCOPES = 'user-read-playback-state user-modify-playback-state user
 let _spAT = null, _spRT = null, _spExp = null;
 let _spUser = null, _spTrack = null, _spPlaying = false;
 let _spPos = 0, _spDur = 0, _spDev = false, _spLiked = false;
-let _spPT = null, _spXT = null, _spPStart = 0, _spPPos = 0;
+let _spPT = null, _spXT = null, _spPStart = 0, _spPPos = 0, _spFetchErr = '';
 
 function _spFmt(t) { return t ? `${Math.floor(t/60000)}:${String(Math.floor(t/1000)%60).padStart(2,'0')}` : '0:00'; }
 
@@ -2457,10 +2457,13 @@ async function spFetchPlay() {
   const d = await spGet('/me/player');
   console.log('[sp] spFetchPlay response:', d ? 'has data' : 'null', d ? 'item:' + (d.item?.name || 'none') + ' dev:' + (d.device?.name || 'none') : 'no data');
   if (!d) {
-    _spTrack = null; _spPlaying = false; _spDev = false; spRender();
+    _spTrack = null; _spPlaying = false; _spDev = false; _spFetchErr = 'No active device (API returned null/204)'; spRender();
     return;
   }
   _spDev = !!d.device;
+  if (!_spDev) _spFetchErr = 'No active device (API 200, no device obj)';
+  else if (!d.item) _spFetchErr = 'Device idle — play something';
+  else _spFetchErr = '';
   const changed = !_spTrack || _spTrack.id !== d.item?.id;
   _spPlaying = d.is_playing;
   _spPos = d.progress_ms || 0; _spDur = d.item?.duration_ms || 0;
@@ -2571,6 +2574,7 @@ function spRender() {
   if (tt) tt.textContent = _spFmt(_spDur);
   if (sm) {
     if (!_spDev && _spTrack) sm.textContent = 'No active device';
+    else if (!_spTrack && _spFetchErr) sm.textContent = _spFetchErr;
     else if (!_spTrack) sm.textContent = 'Nothing playing';
     else sm.textContent = '';
   }
