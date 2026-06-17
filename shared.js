@@ -2287,15 +2287,20 @@ document.addEventListener('click', function(e) {
 // ─── SPOTIFY EMBED ─────────────────────────────────
 const SP_PL_KEY = 'haven-spotify-playlists';
 const SP_ACT_KEY = 'haven-spotify-active';
+
 function spPl() { try { return JSON.parse(localStorage.getItem(SP_PL_KEY)) || []; } catch(e) { return []; } }
 function spSavePl(a) { localStorage.setItem(SP_PL_KEY, JSON.stringify(a)); }
 function spAct() { return localStorage.getItem(SP_ACT_KEY) || ''; }
 function spSetAct(v) { if (v) localStorage.setItem(SP_ACT_KEY, v); else localStorage.removeItem(SP_ACT_KEY); }
 
+function spFriendlyName(m) {
+  const map = { playlist: 'Playlist', track: 'Track', album: 'Album', artist: 'Artist', episode: 'Episode' };
+  return (map[m[1]] || m[1]) + ' ' + m[2].slice(0, 8);
+}
+
 function spInit() {
   const list = spPl(), aid = spAct(), act = list.find(p => p.id === aid);
   const url = act ? act.embedUrl : '';
-  // sidebar
   const ph = document.getElementById('spSidePH'), pl = document.getElementById('spSidePL');
   if (ph) ph.classList.toggle('hidden', !!url);
   if (pl) pl.classList.toggle('hidden', !url);
@@ -2303,7 +2308,6 @@ function spInit() {
   if (sn) sn.textContent = act ? act.name : '';
   const sf = document.querySelector('.sp-embed-iframe');
   if (sf) { sf.src = url; }
-  // modal
   const mph = document.getElementById('spModalPH'), mpl = document.getElementById('spModalPL');
   if (mph) mph.classList.toggle('hidden', !!url);
   if (mpl) mpl.classList.toggle('hidden', !url);
@@ -2311,6 +2315,134 @@ function spInit() {
   if (mf) { mf.src = url; }
   spRenderList();
 }
+
+function spOpenSettings() {
+  const o = document.getElementById('spOverlay');
+  if (!o) return;
+  spInit();
+  o.classList.remove('hidden');
+  setTimeout(() => {
+    const inp = document.getElementById('spAddInput');
+    if (inp) inp.focus();
+  }, 300);
+}
+function spCloseSettings(e) {
+  if (e && e.target !== e.currentTarget) return;
+  const o = document.getElementById('spOverlay');
+  if (o) o.classList.add('hidden');
+}
+
+function spAddPlaylist() {
+  const inp = document.getElementById('spAddInput');
+  if (!inp) return;
+  const v = inp.value.trim();
+  if (!v) { showToast('Paste a Spotify link', 'warning'); return; }
+  const m = v.match(/open\.spotify\.com\/(playlist|track|album|artist|episode)\/([a-zA-Z0-9]+)/);
+  if (!m) { showToast('Invalid Spotify link', 'error'); return; }
+  const id = m[2], embed = 'https://open.spotify.com/embed/' + m[1] + '/' + id;
+  const list = spPl();
+  const newId = 'sp' + Date.now();
+  list.push({ id: newId, name: spFriendlyName(m), embedUrl: embed });
+  spSavePl(list);
+  spSetAct(newId);
+  inp.value = '';
+  spInit();
+  showToast('Playlist added!', 'success');
+}
+
+function spPlayPlaylist(id) {
+  spSetAct(id); spInit();
+}
+
+function spDeletePlaylist(id) {
+  let list = spPl();
+  list = list.filter(p => p.id !== id);
+  spSavePl(list);
+  if (spAct() === id) spSetAct(list.length ? list[0].id : '');
+  spInit();
+  showToast('Playlist removed', 'info');
+}
+
+function spRenamePlaylist(id) {
+  const list = spPl();
+  const item = list.find(p => p.id === id);
+  if (!item) return;
+  const el = document.querySelector(`.sp-list-item[data-id="${id}"] .sp-list-name`);
+  if (!el) return;
+  const cur = el.textContent;
+  const inp = document.createElement('input');
+  inp.className = 'sp-list-rename';
+  inp.value = cur;
+  inp.maxLength = 60;
+  el.replaceWith(inp);
+  inp.focus();
+  inp.select();
+  const finish = () => {
+    const val = inp.value.trim() || cur;
+    item.name = val;
+    spSavePl(list);
+    spInit();
+  };
+  inp.addEventListener('blur', finish);
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { inp.blur(); }
+    if (e.key === 'Escape') { inp.value = cur; inp.blur(); }
+  });
+}
+
+function spRenderList() {
+  const c = document.getElementById('spPlaylistList');
+  if (!c) return;
+  const list = spPl(), aid = spAct();
+  if (!list.length) { c.innerHTML = '<div class="sp-list-empty">No playlists yet</div>'; return; }
+  c.innerHTML = list.map(p =>
+    '<div class="sp-list-item' + (p.id === aid ? ' active' : '') + '" data-id="' + p.id + '" draggable="true">' +
+      '<span class="sp-list-drag" title="Drag to reorder">&#x2630;</span>' +
+      '<span class="sp-list-indicator' + (p.id === aid ? ' on' : '') + '"></span>' +
+      '<span class="sp-list-name" ondblclick="spRenamePlaylist(\'' + p.id + '\')" title="Double-click to rename">' + escapeHtml(p.name) + '</span>' +
+      '<div class="sp-list-actions">' +
+        '<button class="sp-list-play" onclick="spPlayPlaylist(\'' + p.id + '\')" title="Play this playlist">\u25B6</button>' +
+        '<button class="sp-list-del" onclick="spDeletePlaylist(\'' + p.id + '\')" title="Remove playlist">\u2715</button>' +
+      '</div>' +
+    '</div>'
+  ).join('');
+  // drag/drop
+  let dragEl = null;
+  const items = c.querySelectorAll('.sp-list-item');
+  items.forEach(el => {
+    el.addEventListener('dragstart', function(e) {
+      dragEl = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', this.dataset.id);
+    });
+    el.addEventListener('dragend', function() { this.classList.remove('dragging'); });
+    el.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      if (this === dragEl) return;
+      const rect = this.getBoundingClientRect();
+      const mid = rect.top + rect.height / 2;
+      if (e.clientY < mid) { c.insertBefore(dragEl, this); }
+      else { c.insertBefore(dragEl, this.nextSibling); }
+    });
+    el.addEventListener('drop', function(e) { e.preventDefault(); });
+  });
+  c.addEventListener('dragend', function() {
+    if (!dragEl) return;
+    const newOrder = [...this.querySelectorAll('.sp-list-item')].map(el => el.dataset.id);
+    const byId = {};
+    spPl().forEach(p => { byId[p.id] = p; });
+    spSavePl(newOrder.map(id => byId[id]).filter(Boolean));
+    dragEl = null;
+  });
+}
+
+// Enter key to add
+document.addEventListener('keydown', function spEnter(e) {
+  if (e.key === 'Enter' && document.activeElement && document.activeElement.id === 'spAddInput') {
+    spAddPlaylist();
+  }
+});
 
 function spOpenSettings() {
   const o = document.getElementById('spOverlay');

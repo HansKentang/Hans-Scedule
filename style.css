@@ -2001,8 +2001,13 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   height: 80px;
   border: none;
   border-radius: 8px;
+  background: #121212;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   transition: box-shadow 0.3s ease;
+}
+.sp-sidebar-player {
+  overflow: hidden;
+  border-radius: 8px;
 }
 
 /* ─── SPOTIFY SETTINGS MODAL ──────────────────────────── */
@@ -2095,9 +2100,11 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   height: 352px;
   border: none;
   border-radius: 10px;
+  background: #121212;
   margin-bottom: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
+#spModalPL { overflow: hidden; border-radius: 10px; }
 
 /* Add playlist row */
 .sp-modal-add {
@@ -2157,34 +2164,69 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 
 /* Playlist list */
 .sp-playlist-list {
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 2px 0;
 }
 .sp-list-empty {
   font-size: 0.62rem;
   color: var(--text-tertiary);
   text-align: center;
-  padding: 12px 0;
+  padding: 16px 0;
   opacity: 0.7;
 }
 .sp-list-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
+  gap: 6px;
+  padding: 6px 8px;
   border-radius: 8px;
   background: var(--surface-container);
   transition: all 0.15s ease;
+  cursor: default;
+  user-select: none;
+  border: 1px solid transparent;
 }
 .sp-list-item:hover {
   background: var(--surface-container-highest);
 }
 .sp-list-item.active {
   background: rgba(29,185,84,0.08);
-  border: 1px solid rgba(29,185,84,0.2);
+  border-color: rgba(29,185,84,0.2);
+}
+.sp-list-item.dragging {
+  opacity: 0.4;
+  background: var(--surface-container-highest);
+}
+.sp-list-drag {
+  cursor: grab;
+  color: var(--text-tertiary);
+  font-size: 0.6rem;
+  opacity: 0.5;
+  padding: 2px;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.sp-list-item:hover .sp-list-drag { opacity: 0.9; }
+.sp-list-drag:active { cursor: grabbing; }
+.sp-list-indicator {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: transparent;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+.sp-list-indicator.on {
+  background: #1db954;
+  box-shadow: 0 0 6px rgba(29,185,84,0.6);
+  animation: spIndPulse 2s ease-in-out infinite;
+}
+@keyframes spIndPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(29,185,84,0.4); }
+  50% { box-shadow: 0 0 10px rgba(29,185,84,0.7); }
 }
 .sp-list-name {
   flex: 1;
@@ -2194,15 +2236,37 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 500;
+  cursor: text;
+  padding: 1px 2px;
+  border-radius: 3px;
+  transition: background 0.15s;
 }
+.sp-list-name:hover { background: rgba(255,255,255,0.04); }
 .sp-list-item.active .sp-list-name {
   color: #1db954;
 }
+.sp-list-rename {
+  flex: 1;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 2px 4px;
+  border: 1px solid #1db954;
+  border-radius: 4px;
+  background: var(--surface-container-highest);
+  color: var(--text-primary);
+  outline: none;
+  min-width: 0;
+  font-family: inherit;
+}
 .sp-list-actions {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s;
 }
+.sp-list-item:hover .sp-list-actions,
+.sp-list-item.active .sp-list-actions { opacity: 1; }
 .sp-list-play, .sp-list-del {
   width: 22px; height: 22px;
   border: none;
@@ -2211,7 +2275,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.55rem;
+  font-size: 0.5rem;
   transition: all 0.15s ease;
   background: transparent;
   color: var(--text-tertiary);
@@ -2219,6 +2283,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .sp-list-play:hover {
   background: #1db954;
   color: #fff;
+  transform: scale(1.15);
 }
 .sp-list-item.active .sp-list-play {
   color: #1db954;
@@ -2230,6 +2295,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .sp-list-del:hover {
   background: rgba(239,68,68,0.12);
   color: #ef4444;
+  transform: scale(1.15);
 }
 
 /* ─── AI MESSAGE BUBBLES ───────────────────────────────── */
