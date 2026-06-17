@@ -432,6 +432,24 @@ function renderHubBento() {
             ${isEdit ? `<div style="padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="links">+ Add link</button></div>` : ''}
           </div>
         </div>`;
+      case 'progress':
+        const progData = generateProgressData();
+        const maxVal = Math.max(...progData.daily, 1);
+        const chartBars = progData.daily.map((v, i) => {
+          const pct = Math.max(4, (v / maxVal) * 100);
+          const dayLabels = ['M','T','W','T','F','S','S'];
+          return `<div class="prog-bar-col"><div class="prog-bar" style="height:${pct}%"></div><span class="prog-bar-label">${dayLabels[i]}</span></div>`;
+        }).join('');
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:var(--gutter)">Progress</div>
+          <div class="prog-stats-row">
+            <div class="prog-stat"><span class="prog-stat-val">${progData.total}</span><span class="prog-stat-lbl">completed</span></div>
+            <div class="prog-stat"><span class="prog-stat-val">${progData.streak}</span><span class="prog-stat-lbl">day streak</span></div>
+            <div class="prog-stat"><span class="prog-stat-val">${progData.rate}%</span><span class="prog-stat-lbl">rate</span></div>
+          </div>
+          <div class="prog-chart">${chartBars}</div>
+        </div>`;
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
           <div style="text-align:center;color:var(--text-tertiary);font-size:0.75rem">Unknown bubble</div>
@@ -650,9 +668,33 @@ function bubbleTypeIcon(t) {
     text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
     habits: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
     notes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
-    links: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>'
+    links: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
+    progress: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'
   };
   return icons[t] || '';
+}
+
+/* ─── Progress chart data generator ─────────── */
+function generateProgressData() {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const seed = now.getFullYear() * 1000 + (now.getMonth() + 1) * 100 + now.getDate();
+  const rng = (n) => ((seed * (n + 1) * 9301 + 49297) % 233280) / 233280;
+  const daily = [];
+  let total = 0;
+  let streak = 0;
+  for (let i = 6; i >= 0; i--) {
+    const val = Math.floor(rng(i) * 8) + 1;
+    daily.push(val);
+    total += val;
+  }
+  // Calculate streak from today backwards
+  for (let i = 6; i >= 0; i--) {
+    if (daily[i] >= 3) streak++;
+    else break;
+  }
+  const rate = Math.round((total / (7 * 8)) * 100);
+  return { daily, total, streak, rate };
 }
 
 /* ─── Add bubble types ─────────────────────── */
@@ -679,7 +721,7 @@ function addBubbleTypes(types) {
   renderHubBento();
 }
 
-/* ─── ADD popup ────────────────────────────── */
+/* ─── ADD popup (hide-popup style) ──────────── */
 function showHubAddPopup(e) {
   const existing = document.querySelector('.hub-add-popup');
   if (existing) { existing.remove(); document.querySelector('.hub-popup-overlay')?.remove(); return; }
@@ -695,13 +737,8 @@ function showHubAddPopup(e) {
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   const has = t => layout.some(i => i.t === t);
 
-  const gridBtn = (t, l) => {
-    const disabled = t !== 'images' && has(t);
-    return `<button class="hub-add-grid-btn" data-btype="${t}" ${disabled ? 'disabled style="opacity:0.35;cursor:default"' : ''}>
-      <span class="icon">${bubbleTypeIcon(t)}</span>
-      <span>${l}</span>
-    </button>`;
-  };
+  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress' };
+  const types = ['goals','priorities','todos','habits','progress','quote','text','notes','images','links'];
 
   popup.innerHTML = `
     <div class="add-title">
@@ -711,61 +748,45 @@ function showHubAddPopup(e) {
 
     <div class="hub-add-layouts">
       <button class="hub-add-layout-btn" data-layout="focus" title="Goals + Priorities + To-Dos">
-        <span class="lcon" style="background:color-mix(in srgb, var(--primary) 14%, transparent);color:var(--primary)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        </span>
-        Focus Dashboard
-        <small class="ldesc">Goals, priorities &amp; todos</small>
+        <span class="lcon">${bubbleTypeIcon('goals')}</span>
+        <span class="llabel">Focus Dashboard</span>
+        <span class="ldesc">Goals, priorities &amp; todos</span>
+      </button>
+      <button class="hub-add-layout-btn" data-layout="tracker" title="Habits + Progress + To-Dos">
+        <span class="lcon">${bubbleTypeIcon('habits')}</span>
+        <span class="llabel">Daily Tracker</span>
+        <span class="ldesc">Habits, progress &amp; journal</span>
       </button>
       <button class="hub-add-layout-btn" data-layout="creative" title="Images + Quote + Notes">
-        <span class="lcon" style="background:color-mix(in srgb, var(--tag-study-text) 14%, transparent);color:var(--tag-study-text)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        </span>
-        Creative Board
-        <small class="ldesc">Images, quotes &amp; notes</small>
-      </button>
-      <button class="hub-add-layout-btn" data-layout="tracker" title="Habits + To-Dos + Text">
-        <span class="lcon" style="background:color-mix(in srgb, var(--tag-meeting-text) 14%, transparent);color:var(--tag-meeting-text)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"/></svg>
-        </span>
-        Daily Tracker
-        <small class="ldesc">Habits, todos &amp; journal</small>
+        <span class="lcon">${bubbleTypeIcon('images')}</span>
+        <span class="llabel">Creative Board</span>
+        <span class="ldesc">Images, quotes &amp; notes</span>
       </button>
       <button class="hub-add-layout-btn" data-layout="all" title="All bubble types">
-        <span class="lcon" style="background:color-mix(in srgb, var(--tag-deep-work-text) 14%, transparent);color:var(--tag-deep-work-text)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-        </span>
-        Everything
-        <small class="ldesc">All 9 bubble types</small>
+        <span class="lcon">${bubbleTypeIcon('todos')}</span>
+        <span class="llabel">Everything</span>
+        <span class="ldesc">All 10 bubble types</span>
       </button>
     </div>
 
-    <div class="hub-add-section prod">Productivity</div>
-    <div class="hub-add-grid">
-      ${gridBtn('goals','Goals')}
-      ${gridBtn('priorities','Priorities')}
-      ${gridBtn('todos','To-Dos')}
-      ${gridBtn('habits','Habits')}
+    <div class="add-divider"></div>
+
+    <div class="add-list">
+      ${types.map(t => {
+        const disabled = t !== 'images' && has(t);
+        return `<button class="add-row" data-btype="${t}" ${disabled ? 'disabled' : ''}>
+          <span class="add-row-icon">${bubbleTypeIcon(t)}</span>
+          <span class="add-row-label">${labels[t] || t}</span>
+          ${disabled ? '<span class="add-row-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg></span>' : ''}
+        </button>`;
+      }).join('')}
     </div>
 
-    <div class="hub-add-section inspire">Inspiration</div>
-    <div class="hub-add-grid">
-      ${gridBtn('quote','Quote')}
-      ${gridBtn('text','Text')}
-      ${gridBtn('notes','Notes')}
-    </div>
-
-    <div class="hub-add-section media">Media</div>
-    <div class="hub-add-grid">
-      ${gridBtn('images','Images')}
-      ${gridBtn('links','Links')}
-    </div>
-
-    <div class="hub-edit-popup-actions" style="margin-top:8px"><button class="cancel" id="hubAddCancel">Done</button></div>
+    <div class="hub-edit-popup-actions"><button class="cancel" id="hubAddCancel">Done</button></div>
   `;
   document.body.appendChild(popup);
 
-  popup.querySelectorAll('.hub-add-grid-btn:not([disabled])').forEach(el => {
+  popup.querySelectorAll('.add-row:not([disabled])').forEach(el => {
     el.addEventListener('click', () => {
       addBubbleTypes([el.dataset.btype]);
       popup.remove();
@@ -776,9 +797,9 @@ function showHubAddPopup(e) {
     el.addEventListener('click', () => {
       const map = {
         focus: ['goals','priorities','todos'],
+        tracker: ['habits','progress','todos','text'],
         creative: ['images','quote','notes'],
-        tracker: ['habits','todos','text'],
-        all: ['goals','images','priorities','quote','todos','text','habits','notes','links']
+        all: ['goals','images','priorities','quote','todos','text','habits','notes','links','progress']
       };
       addBubbleTypes(map[el.dataset.layout]);
       popup.remove();
@@ -803,7 +824,7 @@ function showHubHidePopup() {
   const popup = document.createElement('div');
   popup.className = 'hub-edit-popup hub-hide-popup';
 
-  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links' };
+  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress' };
 
   popup.innerHTML = `
     <div class="hide-title">
