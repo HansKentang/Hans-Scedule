@@ -325,19 +325,19 @@ function renderHubBento() {
 
     switch (type) {
       case 'goals':
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);border-top:2px solid var(--primary);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:var(--gutter)">Goals</div>
-          <ul id="hubGoalsList" style="list-style:none;padding:0;margin:0;font-size:0.9rem;line-height:1.6;color:var(--text-primary)">
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>Goals</span></div>
+          <div class="w-list" id="hubGoalsList">
             ${hubContent.goals.map((g, i) =>
-              `<li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0;align-items:center;position:relative" data-idx="${i}">
-                <span style="color:var(--primary);font-weight:700">${i+1}.</span>
-                <span class="${isEdit ? 'hub-editable' : ''}" data-edit="goals" data-idx="${i}">${e(g)}</span>
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="goals" data-idx="${i}" title="Delete">×</button>` : ''}
-              </li>`
+              `<div class="w-item" data-idx="${i}">
+                <span class="w-item-num">${i+1}</span>
+                <span class="w-item-text ${isEdit ? 'hub-editable' : ''}" data-edit="goals" data-idx="${i}">${e(g)}</span>
+                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="goals" data-idx="${i}">×</button>` : ''}
+              </div>`
             ).join('')}
-            ${isEdit ? `<li style="display:flex;gap:var(--space-2);padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="goals">+ Add goal</button></li>` : ''}
-          </ul>
+            ${isEdit ? `<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button>` : ''}
+          </div>
         </div>`;
       case 'images':
         const imgId = item.imageId || 'hub-tulips';
@@ -354,85 +354,96 @@ function renderHubBento() {
           </div>
         </div>`;
       case 'priorities':
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        const priColors = ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6'];
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Priorities</div>
-          <div id="hubPrioritiesList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
+          <div class="w-head" style="color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Priorities</span></div>
+          <div class="w-list" id="hubPrioritiesList">
             ${hubContent.priorities.map((p, i) =>
-              `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-md);background:var(--surface-container);border-radius:var(--radius-sm);position:relative" data-idx="${i}">
-                <span class="material-symbols-outlined" style="font-size:1rem;color:var(--primary)">radio_button_checked</span>
-                <span class="${isEdit ? 'hub-editable' : ''}" style="font-size:0.82rem" data-edit="priorities" data-idx="${i}">${e(p)}</span>
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="priorities" data-idx="${i}" title="Delete">×</button>` : ''}
+              `<div class="w-item w-item-card" data-idx="${i}">
+                <span class="w-pri-dot" style="background:${priColors[i % priColors.length]}"></span>
+                <span class="w-item-text ${isEdit ? 'hub-editable' : ''}" data-edit="priorities" data-idx="${i}">${e(p)}</span>
+                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="priorities" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
-            ${isEdit ? `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="priorities">+ Add priority</button></div>` : ''}
+            ${isEdit ? `<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button>` : ''}
           </div>
         </div>`;
       case 'quote':
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-lowest);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Quote</div>
-          <div class="hub-bento-quote${isEdit ? ' hub-editable' : ''}" style="font-family:var(--font-serif);font-size:1.1rem;font-style:italic;line-height:1.5;color:var(--secondary);padding:var(--stack-md) 0" ${isEdit ? 'contenteditable="true"' : ''}>${isEdit ? e(hubContent.quote.text) : '\u201C' + e(hubContent.quote.text) + '\u201D'}</div>
-          <div style="width:48px;height:1px;background:var(--outline);margin-top:var(--stack-md)"></div>
+          <div class="w-head" style="color:var(--text-tertiary);margin-bottom:var(--space-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg><span>Quote</span></div>
+          <div class="w-quote-content">
+            <span class="w-quote-mark">\u201C</span>
+            <div class="w-quote-text${isEdit ? ' hub-editable' : ''}" ${isEdit ? 'contenteditable="true"' : ''}>${e(hubContent.quote.text)}</div>
+          </div>
+          <div class="w-quote-bar"></div>
         </div>`;
       case 'todos':
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">To Do's</div>
-          <div id="hubTodoList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
+          <div class="w-head" style="color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>To Do's</span></div>
+          <div class="w-list" id="hubTodoList">
             ${hubContent.todos.map((t, i) =>
-              `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem;position:relative" data-idx="${i}">
-                <span style="color:var(--primary);font-weight:700;margin-right:var(--space-1)">${i+1}.</span>
-                <span class="${isEdit ? 'hub-editable' : ''}" data-edit="todos" data-idx="${i}" style="${t.done ? 'text-decoration:line-through;opacity:0.5' : ''}">${e(t.text)}</span>
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="todos" data-idx="${i}" title="Delete">×</button>` : ''}
+              `<div class="w-item" data-idx="${i}">
+                <span class="w-todo-box ${t.done ? 'w-todo-checked' : ''}">
+                  ${t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                </span>
+                <span class="w-item-text ${t.done ? 'w-todo-done' : ''} ${isEdit ? 'hub-editable' : ''}" data-edit="todos" data-idx="${i}">${e(t.text)}</span>
+                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="todos" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
-            ${isEdit ? `<div style="padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="todos">+ Add to-do</button></div>` : ''}
+            ${isEdit ? `<button class="w-add-btn" data-add="todos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to-do</button>` : ''}
           </div>
         </div>`;
       case 'text':
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="hub-editable" contenteditable="true" data-save="text" style="font-size:0.9rem;line-height:1.6;color:var(--text-primary);min-height:60px;outline:none">${e(hubContent.text || 'Write something...')}</div>
+          <div class="w-text-wrap">
+            <div class="hub-editable" contenteditable="true" data-save="text">${e(hubContent.text || 'Write something...')}</div>
+          </div>
         </div>`;
       case 'habits':
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:var(--gutter)">Habits</div>
-          <div id="hubHabitsList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
+          <div class="w-head" style="color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Habits</span></div>
+          <div class="w-habit-grid" id="hubHabitsList">
             ${hubContent.habits.map((h, i) =>
-              `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;font-size:0.85rem;position:relative" data-idx="${i}">
-                <span style="color:var(--primary)">\u2713</span>
+              `<div class="w-habit-chip" data-idx="${i}">
+                <span class="w-habit-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
                 <span class="${isEdit ? 'hub-editable' : ''}" data-edit="habits" data-idx="${i}">${e(h)}</span>
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="habits" data-idx="${i}" title="Delete">×</button>` : ''}
+                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="habits" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
-            ${isEdit ? `<div style="padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="habits">+ Add habit</button></div>` : ''}
+            ${isEdit ? `<button class="w-add-btn" data-add="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add habit</button>` : ''}
           </div>
         </div>`;
       case 'notes':
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Notes</div>
-          <div class="hub-editable" contenteditable="true" data-save="notes" style="font-size:0.85rem;line-height:1.6;color:var(--text-primary);min-height:80px;outline:none;white-space:pre-wrap">${e(hubContent.notes || '')}</div>
+          <div class="w-head" style="color:var(--text-tertiary);margin-bottom:var(--space-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Notes</span></div>
+          <div class="w-notes-wrap">
+            <div class="hub-editable" contenteditable="true" data-save="notes">${e(hubContent.notes || '')}</div>
+          </div>
         </div>`;
       case 'links':
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);margin-bottom:var(--gutter)">Links</div>
-          <div id="hubLinksList" style="display:flex;flex-direction:column;gap:var(--stack-sm)">
+          <div class="w-head" style="color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg><span>Links</span></div>
+          <div class="w-list" id="hubLinksList">
             ${hubContent.links.map((l, i) =>
-              `<div style="display:flex;align-items:center;gap:var(--space-2);padding:var(--stack-sm) 0;font-size:0.85rem;position:relative" data-idx="${i}">
-                <span style="color:var(--primary);flex-shrink:0">\u2197</span>
+              `<div class="w-link-card" data-idx="${i}">
+                <div class="w-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
                 ${isEdit
-                  ? `<span class="hub-editable" data-edit="links-label" data-idx="${i}" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${e(l.label)}</span>
-                     <span style="color:var(--text-tertiary);font-size:0.75rem">/</span>
-                     <span class="hub-editable" data-edit="links-url" data-idx="${i}" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;color:var(--text-secondary);font-size:0.75rem">${e(l.url)}</span>`
-                  : `<a href="${e(l.url)}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${e(l.label)}</a>`}
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="links" data-idx="${i}" title="Delete">×</button>` : ''}
+                  ? `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                       <span class="hub-editable" data-edit="links-label" data-idx="${i}" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">${e(l.label)}</span>
+                       <span class="hub-editable" data-edit="links-url" data-idx="${i}" style="font-size:0.65rem;color:var(--text-tertiary)">${e(l.url)}</span>
+                     </div>`
+                  : `<a href="${e(l.url)}" target="_blank" rel="noopener" class="w-link-text"><span class="w-link-label">${e(l.label)}</span><span class="w-link-url">${e(l.url.replace(/^https?:\/\//,''))}</span></a>`}
+                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="links" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
-            ${isEdit ? `<div style="padding:var(--stack-sm) 0"><button class="hub-add-btn" data-add="links">+ Add link</button></div>` : ''}
+            ${isEdit ? `<button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button>` : ''}
           </div>
         </div>`;
       case 'progress':
@@ -443,9 +454,9 @@ function renderHubBento() {
           const dayLabels = ['M','T','W','T','F','S','S'];
           return `<div class="prog-bar-col"><div class="prog-bar" style="height:${pct}%"></div><span class="prog-bar-label">${dayLabels[i]}</span></div>`;
         }).join('');
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div style="font-family:var(--font-sans);font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--primary);margin-bottom:var(--gutter)">Progress</div>
+          <div class="w-head" style="color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Progress</span></div>
           <div class="prog-stats-row">
             <div class="prog-stat"><span class="prog-stat-val">${progData.total}</span><span class="prog-stat-lbl">completed</span></div>
             <div class="prog-stat"><span class="prog-stat-val">${progData.streak}</span><span class="prog-stat-lbl">day streak</span></div>
@@ -461,7 +472,7 @@ function renderHubBento() {
         const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
         const dateStr = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="clock-face" data-clock-uid="${uid}">
             <div class="clock-row"><span class="clock-time">${hh}:${mm}</span><span class="clock-seconds">${ss}</span></div>
@@ -469,7 +480,7 @@ function renderHubBento() {
           </div>
         </div>`;
       case 'weather':
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="weather-widget" data-weather-uid="${uid}">
             <div class="weather-loading">
@@ -492,10 +503,10 @@ function renderHubBento() {
         for (let d = 1; d <= daysInMonth; d++) {
           cells += `<span class="cal-cell ${d === today ? 'cal-today' : ''}">${d}</span>`;
         }
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="cal-widget">
-            <div class="cal-header">${monthNames[calMonth]} <span class="cal-year">${calYear}</span></div>
+            <div class="cal-header"><span class="cal-month">${monthNames[calMonth]}</span> <span class="cal-year">${calYear}</span></div>
             <div class="cal-grid">
               ${dayHeaders.map(d => `<span class="cal-day-header">${d}</span>`).join('')}
               ${cells}
@@ -506,7 +517,7 @@ function renderHubBento() {
         var ts = _timerState(uid);
         var tDisplay = _fmtTime(ts.elapsed);
         var tStatus = ts.running ? 'running' : (ts.elapsed > 0 ? 'paused' : 'idle');
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="timer-widget" data-timer-uid="${uid}">
             <div class="timer-display">${tDisplay}</div>
@@ -524,7 +535,7 @@ function renderHubBento() {
         var pPhase = phaseLabels[ps.phase] || 'Focus';
         var pCycles = ps.cycle + 1;
         var pRunning = ps.running;
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="pomo-widget" data-pomo-uid="${uid}">
             <div class="pomo-header"><span class="pomo-phase">${pPhase}</span><span class="pomo-cycle">#${pCycles}</span></div>
@@ -536,13 +547,29 @@ function renderHubBento() {
           </div>
         </div>`;
       case 'spotify':
-        var spotUrl = hubContent.spotifyUrl || 'https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M?utm_source=generator';
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
-          ${editUI}
-          <div class="spotify-widget">
-            <iframe src="${e(spotUrl)}" width="100%" height="100%" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
-          </div>
-        </div>`;
+        var _spActiveId = null;
+        try { _spActiveId = localStorage.getItem('haven-spotify-active') || null; } catch(e) {}
+        var _spPlaylists = [];
+        try { _spPlaylists = JSON.parse(localStorage.getItem('haven-spotify-playlists') || '[]'); } catch(e) {}
+        var _spActivePlaylist = _spPlaylists.find(function(p) { return p.id === _spActiveId; });
+        if (_spActivePlaylist) {
+          var spotUrl = 'https://open.spotify.com/embed/playlist/' + _spActivePlaylist.id + '?utm_source=generator';
+          return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
+            ${editUI}
+            <div class="spotify-widget">
+              <iframe src="${e(spotUrl)}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media" style="display:block"></iframe>
+            </div>
+          </div>`;
+        } else {
+          return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
+            ${editUI}
+            <div class="spotify-widget spotify-empty">
+              <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;opacity:0.4"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+              <span>No playlist linked</span>
+              <span class="spotify-hint">Add playlists via sidebar Spotify</span>
+            </div>
+          </div>`;
+        }
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
           <div style="text-align:center;color:var(--text-tertiary);font-size:0.75rem">Unknown bubble</div>
@@ -1449,6 +1476,17 @@ function setupHubEditEvents() {
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
     if (_suppressClick) return;
+    const todoBox = e.target.closest('.w-todo-box');
+    if (todoBox) {
+      const item = todoBox.closest('.w-item');
+      if (!item) return;
+      const idx = parseInt(item.dataset.idx);
+      if (isNaN(idx) || !hubContent.todos[idx]) return;
+      hubContent.todos[idx].done = !hubContent.todos[idx].done;
+      saveHubContent();
+      renderHubBento();
+      return;
+    }
     const wrap = e.target.closest('[data-img-picker]');
     if (!wrap) return;
     openImagePicker(wrap.dataset.imgPicker);
@@ -1615,6 +1653,50 @@ if (document.getElementById('hubAccessHub')) {
       try { saveHubContent(); } catch(e) {}
     }
   });
+})();
+
+/* ─── Spotify sidebar sync ──────────────────── */
+(function initSpotifySync() {
+  var _origNav = window.spSideNav;
+  if (typeof _origNav === 'function') {
+    window.spSideNav = function(dir) {
+      _origNav(dir);
+      _updateSpotifyBubbles();
+    };
+  }
+  // Also patch spAddPlaylist / spRemovePlaylist
+  var _origAdd = window.spAddPlaylist;
+  if (typeof _origAdd === 'function') {
+    window.spAddPlaylist = function() {
+      _origAdd();
+      _updateSpotifyBubbles();
+    };
+  }
+  var _origDel = window.spDeletePlaylist;
+  if (typeof _origDel === 'function') {
+    window.spDeletePlaylist = function(id) {
+      _origDel(id);
+      _updateSpotifyBubbles();
+    };
+  }
+  function _updateSpotifyBubbles() {
+    var _id = null, _playlists = [];
+    try { _id = localStorage.getItem('haven-spotify-active') || null; } catch(e) {}
+    try { _playlists = JSON.parse(localStorage.getItem('haven-spotify-playlists') || '[]'); } catch(e) {}
+    var _active = _playlists.find(function(p) { return p.id === _id; });
+    document.querySelectorAll('.spotify-widget').forEach(function(w) {
+      var ifr = w.querySelector('iframe');
+      if (ifr && _active) {
+        ifr.src = 'https://open.spotify.com/embed/playlist/' + _active.id + '?utm_source=generator';
+      } else if (w.classList.contains('spotify-empty') && _active) {
+        // Had empty state, now has playlist — re-render to get the iframe
+        renderHubBento();
+      } else if (ifr && !_active) {
+        // Had playlist, now empty — re-render to show empty state
+        renderHubBento();
+      }
+    });
+  }
 })();
 
 /* ─── Patch updateSectionHandles ────────────── */

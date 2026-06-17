@@ -2765,8 +2765,275 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   .day-header.today .day-number { width: 28px; height: 28px; font-size: 0.95rem; }
 }
 
-
-
+/* ─── Shared Widget Design ──────────────────── */
+.w-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.w-head svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+.w-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.w-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.1s;
+}
+.w-item:hover {
+  background: var(--accent-soft);
+}
+.w-item-card {
+  background: var(--surface-container);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 10px;
+}
+.w-item-card:hover {
+  border-color: var(--border-color);
+}
+.w-item-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--text-tertiary);
+  font-size: 0.6rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.w-item-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.w-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.7rem;
+  font-weight: 500;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+  justify-content: center;
+  margin-top: 2px;
+}
+.w-add-btn svg {
+  width: 12px;
+  height: 12px;
+}
+.w-add-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--accent-soft);
+}
+.w-pri-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.w-todo-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid var(--border-color);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.w-todo-box:hover {
+  border-color: var(--primary);
+}
+.w-todo-box svg {
+  width: 10px;
+  height: 10px;
+}
+.w-todo-checked {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+.w-todo-done {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+.w-habit-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.w-habit-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 20px;
+  background: var(--surface-container);
+  border: 1px solid var(--border-subtle);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: default;
+  transition: all 0.15s;
+}
+.w-habit-chip:hover {
+  border-color: var(--border-color);
+  background: var(--accent-soft);
+}
+.w-habit-check {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.w-habit-check svg {
+  width: 9px;
+  height: 9px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.w-habit-chip:hover .w-habit-check {
+  border-color: var(--primary);
+}
+.w-link-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface-container);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.15s;
+}
+.w-link-card:hover {
+  border-color: var(--border-color);
+}
+.w-link-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+.w-link-icon svg {
+  width: 12px;
+  height: 12px;
+}
+.w-link-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-decoration: none;
+}
+.w-link-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.w-link-url {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.w-quote-content {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+}
+.w-quote-mark {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+.w-quote-text {
+  font-family: var(--font-serif);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+  flex: 1;
+}
+.w-quote-bar {
+  height: 3px;
+  width: 40px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary), transparent);
+  margin-top: 8px;
+  opacity: 0.3;
+}
+.w-text-wrap {
+  padding: 4px 0;
+}
+.w-text-wrap .hub-editable {
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 2em;
+}
+.w-notes-wrap {
+  padding: 4px 0;
+}
+.w-notes-wrap .hub-editable {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-height: 3em;
+}
 
 /* ─── Clock Widget ────────────────────────────────────── */
 .clock-face {
@@ -3056,9 +3323,25 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .spotify-widget {
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .spotify-widget iframe {
   border: none;
+  border-radius: 8px;
+  max-width: 100%;
+}
+.spotify-empty {
+  flex-direction: column;
+  gap: 10px;
+  color: var(--text-tertiary);
+  font-size: 0.78rem;
+  text-align: center;
+}
+.spotify-empty .spotify-hint {
+  font-size: 0.65rem;
+  opacity: 0.6;
   display: block;
 }
 /* ─── SLEEP TRACKING ────────────────────────────────────────── */
