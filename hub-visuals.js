@@ -332,11 +332,11 @@ function renderHubBento() {
             ${hubContent.goals.map((g, i) =>
               `<div class="w-item" data-idx="${i}">
                 <span class="w-item-num">${i+1}</span>
-                <span class="w-item-text ${isEdit ? 'hub-editable' : ''}" data-edit="goals" data-idx="${i}">${e(g)}</span>
+                <span class="w-item-text hub-editable" contenteditable="true" data-edit="goals" data-idx="${i}">${e(g)}</span>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="goals" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
-            ${isEdit ? `<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button>` : ''}
+            <button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button>
           </div>
         </div>`;
       case 'images':
@@ -357,43 +357,43 @@ function renderHubBento() {
         const priColors = ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6'];
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head" style="color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Priorities</span></div>
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Priorities</span></div>
           <div class="w-list" id="hubPrioritiesList">
             ${hubContent.priorities.map((p, i) =>
               `<div class="w-item w-item-card" data-idx="${i}">
                 <span class="w-pri-dot" style="background:${priColors[i % priColors.length]}"></span>
-                <span class="w-item-text ${isEdit ? 'hub-editable' : ''}" data-edit="priorities" data-idx="${i}">${e(p)}</span>
+                <span class="w-item-text hub-editable" contenteditable="true" data-edit="priorities" data-idx="${i}">${e(p)}</span>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="priorities" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
-            ${isEdit ? `<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button>` : ''}
+            <button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button>
           </div>
         </div>`;
       case 'quote':
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-lowest);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head" style="color:var(--text-tertiary);margin-bottom:var(--space-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg><span>Quote</span></div>
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg><span>Quote</span></div>
           <div class="w-quote-content">
             <span class="w-quote-mark">\u201C</span>
-            <div class="w-quote-text${isEdit ? ' hub-editable' : ''}" ${isEdit ? 'contenteditable="true"' : ''}>${e(hubContent.quote.text)}</div>
+            <div class="w-quote-text hub-editable" contenteditable="true">${e(hubContent.quote.text)}</div>
           </div>
           <div class="w-quote-bar"></div>
         </div>`;
       case 'todos':
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head" style="color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>To Do's</span></div>
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>To Do's</span></div>
           <div class="w-list" id="hubTodoList">
             ${hubContent.todos.map((t, i) =>
               `<div class="w-item" data-idx="${i}">
                 <span class="w-todo-box ${t.done ? 'w-todo-checked' : ''}">
                   ${t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
                 </span>
-                <span class="w-item-text ${t.done ? 'w-todo-done' : ''} ${isEdit ? 'hub-editable' : ''}" data-edit="todos" data-idx="${i}">${e(t.text)}</span>
+                <span class="w-item-text ${t.done ? 'w-todo-done' : ''} hub-editable" contenteditable="true" data-edit="todos" data-idx="${i}">${e(t.text)}</span>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="todos" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
-            ${isEdit ? `<button class="w-add-btn" data-add="todos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to-do</button>` : ''}
+            <button class="w-add-btn" data-add="todos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to-do</button>
           </div>
         </div>`;
       case 'text':
@@ -406,22 +406,22 @@ function renderHubBento() {
       case 'habits':
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head" style="color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Habits</span></div>
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Habits</span></div>
           <div class="w-habit-grid" id="hubHabitsList">
             ${hubContent.habits.map((h, i) =>
               `<div class="w-habit-chip" data-idx="${i}">
                 <span class="w-habit-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                <span class="${isEdit ? 'hub-editable' : ''}" data-edit="habits" data-idx="${i}">${e(h)}</span>
+                <span class="hub-editable" contenteditable="true" data-edit="habits" data-idx="${i}">${e(h)}</span>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="habits" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
-            ${isEdit ? `<button class="w-add-btn" data-add="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add habit</button>` : ''}
+            <button class="w-add-btn" data-add="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add habit</button>
           </div>
         </div>`;
       case 'notes':
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head" style="color:var(--text-tertiary);margin-bottom:var(--space-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Notes</span></div>
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Notes</span></div>
           <div class="w-notes-wrap">
             <div class="hub-editable" contenteditable="true" data-save="notes">${e(hubContent.notes || '')}</div>
           </div>
@@ -429,21 +429,22 @@ function renderHubBento() {
       case 'links':
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head" style="color:var(--text-tertiary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg><span>Links</span></div>
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg><span>Links</span></div>
           <div class="w-list" id="hubLinksList">
             ${hubContent.links.map((l, i) =>
               `<div class="w-link-card" data-idx="${i}">
                 <div class="w-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
-                ${isEdit
-                  ? `<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
-                       <span class="hub-editable" data-edit="links-label" data-idx="${i}" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">${e(l.label)}</span>
-                       <span class="hub-editable" data-edit="links-url" data-idx="${i}" style="font-size:0.65rem;color:var(--text-tertiary)">${e(l.url)}</span>
-                     </div>`
-                  : `<a href="${e(l.url)}" target="_blank" rel="noopener" class="w-link-text"><span class="w-link-label">${e(l.label)}</span><span class="w-link-url">${e(l.url.replace(/^https?:\/\//,''))}</span></a>`}
+                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                  <span class="hub-editable" data-edit="links-label" data-idx="${i}" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">${e(l.label)}</span>
+                  <span style="display:flex;align-items:center;gap:4px">
+                    <span class="hub-editable" data-edit="links-url" data-idx="${i}" style="font-size:0.65rem;color:var(--text-tertiary);flex:1">${e(l.url)}</span>
+                    <a href="${e(l.url)}" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
+                  </span>
+                </div>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="links" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
-            ${isEdit ? `<button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button>` : ''}
+            <button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button>
           </div>
         </div>`;
       case 'progress':
@@ -1374,7 +1375,7 @@ function setupHubEditEvents() {
 
   document.addEventListener('blur', function(e) {
     const span = e.target.closest('[data-edit]');
-    if (!span || !hubEditMode) return;
+    if (!span) return;
     const field = span.dataset.edit;
     const idx = parseInt(span.dataset.idx);
     if (field === 'goals' && !isNaN(idx)) {
@@ -1389,6 +1390,7 @@ function setupHubEditEvents() {
     } else if (field === 'habits' && !isNaN(idx)) {
       hubContent.habits[idx] = span.textContent.trim();
       saveHubContent();
+    } else if (!hubEditMode) return;
     } else if (field === 'links-label' && !isNaN(idx)) {
       hubContent.links[idx].label = span.textContent.trim();
       saveHubContent();
@@ -1442,12 +1444,12 @@ function setupHubEditEvents() {
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
     if (_suppressClick) return;
     const addBtn = e.target.closest('[data-add]');
-    if (!addBtn || !hubEditMode) return;
+    if (!addBtn) return;
     const field = addBtn.dataset.add;
-    if (field === 'goals') { hubContent.goals.push('new goal'); saveHubContent(); renderHubBento(); }
-    else if (field === 'priorities') { hubContent.priorities.push('new priority'); saveHubContent(); renderHubBento(); }
-    else if (field === 'todos') { hubContent.todos.push({ text: 'new item', done: false }); saveHubContent(); renderHubBento(); }
-    else if (field === 'habits') { hubContent.habits.push('new habit'); saveHubContent(); renderHubBento(); }
+    if (field === 'goals') { hubContent.goals.push('new goal'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="goals"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    else if (field === 'priorities') { hubContent.priorities.push('new priority'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="priorities"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    else if (field === 'todos') { hubContent.todos.push({ text: 'new item', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="todos"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    else if (field === 'habits') { hubContent.habits.push('new habit'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="habits"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'links') { hubContent.links.push({ label: 'new link', url: 'https://' }); saveHubContent(); renderHubBento(); }
   });
 
