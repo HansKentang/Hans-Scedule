@@ -2967,6 +2967,14 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   flex: 1;
 }
 .w-quote-bar {
+.w-quote-attribution {
+  text-align: right;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  padding: 4px 24px 2px 0;
+  opacity: 0.75;
+}
   display: none;
 }
 .w-text-wrap {
@@ -4786,71 +4794,6 @@ html.light .hub-add-popup {
   height: 16px;
   color: var(--primary);
   flex-shrink: 0;
-}
-
-/* Layout preset buttons */
-.hub-add-layouts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-.hub-add-layout-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 12px 8px 10px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  background: var(--surface-container);
-  color: var(--text-primary);
-  font-size: 0.65rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: var(--font-family);
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  text-align: center;
-}
-.hub-add-layout-btn:hover {
-  border-color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 6%, var(--surface-container));
-  transform: translateY(-1px);
-}
-.hub-add-layout-btn:active {
-  transform: scale(0.97);
-}
-.hub-add-layout-btn .lcon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 12%, transparent);
-  margin-bottom: 2px;
-}
-.hub-add-layout-btn .lcon svg {
-  width: 14px;
-  height: 14px;
-}
-.hub-add-layout-btn .llabel {
-  font-size: 0.65rem;
-  line-height: 1.2;
-}
-.hub-add-layout-btn .ldesc {
-  font-size: 0.55rem;
-  color: var(--text-tertiary);
-  font-weight: 400;
-  line-height: 1.2;
-}
-
-/* Divider */
-.add-divider {
-  height: 1px;
-  background: var(--border-subtle);
-  margin: 8px 0 8px;
 }
 
 /* Bubble type list (like hide-popup rows) */

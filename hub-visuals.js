@@ -174,12 +174,84 @@ function resolveBubbleCollisions(layout) {
   return layout;
 }
 
+/* ─── Quote of the week bank ────────────────── */
+const QUOTE_BANK = [
+  { text: 'It does not matter how slowly you go as long as you do not stop.', author: 'Confucius' },
+  { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
+  { text: 'Believe you can and you\'re halfway there.', author: 'Theodore Roosevelt' },
+  { text: 'The future belongs to those who believe in the beauty of their dreams.', author: 'Eleanor Roosevelt' },
+  { text: 'In the middle of every difficulty lies opportunity.', author: 'Albert Einstein' },
+  { text: 'Success is not final, failure is not fatal: it is the courage to continue that counts.', author: 'Winston Churchill' },
+  { text: 'What lies behind us and what lies before us are tiny matters compared to what lies within us.', author: 'Ralph Waldo Emerson' },
+  { text: 'The only person you are destined to become is the person you decide to be.', author: 'Ralph Waldo Emerson' },
+  { text: 'Everything you\'ve ever wanted is on the other side of fear.', author: 'George Addair' },
+  { text: 'The best time to plant a tree was 20 years ago. The second best time is now.', author: 'Chinese Proverb' },
+  { text: 'Your time is limited, don\'t waste it living someone else\'s life.', author: 'Steve Jobs' },
+  { text: 'The journey of a thousand miles begins with a single step.', author: 'Lao Tzu' },
+  { text: 'What you get by achieving your goals is not as important as what you become by achieving your goals.', author: 'Zig Ziglar' },
+  { text: 'The only impossible journey is the one you never begin.', author: 'Tony Robbins' },
+  { text: 'Act as if what you do makes a difference. It does.', author: 'William James' },
+  { text: 'Do not wait to strike till the iron is hot; but make it hot by striking.', author: 'William Butler Yeats' },
+  { text: 'Whether you think you can or you think you can\'t, you\'re right.', author: 'Henry Ford' },
+  { text: 'The mind is everything. What you think you become.', author: 'Buddha' },
+  { text: 'The best revenge is massive success.', author: 'Frank Sinatra' },
+  { text: 'Fall seven times, stand up eight.', author: 'Japanese Proverb' },
+  { text: 'Hardships often prepare ordinary people for an extraordinary destiny.', author: 'C.S. Lewis' },
+  { text: 'It is during our darkest moments that we must focus to see the light.', author: 'Aristotle' },
+  { text: 'Don\'t judge each day by the harvest you reap but by the seeds that you plant.', author: 'Robert Louis Stevenson' },
+  { text: 'The secret of getting ahead is getting started.', author: 'Mark Twain' },
+  { text: 'You miss 100% of the shots you don\'t take.', author: 'Wayne Gretzky' },
+  { text: 'I have not failed. I\'ve just found 10,000 ways that won\'t work.', author: 'Thomas Edison' },
+  { text: 'A person who never made a mistake never tried anything new.', author: 'Albert Einstein' },
+  { text: 'The only limit to our realization of tomorrow will be our doubts of today.', author: 'Franklin D. Roosevelt' },
+  { text: 'Do what you can, with what you have, where you are.', author: 'Theodore Roosevelt' },
+  { text: 'Be yourself; everyone else is already taken.', author: 'Oscar Wilde' },
+  { text: 'Two roads diverged in a wood, and I took the one less traveled by, and that has made all the difference.', author: 'Robert Frost' },
+  { text: 'You must be the change you wish to see in the world.', author: 'Mahatma Gandhi' },
+  { text: 'The purpose of our lives is to be happy.', author: 'Dalai Lama' },
+  { text: 'Life is what happens when you\'re busy making other plans.', author: 'John Lennon' },
+  { text: 'Get busy living or get busy dying.', author: 'Stephen King' },
+  { text: 'In three words I can sum up everything I\'ve learned about life: it goes on.', author: 'Robert Frost' },
+  { text: 'If you want to live a happy life, tie it to a goal, not to people or things.', author: 'Albert Einstein' },
+  { text: 'We are what we repeatedly do. Excellence, then, is not an act, but a habit.', author: 'Aristotle' },
+  { text: 'The only wealth which you will keep forever is the wealth you have given away.', author: 'Marcus Aurelius' },
+  { text: 'First, have a definite, clear practical ideal; a goal, an objective. Second, have the necessary means to achieve your ends; wisdom, money, and methods. Third, adjust all your means to that end.', author: 'Aristotle' },
+  { text: 'The greatest glory in living lies not in never falling, but in rising every time we fall.', author: 'Nelson Mandela' },
+  { text: 'The way to get started is to quit talking and begin doing.', author: 'Walt Disney' },
+  { text: 'Your time is limited, so don\'t waste it living someone else\'s life. Don\'t be trapped by dogma.', author: 'Steve Jobs' },
+  { text: 'If you look at what you have in life, you\'ll always have more. If you look at what you don\'t have in life, you\'ll never have enough.', author: 'Oprah Winfrey' },
+  { text: 'If you set your goals ridiculously high and it\'s a failure, you will fail above everyone else\'s success.', author: 'James Cameron' },
+  { text: 'Life is either a daring adventure or nothing at all.', author: 'Helen Keller' },
+  { text: 'Many of life\'s failures are people who did not realize how close they were to success when they gave up.', author: 'Thomas Edison' },
+  { text: 'The scariest moment is always just before you start.', author: 'Stephen King' },
+  { text: 'There is nothing impossible to they who will try.', author: 'Alexander the Great' },
+  { text: 'The only way to discover the limits of the possible is to go beyond them into the impossible.', author: 'Arthur C. Clarke' },
+  { text: 'Try not to become a man of success, but rather try to become a man of value.', author: 'Albert Einstein' },
+  { text: 'Great minds discuss ideas; average minds discuss events; small minds discuss people.', author: 'Eleanor Roosevelt' },
+  { text: 'If you cannot do great things, do small things in a great way.', author: 'Napoleon Hill' },
+];
+
+/* ─── Get current ISO week number ──────────── */
+function getCurrentWeekNumber() {
+  const now = new Date();
+  const startOfYear = new Date(now.getFullYear(), 0, 1);
+  const days = Math.floor((now - startOfYear) / (24 * 60 * 60 * 1000));
+  return Math.ceil((days + startOfYear.getDay() + 1) / 7);
+}
+
+/* ─── Get quote of the week ────────────────── */
+function getQuoteOfTheWeek() {
+  const weekNum = getCurrentWeekNumber();
+  const idx = (weekNum - 1) % QUOTE_BANK.length;
+  return { ...QUOTE_BANK[idx], weekNumber: weekNum };
+}
+
 /* ─── Default hub content ──────────────────── */
 const HUB_DEFAULTS = {
   greeting: '',
   goals: ['develop emotional maturity', 'go to the gym + workout consistently', 'eat intentionally', 'learn finances via books'],
   priorities: ['mental and physical health', 'academics', 'self-development'],
-  quote: { text: 'It takes discipline to be the person you want to be.', author: '' },
+  quote: getQuoteOfTheWeek(),
   todos: [{ text: 'get driver\'s license', done: false }, { text: 'get gym membership', done: false }],
   habits: ['drink water', 'exercise', 'read'],
   text: 'Write something...',
@@ -210,7 +282,17 @@ function loadHubContent() {
       if (!hc.gallery) hc.gallery = defaults.gallery.map(g => ({...g}));
       if (!hc.goals) hc.goals = [...defaults.goals];
       if (!hc.priorities) hc.priorities = [...defaults.priorities];
-      if (!hc.quote) hc.quote = {...defaults.quote};
+      if (!hc.quote) hc.quote = getQuoteOfTheWeek();
+      else {
+        // Auto-rotate quote of the week
+        const currentWeek = getCurrentWeekNumber();
+        if (!hc.quote.weekNumber || hc.quote.weekNumber !== currentWeek) {
+          const weekly = getQuoteOfTheWeek();
+          hc.quote.text = weekly.text;
+          hc.quote.author = weekly.author;
+          hc.quote.weekNumber = weekly.weekNumber;
+        }
+      }
       if (!hc.todos) hc.todos = defaults.todos.map(t => ({...t}));
       if (!hc.habits) hc.habits = [...defaults.habits];
       if (hc.notes === undefined) hc.notes = '';
@@ -370,13 +452,15 @@ function renderHubBento() {
           </div>
         </div>`;
       case 'quote':
+        const q = hubContent.quote;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-lowest);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg><span>Quote</span></div>
           <div class="w-quote-content">
             <span class="w-quote-mark">\u201C</span>
-            <div class="w-quote-text hub-editable" contenteditable="true">${e(hubContent.quote.text)}</div>
+            <div class="w-quote-text hub-editable" contenteditable="true">${e(q.text)}</div>
           </div>
+          ${q.author ? `<div class="w-quote-attribution">&mdash; ${e(q.author)}</div>` : ''}
           <div class="w-quote-bar"></div>
         </div>`;
       case 'todos':
@@ -1397,12 +1481,11 @@ function setupHubEditEvents() {
       hubContent.links[idx].url = span.textContent.trim();
       saveHubContent();
     } else if (!hubEditMode) return;
-    }
   }, true);
 
   document.querySelector('.bento-grid')?.addEventListener('blur', function(e) {
-    const q = e.target.closest('.hub-bento-quote');
-    if (!q || !hubEditMode) return;
+    const q = e.target.closest('.w-quote-text');
+    if (!q) return;
     hubContent.quote.text = q.textContent.trim().replace(/^["\u201C]|["\u201D]$/g, '');
     saveHubContent();
   }, true);
