@@ -435,9 +435,9 @@ function renderHubBento() {
               `<div class="w-link-card" data-idx="${i}">
                 <div class="w-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
                 <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
-                  <span class="hub-editable" data-edit="links-label" data-idx="${i}" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">${e(l.label)}</span>
+                  <span class="hub-editable" contenteditable="true" data-edit="links-label" data-idx="${i}" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">${e(l.label)}</span>
                   <span style="display:flex;align-items:center;gap:4px">
-                    <span class="hub-editable" data-edit="links-url" data-idx="${i}" style="font-size:0.65rem;color:var(--text-tertiary);flex:1">${e(l.url)}</span>
+                    <span class="hub-editable" contenteditable="true" data-edit="links-url" data-idx="${i}" style="font-size:0.65rem;color:var(--text-tertiary);flex:1">${e(l.url)}</span>
                     <a href="${e(l.url)}" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
                   </span>
                 </div>
@@ -1390,13 +1390,13 @@ function setupHubEditEvents() {
     } else if (field === 'habits' && !isNaN(idx)) {
       hubContent.habits[idx] = span.textContent.trim();
       saveHubContent();
-    } else if (!hubEditMode) return;
     } else if (field === 'links-label' && !isNaN(idx)) {
       hubContent.links[idx].label = span.textContent.trim();
       saveHubContent();
     } else if (field === 'links-url' && !isNaN(idx)) {
       hubContent.links[idx].url = span.textContent.trim();
       saveHubContent();
+    } else if (!hubEditMode) return;
     }
   }, true);
 
@@ -1409,13 +1409,14 @@ function setupHubEditEvents() {
 
   document.querySelector('.bento-grid')?.addEventListener('blur', function(e) {
     const el = e.target.closest('[data-save]');
-    if (!el || !hubEditMode) return;
+    if (!el) return;
     const field = el.dataset.save;
-    if (field === 'text') {
-      hubContent.text = el.textContent.trim();
-      saveHubContent();
-    } else if (field === 'notes') {
+    if (field === 'notes') {
       hubContent.notes = el.textContent.trim();
+      saveHubContent();
+    } else if (!hubEditMode) return;
+    else if (field === 'text') {
+      hubContent.text = el.textContent.trim();
       saveHubContent();
     }
   }, true);
@@ -1450,7 +1451,7 @@ function setupHubEditEvents() {
     else if (field === 'priorities') { hubContent.priorities.push('new priority'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="priorities"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'todos') { hubContent.todos.push({ text: 'new item', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="todos"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'habits') { hubContent.habits.push('new habit'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="habits"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
-    else if (field === 'links') { hubContent.links.push({ label: 'new link', url: 'https://' }); saveHubContent(); renderHubBento(); }
+    else if (field === 'links') { hubContent.links.push({ label: 'new link', url: 'https://' }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="links-label"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
   });
 
   document.querySelector('.hub-layout')?.addEventListener('click', function(e) {
