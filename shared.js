@@ -1018,10 +1018,10 @@ const DEFAULT_IMAGES = {
 };
 
 function loadImages() {
-  // After restoring, re-apply images to the DOM in case DOM is ready
-  try { applyImages(); } catch(e) { /* DOM may not be ready yet */ }
   state.images = { ...DEFAULT_IMAGES };
   try { restoreDirectImageKeys(); } catch(e) { /* skip */ }
+  // After restoring, re-apply images to the DOM in case DOM is ready
+  try { applyImages(); } catch(e) { /* DOM may not be ready yet */ }
 }
 
 // --- APPLY IMAGES TO DOM ---
