@@ -2765,127 +2765,110 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   .day-header.today .day-number { width: 28px; height: 28px; font-size: 0.95rem; }
 }
 
-/* ─── Shared Widget Design ──────────────────── */
+
+
+/* ─── Shared Widget Design (Notion) ──────────── */
 .w-head {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 8px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.01em;
 }
 .w-head svg {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 0.5;
 }
 .w-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 1px;
 }
 .w-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
-  border-radius: 8px;
+  padding: 4px 6px;
+  border-radius: 4px;
   transition: background 0.1s;
 }
 .w-item:hover {
   background: var(--accent-soft);
 }
 .w-item-card {
-  background: var(--surface-container);
-  border: 1px solid var(--border-subtle);
-  padding: 8px 10px;
-}
-.w-item-card:hover {
-  border-color: var(--border-color);
+  padding: 6px 8px;
 }
 .w-item-num {
-  width: 20px;
-  height: 20px;
-  border-radius: 6px;
-  background: var(--accent-soft);
-  color: var(--text-tertiary);
+  width: 18px;
   font-size: 0.6rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--text-tertiary);
+  text-align: center;
   flex-shrink: 0;
+  font-weight: 500;
 }
 .w-item-text {
   flex: 1;
   min-width: 0;
   font-size: 0.75rem;
   color: var(--text-primary);
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
 }
 .w-add-btn {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 10px;
-  border: 1px dashed var(--border-color);
-  border-radius: 8px;
-  background: transparent;
+  padding: 4px 6px;
+  border: none;
+  background: none;
   color: var(--text-tertiary);
-  font-size: 0.7rem;
-  font-weight: 500;
-  font-family: var(--font-family);
+  font-size: 0.65rem;
   cursor: pointer;
-  transition: all 0.15s;
-  width: 100%;
-  justify-content: center;
-  margin-top: 2px;
+  border-radius: 4px;
+  transition: background 0.1s;
+  font-family: inherit;
 }
 .w-add-btn svg {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
 }
 .w-add-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
   background: var(--accent-soft);
+  color: var(--text-secondary);
 }
 .w-pri-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 .w-todo-box {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 2px solid var(--border-color);
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--border-color);
+  border-radius: 3px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: border-color 0.1s;
 }
 .w-todo-box:hover {
-  border-color: var(--primary);
+  border-color: var(--text-secondary);
 }
 .w-todo-box svg {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 .w-todo-checked {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--on-primary);
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: var(--surface-container);
 }
 .w-todo-done {
   text-decoration: line-through;
@@ -2894,65 +2877,50 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .w-habit-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px;
 }
 .w-habit-chip {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px 6px 8px;
-  border-radius: 20px;
-  background: var(--surface-container);
-  border: 1px solid var(--border-subtle);
+  padding: 4px 8px;
+  border-radius: 6px;
   font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  cursor: default;
-  transition: all 0.15s;
+  color: var(--text-secondary);
+  transition: background 0.1s;
 }
 .w-habit-chip:hover {
-  border-color: var(--border-color);
   background: var(--accent-soft);
 }
 .w-habit-check {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  border: 2px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: all 0.15s;
-  cursor: pointer;
 }
 .w-habit-check svg {
-  width: 9px;
-  height: 9px;
+  width: 6px;
+  height: 6px;
   opacity: 0;
-  transition: opacity 0.15s;
-}
-.w-habit-chip:hover .w-habit-check {
-  border-color: var(--primary);
 }
 .w-link-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: var(--surface-container);
-  border: 1px solid var(--border-subtle);
-  transition: all 0.15s;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: background 0.1s;
 }
 .w-link-card:hover {
-  border-color: var(--border-color);
+  background: var(--accent-soft);
 }
 .w-link-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--accent-soft);
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2960,8 +2928,8 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   color: var(--text-tertiary);
 }
 .w-link-icon svg {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
 }
 .w-link-text {
   flex: 1;
@@ -2972,64 +2940,49 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   text-decoration: none;
 }
 .w-link-label {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.72rem;
   color: var(--text-primary);
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
 }
 .w-link-url {
   font-size: 0.6rem;
   color: var(--text-tertiary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .w-quote-content {
   display: flex;
-  gap: 8px;
-  padding: 4px 0;
+  gap: 6px;
+  padding: 2px 0;
 }
 .w-quote-mark {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: var(--primary);
+  font-size: 1.2rem;
+  color: var(--text-tertiary);
   line-height: 1;
-  opacity: 0.4;
   flex-shrink: 0;
+  opacity: 0.5;
 }
 .w-quote-text {
-  font-family: var(--font-serif);
-  font-size: 0.82rem;
-  font-weight: 500;
+  font-size: 0.8rem;
   color: var(--text-primary);
   line-height: 1.5;
   flex: 1;
 }
 .w-quote-bar {
-  height: 3px;
-  width: 40px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, var(--primary), transparent);
-  margin-top: 8px;
-  opacity: 0.3;
+  display: none;
 }
 .w-text-wrap {
-  padding: 4px 0;
+  padding: 2px 0;
 }
 .w-text-wrap .hub-editable {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--text-primary);
-  line-height: 1.6;
+  line-height: 1.5;
   min-height: 2em;
 }
 .w-notes-wrap {
-  padding: 4px 0;
+  padding: 2px 0;
 }
 .w-notes-wrap .hub-editable {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-primary);
   line-height: 1.5;
   min-height: 3em;
@@ -3043,7 +2996,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   justify-content: center;
   height: 100%;
   gap: 2px;
-  padding: 12px 0;
+  padding: 8px 0;
 }
 .clock-row {
   display: flex;
@@ -3051,31 +3004,26 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   gap: 2px;
 }
 .clock-time {
-  font-family: var(--font-serif);
-  font-size: 2.4rem;
-  font-weight: 600;
+  font-size: 2rem;
+  font-weight: 500;
   color: var(--text-primary);
   line-height: 1;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
 .clock-seconds {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.7rem;
+  font-weight: 400;
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
-  opacity: 0.6;
   vertical-align: super;
-  margin-left: 2px;
+  margin-left: 1px;
 }
 .clock-date {
-  font-size: 0.65rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 4px;
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  margin-top: 2px;
 }
 
 /* ─── Weather Widget ──────────────────────────────────── */
@@ -3089,9 +3037,9 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--text-tertiary);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
 }
 .weather-loading svg { animation: spin 1s linear infinite; }
 .weather-main {
@@ -3101,23 +3049,19 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   gap: 2px;
 }
 .weather-main svg {
-  color: var(--primary);
   margin-bottom: 2px;
 }
 .weather-temp {
-  font-family: var(--font-serif);
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 1.8rem;
+  font-weight: 500;
   color: var(--text-primary);
   line-height: 1;
 }
 .weather-cond {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-top: 4px;
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  margin-top: 2px;
 }
 .weather-error {
   display: flex;
@@ -3137,13 +3081,11 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   height: 100%;
 }
 .cal-header {
-  font-family: var(--font-serif);
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 500;
   color: var(--text-primary);
   text-align: center;
-  margin-bottom: 10px;
-  letter-spacing: -0.01em;
+  margin-bottom: 8px;
 }
 .cal-year {
   font-weight: 400;
@@ -3158,33 +3100,29 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 }
 .cal-day-header {
   text-align: center;
-  font-size: 0.55rem;
-  font-weight: 700;
+  font-size: 0.5rem;
+  font-weight: 600;
   color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 3px 0;
-  opacity: 0.6;
+  padding: 2px 0;
+  opacity: 0.5;
 }
 .cal-cell {
   text-align: center;
-  font-size: 0.72rem;
-  font-weight: 500;
+  font-size: 0.68rem;
+  font-weight: 400;
   color: var(--text-secondary);
-  padding: 4px 0;
-  border-radius: 4px;
+  padding: 3px 0;
+  border-radius: 3px;
   transition: background 0.1s;
   cursor: default;
 }
 .cal-cell.cal-empty { visibility: hidden; }
 .cal-cell:not(.cal-empty):hover { background: var(--accent-soft); }
 .cal-cell.cal-today {
-  color: var(--text-inverse);
-  background: var(--primary);
-  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--accent-soft);
+  font-weight: 500;
 }
-
-
 
 /* ─── Timer Widget ────────────────────────────────────── */
 .timer-widget {
@@ -3193,60 +3131,52 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 16px;
+  gap: 12px;
   padding: 8px 0;
 }
 .timer-display {
-  font-family: var(--font-mono);
-  font-size: 2.8rem;
-  font-weight: 700;
+  font-size: 2.4rem;
+  font-weight: 500;
   color: var(--text-primary);
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
+  letter-spacing: -0.02em;
 }
 .timer-controls {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 .timer-btn {
-  padding: 6px 18px;
-  border-radius: 20px;
+  padding: 5px 14px;
   border: 1px solid var(--border-color);
-  background: var(--surface-container);
+  border-radius: 6px;
+  background: none;
   color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-family: var(--font-family);
+  font-size: 0.7rem;
+  font-weight: 500;
+  font-family: inherit;
   cursor: pointer;
-  transition: all 150ms var(--curve);
+  transition: background 0.1s, color 0.1s;
 }
 .timer-btn:hover {
-  border-color: var(--primary);
-  color: var(--text-primary);
   background: var(--accent-soft);
-}
-.timer-btn:active {
-  transform: scale(0.94);
+  color: var(--text-primary);
 }
 .timer-btn-active {
-  background: var(--primary);
-  color: var(--on-primary);
-  border-color: var(--primary);
+  background: var(--text-primary);
+  color: var(--surface-container);
+  border-color: var(--text-primary);
 }
 .timer-btn-active:hover {
-  opacity: 0.85;
-  border-color: var(--primary);
-  background: var(--primary);
+  background: var(--text-primary);
+  color: var(--surface-container);
 }
 .timer-btn-reset {
-  color: var(--text-tertiary);
   border-color: transparent;
+  color: var(--text-tertiary);
 }
 .timer-btn-reset:hover {
-  color: var(--error);
-  border-color: var(--error);
-  background: color-mix(in srgb, var(--error) 8%, transparent);
+  color: var(--text-secondary);
 }
 
 /* ─── Pomodoro Widget ─────────────────────────────────── */
@@ -3256,33 +3186,31 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   align-items: center;
   justify-content: center;
   height: 100%;
-  gap: 12px;
+  gap: 10px;
   padding: 8px 0;
 }
 .pomo-header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .pomo-phase {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-secondary);
 }
 .pomo-cycle {
-  font-size: 0.6rem;
-  font-weight: 600;
+  font-size: 0.58rem;
+  font-weight: 500;
   color: var(--text-tertiary);
-  background: var(--surface-container);
-  padding: 2px 8px;
-  border-radius: 10px;
+  background: var(--accent-soft);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 .pomo-ring {
   position: relative;
-  width: 100px;
-  height: 100px;
+  width: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3297,26 +3225,25 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .pomo-ring-bg {
   fill: none;
   stroke: var(--border-color);
-  stroke-width: 6;
+  stroke-width: 5;
 }
 .pomo-ring-fg {
   fill: none;
-  stroke: var(--primary);
-  stroke-width: 6;
+  stroke: var(--text-primary);
+  stroke-width: 5;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.3s ease;
 }
 .pomo-time {
-  font-family: var(--font-mono);
-  font-size: 1.3rem;
-  font-weight: 700;
+  font-size: 1.1rem;
+  font-weight: 500;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   z-index: 1;
 }
 .pomo-controls {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* ─── Spotify Widget ──────────────────────────────────── */
@@ -5006,40 +4933,34 @@ html.light .hub-add-popup {
 .prog-stats-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 4px;
+  margin-bottom: 10px;
 }
 .prog-stat {
   text-align: center;
-  padding: 8px 4px;
-  background: var(--surface-container);
-  border-radius: 8px;
-  border: 1px solid var(--border-subtle);
+  padding: 6px 4px;
 }
 .prog-stat-val {
   display: block;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: var(--primary);
+  color: var(--text-primary);
   line-height: 1.2;
 }
 .prog-stat-lbl {
   display: block;
   font-size: 0.55rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 500;
   color: var(--text-tertiary);
-  margin-top: 1px;
+  margin-top: 2px;
 }
-
 .prog-chart {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 4px;
-  height: 70px;
+  gap: 3px;
+  height: 60px;
   padding: 4px 0;
 }
 .prog-bar-col {
@@ -5048,18 +4969,19 @@ html.light .hub-add-popup {
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  gap: 3px;
+  gap: 2px;
   height: 100%;
 }
 .prog-bar {
   width: 100%;
-  max-width: 24px;
-  border-radius: 4px 4px 2px 2px;
-  background: linear-gradient(180deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 50%, transparent) 100%);
+  max-width: 20px;
+  border-radius: 2px;
+  background: var(--text-primary);
   transform-origin: bottom;
   animation: barGrow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  min-height: 3px;
+  min-height: 2px;
   align-self: flex-end;
+  opacity: 0.7;
 }
 .prog-bar-col:nth-child(1) .prog-bar { animation-delay: 0.03s; }
 .prog-bar-col:nth-child(2) .prog-bar { animation-delay: 0.06s; }
@@ -5070,11 +4992,9 @@ html.light .hub-add-popup {
 .prog-bar-col:nth-child(7) .prog-bar { animation-delay: 0.21s; }
 
 .prog-bar-label {
-  font-size: 0.5rem;
-  font-weight: 600;
+  font-size: 0.48rem;
+  font-weight: 500;
   color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .hide-toggle.on .hide-knob { left:20px; }
