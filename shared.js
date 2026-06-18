@@ -1160,7 +1160,11 @@ function handleImagePickerPaste(e) {
         if (preview) preview.src = dataUrl;
         if (preview) preview.style.display = 'block';
         if (status) { status.textContent = 'Image loaded — click Save to apply'; status.style.color = 'var(--primary)'; }
-        preview.dataset.pasted = dataUrl;
+        if (preview) preview.dataset.pasted = dataUrl;
+        // Clear URL input so pasted image takes priority in handleImagePickerSave
+        var _urlInput = document.getElementById('imagePickerUrl');
+        if (_urlInput) _urlInput.value = '';        
+
       };
       reader.readAsDataURL(blob);
       return;
@@ -1177,6 +1181,9 @@ function handleImagePickerPaste(e) {
     if (e.target && e.target.id === 'imagePickerUrl') return;
     // Prevent text from appearing in the contenteditable paste zone
     e.preventDefault();
+    // Clear any residual text from the contenteditable paste zone
+    var _zone = document.getElementById('imagePickerPasteZone');
+    if (_zone) _zone.innerHTML = '';
     handleImagePickerPaste(e);
   });
 })();
@@ -1191,7 +1198,7 @@ function handleImagePickerUrlInput() {
     if (status) { status.textContent = 'Paste an image (Ctrl+V) or type a URL'; status.style.color = ''; }
     return;
   }
-  if (preview) { preview.src = val; preview.style.display = 'block'; delete preview.dataset.pasted; }
+  if (preview) { preview.src = val; preview.style.display = 'block'; }
   if (status) status.textContent = 'URL loaded — click Save to apply';
 }
 
@@ -1201,12 +1208,13 @@ function handleImagePickerSave() {
   const preview = document.getElementById('imagePickerPreview');
   const urlInput = document.getElementById('imagePickerUrl');
   const status = document.getElementById('imagePickerStatus');
-  if (preview?.dataset.pasted) {
+  const urlVal = urlInput?.value?.trim() || '';
+  if (urlVal) {
+    setImage(id, urlVal);
+  } else if (preview?.dataset.pasted) {
     setImage(id, preview.dataset.pasted);
   } else {
-    const val = urlInput?.value?.trim() || '';
-    if (!val) { resetImage(id); }
-    else { setImage(id, val); }
+    resetImage(id);
   }
   if (status) { status.textContent = 'Saved!'; status.style.color = 'var(--primary)'; }
   // Re-render image manager in settings drawer if open
@@ -3001,77 +3009,7 @@ function showAIChat() {
         else if (msg.role === 'assistant') appendAIMessage('assistant', msg.text);
       });
     } else if (!getChickBotProfile()) {
-      dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
-        <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
-        <div class="ai-bubble">
-          <p>Hi! I'm <strong>ChickBot</strong>, your personal schedule assistant!</p>
-          <p>Before we get started, I'd love to get to know you a bit so I can give you better suggestions.</p>
-          <div class="cb-onboard">
-            <div class="form-group">
-              <label>What's your name?</label>
-              <input type="text" id="cb-name" placeholder="e.g. Alex" class="form-input">
-            </div>
-            <div class="form-group">
-              <label>Your pronouns (optional)</label>
-              <input type="text" id="cb-pronouns" placeholder="e.g. they/them" class="form-input">
-            </div>
-            <div class="form-group">
-              <label>What do you do? (optional)</label>
-              <input type="text" id="cb-occupation" placeholder="e.g. Student, Designer" class="form-input">
-            </div>
-            <div class="form-group">
-              <label>Your top goals (up to 3)</label>
-              <input type="text" id="cb-goal1" placeholder="e.g. Exercise more" class="form-input">
-              <input type="text" id="cb-goal2" placeholder="e.g. Learn guitar" class="form-input">
-              <input type="text" id="cb-goal3" placeholder="e.g. Read 20 books" class="form-input">
-            </div>
-            <div class="form-group">
-              <label>Any routines you'd like help with?</label>
-              <textarea id="cb-routines" placeholder="e.g. I usually work out at 6pm, study at 8pm..." class="form-input" rows="2"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Other preferences?</label>
-              <textarea id="cb-preferences" placeholder="e.g. I prefer morning deep work, block out lunch 12-1" class="form-input" rows="2"></textarea>
-            </div>
-            <button class="btn btn-primary" id="cb-save-profile">Save & Start Chatting</button>
-          </div>
-        </div>
-      </div>`;
-      aiChatHistory = [];
-      document.getElementById('cb-save-profile')?.addEventListener('click', () => {
-        const profile = {
-          name: document.getElementById('cb-name')?.value.trim() || '',
-          pronouns: document.getElementById('cb-pronouns')?.value.trim() || '',
-          occupation: document.getElementById('cb-occupation')?.value.trim() || '',
-          goal1: document.getElementById('cb-goal1')?.value.trim() || '',
-          goal2: document.getElementById('cb-goal2')?.value.trim() || '',
-          goal3: document.getElementById('cb-goal3')?.value.trim() || '',
-          routines: document.getElementById('cb-routines')?.value.trim() || '',
-          preferences: document.getElementById('cb-preferences')?.value.trim() || ''
-        };
-        if (!profile.name) { document.getElementById('cb-name')?.focus(); return; }
-        saveChickBotProfile(profile);
-        dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
-          <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
-          <div class="ai-bubble">
-            <p>Nice to meet you, <strong>${escapeHtml(profile.name)}</strong>!</p>
-            <p>I'll keep your preferences in mind from now on. Feel free to ask me anything about your schedule.</p>
-            <div class="ai-suggestions">
-              <button class="ai-chip" data-prompt="What does my week look like?">What does my week look like?</button>
-              <button class="ai-chip" data-prompt="Create a deep work session tomorrow at 9am for 2 hours">Schedule deep work tomorrow</button>
-              <button class="ai-chip" data-prompt="Find a 1 hour gap for a meeting today">Find a gap today</button>
-              <button class="ai-chip" data-prompt="How many tasks do I have this week?">Task count this week</button>
-            </div>
-          </div>
-        </div>`;
-        dom.aiChatMessages.querySelectorAll('.ai-chip').forEach(chip => {
-          chip.addEventListener('click', () => {
-            dom.aiChatInput.value = chip.dataset.prompt;
-            toggleAISendBtn();
-            sendAIMessage();
-          });
-        });
-      });
+      startOnboarding();
     } else {
       dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
         <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
@@ -3391,9 +3329,14 @@ function sendAIMessage() {
 
   const typingEl = document.createElement('div');
   typingEl.className = 'ai-message ai-message-assistant';
-  typingEl.innerHTML = `<div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg></div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>`;
+  typingEl.innerHTML = `<div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>`;
   dom.aiChatMessages.appendChild(typingEl);
   dom.aiChatMessages.scrollTop = dom.aiChatMessages.scrollHeight;
+
+  if (onboardingState) {
+    processOnboardingStep(text, typingEl);
+    return;
+  }
 
   trackAIUsage('chat');
   trackAIUsage('api');
@@ -3520,11 +3463,82 @@ function buildChickBotProfileSection() {
     `- Name: ${profile.name}`,
     `- Pronouns: ${profile.pronouns || 'not specified'}`,
     `- Occupation: ${profile.occupation || 'not specified'}`,
-    `- Goals: ${[profile.goal1, profile.goal2, profile.goal3].filter(Boolean).join(', ') || 'not specified'}`,
+    `- Goals: ${profile.goals || 'not specified'}`,
     `- Routines: ${profile.routines || 'not specified'}`,
     `- Preferences: ${profile.preferences || 'not specified'}`
   ];
   return '\n' + lines.join('\n');
+}
+
+// ─── ChickBot Onboarding Q&A ──────────────────────────
+const ONBOARDING_STEPS = [
+  { key: 'situation', question: "Are you currently in school, working, or both?", required: true },
+  { key: 'break', question: "Do you have a holiday or break right now?", required: false },
+  { key: 'hours', question: "What time do you usually start and end your day?", required: false },
+  { key: 'commitments', question: "Any regular commitments I should know about? (e.g. classes, meetings, workouts)", required: false },
+  { key: 'priorities', question: "What's most important for you to fit into your schedule?", required: false }
+];
+
+let onboardingState = null;
+
+function startOnboarding() {
+  onboardingState = { step: 0, profile: {} };
+  dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
+    <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
+    <div class="ai-bubble"><p>Hi! I'm <strong>ChickBot</strong>, your personal schedule assistant!</p><p>Let's get to know each other first.</p><p><strong>${ONBOARDING_STEPS[0].question}</strong></p></div>
+  </div>`;
+}
+
+function processOnboardingStep(userText, typingEl) {
+  if (!onboardingState) return false;
+  const step = ONBOARDING_STEPS[onboardingState.step];
+  if (!step) return false;
+
+  const val = userText.trim();
+  if (step.required && !val) {
+    typingEl.remove();
+    appendAIMessage('assistant', `I need an answer for that one. ${step.question}`);
+    return true;
+  }
+
+  onboardingState.profile[step.key] = val;
+  onboardingState.step++;
+
+  const nextStep = ONBOARDING_STEPS[onboardingState.step];
+  if (!nextStep) {
+    const profile = {
+      name: onboardingState.profile.situation || '',
+      pronouns: '',
+      occupation: onboardingState.profile.situation || '',
+      goals: onboardingState.profile.priorities || '',
+      routines: [onboardingState.profile.hours, onboardingState.profile.commitments, onboardingState.profile.break].filter(Boolean).join('; '),
+      preferences: ''
+    };
+    saveChickBotProfile(profile);
+    onboardingState = null;
+    typingEl.remove();
+    const msg = `<p>Got it! I'll keep all of that in mind.</p>
+      <p>What would you like to do now?</p>
+      <div class="ai-suggestions">
+        <button class="ai-chip" data-prompt="What does my week look like?">What does my week look like?</button>
+        <button class="ai-chip" data-prompt="Create a deep work session tomorrow at 9am for 2 hours">Schedule deep work tomorrow</button>
+        <button class="ai-chip" data-prompt="Find a 1 hour gap for a meeting today">Find a gap today</button>
+        <button class="ai-chip" data-prompt="How many tasks do I have this week?">Task count this week</button>
+      </div>`;
+    appendAIMessage('assistant', msg);
+    dom.aiChatMessages.querySelectorAll('.ai-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        dom.aiChatInput.value = chip.dataset.prompt;
+        toggleAISendBtn();
+        sendAIMessage();
+      });
+    });
+    return true;
+  }
+
+  typingEl.remove();
+  appendAIMessage('assistant', `<strong>${nextStep.question}</strong>`);
+  return true;
 }
 
 function callAIAgent(userText) {
