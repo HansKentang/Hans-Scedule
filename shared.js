@@ -1494,7 +1494,7 @@ function renderAIUsage() {
   if (aiUsage.totalAPICalls === 0 && aiUsage.chatMessagesSent === 0) {
     dom.settingsAIUsage.innerHTML = `<div class="ai-usage-empty">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
+        <rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/>
       </svg>
       <span>No AI usage yet. Start a chat or use the command palette!</span>
     </div>`;
@@ -1852,6 +1852,7 @@ function openSettingsDrawer() {
   try { renderCardColorsInSettings(); } catch (e) { console.warn('drawer: renderCardColorsInSettings', e); }
   try { renderImageManagerInSettings(); } catch (e) { console.warn('drawer: renderImageManagerInSettings', e); }
   try { renderBubbleConfigInSettings(); } catch (e) { console.warn('drawer: renderBubbleConfigInSettings', e); }
+  try { renderChickBotProfileInSettings(); } catch (e) { console.warn('drawer: renderChickBotProfileInSettings', e); }
   overlay.classList.remove('hidden');
   drawer.classList.remove('hidden');
   requestAnimationFrame(() => {
@@ -1887,6 +1888,18 @@ function handleSettingsSubmit(e) {
   saveApiProvider(provider);
   try { localStorage.setItem('haven-schedule-model', model); } catch (e) { /* ignore */ }
   saveRoutine(routine);
+  // Save ChickBot profile from settings
+  const cbName = document.getElementById('cb-name-settings')?.value?.trim();
+  if (cbName) {
+    saveChickBotProfile({
+      name: cbName,
+      pronouns: document.getElementById('cb-pronouns-settings')?.value?.trim() || '',
+      occupation: document.getElementById('cb-occupation-settings')?.value?.trim() || '',
+      goals: document.getElementById('cb-goals-settings')?.value?.trim() || '',
+      routines: document.getElementById('cb-routines-settings')?.value?.trim() || '',
+      preferences: document.getElementById('cb-preferences-settings')?.value?.trim() || ''
+    });
+  }
   updateSettingsKeyStatus();
   // Save bubble config from settings form
   const bubbleConfig = {};
@@ -3472,7 +3485,8 @@ function buildChickBotProfileSection() {
 
 // ─── ChickBot Onboarding Q&A ──────────────────────────
 const ONBOARDING_STEPS = [
-  { key: 'situation', question: "Are you currently in school, working, or both?", required: true },
+  { key: 'name', question: "What's your name?", required: true },
+  { key: 'situation', question: "Are you currently in school, working, or both?", required: false },
   { key: 'break', question: "Do you have a holiday or break right now?", required: false },
   { key: 'hours', question: "What time do you usually start and end your day?", required: false },
   { key: 'commitments', question: "Any regular commitments I should know about? (e.g. classes, meetings, workouts)", required: false },
@@ -3507,7 +3521,7 @@ function processOnboardingStep(userText, typingEl) {
   const nextStep = ONBOARDING_STEPS[onboardingState.step];
   if (!nextStep) {
     const profile = {
-      name: onboardingState.profile.situation || '',
+      name: onboardingState.profile.name || '',
       pronouns: '',
       occupation: onboardingState.profile.situation || '',
       goals: onboardingState.profile.priorities || '',
@@ -3517,7 +3531,7 @@ function processOnboardingStep(userText, typingEl) {
     saveChickBotProfile(profile);
     onboardingState = null;
     typingEl.remove();
-    const msg = `<p>Got it! I'll keep all of that in mind.</p>
+    const msg = `<p>Thanks, <strong>${escapeHtml(profile.name)}</strong>! I'll keep all of that in mind.</p>
       <p>What would you like to do now?</p>
       <div class="ai-suggestions">
         <button class="ai-chip" data-prompt="What does my week look like?">What does my week look like?</button>
@@ -3539,6 +3553,32 @@ function processOnboardingStep(userText, typingEl) {
   typingEl.remove();
   appendAIMessage('assistant', `<strong>${nextStep.question}</strong>`);
   return true;
+}
+
+function renderChickBotProfileInSettings() {
+  const profile = getChickBotProfile();
+  const nameEl = document.getElementById('cb-name-settings');
+  const pronounsEl = document.getElementById('cb-pronouns-settings');
+  const occupationEl = document.getElementById('cb-occupation-settings');
+  const goalsEl = document.getElementById('cb-goals-settings');
+  const routinesEl = document.getElementById('cb-routines-settings');
+  const preferencesEl = document.getElementById('cb-preferences-settings');
+  if (!nameEl) return;
+  if (profile) {
+    nameEl.value = profile.name || '';
+    pronounsEl.value = profile.pronouns || '';
+    occupationEl.value = profile.occupation || '';
+    goalsEl.value = profile.goals || '';
+    routinesEl.value = profile.routines || '';
+    preferencesEl.value = profile.preferences || '';
+  } else {
+    nameEl.value = '';
+    pronounsEl.value = '';
+    occupationEl.value = '';
+    goalsEl.value = '';
+    routinesEl.value = '';
+    preferencesEl.value = '';
+  }
 }
 
 function callAIAgent(userText) {
