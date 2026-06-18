@@ -933,25 +933,20 @@ function formatDuration(mins) {
 function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
-    var _imgs = {};
-    if (state.images) {
-      for (var _k of Object.keys(state.images)) { if (state.images[_k]) _imgs[_k] = state.images[_k]; }
-    }
-    // Only persist custom images in settings (not defaults) to avoid localStorage quota pressure
+    // Persist each custom image to its own localStorage key (single source of truth)
     var _customImgs = {};
-    for (var _ck of Object.keys(_imgs)) { if (isCustomImage(_ck, _imgs[_ck])) _customImgs[_ck] = _imgs[_ck]; }
+    if (state.images) {
+      for (var _ck of Object.keys(state.images)) { if (isCustomImage(_ck, state.images[_ck])) _customImgs[_ck] = state.images[_ck]; }
+    }
+    for (var _ck2 of Object.keys(_customImgs)) {
+      try { localStorage.setItem('haven-image-' + _ck2, _customImgs[_ck2]); } catch(e) { /* skip */ }
+    }
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({
       showWeekends: state.showWeekends,
       showCompleted: state.showCompleted,
       darkMode: state.darkMode,
-      accessBubbles: state.accessBubbles,
-      images: _customImgs,
+      accessBubbles: state.accessBubbles
     }));
-    console.warn('[img] saveState wrote', Object.keys(_customImgs).length, 'custom images to settings');
-    // Persist each custom image to its own localStorage key for reliable restore on reload
-    for (var _ck2 of Object.keys(_customImgs)) {
-      try { localStorage.setItem('haven-image-' + _ck2, _customImgs[_ck2]); } catch(e) { /* skip */ }
-    }
   } catch (e) { console.warn('[img] saveState failed:', e); }
 }
 
@@ -966,8 +961,7 @@ function loadState() {
       state.showCompleted = s.showCompleted ?? true;
       state.darkMode = s.darkMode !== undefined ? s.darkMode : null;
       state.accessBubbles = s.accessBubbles || {};
-      // Save settings.images for restore after loadImages
-      window._settingsImages = s.images && typeof s.images === 'object' ? s.images : null;
+      // Images are restored via haven-image-* keys directly
     }
     const key = localStorage.getItem(API_KEY_STORAGE);
     if (key) state.apiKey = key;
@@ -978,15 +972,6 @@ function loadState() {
     loadCardColors();
     loadUserProfile();
     loadImages();
-    // Restore images from settings as fallback (fills missing keys only)
-    if (window._settingsImages) {
-      var _filled = 0;
-      for (var _k of Object.keys(window._settingsImages)) {
-        if (window._settingsImages[_k]) { state.images[_k] = window._settingsImages[_k]; _filled++; }
-      }
-      console.warn('[img] loadState settings fill-in:', _filled, 'keys restored from settings');
-      window._settingsImages = null;
-    }
     // Clean up deprecated ai mode storage
     try { localStorage.removeItem('haven-schedule-ai-mode'); } catch (e) { /* ignore */ }
   } catch (e) { console.warn('[img] loadState failed:', e); /* fresh start */ }
@@ -1065,12 +1050,7 @@ function saveImages() {
 
 function getImage(id) {
   if (!state.images) loadImages();
-  // TRY DIRECT KEY FIRST — this is the single source of truth for custom images
-  try {
-    var _directUrl = localStorage.getItem('haven-image-' + id);
-    if (_directUrl) return _directUrl;
-  } catch(e) { console.warn('[img] getImage direct key read failed for', id, ':', e); }
-  // Fallback to state.images (or defaults)
+  // Use state.images as the single in-memory source of truth
   var url = state.images && state.images[id];
   if (url) return url;
   return DEFAULT_IMAGES[id] || '';
@@ -1920,15 +1900,16 @@ function handleSettingsSubmit(e) {
     if (Object.keys(overrides).length) bubbleConfig[key] = overrides;
   });
   state.accessBubbles = bubbleConfig;
-  // Preserve images when saving settings (only custom ones — not defaults)
-  var _imgsForSettings = {};
+  // Persist custom images to individual haven-image-* keys (single source of truth)
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles }));
+  } catch (e) {}
   if (state.images) {
-    for (var _k of Object.keys(state.images)) { if (state.images[_k] && isCustomImage(_k, state.images[_k])) _imgsForSettings[_k] = state.images[_k]; }
-  }
-  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles, images: _imgsForSettings })); } catch (e) {}
-  // Persist each custom image to its own localStorage key for reliable restore
-  for (var _sk of Object.keys(_imgsForSettings)) {
-    try { localStorage.setItem('haven-image-' + _sk, _imgsForSettings[_sk]); } catch(e) { /* skip */ }
+    for (var _sk of Object.keys(state.images)) {
+      if (state.images[_sk] && isCustomImage(_sk, state.images[_sk])) {
+        try { localStorage.setItem('haven-image-' + _sk, state.images[_sk]); } catch(e) { /* skip */ }
+      }
+    }
   }
   applyAccessHubConfig();
   showToast('Settings saved', 'success');
@@ -3003,11 +2984,11 @@ function showAIChat() {
     dom.aiChatMessages.innerHTML = `<div class="ai-welcome">
       <div class="ai-welcome-icon">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/>
+          <rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/>
         </svg>
       </div>
-      <h3>Welcome to Havën AI</h3>
-      <p>Your personal schedule assistant. Get started by adding your API key in Settings.</p>
+      <h3>Welcome to ChickBot</h3>
+      <p>Your smart schedule buddy. Get started by adding your API key in Settings.</p>
       <button class="btn btn-primary" id="aiSetupBtn">Open Settings</button>
       <p class="ai-welcome-hint">Need a key? Get a free one at <a href="${pLink.url}" target="_blank" class="form-link">${pLink.text}</a>. Without it, basic parsing still works in the command palette (${shortcutDisplay('K')}).</p>
     </div>`;
@@ -3024,9 +3005,81 @@ function showAIChat() {
         if (msg.role === 'user') appendAIMessage('user', msg.text);
         else if (msg.role === 'assistant') appendAIMessage('assistant', msg.text);
       });
+    } else if (!getChickBotProfile()) {
+      dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
+        <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
+        <div class="ai-bubble">
+          <p>Hi! I'm <strong>ChickBot</strong>, your personal schedule assistant!</p>
+          <p>Before we get started, I'd love to get to know you a bit so I can give you better suggestions.</p>
+          <div class="cb-onboard">
+            <div class="form-group">
+              <label>What's your name?</label>
+              <input type="text" id="cb-name" placeholder="e.g. Alex" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Your pronouns (optional)</label>
+              <input type="text" id="cb-pronouns" placeholder="e.g. they/them" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>What do you do? (optional)</label>
+              <input type="text" id="cb-occupation" placeholder="e.g. Student, Designer" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Your top goals (up to 3)</label>
+              <input type="text" id="cb-goal1" placeholder="e.g. Exercise more" class="form-input">
+              <input type="text" id="cb-goal2" placeholder="e.g. Learn guitar" class="form-input">
+              <input type="text" id="cb-goal3" placeholder="e.g. Read 20 books" class="form-input">
+            </div>
+            <div class="form-group">
+              <label>Any routines you'd like help with?</label>
+              <textarea id="cb-routines" placeholder="e.g. I usually work out at 6pm, study at 8pm..." class="form-input" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Other preferences?</label>
+              <textarea id="cb-preferences" placeholder="e.g. I prefer morning deep work, block out lunch 12-1" class="form-input" rows="2"></textarea>
+            </div>
+            <button class="btn btn-primary" id="cb-save-profile">Save & Start Chatting</button>
+          </div>
+        </div>
+      </div>`;
+      aiChatHistory = [];
+      document.getElementById('cb-save-profile')?.addEventListener('click', () => {
+        const profile = {
+          name: document.getElementById('cb-name')?.value.trim() || '',
+          pronouns: document.getElementById('cb-pronouns')?.value.trim() || '',
+          occupation: document.getElementById('cb-occupation')?.value.trim() || '',
+          goal1: document.getElementById('cb-goal1')?.value.trim() || '',
+          goal2: document.getElementById('cb-goal2')?.value.trim() || '',
+          goal3: document.getElementById('cb-goal3')?.value.trim() || '',
+          routines: document.getElementById('cb-routines')?.value.trim() || '',
+          preferences: document.getElementById('cb-preferences')?.value.trim() || ''
+        };
+        if (!profile.name) { document.getElementById('cb-name')?.focus(); return; }
+        saveChickBotProfile(profile);
+        dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
+          <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
+          <div class="ai-bubble">
+            <p>Nice to meet you, <strong>${escapeHtml(profile.name)}</strong>!</p>
+            <p>I'll keep your preferences in mind from now on. Feel free to ask me anything about your schedule.</p>
+            <div class="ai-suggestions">
+              <button class="ai-chip" data-prompt="What does my week look like?">What does my week look like?</button>
+              <button class="ai-chip" data-prompt="Create a deep work session tomorrow at 9am for 2 hours">Schedule deep work tomorrow</button>
+              <button class="ai-chip" data-prompt="Find a 1 hour gap for a meeting today">Find a gap today</button>
+              <button class="ai-chip" data-prompt="How many tasks do I have this week?">Task count this week</button>
+            </div>
+          </div>
+        </div>`;
+        dom.aiChatMessages.querySelectorAll('.ai-chip').forEach(chip => {
+          chip.addEventListener('click', () => {
+            dom.aiChatInput.value = chip.dataset.prompt;
+            toggleAISendBtn();
+            sendAIMessage();
+          });
+        });
+      });
     } else {
       dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
-        <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1010 10 10 10 0 00-10-10z"/><path d="M12 6v6l4 2"/></svg></div>
+        <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
         <div class="ai-bubble">
           <p>Hi! Ask me anything about your schedule or tell me what to do.</p>
           <div class="ai-suggestions">
@@ -3448,6 +3501,37 @@ function appendAIMessage(role, html) {
   dom.aiChatMessages.scrollTop = dom.aiChatMessages.scrollHeight;
 }
 
+// ─── ChickBot Profile System ─────────────────────────────
+const CHICKBOT_PROFILE_KEY = 'chickbot_profile';
+
+function getChickBotProfile() {
+  try {
+    const data = localStorage.getItem(CHICKBOT_PROFILE_KEY);
+    return data ? JSON.parse(data) : null;
+  } catch (e) { return null; }
+}
+
+function saveChickBotProfile(profile) {
+  try {
+    localStorage.setItem(CHICKBOT_PROFILE_KEY, JSON.stringify(profile));
+  } catch (e) { /* ignore */ }
+}
+
+function buildChickBotProfileSection() {
+  const profile = getChickBotProfile();
+  if (!profile || !profile.name) return '';
+  const lines = [
+    'ABOUT YOU:',
+    `- Name: ${profile.name}`,
+    `- Pronouns: ${profile.pronouns || 'not specified'}`,
+    `- Occupation: ${profile.occupation || 'not specified'}`,
+    `- Goals: ${[profile.goal1, profile.goal2, profile.goal3].filter(Boolean).join(', ') || 'not specified'}`,
+    `- Routines: ${profile.routines || 'not specified'}`,
+    `- Preferences: ${profile.preferences || 'not specified'}`
+  ];
+  return '\n' + lines.join('\n');
+}
+
 function callAIAgent(userText) {
   const today = formatDate(new Date());
   const weekStart = getMonday(new Date());
@@ -3537,9 +3621,11 @@ ${TAG_ORDER.map(t => `- ${TAG_LABELS[t]}: ${tagSummary[t].count} tasks, ${format
 
   const fileAwareUserText = userText + fileContext;
 
-  const systemPrompt = `You are Havën AI, a smart schedule assistant integrated into a time-blocking calendar app called Havën Schedule.
+  const profileSection = buildChickBotProfileSection();
 
-Today's date is ${today}. Current time: ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}. The user's timezone is ${Intl.DateTimeFormat().resolvedOptions().timeZone}.${learningContext}
+  const systemPrompt = `You are ChickBot, a friendly smart-schedule assistant integrated into Havën Schedule.
+
+Today's date is ${today}. Current time: ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}. The user's timezone is ${Intl.DateTimeFormat().resolvedOptions().timeZone}.${learningContext}${profileSection}
 
 CURRENT SCHEDULE CONTEXT:
 ${context}
