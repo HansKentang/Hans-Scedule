@@ -914,7 +914,7 @@
     // ─── INIT ────────────────────────────────────────────────
 
     function init() {
-      loadImages();
+      loadState();
       const dateEl = document.getElementById('finDate');
       if (dateEl) dateEl.value = new Date().toISOString().slice(0,10);
       document.getElementById('finAddBtn').addEventListener('click', addTransaction);
@@ -1214,13 +1214,6 @@
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
     }
   </script>
-  <script src="shared.js"></script>
-
-  <script src="hub-visuals.js"></script>
-  <script>
-    document.getElementById('bcVisualsBtn')?.addEventListener('click', toggleEditMode);
-  </script>
-
   <!-- ─── Spotify Settings Modal ──────────────── -->
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
     <div class="sp-modal">
