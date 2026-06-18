@@ -981,7 +981,11 @@
         </div>
         <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()">
         <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
-        <div class="image-picker-actions">
+      <div class="img-fit-row" id="imagePickerFitRow">
+        <span class="img-fit-label">Fit:</span>
+        <div class="img-fit-options" id="imagePickerFitOptions"></div>
+      </div>
+      <div class="image-picker-actions">
           <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
           <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
           <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>

@@ -423,12 +423,14 @@ function renderHubBento() {
         </div>`;
       case 'images':
         const imgId = item.imageId || 'hub-tulips';
-        const imgUrl = getImage(imgId);
+        const imgInfo = typeof getImageWithStyle === 'function' ? getImageWithStyle(imgId) : { url: getImage(imgId), fit: 'cover' };
+        const imgUrl = imgInfo.url;
+        const imgFit = imgInfo.fit;
         const hasImg = !!imgUrl;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:var(--gutter);border:1px solid var(--border-color);background:var(--surface-container)">
           ${editUI}
           <div class="bento-img-wrap" style="width:100%;height:100%" data-img-picker="${imgId}">
-            <img data-image-id="${imgId}" src="${e(imgUrl)}" alt="" style="width:100%;height:100%;object-fit:cover;display:${hasImg ? 'block' : 'none'}">
+            <img data-image-id="${imgId}" src="${e(imgUrl)}" alt="" style="width:100%;height:100%;object-fit:${imgFit};display:${hasImg ? 'block' : 'none'}">
             <div class="bento-img-placeholder" style="display:${hasImg ? 'none' : 'flex'}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               <span>Click to add photo</span>
@@ -642,16 +644,20 @@ function renderHubBento() {
           return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
             ${editUI}
             <div class="spotify-widget">
-              <iframe src="${e(spotUrl)}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media" style="display:block"></iframe>
+              <div class="spotify-header">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+                <span>${_spActivePlaylist.name}</span>
+              </div>
+              <iframe src="${e(spotUrl)}" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media" style="display:block;flex:1;min-height:80px;border-radius:0 0 8px 8px"></iframe>
             </div>
           </div>`;
         } else {
           return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:var(--gutter);border:1px solid var(--border-color)">
             ${editUI}
             <div class="spotify-widget spotify-empty">
-              <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;opacity:0.4"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
-              <span>No playlist linked</span>
-              <span class="spotify-hint">Add playlists via sidebar Spotify</span>
+              <svg viewBox="0 0 24 24" fill="currentColor" style="width:24px;height:24px;opacity:0.25"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+              <span style="font-size:0.75rem">No playlist linked</span>
+              <span class="spotify-hint">Add playlists via sidebar</span>
             </div>
           </div>`;
         }
@@ -1249,31 +1255,6 @@ function showHubAddPopup(e) {
       Add to Canvas
     </div>
 
-    <div class="hub-add-layouts">
-      <button class="hub-add-layout-btn" data-layout="focus" title="Goals + Priorities + To-Dos">
-        <span class="lcon">${bubbleTypeIcon('goals')}</span>
-        <span class="llabel">Focus Dashboard</span>
-        <span class="ldesc">Goals, priorities &amp; todos</span>
-      </button>
-      <button class="hub-add-layout-btn" data-layout="tracker" title="Habits + Progress + To-Dos">
-        <span class="lcon">${bubbleTypeIcon('habits')}</span>
-        <span class="llabel">Daily Tracker</span>
-        <span class="ldesc">Habits, progress &amp; journal</span>
-      </button>
-      <button class="hub-add-layout-btn" data-layout="creative" title="Images + Quote + Notes">
-        <span class="lcon">${bubbleTypeIcon('images')}</span>
-        <span class="llabel">Creative Board</span>
-        <span class="ldesc">Images, quotes &amp; notes</span>
-      </button>
-      <button class="hub-add-layout-btn" data-layout="all" title="All bubble types">
-        <span class="lcon">${bubbleTypeIcon('todos')}</span>
-        <span class="llabel">Everything</span>
-        <span class="ldesc">All 10 bubble types</span>
-      </button>
-    </div>
-
-    <div class="add-divider"></div>
-
     <div class="add-list">
       ${types.map(t => {
         const disabled = t !== 'images' && has(t);
@@ -1292,19 +1273,6 @@ function showHubAddPopup(e) {
   popup.querySelectorAll('.add-row:not([disabled])').forEach(el => {
     el.addEventListener('click', () => {
       addBubbleTypes([el.dataset.btype]);
-      popup.remove();
-      overlay.remove();
-    });
-  });
-  popup.querySelectorAll('.hub-add-layout-btn').forEach(el => {
-    el.addEventListener('click', () => {
-      const map = {
-        focus: ['goals','priorities','todos','clock'],
-        tracker: ['habits','progress','todos','text'],
-        creative: ['images','quote','notes','calendar'],
-        all: ['goals','images','priorities','quote','todos','text','habits','notes','links','progress','clock','weather','calendar','timer','pomodoro','spotify']
-      };
-      addBubbleTypes(map[el.dataset.layout]);
       popup.remove();
       overlay.remove();
     });
@@ -1774,7 +1742,7 @@ if (document.getElementById('hubAccessHub')) {
       var ifr = w.querySelector('iframe');
       if (ifr && _active) {
         ifr.src = 'https://open.spotify.com/embed/playlist/' + _active.id + '?utm_source=generator';
-      } else if (w.classList.contains('spotify-empty') && _active) {
+      } else if (w.querySelector('.spotify-empty') && _active) {
         // Had empty state, now has playlist — re-render to get the iframe
         renderHubBento();
       } else if (ifr && !_active) {
