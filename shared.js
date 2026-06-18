@@ -1024,6 +1024,39 @@ function loadImages() {
   try { restoreDirectImageKeys(); } catch(e) { /* skip */ }
 }
 
+// --- APPLY IMAGES TO DOM ---
+function applyImages() {
+  document.querySelectorAll("img[data-image-id]").forEach(function(el) {
+    var _id = el.dataset.imageId;
+    if (_id) {
+      el.src = getImage(_id) || "";
+      el.style.display = el.src ? "block" : "none";
+    }
+  });
+}
+
+// --- APPLY IMAGES TO DOM ---
+function applyImages() {
+  document.querySelectorAll("img[data-image-id]").forEach(function(el) {
+    var _id = el.dataset.imageId;
+    if (_id) {
+      el.src = getImage(_id) || "";
+      el.style.display = el.src ? "block" : "none";
+    }
+  });
+}
+
+// --- APPLY IMAGES TO DOM ---
+function applyImages() {
+  document.querySelectorAll("img[data-image-id]").forEach(function(el) {
+    var _id = el.dataset.imageId;
+    if (_id) {
+      el.src = getImage(_id) || "";
+      el.style.display = el.src ? "block" : "none";
+    }
+  });
+}
+
 function restoreDirectImageKeys() {
   var _found = 0;
   for (var _i = 0; _i < localStorage.length; _i++) {
@@ -1061,7 +1094,10 @@ function getImage(id) {
 function setImage(id, url) {
   if (!state.images) loadImages();
   state.images[id] = url;
-  try { localStorage.setItem('haven-image-' + id, url); } catch(e) { /* skip */ }
+  try { localStorage.setItem('haven-image-' + id, url); } catch(e) {
+    console.warn('[img] localStorage quota may be exceeded for image:', id, e);
+    if (typeof showToast === 'function') showToast('Could not save image: localStorage full. Try a smaller image.', 'error', 4000);
+  }
   if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
     var _item = hubContent.bentoLayout.find(function(i){return i.imageId === id;});
     if (_item) _item._imgUrl = url;
@@ -1141,6 +1177,90 @@ function closeImagePicker() {
   _pickerImageId = null;
 }
 
+// --- IMAGE COMPRESSION ---
+function resizeImageDataUrl(dataUrl, maxWidth, maxHeight, quality) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w <= maxWidth && h <= maxHeight) {
+        resolve(dataUrl);
+        return;
+      }
+      var ratio = Math.min(maxWidth / w, maxHeight / h, 1);
+      var cw = Math.round(w * ratio);
+      var ch = Math.round(h * ratio);
+      var canvas = document.createElement("canvas");
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, cw, ch);
+      var resized = canvas.toDataURL("image/jpeg", quality || 0.82);
+      resolve(resized);
+    };
+    img.onerror = function() { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
+// --- IMAGE COMPRESSION ---
+function resizeImageDataUrl(dataUrl, maxWidth, maxHeight, quality) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w <= maxWidth && h <= maxHeight) {
+        resolve(dataUrl);
+        return;
+      }
+      var ratio = Math.min(maxWidth / w, maxHeight / h, 1);
+      var cw = Math.round(w * ratio);
+      var ch = Math.round(h * ratio);
+      var canvas = document.createElement("canvas");
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, cw, ch);
+      var resized = canvas.toDataURL("image/jpeg", quality || 0.82);
+      resolve(resized);
+    };
+    img.onerror = function() { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
+// --- IMAGE COMPRESSION ---
+function resizeImageDataUrl(dataUrl, maxWidth, maxHeight, quality) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w <= maxWidth && h <= maxHeight) {
+        resolve(dataUrl);
+        return;
+      }
+      var ratio = Math.min(maxWidth / w, maxHeight / h, 1);
+      var cw = Math.round(w * ratio);
+      var ch = Math.round(h * ratio);
+      var canvas = document.createElement("canvas");
+      canvas.width = cw;
+      canvas.height = ch;
+      var ctx = canvas.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, cw, ch);
+      var resized = canvas.toDataURL("image/jpeg", quality || 0.82);
+      resolve(resized);
+    };
+    img.onerror = function() { resolve(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
 function handleImagePickerPaste(e) {
   const status = document.getElementById('imagePickerStatus');
   const preview = document.getElementById('imagePickerPreview');
@@ -1156,20 +1276,24 @@ function handleImagePickerPaste(e) {
         if (status) status.textContent = 'Image too large (max 2MB)';
         return;
       }
+      if (status) { status.textContent = "Processing image..."; status.style.color = "var(--text-tertiary)"; }
       const reader = new FileReader();
       reader.onload = function(ev) {
-        const dataUrl = ev.target.result;
-        if (preview) preview.src = dataUrl;
-        if (preview) preview.style.display = 'block';
-        if (status) { status.textContent = 'Image loaded — click Save to apply'; status.style.color = 'var(--primary)'; }
-        if (preview) preview.dataset.pasted = dataUrl;
-        // Clear URL input so pasted image takes priority in handleImagePickerSave
-        var _urlInput = document.getElementById('imagePickerUrl');
-        if (_urlInput) _urlInput.value = '';        
-
+        var fullDataUrl = ev.target.result;
+        // Resize to max 800px to keep localStorage usage manageable
+        resizeImageDataUrl(fullDataUrl, 800, 800, 0.78).then(function(resizedUrl) {
+          if (preview) preview.src = resizedUrl;
+          if (preview) preview.style.display = "block";
+          if (preview) preview.dataset.pasted = resizedUrl;
+          if (status) { status.textContent = "Image loaded — click Save to apply"; status.style.color = "var(--primary)"; }
+          // Clear URL input so pasted image takes priority in handleImagePickerSave
+          var _urlInput = document.getElementById("imagePickerUrl");
+          if (_urlInput) _urlInput.value = "";
+        });
       };
       reader.readAsDataURL(blob);
       return;
+    }      return;
     }
   }
 }

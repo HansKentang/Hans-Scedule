@@ -138,6 +138,8 @@ function normalizeBentoLayout(layout, parent) {
         const aspectRatios = {square:1, portrait:0.75, landscape:1.333, wide:1.778, tall:0.5625};
         const ratio = aspectRatios[oldAspect] || 1.333;
         item.h = snap(item.w / ratio);
+      } else if (item.t === 'spotify') {
+        item.h = snap(182);
       } else {
         item.h = snap(280);
       }
@@ -960,7 +962,8 @@ function setupBubbleDragDrop() {
 }
 
 function snapSpotifyHeight(h) {
-  var heights = [80, 152, 232, 352];
+  // bubble heights = iframe embed heights + 30px header: 80+30, 152+30, 232+30, 352+30
+  var heights = [110, 182, 262, 382];
   return heights.reduce(function(prev, curr) { return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev; });
 }
 
