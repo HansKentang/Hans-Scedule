@@ -1583,6 +1583,492 @@ html.dark .hub-hero-decor {
   color: var(--text-primary);
   font-weight: 600;
 }
+
+/* ════════════════════════════════════════════════════════════
+   ENHANCED SLEEP FEATURES (tabs, history, insights, targets)
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── Sleep Tabs ──────────────────────────────────────── */
+.sleep-tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.sleep-tab {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all var(--t-fast);
+  font-family: var(--font-family);
+}
+.sleep-tab:hover {
+  color: var(--text-primary);
+  background: var(--accent-soft);
+}
+.sleep-tab.active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.sleep-tab-content {
+  display: none;
+  animation: slideUp 250ms var(--curve);
+}
+.sleep-tab-content.active {
+  display: block;
+}
+
+/* ─── Enhanced Summary ───────────────────────────────── */
+.sleep-enhanced-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.sleep-enhanced-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-3) var(--space-2);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition: all var(--t-fast);
+}
+.sleep-enhanced-stat:hover {
+  border-color: var(--border-color);
+}
+.sleep-enhanced-stat .val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.sleep-enhanced-stat .lbl {
+  font-size: 0.55rem;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin-top: 3px;
+  text-align: center;
+  line-height: 1.3;
+}
+.sleep-enhanced-stat .sub {
+  font-size: 0.55rem;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+  opacity: 0.7;
+}
+.sleep-enhanced-stat .indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 4px;
+}
+.sleep-enhanced-stat .indicator.on-track { background: #10b981; }
+.sleep-enhanced-stat .indicator.behind { background: #ef4444; }
+.sleep-enhanced-stat .indicator.neutral { background: var(--text-tertiary); opacity: 0.4; }
+.sleep-enhanced-stat.primary-stat {
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary));
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
+}
+.sleep-enhanced-stat.primary-stat .val {
+  color: var(--accent);
+}
+
+/* ─── History List ────────────────────────────────────── */
+.sleep-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.sleep-history-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  transition: background var(--t-fast);
+  cursor: default;
+  animation: slideUp 200ms var(--curve) both;
+}
+.sleep-history-item:hover {
+  background: var(--accent-soft);
+}
+.sleep-history-date {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 44px;
+  font-family: var(--font-mono);
+}
+.sleep-history-dur {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 38px;
+}
+.sleep-history-detail {
+  flex: 1;
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.sleep-history-detail .time-range {
+  font-family: var(--font-mono);
+}
+.sleep-history-detail .q-badge {
+  padding: 0 4px;
+  border-radius: 2px;
+  font-size: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.sleep-history-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+.sleep-history-item:hover .sleep-history-actions {
+  opacity: 1;
+}
+.sleep-history-actions button {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 0.7rem;
+  transition: all var(--t-fast);
+}
+.sleep-history-actions button:hover {
+  color: var(--text-primary);
+  background: var(--surface-container-high);
+}
+.sleep-history-actions button.del:hover {
+  color: #ef4444;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
+.sleep-history-empty {
+  text-align: center;
+  padding: var(--space-5);
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+
+/* ─── Insights ────────────────────────────────────────── */
+.sleep-insights-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.sleep-insight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  animation: slideUp 250ms var(--curve) both;
+}
+.sleep-insight-card:hover {
+  border-color: var(--border-color);
+}
+.sleep-insight-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.sleep-insight-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.sleep-insight-text strong {
+  color: var(--text-primary);
+}
+
+/* ─── Targets ─────────────────────────────────────────── */
+.sleep-targets-section {
+  margin-bottom: var(--space-4);
+}
+.sleep-targets-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.sleep-target-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sleep-target-field label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+.sleep-target-field input {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  outline: none;
+  transition: border-color var(--t-fast);
+}
+.sleep-target-field input:focus {
+  border-color: var(--border-focus);
+}
+.sleep-target-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.sleep-target-actions .btn {
+  font-size: 0.68rem;
+  padding: var(--space-1) var(--space-3);
+}
+.sleep-target-status {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+}
+.sleep-target-status.on-track {
+  color: #10b981;
+}
+.sleep-target-status.behind {
+  color: #ef4444;
+}
+
+/* ─── Wind-down Reminder Toggle ──────────────────────── */
+.sleep-winddown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+.sleep-winddown-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sleep-winddown-info .label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.sleep-winddown-info .hint {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+}
+.sleep-winddown-switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.sleep-winddown-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.sleep-winddown-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--surface-container-high);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.sleep-winddown-slider::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  transition: all var(--t-fast);
+}
+.sleep-winddown-switch input:checked + .sleep-winddown-slider {
+  background: var(--accent);
+}
+.sleep-winddown-switch input:checked + .sleep-winddown-slider::before {
+  transform: translateX(16px);
+  background: var(--text-inverse);
+}
+
+/* ─── Consistency Gauge (ring) ───────────────────────── */
+.sleep-consistency-gauge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+.sleep-gauge-ring {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+.sleep-gauge-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.sleep-gauge-ring .bg {
+  fill: none;
+  stroke: var(--surface-container-high);
+  stroke-width: 5;
+}
+.sleep-gauge-ring .fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s var(--curve);
+}
+.sleep-gauge-score {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.sleep-gauge-info {
+  flex: 1;
+  min-width: 0;
+}
+.sleep-gauge-info .label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+.sleep-gauge-info .detail {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ─── Sleep Debt Display ─────────────────────────────── */
+.sleep-debt-display {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  margin-bottom: var(--space-3);
+}
+.sleep-debt-display.surplus {
+  background: color-mix(in srgb, #10b981 8%, transparent);
+  border: 1px solid color-mix(in srgb, #10b981 20%, transparent);
+  color: #10b981;
+}
+.sleep-debt-display.deficit {
+  background: color-mix(in srgb, #ef4444 8%, transparent);
+  border: 1px solid color-mix(in srgb, #ef4444 20%, transparent);
+  color: #ef4444;
+}
+.sleep-debt-display.neutral {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+}
+.sleep-debt-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Environment Factors (modal) ────────────────────── */
+.sleep-env-factors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+.sleep-env-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  font-weight: 500;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  font-family: var(--font-family);
+}
+.sleep-env-chip:hover {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+.sleep-env-chip.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+}
+
+/* ─── Sleep Env Row (in modal) ───────────────────────── */
+.sleep-env-row {
+  margin-bottom: var(--space-2);
+}
+.sleep-env-row label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: block;
+  margin-bottom: var(--space-1);
+}
 .hub-snav-item .snav-icon {
   width: 18px; height: 18px; display: flex;
   align-items: center; justify-content: center;
@@ -1612,40 +2098,48 @@ html.dark .hub-hero-decor {
 
 /* ─── SIDEBAR IMAGES SECTION ──────────────────────── */
 .hub-sidebar-images {
-  padding: var(--space-2) var(--space-2);
+  padding: var(--space-1) var(--space-2);
   display: flex; flex-direction: column; gap: var(--space-1);
-  border-top: 1px solid var(--border-subtle);
+  max-height: 300px; overflow-y: auto;
 }
 .hub-sidebar-image-item {
-  display: flex; align-items: center; gap: var(--space-2);
-  padding: 3px var(--space-2);
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background var(--t-fast);
   position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity var(--t-fast);
+  line-height: 0;
 }
 .hub-sidebar-image-item:hover {
-  background: var(--accent-soft);
+  opacity: 0.85;
 }
 .hub-sidebar-image-item img {
-  width: 24px; height: 24px; border-radius: 4px;
-  object-fit: cover; flex-shrink: 0;
+  max-width: 100%;
+  max-height: 250px;
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  background: var(--bg-surface);
 }
 .hub-sidebar-image-label {
-  font-size: 0.72rem; color: var(--text-secondary);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  display: none;
 }
 .hub-sidebar-image-remove {
-  position: absolute; top: 0; right: 0;
-  width: 18px; height: 18px;
+  position: absolute; top: 4px; right: 4px;
+  width: 22px; height: 22px;
   display: flex; align-items: center; justify-content: center;
-  border: none; background: transparent;
-  color: var(--text-tertiary); cursor: pointer;
-  font-size: 0.8rem; border-radius: 3px; opacity: 0.4;
+  border: none; background: rgba(0,0,0,0.5);
+  color: #fff; cursor: pointer;
+  font-size: 0.85rem; border-radius: 50%;
+  opacity: 0; transition: opacity 150ms ease; z-index: 2;
+}
+.hub-sidebar-image-item:hover .hub-sidebar-image-remove,
+html.sidebar-edit-mode .hub-sidebar-image-remove {
+  opacity: 1;
 }
 .hub-sidebar-image-remove:hover {
-  opacity: 1; color: #ef4444;
-  background: color-mix(in srgb, #ef4444 12%, transparent);
+  background: rgba(239,68,68,0.8);
 }
 .hub-sidebar-image-add {
   padding: 3px var(--space-2);
@@ -1718,6 +2212,39 @@ html.sidebar-edit-mode .hub-sidebar-footer button {
 }
 .sidebar-lightbox-close:hover {
   transform: scale(1.15);
+}
+
+/* ─── SIDEBAR IMAGE PASTE POPUP ───────────────────── */
+.sidebar-paste-popup {
+  padding: var(--space-2);
+  background: var(--surface-container);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  margin-top: var(--space-1);
+}
+.sidebar-paste-popup input {
+  width: 100%; box-sizing: border-box;
+  padding: 4px 6px; font-size: 0.72rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  outline: none;
+}
+.sidebar-paste-popup input:focus {
+  border-color: var(--primary);
+}
+.sidebar-paste-popup .hub-edit-popup-actions {
+  display: flex; gap: 4px; justify-content: flex-end;
+}
+.sidebar-paste-popup .hub-edit-popup-actions button {
+  padding: 2px 8px; font-size: 0.65rem;
+  border-radius: 4px; border: 1px solid var(--border-color);
+  background: var(--surface-container);
+  color: var(--text-secondary); cursor: pointer;
+}
+.sidebar-paste-popup .hub-edit-popup-actions .primary {
+  background: var(--primary); color: #fff; border-color: var(--primary);
 }
 /* Edit button in workspace header */
 #hubSidebarEditBtn {
@@ -5274,4 +5801,78 @@ html.light .hub-add-popup {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   font-weight: 600;
+}
+
+/* ─── SLEEP WEEK CHART (enhanced chart) ───────────────── */
+.sleep-chart-yaxis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-right: 4px;
+  font-size: 0.5rem;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  height: 100%;
+  opacity: 0.5;
+  flex-shrink: 0;
+  width: 20px;
+  padding-bottom: 16px;
+}
+.sleep-week-chart-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 6px;
+  flex: 1;
+  height: 100%;
+  position: relative;
+}
+.sleep-chart-target {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sleep-chart-target-line {
+  flex: 1;
+  height: 1px;
+  background: var(--text-tertiary);
+  opacity: 0.3;
+  border-top: 1px dashed var(--text-tertiary);
+}
+.sleep-chart-target-label {
+  font-size: 0.5rem;
+  color: var(--text-tertiary);
+  opacity: 0.5;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.sleep-week-bar.today .sleep-week-bar-fill {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.sleep-week-bar.today .sleep-week-bar-label {
+  color: var(--accent);
+  font-weight: 700;
+}
+.sleep-week-bar.no-data {
+  opacity: 0.35;
+}
+.sleep-week-bar-value {
+  font-size: 0.5rem;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  font-weight: 500;
+}
+.sleep-week-bar-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 1px;
 }

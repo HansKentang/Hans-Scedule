@@ -165,6 +165,248 @@ const SLEEP_QUALITY_LABELS = {
   5: 'Excellent',
 };
 
+// ─── SLEEP TARGETS ────────────────────────────────────────────
+const SLEEP_TARGET_KEY = 'haven-schedule-sleep-targets';
+
+function loadSleepTargets() {
+  try {
+    const data = localStorage.getItem(SLEEP_TARGET_KEY);
+    return data ? JSON.parse(data) : getDefaultSleepTargets();
+  } catch (e) {
+    return getDefaultSleepTargets();
+  }
+}
+
+function saveSleepTargets(targets) {
+  try {
+    localStorage.setItem(SLEEP_TARGET_KEY, JSON.stringify(targets));
+  } catch (e) { /* ignore */ }
+}
+
+function getDefaultSleepTargets() {
+  return {
+    targetBedtime: '23:00',
+    targetWakeTime: '07:00',
+    targetDuration: 480, // 8 hours in minutes
+    windDownReminder: false,
+    windDownReminderMins: 30,
+  };
+}
+
+// ─── SLEEP CONSISTENCY ────────────────────────────────────────
+function getSleepConsistencyScore(logs, daysBack) {
+  daysBack = daysBack || 7;
+  const now = new Date();
+  const recent = [];
+  for (let i = daysBack - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const ds = formatDate(d);
+    const log = getSleepLog(ds);
+    if (log) recent.push(log);
+  }
+  if (recent.length < 3) return null;
+
+  // Calculate variance in bedtimes (converted to minutes from midnight)
+  const bedMins = [];
+  const wakeMins = [];
+  const durs = [];
+  for (const log of recent) {
+    const [bh, bm] = log.bedtime.split(':').map(Number);
+    let bTotal = bh * 60 + bm;
+    if (bTotal < 720) bTotal += 1440; // normalize past midnight bedtimes
+    bedMins.push(bTotal);
+    const [wh, wm] = log.wakeTime.split(':').map(Number);
+    wakeMins.push(wh * 60 + wm);
+    durs.push(log.duration);
+  }
+
+  const bedStdDev = calculateStdDev(bedMins);
+  const wakeStdDev = calculateStdDev(wakeMins);
+  const durStdDev = calculateStdDev(durs);
+
+  // Score 0-100: lower variance = higher consistency
+  const bedScore = Math.max(0, 100 - bedStdDev * 2.5);
+  const wakeScore = Math.max(0, 100 - wakeStdDev * 2.5);
+  const durScore = Math.max(0, 100 - durStdDev);
+
+  const avgScore = Math.round((bedScore + wakeScore + durScore) / 3);
+  return {
+    score: avgScore,
+    bedVariance: Math.round(bedStdDev),
+    wakeVariance: Math.round(wakeStdDev),
+    durVariance: Math.round(durStdDev),
+    nightsLogged: recent.length
+  };
+}
+
+function calculateStdDev(values) {
+  const avg = values.reduce((s, v) => s + v, 0) / values.length;
+  const sqDiffs = values.map(v => Math.pow(v - avg, 2));
+  return Math.sqrt(sqDiffs.reduce((s, v) => s + v, 0) / values.length);
+}
+
+// ─── SLEEP DEBT ───────────────────────────────────────────────
+function getSleepDebt(logs, targets) {
+  const targetDur = targets ? targets.targetDuration : 480;
+  const now = new Date();
+  let totalDebt = 0;
+  let daysWithData = 0;
+  // Look at last 14 days
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const ds = formatDate(d);
+    const log = logs.find(l => l.date === ds);
+    if (log) {
+      totalDebt += log.duration - targetDur;
+      daysWithData++;
+    }
+  }
+  return {
+    totalDebt: totalDebt,
+    avgSurplus: daysWithData > 0 ? Math.round(totalDebt / daysWithData) : 0,
+    daysWithData: daysWithData
+  };
+}
+
+// ─── SLEEP INSIGHTS ───────────────────────────────────────────
+function generateSleepInsights(logs) {
+  const insights = [];
+  if (logs.length < 3) return [{ icon: '💤', text: 'Log at least 3 nights to see sleep insights.' }];
+
+  // Sort logs by date (most recent first)
+  const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
+
+  // 1. Best quality analysis
+  const highQuality = sorted.filter(l => l.quality >= 4);
+  const lowQuality = sorted.filter(l => l.quality <= 2);
+  if (highQuality.length >= 3 && lowQuality.length >= 2) {
+    // Compare bedtimes
+    const hqBeds = highQuality.map(l => parseTime(l.bedtime));
+    const lqBeds = lowQuality.map(l => parseTime(l.bedtime));
+    const hqAvg = hqBeds.reduce((s, v) => s + v, 0) / hqBeds.length;
+    const lqAvg = lqBeds.reduce((s, v) => s + v, 0) / lqBeds.length;
+    const diff = Math.round(Math.abs(hqAvg - lqAvg));
+    if (diff >= 30) {
+      const hqTime = toTimeStr(Math.round(hqAvg));
+      const lqTime = toTimeStr(Math.round(lqAvg));
+      insights.push({
+        icon: '🌙',
+        text: `You sleep better when you go to bed around ${formatTimeAMPM(hqTime)} vs ${formatTimeAMPM(lqTime)}.`
+      });
+    }
+  }
+
+  // 2. Duration sweet spot
+  const durBuckets = {};
+  for (const log of sorted) {
+    const bucket = Math.round(log.duration / 30) * 30; // round to nearest 30 min
+    if (!durBuckets[bucket]) durBuckets[bucket] = { count: 0, totalQ: 0 };
+    durBuckets[bucket].count++;
+    durBuckets[bucket].totalQ += log.quality;
+  }
+  let bestBucket = null;
+  let bestAvgQ = 0;
+  for (const [dur, data] of Object.entries(durBuckets)) {
+    if (data.count >= 2) {
+      const avgQ = data.totalQ / data.count;
+      if (avgQ > bestAvgQ) {
+        bestAvgQ = avgQ;
+        bestBucket = parseInt(dur);
+      }
+    }
+  }
+  if (bestBucket) {
+    insights.push({
+      icon: '⏰',
+      text: `Your optimal sleep duration seems to be around ${formatSleepMinutes(bestBucket)} — your highest quality nights.`
+    });
+  }
+
+  // 3. Consistency matters
+  const consistency = getSleepConsistencyScore(logs);
+  if (consistency && consistency.nightsLogged >= 5) {
+    if (consistency.score >= 80) {
+      insights.push({
+        icon: '🌟',
+        text: `Great consistency! Your bedtime varies by only ~${consistency.bedVariance}min.`
+      });
+    } else if (consistency.score < 50) {
+      insights.push({
+        icon: '📊',
+        text: `Your bedtime varies by ~${consistency.bedVariance}min. A regular wind-down routine can improve sleep quality.`
+      });
+    }
+  }
+
+  // 4. Weekday vs weekend
+  const weekdayLogs = sorted.filter(l => {
+    const d = new Date(l.date + 'T12:00:00');
+    const day = d.getDay();
+    return day >= 1 && day <= 5;
+  });
+  const weekendLogs = sorted.filter(l => {
+    const d = new Date(l.date + 'T12:00:00');
+    return d.getDay() === 0 || d.getDay() === 6;
+  });
+  if (weekdayLogs.length >= 3 && weekendLogs.length >= 2) {
+    const wdAvg = weekdayLogs.reduce((s, l) => s + l.duration, 0) / weekdayLogs.length;
+    const weAvg = weekendLogs.reduce((s, l) => s + l.duration, 0) / weekendLogs.length;
+    if (Math.abs(wdAvg - weAvg) >= 60) {
+      insights.push({
+        icon: '📅',
+        text: `You sleep ${formatSleepMinutes(Math.round(Math.abs(wdAvg - weAvg)))} ${weAvg > wdAvg ? 'more' : 'less'} on weekends vs weekdays.`
+      });
+    }
+  }
+
+  // 5. Recent trend
+  const recent7 = sorted.slice(-7);
+  if (recent7.length >= 3) {
+    const first3 = recent7.slice(0, 3);
+    const last3 = recent7.slice(-3);
+    const avgFirst = first3.reduce((s, l) => s + l.duration, 0) / first3.length;
+    const avgLast = last3.reduce((s, l) => s + l.duration, 0) / last3.length;
+    const diff = Math.round(avgLast - avgFirst);
+    if (Math.abs(diff) >= 30) {
+      insights.push({
+        icon: diff > 0 ? '📈' : '📉',
+        text: `Your sleep duration has ${diff > 0 ? 'increased' : 'decreased'} by ~${formatSleepMinutes(Math.abs(diff))} over the last week.`
+      });
+    }
+  }
+
+  // 6. Quality vs duration check
+  if (recent7.length >= 3) {
+    const highDur = recent7.filter(l => l.duration >= 420); // 7h+
+    const lowDur = recent7.filter(l => l.duration < 420);
+    if (highDur.length >= 2 && lowDur.length >= 2) {
+      const hqAvg = highDur.reduce((s, l) => s + l.quality, 0) / highDur.length;
+      const lqAvg = lowDur.reduce((s, l) => s + l.quality, 0) / lowDur.length;
+      if (hqAvg - lqAvg >= 1) {
+        insights.push({
+          icon: '💪',
+          text: `Nights with 7h+ sleep score ${(hqAvg - lqAvg).toFixed(1)} points higher in quality than shorter nights.`
+        });
+      }
+    }
+  }
+
+  if (insights.length === 0) {
+    insights.push({ icon: '📝', text: 'Keep logging to receive personalized sleep insights!' });
+  }
+
+  return insights.slice(0, 5); // Max 5 insights
+}
+
+function formatTimeAMPM(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const ampm = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
+}
+
 
 const TAG_ORDER = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
 
@@ -426,6 +668,8 @@ function checkReminders() {
   const now = new Date();
   const today = formatDate(now);
   const currentMins = now.getHours() * 60 + now.getMinutes();
+  
+  // Check task reminders
   for (const task of state.tasks) {
     if (task.completed || isWhiteboardTask(task) || !task.reminder) continue;
     if (task.date !== today) continue;
@@ -441,6 +685,33 @@ function checkReminders() {
       } catch (e) { /* ignore */ }
     }
   }
+  
+  // Check wind-down reminder
+  checkWindDownReminder(currentMins, today);
+}
+
+function checkWindDownReminder(currentMins, today) {
+  try {
+    const targets = loadSleepTargets();
+    if (!targets.windDownReminder) return;
+    const [bh, bm] = targets.targetBedtime.split(':').map(Number);
+    let bedMins = bh * 60 + bm;
+    if (bedMins < 720) bedMins += 1440; // normalize past midnight
+    let nowMins = currentMins;
+    if (nowMins < 720) nowMins += 1440;
+    const windDownAt = bedMins - targets.windDownReminderMins;
+    if (Math.abs(nowMins - windDownAt) <= 1) {
+      const windKey = 'winddown-' + today;
+      if (notifiedTaskIds.has(windKey)) return;
+      notifiedTaskIds.add(windKey);
+      try {
+        new Notification('🛏️ Wind-down time', {
+          body: `Your target bedtime is ${formatTimeAMPM(targets.targetBedtime)}. Start winding down!`,
+          icon: '/favicon.ico',
+        });
+      } catch (e) { /* ignore */ }
+    }
+  } catch (e) { /* ignore */ }
 }
 
 // ─── RECURRING TASK EXPANSION ─────────────────────────────
@@ -2055,7 +2326,12 @@ function loadSidebarConfig() {
 }
 
 function saveSidebarConfig(config) {
-  try { localStorage.setItem(SIDEBAR_CONFIG_KEY, JSON.stringify(config)); } catch {}
+  try {
+    var str = JSON.stringify(config);
+    localStorage.setItem(SIDEBAR_CONFIG_KEY, str);
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('Could not save: localStorage might be full', 'error');
+  }
 }
 
 function applySidebarConfig() {
@@ -2321,7 +2597,7 @@ function renderSidebarImages() {
   }
   container.style.display = '';
   images.forEach(img => {
-    const url = getImage(img.id);
+    var url = img.url || getImage(img.id);
     if (!url) return;
     const item = document.createElement('div');
     item.className = 'hub-sidebar-image-item';
@@ -2358,18 +2634,65 @@ function renderSidebarImageEditControls() {
     const addBtn = document.createElement('button');
     addBtn.className = 'hub-sidebar-image-add';
     addBtn.innerHTML = '+ Add image';
-    addBtn.addEventListener('click', function() {
-      var id = prompt('Enter image ID (e.g. hub-hero, hub-tulips, hub-lamp):');
-      if (id && id.trim()) addSidebarImage(id.trim());
-    });
+    addBtn.addEventListener('click', showSidebarImagePastePopup);
     container.appendChild(addBtn);
   }
 }
 
-function addSidebarImage(id) {
-  if (!getImage(id)) {
-    if (typeof showToast === 'function') showToast('Image not found: ' + id, 'error');
-    return;
+function showSidebarImagePastePopup() {
+  const existing = document.querySelector('.sidebar-paste-popup');
+  if (existing) { existing.remove(); return; }
+  const popup = document.createElement('div');
+  popup.className = 'sidebar-paste-popup';
+  popup.innerHTML = '<div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-tertiary);margin-bottom:6px">Paste Image</div>' +
+    '<input type="text" id="sidebarPasteInput" placeholder="Paste URL or Ctrl+V" autofocus>' +
+    '<div class="sidebar-paste-hint" style="font-size:0.6rem;color:var(--text-tertiary);margin-top:4px">Paste a URL or use Ctrl+V to paste from clipboard</div>' +
+    '<div class="hub-edit-popup-actions" style="margin-top:6px">' +
+    '<button class="cancel" id="sidebarPasteCancel">Cancel</button>' +
+    '<button class="primary" id="sidebarPasteSave">Add</button></div>';
+  var addBtn = document.querySelector('.hub-sidebar-image-add');
+  if (addBtn) addBtn.parentNode.insertBefore(popup, addBtn.nextSibling);
+  else document.querySelector('.hub-sidebar-images').appendChild(popup);
+  var input = document.getElementById('sidebarPasteInput');
+  if (input) { input.focus(); }
+  document.getElementById('sidebarPasteSave').addEventListener('click', function() {
+    var val = document.getElementById('sidebarPasteInput')?.value?.trim();
+    if (val) addSidebarImage('_custom_' + Date.now(), val);
+    popup.remove();
+  });
+  document.getElementById('sidebarPasteCancel').addEventListener('click', function() { popup.remove(); });
+  // Paste from clipboard — capture paste event
+  if (input) {
+    input.addEventListener('paste', function(e) {
+      var items = e.clipboardData.items;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          var blob = items[i].getAsFile();
+          var reader = new FileReader();
+          reader.onload = function(ev) {
+            input.value = ev.target.result;
+          };
+          reader.readAsDataURL(blob);
+          break;
+        }
+      }
+    });
+  }
+}
+
+function addSidebarImage(id, url) {
+  if (url) {
+    // Custom pasted image — store URL directly
+    if (url.length > 500000) {
+      if (typeof showToast === 'function') showToast('Image too large, try a smaller one', 'error');
+      return;
+    }
+  } else {
+    // Built-in image ID
+    if (!getImage(id)) {
+      if (typeof showToast === 'function') showToast('Image not found: ' + id, 'error');
+      return;
+    }
   }
   const config = loadSidebarConfig();
   if (!config.images) config.images = [];
@@ -2377,7 +2700,10 @@ function addSidebarImage(id) {
     if (typeof showToast === 'function') showToast('Image already added', 'info');
     return;
   }
-  config.images.push({ id: id, label: imageLabel(id) });
+  var label = id;
+  if (!url) { label = imageLabel(id); }
+  else { label = 'Custom Image'; }
+  config.images.push({ id: id, label: label, url: url || undefined });
   saveSidebarConfig(config);
   renderSidebarImages();
 }

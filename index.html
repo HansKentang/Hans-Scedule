@@ -95,8 +95,9 @@
         </div>
       </nav>
       <div class="hub-sidebar-body">
-      <!-- ─── SPOTIFY EMBED ───────────────────────── -->
       <div class="sp-sidebar" id="spSidebar">
+        <!-- ─── SIDEBAR IMAGES ────────────────────── -->
+        <div class="hub-sidebar-images"></div>
         <div class="sp-header" onclick="spToggleSection()">
           <button class="sp-toggle-btn" onclick="event.stopPropagation();spToggleSection()" title="Toggle player">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
@@ -131,8 +132,6 @@
         </div>
       </div>
       </div>
-      <!-- ─── SIDEBAR IMAGES ────────────────────────── -->
-      <div class="hub-sidebar-images"></div>
       <div class="hub-sidebar-footer">
         <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -264,17 +263,109 @@
                   <button class="btn btn-outline" onclick="openSleepLogModal()" style="font-size:0.72rem;padding:var(--space-1) var(--space-3)">Log Sleep</button>
                 </div>
               </div>
-              <div id="sleepSummary" class="sleep-summary">
-                <div class="sleep-stat"><div class="val" id="sleepLastDur">—</div><div class="lbl">Last Night</div></div>
-                <div class="sleep-stat"><div class="val" id="sleepAvgDur">—</div><div class="lbl">7-Day Avg</div></div>
-                <div class="sleep-stat">
-                  <div class="val" id="sleepAvgQuality">—</div>
-                  <div class="sleep-quality-stars" id="sleepQualityStars"></div>
-                  <div class="lbl">Avg Quality</div>
+
+              <!-- Tabs -->
+              <div class="sleep-tabs">
+                <button class="sleep-tab active" data-sleep-tab="overview">Overview</button>
+                <button class="sleep-tab" data-sleep-tab="history">History</button>
+                <button class="sleep-tab" data-sleep-tab="insights">Insights</button>
+                <button class="sleep-tab" data-sleep-tab="targets">Targets</button>
+              </div>
+
+              <!-- Overview Tab -->
+              <div class="sleep-tab-content active" data-sleep-tab-content="overview">
+                <!-- Enhanced summary -->
+                <div class="sleep-enhanced-summary" id="sleepEnhancedSummary">
+                  <div class="sleep-enhanced-stat primary-stat">
+                    <div class="val" id="sleepEnhLastDur">—</div>
+                    <div class="lbl">Last Night</div>
+                    <div class="sub" id="sleepEnhLastTime">—</div>
+                  </div>
+                  <div class="sleep-enhanced-stat">
+                    <div class="val" id="sleepEnhAvgDur">—</div>
+                    <div class="lbl">7-Day Avg</div>
+                    <div class="sub" id="sleepEnhOnTrack"></div>
+                  </div>
+                  <div class="sleep-enhanced-stat">
+                    <div class="val" id="sleepEnhQuality">—</div>
+                    <div class="lbl">Avg Quality</div>
+                    <div class="sub" id="sleepEnhQualityLabel">—</div>
+                  </div>
+                </div>
+
+                <!-- Consistency gauge -->
+                <div class="sleep-consistency-gauge" id="sleepConsistencyGauge">
+                  <div class="sleep-gauge-ring" id="sleepGaugeRing">
+                    <svg viewBox="0 0 36 36">
+                      <circle class="bg" cx="18" cy="18" r="15.5"></circle>
+                      <circle class="fill" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" id="sleepGaugeCircle"></circle>
+                    </svg>
+                    <div class="sleep-gauge-score" id="sleepGaugeScore">—</div>
+                  </div>
+                  <div class="sleep-gauge-info">
+                    <div class="label">Consistency</div>
+                    <div class="detail" id="sleepGaugeDetail">Log 3+ nights to see your score</div>
+                  </div>
+                </div>
+
+                <!-- Sleep Debt -->
+                <div class="sleep-debt-display neutral" id="sleepDebtDisplay">
+                  <span>Sleep Debt:</span>
+                  <span class="sleep-debt-value" id="sleepDebtValue">—</span>
+                </div>
+
+                <!-- Wind-down reminder toggle -->
+                <div class="sleep-winddown-toggle">
+                  <div class="sleep-winddown-info">
+                    <div class="label">Wind-down Reminder</div>
+                    <div class="hint" id="sleepWinddownHint">Get a gentle reminder before your target bedtime</div>
+                  </div>
+                  <label class="sleep-winddown-switch">
+                    <input type="checkbox" id="sleepWinddownToggle">
+                    <span class="sleep-winddown-slider"></span>
+                  </label>
+                </div>
+
+                <!-- Weekly chart -->
+                <div id="sleepWeekChart" class="sleep-week-chart">
+                  <div style="width:100%;text-align:center;font-size:0.72rem;color:var(--text-tertiary);padding:var(--space-4)">No sleep data this week</div>
                 </div>
               </div>
-              <div id="sleepWeekChart" class="sleep-week-chart">
-                <div style="width:100%;text-align:center;font-size:0.72rem;color:var(--text-tertiary);padding:var(--space-4)">No sleep data this week</div>
+
+              <!-- History Tab -->
+              <div class="sleep-tab-content" data-sleep-tab-content="history">
+                <div class="sleep-history-list" id="sleepHistoryList">
+                  <div class="sleep-history-empty">No sleep logs yet. Log your first night!</div>
+                </div>
+              </div>
+
+              <!-- Insights Tab -->
+              <div class="sleep-tab-content" data-sleep-tab-content="insights">
+                <div class="sleep-insights-grid" id="sleepInsightsGrid"></div>
+              </div>
+
+              <!-- Targets Tab -->
+              <div class="sleep-tab-content" data-sleep-tab-content="targets">
+                <div class="sleep-targets-section">
+                  <div class="sleep-targets-row">
+                    <div class="sleep-target-field">
+                      <label for="sleepTargetBedtime">Target Bedtime</label>
+                      <input type="time" id="sleepTargetBedtime" value="23:00">
+                    </div>
+                    <div class="sleep-target-field">
+                      <label for="sleepTargetWake">Target Wake Time</label>
+                      <input type="time" id="sleepTargetWake" value="07:00">
+                    </div>
+                    <div class="sleep-target-field">
+                      <label for="sleepTargetDuration">Target Duration (min)</label>
+                      <input type="number" id="sleepTargetDuration" value="480" min="300" max="600" step="15">
+                    </div>
+                  </div>
+                  <div class="sleep-target-actions">
+                    <button class="btn btn-primary" onclick="saveSleepTargetsFromHub()">Save Targets</button>
+                    <span class="sleep-target-status" id="sleepTargetStatus"></span>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -839,21 +930,26 @@
   </div>
 
   <script>
-    // ─── SLEEP TRACKING (Hub) ──────────────────────────────
+    // ─── ENHANCED SLEEP TRACKING (Hub) ───────────────────────
     let sleepSelectedQuality = 3;
+    let sleepLogEditId = null;
 
     function renderSleepHub() {
       const logs = loadSleepLogs();
       const now = new Date();
       const todayStr = formatDate(now);
+      const targets = loadSleepTargets();
 
-      // Last night's sleep (most recent log)
+      // ── Overview stats ──
       const lastLog = logs.length > 0 ? logs.reduce((a, b) => a.date > b.date ? a : b) : null;
-      const lastDurEl = document.getElementById('sleepLastDur');
-      if (lastLog && lastDurEl) {
-        lastDurEl.textContent = formatSleepMinutes(lastLog.duration);
-      } else if (lastDurEl) {
-        lastDurEl.textContent = '—';
+      const lastDurEl = document.getElementById('sleepEnhLastDur');
+      const lastTimeEl = document.getElementById('sleepEnhLastTime');
+      if (lastLog) {
+        if (lastDurEl) lastDurEl.textContent = formatSleepMinutes(lastLog.duration);
+        if (lastTimeEl) lastTimeEl.textContent = formatTimeAMPM(lastLog.bedtime) + ' \u2013 ' + formatTimeAMPM(lastLog.wakeTime);
+      } else {
+        if (lastDurEl) lastDurEl.textContent = '\u2014';
+        if (lastTimeEl) lastTimeEl.textContent = '\u2014';
       }
 
       // 7-day average
@@ -865,48 +961,320 @@
         const log = getSleepLog(ds);
         if (log) weekLogs.push(log);
       }
-      const avgDurEl = document.getElementById('sleepAvgDur');
+
+      const avgDurEl = document.getElementById('sleepEnhAvgDur');
       if (weekLogs.length > 0 && avgDurEl) {
         const avg = Math.round(weekLogs.reduce((s, l) => s + l.duration, 0) / weekLogs.length);
         avgDurEl.textContent = formatSleepMinutes(avg);
+        // Track vs target
+        const onTrackEl = document.getElementById('sleepEnhOnTrack');
+        if (onTrackEl) {
+          const diff = avg - targets.targetDuration;
+          if (Math.abs(diff) < 30) onTrackEl.textContent = 'Matched target';
+          else if (diff > 0) onTrackEl.textContent = '+' + formatSleepMinutes(diff) + ' over target';
+          else onTrackEl.textContent = formatSleepMinutes(Math.abs(diff)) + ' under target';
+        }
       } else if (avgDurEl) {
-        avgDurEl.textContent = '—';
+        avgDurEl.textContent = '\u2014';
       }
 
       // Average quality
-      const qualityEl = document.getElementById('sleepAvgQuality');
-      const starsEl = document.getElementById('sleepQualityStars');
+      const qualityEl = document.getElementById('sleepEnhQuality');
+      const qLabelEl = document.getElementById('sleepEnhQualityLabel');
       if (weekLogs.length > 0) {
         const avgQ = Math.round(weekLogs.reduce((s, l) => s + l.quality, 0) / weekLogs.length * 10) / 10;
         if (qualityEl) qualityEl.textContent = avgQ.toFixed(1);
-        if (starsEl) {
-          const full = Math.floor(avgQ);
-          const half = avgQ - full >= 0.3;
-          let starHtml = '';
-          for (let i = 0; i < 5; i++) {
-            if (i < full) starHtml += '<span class="sleep-quality-star filled">★</span>';
-            else if (i === full && half) starHtml += '<span class="sleep-quality-star filled">★</span>';
-            else starHtml += '<span class="sleep-quality-star">★</span>';
-          }
-          starsEl.innerHTML = starHtml;
-        }
+        if (qLabelEl) qLabelEl.textContent = SLEEP_QUALITY_LABELS[Math.round(avgQ)] || '\u2014';
       } else {
-        if (qualityEl) qualityEl.textContent = '—';
-        if (starsEl) starsEl.innerHTML = '';
+        if (qualityEl) qualityEl.textContent = '\u2014';
+        if (qLabelEl) qLabelEl.textContent = '\u2014';
       }
 
-      // Weekly chart
-      renderSleepWeekChart(logs, now);
+      // ── Consistency gauge ──
+      renderSleepConsistency(logs);
+
+      // ── Sleep debt ──
+      renderSleepDebt(logs, targets);
+
+      // ── Wind-down reminder ──
+      renderWindDownToggle(targets);
+
+      // ── Weekly chart ──
+      renderSleepWeekChart(logs, now, targets);
+
+      // ── Target editor ──
+      renderTargetEditor(targets);
+
+      // ── History ──
+      renderSleepHistory(logs);
+
+      // ── Insights ──
+      renderSleepInsights(logs);
     }
 
-    function renderSleepWeekChart(logs, now) {
+    // ── Tab switching ──
+    document.addEventListener('click', function(e) {
+      const tab = e.target.closest('.sleep-tab');
+      if (!tab) return;
+      const container = tab.closest('.sleep-card');
+      if (!container) return;
+      const tabName = tab.dataset.sleepTab;
+      if (!tabName) return;
+
+      container.querySelectorAll('.sleep-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      container.querySelectorAll('.sleep-tab-content').forEach(c => c.classList.remove('active'));
+      const content = container.querySelector('[data-sleep-tab-content="' + tabName + '"]');
+      if (content) content.classList.add('active');
+    });
+
+    // ── Consistency gauge ──
+    function renderSleepConsistency(logs) {
+      const consistency = getSleepConsistencyScore(logs);
+      const gaugeScoreEl = document.getElementById('sleepGaugeScore');
+      const gaugeDetailEl = document.getElementById('sleepGaugeDetail');
+      const gaugeCircle = document.getElementById('sleepGaugeCircle');
+
+      if (!consistency) {
+        if (gaugeScoreEl) gaugeScoreEl.textContent = '\u2014';
+        if (gaugeDetailEl) gaugeDetailEl.textContent = 'Log 3+ nights to see your consistency score';
+        return;
+      }
+
+      const score = consistency.score;
+      if (gaugeScoreEl) gaugeScoreEl.textContent = score;
+      if (gaugeDetailEl) {
+        let extra = '';
+        if (score >= 80) extra = 'Very consistent! \u2705';
+        else if (score >= 60) extra = 'Good consistency';
+        else if (score >= 40) extra = 'Some variation in your schedule';
+        else extra = 'Try a more regular sleep schedule';
+        gaugeDetailEl.textContent = 'Bedtime varies by ~' + consistency.bedVariance + 'min. ' + extra;
+      }
+      // Animate gauge
+      if (gaugeCircle) {
+        const circumference = 97.4;
+        const offset = circumference - (score / 100) * circumference;
+        // Use transition via style
+        requestAnimationFrame(function() {
+          gaugeCircle.style.strokeDashoffset = offset;
+          // Color based on score
+          if (score >= 70) gaugeCircle.style.stroke = '#10b981';
+          else if (score >= 40) gaugeCircle.style.stroke = '#f59e0b';
+          else gaugeCircle.style.stroke = '#ef4444';
+        });
+      }
+    }
+
+    // ── Sleep debt ──
+    function renderSleepDebt(logs, targets) {
+      const debtDisplay = document.getElementById('sleepDebtDisplay');
+      const debtValue = document.getElementById('sleepDebtValue');
+      if (!debtDisplay || !debtValue) return;
+
+      const debt = getSleepDebt(logs, targets);
+      if (debt.daysWithData === 0) {
+        debtDisplay.className = 'sleep-debt-display neutral';
+        debtValue.textContent = 'Log sleep to track debt';
+        return;
+      }
+
+      const total = Math.round(debt.totalDebt / 60 * 10) / 10; // Convert to hours
+      const sign = total > 0 ? '+' : '';
+      debtValue.textContent = sign + total.toFixed(1) + 'h (' + debt.daysWithData + ' days)';
+
+      if (total > 1) {
+        debtDisplay.className = 'sleep-debt-display surplus';
+      } else if (total < -1) {
+        debtDisplay.className = 'sleep-debt-display deficit';
+      } else {
+        debtDisplay.className = 'sleep-debt-display neutral';
+      }
+    }
+
+    // ── Wind-down toggle ──
+    function renderWindDownToggle(targets) {
+      const toggle = document.getElementById('sleepWinddownToggle');
+      const hint = document.getElementById('sleepWinddownHint');
+      if (!toggle) return;
+
+      toggle.checked = targets.windDownReminder;
+      if (hint) {
+        if (targets.windDownReminder) {
+          const bf = targets.targetBedtime;
+          const [h, m] = bf.split(':').map(Number);
+          const totalMins = h * 60 + m - targets.windDownReminderMins;
+          const reminderH = Math.floor(((totalMins % 1440) + 1440) % 1440 / 60);
+          const reminderM = ((totalMins % 1440) + 1440) % 1440 % 60;
+          hint.textContent = 'Reminder at ' + String(reminderH).padStart(2, '0') + ':' + String(reminderM).padStart(2, '0') + ' (' + targets.windDownReminderMins + 'min before bedtime)';
+        } else {
+          hint.textContent = 'Get a gentle reminder before your target bedtime';
+        }
+      }
+
+      toggle.onchange = function() {
+        targets.windDownReminder = this.checked;
+        saveSleepTargets(targets);
+        renderWindDownToggle(targets);
+        renderSleepHub();
+        if (this.checked) {
+          if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+          }
+        }
+      };
+    }
+
+    // ── Targets editor ──
+    function renderTargetEditor(targets) {
+      const btEl = document.getElementById('sleepTargetBedtime');
+      const wtEl = document.getElementById('sleepTargetWake');
+      const durEl = document.getElementById('sleepTargetDuration');
+      const statusEl = document.getElementById('sleepTargetStatus');
+      if (btEl) btEl.value = targets.targetBedtime;
+      if (wtEl) wtEl.value = targets.targetWakeTime;
+      if (durEl) durEl.value = targets.targetDuration;
+      if (statusEl) {
+        const logs = loadSleepLogs();
+        const now = new Date();
+        const recent7 = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - i);
+          const log = getSleepLog(formatDate(d));
+          if (log) recent7.push(log);
+        }
+        if (recent7.length > 0) {
+          const avg = Math.round(recent7.reduce((s, l) => s + l.duration, 0) / recent7.length);
+          const diff = avg - targets.targetDuration;
+          if (Math.abs(diff) < 30) {
+            statusEl.textContent = '\u2714 On track!';
+            statusEl.className = 'sleep-target-status on-track';
+          } else if (diff > 0) {
+            statusEl.textContent = 'Avg ' + formatSleepMinutes(avg) + ' (+' + formatSleepMinutes(diff) + ' over target)';
+            statusEl.className = 'sleep-target-status on-track';
+          } else {
+            statusEl.textContent = 'Avg ' + formatSleepMinutes(avg) + ' (' + formatSleepMinutes(Math.abs(diff)) + ' under target)';
+            statusEl.className = 'sleep-target-status behind';
+          }
+        }
+      }
+    }
+
+    function saveSleepTargetsFromHub() {
+      const btEl = document.getElementById('sleepTargetBedtime');
+      const wtEl = document.getElementById('sleepTargetWake');
+      const durEl = document.getElementById('sleepTargetDuration');
+      if (!btEl || !wtEl || !durEl) return;
+
+      const targets = loadSleepTargets();
+      targets.targetBedtime = btEl.value;
+      targets.targetWakeTime = wtEl.value;
+      targets.targetDuration = parseInt(durEl.value) || 480;
+      saveSleepTargets(targets);
+
+      const statusEl = document.getElementById('sleepTargetStatus');
+      if (statusEl) {
+        statusEl.textContent = '\u2714 Saved!';
+        statusEl.className = 'sleep-target-status on-track';
+        setTimeout(function() { renderSleepHub(); }, 800);
+      }
+      renderSleepHub();
+      showToast('Sleep targets saved', 'success', 1500);
+    }
+
+    // ── History list ──
+    function renderSleepHistory(logs) {
+      const container = document.getElementById('sleepHistoryList');
+      if (!container) return;
+
+      if (logs.length === 0) {
+        container.innerHTML = '<div class="sleep-history-empty">No sleep logs yet. Log your first night!</div>';
+        return;
+      }
+
+      const sorted = [...logs].sort((a, b) => b.date.localeCompare(a.date));
+      const qualityLabels = { 1: 'Poor', 2: 'Fair', 3: 'Good', 4: 'Great', 5: 'Excellent' };
+      const qualityColors = { 1: '#ef4444', 2: '#f59e0b', 3: '#6366f1', 4: '#10b981', 5: '#059669' };
+
+      let html = '';
+      for (const log of sorted) {
+        const d = new Date(log.date + 'T12:00:00');
+        const dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        html += '<div class="sleep-history-item" data-log-id="' + log.id + '">';
+        html += '<span class="sleep-history-date">' + dateLabel + '</span>';
+        html += '<span class="sleep-history-dur">' + formatSleepMinutes(log.duration) + '</span>';
+        html += '<span class="sleep-history-detail">';
+        html += '<span class="time-range">' + log.bedtime + '\u2013' + log.wakeTime + '</span>';
+        html += '<span class="q-badge" style="background:' + qualityColors[log.quality] + '22;color:' + qualityColors[log.quality] + '">' + log.quality + '/5</span>';
+        if (log.notes) html += '<span style="opacity:0.6">\u2014 ' + escapeHtml(log.notes) + '</span>';
+        html += '</span>';
+        html += '<span class="sleep-history-actions">';
+        html += '<button class="edit" title="Edit" onclick="editSleepLog(\'' + log.id + '\')">\u270E</button>';
+        html += '<button class="del" title="Delete" onclick="deleteSleepLogEntry(\'' + log.id + '\')">\u2715</button>';
+        html += '</span>';
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function deleteSleepLogEntry(id) {
+      if (!confirm('Delete this sleep log?')) return;
+      deleteSleepLog(id);
+      renderSleepHub();
+      showToast('Sleep log deleted', 'info', 1500);
+    }
+
+    function editSleepLog(id) {
+      const logs = loadSleepLogs();
+      const log = logs.find(l => l.id === id);
+      if (!log) return;
+
+      sleepLogEditId = id;
+      document.getElementById('sleepDate').value = log.date;
+      document.getElementById('sleepBedtime').value = log.bedtime;
+      document.getElementById('sleepWakeTime').value = log.wakeTime;
+      document.getElementById('sleepNotes').value = log.notes || '';
+
+      sleepSelectedQuality = log.quality;
+      document.querySelectorAll('.sleep-quality-opt').forEach(function(o) {
+        o.classList.toggle('active', parseInt(o.dataset.quality) === log.quality);
+      });
+
+      openSleepLogModal();
+    }
+
+    // ── Insights ──
+    function renderSleepInsights(logs) {
+      const container = document.getElementById('sleepInsightsGrid');
+      if (!container) return;
+
+      const insights = generateSleepInsights(logs);
+      if (!insights || insights.length === 0) {
+        container.innerHTML = '<div class="sleep-insight-card"><span class="sleep-insight-icon">\uD83D\uDCA4</span><span class="sleep-insight-text">Log at least 3 nights to see personalized insights.</span></div>';
+        return;
+      }
+
+      let html = '';
+      for (const insight of insights) {
+        html += '<div class="sleep-insight-card">';
+        html += '<span class="sleep-insight-icon">' + (insight.icon || '\uD83D\uDCA1') + '</span>';
+        html += '<span class="sleep-insight-text">' + insight.text + '</span>';
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+
+    // ── Enhanced weekly chart ──
+    function renderSleepWeekChart(logs, now, targets) {
       const container = document.getElementById('sleepWeekChart');
       if (!container) return;
       const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
       const ws = getMonday(now);
       const todayStr = formatDate(now);
       const MAX_VIS = 600; // 10 hours — fixed scale for consistent comparison
-      const TARGET = 480;  // 8 hours reference line
+      const TARGET = targets ? targets.targetDuration : 480;
 
       // Check if there's any data this week
       const weekLogs = [];
@@ -953,11 +1321,11 @@
 
       html += '<div class="sleep-week-chart-inner">';
 
-      // Target line at 8 hours
-      const targetPct = (TARGET / MAX_VIS) * 100;
+      // Target line
+      const targetPct = Math.min(95, (TARGET / MAX_VIS) * 100);
       html += '<div class="sleep-chart-target" style="bottom:' + targetPct + '%">' +
         '<div class="sleep-chart-target-line"></div>' +
-        '<span class="sleep-chart-target-label">8h target</span></div>';
+        '<span class="sleep-chart-target-label">target</span></div>';
 
       for (const day of dayDurs) {
         const heightPct = day.hasData ? Math.max(3, (day.mins / MAX_VIS) * 100) : 2;
@@ -969,11 +1337,13 @@
           : 'No sleep data';
         const barCls = day.isToday ? 'sleep-week-bar today' : 'sleep-week-bar';
         const noDataCls = !day.hasData ? ' no-data' : '';
+        const onTarget = day.hasData && Math.abs(day.mins - TARGET) < 30;
 
         html += '<div class="' + barCls + noDataCls + '" title="' + escapeHtml(tooltipTitle) + '">';
         html += '<span class="sleep-week-bar-value">' + durStr + '</span>';
         html += '<div class="sleep-week-bar-fill" style="height:' + heightPct + '%;' +
-          (color ? 'background:linear-gradient(180deg,' + color + ' 0%,' + color + '88 100%)' : '') + '"></div>';
+          (color ? 'background:linear-gradient(180deg,' + color + ' 0%,' + color + '88 100%)' : '') +
+          (onTarget ? ';box-shadow:0 0 8px ' + color + '88' : '') + '"></div>';
         html += '<span class="sleep-week-bar-label' + (day.isToday ? ' today-label' : '') + '">' + day.label + '</span>';
         if (day.hasData && day.quality) {
           html += '<span class="sleep-week-bar-dot" style="background:' + color + '"></span>';
@@ -985,24 +1355,25 @@
       container.innerHTML = html;
     }
 
+    // ── Sleep Log Modal ──
     function openSleepLogModal() {
       const overlay = document.getElementById('sleepLogOverlay');
       const modal = document.getElementById('sleepLogModal');
       if (!overlay || !modal) return;
 
-      // Default to today
-      document.getElementById('sleepDate').value = formatDate(new Date());
-      document.getElementById('sleepBedtime').value = '23:00';
-      document.getElementById('sleepWakeTime').value = '07:00';
-      document.getElementById('sleepNotes').value = '';
-
-      // Reset quality
-      sleepSelectedQuality = 3;
-      document.querySelectorAll('.sleep-quality-opt').forEach(o => o.classList.toggle('active', o.dataset.quality == 3));
+      if (!sleepLogEditId) {
+        // Default to today
+        document.getElementById('sleepDate').value = formatDate(new Date());
+        document.getElementById('sleepBedtime').value = '23:00';
+        document.getElementById('sleepWakeTime').value = '07:00';
+        document.getElementById('sleepNotes').value = '';
+        sleepSelectedQuality = 3;
+        document.querySelectorAll('.sleep-quality-opt').forEach(function(o) { o.classList.toggle('active', o.dataset.quality == 3); });
+      }
 
       overlay.classList.remove('hidden');
       modal.classList.remove('hidden');
-      requestAnimationFrame(() => {
+      requestAnimationFrame(function() {
         overlay.classList.add('active');
         modal.classList.add('active');
       });
@@ -1014,10 +1385,11 @@
       if (!overlay || !modal) return;
       overlay.classList.remove('active');
       modal.classList.remove('active');
-      setTimeout(() => {
+      setTimeout(function() {
         overlay.classList.add('hidden');
         modal.classList.add('hidden');
       }, 300);
+      sleepLogEditId = null;
     }
 
     function handleSleepLogSave() {
@@ -1026,25 +1398,31 @@
       const wakeTime = document.getElementById('sleepWakeTime').value;
       const notes = document.getElementById('sleepNotes').value.trim();
 
-      // Check if a log already exists for this date
-      const existing = getSleepLog(date);
-      if (existing) {
-        updateSleepLog(existing.id, { bedtime, wakeTime, quality: sleepSelectedQuality, notes });
+      if (sleepLogEditId) {
+        updateSleepLog(sleepLogEditId, { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes });
+        sleepLogEditId = null;
       } else {
-        addSleepLog({ date, bedtime, wakeTime, quality: sleepSelectedQuality, notes });
+        const existing = getSleepLog(date);
+        if (existing) {
+          updateSleepLog(existing.id, { bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes });
+        } else {
+          addSleepLog({ date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes });
+        }
       }
 
       closeSleepLogModal();
       renderSleepHub();
-      showToast('Sleep logged for ' + date, 'success', 2000);
+      showToast('Sleep saved for ' + date, 'success', 2000);
     }
 
-    // Init sleep quality selector
+    // ── Init quality selector ──
     document.addEventListener('click', function(e) {
       const opt = e.target.closest('.sleep-quality-opt');
       if (opt) {
         sleepSelectedQuality = parseInt(opt.dataset.quality);
-        document.querySelectorAll('.sleep-quality-opt').forEach(o => o.classList.toggle('active', o.dataset.quality == sleepSelectedQuality));
+        document.querySelectorAll('.sleep-quality-opt').forEach(function(o) {
+          o.classList.toggle('active', parseInt(o.dataset.quality) === sleepSelectedQuality);
+        });
       }
     });
   </script>

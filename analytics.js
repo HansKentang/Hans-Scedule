@@ -552,9 +552,60 @@ function renderSleepAnalytics() {
     const avgMins = Math.round(totalMins / weekLogs.length);
     durEl.textContent = formatSleepMinutes(avgMins);
     durSubEl.textContent = 'Average across ' + weekLogs.length + ' nights';
+
+    // Show target comparison
+    const targets = loadSleepTargets();
+    const targetDurEl = document.getElementById('sleepAnalyticsTarget');
+    if (targetDurEl) {
+      const diff = avgMins - targets.targetDuration;
+      if (Math.abs(diff) < 30) {
+        targetDurEl.textContent = 'On track with target (' + formatSleepMinutes(targets.targetDuration) + ')';
+        targetDurEl.style.color = '#10b981';
+      } else if (diff > 0) {
+        targetDurEl.textContent = '+' + formatSleepMinutes(diff) + ' over ' + formatSleepMinutes(targets.targetDuration) + ' target';
+        targetDurEl.style.color = '#10b981';
+      } else {
+        targetDurEl.textContent = formatSleepMinutes(Math.abs(diff)) + ' under ' + formatSleepMinutes(targets.targetDuration) + ' target';
+        targetDurEl.style.color = '#ef4444';
+      }
+    }
   } else {
     durEl.textContent = '—';
     durSubEl.textContent = 'No sleep data';
+  }
+
+  // Consistency score
+  const consistencyEl = document.getElementById('sleepAnalyticsConsistency');
+  const consistencySubEl = document.getElementById('sleepAnalyticsConsistencySub');
+  if (consistencyEl) {
+    const consistency = getSleepConsistencyScore(logs);
+    if (consistency) {
+      consistencyEl.textContent = consistency.score;
+      if (consistencySubEl) {
+        consistencySubEl.textContent = 'Bedtime varies by ' + consistency.bedVariance + 'min, wake by ' + consistency.wakeVariance + 'min';
+      }
+    } else {
+      consistencyEl.textContent = '—';
+      if (consistencySubEl) consistencySubEl.textContent = 'Log 3+ nights to calculate';
+    }
+  }
+
+  // Sleep debt
+  const debtEl = document.getElementById('sleepAnalyticsDebt');
+  const debtSubEl = document.getElementById('sleepAnalyticsDebtSub');
+  if (debtEl) {
+    const targets = loadSleepTargets();
+    const debt = getSleepDebt(logs, targets);
+    if (debt.daysWithData > 0) {
+      const totalHours = Math.round(debt.totalDebt / 60 * 10) / 10;
+      const sign = totalHours > 0 ? '+' : '';
+      debtEl.textContent = sign + totalHours.toFixed(1) + 'h';
+      debtEl.style.color = totalHours > 1 ? '#10b981' : totalHours < -1 ? '#ef4444' : 'var(--text-primary)';
+      if (debtSubEl) debtSubEl.textContent = totalHours > 0 ? 'Surplus over 14 days' : totalHours < 0 ? 'Deficit over 14 days' : 'Balanced';
+    } else {
+      debtEl.textContent = '—';
+      if (debtSubEl) debtSubEl.textContent = 'No sleep data';
+    }
   }
 
   // Quality stats
