@@ -1037,11 +1037,13 @@ function applyImages() {
 
 function restoreDirectImageKeys() {
   var _found = 0;
-  for (var _i = 0; _i < localStorage.length; _i++) {
-    var _k = localStorage.key(_i);
-    if (_k && _k.indexOf('haven-image-') === 0) {
-      var _id = _k.slice(12);
-      if (_id) { var _v = localStorage.getItem(_k); if (_v) { state.images[_id] = _v; _found++; } }
+  var _knownIds = Object.keys(DEFAULT_IMAGES);
+  for (var _i = 0; _i < _knownIds.length; _i++) {
+    var _id = _knownIds[_i];
+    var _v = localStorage.getItem('haven-image-' + _id);
+    if (_v) {
+      state.images[_id] = _v;
+      _found++;
     }
   }
   if (_found) console.warn('[img] restoreDirectImageKeys found', _found, 'keys');
@@ -2048,8 +2050,8 @@ let sidebarEditMode = false;
 function loadSidebarConfig() {
   try {
     const raw = localStorage.getItem(SIDEBAR_CONFIG_KEY);
-    return raw ? JSON.parse(raw) : { order: [], visibility: {}, customLinks: [] };
-  } catch { return { order: [], visibility: {}, customLinks: [] }; }
+    return raw ? JSON.parse(raw) : { order: [], visibility: {}, customLinks: [], footerOrder: [], images: [] };
+  } catch { return { order: [], visibility: {}, customLinks: [], footerOrder: [], images: [] }; }
 }
 
 function saveSidebarConfig(config) {
@@ -2106,6 +2108,23 @@ function applySidebarConfig() {
   stagger.querySelectorAll('.hub-snav-item').forEach(item => {
     item.classList.toggle('active', item.getAttribute('href') === currentPage);
   });
+
+  // Apply footer button order
+  const footer = document.querySelector('.hub-sidebar-footer');
+  if (footer && config.footerOrder && config.footerOrder.length > 0) {
+    const btnMap = {};
+    footer.querySelectorAll('button').forEach(btn => {
+      const id = btn.id || btn.className;
+      if (id) btnMap[id] = btn;
+    });
+    for (const id of config.footerOrder) {
+      const btn = btnMap[id];
+      if (btn) footer.appendChild(btn);
+    }
+  }
+
+  // Render image section
+  renderSidebarImages();
 }
 
 function toggleSidebarEditMode() {
@@ -2166,14 +2185,34 @@ function renderSidebarEditControls() {
 
   // Setup drag events
   setupSidebarDrag();
+
+  // Add drag handles to footer buttons
+  const footer = document.querySelector('.hub-sidebar-footer');
+  if (footer) {
+    footer.querySelectorAll('button').forEach(btn => {
+      if (btn.querySelector('.sidebar-footer-handle')) return;
+      const handle = document.createElement('span');
+      handle.className = 'snav-drag-handle sidebar-footer-handle';
+      handle.innerHTML = '⠿';
+      handle.draggable = true;
+      handle.title = 'Drag to reorder';
+      btn.prepend(handle);
+    });
+    setupSidebarFooterDrag();
+  }
+
+  // Show image edit controls (remove buttons + add button)
+  renderSidebarImageEditControls();
 }
 
 function removeSidebarEditControls() {
-  document.querySelectorAll('.snav-drag-handle, .snav-hide-btn, .snav-add-link-btn').forEach(el => el.remove());
+  document.querySelectorAll('.snav-drag-handle, .snav-hide-btn, .snav-add-link-btn, .sidebar-footer-handle').forEach(el => el.remove());
   // Reset opacity on hidden items
   document.querySelectorAll('.hub-snav-item').forEach(item => {
     item.style.opacity = '';
   });
+  // Remove image remove buttons + add button
+  document.querySelectorAll('.hub-sidebar-image-remove, .hub-sidebar-image-add').forEach(el => el.remove());
 }
 
 let sidebarDragSrc = null;
@@ -2228,6 +2267,148 @@ function persistSidebarOrder() {
     if (href) config.order.push(href);
   });
   saveSidebarConfig(config);
+}
+
+/* ─── Sidebar footer drag reorder ──────────── */
+function setupSidebarFooterDrag() {
+  const footer = document.querySelector('.hub-sidebar-footer');
+  if (!footer) return;
+  const handles = footer.querySelectorAll('.sidebar-footer-handle');
+  handles.forEach(handle => {
+    handle.addEventListener('dragstart', function(e) {
+      sidebarDragSrc = this.closest('button');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    handle.addEventListener('dragend', function() {
+      sidebarDragSrc = null;
+      document.querySelectorAll('.snav-drag-over').forEach(el => el.classList.remove('snav-drag-over'));
+    });
+  });
+  footer.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+    btn.addEventListener('dragenter', function(e) { e.preventDefault(); if (this !== sidebarDragSrc) this.classList.add('snav-drag-over'); });
+    btn.addEventListener('dragleave', function() { this.classList.remove('snav-drag-over'); });
+    btn.addEventListener('drop', function(e) {
+      e.preventDefault(); this.classList.remove('snav-drag-over');
+      if (!sidebarDragSrc || this === sidebarDragSrc) return;
+      footer.insertBefore(sidebarDragSrc, this);
+      persistSidebarFooterOrder();
+    });
+  });
+}
+
+function persistSidebarFooterOrder() {
+  const footer = document.querySelector('.hub-sidebar-footer');
+  if (!footer) return;
+  const config = loadSidebarConfig();
+  config.footerOrder = [];
+  footer.querySelectorAll('button').forEach(btn => {
+    config.footerOrder.push(btn.id || btn.className);
+  });
+  saveSidebarConfig(config);
+}
+
+/* ─── Sidebar image section ────────────────── */
+function renderSidebarImages() {
+  const container = document.querySelector('.hub-sidebar-images');
+  if (!container) return;
+  const config = loadSidebarConfig();
+  const images = config.images || [];
+  container.innerHTML = '';
+  if (images.length === 0 && !sidebarEditMode) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = '';
+  images.forEach(img => {
+    const url = getImage(img.id);
+    if (!url) return;
+    const item = document.createElement('div');
+    item.className = 'hub-sidebar-image-item';
+    item.dataset.imageId = img.id;
+    const label = img.label || img.id;
+    item.innerHTML = '<img src="' + url + '" alt="' + label + '" loading="lazy">' +
+      '<span class="hub-sidebar-image-label">' + label + '</span>';
+    if (!sidebarEditMode) {
+      item.addEventListener('click', function() { openImageLightbox(url, label); });
+    }
+    container.appendChild(item);
+  });
+  if (sidebarEditMode) {
+    renderSidebarImageEditControls();
+  }
+}
+
+function renderSidebarImageEditControls() {
+  const container = document.querySelector('.hub-sidebar-images');
+  if (!container) return;
+  container.querySelectorAll('.hub-sidebar-image-item').forEach(function(item) {
+    if (item.querySelector('.hub-sidebar-image-remove')) return;
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'hub-sidebar-image-remove';
+    removeBtn.innerHTML = '\u00D7';
+    removeBtn.title = 'Remove image';
+    removeBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      removeSidebarImage(item.dataset.imageId);
+    });
+    item.appendChild(removeBtn);
+  });
+  if (!container.querySelector('.hub-sidebar-image-add')) {
+    const addBtn = document.createElement('button');
+    addBtn.className = 'hub-sidebar-image-add';
+    addBtn.innerHTML = '+ Add image';
+    addBtn.addEventListener('click', function() {
+      var id = prompt('Enter image ID (e.g. hub-hero, hub-tulips, hub-lamp):');
+      if (id && id.trim()) addSidebarImage(id.trim());
+    });
+    container.appendChild(addBtn);
+  }
+}
+
+function addSidebarImage(id) {
+  if (!getImage(id)) {
+    if (typeof showToast === 'function') showToast('Image not found: ' + id, 'error');
+    return;
+  }
+  const config = loadSidebarConfig();
+  if (!config.images) config.images = [];
+  if (config.images.some(function(i) { return i.id === id; })) {
+    if (typeof showToast === 'function') showToast('Image already added', 'info');
+    return;
+  }
+  config.images.push({ id: id, label: imageLabel(id) });
+  saveSidebarConfig(config);
+  renderSidebarImages();
+}
+
+function removeSidebarImage(id) {
+  const config = loadSidebarConfig();
+  config.images = (config.images || []).filter(function(i) { return i.id !== id; });
+  saveSidebarConfig(config);
+  renderSidebarImages();
+}
+
+function openImageLightbox(url, label) {
+  var existing = document.querySelector('.sidebar-lightbox');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.className = 'sidebar-lightbox';
+  overlay.innerHTML = '<div class="sidebar-lightbox-backdrop"></div>' +
+    '<div class="sidebar-lightbox-content">' +
+    '<button class="sidebar-lightbox-close">' + '\u00D7' + '</button>' +
+    '<img src="' + url + '" alt="' + (label || '') + '">' +
+    '</div>';
+  document.body.appendChild(overlay);
+  requestAnimationFrame(function() { overlay.classList.add('active'); });
+  overlay.querySelector('.sidebar-lightbox-backdrop').addEventListener('click', function() {
+    overlay.classList.remove('active');
+    setTimeout(function() { overlay.remove(); }, 200);
+  });
+  overlay.querySelector('.sidebar-lightbox-close').addEventListener('click', function() {
+    overlay.classList.remove('active');
+    setTimeout(function() { overlay.remove(); }, 200);
+  });
 }
 
 function showAddLinkPopup() {

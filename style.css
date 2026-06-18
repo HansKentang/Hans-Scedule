@@ -1610,7 +1610,115 @@ html.dark .hub-hero-decor {
 }
 .hub-sidebar-footer .btn:hover { background: var(--accent-soft); }
 
-/* ─── SIDEBAR EDIT MODE ─────────────────────────────────── */
+/* ─── SIDEBAR IMAGES SECTION ──────────────────────── */
+.hub-sidebar-images {
+  padding: var(--space-2) var(--space-2);
+  display: flex; flex-direction: column; gap: var(--space-1);
+  border-top: 1px solid var(--border-subtle);
+}
+.hub-sidebar-image-item {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: 3px var(--space-2);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background var(--t-fast);
+  position: relative;
+}
+.hub-sidebar-image-item:hover {
+  background: var(--accent-soft);
+}
+.hub-sidebar-image-item img {
+  width: 24px; height: 24px; border-radius: 4px;
+  object-fit: cover; flex-shrink: 0;
+}
+.hub-sidebar-image-label {
+  font-size: 0.72rem; color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hub-sidebar-image-remove {
+  position: absolute; top: 0; right: 0;
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent;
+  color: var(--text-tertiary); cursor: pointer;
+  font-size: 0.8rem; border-radius: 3px; opacity: 0.4;
+}
+.hub-sidebar-image-remove:hover {
+  opacity: 1; color: #ef4444;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
+.hub-sidebar-image-add {
+  padding: 3px var(--space-2);
+  border: 1px dashed var(--border-color);
+  background: transparent; color: var(--text-tertiary);
+  border-radius: 5px; cursor: pointer;
+  font-size: 0.72rem; text-align: center;
+  transition: all var(--t-fast);
+}
+.hub-sidebar-image-add:hover {
+  border-color: var(--primary); color: var(--primary);
+}
+
+/* ─── SIDEBAR FOOTER DRAG ─────────────────────────── */
+.hub-sidebar-footer button {
+  position: relative;
+}
+.sidebar-footer-handle {
+  position: absolute; left: -2px; top: 50%;
+  transform: translateY(-50%);
+  width: 14px; height: 14px; font-size: 0.55rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; color: var(--text-tertiary);
+  opacity: 0; transition: opacity 150ms ease;
+}
+html.sidebar-edit-mode .sidebar-footer-handle {
+  opacity: 0.3;
+}
+html.sidebar-edit-mode .sidebar-footer-handle:hover {
+  opacity: 0.8;
+}
+html.sidebar-edit-mode .hub-sidebar-footer button {
+  padding-left: 16px;
+}
+
+/* ─── SIDEBAR IMAGE LIGHTBOX ──────────────────────── */
+.sidebar-lightbox {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+}
+.sidebar-lightbox-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.7);
+  opacity: 0; transition: opacity 200ms ease;
+}
+.sidebar-lightbox.active .sidebar-lightbox-backdrop {
+  opacity: 1;
+}
+.sidebar-lightbox-content {
+  position: relative; max-width: 90vw; max-height: 90vh;
+  transform: scale(0.9); opacity: 0;
+  transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sidebar-lightbox.active .sidebar-lightbox-content {
+  transform: scale(1); opacity: 1;
+}
+.sidebar-lightbox-content img {
+  max-width: 100%; max-height: 85vh;
+  border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  display: block;
+}
+.sidebar-lightbox-close {
+  position: absolute; top: -12px; right: -12px;
+  width: 28px; height: 28px; border-radius: 50%;
+  border: none; background: var(--surface-elevated);
+  color: var(--text-primary); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  transition: transform 150ms ease;
+}
+.sidebar-lightbox-close:hover {
+  transform: scale(1.15);
+}
 /* Edit button in workspace header */
 #hubSidebarEditBtn {
   width: 26px; height: 26px; border-radius: 6px;
