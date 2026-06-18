@@ -959,6 +959,11 @@ function setupBubbleDragDrop() {
   });
 }
 
+function snapSpotifyHeight(h) {
+  var heights = [80, 152, 232, 352];
+  return heights.reduce(function(prev, curr) { return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev; });
+}
+
 function setupBubbleResize() {
   if (!hubEditMode) return;
   if (_bubbleResizeInitialized) return;
@@ -975,12 +980,14 @@ function setupBubbleResize() {
     const bubble = handle.closest('.bento-bubble');
     if (!bubble) return;
     const rect = bubble.getBoundingClientRect();
+    var isSpotify = !!bubble.querySelector('iframe[src*="spotify"]');
     _bubbleResizeData = {
       bubble,
       startW: rect.width,
       startH: rect.height,
       startX: e.clientX,
-      startY: e.clientY
+      startY: e.clientY,
+      isSpotify: isSpotify
     };
     bubble.classList.add('dragging');
   });
@@ -991,6 +998,7 @@ function setupBubbleResize() {
     const dy = e.clientY - _bubbleResizeData.startY;
     let newW = snap(Math.max(100, _bubbleResizeData.startW + dx));
     let newH = snap(Math.max(80, _bubbleResizeData.startH + dy));
+    if (_bubbleResizeData.isSpotify) newH = snapSpotifyHeight(newH);
     _bubbleResizeData.bubble.style.width = newW + 'px';
     _bubbleResizeData.bubble.style.height = newH + 'px';
   });
@@ -1000,7 +1008,8 @@ function setupBubbleResize() {
     _bubbleResizeData.bubble.classList.remove('dragging');
     const bubble = _bubbleResizeData.bubble;
     const w = parseInt(bubble.style.width) || 320;
-    const h = parseInt(bubble.style.height) || 240;
+    var h = parseInt(bubble.style.height) || 240;
+    if (_bubbleResizeData.isSpotify) h = snapSpotifyHeight(snap(h));
     const uid = bubble.dataset.bubble;
     const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
     const item = layout.find(i => i.uid === uid);
