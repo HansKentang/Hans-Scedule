@@ -1035,28 +1035,6 @@ function applyImages() {
   });
 }
 
-// --- APPLY IMAGES TO DOM ---
-function applyImages() {
-  document.querySelectorAll("img[data-image-id]").forEach(function(el) {
-    var _id = el.dataset.imageId;
-    if (_id) {
-      el.src = getImage(_id) || "";
-      el.style.display = el.src ? "block" : "none";
-    }
-  });
-}
-
-// --- APPLY IMAGES TO DOM ---
-function applyImages() {
-  document.querySelectorAll("img[data-image-id]").forEach(function(el) {
-    var _id = el.dataset.imageId;
-    if (_id) {
-      el.src = getImage(_id) || "";
-      el.style.display = el.src ? "block" : "none";
-    }
-  });
-}
-
 function restoreDirectImageKeys() {
   var _found = 0;
   for (var _i = 0; _i < localStorage.length; _i++) {
@@ -1204,63 +1182,6 @@ function resizeImageDataUrl(dataUrl, maxWidth, maxHeight, quality) {
     img.src = dataUrl;
   });
 }
-
-// --- IMAGE COMPRESSION ---
-function resizeImageDataUrl(dataUrl, maxWidth, maxHeight, quality) {
-  return new Promise(function(resolve) {
-    var img = new Image();
-    img.onload = function() {
-      var w = img.width, h = img.height;
-      if (w <= maxWidth && h <= maxHeight) {
-        resolve(dataUrl);
-        return;
-      }
-      var ratio = Math.min(maxWidth / w, maxHeight / h, 1);
-      var cw = Math.round(w * ratio);
-      var ch = Math.round(h * ratio);
-      var canvas = document.createElement("canvas");
-      canvas.width = cw;
-      canvas.height = ch;
-      var ctx = canvas.getContext("2d");
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(img, 0, 0, cw, ch);
-      var resized = canvas.toDataURL("image/jpeg", quality || 0.82);
-      resolve(resized);
-    };
-    img.onerror = function() { resolve(dataUrl); };
-    img.src = dataUrl;
-  });
-}
-
-// --- IMAGE COMPRESSION ---
-function resizeImageDataUrl(dataUrl, maxWidth, maxHeight, quality) {
-  return new Promise(function(resolve) {
-    var img = new Image();
-    img.onload = function() {
-      var w = img.width, h = img.height;
-      if (w <= maxWidth && h <= maxHeight) {
-        resolve(dataUrl);
-        return;
-      }
-      var ratio = Math.min(maxWidth / w, maxHeight / h, 1);
-      var cw = Math.round(w * ratio);
-      var ch = Math.round(h * ratio);
-      var canvas = document.createElement("canvas");
-      canvas.width = cw;
-      canvas.height = ch;
-      var ctx = canvas.getContext("2d");
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(img, 0, 0, cw, ch);
-      var resized = canvas.toDataURL("image/jpeg", quality || 0.82);
-      resolve(resized);
-    };
-    img.onerror = function() { resolve(dataUrl); };
-    img.src = dataUrl;
-  });
-}
-
 function handleImagePickerPaste(e) {
   const status = document.getElementById('imagePickerStatus');
   const preview = document.getElementById('imagePickerPreview');
@@ -1293,7 +1214,6 @@ function handleImagePickerPaste(e) {
       };
       reader.readAsDataURL(blob);
       return;
-    }      return;
     }
   }
 }

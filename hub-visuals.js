@@ -962,8 +962,8 @@ function setupBubbleDragDrop() {
 }
 
 function snapSpotifyHeight(h) {
-  // bubble heights = iframe embed heights + 30px header: 80+30, 152+30, 232+30, 352+30
-  var heights = [110, 182, 262, 382];
+  // bubble heights = iframe + 30px header, aligned to 20px grid: 120, 180, 260, 380
+  var heights = [120, 180, 260, 380];
   return heights.reduce(function(prev, curr) { return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev; });
 }
 
