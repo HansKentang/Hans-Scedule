@@ -1029,11 +1029,19 @@ function setupBubbleResize() {
 
   document.addEventListener('mousemove', function(e) {
     if (!_bubbleResizeData) return;
+    const bubble = _bubbleResizeData.bubble;
+    const gridRect = grid.getBoundingClientRect();
+    const bRect = bubble.getBoundingClientRect();
+    const left = parseInt(bubble.style.left) || 0;
+    const top = parseInt(bubble.style.top) || 0;
     const dx = e.clientX - _bubbleResizeData.startX;
     const dy = e.clientY - _bubbleResizeData.startY;
     let newW = snap(Math.max(100, _bubbleResizeData.startW + dx));
     let newH = snap(Math.max(80, _bubbleResizeData.startH + dy));
     if (_bubbleResizeData.isSpotify) newH = snapSpotifyHeight(newH);
+    // Constrain so bubble doesn't overflow grid edges
+    newW = Math.min(newW, gridRect.width - left);
+    newH = Math.min(newH, gridRect.height - top);
     _bubbleResizeData.bubble.style.width = newW + 'px';
     _bubbleResizeData.bubble.style.height = newH + 'px';
   });
@@ -1042,9 +1050,14 @@ function setupBubbleResize() {
     if (!_bubbleResizeData) return;
     _bubbleResizeData.bubble.classList.remove('dragging');
     const bubble = _bubbleResizeData.bubble;
-    const w = parseInt(bubble.style.width) || 320;
-    var h = parseInt(bubble.style.height) || 240;
-    if (_bubbleResizeData.isSpotify) h = snapSpotifyHeight(snap(h));
+    const gridRect = grid.getBoundingClientRect();
+    const left = parseInt(bubble.style.left) || 0;
+    const top = parseInt(bubble.style.top) || 0;
+    let w = parseInt(bubble.style.width) || 320;
+    let h = parseInt(bubble.style.height) || 240;
+    if (_bubbleResizeData.isSpotify) h = snapSpotifyHeight(h);
+    w = Math.min(w, gridRect.width - left);
+    h = Math.min(h, gridRect.height - top);
     const uid = bubble.dataset.bubble;
     const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
     const item = layout.find(i => i.uid === uid);
