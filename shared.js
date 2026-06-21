@@ -1285,7 +1285,14 @@ const DEFAULT_IMAGES = {
   'hub-image-7': 'https://picsum.photos/seed/haven-canvas-7/600/400',
   'hub-image-8': 'https://picsum.photos/seed/haven-canvas-8/600/400',
   'hub-image-9': 'https://picsum.photos/seed/haven-canvas-9/600/400',
-  'hub-image-10': 'https://picsum.photos/seed/haven-canvas-10/600/400'
+  'hub-image-10': 'https://picsum.photos/seed/haven-canvas-10/600/400',
+  'sidebar-index': 'https://images.unsplash.com/photo-1752503650851-cbc3f8b00679?auto=format&fit=crop&w=440&q=80',
+  'sidebar-schedule': 'https://images.unsplash.com/photo-1562537218-26057ef20502?auto=format&fit=crop&w=440&q=80',
+  'sidebar-activities': 'https://images.unsplash.com/photo-1742055700759-e393a5314287?auto=format&fit=crop&w=440&q=80',
+  'sidebar-analytics': 'https://images.unsplash.com/photo-1759210358926-4673cc44d35f?auto=format&fit=crop&w=440&q=80',
+  'sidebar-goals': 'https://images.unsplash.com/photo-1731176497854-f9ea4dd52eb6?auto=format&fit=crop&w=440&q=80',
+  'sidebar-finance': 'https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&w=440&q=80',
+  'sidebar-tags': 'https://images.unsplash.com/photo-1768527049008-85f2cc0166be?auto=format&fit=crop&w=440&q=80'
 };
 
 function loadImages() {
@@ -1382,6 +1389,23 @@ function resetImage(id) {
       if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
     }
   });
+
+  // If this is a sidebar image, also update sidebar config
+  if (id && id.indexOf('sidebar-') === 0) {
+    var pageName = id.replace('sidebar-', '');
+    if (pageName) {
+      var cfg = loadSidebarConfig();
+      if (cfg.images) {
+        for (var i = 0; i < cfg.images.length; i++) {
+          if ((cfg.images[i].page || '') === pageName) {
+            cfg.images[i].url = url;
+            break;
+          }
+        }
+      }
+      saveSidebarConfig(cfg);
+    }
+  }
 }
 
 function imageLabel(id) {
@@ -2318,11 +2342,58 @@ const SIDEBAR_CONFIG_KEY = 'haven-sidebar-config';
 
 let sidebarEditMode = false;
 
+const SIDEBAR_IMAGE_DEFAULTS = [
+  { id: '_img_hub', label: 'Hub', page: 'index', url: 'https://images.unsplash.com/photo-1752503650851-cbc3f8b00679?auto=format&fit=crop&w=440&q=80' },
+  { id: '_img_schedule', label: 'Schedule', page: 'schedule', url: 'https://images.unsplash.com/photo-1562537218-26057ef20502?auto=format&fit=crop&w=440&q=80' },
+  { id: '_img_activities', label: 'Activities', page: 'activities', url: 'https://images.unsplash.com/photo-1742055700759-e393a5314287?auto=format&fit=crop&w=440&q=80' },
+  { id: '_img_analytics', label: 'Analytics', page: 'analytics', url: 'https://images.unsplash.com/photo-1759210358926-4673cc44d35f?auto=format&fit=crop&w=440&q=80' },
+  { id: '_img_goals', label: 'Goals', page: 'goals', url: 'https://images.unsplash.com/photo-1731176497854-f9ea4dd52eb6?auto=format&fit=crop&w=440&q=80' },
+  { id: '_img_finance', label: 'Finance', page: 'finance', url: 'https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&w=440&q=80' },
+  { id: '_img_tags', label: 'Tags', page: 'tags', url: 'https://images.unsplash.com/photo-1768527049008-85f2cc0166be?auto=format&fit=crop&w=440&q=80' }
+];
+
+function getCurrentPage() {
+  var p = location.pathname.split('/').pop() || 'index.html';
+  return p.replace('.html', '');
+}
+
 function loadSidebarConfig() {
   try {
     const raw = localStorage.getItem(SIDEBAR_CONFIG_KEY);
-    return raw ? JSON.parse(raw) : { order: [], visibility: {}, customLinks: [], footerOrder: [], images: [] };
-  } catch { return { order: [], visibility: {}, customLinks: [], footerOrder: [], images: [] }; }
+    if (raw) {
+      const config = JSON.parse(raw);
+      // Migrate v0/v1 to v2: seed default images for all pages
+      if (!config._v || config._v < 2) {
+        config._v = 2;
+        config.images = SIDEBAR_IMAGE_DEFAULTS.map(function(d) { return { id: d.id, label: d.label, page: d.page, url: d.url }; });
+        saveSidebarConfig(config);
+      }
+      // Ensure every page has at least one image
+      if (!config.images) config.images = [];
+      var defaultPages = ['index','schedule','activities','analytics','goals','finance','tags'];
+      for (var p = 0; p < defaultPages.length; p++) {
+        var pageName = defaultPages[p];
+        var has = false;
+        for (var i = 0; i < config.images.length; i++) {
+          if (config.images[i].page === pageName) { has = true; break; }
+        }
+        if (!has) {
+          for (var d = 0; d < SIDEBAR_IMAGE_DEFAULTS.length; d++) {
+            if (SIDEBAR_IMAGE_DEFAULTS[d].page === pageName) {
+              config.images.push({ id: SIDEBAR_IMAGE_DEFAULTS[d].id, label: SIDEBAR_IMAGE_DEFAULTS[d].label, page: SIDEBAR_IMAGE_DEFAULTS[d].page, url: SIDEBAR_IMAGE_DEFAULTS[d].url });
+              break;
+            }
+          }
+        }
+      }
+      return config;
+    }
+  } catch {}
+  // Fresh start
+  return {
+    order: [], visibility: {}, customLinks: [], footerOrder: [], _v: 2,
+    images: SIDEBAR_IMAGE_DEFAULTS.map(function(d) { return { id: d.id, label: d.label, page: d.page, url: d.url }; })
+  };
 }
 
 function saveSidebarConfig(config) {
@@ -2411,9 +2482,11 @@ function toggleSidebarEditMode() {
 
   if (sidebarEditMode) {
     renderSidebarEditControls();
+    renderSidebarImages();
     showToast('✎ Sidebar edit ON — drag to reorder, click ● to hide', 'info', 2500);
   } else {
     removeSidebarEditControls();
+    renderSidebarImages();
     showToast('Sidebar edit OFF', 'info', 1500);
   }
 }
@@ -2488,7 +2561,7 @@ function removeSidebarEditControls() {
     item.style.opacity = '';
   });
   // Remove image remove buttons + add button
-  document.querySelectorAll('.hub-sidebar-image-remove, .hub-sidebar-image-add').forEach(el => el.remove());
+  document.querySelectorAll('.hub-sidebar-image-remove, .hub-sidebar-image-toggle, .hub-sidebar-image-edit, .hub-sidebar-image-resize-handle').forEach(el => el.remove());
 }
 
 let sidebarDragSrc = null;
@@ -2589,29 +2662,72 @@ function renderSidebarImages() {
   const container = document.querySelector('.hub-sidebar-images');
   if (!container) return;
   const config = loadSidebarConfig();
-  const images = config.images || [];
+  const currentPage = getCurrentPage();
+  var images = (config.images || []).filter(function(img) {
+    return !img.page || img.page === currentPage;
+  });
+  // Only one image per page
+  images = images.slice(0, 1);
+  // In normal mode, hide hidden images; in edit mode, show them dimmed
+  if (!sidebarEditMode) {
+    images = images.filter(function(img) { return !img.hidden; });
+  }
   container.innerHTML = '';
   if (images.length === 0 && !sidebarEditMode) {
     container.style.display = 'none';
+    container.style.height = '';
+    container.style.flex = '';
     return;
   }
   container.style.display = '';
-  images.forEach(img => {
-    var url = img.url || getImage(img.id);
-    if (!url) return;
-    const item = document.createElement('div');
-    item.className = 'hub-sidebar-image-item';
-    item.dataset.imageId = img.id;
-    const label = img.label || img.id;
-    item.innerHTML = '<img src="' + url + '" alt="' + label + '" loading="lazy">' +
-      '<span class="hub-sidebar-image-label">' + label + '</span>';
-    if (!sidebarEditMode) {
-      item.addEventListener('click', function() { openImageLightbox(url, label); });
-    }
-    container.appendChild(item);
-  });
+  var spEl = document.querySelector('.sp-sidebar');
+  // Apply saved height (never more than space above Spotify)
+  if (config.imageSectionHeight) {
+    var spH = spEl ? spEl.offsetHeight : 100;
+    var parentH = container.parentElement ? container.parentElement.offsetHeight : 600;
+    var clampedH = Math.min(config.imageSectionHeight, Math.max(60, parentH - spH));
+    container.style.flex = 'none';
+    container.style.height = clampedH + 'px';
+    container.style.maxHeight = 'none';
+  } else {
+    container.style.flex = '';
+    container.style.height = '';
+    container.style.maxHeight = '';
+  }
+  // Render image items FIRST
+  if (images.length > 0) {
+    images.forEach(img => {
+      var url = img.url || getImage(img.id);
+      if (!url) return;
+      // Sync to state.images so Visuals image picker shows correct URL
+      var sidebarId = 'sidebar-' + currentPage;
+      state.images[sidebarId] = url;
+
+      const item = document.createElement('div');
+      item.className = 'hub-sidebar-image-item';
+      if (img.hidden) item.classList.add('hub-sidebar-image-hidden');
+      item.dataset.imageId = img.id;
+      const label = img.label || img.id;
+      item.innerHTML = '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' +
+        '<span class="hub-sidebar-image-label">' + label + '</span>';
+      // Click: in Visuals edit mode → image picker, else → lightbox
+      item.addEventListener('click', function() {
+        if (state.editMode) {
+          openImagePicker(sidebarId);
+        } else {
+          openImageLightbox(url, label);
+        }
+      });
+      container.appendChild(item);
+    });
+  }
+  // Resize handle at bottom edge AFTER images (right above Spotify)
   if (sidebarEditMode) {
-    renderSidebarImageEditControls();
+    const handle = document.createElement('div');
+    handle.className = 'hub-sidebar-image-resize-handle';
+    handle.innerHTML = '<div class="hub-sidebar-image-resize-handle-dots"><span></span><span></span><span></span></div>';
+    container.appendChild(handle);
+    setupSidebarImageResize(container, handle);
   }
 }
 
@@ -2620,9 +2736,37 @@ function renderSidebarImageEditControls() {
   if (!container) return;
   container.querySelectorAll('.hub-sidebar-image-item').forEach(function(item) {
     if (item.querySelector('.hub-sidebar-image-remove')) return;
+    // Replace/edit button
+    const editBtn = document.createElement('button');
+    editBtn.className = 'hub-sidebar-image-edit';
+    editBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>';
+    editBtn.title = 'Replace image';
+    editBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      showSidebarImageReplacePopup(item.dataset.imageId);
+    });
+    item.appendChild(editBtn);
+    // Hide/show toggle button
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'hub-sidebar-image-toggle';
+    var isHidden = false;
+    var imgId = item.dataset.imageId;
+    var cfg = loadSidebarConfig();
+    if (cfg.images) {
+      var found = cfg.images.find(function(i) { return i.id === imgId; });
+      if (found && found.hidden) isHidden = true;
+    }
+    toggleBtn.innerHTML = isHidden ? '○' : '●';
+    toggleBtn.title = isHidden ? 'Show in sidebar' : 'Hide from sidebar';
+    toggleBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      toggleSidebarImageHidden(imgId);
+    });
+    item.appendChild(toggleBtn);
+    // Remove button
     const removeBtn = document.createElement('button');
     removeBtn.className = 'hub-sidebar-image-remove';
-    removeBtn.innerHTML = '\u00D7';
+    removeBtn.innerHTML = '×';
     removeBtn.title = 'Remove image';
     removeBtn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -2630,13 +2774,6 @@ function renderSidebarImageEditControls() {
     });
     item.appendChild(removeBtn);
   });
-  if (!container.querySelector('.hub-sidebar-image-add')) {
-    const addBtn = document.createElement('button');
-    addBtn.className = 'hub-sidebar-image-add';
-    addBtn.innerHTML = '+ Add image';
-    addBtn.addEventListener('click', showSidebarImagePastePopup);
-    container.appendChild(addBtn);
-  }
 }
 
 function showSidebarImagePastePopup() {
@@ -2646,6 +2783,16 @@ function showSidebarImagePastePopup() {
   popup.className = 'sidebar-paste-popup';
   popup.innerHTML = '<div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-tertiary);margin-bottom:6px">Paste Image</div>' +
     '<input type="text" id="sidebarPasteInput" placeholder="Paste URL or Ctrl+V" autofocus>' +
+    '<select id="sidebarPastePage" style="width:100%;margin-top:4px;padding:3px 4px;font-size:0.7rem;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-color);border-radius:4px">' +
+    '<option value="">All pages</option>' +
+    '<option value="index">Hub</option>' +
+    '<option value="schedule">Schedule</option>' +
+    '<option value="activities">Activities</option>' +
+    '<option value="analytics">Analytics</option>' +
+    '<option value="goals">Goals</option>' +
+    '<option value="finance">Finance</option>' +
+    '<option value="tags">Tags</option>' +
+    '</select>' +
     '<div class="sidebar-paste-hint" style="font-size:0.6rem;color:var(--text-tertiary);margin-top:4px">Paste a URL or use Ctrl+V to paste from clipboard</div>' +
     '<div class="hub-edit-popup-actions" style="margin-top:6px">' +
     '<button class="cancel" id="sidebarPasteCancel">Cancel</button>' +
@@ -2735,6 +2882,113 @@ function openImageLightbox(url, label) {
     overlay.classList.remove('active');
     setTimeout(function() { overlay.remove(); }, 200);
   });
+}
+
+// ─── RESIZE HANDLE DRAG ───────────────────────
+var _sidebarResizeData = null;
+
+function setupSidebarImageResize(container, handle) {
+  handle.addEventListener('mousedown', function(e) {
+    e.preventDefault();
+    var startH = container.offsetHeight;
+    _sidebarResizeData = { container: container, startY: e.clientY, startH: startH };
+    document.addEventListener('mousemove', _onResizeMove);
+    document.addEventListener('mouseup', _onResizeUp);
+  });
+}
+
+function _onResizeMove(e) {
+  if (!_sidebarResizeData) return;
+  var diff = e.clientY - _sidebarResizeData.startY;
+  var parent = _sidebarResizeData.container.parentElement;
+  var sp = parent ? parent.querySelector('.sp-sidebar') : null;
+  var spH = sp ? sp.offsetHeight : 100;
+  var parentH = parent ? parent.offsetHeight : 600;
+  var maxH = Math.max(60, parentH - spH);
+  var newH = Math.max(60, Math.min(maxH, _sidebarResizeData.startH - diff));
+  _sidebarResizeData.container.style.flex = 'none';
+  _sidebarResizeData.container.style.height = newH + 'px';
+  _sidebarResizeData.container.style.maxHeight = 'none';
+}
+
+function _onResizeUp() {
+  if (!_sidebarResizeData) return;
+  document.removeEventListener('mousemove', _onResizeMove);
+  document.removeEventListener('mouseup', _onResizeUp);
+  var h = _sidebarResizeData.container.offsetHeight;
+  var parent = _sidebarResizeData.container.parentElement;
+  var sp = parent ? parent.querySelector('.sp-sidebar') : null;
+  var spH = sp ? sp.offsetHeight : 100;
+  var parentH = parent ? parent.offsetHeight : 600;
+  h = Math.max(60, Math.min(h, parentH - spH));
+  _sidebarResizeData.container.style.height = h + 'px';
+  var config = loadSidebarConfig();
+  config.imageSectionHeight = h;
+  saveSidebarConfig(config);
+  _sidebarResizeData = null;
+}
+
+function showSidebarImageReplacePopup(imgId) {
+  const config = loadSidebarConfig();
+  var imgData = null;
+  if (config.images) {
+    for (var i = 0; i < config.images.length; i++) {
+      if (config.images[i].id === imgId) { imgData = config.images[i]; break; }
+    }
+  }
+  if (!imgData) return;
+  const existing = document.querySelector('.sidebar-paste-popup');
+  if (existing) existing.remove();
+  const popup = document.createElement('div');
+  popup.className = 'sidebar-paste-popup';
+  popup.innerHTML = '<div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-tertiary);margin-bottom:6px">Replace Image</div>' +
+    '<input type="text" id="sidebarPasteInput" placeholder="Paste new image URL" value="' + (imgData.url || '') + '" autofocus>' +
+    '<div class="sidebar-paste-hint" style="font-size:0.6rem;color:var(--text-tertiary);margin-top:4px">Enter a new URL or use Ctrl+V to paste from clipboard</div>' +
+    '<div class="hub-edit-popup-actions" style="margin-top:6px">' +
+    '<button class="cancel" id="sidebarPasteCancel">Cancel</button>' +
+    '<button class="primary" id="sidebarPasteSave">Replace</button></div>';
+  var addBtn = document.querySelector('.hub-sidebar-image-add');
+  if (addBtn) addBtn.parentNode.insertBefore(popup, addBtn.nextSibling);
+  else document.querySelector('.hub-sidebar-images').appendChild(popup);
+  var input = document.getElementById('sidebarPasteInput');
+  if (input) { input.focus(); input.select(); }
+  document.getElementById('sidebarPasteSave').addEventListener('click', function() {
+    var val = document.getElementById('sidebarPasteInput')?.value?.trim();
+    if (val) {
+      imgData.url = val;
+      saveSidebarConfig(config);
+      renderSidebarImages();
+    }
+    popup.remove();
+  });
+  document.getElementById('sidebarPasteCancel').addEventListener('click', function() { popup.remove(); });
+  if (input) {
+    input.addEventListener('paste', function(e) {
+      var items = e.clipboardData.items;
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          var blob = items[i].getAsFile();
+          var reader = new FileReader();
+          reader.onload = function(ev) { input.value = ev.target.result; };
+          reader.readAsDataURL(blob);
+          break;
+        }
+      }
+    });
+  }
+}
+
+function toggleSidebarImageHidden(id) {
+  const config = loadSidebarConfig();
+  if (!config.images) return;
+  for (var i = 0; i < config.images.length; i++) {
+    if (config.images[i].id === id) {
+      config.images[i].hidden = !config.images[i].hidden;
+      break;
+    }
+  }
+  saveSidebarConfig(config);
+  renderSidebarImages();
 }
 
 function showAddLinkPopup() {

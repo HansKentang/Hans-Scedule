@@ -2098,59 +2098,124 @@ html.dark .hub-hero-decor {
 
 /* ─── SIDEBAR IMAGES SECTION ──────────────────────── */
 .hub-sidebar-images {
-  padding: var(--space-1) var(--space-2);
-  display: flex; flex-direction: column; gap: var(--space-1);
-  max-height: 300px; overflow-y: auto;
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;
+  position: relative;
+  overflow: hidden;
 }
+html.sidebar-edit-mode .hub-sidebar-images {
+  outline: 1px dashed var(--border-color);
+  outline-offset: -1px;
+}
+/* Add placeholder in edit mode when no images */
+.hub-sidebar-image-add-placeholder {
+  width: 100%; min-height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px dashed var(--border-color);
+  border-radius: 6px;
+  color: var(--text-tertiary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  user-select: none;
+}
+.hub-sidebar-image-add-placeholder:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+/* ─── RESIZE HANDLE ─────────────────────────── */
+.hub-sidebar-image-resize-handle {
+  display: none;
+  position: relative;
+  width: 100%; height: 16px;
+  cursor: row-resize;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  flex-shrink: 0;
+}
+html.sidebar-edit-mode .hub-sidebar-image-resize-handle {
+  display: flex;
+}
+.hub-sidebar-image-resize-handle:hover {
+  background: color-mix(in srgb, var(--border-color) 30%, transparent);
+  border-radius: 4px;
+}
+.hub-sidebar-image-resize-handle-dots {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  opacity: 0.5;
+  pointer-events: none;
+}
+.hub-sidebar-image-resize-handle-dots span {
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  display: block;
+}
+/* ─── IMAGE CARDS ───────────────────────────── */
 .hub-sidebar-image-item {
   position: relative;
-  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  transition: opacity var(--t-fast);
-  line-height: 0;
+  flex: 1;
+  min-height: 0;
 }
 .hub-sidebar-image-item:hover {
   opacity: 0.85;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 .hub-sidebar-image-item img {
-  max-width: 100%;
-  max-height: 250px;
-  width: auto;
+  width: 100%;
   height: auto;
   display: block;
-  margin: 0 auto;
   background: var(--bg-surface);
 }
 .hub-sidebar-image-label {
   display: none;
 }
+/* ─── EDIT BUTTONS ON IMAGES ────────────────── */
+.hub-sidebar-image-edit,
+.hub-sidebar-image-toggle,
 .hub-sidebar-image-remove {
-  position: absolute; top: 4px; right: 4px;
+  position: absolute; top: 4px;
   width: 22px; height: 22px;
   display: flex; align-items: center; justify-content: center;
-  border: none; background: rgba(0,0,0,0.5);
+  border: none;
+  background: color-mix(in srgb, #000 50%, transparent);
   color: #fff; cursor: pointer;
-  font-size: 0.85rem; border-radius: 50%;
-  opacity: 0; transition: opacity 150ms ease; z-index: 2;
+  font-size: 0.75rem; border-radius: 50%;
+  opacity: 0; transition: opacity 150ms ease, background 150ms ease, transform 150ms ease;
+  z-index: 2;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transform: scale(0.9);
 }
-.hub-sidebar-image-item:hover .hub-sidebar-image-remove,
+html.sidebar-edit-mode .hub-sidebar-image-edit,
+html.sidebar-edit-mode .hub-sidebar-image-toggle,
 html.sidebar-edit-mode .hub-sidebar-image-remove {
   opacity: 1;
+  transform: scale(1);
 }
-.hub-sidebar-image-remove:hover {
-  background: rgba(239,68,68,0.8);
+.hub-sidebar-image-item:hover .hub-sidebar-image-edit,
+.hub-sidebar-image-item:hover .hub-sidebar-image-toggle,
+.hub-sidebar-image-item:hover .hub-sidebar-image-remove {
+  opacity: 1;
+  transform: scale(1);
 }
-.hub-sidebar-image-add {
-  padding: 3px var(--space-2);
-  border: 1px dashed var(--border-color);
-  background: transparent; color: var(--text-tertiary);
-  border-radius: 5px; cursor: pointer;
-  font-size: 0.72rem; text-align: center;
-  transition: all var(--t-fast);
+.hub-sidebar-image-edit { left: 4px; }
+.hub-sidebar-image-toggle { left: 30px; }
+.hub-sidebar-image-remove { right: 4px; }
+.hub-sidebar-image-edit:hover { background: rgba(255,255,255,0.3); }
+.hub-sidebar-image-toggle:hover { background: rgba(255,255,255,0.3); }
+.hub-sidebar-image-remove:hover { background: rgba(239,68,68,0.8); }
+.hub-sidebar-image-hidden {
+  opacity: 0.35;
 }
-.hub-sidebar-image-add:hover {
-  border-color: var(--primary); color: var(--primary);
+.hub-sidebar-image-hidden:hover {
+  opacity: 0.5;
 }
 
 /* ─── SIDEBAR FOOTER DRAG ─────────────────────────── */
@@ -5628,11 +5693,11 @@ html.light .hub-add-popup {
 .bento-resize-handle:hover::after { opacity:1; border-color:transparent transparent var(--primary) transparent; }
 
 /* ─── SIDEBAR BODY (scrollable nav + spotify) ──────────── */
-.hub-sidebar-body { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
+.hub-sidebar-body { flex:1; overflow:hidden; display:flex; flex-direction:column; }
 .hub-sidebar-body > .hub-sidebar-nav { flex:0 0 auto; overflow:visible; }
 
 /* ─── SPOTIFY EMBED ────────────────────────────────────────── */
-.sp-sidebar { flex-shrink:0; border-top:1px solid var(--border-subtle); margin-top:auto; }
+.sp-sidebar { border-top:1px solid var(--border-subtle); margin-top:auto; }
 .sp-header { display:flex; align-items:center; gap:6px; padding:10px 14px 6px; cursor:pointer; user-select:none; }
 .sp-header:active { opacity:0.7; }
 .sp-toggle-btn { width:20px; height:20px; border:none; border-radius:4px; background:transparent; color:#1db954; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:color 0.12s,background 0.12s; }
