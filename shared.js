@@ -2691,9 +2691,11 @@ function renderSidebarImages() {
   }
   container.innerHTML = '';
   if (images.length === 0 && !sidebarEditMode) {
-    container.style.display = 'none';
-    container.style.height = '';
-    container.style.flex = '';
+    container.style.display = '';
+    container.style.flex = 'none';
+    container.style.height = '0';
+    container.style.maxHeight = '';
+    container.classList.add('collapsed');
     return;
   }
   container.style.display = '';
@@ -2706,10 +2708,12 @@ function renderSidebarImages() {
     container.style.flex = 'none';
     container.style.height = clampedH + 'px';
     container.style.maxHeight = 'none';
+    container.classList.toggle('collapsed', clampedH <= 60);
   } else {
     container.style.flex = '';
     container.style.height = '';
     container.style.maxHeight = '';
+    container.classList.remove('collapsed');
   }
   // Render image items FIRST
   if (images.length > 0) {
@@ -2739,12 +2743,15 @@ function renderSidebarImages() {
       container.appendChild(item);
     });
   }
-  // Resize handle at bottom edge AFTER images (right above Spotify)
+  // ─── RESIZE HANDLE (at top of images container, sticking to image) ───
+  var oldHandle = document.querySelector('.hub-sidebar-image-resize-handle');
+  if (oldHandle) oldHandle.remove();
   const handle = document.createElement('div');
   handle.className = 'hub-sidebar-image-resize-handle';
   handle.innerHTML = '<div class="hub-sidebar-image-resize-handle-dots"><span></span><span></span><span></span></div>';
-  container.appendChild(handle);
+  container.insertBefore(handle, container.firstChild);
   setupSidebarImageResize(container, handle);
+  // ───────────────────────────────────────────────────────────────────
 }
 
 function renderSidebarImageEditControls() {
@@ -2925,6 +2932,7 @@ function _onResizeMove(e) {
   _sidebarResizeData.container.style.flex = 'none';
   _sidebarResizeData.container.style.height = newH + 'px';
   _sidebarResizeData.container.style.maxHeight = 'none';
+  _sidebarResizeData.container.classList.toggle('collapsed', newH <= 60);
 }
 
 function _onResizeUp() {
@@ -2938,6 +2946,7 @@ function _onResizeUp() {
   var parentH = parent ? parent.offsetHeight : 600;
   h = Math.max(60, Math.min(h, parentH - spH));
   _sidebarResizeData.container.style.height = h + 'px';
+  _sidebarResizeData.container.classList.toggle('collapsed', h <= 60);
   var config = loadSidebarConfig();
   config.imageSectionHeight = h;
   saveSidebarConfig(config);

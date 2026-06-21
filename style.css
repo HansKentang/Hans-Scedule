@@ -2099,7 +2099,7 @@ html.dark .hub-hero-decor {
 /* ─── SIDEBAR IMAGES SECTION ──────────────────────── */
 .hub-sidebar-images {
   display: flex; flex-direction: column;
-  flex: 1; min-height: 0;
+  min-height: 0;
   position: relative;
   overflow: hidden;
 }
@@ -2107,6 +2107,7 @@ html.sidebar-edit-mode .hub-sidebar-images {
   outline: 1px dashed var(--border-color);
   outline-offset: -1px;
 }
+.hub-sidebar-images.collapsed .hub-sidebar-image-item { display:none; }
 /* Add placeholder in edit mode when no images */
 .hub-sidebar-image-add-placeholder {
   width: 100%; min-height: 40px;
@@ -5694,7 +5695,7 @@ html.light .hub-add-popup {
 .hub-sidebar-body > .hub-sidebar-nav { flex:0 0 auto; overflow:visible; }
 
 /* ─── SPOTIFY EMBED ────────────────────────────────────────── */
-.sp-sidebar { border-top:1px solid var(--border-subtle); margin-top:auto; }
+.sp-sidebar { border-top:1px solid var(--border-subtle); }
 .sp-header { display:flex; align-items:center; gap:6px; padding:10px 14px 6px; cursor:pointer; user-select:none; }
 .sp-header:active { opacity:0.7; }
 .sp-toggle-btn { width:20px; height:20px; border:none; border-radius:4px; background:transparent; color:#1db954; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:color 0.12s,background 0.12s; }
