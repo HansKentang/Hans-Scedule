@@ -126,7 +126,7 @@ function normalizeBentoLayout(layout, parent) {
         const ratio = aspectRatios[oldAspect] || 1.333;
         norm.h = snap(norm.w / ratio);
       } else if (norm.t === 'spotify') {
-        norm.h = snap(160);
+        norm.h = 352;
       } else {
         norm.h = snap(280);
       }
@@ -986,8 +986,7 @@ function setupBubbleDragDrop() {
 }
 
 function snapSpotifyHeight(h) {
-  // bubble heights = iframe + 30px header, aligned to 20px grid: 100, 160, 240, 340, 440
-  var heights = [100, 160, 240, 340, 440];
+  var heights = [152, 352];
   return heights.reduce(function(prev, curr) { return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev; });
 }
 
@@ -1166,7 +1165,7 @@ function addBubbleTypes(types) {
     item.x = snap(24);
     item.y = snap(maxY + 30);
     item.w = snap(320);
-    item.h = item.t === 'spotify' ? snap(160) : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+    item.h = item.t === 'spotify' ? 352 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
     layout.push(item);
   });
   // Force all collisions to be resolved — this will push the new item down if needed
