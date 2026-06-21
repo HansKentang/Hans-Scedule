@@ -2084,6 +2084,7 @@ function init() {
   loadState();
   applyTheme();
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
+  if (typeof renderSidebarImages === 'function') renderSidebarImages();
   if (dom.filterShowWeekends) dom.filterShowWeekends.checked = state.showWeekends;
   if (dom.filterShowCompleted) dom.filterShowCompleted.checked = state.showCompleted;
   state.currentWeekStart = getMonday(new Date());
