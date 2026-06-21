@@ -2561,7 +2561,7 @@ function removeSidebarEditControls() {
     item.style.opacity = '';
   });
   // Remove image remove buttons + add button
-  document.querySelectorAll('.hub-sidebar-image-remove, .hub-sidebar-image-toggle, .hub-sidebar-image-edit, .hub-sidebar-image-resize-handle').forEach(el => el.remove());
+  document.querySelectorAll('.hub-sidebar-image-remove, .hub-sidebar-image-toggle, .hub-sidebar-image-edit').forEach(el => el.remove());
 }
 
 let sidebarDragSrc = null;
@@ -2722,13 +2722,11 @@ function renderSidebarImages() {
     });
   }
   // Resize handle at bottom edge AFTER images (right above Spotify)
-  if (sidebarEditMode) {
-    const handle = document.createElement('div');
-    handle.className = 'hub-sidebar-image-resize-handle';
-    handle.innerHTML = '<div class="hub-sidebar-image-resize-handle-dots"><span></span><span></span><span></span></div>';
-    container.appendChild(handle);
-    setupSidebarImageResize(container, handle);
-  }
+  const handle = document.createElement('div');
+  handle.className = 'hub-sidebar-image-resize-handle';
+  handle.innerHTML = '<div class="hub-sidebar-image-resize-handle-dots"><span></span><span></span><span></span></div>';
+  container.appendChild(handle);
+  setupSidebarImageResize(container, handle);
 }
 
 function renderSidebarImageEditControls() {
