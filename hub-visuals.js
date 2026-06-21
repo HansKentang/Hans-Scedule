@@ -925,10 +925,12 @@ function setupBubbleDragDrop() {
   document.addEventListener('mousemove', function(e) {
     if (!_bubbleDragData) return;
     const gridRect = grid.getBoundingClientRect();
+    const bRect = _bubbleDragData.bubble.getBoundingClientRect();
+    const bw = bRect.width, bh = bRect.height;
     let newX = e.clientX - _bubbleDragData.offsetX - gridRect.left;
     let newY = e.clientY - _bubbleDragData.offsetY - gridRect.top;
-    newX = Math.max(0, snap(newX));
-    newY = Math.max(0, snap(newY));
+    newX = Math.max(0, Math.min(snap(newX), gridRect.width - bw));
+    newY = Math.max(0, Math.min(snap(newY), gridRect.height - bh));
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
     // Real-time collision push
@@ -956,8 +958,15 @@ function setupBubbleDragDrop() {
     if (!_bubbleDragData) return;
     _bubbleDragData.bubble.classList.remove('dragging');
     const bubble = _bubbleDragData.bubble;
-    const x = parseInt(bubble.style.left) || 0;
-    const y = parseInt(bubble.style.top) || 0;
+    const gridRect = grid.getBoundingClientRect();
+    const bRect = bubble.getBoundingClientRect();
+    const bw = bRect.width, bh = bRect.height;
+    let x = parseInt(bubble.style.left) || 0;
+    let y = parseInt(bubble.style.top) || 0;
+    x = Math.max(0, Math.min(x, gridRect.width - bw));
+    y = Math.max(0, Math.min(y, gridRect.height - bh));
+    bubble.style.left = x + 'px';
+    bubble.style.top = y + 'px';
     const uid = bubble.dataset.bubble;
     const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
     const item = layout.find(i => i.uid === uid);
