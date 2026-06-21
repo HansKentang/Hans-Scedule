@@ -3965,6 +3965,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   height: 100%;
   display: flex;
   flex-direction: column;
+  border-radius: 16px;
 }
 .spotify-widget iframe {
   border: none;
@@ -3973,6 +3974,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   background: #121212;
   flex: 1;
   min-height: 0;
+  border-radius: 0 0 16px 16px;
 }
 .spotify-header {
   display: flex;

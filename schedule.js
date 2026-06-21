@@ -1623,18 +1623,29 @@ function bindEvents() {
   dom.quickTaskBtn?.addEventListener('click', () => { const now = new Date(); openNewTaskModal(formatDate(now), roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES)); });
   dom.filterTagList?.addEventListener('click', (e) => {
     const pill = e.target.closest('.sch-filter-pill');
-    if (pill) {
-      const tag = pill.dataset.tag || null;
-      state.selectedTag = state.selectedTag === tag ? null : tag;
-      dom.filterTagList.querySelectorAll('.sch-filter-pill').forEach(p => p.classList.remove('active'));
-      if (state.selectedTag) {
-        dom.filterTagList.querySelector(`.sch-filter-pill[data-tag="${state.selectedTag}"]`)?.classList.add('active');
-        dom.filterTagList.querySelector(`.sch-filter-pill[data-tag=""]`)?.classList.remove('active');
-      } else {
-        dom.filterTagList.querySelector(`.sch-filter-pill[data-tag=""]`)?.classList.add('active');
-      }
-      renderCalendar();
+    if (!pill) return;
+    const dot = e.target.closest('.pill-dot');
+    if (dot) {
+      e.stopPropagation();
+      const tag = pill.dataset.tag;
+      if (!tag) return;
+      const curColor = cardColors[tag]?.light || DEFAULT_TAG_COLORS[tag].light;
+      openCardColorPicker(dot, tag, curColor, () => {
+        renderCalendar();
+        renderSchTemplates();
+      });
+      return;
     }
+    const tag = pill.dataset.tag || null;
+    state.selectedTag = state.selectedTag === tag ? null : tag;
+    dom.filterTagList.querySelectorAll('.sch-filter-pill').forEach(p => p.classList.remove('active'));
+    if (state.selectedTag) {
+      dom.filterTagList.querySelector(`.sch-filter-pill[data-tag="${state.selectedTag}"]`)?.classList.add('active');
+      dom.filterTagList.querySelector(`.sch-filter-pill[data-tag=""]`)?.classList.remove('active');
+    } else {
+      dom.filterTagList.querySelector(`.sch-filter-pill[data-tag=""]`)?.classList.add('active');
+    }
+    renderCalendar();
   });
   dom.filterShowWeekends?.addEventListener('change', (e) => { state.showWeekends = e.target.checked; saveState(); renderCalendar(); });
   dom.filterShowCompleted?.addEventListener('change', (e) => { state.showCompleted = e.target.checked; saveState(); renderCalendar(); });

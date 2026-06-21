@@ -644,7 +644,7 @@ function renderHubBento() {
         var _spActivePlaylist = _spPlaylists.find(function(p) { return p.id === _spActiveId; });
         if (_spActivePlaylist) {
           var spotUrl = 'https://open.spotify.com/embed/playlist/' + _spActivePlaylist.id + '?utm_source=generator';
-          return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
+          return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden;border-radius:16px">
             ${editUI}
             <div class="spotify-widget">
               <div class="spotify-header">
@@ -927,6 +927,26 @@ function setupBubbleDragDrop() {
     newY = Math.max(0, snap(newY));
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
+    // Real-time collision push
+    const uid = _bubbleDragData.bubble.dataset.bubble;
+    const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+    const item = layout.find(i => i.uid === uid);
+    if (item) {
+      item.x = newX;
+      item.y = newY;
+      resolveBubbleCollisions(layout);
+      var g = document.querySelector('.bento-grid');
+      if (g) {
+        layout.forEach(function(it) {
+          if (it.uid === uid) return;
+          var el = g.querySelector('[data-bubble="' + it.uid + '"]');
+          if (el) {
+            el.style.left = it.x + 'px';
+            el.style.top = it.y + 'px';
+          }
+        });
+      }
+    }
   });
 
   document.addEventListener('mouseup', function(e) {
