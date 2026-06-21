@@ -1369,6 +1369,23 @@ function setImage(id, url) {
       if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
     }
   });
+
+  // If this is a sidebar image, also update sidebar config (mirrors resetImage sync)
+  if (id && id.indexOf('sidebar-') === 0) {
+    var pageName = id.replace('sidebar-', '');
+    if (pageName) {
+      var cfg = loadSidebarConfig();
+      if (cfg.images) {
+        for (var i = 0; i < cfg.images.length; i++) {
+          if ((cfg.images[i].page || '') === pageName) {
+            cfg.images[i].url = url;
+            break;
+          }
+        }
+      }
+      saveSidebarConfig(cfg);
+    }
+  }
 }
 
 function resetImage(id) {
@@ -2697,10 +2714,11 @@ function renderSidebarImages() {
   // Render image items FIRST
   if (images.length > 0) {
     images.forEach(img => {
-      var url = img.url || getImage(img.id);
+      var sidebarId = 'sidebar-' + currentPage;
+      // Use URL from sidebar config, fall back to main image system (haven-image-sidebar-*)
+      var url = img.url || getImage(sidebarId);
       if (!url) return;
       // Sync to state.images so Visuals image picker shows correct URL
-      var sidebarId = 'sidebar-' + currentPage;
       state.images[sidebarId] = url;
 
       const item = document.createElement('div');
