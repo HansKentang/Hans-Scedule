@@ -126,7 +126,7 @@ function normalizeBentoLayout(layout, parent) {
         const ratio = aspectRatios[oldAspect] || 1.333;
         norm.h = snap(norm.w / ratio);
       } else if (norm.t === 'spotify') {
-        norm.h = 352;
+        norm.h = 400;
       } else {
         norm.h = snap(280);
       }
@@ -921,6 +921,12 @@ function setupBubbleDragDrop() {
     };
     bubble.classList.add('dragging');
   });
+  // Double-click during drag → release the bubble at current position
+  document.addEventListener('dblclick', function(e) {
+    if (!_bubbleDragData) return;
+    var mu = new Event('mouseup');
+    document.dispatchEvent(mu);
+  });
 
   document.addEventListener('mousemove', function(e) {
     if (!_bubbleDragData) return;
@@ -995,7 +1001,7 @@ function setupBubbleDragDrop() {
 }
 
 function snapSpotifyHeight(h) {
-  var heights = [152, 352];
+  var heights = [180, 400];
   return heights.reduce(function(prev, curr) { return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev; });
 }
 
@@ -1031,7 +1037,6 @@ function setupBubbleResize() {
     if (!_bubbleResizeData) return;
     const bubble = _bubbleResizeData.bubble;
     const gridRect = grid.getBoundingClientRect();
-    const bRect = bubble.getBoundingClientRect();
     const left = parseInt(bubble.style.left) || 0;
     const top = parseInt(bubble.style.top) || 0;
     const dx = e.clientX - _bubbleResizeData.startX;
@@ -1063,7 +1068,7 @@ function setupBubbleResize() {
     const item = layout.find(i => i.uid === uid);
     if (item) {
       item.w = Math.max(100, snap(w));
-      item.h = Math.max(80, snap(h));
+      item.h = _bubbleResizeData.isSpotify ? Math.max(80, h) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       hubContent.bentoLayout = layout;
       saveHubContent();
@@ -1187,7 +1192,7 @@ function addBubbleTypes(types) {
     item.x = snap(24);
     item.y = snap(maxY + 30);
     item.w = snap(320);
-    item.h = item.t === 'spotify' ? 352 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+    item.h = item.t === 'spotify' ? 400 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
     layout.push(item);
   });
   // Force all collisions to be resolved — this will push the new item down if needed
