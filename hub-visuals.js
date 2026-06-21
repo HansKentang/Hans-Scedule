@@ -113,42 +113,45 @@ function onDrop(e) {
 /* ─── Bento layout normalization ───────────── */
 function normalizeBentoLayout(layout, parent) {
   const result = [];
-  let maxY = 24;
   (layout || []).forEach(item => {
     const norm = typeof item === 'string' ? {t: item} : {...item};
     if (!norm.uid) norm.uid = _nextUid();
-    if (norm.x !== undefined && norm.y !== undefined) {
-      maxY = Math.max(maxY, norm.y + (norm.h || 240));
-    }
-    result.push(norm);
-  });
-  result.forEach(item => {
-    if (item.hidden === undefined) item.hidden = false;
-    if (item.x === undefined || item.y === undefined) {
-      item.x = snap(24);
-      item.y = snap(maxY);
-      maxY += (item.h || 240) + 24;
-    }
-    if (item.w === undefined || item.h === undefined) {
+    if (norm.w === undefined || norm.h === undefined) {
       const sizeMap = {s:220, m:320, l:420, xl:540, full:600};
-      item.w = snap(sizeMap[item.s] || 320);
-      if (item.t === 'images') {
-        const imgLookup = item.imageId || 'hub-tulips';
+      norm.w = snap(sizeMap[norm.s] || 320);
+      if (norm.t === 'images') {
+        const imgLookup = norm.imageId || 'hub-tulips';
         const oldAspect = parent?.imageAspects?.[imgLookup] || parent?.imageAspect || 'landscape';
         const aspectRatios = {square:1, portrait:0.75, landscape:1.333, wide:1.778, tall:0.5625};
         const ratio = aspectRatios[oldAspect] || 1.333;
-        item.h = snap(item.w / ratio);
-      } else if (item.t === 'spotify') {
-        item.h = snap(160);
+        norm.h = snap(norm.w / ratio);
+      } else if (norm.t === 'spotify') {
+        norm.h = snap(160);
       } else {
-        item.h = snap(280);
+        norm.h = snap(280);
       }
-      delete item.s;
+      delete norm.s;
       if (parent) { delete parent.imageAspect; delete parent.imageAspects; }
     }
+    if (norm.hidden === undefined) norm.hidden = false;
+    result.push(norm);
   });
-  resolveBubbleCollisions(result);
-  return result;
+  // Phase 1: position items that have x,y and resolve their collisions
+  const placed = result.filter(i => i.x !== undefined && i.y !== undefined);
+  const unplaced = result.filter(i => i.x === undefined || i.y === undefined);
+  resolveBubbleCollisions(placed);
+  // Phase 2: place new items below the lowest placed item
+  let maxY = 24;
+  placed.forEach(i => { maxY = Math.max(maxY, i.y + i.h); });
+  unplaced.forEach(item => {
+    item.x = snap(24);
+    item.y = snap(maxY + 24);
+    maxY = item.y + item.h;
+  });
+  // Phase 3: recombine and resolve any remaining collisions
+  const combined = [...placed, ...unplaced];
+  resolveBubbleCollisions(combined);
+  return combined;
 }
 
 /* ─── Bubble collision push ────────────────── */
@@ -913,7 +916,8 @@ function setupBubbleDragDrop() {
       offsetX: e.clientX - rect.left,
       offsetY: e.clientY - rect.top,
       startX: rect.left - gridRect.left,
-      startY: rect.top - gridRect.top
+      startY: rect.top - gridRect.top,
+      dragLayout: normalizeBentoLayout(hubContent.bentoLayout, hubContent)
     };
     bubble.classList.add('dragging');
   });
@@ -928,17 +932,16 @@ function setupBubbleDragDrop() {
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
     // Real-time collision push
-    const uid = _bubbleDragData.bubble.dataset.bubble;
-    const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
-    const item = layout.find(i => i.uid === uid);
-    if (item) {
-      item.x = newX;
-      item.y = newY;
-      resolveBubbleCollisions(layout);
+    const dragLayout = _bubbleDragData.dragLayout;
+    const dragItem = dragLayout.find(i => i.uid === _bubbleDragData.bubble.dataset.bubble);
+    if (dragItem) {
+      dragItem.x = newX;
+      dragItem.y = newY;
+      resolveBubbleCollisions(dragLayout);
       var g = document.querySelector('.bento-grid');
       if (g) {
-        layout.forEach(function(it) {
-          if (it.uid === uid) return;
+        dragLayout.forEach(function(it) {
+          if (it.uid === _bubbleDragData.bubble.dataset.bubble) return;
           var el = g.querySelector('[data-bubble="' + it.uid + '"]');
           if (el) {
             el.style.left = it.x + 'px';
