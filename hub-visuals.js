@@ -1138,6 +1138,8 @@ function generateProgressData() {
 /* ─── Add bubble types ─────────────────────── */
 function addBubbleTypes(types) {
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+  let maxY = 24;
+  layout.forEach(i => { maxY = Math.max(maxY, (i.y || 0) + (i.h || 280)); });
   types.forEach(t => {
     const item = {t, uid: _nextUid()};
     if (t === 'images') {
@@ -1156,7 +1158,13 @@ function addBubbleTypes(types) {
     } else {
       if (layout.find(i => i.t === t)) return;
     }
+    // Position below everything, then push layout items down
+    item.x = snap(24);
+    item.y = snap(maxY + 24);
+    item.w = snap(320);
+    item.h = item.t === 'spotify' ? snap(160) : item.t === 'images' ? snap(320 / 1.333) : snap(280);
     layout.push(item);
+    maxY = item.y + item.h;
   });
   hubContent.bentoLayout = layout;
   saveHubContent();
