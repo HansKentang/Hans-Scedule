@@ -3974,7 +3974,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   background: #121212;
   flex: 1;
   min-height: 0;
-  border-radius: 0 0 16px 16px;
+  border-radius: 16px;
 }
 .spotify-header {
   display: flex;
@@ -3987,6 +3987,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  border-radius: 16px 16px 0 0;
 }
 .spotify-header svg { color: #1DB954; }
 .spotify-header span {
