@@ -2704,7 +2704,7 @@ function renderSidebarImages() {
   if (config.imageSectionHeight) {
     var spH = spEl ? spEl.offsetHeight : 100;
     var parentH = container.parentElement ? container.parentElement.offsetHeight : 600;
-    var clampedH = Math.min(config.imageSectionHeight, Math.max(16, parentH - spH));
+    var clampedH = Math.min(config.imageSectionHeight, Math.max(16, Math.min(200, parentH - spH)));
     container.style.flex = 'none';
     container.style.height = clampedH + 'px';
     container.style.maxHeight = 'none';
@@ -2927,7 +2927,7 @@ function _onResizeMove(e) {
   var sp = parent ? parent.querySelector('.sp-sidebar') : null;
   var spH = sp ? sp.offsetHeight : 100;
   var parentH = parent ? parent.offsetHeight : 600;
-  var maxH = Math.max(60, parentH - spH);
+  var maxH = Math.min(200, Math.max(60, parentH - spH));
   var newH = Math.max(16, Math.min(maxH, _sidebarResizeData.startH - diff));
   _sidebarResizeData.container.style.flex = 'none';
   _sidebarResizeData.container.style.height = newH + 'px';
@@ -2944,7 +2944,7 @@ function _onResizeUp() {
   var sp = parent ? parent.querySelector('.sp-sidebar') : null;
   var spH = sp ? sp.offsetHeight : 100;
   var parentH = parent ? parent.offsetHeight : 600;
-  h = Math.max(16, Math.min(h, parentH - spH));
+  h = Math.max(16, Math.min(h, Math.min(200, parentH - spH)));
   _sidebarResizeData.container.style.height = h + 'px';
   _sidebarResizeData.container.classList.toggle('collapsed', h <= 16);
   var config = loadSidebarConfig();

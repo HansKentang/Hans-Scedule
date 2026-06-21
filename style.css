@@ -2129,9 +2129,9 @@ html.sidebar-edit-mode .hub-sidebar-images {
   color: var(--primary);
   background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
-/* ─── DRAWER HANDLE (minimal) ───────────────── */
+/* ─── DRAWER HANDLE (minimal, edit mode only) ── */
 .hub-sidebar-image-resize-handle {
-  display: flex;
+  display: none;
   position: relative;
   width: 100%; height: 16px;
   cursor: row-resize;
@@ -2139,6 +2139,9 @@ html.sidebar-edit-mode .hub-sidebar-images {
   justify-content: center;
   user-select: none;
   flex-shrink: 0;
+}
+html.sidebar-edit-mode .hub-sidebar-image-resize-handle {
+  display: flex;
 }
 .hub-sidebar-image-resize-handle:hover {
   background: color-mix(in srgb, var(--border-color) 25%, transparent);
@@ -4806,6 +4809,36 @@ html.focus-mode .time-slot { height: 36px; font-size: 0.55rem; }
 .template-pill .tpl-dot {
   width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
 }
+/* ─── TEMPLATES BAR ──────────────────────────── */
+.sch-templates-bar {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: 4px var(--space-4);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  flex-shrink: 0; overflow-x: auto;
+}
+.sch-templates-label {
+  font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-tertiary);
+  white-space: nowrap; margin-right: var(--space-1);
+}
+.template-pill {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: 3px 10px 3px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  cursor: pointer; white-space: nowrap;
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+}
+.template-pill:hover {
+  background: var(--accent-soft);
+  border-color: var(--primary);
+  color: var(--text-primary);
+}
 
 /* ─── PRIORITY (replaced by .tf-priority in task modal) ── */
 
@@ -5699,7 +5732,7 @@ html.light .hub-add-popup {
 /* ─── SIDEBAR BODY (scrollable nav + spotify) ──────────── */
 .hub-sidebar-body { flex:1; overflow:hidden; display:flex; flex-direction:column; }
 .hub-sidebar-body > .hub-sidebar-nav { flex:0 0 auto; overflow:visible; }
-/* On schedule page, reverse column so images grow upward, pushing mini week up */
+/* On schedule page, images grow upward pushing mini week */
 .hub-sidebar-body:has(.sch-mini-week) {
   flex-direction: column-reverse;
 }
