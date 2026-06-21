@@ -2096,12 +2096,16 @@ html.dark .hub-hero-decor {
 }
 .hub-sidebar-footer .btn:hover { background: var(--accent-soft); }
 
-/* ─── SIDEBAR IMAGES SECTION ──────────────────────── */
+/* ─── SIDEBAR IMAGES SECTION (drawer front) ─── */
 .hub-sidebar-images {
   display: flex; flex-direction: column;
   min-height: 0;
   position: relative;
   overflow: hidden;
+  margin-top: auto;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-color);
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.04);
 }
 html.sidebar-edit-mode .hub-sidebar-images {
   outline: 1px dashed var(--border-color);
@@ -2125,7 +2129,7 @@ html.sidebar-edit-mode .hub-sidebar-images {
   color: var(--primary);
   background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
-/* ─── RESIZE HANDLE ─────────────────────────── */
+/* ─── DRAWER HANDLE (minimal) ───────────────── */
 .hub-sidebar-image-resize-handle {
   display: flex;
   position: relative;
@@ -2137,14 +2141,12 @@ html.sidebar-edit-mode .hub-sidebar-images {
   flex-shrink: 0;
 }
 .hub-sidebar-image-resize-handle:hover {
-  background: color-mix(in srgb, var(--border-color) 30%, transparent);
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--border-color) 25%, transparent);
 }
 .hub-sidebar-image-resize-handle-dots {
   display: flex;
   gap: 3px;
   align-items: center;
-  opacity: 0.5;
   pointer-events: none;
 }
 .hub-sidebar-image-resize-handle-dots span {
@@ -2152,7 +2154,9 @@ html.sidebar-edit-mode .hub-sidebar-images {
   border-radius: 50%;
   background: var(--text-tertiary);
   display: block;
+  opacity: 0.5;
 }
+
 /* ─── IMAGE CARDS ───────────────────────────── */
 .hub-sidebar-image-item {
   position: relative;
@@ -2167,9 +2171,9 @@ html.sidebar-edit-mode .hub-sidebar-images {
 }
 .hub-sidebar-image-item img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   display: block;
-  background: var(--bg-surface);
 }
 .hub-sidebar-image-label {
   display: none;
@@ -3962,6 +3966,8 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .spotify-widget iframe {
   border: none;
   max-width: 100%;
+  display: block;
+  background: #121212;
 }
 .spotify-header {
   display: flex;
@@ -5693,9 +5699,21 @@ html.light .hub-add-popup {
 /* ─── SIDEBAR BODY (scrollable nav + spotify) ──────────── */
 .hub-sidebar-body { flex:1; overflow:hidden; display:flex; flex-direction:column; }
 .hub-sidebar-body > .hub-sidebar-nav { flex:0 0 auto; overflow:visible; }
+/* On schedule page, reverse column so images grow upward, pushing mini week up */
+.hub-sidebar-body:has(.sch-mini-week) {
+  flex-direction: column-reverse;
+}
+.hub-sidebar-body:has(.sch-mini-week) > .sch-mini-week { order: 3; }
+.hub-sidebar-body:has(.sch-mini-week) > .hub-sidebar-images { order: 2; margin-top: 0; }
+.hub-sidebar-body:has(.sch-mini-week) > .sp-sidebar { order: 1; }
 
 /* ─── SPOTIFY EMBED ────────────────────────────────────────── */
-.sp-sidebar { border-top:1px solid var(--border-subtle); }
+.sp-sidebar {
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -1px 4px rgba(0,0,0,0.08);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
 .sp-header { display:flex; align-items:center; gap:6px; padding:10px 14px 6px; cursor:pointer; user-select:none; }
 .sp-header:active { opacity:0.7; }
 .sp-toggle-btn { width:20px; height:20px; border:none; border-radius:4px; background:transparent; color:#1db954; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:color 0.12s,background 0.12s; }
