@@ -3971,6 +3971,8 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   max-width: 100%;
   display: block;
   background: #121212;
+  flex: 1;
+  min-height: 0;
 }
 .spotify-header {
   display: flex;
