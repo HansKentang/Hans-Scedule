@@ -1105,17 +1105,25 @@ function renderHubBento() {
 }
 
 /* ─── Helper: keep add button below lowest widget ── */
-function updateAddBtnPosition() {
+function updateAddBtnPosition(optLayout) {
   var btn = document.getElementById('bentoAddBubble');
   if (!btn) return;
-  var grid2 = document.querySelector('.bento-grid');
-  if (!grid2) return;
-  var allItems = grid2.querySelectorAll('.bento-bubble');
+  var layout = optLayout || hubContent.bentoLayout || [];
   var lowest = 0;
-  allItems.forEach(function(b) {
-    var bBottom = b.offsetTop + b.offsetHeight;
-    if (bBottom > lowest) lowest = bBottom;
+  layout.forEach(function(i) {
+    if (i.hidden) return;
+    var bottom = (i.y || 0) + (i.h || 280);
+    if (bottom > lowest) lowest = bottom;
   });
+  if (lowest === 0) { // no visible items — use DOM as fallback
+    var g = document.querySelector('.bento-grid');
+    if (g) {
+      g.querySelectorAll('.bento-bubble').forEach(function(b) {
+        var btm = b.offsetTop + b.offsetHeight;
+        if (btm > lowest) lowest = btm;
+      });
+    }
+  }
   btn.style.top = Math.max(lowest + 50, 50) + 'px';
 }
 
@@ -1225,7 +1233,7 @@ function setupBubbleDragDrop() {
           }
         });
       }
-      updateAddBtnPosition();
+      updateAddBtnPosition(dragLayout);
     }
   });
 
