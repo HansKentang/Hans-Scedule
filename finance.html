@@ -124,6 +124,115 @@
     .fin-hero-decor { position: absolute; right: 10px; top: 10px; width: 120px; height: 120px; opacity: 0.12; pointer-events: none; }
     .fin-hero-decor svg { width: 100%; height: 100%; }
 
+    /* ─── PIGGY BANK & WALLET ─────────────────────────── */
+    .fin-savings-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); }
+    @media (max-width: 700px) { .fin-savings-row { grid-template-columns: 1fr; } }
+
+    .fin-piggy-card, .fin-wallet-card {
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl);
+      padding: var(--space-5); transition: all var(--t-base); position: relative; overflow: hidden;
+    }
+    .fin-piggy-card:hover { border-color: #fbbf24; box-shadow: 0 4px 24px rgba(251,191,36,0.12); }
+    .fin-wallet-card:hover { border-color: #a28d6b; box-shadow: 0 4px 24px rgba(162,141,107,0.12); }
+
+    .fin-piggy-header, .fin-wallet-header { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-4); }
+    .fin-piggy-icon, .fin-wallet-icon {
+      width: 72px; height: 72px; flex-shrink: 0; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .fin-piggy-label, .fin-wallet-label {
+      font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--text-tertiary); margin-bottom: 2px;
+    }
+    .fin-piggy-balance, .fin-wallet-balance {
+      font-size: 1.6rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .fin-piggy-balance { color: #fbbf24; }
+    .fin-wallet-balance { color: #c4a882; }
+    .fin-piggy-balance.pop, .fin-wallet-balance.pop { transform: scale(1.08); }
+
+    .fin-piggy-actions, .fin-wallet-actions { display: flex; gap: var(--space-2); align-items: center; }
+    .fin-piggy-input, .fin-wallet-input {
+      flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--border-color); background: var(--bg-primary);
+      color: var(--text-primary); font-family: var(--font-family); font-size: 0.85rem;
+      outline: none; transition: border-color 0.15s ease; max-width: 120px;
+    }
+    .fin-piggy-input:focus { border-color: #fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,0.12); }
+    .fin-wallet-input:focus { border-color: #a28d6b; box-shadow: 0 0 0 3px rgba(162,141,107,0.12); }
+    .fin-piggy-btn, .fin-wallet-btn {
+      border: none; padding: 8px 14px; border-radius: 10px; font-weight: 700;
+      font-size: 0.75rem; cursor: pointer; transition: all var(--t-fast);
+      font-family: var(--font-family); white-space: nowrap;
+    }
+    .fin-piggy-btn.add { background: #fbbf24; color: #1c1917; }
+    .fin-piggy-btn.add:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .fin-piggy-btn.sub { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
+    .fin-piggy-btn.sub:hover { border-color: var(--text-primary); color: var(--text-primary); }
+    .fin-wallet-btn.add { background: #a28d6b; color: #fff; }
+    .fin-wallet-btn.add:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .fin-wallet-btn.sub { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
+    .fin-wallet-btn.sub:hover { border-color: var(--text-primary); color: var(--text-primary); }
+    .fin-piggy-btn:active, .fin-wallet-btn:active { transform: scale(0.95); }
+
+    /* ─── PIGGY BANK SVG ────────────────────────────────── */
+    .piggy-svg { width: 72px; height: 72px; overflow: visible; }
+    .piggy-svg .piggy-body { fill: url(#piggyGrad); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .piggy-svg.jiggle .piggy-body { animation: piggyJiggle 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    @keyframes piggyJiggle {
+      0% { transform: translateX(0); }
+      15% { transform: translateX(-4px) rotate(-3deg); }
+      30% { transform: translateX(4px) rotate(3deg); }
+      45% { transform: translateX(-3px) rotate(-2deg); }
+      60% { transform: translateX(3px) rotate(2deg); }
+      80% { transform: translateX(-1px) rotate(-1deg); }
+      100% { transform: translateX(0) rotate(0); }
+    }
+    .piggy-svg .piggy-eye { fill: #292524; }
+    .piggy-svg .piggy-snout { fill: #fbbf24; stroke: #d97706; stroke-width: 1.5; }
+    .piggy-svg .piggy-ear { fill: #fbbf24; stroke: #d97706; stroke-width: 1.2; }
+    .piggy-svg .piggy-leg { fill: #fbbf24; }
+    .piggy-svg .piggy-tail { fill: none; stroke: #d97706; stroke-width: 2; stroke-linecap: round; }
+    .piggy-svg .piggy-slot { fill: #292524; }
+    .piggy-svg .piggy-coin-in { fill: #fde047; stroke: #d97706; stroke-width: 1; }
+
+    /* ─── WALLET SVG ────────────────────────────────────── */
+    .wallet-svg { width: 72px; height: 72px; }
+    .wallet-svg .wallet-body { fill: #a28d6b; rx: 8; transition: transform 0.3s ease; }
+    .wallet-svg .wallet-flap { fill: #8a7456; rx: 6; }
+    .wallet-svg .wallet-stitch { fill: none; stroke: #6b5a3e; stroke-width: 1; stroke-dasharray: 3,3; }
+    .wallet-svg .wallet-card { fill: #d4d4d8; rx: 3; }
+    .wallet-svg .wallet-coin { fill: #fde047; stroke: #d97706; stroke-width: 1; }
+
+    /* ─── COIN ANIMATION ─────────────────────────────────── */
+    .fin-coin-particle {
+      position: fixed; z-index: 999; width: 20px; height: 20px;
+      border-radius: 50%; background: linear-gradient(135deg, #fde047, #f59e0b);
+      border: 2px solid #d97706; pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800; color: #d97706;
+      box-shadow: 0 2px 8px rgba(251,191,36,0.4);
+      animation: coinFly 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes coinFly {
+      0% { transform: translate(0,0) scale(1) rotate(0deg); opacity: 1; }
+      50% { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(180deg); opacity: 1; }
+      100% { transform: translate(var(--dx-end, var(--dx)), var(--dy-end, var(--dy))) scale(0.3) rotate(360deg); opacity: 0; }
+    }
+
+    /* ─── SPARKLE OVERLAY ───────────────────────────────── */
+    .fin-sparkle {
+      position: absolute; pointer-events: none; font-size: 1.2rem;
+      animation: sparkleFloat 0.8s ease-out forwards;
+      z-index: 5;
+    }
+    @keyframes sparkleFloat {
+      0% { transform: translateY(0) scale(0.5); opacity: 1; }
+      100% { transform: translateY(-60px) scale(1.2); opacity: 0; }
+    }
+
     /* ─── ADVANCED CHARTS ──────────────────────────────── */
     .fin-adv-section { margin-bottom: var(--space-6); }
     .fin-adv-header {
@@ -505,8 +614,114 @@
           </div>
         </div>
 
+        <!-- ─── PIGGY BANK & WALLET ───────────────────── -->
+        <div class="fin-savings-row hub-anim-in hub-anim-in-4">
+
+          <!-- Piggy Bank -->
+          <div class="fin-piggy-card">
+            <div class="fin-piggy-header">
+              <div class="fin-piggy-icon" id="piggyIcon">
+                <svg class="piggy-svg" id="piggySvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="piggyGrad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="#fde047"/>
+                      <stop offset="50%" stop-color="#fbbf24"/>
+                      <stop offset="100%" stop-color="#f59e0b"/>
+                    </linearGradient>
+                    <linearGradient id="piggyShine" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
+                      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                    </linearGradient>
+                  </defs>
+                  <!-- Tail -->
+                  <path class="piggy-tail" d="M68 40 Q78 30 76 22 Q74 16 70 18"/>
+                  <!-- Coin slot -->
+                  <rect class="piggy-slot" x="42" y="12" width="16" height="4" rx="2"/>
+                  <!-- Ears -->
+                  <ellipse class="piggy-ear" cx="32" cy="16" rx="6" ry="8" transform="rotate(-15 32 16)"/>
+                  <ellipse class="piggy-ear" cx="62" cy="16" rx="6" ry="8" transform="rotate(15 62 16)"/>
+                  <!-- Body -->
+                  <ellipse class="piggy-body" cx="48" cy="52" rx="32" ry="26"/>
+                  <!-- Shine -->
+                  <ellipse cx="36" cy="40" rx="12" ry="10" fill="url(#piggyShine)"/>
+                  <!-- Eyes -->
+                  <circle class="piggy-eye" cx="34" cy="46" r="3.5"/>
+                  <circle class="piggy-eye" cx="58" cy="46" r="3.5"/>
+                  <!-- Eye shine -->
+                  <circle cx="35" cy="44.5" r="1.2" fill="#fff"/>
+                  <circle cx="59" cy="44.5" r="1.2" fill="#fff"/>
+                  <!-- Snout -->
+                  <ellipse class="piggy-snout" cx="46" cy="58" rx="12" ry="8"/>
+                  <!-- Nostrils -->
+                  <circle cx="42" cy="58" r="2" fill="#d97706" opacity="0.6"/>
+                  <circle cx="50" cy="58" r="2" fill="#d97706" opacity="0.6"/>
+                  <!-- Smile -->
+                  <path d="M38 62 Q46 68 54 62" fill="none" stroke="#d97706" stroke-width="1.2" stroke-linecap="round"/>
+                  <!-- Legs -->
+                  <rect class="piggy-leg" x="26" y="72" width="10" height="8" rx="3"/>
+                  <rect class="piggy-leg" x="38" y="72" width="10" height="8" rx="3"/>
+                  <rect class="piggy-leg" x="50" y="72" width="10" height="8" rx="3"/>
+                  <rect class="piggy-leg" x="62" y="72" width="10" height="8" rx="3"/>
+                  <!-- Coin in slot -->
+                  <circle class="piggy-coin-in" cx="50" cy="10" r="4" opacity="0.8"/>
+                  <text x="50" y="13" text-anchor="middle" font-size="5" font-weight="700" fill="#d97706" opacity="0.8">$</text>
+                </svg>
+              </div>
+              <div>
+                <div class="fin-piggy-label">🐷 Piggy Bank</div>
+                <div class="fin-piggy-balance" id="piggyBalance">Rp 0</div>
+              </div>
+            </div>
+            <div class="fin-piggy-actions">
+              <input type="number" id="piggyInput" class="fin-piggy-input" placeholder="Amount" step="1000" min="0">
+              <button class="fin-piggy-btn add" id="piggyAddBtn">+ Save</button>
+              <button class="fin-piggy-btn sub" id="piggySubBtn">− Spend</button>
+            </div>
+          </div>
+
+          <!-- Wallet -->
+          <div class="fin-wallet-card">
+            <div class="fin-wallet-header">
+              <div class="fin-wallet-icon">
+                <svg class="wallet-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Wallet outer -->
+                  <rect class="wallet-body" x="8" y="20" width="84" height="60" rx="10" stroke="#8a7456" stroke-width="1.5"/>
+                  <!-- Flap -->
+                  <path class="wallet-flap" d="M18 30 L50 18 L82 30 L82 48 L18 48 Z"/>
+                  <!-- Stitching -->
+                  <rect class="wallet-stitch" x="12" y="24" width="76" height="52" rx="8"/>
+                  <!-- Cards -->
+                  <rect class="wallet-card" x="22" y="34" width="56" height="12" rx="3"/>
+                  <rect class="wallet-card" x="22" y="44" width="52" height="12" rx="3" opacity="0.7"/>
+                  <rect class="wallet-card" x="22" y="54" width="48" height="12" rx="3" opacity="0.5"/>
+                  <!-- Chip on first card -->
+                  <rect x="30" y="38" width="10" height="6" rx="1" fill="#fbbf24" opacity="0.6"/>
+                  <!-- Deco lines on cards -->
+                  <line x1="46" y1="39" x2="70" y2="39" stroke="#a1a1aa" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="46" y1="43" x2="64" y2="43" stroke="#a1a1aa" stroke-width="1" stroke-linecap="round"/>
+                  <!-- Coin peeking out -->
+                  <circle class="wallet-coin" cx="82" cy="68" r="7"/>
+                  <text x="82" y="71" text-anchor="middle" font-size="6" font-weight="700" fill="#d97706">$</text>
+                  <!-- Dollar sign on flap -->
+                  <text x="50" y="40" text-anchor="middle" font-size="10" font-weight="700" fill="#6b5a3e" opacity="0.15">$</text>
+                </svg>
+              </div>
+              <div>
+                <div class="fin-wallet-label">👛 Wallet</div>
+                <div class="fin-wallet-balance" id="walletBalance">Rp 0</div>
+              </div>
+            </div>
+            <div class="fin-wallet-actions">
+              <input type="number" id="walletInput" class="fin-wallet-input" placeholder="Amount" step="1000" min="0">
+              <button class="fin-wallet-btn add" id="walletAddBtn">+ Add</button>
+              <button class="fin-wallet-btn sub" id="walletSubBtn">− Spend</button>
+            </div>
+          </div>
+
+        </div>
+
         <!-- Toolbar -->
-        <div class="fin-toolbar hub-anim-in hub-anim-in-4">
+        <div class="fin-toolbar hub-anim-in hub-anim-in-5">
           <div class="fin-toolbar-left">
             <div class="fin-tabs">
               <button class="fin-tab" data-range="7d">7D</button>

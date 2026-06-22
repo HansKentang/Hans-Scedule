@@ -1237,34 +1237,35 @@ function setupBubbleDragDrop() {
   if (!grid) return;
 
   grid.addEventListener('mousedown', function(e) {
-    const handle = e.target.closest('.bento-bubble-handle');
-    if (!handle) return;
-    e.preventDefault();
-    const bubble = handle.closest('.bento-bubble');
+    // Drag can be initiated from the handle, .w-head, .spotify-header, .pomo-header, or .clock-face
+    var dragZone = e.target.closest('.bento-bubble-handle, .w-head, .spotify-header, .pomo-header, .clock-face');
+    if (!dragZone) return;
+    // Don't start drag if clicking interactive elements inside the zone
+    if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-copy-bubble], [data-duplicate-bubble]')) return;
+    const bubble = dragZone.closest('.bento-bubble');
     if (!bubble) return;
-    const rect = bubble.getBoundingClientRect();
-    const gridRect = grid.getBoundingClientRect();
     _bubbleDragData = {
       bubble,
-      offsetX: e.clientX - rect.left,
-      offsetY: e.clientY - rect.top,
-      startX: rect.left - gridRect.left,
-      startY: rect.top - gridRect.top,
-      originalX: parseInt(bubble.style.left) || rect.left - gridRect.left,
-      originalY: parseInt(bubble.style.top) || rect.top - gridRect.top,
-      dragLayout: normalizeBentoLayout(hubContent.bentoLayout, hubContent),
+      offsetX: e.clientX - bubble.getBoundingClientRect().left,
+      offsetY: e.clientY - bubble.getBoundingClientRect().top,
+      startMouseX: e.clientX,
+      startMouseY: e.clientY,
+      originalX: parseInt(bubble.style.left) || 0,
+      originalY: parseInt(bubble.style.top) || 0,
+      active: false,
       cancelled: false
     };
-    bubble.classList.add('dragging');
   });
 
   // Cancel helper — restores original position/size
   function cancelDrag() {
     if (_bubbleDragData) {
-      _bubbleDragData.bubble.style.left = _bubbleDragData.originalX + 'px';
-      _bubbleDragData.bubble.style.top = _bubbleDragData.originalY + 'px';
+      if (_bubbleDragData.active) {
+        _bubbleDragData.bubble.style.left = _bubbleDragData.originalX + 'px';
+        _bubbleDragData.bubble.style.top = _bubbleDragData.originalY + 'px';
+        _bubbleDragData.bubble.classList.remove('dragging');
+      }
       _bubbleDragData.cancelled = true;
-      _bubbleDragData.bubble.classList.remove('dragging');
       _bubbleDragData = null;
     }
     if (_bubbleResizeData) {
@@ -1295,10 +1296,19 @@ function setupBubbleDragDrop() {
   window.addEventListener('blur', cancelDrag);
 
   document.addEventListener('mousemove', function(e) {
-    if (!_bubbleDragData) return;
+    if (!_bubbleDragData || _bubbleDragData.cancelled) return;
+    // Lazily activate drag on first meaningful movement (5px threshold)
+    if (!_bubbleDragData.active) {
+      var dx = e.clientX - _bubbleDragData.startMouseX;
+      var dy = e.clientY - _bubbleDragData.startMouseY;
+      if (dx * dx + dy * dy < 25) return;
+      _bubbleDragData.active = true;
+      _bubbleDragData.dragLayout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+      _bubbleDragData.bubble.classList.add('dragging');
+    }
     const gridRect = grid.getBoundingClientRect();
-    let newX = snap(e.clientX - _bubbleDragData.offsetX - gridRect.left);
-    let newY = snap(e.clientY - _bubbleDragData.offsetY - gridRect.top);
+    let newX = e.clientX - _bubbleDragData.offsetX - gridRect.left;
+    let newY = e.clientY - _bubbleDragData.offsetY - gridRect.top;
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
     // Real-time collision push
@@ -1325,17 +1335,20 @@ function setupBubbleDragDrop() {
 
   document.addEventListener('mouseup', function(e) {
     if (!_bubbleDragData) return;
-    var cancelled = _bubbleDragData.cancelled;
+    // If drag was never activated, it was a click — let it pass through
+    if (!_bubbleDragData.active || _bubbleDragData.cancelled) {
+      _bubbleDragData = null;
+      return;
+    }
     _bubbleDragData.bubble.classList.remove('dragging');
-    if (cancelled) { _bubbleDragData = null; return; }
     const bubble = _bubbleDragData.bubble;
     const gridRect = grid.getBoundingClientRect();
     const bRect = bubble.getBoundingClientRect();
     const bw = bRect.width, bh = bRect.height;
     let x = parseInt(bubble.style.left) || 0;
     let y = parseInt(bubble.style.top) || 0;
-    x = Math.max(0, Math.min(x, gridRect.width - bw));
-    y = Math.max(0, Math.min(y, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - bh));
+    x = Math.max(0, Math.min(snap(x), gridRect.width - bw));
+    y = Math.max(0, Math.min(snap(y), Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - bh));
     bubble.style.left = x + 'px';
     bubble.style.top = y + 'px';
     const uid = bubble.dataset.bubble;
