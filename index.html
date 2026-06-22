@@ -422,17 +422,26 @@
             <span class="hub-section-label">Today's Schedule</span>
           </div>
           <div class="hub-anim-in hub-anim-in-5" style="margin-bottom:var(--space-5)">
-            <div class="hub-db-header">
-              <div class="hub-db-title">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-                </svg>
-                Today's Schedule
+
+            <!-- Day summary bar -->
+            <div class="td-summary" id="tdSummary">
+              <div class="td-summary-top">
+                <div class="td-summary-left">
+                  <span class="td-summary-date" id="tdDate"></span>
+                  <span class="td-summary-count" id="tdCount"></span>
+                </div>
+                <div class="td-summary-right">
+                  <span class="td-summary-completed" id="tdCompleted"></span>
+                </div>
               </div>
-              <span class="hub-db-count"><strong id="statWeekDayCount">0</strong> tasks</span>
+              <div class="td-progress-track">
+                <div class="td-progress-fill" id="tdProgressFill"></div>
+              </div>
             </div>
-            <div id="hubTimeline" class="hub-db-list">
-              <div class="hub-db-empty">No tasks today</div>
+
+            <!-- Visual timeline -->
+            <div class="td-timeline" id="hubTimeline">
+              <div class="td-empty">No tasks today</div>
             </div>
           </div>
         </div>
@@ -650,7 +659,8 @@
       const todayStr = formatDate(now);
       const todayTasks = all.filter(t => t.date === todayStr);
 
-      document.getElementById('statWeekDayCount').textContent = todayTasks.length;
+      var _c1 = document.getElementById('statWeekDayCount');
+      if (_c1) _c1.textContent = todayTasks.length;
       document.getElementById('statWeekDayCount2').textContent = weekTasks.length;
       const weekTasksEl = document.getElementById('hubWeekTasks');
       if (weekTasksEl) weekTasksEl.textContent = weekTasks.length + ' this week';
@@ -663,35 +673,133 @@
     }
 
     // ─── WEEKLY PLANNER GRID ──────────────────────────────
-    // ─── TIMELINE RENDER ─────────────────────────────────
+    // ─── TIMELINE RENDER (Full Day Timetable) ────────────
+    function parseTimeMins(t) {
+      if (!t) return 0;
+      var p = t.split(':').map(Number);
+      return p[0] * 60 + (p[1] || 0);
+    }
+    function formatMins(m) {
+      var h = Math.floor(m / 60);
+      var min = m % 60;
+      return String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0');
+    }
     function renderTimeline(todayTasks) {
-      const list = document.getElementById('hubTimeline');
+      var list = document.getElementById('hubTimeline');
       if (!list) return;
-      const countEl = document.getElementById('statWeekDayCount');
-      if (countEl) countEl.textContent = todayTasks.length;
-      if (todayTasks.length === 0) {
-        list.innerHTML = '<div class="hub-db-empty">No tasks today</div>';
+
+      // Date
+      var now = new Date();
+      var dateEl = document.getElementById('tdDate');
+      if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+      // Stats
+      var total = todayTasks.length;
+      var completed = todayTasks.filter(function(t) { return t.completed; }).length;
+      var remaining = total - completed;
+      var countEl = document.getElementById('tdCount');
+      if (countEl) countEl.textContent = total + ' task' + (total !== 1 ? 's' : '');
+      var compEl = document.getElementById('tdCompleted');
+      if (compEl) compEl.textContent = completed + '/' + total + ' done';
+      var progEl = document.getElementById('tdProgressFill');
+      if (progEl) progEl.style.width = total > 0 ? (completed / total * 100) + '%' : '0%';
+
+      if (total === 0) {
+        list.innerHTML = '<div class="td-empty">No tasks today</div>';
         return;
       }
-      const sorted = [...todayTasks].sort((a, b) => parseTime(a.startTime) - parseTime(b.startTime));
-      let html = '';
-      for (const task of sorted) {
-        const meta = getTagMeta(task.tag);
-        const doneCls = task.completed ? ' completed' : '';
-        html += `<div class="hub-db-item${doneCls}" data-task-id="${task.id}">
-          <span class="hub-db-item-time">${task.startTime}</span>
-          <div class="hub-db-item-body">
-            <span class="task-check ${task.completed ? 'checked' : ''}" data-toggle-complete="${task.id}"></span>
-            <span class="hub-db-item-title">${escapeHtml(task.title)}</span>
-            <span class="hub-db-item-tag" style="color:${meta.text};background:color-mix(in srgb, ${meta.text} 15%, transparent)">${task.tag}</span>
-          </div>
-        </div>`;
+
+      var sorted = [...todayTasks].sort(function(a, b) { return parseTimeMins(a.startTime) - parseTimeMins(b.startTime); });
+
+      // Compute time bounds with 1h padding before earliest and after latest (min 7am–10pm)
+      var earliest = 420; // 7am default
+      var latest = 1320;  // 10pm default (22*60)
+      if (sorted.length > 0) {
+        var firstMin = parseTimeMins(sorted[0].startTime);
+        var lastTaskEnd = parseTimeMins(sorted[sorted.length - 1].startTime) + 60; // assume 1h duration
+        earliest = Math.max(360, Math.min(firstMin - 60, earliest));
+        latest = Math.min(1440, Math.max(lastTaskEnd + 60, latest));
       }
+
+      var totalMins = latest - earliest;
+      var nowMins = now.getHours() * 60 + now.getMinutes();
+      var nowPct = ((nowMins - earliest) / totalMins) * 100;
+
+      var hourLabels = [];
+      for (var h = Math.ceil(earliest / 60); h <= Math.floor(latest / 60); h++) {
+        hourLabels.push(h);
+      }
+
+      var html = '<div class="td-timeline-body" style="--td-now-pct:' + Math.max(0, Math.min(100, nowPct)) + '%">';
+
+      // Hour markers
+      html += '<div class="td-hours">';
+      for (var hi = 0; hi < hourLabels.length; hi++) {
+        var hVal = hourLabels[hi];
+        var ampm = hVal < 12 ? 'AM' : 'PM';
+        var h12 = hVal % 12 || 12;
+        var topPct = ((hVal * 60 - earliest) / totalMins) * 100;
+        html += '<div class="td-hour-marker" style="top:' + topPct + '%"><span class="td-hour-label">' + h12 + ampm + '</span><span class="td-hour-line"></span></div>';
+      }
+      html += '</div>';
+
+      // Now indicator (only if within bounds)
+      if (nowMins >= earliest && nowMins <= latest) {
+        html += '<div class="td-now-indicator"><span class="td-now-dot"></span><span class="td-now-line"></span></div>';
+      }
+
+      // Task blocks
+      html += '<div class="td-slots">';
+      var prevEnd = earliest;
+      for (var ti = 0; ti < sorted.length; ti++) {
+        var task = sorted[ti];
+        var startMins = parseTimeMins(task.startTime);
+        var endMins = parseTimeMins(task.endTime) || (startMins + 60);
+        if (endMins <= startMins) endMins = startMins + 60;
+        startMins = Math.max(earliest, Math.min(latest, startMins));
+        endMins = Math.max(earliest, Math.min(latest, endMins));
+
+        // Gap before this task
+        if (startMins > prevEnd + 15) {
+          var gapPct = ((startMins - prevEnd) / totalMins) * 100;
+          var gapMins = startMins - prevEnd;
+          var gapLabel = gapMins >= 60 ? Math.floor(gapMins / 60) + 'h ' + (gapMins % 60) + 'm free' : gapMins + 'm free';
+          html += '<div class="td-gap" style="height:' + gapPct + '%"><span class="td-gap-label">' + gapLabel + '</span></div>';
+        }
+
+        // Task block
+        var taskPct = ((endMins - startMins) / totalMins) * 100;
+        var meta = getTagMeta(task.tag);
+        var doneCls = task.completed ? ' td-task-done' : '';
+        html += '<div class="td-task' + doneCls + '" data-task-id="' + task.id + '" style="height:' + taskPct + '%;--td-task-color:' + meta.text + '">';
+        html += '<span class="td-task-check' + (task.completed ? ' checked' : '') + '" data-toggle-complete="' + task.id + '"></span>';
+        html += '<div class="td-task-info">';
+        html += '<span class="td-task-time">' + task.startTime + (task.endTime ? '\u2013' + task.endTime : '') + '</span>';
+        html += '<span class="td-task-title">' + escapeHtml(task.title) + '</span>';
+        html += '</div>';
+        html += '<span class="td-task-tag" style="color:' + meta.text + ';background:' + meta.bg + '">' + task.tag + '</span>';
+        html += '</div>';
+
+        prevEnd = endMins;
+      }
+
+      // Gap after last task
+      if (prevEnd < latest) {
+        var gapPct = ((latest - prevEnd) / totalMins) * 100;
+        var gapMins = latest - prevEnd;
+        var gapLabel = gapMins >= 60 ? Math.floor(gapMins / 60) + 'h ' + (gapMins % 60) + 'm free' : gapMins + 'm free';
+        html += '<div class="td-gap td-gap-end" style="height:' + gapPct + '%"><span class="td-gap-label">' + gapLabel + '</span></div>';
+      }
+
+      html += '</div>'; // td-slots
+      html += '</div>'; // td-timeline-body
       list.innerHTML = html;
-      list.querySelectorAll('.hub-db-item').forEach(el => {
+
+      // Click handlers
+      list.querySelectorAll('.td-task').forEach(function(el) {
         el.addEventListener('click', function(e) {
           if (e.target.closest('[data-toggle-complete]')) {
-            const id = e.target.closest('[data-toggle-complete]').dataset.toggleComplete;
+            var id = e.target.closest('[data-toggle-complete]').dataset.toggleComplete;
             toggleComplete(id);
             updateHub();
             return;
