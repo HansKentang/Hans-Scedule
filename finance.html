@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
+  <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <title>Havën Schedule — Finance</title>
   <style>
@@ -526,7 +526,7 @@
             <button onclick="spOpenSettings()">Add playlist</button>
           </div>
           <div class="sp-embed-wrap" id="spEmbedWrap">
-            <iframe id="spEmbed" src="" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+            <iframe id="spEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
           </div>
         </div>
         <div class="sp-controls" id="spControls">
@@ -738,7 +738,7 @@
         </div>
 
         <!-- Panels: Table + Form -->
-        <div class="fin-panels hub-anim-in hub-anim-in-5">
+        <div class="fin-panels hub-anim-in hub-anim-in-6">
           <div>
             <div class="fin-table-wrap">
               <div class="fin-table-head">
@@ -799,7 +799,7 @@
         </div>
 
         <!-- Charts -->
-        <div class="fin-charts hub-anim-in hub-anim-in-6">
+        <div class="fin-charts hub-anim-in hub-anim-in-7">
           <div class="fin-chart-card">
             <div class="fin-chart-title">Spending by category</div>
             <div class="fin-category-bars" id="finCategoryBars">
@@ -815,7 +815,7 @@
         </div>
 
         <!-- ─── ADVANCED CHARTS ───────────────────────────── -->
-        <div class="fin-adv-section hub-anim-in hub-anim-in-7">
+        <div class="fin-adv-section hub-anim-in hub-anim-in-8">
           <div class="fin-adv-header">
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary)">Spending Intelligence</span>
             <div class="fin-adv-tabs" id="finAdvTabs">
@@ -1180,6 +1180,248 @@
 
     }
 
+    // ─── AUDIO CONTEXT (lazy) ─────────────────────────────
+    let _audioCtx = null;
+    function getAudioCtx() {
+      if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (_audioCtx.state === 'suspended') _audioCtx.resume();
+      return _audioCtx;
+    }
+
+    // ─── PLAY "CHING" SOUND ───────────────────────────────
+    function playChingSound() {
+      try {
+        const ctx = getAudioCtx();
+        const now = ctx.currentTime;
+
+        // Main tone ~880Hz (A5) — bell-like
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(880, now);
+        osc1.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
+        gain1.gain.setValueAtTime(0.3, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.5);
+
+        // Harmonic ~1760Hz (A6) — sparkle
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(1760, now);
+        gain2.gain.setValueAtTime(0.12, now);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.start(now);
+        osc2.stop(now + 0.35);
+
+        // Third overtone ~2640Hz (E7) — extra shimmer
+        const osc3 = ctx.createOscillator();
+        const gain3 = ctx.createGain();
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(2640, now);
+        gain3.gain.setValueAtTime(0.05, now);
+        gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc3.connect(gain3);
+        gain3.connect(ctx.destination);
+        osc3.start(now);
+        osc3.stop(now + 0.25);
+      } catch (e) {
+        // Audio not available, silently ignore
+      }
+    }
+
+    // ─── PIGGY BANK & WALLET ────────────────────────────────
+    const PIGGY_KEY = 'haven-piggybank';
+    const WALLET_KEY = 'haven-wallet';
+
+    function loadPiggy() {
+      try { const raw = localStorage.getItem(PIGGY_KEY); return raw ? JSON.parse(raw) : 0; } catch (e) { return 0; }
+    }
+    function savePiggy(val) {
+      try { localStorage.setItem(PIGGY_KEY, JSON.stringify(val)); } catch (e) { /* ignore */ }
+    }
+    function loadWallet() {
+      try { const raw = localStorage.getItem(WALLET_KEY); return raw ? JSON.parse(raw) : 0; } catch (e) { return 0; }
+    }
+    function saveWallet(val) {
+      try { localStorage.setItem(WALLET_KEY, JSON.stringify(val)); } catch (e) { /* ignore */ }
+    }
+
+    function renderPiggy() {
+      const bal = loadPiggy();
+      const el = document.getElementById('piggyBalance');
+      if (el) el.textContent = fmtMoney(bal);
+    }
+    function renderWallet() {
+      const bal = loadWallet();
+      const el = document.getElementById('walletBalance');
+      if (el) el.textContent = fmtMoney(bal);
+    }
+
+    function piggyPop() {
+      const el = document.getElementById('piggyBalance');
+      if (!el) return;
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+      setTimeout(function() { el.classList.remove('pop'); }, 400);
+    }
+    function walletPop() {
+      const el = document.getElementById('walletBalance');
+      if (!el) return;
+      el.classList.remove('pop');
+      void el.offsetWidth;
+      el.classList.add('pop');
+      setTimeout(function() { el.classList.remove('pop'); }, 400);
+    }
+
+    // ─── COIN FLY ANIMATION ────────────────────────────────
+    function spawnCoinParticles(originBtn, targetId, count) {
+      count = count || 3;
+      const target = document.getElementById(targetId);
+      if (!target || !originBtn) return;
+      const btnRect = originBtn.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const cx = btnRect.left + btnRect.width / 2;
+      const cy = btnRect.top;
+      const tx = targetRect.left + targetRect.width / 2;
+      const ty = targetRect.top + targetRect.height / 2;
+
+      for (let i = 0; i < count; i++) {
+        const coin = document.createElement('div');
+        coin.className = 'fin-coin-particle';
+        coin.textContent = 'R';
+        coin.style.left = (cx + (Math.random() - 0.5) * 20) + 'px';
+        coin.style.top = (cy + (Math.random() - 0.5) * 10) + 'px';
+        // Randomize flight path
+        const midX = (cx + tx) / 2 + (Math.random() - 0.5) * 80;
+        const midY = (cy + ty) / 2 - 60 - Math.random() * 40;
+        const dx = midX - (cx + (Math.random() - 0.5) * 20);
+        const dy = midY - (cy + (Math.random() - 0.5) * 10);
+        const dxEnd = tx - (cx + (Math.random() - 0.5) * 20);
+        const dyEnd = ty - (cy + (Math.random() - 0.5) * 10);
+        coin.style.setProperty('--dx', dx + 'px');
+        coin.style.setProperty('--dy', dy + 'px');
+        coin.style.setProperty('--dx-end', dxEnd + 'px');
+        coin.style.setProperty('--dy-end', dyEnd + 'px');
+        coin.style.animationDuration = (0.5 + Math.random() * 0.3) + 's';
+        coin.style.animationDelay = (i * 0.08) + 's';
+        document.body.appendChild(coin);
+        coin.addEventListener('animationend', function() { coin.remove(); });
+      }
+    }
+
+    // ─── SPARKLE TEXT OVERLAY ──────────────────────────────
+    function spawnSparkle(parent, amount, type) {
+      if (!parent) return;
+      const emojis = type === 'save' ? ['✨','🪙','💰','🌟'] : ['💸','🪙','💵'];
+      for (let i = 0; i < 3; i++) {
+        const sp = document.createElement('div');
+        sp.className = 'fin-sparkle';
+        sp.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        sp.style.left = (20 + Math.random() * 60) + '%';
+        sp.style.top = (30 + Math.random() * 40) + '%';
+        sp.style.animationDelay = (i * 0.12) + 's';
+        parent.appendChild(sp);
+        sp.addEventListener('animationend', function() { sp.remove(); });
+      }
+    }
+
+    // ─── PIGGY SHAKE ───────────────────────────────────────
+    function jigglePiggy() {
+      const svg = document.getElementById('piggySvg');
+      if (!svg) return;
+      svg.classList.remove('jiggle');
+      void svg.offsetWidth;
+      svg.classList.add('jiggle');
+      setTimeout(function() { svg.classList.remove('jiggle'); }, 600);
+    }
+
+    // ─── HANDLE PIGGY ADD/SUBTRACT ─────────────────────────
+    function handlePiggyAdd() {
+      const input = document.getElementById('piggyInput');
+      const amt = parseInt(input?.value) || 0;
+      if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
+      let bal = loadPiggy();
+      bal += amt;
+      savePiggy(bal);
+      input.value = '';
+      renderPiggy();
+      piggyPop();
+      jigglePiggy();
+      playChingSound();
+      spawnCoinParticles(document.getElementById('piggyAddBtn'), 'piggyIcon', 4);
+      spawnSparkle(document.querySelector('.fin-piggy-card'), amt, 'save');
+    }
+    function handlePiggySub() {
+      const input = document.getElementById('piggyInput');
+      const amt = parseInt(input?.value) || 0;
+      if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
+      let bal = loadPiggy();
+      if (amt > bal) { showToast('Not enough savings!', 'info', 2000); return; }
+      bal -= amt;
+      savePiggy(bal);
+      input.value = '';
+      renderPiggy();
+      piggyPop();
+      jigglePiggy();
+      spawnSparkle(document.querySelector('.fin-piggy-card'), amt, 'spend');
+    }
+
+    // ─── HANDLE WALLET ADD/SUBTRACT ────────────────────────
+    function handleWalletAdd() {
+      const input = document.getElementById('walletInput');
+      const amt = parseInt(input?.value) || 0;
+      if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
+      let bal = loadWallet();
+      bal += amt;
+      saveWallet(bal);
+      input.value = '';
+      renderWallet();
+      walletPop();
+    }
+    function handleWalletSub() {
+      const input = document.getElementById('walletInput');
+      const amt = parseInt(input?.value) || 0;
+      if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
+      let bal = loadWallet();
+      if (amt > bal) { showToast('Not enough cash in wallet!', 'info', 2000); return; }
+      bal -= amt;
+      saveWallet(bal);
+      input.value = '';
+      renderWallet();
+      walletPop();
+    }
+
+    // ─── INIT PIGGY & WALLET ────────────────────────────────
+    function initSavings() {
+      renderPiggy();
+      renderWallet();
+      document.getElementById('piggyAddBtn')?.addEventListener('click', handlePiggyAdd);
+      document.getElementById('piggySubBtn')?.addEventListener('click', handlePiggySub);
+      document.getElementById('walletAddBtn')?.addEventListener('click', handleWalletAdd);
+      document.getElementById('walletSubBtn')?.addEventListener('click', handleWalletSub);
+      // Enter key support
+      document.getElementById('piggyInput')?.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') handlePiggyAdd();
+      });
+      document.getElementById('walletInput')?.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') handleWalletAdd();
+      });
+    }
+
+    // ─── EXTENDED INIT ──────────────────────────────────────
+    var origInit = init;
+    init = function() {
+      if (typeof origInit === 'function') origInit();
+      initSavings();
+    };
+
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
   </script>
 
@@ -1451,7 +1693,7 @@
           <input id="spSearchInput" placeholder="Search playlists..." oninput="spRenderList(this.value)">
         </div>
         <div class="sp-iframe-wrap">
-          <iframe id="spModalEmbed" src="" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+          <iframe id="spModalEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
         </div>
         <div class="sp-list" id="spList"></div>
       </div>

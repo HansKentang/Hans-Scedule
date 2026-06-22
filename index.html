@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Havën">
-  <link rel="manifest" href="manifest.json">
+  <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
   <title>Havën Schedule — Hub</title>
@@ -115,7 +115,7 @@
             <button onclick="spOpenSettings()">Add playlist</button>
           </div>
           <div class="sp-embed-wrap" id="spEmbedWrap">
-            <iframe id="spEmbed" src="" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+            <iframe id="spEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
           </div>
         </div>
         <div class="sp-controls" id="spControls">
@@ -1551,7 +1551,7 @@
           <input id="spSearchInput" placeholder="Search playlists..." oninput="spRenderList(this.value)">
         </div>
         <div class="sp-iframe-wrap">
-          <iframe id="spModalEmbed" src="" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+          <iframe id="spModalEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
         </div>
         <div class="sp-list" id="spList"></div>
       </div>
