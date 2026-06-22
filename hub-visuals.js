@@ -404,10 +404,10 @@ function renderHubBento() {
     const {t: type, x, y, w, h, uid} = item;
     const e = (s) => escapeHtml(s);
     const resizeHandle = isEdit
-      ? `<div class="bento-resize-handle" data-resize-bubble="${uid}"></div>`
+      ? `<div class="bento-resize-edge" data-resize-axis="e" data-resize-bubble="${uid}"></div><div class="bento-resize-edge" data-resize-axis="s" data-resize-bubble="${uid}"></div><div class="bento-resize-handle" data-resize-axis="se" data-resize-bubble="${uid}"></div>`
       : '';
     const editUI = isEdit
-      ? `<div class="bento-bubble-handle" draggable="true">⠿</div><button class="bento-bubble-remove" data-remove-bubble="${uid}">×</button>${resizeHandle}`
+      ? `<div class="bento-bubble-handle" draggable="true">⠿</div><button class="bento-bubble-duplicate" data-duplicate-bubble="${uid}" title="Duplicate">⧉</button><button class="bento-bubble-remove" data-remove-bubble="${uid}">×</button>${resizeHandle}`
       : '';
     const dimStyle = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;overflow:auto`;
 
@@ -697,21 +697,156 @@ function renderHubBento() {
     });
   });
 
+  // Wire duplicate-bubble buttons
+  grid.querySelectorAll('[data-duplicate-bubble]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.duplicateBubble;
+      var layout2 = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+      var src = layout2.find(function(it) { return it.uid === uid; });
+      if (!src) return;
+      var copy = JSON.parse(JSON.stringify(src));
+      copy.uid = 'bubble-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      copy.x = src.x + 24;
+      copy.y = src.y + 24;
+      // Duplicate image if present
+      if (copy.imageId) {
+        var newId = copy.imageId;
+        while (layout2.find(function(it) { return it.imageId === newId; }) || (hubContent.images && hubContent.images[newId])) {
+          var parts = newId.split('-');
+          var num = parseInt(parts[parts.length - 1]) || 1;
+          parts[parts.length - 1] = String(num + 1);
+          newId = parts.join('-');
+        }
+        copy.imageId = newId;
+      }
+      layout2.push(copy);
+      resolveBubbleCollisions(layout2);
+      hubContent.bentoLayout = layout2;
+      saveHubContent();
+      renderHubBento();
+    });
+  });
+
   if (isEdit) {
     const addBtn = document.createElement('button');
     addBtn.className = 'bento-add-bubble-btn';
     addBtn.id = 'bentoAddBubble';
     addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Bubble';
-    const lastItem = visible.length > 0 ? visible[visible.length-1] : null;
-    const addY = lastItem ? lastItem.y + (lastItem.h || 240) + 24 : 24;
-    addBtn.style.cssText = `position:absolute;left:24px;top:${addY}px;width:calc(100% - 48px)`;
+    const addY = visible.reduce(function(max, i) { return Math.max(max, i.y + (i.h || 240)); }, 24) + 24;
+    addBtn.style.cssText = `position:sticky;left:24px;bottom:24px;width:calc(100% - 48px);margin-top:${addY - 24}px;z-index:10`;
     grid.appendChild(addBtn);
     addBtn.addEventListener('click', showHubAddPopup);
+
+    // Done Editing button
+    var doneBtn = document.createElement('button');
+    doneBtn.className = 'bento-edit-done-btn';
+    doneBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Done Editing';
+    grid.appendChild(doneBtn);
+    doneBtn.addEventListener('click', function() { toggleHubEdit(); });
+
+    // Right-click paste support for contenteditable fields only
+    grid.addEventListener('contextmenu', function(e) {
+      var editable = e.target.closest('[contenteditable]');
+      if (editable) return; // allow default paste context menu on contenteditable
+      e.preventDefault();
+    });
+
+    // Selection click handler — click a bubble to select, click elsewhere to deselect
+    grid.addEventListener('click', function(e) {
+      var bubble = e.target.closest('.bento-bubble');
+      if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
+      // Don't select when clicking remove/duplicate/handle
+      if (e.target.closest('[data-remove-bubble]') || e.target.closest('[data-duplicate-bubble]') || e.target.closest('.bento-bubble-handle') || e.target.closest('.bento-resize-handle')) return;
+      var wasSelected = bubble.classList.contains('selected');
+      grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
+      if (!wasSelected) bubble.classList.add('selected');
+    });
+
+    // Bubble context menu (right-click)
+    grid.addEventListener('contextmenu', function(e) {
+      var editable = e.target.closest('[contenteditable]');
+      if (editable) return; // allow default paste menu
+      var bubble = e.target.closest('.bento-bubble');
+      if (!bubble) { e.preventDefault(); return; }
+      e.preventDefault();
+      // Remove existing context menus
+      var old = grid.querySelector('.bento-context-menu');
+      if (old) old.remove();
+      var uid = bubble.dataset.bubble;
+      var menu = document.createElement('div');
+      menu.className = 'bento-context-menu';
+      menu.style.left = Math.min(e.offsetX || e.clientX - grid.getBoundingClientRect().left, grid.clientWidth - 160) + 'px';
+      menu.style.top = (e.offsetY || e.clientY - grid.getBoundingClientRect().top) + 'px';
+      menu.innerHTML =
+        '<button data-action="duplicate" data-uid="' + uid + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Duplicate</button>' +
+        '<button data-action="remove" data-uid="' + uid + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>Remove</button>' +
+        '<button data-action="reset-size" data-uid="' + uid + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>Reset Size</button>' +
+        '<button data-action="move-front" data-uid="' + uid + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="18 15 12 9 6 15"/></svg>Bring Forward</button>' +
+        '<button data-action="move-back" data-uid="' + uid + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>Send Backward</button>';
+      grid.appendChild(menu);
+
+      // Close menu on click anywhere else
+      var closeMenu = function(ev) {
+        if (!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('mousedown', closeMenu); }
+      };
+      setTimeout(function() { document.addEventListener('mousedown', closeMenu); }, 0);
+
+      // Handle menu actions
+      menu.querySelectorAll('button').forEach(function(btn) {
+        btn.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          var action = this.dataset.action;
+          var uid = this.dataset.uid;
+          menu.remove();
+          if (action === 'duplicate') {
+            var dupBtn = grid.querySelector('[data-duplicate-bubble="' + uid + '"]');
+            if (dupBtn) dupBtn.click();
+          } else if (action === 'remove') {
+            var rmBtn = grid.querySelector('[data-remove-bubble="' + uid + '"]');
+            if (rmBtn) rmBtn.click();
+          } else if (action === 'reset-size') {
+            var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+            var item = layout.find(function(i) { return i.uid === uid; });
+            if (item) {
+              item.w = snap(320);
+              item.h = item.t === 'spotify' ? 400 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+              item.x = snap(24);
+              item.y = snap(24);
+              resolveBubbleCollisions(layout);
+              hubContent.bentoLayout = layout;
+              saveHubContent();
+              renderHubBento();
+            }
+          } else if (action === 'move-front') {
+            var el = grid.querySelector('[data-bubble="' + uid + '"]');
+            if (el) {
+              var maxZ = 0;
+              grid.querySelectorAll('.bento-bubble').forEach(function(b) {
+                var z = parseInt(b.style.zIndex) || 0;
+                if (z > maxZ) maxZ = z;
+              });
+              el.style.zIndex = maxZ + 1;
+            }
+          } else if (action === 'move-back') {
+            var el = grid.querySelector('[data-bubble="' + uid + '"]');
+            if (el) {
+              var minZ = 0;
+              grid.querySelectorAll('.bento-bubble').forEach(function(b) {
+                var z = parseInt(b.style.zIndex) || 0;
+                if (z < minZ) minZ = z;
+              });
+              el.style.zIndex = minZ - 1;
+            }
+          }
+        });
+      });
+    });
   }
 
   if (visible.length > 0) {
-    const last = visible[visible.length-1];
-    grid.style.minHeight = Math.max(800, last.y + (last.h || 240) + 160) + 'px';
+    var lowest = visible.reduce(function(max, i) { return Math.max(max, i.y + (i.h || 240)); }, 0);
+    grid.style.minHeight = Math.max(800, lowest + 160) + 'px';
   }
 
   document.querySelectorAll('img[data-image-id]').forEach(el => {
@@ -876,9 +1011,97 @@ function renderHubBento() {
     });
   }
 
-  resetBentoInteractions();
   setupBubbleDragDrop();
   setupBubbleResize();
+
+  // Global keyboard shortcuts for edit mode
+  if (isEdit && !grid._editKeysWired) {
+    grid._editKeysWired = true;
+    document.addEventListener('keydown', function(e) {
+      if (!hubEditMode) return;
+      // Ctrl+D: duplicate selected bubble
+      if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();
+        var sel = grid.querySelector('.bento-bubble.selected');
+        if (!sel) return;
+        var uid = sel.dataset.bubble;
+        var dupBtn = grid.querySelector('[data-duplicate-bubble="' + uid + '"]');
+        if (dupBtn) dupBtn.click();
+        return;
+      }
+      // Escape: deselect + close shortcuts panel
+      if (e.key === 'Escape') {
+        grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
+        var sp = document.getElementById('bentoShortcutsPanel');
+        if (sp) sp.remove();
+        return;
+      }
+      // Arrow keys: nudge selected bubble
+      var arrowMap = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] };
+      var dir = arrowMap[e.key];
+      if (!dir) return;
+      var sel = grid.querySelector('.bento-bubble.selected');
+      if (!sel) return;
+      e.preventDefault();
+      var step = e.shiftKey ? 1 : 20;
+      var dx = dir[0] * step;
+      var dy = dir[1] * step;
+      var x = parseInt(sel.style.left) || 0;
+      var y = parseInt(sel.style.top) || 0;
+      var w = sel.offsetWidth || parseInt(sel.style.width) || 320;
+      var h = sel.offsetHeight || parseInt(sel.style.height) || 240;
+      var gridRect = grid.getBoundingClientRect();
+      x = Math.max(0, Math.min(x + dx, gridRect.width - w));
+      y = Math.max(0, Math.min(y + dy, gridRect.height - h));
+      sel.style.left = x + 'px';
+      sel.style.top = y + 'px';
+      // Save to layout
+      var uid = sel.dataset.bubble;
+      var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+      var item = layout.find(function(i) { return i.uid === uid; });
+      if (item) {
+        item.x = x;
+        item.y = y;
+        resolveBubbleCollisions(layout);
+        hubContent.bentoLayout = layout;
+        // Update pushed bubbles' DOM positions
+        layout.forEach(function(it) {
+          if (it.uid === uid) return;
+          var el = grid.querySelector('[data-bubble="' + it.uid + '"]');
+          if (el) { el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; }
+        });
+        saveHubContent();
+      }
+    });
+
+    // Keyboard shortcuts reference button
+    var shortBtn = document.createElement('button');
+    shortBtn.className = 'bento-shortcuts-btn';
+    shortBtn.id = 'bentoShortcutsBtn';
+    shortBtn.textContent = '?';
+    shortBtn.title = 'Keyboard shortcuts';
+    grid.appendChild(shortBtn);
+    shortBtn.addEventListener('click', function() {
+      var existing = document.getElementById('bentoShortcutsPanel');
+      if (existing) { existing.remove(); return; }
+      var panel = document.createElement('div');
+      panel.className = 'bento-shortcuts-panel';
+      panel.id = 'bentoShortcutsPanel';
+      panel.innerHTML =
+        '<div class="bento-shortcuts-title">Keyboard Shortcuts</div>' +
+        '<div class="bento-shortcut-row"><kbd>Ctrl+D</kbd><span>Duplicate selected bubble</span></div>' +
+        '<div class="bento-shortcut-row"><kbd>↑ ↓ ← →</kbd><span>Nudge by 20px</span></div>' +
+        '<div class="bento-shortcut-row"><kbd>Shift+↑ ↓ ← →</kbd><span>Nudge by 1px</span></div>' +
+        '<div class="bento-shortcut-row"><kbd>Escape</kbd><span>Deselect / Cancel drag</span></div>' +
+        '<div class="bento-shortcut-row"><kbd>Double-click</kbd><span>Cancel drag / resize</span></div>';
+      grid.appendChild(panel);
+      // Close on click outside
+      var closer = function(ev) {
+        if (!panel.contains(ev.target) && ev.target !== shortBtn) { panel.remove(); document.removeEventListener('mousedown', closer); }
+      };
+      setTimeout(function() { document.addEventListener('mousedown', closer); }, 0);
+    });
+  }
 }
 
 /* ─── Bubble drag/resize ───────────────────── */
@@ -917,15 +1140,44 @@ function setupBubbleDragDrop() {
       offsetY: e.clientY - rect.top,
       startX: rect.left - gridRect.left,
       startY: rect.top - gridRect.top,
-      dragLayout: normalizeBentoLayout(hubContent.bentoLayout, hubContent)
+      originalX: parseInt(bubble.style.left) || rect.left - gridRect.left,
+      originalY: parseInt(bubble.style.top) || rect.top - gridRect.top,
+      dragLayout: normalizeBentoLayout(hubContent.bentoLayout, hubContent),
+      cancelled: false
     };
     bubble.classList.add('dragging');
   });
-  // Double-click during drag → release the bubble at current position
+
+  // Cancel helper — restores original position/size
+  function cancelDrag() {
+    if (_bubbleDragData) {
+      _bubbleDragData.bubble.style.left = _bubbleDragData.originalX + 'px';
+      _bubbleDragData.bubble.style.top = _bubbleDragData.originalY + 'px';
+      _bubbleDragData.cancelled = true;
+      _bubbleDragData.bubble.classList.remove('dragging');
+      _bubbleDragData = null;
+    }
+    if (_bubbleResizeData) {
+      _bubbleResizeData.bubble.style.width = _bubbleResizeData.originalW + 'px';
+      _bubbleResizeData.bubble.style.height = _bubbleResizeData.originalH + 'px';
+      _bubbleResizeData.cancelled = true;
+      _bubbleResizeData.bubble.classList.remove('dragging');
+      var tip = document.querySelector('.bento-resize-tooltip');
+      if (tip) tip.style.display = 'none';
+      _bubbleResizeData = null;
+    }
+  }
+
+  // Double-click cancels any held drag/resize
   document.addEventListener('dblclick', function(e) {
-    if (!_bubbleDragData) return;
-    var mu = new Event('mouseup');
-    document.dispatchEvent(mu);
+    cancelDrag();
+  });
+
+  // Escape cancels drag/resize
+  document.addEventListener('keydown', function _escCancel(e) {
+    if (e.key === 'Escape' && (_bubbleDragData || _bubbleResizeData)) {
+      cancelDrag();
+    }
   });
 
   document.addEventListener('mousemove', function(e) {
@@ -962,7 +1214,9 @@ function setupBubbleDragDrop() {
 
   document.addEventListener('mouseup', function(e) {
     if (!_bubbleDragData) return;
+    var cancelled = _bubbleDragData.cancelled;
     _bubbleDragData.bubble.classList.remove('dragging');
+    if (cancelled) { _bubbleDragData = null; return; }
     const bubble = _bubbleDragData.bubble;
     const gridRect = grid.getBoundingClientRect();
     const bRect = bubble.getBoundingClientRect();
@@ -1013,6 +1267,11 @@ function setupBubbleResize() {
   const grid = document.querySelector('.bento-grid');
   if (!grid) return;
 
+  // Create resize tooltip
+  var resizeTip = document.createElement('div');
+  resizeTip.className = 'bento-resize-tooltip';
+  document.body.appendChild(resizeTip);
+
   grid.addEventListener('mousedown', function(e) {
     const handle = e.target.closest('[data-resize-bubble]');
     if (!handle) return;
@@ -1022,15 +1281,24 @@ function setupBubbleResize() {
     if (!bubble) return;
     const rect = bubble.getBoundingClientRect();
     var isSpotify = !!bubble.querySelector('iframe[src*="spotify"]');
+    var axis = (handle.dataset.resizeAxis || 'se');
     _bubbleResizeData = {
       bubble,
+      axis: axis,
       startW: rect.width,
       startH: rect.height,
+      originalW: rect.width,
+      originalH: rect.height,
       startX: e.clientX,
       startY: e.clientY,
-      isSpotify: isSpotify
+      isSpotify: isSpotify,
+      cancelled: false
     };
     bubble.classList.add('dragging');
+    resizeTip.style.display = 'block';
+    resizeTip.textContent = Math.round(rect.width) + ' × ' + Math.round(rect.height);
+    resizeTip.style.left = (e.clientX + 12) + 'px';
+    resizeTip.style.top = (e.clientY - 32) + 'px';
   });
 
   document.addEventListener('mousemove', function(e) {
@@ -1041,23 +1309,37 @@ function setupBubbleResize() {
     const top = parseInt(bubble.style.top) || 0;
     const dx = e.clientX - _bubbleResizeData.startX;
     const dy = e.clientY - _bubbleResizeData.startY;
-    let newW = snap(Math.max(100, _bubbleResizeData.startW + dx));
-    let newH = snap(Math.max(80, _bubbleResizeData.startH + dy));
-    if (_bubbleResizeData.isSpotify) newH = snapSpotifyHeight(newH);
-    // Constrain so bubble doesn't overflow grid edges
-    newW = Math.min(newW, gridRect.width - left);
-    newH = Math.min(newH, gridRect.height - top);
-    _bubbleResizeData.bubble.style.width = newW + 'px';
-    _bubbleResizeData.bubble.style.height = newH + 'px';
+    var axis = _bubbleResizeData.axis;
+    var curW = _bubbleResizeData.bubble.offsetWidth || parseInt(bubble.style.width) || 320;
+    var curH = _bubbleResizeData.bubble.offsetHeight || parseInt(bubble.style.height) || 240;
+    if (axis === 'e' || axis === 'se') {
+      let newW = snap(Math.max(100, _bubbleResizeData.startW + dx));
+      newW = Math.min(newW, gridRect.width - left);
+      _bubbleResizeData.bubble.style.width = newW + 'px';
+    }
+    if (axis === 's' || axis === 'se') {
+      let newH = snap(Math.max(80, _bubbleResizeData.startH + dy));
+      if (_bubbleResizeData.isSpotify) newH = snapSpotifyHeight(newH);
+      newH = Math.min(newH, gridRect.height - top);
+      _bubbleResizeData.bubble.style.height = newH + 'px';
+    }
+    var finalW = parseInt(bubble.style.width) || curW;
+    var finalH = parseInt(bubble.style.height) || curH;
+    resizeTip.textContent = Math.round(finalW) + ' × ' + Math.round(finalH);
+    resizeTip.style.left = (e.clientX + 12) + 'px';
+    resizeTip.style.top = (e.clientY - 32) + 'px';
   });
 
   document.addEventListener('mouseup', function() {
     if (!_bubbleResizeData) return;
+    var cancelled = _bubbleResizeData.cancelled;
     _bubbleResizeData.bubble.classList.remove('dragging');
+    if (cancelled) { resizeTip.style.display = 'none'; _bubbleResizeData = null; return; }
     const bubble = _bubbleResizeData.bubble;
     const gridRect = grid.getBoundingClientRect();
     const left = parseInt(bubble.style.left) || 0;
     const top = parseInt(bubble.style.top) || 0;
+    var axis = _bubbleResizeData.axis;
     let w = parseInt(bubble.style.width) || 320;
     let h = parseInt(bubble.style.height) || 240;
     if (_bubbleResizeData.isSpotify) h = snapSpotifyHeight(h);
@@ -1067,8 +1349,8 @@ function setupBubbleResize() {
     const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
     const item = layout.find(i => i.uid === uid);
     if (item) {
-      item.w = Math.max(100, snap(w));
-      item.h = _bubbleResizeData.isSpotify ? Math.max(80, h) : Math.max(80, snap(h));
+      if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
+      if (axis === 's' || axis === 'se') item.h = _bubbleResizeData.isSpotify ? Math.max(80, h) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       hubContent.bentoLayout = layout;
       saveHubContent();
@@ -1084,6 +1366,7 @@ function setupBubbleResize() {
         });
       }
     }
+    resizeTip.style.display = 'none';
     _bubbleResizeData = null;
   });
 }
@@ -1165,6 +1448,9 @@ function generateProgressData() {
 function addBubbleTypes(types) {
   // Start from fresh normalized layout
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+  // Get grid width for gap-finding
+  var gridEl = document.querySelector('.bento-grid');
+  var gridWidth = gridEl ? gridEl.clientWidth : 800;
   types.forEach(t => {
     const item = {t, uid: _nextUid()};
     if (t === 'images') {
@@ -1183,16 +1469,12 @@ function addBubbleTypes(types) {
     } else {
       if (layout.find(i => i.t === t)) return;
     }
-    // Find the absolute lowest Y among ALL items (ignoring hidden)
-    let maxY = 0;
-    layout.forEach(i => {
-      if (i.hidden) return;
-      maxY = Math.max(maxY, (i.y || 0) + (i.h || 280));
-    });
-    item.x = snap(24);
-    item.y = snap(maxY + 30);
     item.w = snap(320);
     item.h = item.t === 'spotify' ? 400 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+    // Smart gap-filling: find first horizontal gap that fits this item
+    var pos = findBentoGap(layout, item.w, item.h, gridWidth);
+    item.x = pos.x;
+    item.y = pos.y;
     layout.push(item);
   });
   // Force all collisions to be resolved — this will push the new item down if needed
@@ -1200,6 +1482,65 @@ function addBubbleTypes(types) {
   hubContent.bentoLayout = layout;
   saveHubContent();
   renderHubBento();
+}
+
+function findBentoGap(layout, bubbleW, bubbleH, gridWidth) {
+  var items = layout.filter(function(i) { return !i.hidden; });
+  if (items.length === 0) return { x: snap(24), y: snap(24) };
+  // Collect unique start Y positions, sorted top to bottom
+  var rows = {};
+  items.forEach(function(i) {
+    var rowKey = i.y;
+    if (!rows[rowKey]) rows[rowKey] = [];
+    rows[rowKey].push(i);
+  });
+  var sortedYs = Object.keys(rows).map(Number).sort(function(a, b) { return a - b; });
+  // For each existing row, try to find a gap
+  for (var yi = 0; yi < sortedYs.length; yi++) {
+    var rowY = sortedYs[yi];
+    var rowItems = rows[rowY].sort(function(a, b) { return a.x - b.x; });
+    // Compute the effective bottom of this row (tallest item)
+    var rowBottom = rowY;
+    rowItems.forEach(function(i) { rowBottom = Math.max(rowBottom, i.y + i.h); });
+    // Scan for gaps within the row
+    var cursor = snap(24);
+    for (var ri = 0; ri < rowItems.length; ri++) {
+      // Check gap before this item
+      if (cursor + bubbleW + 24 <= rowItems[ri].x) {
+        // Also check that the item fits vertically in this row
+        if (rowBottom - rowY >= bubbleH || rowY + bubbleH <= rowBottom + 48) {
+          return { x: snap(cursor), y: snap(rowY) };
+        }
+      }
+      cursor = Math.max(cursor, rowItems[ri].x + rowItems[ri].w + 24);
+    }
+    // Check gap after last item in this row
+    if (cursor + bubbleW + 24 <= gridWidth) {
+      if (rowBottom - rowY >= bubbleH || rowY + bubbleH <= rowBottom + 48) {
+        return { x: snap(cursor), y: snap(rowY) };
+      }
+    }
+    // Also try placing at the next row's Y if this row's height can't fit the bubble
+    if (rowBottom - rowY < bubbleH && yi + 1 < sortedYs.length) {
+      var nextRowY = sortedYs[yi + 1];
+      // Can we fit between this row's bottom and the next row's top?
+      if (nextRowY - rowBottom >= bubbleH) {
+        var c2 = snap(24);
+        for (var ri2 = 0; ri2 < rowItems.length; ri2++) {
+          if (c2 + bubbleW + 24 <= rowItems[ri2].x) {
+            return { x: snap(c2), y: snap(rowBottom + 24) };
+          }
+          c2 = Math.max(c2, rowItems[ri2].x + rowItems[ri2].w + 24);
+        }
+        if (c2 + bubbleW + 24 <= gridWidth) {
+          return { x: snap(c2), y: snap(rowBottom + 24) };
+        }
+      }
+    }
+  }
+  // Fallback: place below the lowest item
+  var lowest = items.reduce(function(m, i) { return Math.max(m, i.y + i.h); }, 0);
+  return { x: snap(24), y: snap(lowest + 30) };
 }
 
 /* ─── Timer / Pomodoro helpers ────────────────── */
@@ -1333,26 +1674,39 @@ function showHubAddPopup(e) {
     <div class="add-list">
       ${types.map(t => {
         const disabled = t !== 'images' && has(t);
-        return `<button class="add-row" data-btype="${t}" ${disabled ? 'disabled' : ''} type="button">
+        return `<button class="add-row${!disabled ? ' add-row-toggle' : ''}" data-btype="${t}" ${disabled ? 'disabled' : ''} type="button">
           <span class="add-row-icon">${bubbleTypeIcon(t)}</span>
           <span class="add-row-label">${labels[t] || t}</span>
-          ${disabled ? '<span class="add-row-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg></span>' : ''}
+          <span class="add-row-check">${disabled ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg class="add-check-empty" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="12" cy="12" r="10"/></svg><svg class="add-check-fill" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:none"><polyline points="20 6 9 17 4 12"/></svg>'}</span>
         </button>`;
       }).join('')}
     </div>
 
-    <div class="hub-edit-popup-actions"><button class="cancel" id="hubAddCancel">Done</button></div>
+    <div class="hub-edit-popup-actions" id="hubAddActions"><button class="cancel primary" id="hubAddConfirm">Add Selected</button></div>
   `;
   document.body.appendChild(popup);
 
-  popup.querySelectorAll('.add-row:not([disabled])').forEach(el => {
-    el.addEventListener('click', () => {
-      addBubbleTypes([el.dataset.btype]);
-      popup.remove();
-      overlay.remove();
+  var selected = {};
+  // Toggle selection on click
+  popup.querySelectorAll('.add-row-toggle').forEach(function(el) {
+    el.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      var t = this.dataset.btype;
+      selected[t] = !selected[t];
+      this.classList.toggle('add-row-selected', selected[t]);
+      this.querySelector('.add-check-empty').style.display = selected[t] ? 'none' : '';
+      this.querySelector('.add-check-fill').style.display = selected[t] ? '' : 'none';
     });
   });
-  document.getElementById('hubAddCancel')?.addEventListener('click', () => { popup.remove(); overlay.remove(); });
+  // Confirm: add all selected types
+  document.getElementById('hubAddConfirm').addEventListener('click', function() {
+    var typesToAdd = Object.keys(selected).filter(function(k) { return selected[k]; });
+    if (typesToAdd.length === 0) { popup.remove(); overlay.remove(); return; }
+    addBubbleTypes(typesToAdd);
+    popup.remove();
+    overlay.remove();
+  });
+  // Also close on overlay click (already handled above)
 }
 
 /* ─── HIDE popup ───────────────────────────── */
