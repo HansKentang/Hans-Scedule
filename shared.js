@@ -110,6 +110,8 @@ function addSleepLog(data) {
     wakeTime: data.wakeTime || '07:00',
     quality: data.quality || 3,
     notes: data.notes || '',
+    mood: data.mood || [],
+    env: data.env || [],
     createdAt: new Date().toISOString(),
   };
   log.duration = calculateSleepDuration(log.bedtime, log.wakeTime);

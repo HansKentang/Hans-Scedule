@@ -257,22 +257,33 @@
 
               <!-- Overview Tab -->
               <div class="sleep-tab-content active" data-sleep-tab-content="overview">
-                <!-- Enhanced summary -->
-                <div class="sleep-enhanced-summary" id="sleepEnhancedSummary">
-                  <div class="sleep-enhanced-stat primary-stat">
-                    <div class="val" id="sleepEnhLastDur">—</div>
-                    <div class="lbl">Last Night</div>
-                    <div class="sub" id="sleepEnhLastTime">—</div>
+
+                <!-- Sleep Score + Key Metrics row -->
+                <div class="sleep-overview-top">
+                  <div class="sleep-score-ring" id="sleepScoreRing">
+                    <svg viewBox="0 0 36 36">
+                      <circle class="bg" cx="18" cy="18" r="15.5"></circle>
+                      <circle class="fill" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" id="sleepScoreCircle"></circle>
+                    </svg>
+                    <div class="sleep-score-value" id="sleepScoreValue">—</div>
+                    <div class="sleep-score-label">Score</div>
                   </div>
-                  <div class="sleep-enhanced-stat">
-                    <div class="val" id="sleepEnhAvgDur">—</div>
-                    <div class="lbl">7-Day Avg</div>
-                    <div class="sub" id="sleepEnhOnTrack"></div>
-                  </div>
-                  <div class="sleep-enhanced-stat">
-                    <div class="val" id="sleepEnhQuality">—</div>
-                    <div class="lbl">Avg Quality</div>
-                    <div class="sub" id="sleepEnhQualityLabel">—</div>
+                  <div class="sleep-enhanced-summary" id="sleepEnhancedSummary">
+                    <div class="sleep-enhanced-stat primary-stat">
+                      <div class="val" id="sleepEnhLastDur">—</div>
+                      <div class="lbl">Last Night</div>
+                      <div class="sub" id="sleepEnhLastTime">—</div>
+                    </div>
+                    <div class="sleep-enhanced-stat">
+                      <div class="val" id="sleepEnhAvgDur">—</div>
+                      <div class="lbl">7-Day Avg</div>
+                      <div class="sub" id="sleepEnhOnTrack"></div>
+                    </div>
+                    <div class="sleep-enhanced-stat">
+                      <div class="val" id="sleepEnhQuality">—</div>
+                      <div class="lbl">Avg Quality</div>
+                      <div class="sub" id="sleepEnhQualityLabel">—</div>
+                    </div>
                   </div>
                 </div>
 
@@ -344,9 +355,60 @@
                       <input type="number" id="sleepTargetDuration" value="480" min="300" max="600" step="15">
                     </div>
                   </div>
+                  <!-- Wind-down minutes config -->
+                  <div class="sleep-targets-row">
+                    <div class="sleep-target-field">
+                      <label for="sleepWinddownMins">Wind-down Reminder (min before)</label>
+                      <input type="number" id="sleepWinddownMins" value="30" min="5" max="120" step="5">
+                    </div>
+                    <div class="sleep-target-field">
+                      <label>&nbsp;</label>
+                      <div style="font-size:0.6rem;color:var(--text-tertiary);padding:var(--space-1) 0;line-height:1.4">Set how many minutes before bedtime you want a wind-down reminder.</div>
+                    </div>
+                  </div>
                   <div class="sleep-target-actions">
                     <button class="btn btn-primary" onclick="saveSleepTargetsFromHub()">Save Targets</button>
                     <span class="sleep-target-status" id="sleepTargetStatus"></span>
+                  </div>
+                </div>
+
+                <!-- Bedtime Routine Checklist -->
+                <div class="sleep-routine-section">
+                  <div class="sleep-targets-field" style="margin-bottom:var(--space-2)">
+                    <label style="font-size:0.72rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:var(--space-2)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                      Bedtime Routine
+                    </label>
+                  </div>
+                  <div class="sleep-routine-list" id="sleepRoutineList">
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="screen-off"> <span>Screen off 30min before</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="read"> <span>Read / unwind</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="meditate"> <span>Meditate / breathe</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="journal"> <span>Journal / reflect</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="no-caffeine"> <span>No caffeine after 5pm</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="water"> <span>Drink water</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="dark-room"> <span>Darken the room</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="stretch"> <span>Light stretch</span>
+                    </label>
+                  </div>
+                  <div class="sleep-target-actions" style="margin-top:var(--space-2)">
+                    <button class="btn btn-outline" onclick="saveSleepRoutine()" style="font-size:0.65rem">Save Routine</button>
+                    <span class="sleep-target-status" id="sleepRoutineStatus"></span>
                   </div>
                 </div>
               </div>
@@ -774,6 +836,38 @@
           <input type="time" id="sleepWakeTime" class="form-input" value="07:00">
         </div>
       </div>
+
+      <!-- Mood tags -->
+      <div class="form-group">
+        <label>How did you feel?</label>
+        <div class="sleep-mood-chips" id="sleepMoodChips">
+          <button class="sleep-mood-chip" data-mood="restful">&#9922; Restful</button>
+          <button class="sleep-mood-chip" data-mood="restless">&#9881; Restless</button>
+          <button class="sleep-mood-chip" data-mood="dreams">&#9733; Dreams</button>
+          <button class="sleep-mood-chip" data-mood="tired">&#9888; Woke Tired</button>
+          <button class="sleep-mood-chip" data-mood="nightmare">&#9785; Nightmare</button>
+          <button class="sleep-mood-chip" data-mood="insomnia">&#9783; Insomnia</button>
+        </div>
+      </div>
+
+      <!-- Environment factors -->
+      <div class="form-group">
+        <label>Environment</label>
+        <div class="sleep-env-factors" id="sleepEnvFactors">
+          <button class="sleep-env-chip" data-env="cold">&#127777; Cold</button>
+          <button class="sleep-env-chip" data-env="warm">&#127777; Warm</button>
+          <button class="sleep-env-chip" data-env="hot">&#127774; Hot</button>
+          <button class="sleep-env-chip" data-env="noisy">&#128264; Noisy</button>
+          <button class="sleep-env-chip" data-env="quiet">&#128264; Quiet</button>
+          <button class="sleep-env-chip" data-env="bright">&#9728; Bright</button>
+          <button class="sleep-env-chip" data-env="dark">&#9790; Dark</button>
+          <button class="sleep-env-chip" data-env="caffeine">&#9749; Caffeine</button>
+          <button class="sleep-env-chip" data-env="exercise">&#9971; Exercise</button>
+          <button class="sleep-env-chip" data-env="alcohol">&#127866; Alcohol</button>
+          <button class="sleep-env-chip" data-env="meditation">&#128519; Meditated</button>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="sleepNotes">Notes (optional)</label>
         <input type="text" id="sleepNotes" class="form-input" placeholder="How was your sleep?">
@@ -846,6 +940,12 @@
         if (qLabelEl) qLabelEl.textContent = '\u2014';
       }
 
+      // ── Sleep Score ──
+      renderSleepScore(logs, targets);
+
+      // ── Routine ──
+      renderSleepRoutine();
+
       // ── Consistency gauge ──
       renderSleepConsistency(logs);
 
@@ -866,6 +966,105 @@
 
       // ── Insights ──
       renderSleepInsights(logs);
+    }
+
+    // ── Sleep Score (composite 0-100) ──
+    function computeSleepScore(logs, targets) {
+      if (logs.length < 3) return null;
+      var now = new Date();
+      var weekLogs = [];
+      for (var i = 6; i >= 0; i--) {
+        var d = new Date(now);
+        d.setDate(d.getDate() - i);
+        var log = getSleepLog(formatDate(d));
+        if (log) weekLogs.push(log);
+      }
+      if (weekLogs.length === 0) return null;
+
+      // Duration score (0-40): how close to target
+      var durScore = 0;
+      var targetDur = targets ? targets.targetDuration : 480;
+      var durData = weekLogs.filter(function(l) { return l.duration; });
+      if (durData.length > 0) {
+        var avgDur = durData.reduce(function(s, l) { return s + l.duration; }, 0) / durData.length;
+        var durDiff = Math.abs(avgDur - targetDur);
+        durScore = Math.max(0, 40 - durDiff * 0.15);
+      }
+
+      // Quality score (0-30): average quality scaled
+      var qualityScore = 0;
+      var qData = weekLogs.filter(function(l) { return l.quality; });
+      if (qData.length > 0) {
+        var avgQ = qData.reduce(function(s, l) { return s + l.quality; }, 0) / qData.length;
+        qualityScore = (avgQ / 5) * 30;
+      }
+
+      // Consistency score (0-30)
+      var consistencyScore = 0;
+      var consistency = getSleepConsistencyScore(logs);
+      if (consistency) {
+        consistencyScore = (consistency.score / 100) * 30;
+      }
+
+      return Math.round(durScore + qualityScore + consistencyScore);
+    }
+
+    function renderSleepScore(logs, targets) {
+      var score = computeSleepScore(logs, targets);
+      var scoreEl = document.getElementById('sleepScoreValue');
+      var circleEl = document.getElementById('sleepScoreCircle');
+      if (!scoreEl || !circleEl) return;
+
+      if (score === null) {
+        scoreEl.textContent = '\u2014';
+        return;
+      }
+
+      scoreEl.textContent = score;
+      var circumference = 97.4;
+      var offset = circumference - (score / 100) * circumference;
+      requestAnimationFrame(function() {
+        circleEl.style.strokeDashoffset = offset;
+        if (score >= 70) circleEl.style.stroke = '#10b981';
+        else if (score >= 40) circleEl.style.stroke = '#f59e0b';
+        else circleEl.style.stroke = '#ef4444';
+      });
+    }
+
+    // ── Bedtime Routine ──
+    var ROUTINE_LIST_KEY = 'haven-schedule-sleep-routine';
+
+    function loadSleepRoutine() {
+      try {
+        var data = localStorage.getItem(ROUTINE_LIST_KEY);
+        return data ? JSON.parse(data) : {
+          'screen-off': false, 'read': false, 'meditate': false,
+          'journal': false, 'no-caffeine': false, 'water': false,
+          'dark-room': false, 'stretch': false
+        };
+      } catch (e) { return {}; }
+    }
+
+    function saveSleepRoutine() {
+      var checks = document.querySelectorAll('[data-routine]');
+      var state = {};
+      checks.forEach(function(c) { state[c.dataset.routine] = c.checked; });
+      localStorage.setItem(ROUTINE_LIST_KEY, JSON.stringify(state));
+      var statusEl = document.getElementById('sleepRoutineStatus');
+      if (statusEl) {
+        statusEl.textContent = '\u2714 Saved!';
+        statusEl.className = 'sleep-target-status on-track';
+        setTimeout(function() { if (statusEl) { statusEl.textContent = ''; } }, 2000);
+      }
+      showToast('Routine saved', 'success', 1500);
+    }
+
+    function renderSleepRoutine() {
+      var state = loadSleepRoutine();
+      var checks = document.querySelectorAll('[data-routine]');
+      checks.forEach(function(c) {
+        c.checked = !!state[c.dataset.routine];
+      });
     }
 
     // ── Tab switching ──
@@ -987,10 +1186,12 @@
       const btEl = document.getElementById('sleepTargetBedtime');
       const wtEl = document.getElementById('sleepTargetWake');
       const durEl = document.getElementById('sleepTargetDuration');
+      const wdEl = document.getElementById('sleepWinddownMins');
       const statusEl = document.getElementById('sleepTargetStatus');
       if (btEl) btEl.value = targets.targetBedtime;
       if (wtEl) wtEl.value = targets.targetWakeTime;
       if (durEl) durEl.value = targets.targetDuration;
+      if (wdEl) wdEl.value = targets.windDownReminderMins || 30;
       if (statusEl) {
         const logs = loadSleepLogs();
         const now = new Date();
@@ -1022,12 +1223,14 @@
       const btEl = document.getElementById('sleepTargetBedtime');
       const wtEl = document.getElementById('sleepTargetWake');
       const durEl = document.getElementById('sleepTargetDuration');
+      const wdEl = document.getElementById('sleepWinddownMins');
       if (!btEl || !wtEl || !durEl) return;
 
       const targets = loadSleepTargets();
       targets.targetBedtime = btEl.value;
       targets.targetWakeTime = wtEl.value;
       targets.targetDuration = parseInt(durEl.value) || 480;
+      if (wdEl) targets.windDownReminderMins = parseInt(wdEl.value) || 30;
       saveSleepTargets(targets);
 
       const statusEl = document.getElementById('sleepTargetStatus');
@@ -1039,6 +1242,18 @@
       renderSleepHub();
       showToast('Sleep targets saved', 'success', 1500);
     }
+
+    // ── Mood/Env icons ──
+    var SLEEP_MOOD_ICONS = {
+      restful: '\u269B', restless: '\u2601', dreams: '\u2605',
+      tired: '\u26A0', nightmare: '\u2639', insomnia: '\u2603'
+    };
+    var SLEEP_ENV_ICONS = {
+      cold: '\u2744', warm: '\u2600', hot: '\u2600',
+      noisy: '\u26A1', quiet: '\u26A1', bright: '\u2600',
+      dark: '\u263E', caffeine: '\u2615', exercise: '\u26BD',
+      alcohol: '\u2615', meditation: '\u2637'
+    };
 
     // ── History list ──
     function renderSleepHistory(logs) {
@@ -1058,13 +1273,30 @@
       for (const log of sorted) {
         const d = new Date(log.date + 'T12:00:00');
         const dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        var moodTags = '';
+        if (log.mood && Array.isArray(log.mood) && log.mood.length) {
+          moodTags = log.mood.map(function(m) {
+            var icon = SLEEP_MOOD_ICONS[m] || '';
+            return '<span class="sleep-history-tag mood-' + m + '" title="' + m + '">' + icon + (icon ? ' ' : '') + m.charAt(0).toUpperCase() + m.slice(1) + '</span>';
+          }).join('');
+        }
+        var envTags = '';
+        if (log.env && Array.isArray(log.env) && log.env.length) {
+          envTags = log.env.map(function(e) {
+            var icon = SLEEP_ENV_ICONS[e] || '';
+            return '<span class="sleep-history-tag env-' + e + '" title="' + e + '">' + icon + (icon ? ' ' : '') + e.charAt(0).toUpperCase() + e.slice(1) + '</span>';
+          }).join('');
+        }
         html += '<div class="sleep-history-item" data-log-id="' + log.id + '">';
         html += '<span class="sleep-history-date">' + dateLabel + '</span>';
         html += '<span class="sleep-history-dur">' + formatSleepMinutes(log.duration) + '</span>';
         html += '<span class="sleep-history-detail">';
+        html += '<span class="sleep-history-detail-top">';
         html += '<span class="time-range">' + log.bedtime + '\u2013' + log.wakeTime + '</span>';
         html += '<span class="q-badge" style="background:' + qualityColors[log.quality] + '22;color:' + qualityColors[log.quality] + '">' + log.quality + '/5</span>';
         if (log.notes) html += '<span style="opacity:0.6">\u2014 ' + escapeHtml(log.notes) + '</span>';
+        html += '</span>';
+        html += '<span class="sleep-history-tags">' + moodTags + envTags + '</span>';
         html += '</span>';
         html += '<span class="sleep-history-actions">';
         html += '<button class="edit" title="Edit" onclick="editSleepLog(\'' + log.id + '\')">\u270E</button>';
@@ -1097,6 +1329,20 @@
       document.querySelectorAll('.sleep-quality-opt').forEach(function(o) {
         o.classList.toggle('active', parseInt(o.dataset.quality) === log.quality);
       });
+
+      resetSleepModalChips();
+      if (log.mood && Array.isArray(log.mood)) {
+        log.mood.forEach(function(m) {
+          var chip = document.querySelector('.sleep-mood-chip[data-mood="' + m + '"]');
+          if (chip) chip.classList.add('active');
+        });
+      }
+      if (log.env && Array.isArray(log.env)) {
+        log.env.forEach(function(e) {
+          var chip = document.querySelector('.sleep-env-chip[data-env="' + e + '"]');
+          if (chip) chip.classList.add('active');
+        });
+      }
 
       openSleepLogModal();
     }
@@ -1212,10 +1458,28 @@
     }
 
     // ── Sleep Log Modal ──
+    function resetSleepModalChips() {
+      document.querySelectorAll('.sleep-mood-chip, .sleep-env-chip').forEach(function(c) {
+        c.classList.remove('active');
+      });
+    }
+
+    function getSelectedMoods() {
+      const chips = document.querySelectorAll('.sleep-mood-chip.active');
+      return Array.from(chips).map(function(c) { return c.dataset.mood; });
+    }
+
+    function getSelectedEnv() {
+      const chips = document.querySelectorAll('.sleep-env-chip.active');
+      return Array.from(chips).map(function(c) { return c.dataset.env; });
+    }
+
     function openSleepLogModal() {
       const overlay = document.getElementById('sleepLogOverlay');
       const modal = document.getElementById('sleepLogModal');
       if (!overlay || !modal) return;
+
+      resetSleepModalChips();
 
       if (!sleepLogEditId) {
         // Default to today
@@ -1253,16 +1517,18 @@
       const bedtime = document.getElementById('sleepBedtime').value;
       const wakeTime = document.getElementById('sleepWakeTime').value;
       const notes = document.getElementById('sleepNotes').value.trim();
+      const mood = getSelectedMoods();
+      const env = getSelectedEnv();
 
       if (sleepLogEditId) {
-        updateSleepLog(sleepLogEditId, { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes });
+        updateSleepLog(sleepLogEditId, { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood, env: env });
         sleepLogEditId = null;
       } else {
         const existing = getSleepLog(date);
         if (existing) {
-          updateSleepLog(existing.id, { bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes });
+          updateSleepLog(existing.id, { bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood, env: env });
         } else {
-          addSleepLog({ date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes });
+          addSleepLog({ date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood, env: env });
         }
       }
 
@@ -1271,14 +1537,22 @@
       showToast('Sleep saved for ' + date, 'success', 2000);
     }
 
-    // ── Init quality selector ──
+    // ── Init modal chip toggles ──
     document.addEventListener('click', function(e) {
-      const opt = e.target.closest('.sleep-quality-opt');
-      if (opt) {
-        sleepSelectedQuality = parseInt(opt.dataset.quality);
+      const qualityOpt = e.target.closest('.sleep-quality-opt');
+      if (qualityOpt) {
+        sleepSelectedQuality = parseInt(qualityOpt.dataset.quality);
         document.querySelectorAll('.sleep-quality-opt').forEach(function(o) {
           o.classList.toggle('active', parseInt(o.dataset.quality) === sleepSelectedQuality);
         });
+      }
+      const moodChip = e.target.closest('.sleep-mood-chip');
+      if (moodChip) {
+        moodChip.classList.toggle('active');
+      }
+      const envChip = e.target.closest('.sleep-env-chip');
+      if (envChip) {
+        envChip.classList.toggle('active');
       }
     });
   </script>
