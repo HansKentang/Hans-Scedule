@@ -228,22 +228,6 @@
           </div>
         </div>
 
-        <div class="hub-section-wrap" data-hub-section="weekly-planner">
-          <div class="hub-section-header">
-            <span class="hub-section-drag-handle" draggable="true">⠿</span>
-            <span class="hub-section-label">Weekly Planner</span>
-          </div>
-          <section class="fade-in" style="background:var(--surface-container-low);border-radius:var(--radius-xl);padding:var(--gutter) var(--container-padding);margin-bottom:var(--section-gap);border:1px solid var(--border-color)">
-            <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:var(--gutter);padding-bottom:var(--space-2);border-bottom:1px solid var(--border-color)">
-              <h2 style="font-family:var(--font-serif);font-size:1.3rem;font-weight:500;color:var(--text-primary)">weekly planner</h2>
-              <span style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--text-tertiary);opacity:0.5"><span id="hubMonthYear"></span></span>
-            </div>
-            <div id="hubWeeklyGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:var(--space-2)">
-              <!-- Populated by JS -->
-            </div>
-          </section>
-        </div>
-
         <div class="hub-section-wrap" data-hub-section="sleep">
           <div class="hub-section-header">
             <span class="hub-section-drag-handle" draggable="true">⠿</span>
@@ -368,52 +352,6 @@
               </div>
             </div>
           </section>
-        </div>
-
-        <div class="hub-section-wrap" data-hub-section="briefing">
-          <div class="hub-section-header">
-            <span class="hub-section-drag-handle" draggable="true">⠿</span>
-            <span class="hub-section-label">Daily Briefing</span>
-          </div>
-          <div id="hubBriefing" class="hub-callout hidden hub-anim-in hub-anim-in-4">
-          <div class="hub-callout-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-            </svg>
-          </div>
-          <div class="hub-callout-body"></div>
-        </div>
-        </div>
-
-        <div class="hub-section-wrap" data-hub-section="templates">
-          <div class="hub-section-header">
-            <span class="hub-section-drag-handle" draggable="true">⠿</span>
-            <span class="hub-section-label">Templates</span>
-          </div>
-          <div class="template-pills hub-anim-in hub-anim-in-4" id="hubTemplates" style="margin-bottom:var(--space-4)"></div>
-        </div>
-
-        <div class="hub-section-wrap" data-hub-section="quick-add">
-          <div class="hub-section-header">
-            <span class="hub-section-drag-handle" draggable="true">⠿</span>
-            <span class="hub-section-label">Quick Add</span>
-          </div>
-          <div class="hub-quickadd hub-anim-in hub-anim-in-4">
-            <div class="hub-quickadd-inner">
-              <span class="hub-quickadd-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-              </span>
-              <input type="text" class="hub-quickadd-input" id="hubQuickAddInput" placeholder="Add a task...">
-              <span class="hub-quickadd-tag" id="hubQuickAddTag">meeting</span>
-              <button class="hub-quickadd-submit" id="hubQuickAddSubmit" aria-label="Add task">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-              </button>
-            </div>
-          </div>
         </div>
 
         <div class="hub-section-wrap" data-hub-section="today-schedule">
@@ -635,7 +573,7 @@
     // HUB: PAGE-SPECIFIC CODE
     // ════════════════════════════════════════════════════════════
 
-    pageAfterImport = () => { updateHub(); renderDailyBriefing(); };
+    pageAfterImport = () => { updateHub(); };
 
     // ─── GREETING & DATE ─────────────────────────────────
     document.getElementById('hubDateLine').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -659,33 +597,10 @@
 
       renderTimeline(todayTasks);
       renderWeeklyChart(ws);
-      renderDailyBriefing();
-      populateWeeklyGrid(ws, weekTasks);
       if (typeof renderSleepHub === 'function') renderSleepHub();
     }
 
     // ─── WEEKLY PLANNER GRID ──────────────────────────────
-    function populateWeeklyGrid(weekStart, weekTasks) {
-      const grid = document.getElementById('hubWeeklyGrid');
-      if (!grid) return;
-      const monthYear = document.getElementById('hubMonthYear');
-      if (monthYear) monthYear.textContent = formatDateLabel(weekStart);
-      const dayNames = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-      const todayStr = formatDate(new Date());
-      let html = '';
-      for (let i = 0; i < 7; i++) {
-        const d = addDays(weekStart, i);
-        const ds = formatDate(d);
-        const dayTasks = weekTasks.filter(t => t.date === ds);
-        const isT = ds === todayStr;
-        html += `<div style="text-align:center;padding:var(--space-2);border-radius:var(--radius-md);${isT ? 'background:color-mix(in srgb, var(--accent) 12%, transparent);border:1px solid color-mix(in srgb, var(--accent) 20%, transparent)' : ''}">
-          <div style="font-size:0.6rem;font-weight:600;color:var(--text-tertiary);text-transform:uppercase">${dayNames[i]}</div>
-          <div style="font-size:1rem;font-weight:600;color:${isT ? 'var(--accent)' : 'var(--text-primary)'};margin:2px 0">${d.getDate()}</div>
-          <div style="font-size:0.6rem;color:var(--text-tertiary)">${dayTasks.length} task${dayTasks.length !== 1 ? 's' : ''}</div>
-        </div>`;
-      }
-      grid.innerHTML = html;
-    }
     // ─── TIMELINE RENDER ─────────────────────────────────
     function renderTimeline(todayTasks) {
       const list = document.getElementById('hubTimeline');
@@ -757,53 +672,8 @@
     const _hubQuickTags = ['meeting', 'deep-work', 'exercise', 'study', 'hobby'];
     let _hubQuickTagIdx = 0;
 
-    function handleHubQuickAdd() {
-      const input = document.getElementById('hubQuickAddInput');
-      const tagEl = document.getElementById('hubQuickAddTag');
-      if (!input || !input.value.trim()) return;
-      const tag = tagEl ? tagEl.textContent : 'meeting';
-      const now = new Date();
-      const mins = roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES);
-      createTask({
-        title: input.value.trim(),
-        date: formatDate(now),
-        startTime: toTimeStr(mins),
-        endTime: toTimeStr(mins + 60),
-        tag: tag,
-      });
-      input.value = '';
-      updateQuickAddSubmit();
-      updateHub();
-      showToast('Task added!', 'success', 1500);
-    }
-    function updateQuickAddSubmit() {
-      const input = document.getElementById('hubQuickAddInput');
-      const btn = document.getElementById('hubQuickAddSubmit');
-      if (!input || !btn) return;
-      btn.classList.toggle('active', input.value.trim().length > 0);
-    }
-    function cycleQuickAddTag() {
-      const tagEl = document.getElementById('hubQuickAddTag');
-      if (!tagEl) return;
-      _hubQuickTagIdx = (_hubQuickTagIdx + 1) % _hubQuickTags.length;
-      const tag = _hubQuickTags[_hubQuickTagIdx];
-      tagEl.textContent = tag;
-      tagEl.style.background = `var(--tag-${tag}-bg)`;
-      tagEl.style.color = `var(--tag-${tag}-text)`;
-    }
-    function renderDailyBriefing() {
-      const el = document.getElementById('hubBriefing');
-      if (!el) return;
-      const briefing = getDailyBriefing();
-      if (!briefing) {
-        el.classList.add('hidden');
-        return;
-      }
-      el.classList.remove('hidden');
-      const body = el.querySelector('.hub-callout-body');
-      if (!body) return;
-      body.innerHTML = `You have <strong>${briefing.taskCount}</strong> task${briefing.taskCount !== 1 ? 's' : ''} today. Next free slot: <strong>${briefing.gapStart}</strong> – <strong>${briefing.gapEnd}</strong> (${formatDuration(briefing.duration)}).`;
-    }
+
+
 
     // ════════════════════════════════════════════════════════════
     // INIT
@@ -835,19 +705,6 @@
       dom.aiChatInputWrapper = document.getElementById('aiChatInputWrapper');
       dom.aiChatSend = document.getElementById('aiChatSend');
       dom.aiChatClose = document.getElementById('aiChatClose');
-
-  const quickAddInput = document.getElementById('hubQuickAddInput');
-  const quickAddBtn = document.getElementById('hubQuickAddSubmit');
-  const quickAddTag = document.getElementById('hubQuickAddTag');
-
-  quickAddInput?.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') { e.preventDefault(); handleHubQuickAdd(); }
-    updateQuickAddSubmit();
-  });
-  quickAddInput?.addEventListener('input', updateQuickAddSubmit);
-  quickAddBtn?.addEventListener('click', handleHubQuickAdd);
-  quickAddTag?.addEventListener('click', cycleQuickAddTag);
-
 
       document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
       document.getElementById('settingsBtnSidebar')?.addEventListener('click', openSettingsDrawer);
