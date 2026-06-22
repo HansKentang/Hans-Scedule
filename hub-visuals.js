@@ -1281,7 +1281,7 @@ function setupBubbleDragDrop() {
 }
 
 function snapSpotifyHeight(h) {
-  var heights = [180, 400];
+  var heights = [200, 420];
   return heights.reduce(function(prev, curr) { return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev; });
 }
 
