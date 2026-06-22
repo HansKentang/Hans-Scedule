@@ -166,8 +166,20 @@ function rectsOverlap(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
-function resolveBubbleCollisions(layout) {
+function resolveBubbleCollisions(layout, canvasWidth, canvasHeight, excludeUid) {
   layout = layout.filter(i => !i.hidden);
+  // Determine canvas bounds
+  if (canvasWidth === undefined) {
+    var _gc = document.querySelector('.bento-grid');
+    var _gr = _gc ? _gc.getBoundingClientRect() : null;
+    canvasWidth = _gr ? _gr.width : 1800;
+  }
+  if (canvasHeight === undefined) canvasHeight = MAX_CANVAS_HEIGHT;
+  function clamp(item) {
+    if (item.uid === excludeUid) return;
+    item.x = Math.max(0, Math.min(item.x, canvasWidth - item.w));
+    item.y = Math.max(0, Math.min(item.y, canvasHeight - item.h));
+  }
   let dirty = true;
   let maxIter = 40;
   while (dirty && maxIter-- > 0) {
@@ -188,9 +200,12 @@ function resolveBubbleCollisions(layout) {
             dirty = true;
           }
         }
+        clamp(layout[j]);
       }
     }
   }
+  // Final clamp for all items (except excluded)
+  layout.forEach(clamp);
   return layout;
 }
 
@@ -1282,12 +1297,8 @@ function setupBubbleDragDrop() {
   document.addEventListener('mousemove', function(e) {
     if (!_bubbleDragData) return;
     const gridRect = grid.getBoundingClientRect();
-    const bRect = _bubbleDragData.bubble.getBoundingClientRect();
-    const bw = bRect.width, bh = bRect.height;
-    let newX = e.clientX - _bubbleDragData.offsetX - gridRect.left;
-    let newY = e.clientY - _bubbleDragData.offsetY - gridRect.top;
-    newX = Math.max(0, Math.min(snap(newX), gridRect.width - bw));
-    newY = Math.max(0, Math.min(snap(newY), Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - bh));
+    let newX = snap(e.clientX - _bubbleDragData.offsetX - gridRect.left);
+    let newY = snap(e.clientY - _bubbleDragData.offsetY - gridRect.top);
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
     // Real-time collision push
@@ -1296,7 +1307,7 @@ function setupBubbleDragDrop() {
     if (dragItem) {
       dragItem.x = newX;
       dragItem.y = newY;
-      resolveBubbleCollisions(dragLayout);
+      resolveBubbleCollisions(dragLayout, undefined, undefined, _bubbleDragData.bubble.dataset.bubble);
       var g = document.querySelector('.bento-grid');
       if (g) {
         dragLayout.forEach(function(it) {
@@ -1438,7 +1449,7 @@ function setupBubbleResize() {
     if (resizeItem) {
       if (axis === 'e' || axis === 'se') resizeItem.w = finalW;
       if (axis === 's' || axis === 'se') resizeItem.h = finalH;
-      resolveBubbleCollisions(resizeLayout);
+      resolveBubbleCollisions(resizeLayout, undefined, undefined, resizeUid);
       grid.querySelectorAll('.bento-bubble').forEach(function(el) {
         var it = resizeLayout.find(function(i) { return i.uid === el.dataset.bubble; });
         if (it && it.uid !== resizeUid) {
