@@ -1626,10 +1626,9 @@ html.dark .hub-hero-decor {
   display: block;
 }
 
-/* ─── Sleep Score Ring ────────────────────────────── */
+/* ─── Sleep Score Ring + Last Night Card ────────────── */
 .sleep-overview-top {
   display: flex;
-  align-items: stretch;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
@@ -1680,14 +1679,64 @@ html.dark .hub-hero-decor {
   margin-top: 1px;
 }
 
-/* ─── Enhanced Summary ───────────────────────────────── */
-.sleep-enhanced-summary {
+/* ─── Last Night Card ───────────────────────────────── */
+.s-last-card {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  gap: 2px;
+}
+.s-last-main {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.s-last-dur {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.s-last-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+}
+.s-last-sub {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+.s-last-quality {
+  display: flex;
+  gap: 1px;
+  margin-top: 2px;
+}
+.s-star {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  opacity: 0.25;
+}
+.s-star.s-star-on {
+  color: #f59e0b;
+  opacity: 1;
+}
+
+/* ─── Metrics row ────────────────────────────────────── */
+.s-metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
-.sleep-enhanced-stat {
+.s-metric {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1695,19 +1744,15 @@ html.dark .hub-hero-decor {
   background: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  transition: all var(--t-fast);
 }
-.sleep-enhanced-stat:hover {
-  border-color: var(--border-color);
-}
-.sleep-enhanced-stat .val {
+.s-metric-val {
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
 }
-.sleep-enhanced-stat .lbl {
+.s-metric-lbl {
   font-size: 0.55rem;
   color: var(--text-tertiary);
   text-transform: uppercase;
@@ -1717,27 +1762,99 @@ html.dark .hub-hero-decor {
   text-align: center;
   line-height: 1.3;
 }
-.sleep-enhanced-stat .sub {
+.s-metric-sub {
   font-size: 0.55rem;
   color: var(--text-tertiary);
   margin-top: 1px;
   opacity: 0.7;
 }
-.sleep-enhanced-stat .indicator {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  margin-top: 4px;
+
+/* ─── Weekly Sleep Schedule (visual horizontal bars) ── */
+.s-schedule-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-2);
 }
-.sleep-enhanced-stat .indicator.on-track { background: #10b981; }
-.sleep-enhanced-stat .indicator.behind { background: #ef4444; }
-.sleep-enhanced-stat .indicator.neutral { background: var(--text-tertiary); opacity: 0.4; }
-.sleep-enhanced-stat.primary-stat {
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary));
-  border-color: color-mix(in srgb, var(--accent) 20%, var(--border-subtle));
+.s-schedule {
+  margin-bottom: var(--space-3);
 }
-.sleep-enhanced-stat.primary-stat .val {
-  color: var(--accent);
+.ss-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ss-axis {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 38px;
+  margin-bottom: 2px;
+}
+.ss-axis span {
+  font-size: 0.45rem;
+  color: var(--text-tertiary);
+  opacity: 0.5;
+  font-family: var(--font-mono);
+}
+.ss-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 3px 0;
+  border-radius: var(--radius-sm);
+  transition: background var(--t-fast);
+}
+.ss-row-today {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.ss-label {
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.ss-label span {
+  display: block;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+}
+.ss-label .ss-date {
+  font-size: 0.45rem;
+  font-weight: 400;
+  opacity: 0.5;
+}
+.ss-track {
+  flex: 1;
+  height: 16px;
+  background: color-mix(in srgb, var(--text-tertiary) 6%, var(--bg-primary));
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.ss-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 8px;
+  opacity: 0.7;
+  transition: opacity var(--t-fast);
+  min-width: 2px;
+}
+.ss-row:hover .ss-bar {
+  opacity: 1;
+}
+.ss-info {
+  width: 44px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  text-align: right;
+  flex-shrink: 0;
 }
 
 /* ─── History List ────────────────────────────────────── */
@@ -1779,15 +1896,10 @@ html.dark .hub-hero-decor {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.sleep-history-detail-top {
-  font-size: 0.65rem;
-  color: var(--text-tertiary);
-  display: flex;
   align-items: center;
   gap: var(--space-2);
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
 }
 .sleep-history-detail .time-range {
   font-family: var(--font-mono);
@@ -1799,6 +1911,25 @@ html.dark .hub-hero-decor {
   font-weight: 600;
   text-transform: uppercase;
 }
+.sleep-history-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.sleep-history-tag {
+  font-size: 0.45rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--surface-container-high);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+.sleep-history-tag.mood-restful { background: color-mix(in srgb, #10b981 15%, transparent); color: #10b981; }
+.sleep-history-tag.mood-restless { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #f59e0b; }
+.sleep-history-tag.mood-tired { background: color-mix(in srgb, #ef4444 15%, transparent); color: #ef4444; }
+.sleep-history-tag.mood-dreams { background: color-mix(in srgb, #8b5cf6 15%, transparent); color: #8b5cf6; }
+.sleep-history-tag.mood-nightmare { background: color-mix(in srgb, #dc2626 15%, transparent); color: #dc2626; }
+.sleep-history-tag.mood-insomnia { background: color-mix(in srgb, #6b7280 15%, transparent); color: #9ca3af; }
 .sleep-history-actions {
   display: flex;
   gap: 2px;
@@ -1869,9 +2000,6 @@ html.dark .hub-hero-decor {
   color: var(--text-secondary);
   line-height: 1.5;
 }
-.sleep-insight-text strong {
-  color: var(--text-primary);
-}
 
 /* ─── Targets ─────────────────────────────────────────── */
 .sleep-targets-section {
@@ -1929,159 +2057,64 @@ html.dark .hub-hero-decor {
   color: #ef4444;
 }
 
-/* ─── Wind-down Reminder Toggle ──────────────────────── */
-.sleep-winddown-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-3);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-3);
+/* ─── Bedtime Routine ───────────────────────────────── */
+.sleep-routine-section {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
 }
-.sleep-winddown-info {
+.sleep-routine-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
-.sleep-winddown-info .label {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.sleep-winddown-info .hint {
-  font-size: 0.6rem;
-  color: var(--text-tertiary);
-}
-.sleep-winddown-switch {
-  position: relative;
-  width: 36px;
-  height: 20px;
-  flex-shrink: 0;
-}
-.sleep-winddown-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.sleep-winddown-slider {
-  position: absolute;
-  inset: 0;
-  background: var(--surface-container-high);
-  border-radius: 10px;
+.sleep-routine-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: background var(--t-fast);
-}
-.sleep-winddown-slider::before {
-  content: '';
-  position: absolute;
-  left: 2px;
-  top: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--text-tertiary);
-  transition: all var(--t-fast);
-}
-.sleep-winddown-switch input:checked + .sleep-winddown-slider {
-  background: var(--accent);
-}
-.sleep-winddown-switch input:checked + .sleep-winddown-slider::before {
-  transform: translateX(16px);
-  background: var(--text-inverse);
-}
-
-/* ─── Consistency Gauge (ring) ───────────────────────── */
-.sleep-consistency-gauge {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-3);
-}
-.sleep-gauge-ring {
-  position: relative;
-  width: 52px;
-  height: 52px;
-  flex-shrink: 0;
-}
-.sleep-gauge-ring svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-.sleep-gauge-ring .bg {
-  fill: none;
-  stroke: var(--surface-container-high);
-  stroke-width: 5;
-}
-.sleep-gauge-ring .fill {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 5;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 1s var(--curve);
-}
-.sleep-gauge-score {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-}
-.sleep-gauge-info {
-  flex: 1;
-  min-width: 0;
-}
-.sleep-gauge-info .label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-tertiary);
-}
-.sleep-gauge-info .detail {
   font-size: 0.65rem;
   color: var(--text-secondary);
-  margin-top: 2px;
-  line-height: 1.4;
+}
+.sleep-routine-item:hover {
+  background: var(--accent-soft);
+}
+.sleep-routine-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.sleep-routine-item:has(input:checked) span {
+  text-decoration: line-through;
+  opacity: 0.6;
 }
 
-/* ─── Sleep Debt Display ─────────────────────────────── */
-.sleep-debt-display {
+/* ─── Duration Preview (modal) ───────────────────────── */
+.s-dur-preview {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  font-size: 0.72rem;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary));
+  border: 1px solid color-mix(in srgb, var(--accent) 15%, var(--border-subtle));
+  border-radius: var(--radius-md);
   margin-bottom: var(--space-3);
+  opacity: 1;
+  transition: opacity 0.2s;
 }
-.sleep-debt-display.surplus {
-  background: color-mix(in srgb, #10b981 8%, transparent);
-  border: 1px solid color-mix(in srgb, #10b981 20%, transparent);
-  color: #10b981;
+.s-dur-preview-icon {
+  font-size: 1rem;
 }
-.sleep-debt-display.deficit {
-  background: color-mix(in srgb, #ef4444 8%, transparent);
-  border: 1px solid color-mix(in srgb, #ef4444 20%, transparent);
-  color: #ef4444;
+.s-dur-preview-text {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
 }
-.sleep-debt-display.neutral {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-tertiary);
-}
-.sleep-debt-value {
-  font-weight: 700;
+.s-dur-preview-text strong {
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2116,113 +2149,7 @@ html.dark .hub-hero-decor {
   color: var(--accent);
 }
 
-/* ─── Environment Factors (modal) ────────────────────── */
-.sleep-env-factors {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-}
-.sleep-env-chip {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.6rem;
-  font-weight: 500;
-  border: 1px solid var(--border-subtle);
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  transition: all var(--t-fast);
-  font-family: var(--font-family);
-}
-.sleep-env-chip:hover {
-  border-color: var(--border-color);
-  color: var(--text-secondary);
-}
-.sleep-env-chip.active {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  color: var(--accent);
-}
 
-/* ─── History tags ───────────────────────────────────── */
-.sleep-history-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-}
-.sleep-history-tag {
-  font-size: 0.45rem;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: var(--surface-container-high);
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 70px;
-}
-.sleep-history-tag.mood-restful { background: color-mix(in srgb, #10b981 15%, transparent); color: #10b981; }
-.sleep-history-tag.mood-restless { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #f59e0b; }
-.sleep-history-tag.mood-tired { background: color-mix(in srgb, #ef4444 15%, transparent); color: #ef4444; }
-.sleep-history-tag.mood-dreams { background: color-mix(in srgb, #8b5cf6 15%, transparent); color: #8b5cf6; }
-.sleep-history-tag.mood-nightmare { background: color-mix(in srgb, #dc2626 15%, transparent); color: #dc2626; }
-.sleep-history-tag.mood-insomnia { background: color-mix(in srgb, #6b7280 15%, transparent); color: #9ca3af; }
-
-/* ─── Bedtime Routine ───────────────────────────────── */
-.sleep-routine-section {
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border-subtle);
-}
-.sleep-routine-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-.sleep-routine-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background var(--t-fast);
-  font-size: 0.65rem;
-  color: var(--text-secondary);
-}
-.sleep-routine-item:hover {
-  background: var(--accent-soft);
-}
-.sleep-routine-item input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
-.sleep-routine-item:has(input:checked) {
-  color: var(--text-primary);
-}
-.sleep-routine-item:has(input:checked) span {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-/* ─── Sleep Env Row (in modal) ───────────────────────── */
-.sleep-env-row {
-  margin-bottom: var(--space-2);
-}
-.sleep-env-row label {
-  font-size: 0.6rem;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  display: block;
-  margin-bottom: var(--space-1);
-}
 .hub-snav-item .snav-icon {
   width: 18px; height: 18px; display: flex;
   align-items: center; justify-content: center;
@@ -4421,34 +4348,6 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .sleep-quality-star.filled { color: #f59e0b; opacity: 1; }
 .sleep-quality-star.half { opacity: 0.6; }
 
-.sleep-week-chart {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  gap: 8px; height: 100px; padding: var(--space-2) 0;
-  margin-top: var(--space-3);
-}
-.sleep-week-bar {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; gap: 2px; height: 100%;
-}
-.sleep-week-bar-fill {
-  width: 100%; border-radius: 4px 4px 2px 2px;
-  background: linear-gradient(180deg, var(--tag-deep-work-text, #6366f1) 0%, color-mix(in srgb, var(--tag-deep-work-text, #6366f1) 60%, transparent) 100%);
-  transform-origin: bottom;
-  animation: barGrow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  min-height: 4px;
-}
-.sleep-week-bar:hover .sleep-week-bar-fill {
-  box-shadow: 0 0 12px color-mix(in srgb, var(--tag-deep-work-text, #6366f1) 25%, transparent);
-}
-.sleep-week-bar-label {
-  font-size: 0.55rem; font-weight: 600; color: var(--text-tertiary);
-  text-transform: uppercase; letter-spacing: 0.04em;
-}
-.sleep-week-bar-value {
-  font-size: 0.5rem; color: var(--text-tertiary);
-  font-family: var(--font-mono); opacity: 0.6;
-}
-
 /* Sleep log modal */
 .sleep-log-overlay {
   position: fixed; inset: 0; z-index: 100;
@@ -6339,76 +6238,4 @@ html.light .hub-add-popup {
   font-weight: 600;
 }
 
-/* ─── SLEEP WEEK CHART (enhanced chart) ───────────────── */
-.sleep-chart-yaxis {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: flex-end;
-  padding-right: 4px;
-  font-size: 0.5rem;
-  color: var(--text-tertiary);
-  font-family: var(--font-mono);
-  height: 100%;
-  opacity: 0.5;
-  flex-shrink: 0;
-  width: 20px;
-  padding-bottom: 16px;
-}
-.sleep-week-chart-inner {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 6px;
-  flex: 1;
-  height: 100%;
-  position: relative;
-}
-.sleep-chart-target {
-  position: absolute;
-  left: 0;
-  right: 0;
-  z-index: 1;
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.sleep-chart-target-line {
-  flex: 1;
-  height: 1px;
-  background: var(--text-tertiary);
-  opacity: 0.3;
-  border-top: 1px dashed var(--text-tertiary);
-}
-.sleep-chart-target-label {
-  font-size: 0.5rem;
-  color: var(--text-tertiary);
-  opacity: 0.5;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-}
-.sleep-week-bar.today .sleep-week-bar-fill {
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 20%, transparent);
-}
-.sleep-week-bar.today .sleep-week-bar-label {
-  color: var(--accent);
-  font-weight: 700;
-}
-.sleep-week-bar.no-data {
-  opacity: 0.35;
-}
-.sleep-week-bar-value {
-  font-size: 0.5rem;
-  color: var(--text-tertiary);
-  font-family: var(--font-mono);
-  white-space: nowrap;
-  font-weight: 500;
-}
-.sleep-week-bar-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
+
