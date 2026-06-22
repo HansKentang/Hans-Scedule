@@ -733,9 +733,9 @@ function renderHubBento() {
     addBtn.className = 'bento-add-bubble-btn';
     addBtn.id = 'bentoAddBubble';
     addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Bubble';
-    const addY = visible.reduce(function(max, i) { return Math.max(max, i.y + (i.h || 240)); }, 24) + 24;
-    addBtn.style.cssText = `position:sticky;left:24px;bottom:24px;width:calc(100% - 48px);margin-top:${addY - 24}px;z-index:10`;
+    addBtn.style.cssText = `position:absolute;left:24px;width:calc(100% - 48px)`;
     grid.appendChild(addBtn);
+    updateAddBtnPosition();
     addBtn.addEventListener('click', showHubAddPopup);
 
     // Done Editing button
@@ -1080,7 +1080,7 @@ function renderHubBento() {
     shortBtn.id = 'bentoShortcutsBtn';
     shortBtn.textContent = '?';
     shortBtn.title = 'Keyboard shortcuts';
-    grid.appendChild(shortBtn);
+    document.body.appendChild(shortBtn);
     shortBtn.addEventListener('click', function() {
       var existing = document.getElementById('bentoShortcutsPanel');
       if (existing) { existing.remove(); return; }
@@ -1094,7 +1094,7 @@ function renderHubBento() {
         '<div class="bento-shortcut-row"><kbd>Shift+↑ ↓ ← →</kbd><span>Nudge by 1px</span></div>' +
         '<div class="bento-shortcut-row"><kbd>Escape</kbd><span>Deselect / Cancel drag</span></div>' +
         '<div class="bento-shortcut-row"><kbd>Double-click</kbd><span>Cancel drag / resize</span></div>';
-      grid.appendChild(panel);
+      document.body.appendChild(panel);
       // Close on click outside
       var closer = function(ev) {
         if (!panel.contains(ev.target) && ev.target !== shortBtn) { panel.remove(); document.removeEventListener('mousedown', closer); }
@@ -1102,6 +1102,21 @@ function renderHubBento() {
       setTimeout(function() { document.addEventListener('mousedown', closer); }, 0);
     });
   }
+}
+
+/* ─── Helper: keep add button below lowest widget ── */
+function updateAddBtnPosition() {
+  var btn = document.getElementById('bentoAddBubble');
+  if (!btn) return;
+  var grid2 = document.querySelector('.bento-grid');
+  if (!grid2) return;
+  var allItems = grid2.querySelectorAll('.bento-bubble');
+  var lowest = 0;
+  allItems.forEach(function(b) {
+    var bBottom = b.offsetTop + b.offsetHeight;
+    if (bBottom > lowest) lowest = bBottom;
+  });
+  btn.style.top = Math.max(lowest + 50, 50) + 'px';
 }
 
 /* ─── Bubble drag/resize ───────────────────── */
@@ -1166,6 +1181,7 @@ function setupBubbleDragDrop() {
       if (tip) tip.style.display = 'none';
       _bubbleResizeData = null;
     }
+    updateAddBtnPosition();
   }
 
   // Double-click cancels any held drag/resize
@@ -1209,6 +1225,7 @@ function setupBubbleDragDrop() {
           }
         });
       }
+      updateAddBtnPosition();
     }
   });
 
@@ -1248,6 +1265,7 @@ function setupBubbleDragDrop() {
         });
       }
     }
+    updateAddBtnPosition();
     _bubbleDragData = null;
     _suppressClick = true;
     setTimeout(function() { _suppressClick = false; }, 100);
@@ -1366,6 +1384,7 @@ function setupBubbleResize() {
         });
       }
     }
+    updateAddBtnPosition();
     resizeTip.style.display = 'none';
     _bubbleResizeData = null;
   });
