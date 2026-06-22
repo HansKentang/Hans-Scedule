@@ -13,11 +13,13 @@ const HUB_EDIT_KEY = 'haven-hub-edit';
 const HUB_VIS_KEY = 'haven-hub-visibility';
 const HUB_CONTENT_KEY = 'haven-hub-content';
 
+const MAX_CANVAS_HEIGHT = 10000;
 let hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true';
 let _bentoUidCounter = 0;
 let _clockInterval = null;
 let _timerIntervals = {};
 let _pomodoroState = {};
+let _calView = { year: 0, month: -1 }; // tracks displayed month/year for refresh
 function _nextUid() { return 'b' + (++_bentoUidCounter) + '_' + Date.now(); }
 
 /* ─── Section drag/drop reordering ─────────── */
@@ -279,10 +281,8 @@ function loadHubContent() {
   const defaults = HUB_DEFAULTS;
   try {
     const raw = localStorage.getItem(HUB_CONTENT_KEY);
-    console.warn('[img] loadHubContent: raw from localStorage:', raw ? raw.slice(0, 200) + '...' : 'null');
     if (raw) {
       const hc = JSON.parse(raw);
-      console.warn('[img] loadHubContent: parsed, bentoLayout length:', hc.bentoLayout ? hc.bentoLayout.length : 0);
       hc.bentoLayout = normalizeBentoLayout(hc.bentoLayout, hc);
       if (!hc.bentoLayout || !hc.bentoLayout.length) hc.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
       if (!hc.gallery) hc.gallery = defaults.gallery.map(g => ({...g}));
@@ -301,13 +301,12 @@ function loadHubContent() {
       }
       if (!hc.todos) hc.todos = defaults.todos.map(t => ({...t}));
       if (!hc.habits) hc.habits = [...defaults.habits];
+      if (!hc.habitData) hc.habitData = {};
       if (hc.notes === undefined) hc.notes = '';
       if (!hc.links) hc.links = defaults.links.map(l => ({...l}));
-      console.warn('[img] loadHubContent: returning custom layout');
       return hc;
     }
   } catch(e) { console.warn('[img] loadHubContent: error:', e); }
-  console.warn('[img] loadHubContent: returning DEFAULTS');
   return JSON.parse(JSON.stringify(HUB_DEFAULTS));
 }
 
@@ -407,9 +406,14 @@ function renderHubBento() {
       ? `<div class="bento-resize-edge" data-resize-axis="e" data-resize-bubble="${uid}"></div><div class="bento-resize-edge" data-resize-axis="s" data-resize-bubble="${uid}"></div><div class="bento-resize-handle" data-resize-axis="se" data-resize-bubble="${uid}"></div>`
       : '';
     const editUI = isEdit
-      ? `<div class="bento-bubble-handle" draggable="true">⠿</div><button class="bento-bubble-duplicate" data-duplicate-bubble="${uid}" title="Duplicate">⧉</button><button class="bento-bubble-remove" data-remove-bubble="${uid}">×</button>${resizeHandle}`
+      ? `<div class="bento-bubble-handle" draggable="true">⠿</div>
+         <button class="bento-bubble-btn" data-duplicate-bubble="${uid}" title="Duplicate" style="right:32px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="10" height="10" rx="1"/><path d="M4 14V5a1 1 0 0 1 1-1h9"/></svg></button>
+         <button class="bento-bubble-btn" data-copy-bubble="${uid}" title="Copy" style="right:58px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="8" width="10" height="10" rx="1"/><path d="M8 4V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-1"/></svg></button>
+         <button class="bento-bubble-remove" data-remove-bubble="${uid}">×</button>${resizeHandle}`
       : '';
-    const dimStyle = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;overflow:auto`;
+    const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
+    const clampH = Math.min(h, MAX_CANVAS_HEIGHT - clampY);
+    const dimStyle = `left:${x}px;top:${clampY}px;width:${w}px;height:${clampH}px;overflow:auto`;
 
     switch (type) {
       case 'goals':
@@ -463,7 +467,7 @@ function renderHubBento() {
         const q = hubContent.quote;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-lowest);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg><span>Quote</span></div>
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg><span>Quote</span><button class="w-shuffle-btn" data-quote-shuffle title="Random quote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button></div>
           <div class="w-quote-content">
             <span class="w-quote-mark">\u201C</span>
             <div class="w-quote-text hub-editable" contenteditable="true">${e(q.text)}</div>
@@ -478,6 +482,7 @@ function renderHubBento() {
           <div class="w-list" id="hubTodoList">
             ${hubContent.todos.map((t, i) =>
               `<div class="w-item" data-idx="${i}">
+                ${isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : ''}
                 <span class="w-todo-box ${t.done ? 'w-todo-checked' : ''}">
                   ${t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
                 </span>
@@ -496,17 +501,20 @@ function renderHubBento() {
           </div>
         </div>`;
       case 'habits':
+        const todayKey = new Date().toISOString().slice(0,10);
+        const habitDone = hubContent.habitData?.[todayKey] || {};
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Habits</span></div>
           <div class="w-habit-grid" id="hubHabitsList">
-            ${hubContent.habits.map((h, i) =>
-              `<div class="w-habit-chip" data-idx="${i}">
-                <span class="w-habit-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+            ${hubContent.habits.map((h, i) => {
+              const checked = habitDone[i] ? ' w-habit-checked' : '';
+              return `<div class="w-habit-chip" data-idx="${i}">
+                <span class="w-habit-check${checked}" data-habit-toggle="${i}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
                 <span class="hub-editable" contenteditable="true" data-edit="habits" data-idx="${i}">${e(h)}</span>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="habits" data-idx="${i}">×</button>` : ''}
-              </div>`
-            ).join('')}
+              </div>`;
+            }).join('')}
             <button class="w-add-btn" data-add="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add habit</button>
           </div>
         </div>`;
@@ -583,23 +591,41 @@ function renderHubBento() {
           </div>
         </div>`;
       case 'calendar':
-        const calNow = new Date();
-        const calYear = calNow.getFullYear();
-        const calMonth = calNow.getMonth();
+        const calBase = new Date();
+        const calOff = typeof item.calOffset === 'number' ? item.calOffset : 0;
+        const calDate = new Date(calBase.getFullYear(), calBase.getMonth() + calOff, 1);
+        const calYear = calDate.getFullYear();
+        const calMonth = calDate.getMonth();
         const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const firstDay = new Date(calYear, calMonth, 1).getDay();
         const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-        const today = calNow.getDate();
+        const isCurrentMonth = calOff === 0;
+        const today = calBase.getDate();
         const dayHeaders = ['S','M','T','W','T','F','S'];
+        const allTasks = typeof loadTasks === 'function' ? loadTasks() : [];
+        const daysWithTasks = {};
+        allTasks.forEach(function(t) {
+          if (t.date && t.date.startsWith(calYear + '-' + String(calMonth + 1).padStart(2, '0'))) {
+            daysWithTasks[parseInt(t.date.slice(8))] = true;
+          }
+        });
         let cells = '';
         for (let i = 0; i < firstDay; i++) { cells += '<span class="cal-cell cal-empty"></span>'; }
         for (let d = 1; d <= daysInMonth; d++) {
-          cells += `<span class="cal-cell ${d === today ? 'cal-today' : ''}">${d}</span>`;
+          var cls = 'cal-cell';
+          if (isCurrentMonth && d === today) cls += ' cal-today';
+          if (daysWithTasks[d]) cls += ' cal-has-tasks';
+          var dot = daysWithTasks[d] ? '<span class="cal-dot"></span>' : '';
+          cells += `<span class="${cls}" data-cal-day="${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}">${d}${dot}</span>`;
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="cal-widget">
-            <div class="cal-header"><span class="cal-month">${monthNames[calMonth]}</span> <span class="cal-year">${calYear}</span></div>
+            <div class="cal-header">
+              <button class="cal-nav" data-cal-nav="-1" title="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <span><span class="cal-month">${monthNames[calMonth]}</span> <span class="cal-year">${calYear}</span></span>
+              <button class="cal-nav" data-cal-nav="1" title="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
             <div class="cal-grid">
               ${dayHeaders.map(d => `<span class="cal-day-header">${d}</span>`).join('')}
               ${cells}
@@ -610,9 +636,11 @@ function renderHubBento() {
         var ts = _timerState(uid);
         var tDisplay = _fmtTime(ts.elapsed);
         var tStatus = ts.running ? 'running' : (ts.elapsed > 0 ? 'paused' : 'idle');
+        var presetsHtml = tStatus === 'idle' ? '<div class="timer-presets"><button class="timer-preset" data-timer-preset="60" data-timer-uid="' + uid + '">1m</button><button class="timer-preset" data-timer-preset="300" data-timer-uid="' + uid + '">5m</button><button class="timer-preset" data-timer-preset="900" data-timer-uid="' + uid + '">15m</button><button class="timer-preset" data-timer-preset="1800" data-timer-uid="' + uid + '">30m</button></div>' : '';
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="timer-widget" data-timer-uid="${uid}">
+            ${presetsHtml}
             <div class="timer-display">${tDisplay}</div>
             <div class="timer-controls">
               <button class="timer-btn ${tStatus === 'running' ? 'timer-btn-active' : ''}" data-timer-action="toggle" data-timer-uid="${uid}">${ts.running ? 'Pause' : 'Start'}</button>
@@ -677,7 +705,12 @@ function renderHubBento() {
   const visible = layout.filter(i => !i.hidden);
   visible.forEach(item => {
     try {
-      grid.insertAdjacentHTML('beforeend', bubbleHtml(item));
+      var html = bubbleHtml(item);
+      var accent = hubContent.bubbleColors && hubContent.bubbleColors[item.uid];
+      if (accent) {
+        html = html.replace(/style="(left:[^"]+)"/, function(m, p1) { return 'style="' + p1 + ';--bubble-accent:' + accent + '"'; });
+      }
+      grid.insertAdjacentHTML('beforeend', html);
     } catch (e) {
       console.warn('Bento bubble render error:', item.t, e);
     }
@@ -757,7 +790,7 @@ function renderHubBento() {
       var bubble = e.target.closest('.bento-bubble');
       if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
       // Don't select when clicking remove/duplicate/handle
-      if (e.target.closest('[data-remove-bubble]') || e.target.closest('[data-duplicate-bubble]') || e.target.closest('.bento-bubble-handle') || e.target.closest('.bento-resize-handle')) return;
+      if (e.target.closest('[data-remove-bubble]') || e.target.closest('[data-duplicate-bubble]') || e.target.closest('.bento-bubble-handle') || e.target.closest('.bento-bubble-btn') || e.target.closest('.bento-resize-handle')) return;
       var wasSelected = bubble.classList.contains('selected');
       grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
       if (!wasSelected) bubble.classList.add('selected');
@@ -846,7 +879,7 @@ function renderHubBento() {
 
   if (visible.length > 0) {
     var lowest = visible.reduce(function(max, i) { return Math.max(max, i.y + (i.h || 240)); }, 0);
-    grid.style.minHeight = Math.max(800, lowest + 160) + 'px';
+    grid.style.minHeight = Math.min(Math.max(800, lowest + 160), MAX_CANVAS_HEIGHT) + 'px';
   }
 
   document.querySelectorAll('img[data-image-id]').forEach(el => {
@@ -857,6 +890,23 @@ function renderHubBento() {
   if (!grid._timerWired) {
     grid._timerWired = true;
     grid.addEventListener('click', function(e) {
+      var shuffleBtn = e.target.closest('[data-quote-shuffle]');
+      if (shuffleBtn) {
+        var randQ = QUOTE_BANK[Math.floor(Math.random() * QUOTE_BANK.length)];
+        hubContent.quote = { text: randQ.text, author: randQ.author, weekNumber: getCurrentWeekNumber() };
+        saveHubContent();
+        renderHubBento();
+        return;
+      }
+      var presetBtn = e.target.closest('[data-timer-preset]');
+      if (presetBtn) {
+        var puid = presetBtn.dataset.timerUid;
+        if (!puid) return;
+        var ps = _timerState(puid);
+        ps.elapsed = parseInt(presetBtn.dataset.timerPreset);
+        _renderTimer(puid);
+        return;
+      }
       var toggleBtn = e.target.closest('[data-timer-action="toggle"]');
       if (toggleBtn) {
         var uid = toggleBtn.dataset.timerUid;
@@ -953,6 +1003,7 @@ function renderHubBento() {
   if (_clockInterval) { clearInterval(_clockInterval); _clockInterval = null; }
   const clockFaces = grid.querySelectorAll('.clock-face[data-clock-uid]');
   if (clockFaces.length > 0) {
+    var _calMonthCheck = -1;
     _clockInterval = setInterval(function() {
       const n = new Date();
       const hh = String(n.getHours()).padStart(2,'0');
@@ -969,6 +1020,12 @@ function renderHubBento() {
         if (secEl) secEl.textContent = ss;
         if (dateEl) dateEl.textContent = dateStr;
       });
+      // Auto-refresh calendar when month changes
+      var cm = n.getMonth() + n.getFullYear() * 12;
+      if (_calMonthCheck >= 0 && _calMonthCheck !== cm && grid.querySelector('.cal-nav')) {
+        renderHubBento();
+      }
+      _calMonthCheck = cm;
     }, 1000);
   }
 
@@ -1052,7 +1109,7 @@ function renderHubBento() {
       var h = sel.offsetHeight || parseInt(sel.style.height) || 240;
       var gridRect = grid.getBoundingClientRect();
       x = Math.max(0, Math.min(x + dx, gridRect.width - w));
-      y = Math.max(0, Math.min(y + dy, gridRect.height - h));
+      y = Math.max(0, Math.min(y + dy, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - h));
       sel.style.left = x + 'px';
       sel.style.top = y + 'px';
       // Save to layout
@@ -1105,26 +1162,17 @@ function renderHubBento() {
 }
 
 /* ─── Helper: keep add button below lowest widget ── */
-function updateAddBtnPosition(optLayout) {
+function updateAddBtnPosition() {
   var btn = document.getElementById('bentoAddBubble');
   if (!btn) return;
-  var layout = optLayout || hubContent.bentoLayout || [];
+  var g = document.querySelector('.bento-grid');
+  if (!g) return;
   var lowest = 0;
-  layout.forEach(function(i) {
-    if (i.hidden) return;
-    var bottom = (i.y || 0) + (i.h || 280);
-    if (bottom > lowest) lowest = bottom;
+  g.querySelectorAll('.bento-bubble').forEach(function(b) {
+    var btm = b.offsetTop + b.offsetHeight;
+    if (btm > lowest) lowest = btm;
   });
-  if (lowest === 0) { // no visible items — use DOM as fallback
-    var g = document.querySelector('.bento-grid');
-    if (g) {
-      g.querySelectorAll('.bento-bubble').forEach(function(b) {
-        var btm = b.offsetTop + b.offsetHeight;
-        if (btm > lowest) lowest = btm;
-      });
-    }
-  }
-  btn.style.top = Math.max(lowest + 50, 50) + 'px';
+  btn.style.top = Math.min(Math.max(lowest + 50, 50), MAX_CANVAS_HEIGHT - 50) + 'px';
 }
 
 /* ─── Bubble drag/resize ───────────────────── */
@@ -1212,7 +1260,7 @@ function setupBubbleDragDrop() {
     let newX = e.clientX - _bubbleDragData.offsetX - gridRect.left;
     let newY = e.clientY - _bubbleDragData.offsetY - gridRect.top;
     newX = Math.max(0, Math.min(snap(newX), gridRect.width - bw));
-    newY = Math.max(0, Math.min(snap(newY), gridRect.height - bh));
+    newY = Math.max(0, Math.min(snap(newY), Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - bh));
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
     // Real-time collision push
@@ -1233,7 +1281,7 @@ function setupBubbleDragDrop() {
           }
         });
       }
-      updateAddBtnPosition(dragLayout);
+      updateAddBtnPosition();
     }
   });
 
@@ -1249,7 +1297,7 @@ function setupBubbleDragDrop() {
     let x = parseInt(bubble.style.left) || 0;
     let y = parseInt(bubble.style.top) || 0;
     x = Math.max(0, Math.min(x, gridRect.width - bw));
-    y = Math.max(0, Math.min(y, gridRect.height - bh));
+    y = Math.max(0, Math.min(y, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - bh));
     bubble.style.left = x + 'px';
     bubble.style.top = y + 'px';
     const uid = bubble.dataset.bubble;
@@ -1318,7 +1366,8 @@ function setupBubbleResize() {
       startX: e.clientX,
       startY: e.clientY,
       isSpotify: isSpotify,
-      cancelled: false
+      cancelled: false,
+      resizeLayout: JSON.parse(JSON.stringify(normalizeBentoLayout(hubContent.bentoLayout, hubContent)))
     };
     bubble.classList.add('dragging');
     resizeTip.style.display = 'block';
@@ -1346,7 +1395,7 @@ function setupBubbleResize() {
     if (axis === 's' || axis === 'se') {
       let newH = snap(Math.max(80, _bubbleResizeData.startH + dy));
       if (_bubbleResizeData.isSpotify) newH = snapSpotifyHeight(newH);
-      newH = Math.min(newH, gridRect.height - top);
+      newH = Math.min(newH, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - top);
       _bubbleResizeData.bubble.style.height = newH + 'px';
     }
     var finalW = parseInt(bubble.style.width) || curW;
@@ -1354,6 +1403,23 @@ function setupBubbleResize() {
     resizeTip.textContent = Math.round(finalW) + ' × ' + Math.round(finalH);
     resizeTip.style.left = (e.clientX + 12) + 'px';
     resizeTip.style.top = (e.clientY - 32) + 'px';
+    // Real-time collision push during resize
+    var resizeLayout = _bubbleResizeData.resizeLayout;
+    var resizeUid = bubble.dataset.bubble;
+    var resizeItem = resizeLayout.find(function(i) { return i.uid === resizeUid; });
+    if (resizeItem) {
+      if (axis === 'e' || axis === 'se') resizeItem.w = finalW;
+      if (axis === 's' || axis === 'se') resizeItem.h = finalH;
+      resolveBubbleCollisions(resizeLayout);
+      grid.querySelectorAll('.bento-bubble').forEach(function(el) {
+        var it = resizeLayout.find(function(i) { return i.uid === el.dataset.bubble; });
+        if (it && it.uid !== resizeUid) {
+          el.style.left = it.x + 'px';
+          el.style.top = it.y + 'px';
+        }
+      });
+      updateAddBtnPosition();
+    }
   });
 
   document.addEventListener('mouseup', function() {
@@ -1370,7 +1436,7 @@ function setupBubbleResize() {
     let h = parseInt(bubble.style.height) || 240;
     if (_bubbleResizeData.isSpotify) h = snapSpotifyHeight(h);
     w = Math.min(w, gridRect.width - left);
-    h = Math.min(h, gridRect.height - top);
+    h = Math.min(h, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - top);
     const uid = bubble.dataset.bubble;
     const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
     const item = layout.find(i => i.uid === uid);
@@ -1450,25 +1516,31 @@ function updateWeatherWidget(widget, data) {
 
 /* ─── Progress chart data generator ─────────── */
 function generateProgressData() {
+  const allT = typeof loadTasks === 'function' ? loadTasks() : [];
   const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=Sun
-  const seed = now.getFullYear() * 1000 + (now.getMonth() + 1) * 100 + now.getDate();
-  const rng = (n) => ((seed * (n + 1) * 9301 + 49297) % 233280) / 233280;
-  const daily = [];
-  let total = 0;
+  const ws = new Date(now);
+  ws.setDate(ws.getDate() - ((ws.getDay() + 6) % 7));
+  ws.setHours(0,0,0,0);
+  const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const daily = [0,0,0,0,0,0,0];
+  let totalDone = 0, totalAll = 0;
   let streak = 0;
-  for (let i = 6; i >= 0; i--) {
-    const val = Math.floor(rng(i) * 8) + 1;
-    daily.push(val);
-    total += val;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(ws);
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().slice(0,10);
+    const dayTasks = allT.filter(t => t.date === dateStr);
+    const done = dayTasks.filter(t => t.completed).length;
+    daily[i] = Math.min(done, 20);
+    totalDone += done;
+    totalAll += dayTasks.length;
   }
-  // Calculate streak from today backwards
   for (let i = 6; i >= 0; i--) {
-    if (daily[i] >= 3) streak++;
+    if (daily[i] > 0) streak++;
     else break;
   }
-  const rate = Math.round((total / (7 * 8)) * 100);
-  return { daily, total, streak, rate };
+  const rate = totalAll > 0 ? Math.round((totalDone / totalAll) * 100) : 0;
+  return { daily, total: totalDone, streak, rate, count: totalAll };
 }
 
 /* ─── Add bubble types ─────────────────────── */
@@ -1797,8 +1869,25 @@ function renderHubGallery() {
     chart: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'
   };
   const isEdit = hubEditMode;
-  nav.innerHTML = hubContent.gallery.map((c, i) =>
-    `<a href="${escapeHtml(c.href)}" class="hub-gallery-card" data-idx="${i}">
+  const allGalleryTasks = typeof loadTasks === 'function' ? loadTasks() : [];
+  const now = new Date();
+  const ws = new Date(now);
+  ws.setDate(ws.getDate() - ((ws.getDay() + 6) % 7));
+  ws.setHours(0,0,0,0);
+  const we = new Date(ws);
+  we.setDate(we.getDate() + 7);
+  const galleryWeekTasks = allGalleryTasks.filter(t => {
+    const d = new Date(t.date + 'T12:00:00');
+    return d >= ws && d < we;
+  });
+  nav.innerHTML = hubContent.gallery.map((c, i) => {
+    let countHtml = '';
+    if (c.href === 'schedule.html') {
+      countHtml = `<span class="hub-gallery-count" id="hubWeekTasks">${galleryWeekTasks.length} this week</span>`;
+    } else if (c.href === 'activities.html') {
+      countHtml = `<span class="hub-gallery-count" id="hubTotalTasks">${allGalleryTasks.length} total</span>`;
+    }
+    return `<a href="${escapeHtml(c.href)}" class="hub-gallery-card" data-idx="${i}">
       <div class="hub-gallery-cover" style="background:${c.bg}">
         <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, ${c.color}, transparent)"></div>
         ${icons[c.icon] || icons.calendar}
@@ -1807,12 +1896,13 @@ function renderHubGallery() {
         <div class="hub-gallery-title">${escapeHtml(c.label)}</div>
         <p class="hub-gallery-desc">${escapeHtml(c.desc)}</p>
         <div class="hub-gallery-meta">
+          ${countHtml}
           <span class="hub-gallery-link">Open <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
         </div>
       </div>
       ${isEdit ? `<div class="hub-edit-badge" data-edit-gallery="${i}" title="Edit card">\u270E</div>` : ''}
-    </a>`
-  ).join('');
+    </a>`;
+  }).join('');
   if (isEdit) {
     nav.insertAdjacentHTML('beforeend', `<div style="display:flex;align-items:center;justify-content:center;min-height:100px"><button class="hub-add-btn" data-add="gallery">+ Add card</button></div>`);
   }
@@ -1935,6 +2025,43 @@ function setupHubEditEvents() {
     saveHubContent();
   });
 
+  var _todoDragIdx = null;
+  document.querySelector('.bento-grid')?.addEventListener('dragstart', function(e) {
+    var handle = e.target.closest('[data-todo-drag]');
+    if (!handle) return;
+    _todoDragIdx = parseInt(handle.dataset.todoDrag);
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  document.querySelector('.bento-grid')?.addEventListener('dragover', function(e) {
+    var item = e.target.closest('.w-item[data-idx]');
+    if (_todoDragIdx === null || !item) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    document.querySelectorAll('.w-item.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+    item.classList.add('drag-over');
+  });
+  document.querySelector('.bento-grid')?.addEventListener('drop', function(e) {
+    var item = e.target.closest('.w-item[data-idx]');
+    if (_todoDragIdx === null || !item) return;
+    e.preventDefault();
+    var toIdx = parseInt(item.dataset.idx);
+    if (toIdx !== _todoDragIdx) {
+      var arr = hubContent.todos;
+      var moved = arr.splice(_todoDragIdx, 1)[0];
+      arr.splice(toIdx, 0, moved);
+      saveHubContent();
+      renderHubBento();
+    }
+    _todoDragIdx = null;
+    document.querySelectorAll('.w-item.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+  });
+  document.querySelector('.bento-grid')?.addEventListener('dragend', function(e) {
+    if (_todoDragIdx !== null) {
+      _todoDragIdx = null;
+      document.querySelectorAll('.w-item.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+    }
+  });
+
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
     if (_suppressClick) return;
     const delBtn = e.target.closest('[data-del]');
@@ -1984,8 +2111,95 @@ function setupHubEditEvents() {
     renderHubGallery();
   });
 
+  // Snap-presets submenu on right-click of bubble handle/button area in edit mode
+  document.querySelector('.bento-grid')?.addEventListener('contextmenu', function(e) {
+    var handle = e.target.closest('.bento-bubble-handle, .bento-bubble-remove, .bento-bubble-btn');
+    if (!handle || !hubEditMode) return;
+    e.preventDefault();
+    var bubble = handle.closest('.bento-bubble');
+    if (!bubble) return;
+    var uid = bubble.dataset.bubble;
+
+    // Remove any existing snap menu
+    var old = document.querySelector('.snap-preset-menu');
+    if (old) old.remove();
+
+    var menu = document.createElement('div');
+    menu.className = 'snap-preset-menu';
+    var colors = ['#4fc3f7','#81c784','#ffb74d','#e57373','#ba68c8','#a1887f','#90a4ae','var(--text-primary)'];
+    var itemColor = hubContent.bubbleColors && hubContent.bubbleColors[uid];
+    menu.innerHTML =
+      '<div class="snap-preset-head">Resize</div>' +
+      '<div class="snap-preset-item" data-snap-preset="' + uid + '" data-snap-size="small">Small (160×100)</div>' +
+      '<div class="snap-preset-item" data-snap-preset="' + uid + '" data-snap-size="medium">Medium (240×160)</div>' +
+      '<div class="snap-preset-item" data-snap-preset="' + uid + '" data-snap-size="large">Large (340×240)</div>' +
+      '<div class="snap-preset-head" style="margin-top:4px">Accent Color</div>' +
+      '<div class="snap-preset-colors">' + colors.map(function(c) {
+        var checked = c === itemColor ? ' data-checked="1"' : '';
+        return '<div class="snap-color-swatch' + (c === itemColor ? ' snap-color-active' : '') + '" data-bubble-color="' + uid + '" data-color="' + (c === 'var(--text-primary)' ? '' : c) + '" style="background:' + c + '"' + checked + '></div>';
+      }).join('') + '</div>';
+    menu.style.left = e.pageX + 'px';
+    menu.style.top = e.pageY + 'px';
+    document.body.appendChild(menu);
+    setTimeout(function() { menu.addEventListener('wheel', function(we) { we.stopPropagation(); }); }, 0);
+  });
+  document.addEventListener('click', function(e) {
+    var snapItem = e.target.closest('[data-snap-preset]');
+    if (snapItem) {
+      e.preventDefault();
+      var uid = snapItem.dataset.snapPreset;
+      var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+      var item = layout.find(function(i) { return i.uid === uid; });
+      if (item) {
+        var presets = {small:{w:160,h:100}, medium:{w:240,h:160}, large:{w:340,h:240}};
+        var p = presets[snapItem.dataset.snapSize] || presets.medium;
+        item.w = p.w; item.h = p.h;
+        hubContent.bentoLayout = layout;
+        saveHubContent();
+        renderHubBento();
+      }
+      var menu = document.querySelector('.snap-preset-menu');
+      if (menu) menu.remove();
+      return;
+    }
+    var colorSwatch = e.target.closest('[data-bubble-color]');
+    if (colorSwatch) {
+      var uid = colorSwatch.dataset.bubbleColor;
+      var color = colorSwatch.dataset.color || '';
+      hubContent.bubbleColors = hubContent.bubbleColors || {};
+      hubContent.bubbleColors[uid] = color;
+      saveHubContent();
+      renderHubBento();
+      var menu = document.querySelector('.snap-preset-menu');
+      if (menu) menu.remove();
+      return;
+    }
+    if (!e.target.closest('.snap-preset-menu')) {
+      var menu = document.querySelector('.snap-preset-menu');
+      if (menu) menu.remove();
+    }
+  }, true);
+
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
     if (_suppressClick) return;
+    const copyBtn = e.target.closest('[data-copy-bubble]');
+    if (copyBtn) {
+      var uid = copyBtn.dataset.copyBubble;
+      var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+      var item = layout.find(i => i.uid === uid);
+      if (item) {
+        var text = '';
+        switch (item.t) {
+          case 'todos': case 'goals': case 'priorities': text = (hubContent[item.t] || []).map(function(x) { return typeof x === 'string' ? x : x.text; }).join('\n'); break;
+          case 'quote': text = (hubContent.quote || '') + (hubContent.quoteAuthor ? ' — ' + hubContent.quoteAuthor : ''); break;
+          case 'notes': text = hubContent.notes || ''; break;
+          case 'habits': text = (hubContent.habits || []).join('\n'); break;
+          default: text = '';
+        }
+        if (text) navigator.clipboard.writeText(text).catch(function() {});
+      }
+      return;
+    }
     const todoBox = e.target.closest('.w-todo-box');
     if (todoBox) {
       const item = todoBox.closest('.w-item');
@@ -1995,6 +2209,53 @@ function setupHubEditEvents() {
       hubContent.todos[idx].done = !hubContent.todos[idx].done;
       saveHubContent();
       renderHubBento();
+      return;
+    }
+    const calNav = e.target.closest('[data-cal-nav]');
+    if (calNav) {
+      e.preventDefault();
+      const bubble = calNav.closest('.bento-bubble');
+      if (!bubble) return;
+      const uid = bubble.dataset.bubble;
+      const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+      const item = layout.find(i => i.uid === uid);
+      if (item) {
+        item.calOffset = (item.calOffset || 0) + parseInt(calNav.dataset.calNav);
+        hubContent.bentoLayout = layout;
+        saveHubContent();
+        renderHubBento();
+      }
+      return;
+    }
+    const calDay = e.target.closest('[data-cal-day]');
+    if (calDay) {
+      var oldTip = document.querySelector('.cal-tooltip');
+      if (oldTip) oldTip.remove();
+      var dateStr = calDay.dataset.calDay;
+      var tasks = (typeof loadTasks === 'function' ? loadTasks() : []).filter(function(t) { return t.date === dateStr; });
+      if (tasks.length === 0) return;
+      var tip = document.createElement('div');
+      tip.className = 'cal-tooltip';
+      tip.innerHTML = '<div class="cal-tooltip-head">' + dateStr + ' — ' + tasks.length + ' task' + (tasks.length !== 1 ? 's' : '') + '</div><div class="cal-tooltip-body">' + tasks.slice(0, 5).map(function(t) { return '<div class="cal-tooltip-item' + (t.completed ? ' cal-done' : '') + '">' + escapeHtml(t.title) + '</div>'; }).join('') + (tasks.length > 5 ? '<div class="cal-tooltip-more">+' + (tasks.length - 5) + ' more</div>' : '') + '</div>';
+      document.body.appendChild(tip);
+      var r = calDay.getBoundingClientRect();
+      tip.style.left = Math.min(r.left + r.width / 2 - tip.offsetWidth / 2, window.innerWidth - tip.offsetWidth - 8) + 'px';
+      tip.style.top = (r.bottom + 6) + 'px';
+      function closeTip(e2) { if (!e2.target.closest('.cal-tooltip')) { tip.remove(); document.removeEventListener('mousedown', closeTip); } }
+      setTimeout(function() { document.addEventListener('mousedown', closeTip); }, 0);
+      return;
+    }
+    const habitToggle = e.target.closest('[data-habit-toggle]');
+    if (habitToggle) {
+      const idx = parseInt(habitToggle.dataset.habitToggle);
+      if (!isNaN(idx)) {
+        const todayKey = new Date().toISOString().slice(0,10);
+        if (!hubContent.habitData) hubContent.habitData = {};
+        if (!hubContent.habitData[todayKey]) hubContent.habitData[todayKey] = {};
+        hubContent.habitData[todayKey][idx] = !hubContent.habitData[todayKey][idx];
+        saveHubContent();
+        renderHubBento();
+      }
       return;
     }
     const wrap = e.target.closest('[data-img-picker]');

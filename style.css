@@ -3541,6 +3541,9 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   width: 10px;
   height: 10px;
 }
+.w-todo-drag-handle { cursor:grab; color:var(--text-tertiary); font-size:0.85rem; padding:0 4px; user-select:none; opacity:0.35; transition:opacity 0.15s, transform 0.15s; flex-shrink:0; line-height:1; letter-spacing:2px; }
+.w-todo-drag-handle:hover { opacity:0.9; transform:scale(1.15); }
+.w-item.drag-over { outline:2px dashed var(--primary); outline-offset:-2px; border-radius:4px; background:var(--accent-soft); }
 .w-add-btn:hover {
   background: var(--accent-soft);
   color: var(--primary);
@@ -3610,8 +3613,10 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .w-habit-check svg {
   width: 6px;
   height: 6px;
-  opacity: 0;
+  opacity: 0.15;
 }
+.w-habit-checked { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 20%, transparent); }
+.w-habit-checked svg { opacity: 1; color: var(--primary); }
 .w-link-card {
   display: flex;
   align-items: center;
@@ -3671,7 +3676,9 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   line-height: 1.5;
   flex: 1;
 }
-.w-quote-bar {
+.w-quote-bar { display: none; }
+.w-shuffle-btn { background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:2px; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; margin-left:auto; opacity:0.5; transition:all 0.1s; }
+.w-shuffle-btn:hover { opacity:1; color:var(--primary); background:var(--accent-soft); }
 .w-quote-attribution {
   text-align: right;
   font-size: 0.65rem;
@@ -3836,6 +3843,16 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   background: var(--accent-soft);
   font-weight: 500;
 }
+.cal-cell.cal-has-tasks { cursor: pointer; position: relative; }
+.cal-dot { display: block; width: 3px; height: 3px; border-radius: 50%; background: var(--primary); margin: 1px auto 0; opacity: 0.6; }
+.cal-nav { background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 2px 6px; border-radius: 4px; display:inline-flex; align-items:center; justify-content:center; vertical-align:middle; }
+.cal-nav:hover { color: var(--text-primary); background: var(--accent-soft); }
+.cal-tooltip { position:fixed; z-index:5000; background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:8px 12px; font-size:0.72rem; box-shadow:0 4px 20px rgba(0,0,0,0.12); min-width:140px; max-width:240px; pointer-events:auto; }
+.cal-tooltip-head { font-weight:500; color:var(--text-primary); margin-bottom:4px; font-size:0.68rem; }
+.cal-tooltip-body { color:var(--text-secondary); }
+.cal-tooltip-item { padding:1px 0; }
+.cal-tooltip-item.cal-done { text-decoration:line-through; color:var(--text-tertiary); }
+.cal-tooltip-more { color:var(--text-tertiary); font-size:0.65rem; margin-top:2px; }
 
 /* ─── Timer Widget ────────────────────────────────────── */
 .timer-widget {
@@ -3891,6 +3908,9 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .timer-btn-reset:hover {
   color: var(--text-secondary);
 }
+.timer-presets { display:flex; gap:4px; justify-content:center; margin-bottom:6px; }
+.timer-preset { padding:2px 8px; border:1px solid var(--border-color); border-radius:4px; background:none; color:var(--text-tertiary); font-size:0.62rem; font-family:inherit; cursor:pointer; transition:all 0.1s; font-weight:500; }
+.timer-preset:hover { color:var(--text-primary); background:var(--accent-soft); border-color:var(--primary); }
 
 /* ─── Pomodoro Widget ─────────────────────────────────── */
 .pomo-widget {
@@ -5717,12 +5737,34 @@ html.light .hub-add-popup {
 .bento-bubble { position:absolute; display:block; border-radius:var(--radius-lg); transition:opacity 0.2s, box-shadow 0.2s; }
 .bento-bubble.dragging { opacity:0.85; z-index:100; }
 .bento-bubble.drag-over { box-shadow:0 0 0 2px var(--primary), 0 4px 20px rgba(0,0,0,0.12); transform:scale(1.01); }
-.bento-bubble-handle { position:absolute; top:6px; left:6px; width:24px; height:24px; border-radius:6px; background:var(--surface-container); color:var(--text-tertiary); display:none; align-items:center; justify-content:center; font-size:0.75rem; cursor:grab; z-index:5; border:1px solid var(--border-color); }
+.bento-bubble-handle { position:absolute; top:6px; left:6px; width:28px; height:28px; border-radius:8px; background:var(--surface-container-high); color:var(--text-tertiary); display:none; align-items:center; justify-content:center; font-size:0.85rem; cursor:grab; z-index:10; border:1px solid var(--border-color); transition:all 0.15s; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
 .hub-edit .bento-bubble-handle { display:flex; }
-.bento-bubble-handle:hover { color:var(--text-primary); background:var(--accent-soft); }
-.bento-bubble-remove { position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:6px; background:var(--surface-container); color:var(--text-tertiary); display:none; align-items:center; justify-content:center; font-size:0.8rem; cursor:pointer; z-index:5; border:1px solid var(--border-color); transition:all var(--t-fast); border:none; }
+.bento-bubble-handle:hover { color:var(--text-primary); background:var(--accent-subtle); transform:scale(1.12); }
+.bento-bubble-btn { position:absolute; top:6px; width:28px; height:28px; border-radius:8px; background:var(--surface-container-high); color:var(--text-tertiary); display:none; align-items:center; justify-content:center; cursor:pointer; z-index:10; border:1px solid var(--border-color); transition:all 0.15s; box-shadow:0 1px 4px rgba(0,0,0,0.08); padding:5px; }
+.hub-edit .bento-bubble-btn { display:flex; }
+.bento-bubble-btn:hover { color:var(--text-primary); background:var(--accent-subtle); transform:scale(1.12); }
+.bento-bubble-btn svg { width:100%; height:100%; }
+.bento-bubble-remove { position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:8px; background:var(--surface-container-high); color:var(--text-tertiary); display:none; align-items:center; justify-content:center; cursor:pointer; z-index:10; border:1px solid var(--border-color); transition:all 0.15s; box-shadow:0 1px 4px rgba(0,0,0,0.08); font-size:0.95rem; font-family:inherit; }
 .hub-edit .bento-bubble-remove { display:flex; }
-.bento-bubble-remove:hover { background:#ef4444; color:#fff; }
+.bento-bubble-remove:hover { color:var(--error); background:var(--error-soft); transform:scale(1.12); border-color:var(--error); }
+
+.snap-preset-menu { position:fixed; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:12px; padding:6px; z-index:10000; min-width:180px; box-shadow:0 8px 32px rgba(0,0,0,0.18); display:flex; flex-direction:column; gap:2px; backdrop-filter:blur(12px); }
+.snap-preset-item { padding:8px 14px; border-radius:6px; cursor:pointer; color:var(--text-primary); font-size:0.8rem; white-space:nowrap; transition:background 0.1s; }
+.snap-preset-item:hover { background:var(--accent-subtle); }
+.snap-preset-head { padding:6px 14px 3px; font-size:0.65rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.06em; font-weight:600; }
+.snap-preset-colors { display:flex; gap:6px; padding:6px 12px 10px; flex-wrap:wrap; }
+.snap-color-swatch { width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:all 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.15); }
+.snap-color-swatch:hover { border-color:var(--text-primary); transform:scale(1.15); }
+.snap-color-active { border-color:var(--text-primary); box-shadow:0 0 0 3px color-mix(in srgb, var(--text-primary) 30%, transparent); }
+
+/* Bubble accent color application */
+.bento-bubble { --bubble-accent: var(--text-primary); }
+.bento-bubble .w-head { color:var(--bubble-accent); }
+.bento-bubble .clock-face .clock-time { color:var(--bubble-accent); }
+.bento-bubble .timer-display .timer-time { color:var(--bubble-accent); }
+.bento-bubble .prog-stat-value { color:var(--bubble-accent); }
+.bento-bubble .cal-day.today { background:var(--bubble-accent); color:#fff; }
+.bento-bubble .pomo-timer { color:var(--bubble-accent); }
 .bento-add-bubble-btn { z-index:2; border:2px dashed var(--border-color); background:var(--surface-container); color:var(--text-tertiary); cursor:pointer; border-radius:var(--radius-lg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:28px; transition:all var(--t-fast); font-size:0.8rem; font-weight:500; min-height:130px; }
 .bento-add-bubble-btn:hover { border-color:var(--primary); color:var(--primary); background:color-mix(in srgb, var(--primary) 6%, transparent); }
 .bento-add-bubble-btn svg { width:22px; height:22px; }
@@ -5746,9 +5788,7 @@ html.light .hub-add-popup {
 /* ─── Edit mode enhancements ──────────── */
 .hub-edit .bento-bubble { cursor:pointer; }
 .bento-bubble.selected { outline:2px solid var(--primary); outline-offset:2px; box-shadow:0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent); }
-.bento-bubble-duplicate { position:absolute; top:6px; right:34px; width:24px; height:24px; border-radius:6px; background:var(--surface-container); color:var(--text-tertiary); display:none; align-items:center; justify-content:center; font-size:0.75rem; cursor:pointer; z-index:5; border:1px solid var(--border-color); transition:all var(--t-fast); border:none; }
-.hub-edit .bento-bubble-duplicate { display:flex; }
-.bento-bubble-duplicate:hover { color:var(--primary); background:color-mix(in srgb, var(--primary) 12%, transparent); }
+/* .bento-bubble-duplicate now uses .bento-bubble-btn class */
 .bento-resize-tooltip { position:fixed; background:var(--bg-primary); color:var(--text-primary); font-size:0.7rem; font-weight:600; padding:3px 8px; border-radius:6px; border:1px solid var(--border-color); pointer-events:none; z-index:1000; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.08); display:none; font-variant-numeric:tabular-nums; }
 .bento-edit-done-btn { position:sticky; bottom:16px; z-index:50; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; background:var(--primary); color:var(--text-inverse); border:none; font-weight:600; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 16px color-mix(in srgb, var(--primary) 40%, transparent); transition:all var(--t-fast); margin:16px auto; width:fit-content; }
 .bento-edit-done-btn:hover { filter:brightness(1.1); transform:translateY(-1px); box-shadow:0 6px 24px color-mix(in srgb, var(--primary) 50%, transparent); }
