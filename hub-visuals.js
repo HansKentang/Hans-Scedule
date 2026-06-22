@@ -133,7 +133,12 @@ function normalizeBentoLayout(layout, parent) {
         norm.h = snap(280);
       }
       delete norm.s;
-      if (parent) { delete parent.imageAspect; delete parent.imageAspects; }
+      // Migrate old imageAspect/imageAspects to per-item without mutating parent
+      if (parent && parent.imageAspects) {
+        result.forEach(function(n) {
+          if (n.t === 'images' && !n.imageId) n.imageId = 'hub-tulips';
+        });
+      }
     }
     if (norm.hidden === undefined) norm.hidden = false;
     result.push(norm);
@@ -164,17 +169,24 @@ function rectsOverlap(a, b) {
 function resolveBubbleCollisions(layout) {
   layout = layout.filter(i => !i.hidden);
   let dirty = true;
-  let maxIter = 30;
+  let maxIter = 40;
   while (dirty && maxIter-- > 0) {
     dirty = false;
     layout.sort((a, b) => a.y - b.y || a.x - b.x);
     for (let i = 0; i < layout.length; i++) {
       for (let j = i + 1; j < layout.length; j++) {
         if (!rectsOverlap(layout[i], layout[j])) continue;
-        const pushY = snap(layout[i].y + layout[i].h + 24);
-        if (pushY > layout[j].y) {
-          layout[j].y = pushY;
+        // Try rightward push first
+        const pushX = snap(layout[i].x + layout[i].w + 24);
+        if (pushX > layout[j].x && pushX - layout[j].x < (layout[i].y + layout[i].h + 24 - layout[j].y || 999)) {
+          layout[j].x = pushX;
           dirty = true;
+        } else {
+          const pushY = snap(layout[i].y + layout[i].h + 24);
+          if (pushY > layout[j].y) {
+            layout[j].y = pushY;
+            dirty = true;
+          }
         }
       }
     }
@@ -350,6 +362,7 @@ function applyHubEditMode() {
   if (greetEl) greetEl.contentEditable = hubEditMode ? 'true' : 'false';
   if (hubEditMode) greetEl?.classList.add('hub-editable');
   else greetEl?.classList.remove('hub-editable');
+  resetBentoInteractions();
   updateSectionHandles();
   renderHubBento();
   renderHubGallery();
@@ -406,9 +419,9 @@ function renderHubBento() {
       ? `<div class="bento-resize-edge" data-resize-axis="e" data-resize-bubble="${uid}"></div><div class="bento-resize-edge" data-resize-axis="s" data-resize-bubble="${uid}"></div><div class="bento-resize-handle" data-resize-axis="se" data-resize-bubble="${uid}"></div>`
       : '';
     const editUI = isEdit
-      ? `<div class="bento-bubble-handle" draggable="true">⠿</div>
-         <button class="bento-bubble-btn" data-duplicate-bubble="${uid}" title="Duplicate" style="right:32px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="10" height="10" rx="1"/><path d="M4 14V5a1 1 0 0 1 1-1h9"/></svg></button>
-         <button class="bento-bubble-btn" data-copy-bubble="${uid}" title="Copy" style="right:58px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="8" width="10" height="10" rx="1"/><path d="M8 4V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-1"/></svg></button>
+      ? `<div class="bento-bubble-handle" draggable="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><circle cx="8" cy="6" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg></div>
+         <button class="bento-bubble-btn" data-duplicate-bubble="${uid}" title="Duplicate" style="right:34px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="10" height="10" rx="1"/><path d="M4 14V5a1 1 0 0 1 1-1h9"/></svg></button>
+         <button class="bento-bubble-btn" data-copy-bubble="${uid}" title="Copy" style="right:62px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="8" width="10" height="10" rx="1"/><path d="M8 4V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-1"/></svg></button>
          <button class="bento-bubble-remove" data-remove-bubble="${uid}">×</button>${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
@@ -682,7 +695,7 @@ function renderHubBento() {
                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
                 <span>${_spActivePlaylist.name}</span>
               </div>
-              <iframe src="${e(spotUrl)}" width="100%" frameborder="0" allowtransparency="true" allow="encrypted-media" style="display:block;width:100%;flex:1;min-height:0"></iframe>
+              <iframe src="${e(spotUrl)}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" loading="lazy" style="display:block;width:100%;height:calc(100% - 32px);border:none"></iframe>
             </div>
           </div>`;
         } else {
@@ -778,26 +791,32 @@ function renderHubBento() {
     grid.appendChild(doneBtn);
     doneBtn.addEventListener('click', function() { toggleHubEdit(); });
 
-    // Right-click paste support for contenteditable fields only
-    grid.addEventListener('contextmenu', function(e) {
-      var editable = e.target.closest('[contenteditable]');
-      if (editable) return; // allow default paste context menu on contenteditable
-      e.preventDefault();
-    });
+    // Register grid-level event listeners only once (guard via _hubEventsWired)
+    if (!grid._hubEventsWired) {
+      grid._hubEventsWired = true;
 
-    // Selection click handler — click a bubble to select, click elsewhere to deselect
-    grid.addEventListener('click', function(e) {
-      var bubble = e.target.closest('.bento-bubble');
-      if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
-      // Don't select when clicking remove/duplicate/handle
-      if (e.target.closest('[data-remove-bubble]') || e.target.closest('[data-duplicate-bubble]') || e.target.closest('.bento-bubble-handle') || e.target.closest('.bento-bubble-btn') || e.target.closest('.bento-resize-handle')) return;
-      var wasSelected = bubble.classList.contains('selected');
-      grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
-      if (!wasSelected) bubble.classList.add('selected');
-    });
+      // Right-click paste support for contenteditable fields only
+      grid.addEventListener('contextmenu', function(e) {
+        var editable = e.target.closest('[contenteditable]');
+        if (editable) return; // allow default paste context menu on contenteditable
+        e.preventDefault();
+      });
 
-    // Bubble context menu (right-click)
-    grid.addEventListener('contextmenu', function(e) {
+      // Selection click handler — click a bubble to select, click elsewhere to deselect
+      grid.addEventListener('click', function(e) {
+        if (_suppressClick) return;
+        if (!hubEditMode) return;
+        var bubble = e.target.closest('.bento-bubble');
+        if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
+        // Don't select when clicking remove/duplicate/handle
+        if (e.target.closest('[data-remove-bubble]') || e.target.closest('[data-duplicate-bubble]') || e.target.closest('.bento-bubble-handle') || e.target.closest('.bento-bubble-btn') || e.target.closest('.bento-resize-handle')) return;
+        var wasSelected = bubble.classList.contains('selected');
+        grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
+        if (!wasSelected) bubble.classList.add('selected');
+      });
+
+      // Bubble context menu (right-click)
+      grid.addEventListener('contextmenu', function(e) {
       var editable = e.target.closest('[contenteditable]');
       if (editable) return; // allow default paste menu
       var bubble = e.target.closest('.bento-bubble');
@@ -875,6 +894,7 @@ function renderHubBento() {
         });
       });
     });
+    }
   }
 
   if (visible.length > 0) {
@@ -951,8 +971,8 @@ function renderHubBento() {
         var ps = _pomodoroState[puid];
         if (!ps) return;
         if (ps.running) {
-          var delta = Math.floor((Date.now() - ps.startTs) / 1000);
-          ps.remaining = Math.max(0, ps.remaining - delta);
+          var elapsed = (Date.now() - ps.startTs) / 1000;
+          ps.remaining = Math.max(0, ps.remaining - elapsed);
           ps.startTs = null;
           ps.running = false;
           _pomoClearTickIfIdle();
@@ -968,12 +988,14 @@ function renderHubBento() {
                 if (k === '_tick') return;
                 var ps2 = _pomodoroState[k];
                 if (!ps2.running || !ps2.startTs) return;
-                var delta = Math.floor((Date.now() - ps2.startTs) / 1000);
-                ps2.remaining = Math.max(0, ps2.remaining - delta);
-                ps2.startTs = Date.now();
+                var now = Date.now();
+                var elapsed = now - ps2.startTs;
+                ps2.startTs = now;
+                ps2.remaining = Math.max(0, ps2.remaining - elapsed / 1000);
                 if (ps2.remaining <= 0) {
                   ps2.running = false;
                   ps2.startTs = null;
+                  ps2.remaining = 0;
                   _advancePomoPhase(k);
                 }
                 _renderPomo(k);
@@ -1183,10 +1205,12 @@ let _bubbleResizeInitialized = false;
 let _suppressClick = false;
 
 function resetBentoInteractions() {
-  _bubbleDragInitialized = false;
+  // Only clear active state — NEVER reset initialization flags,
+  // otherwise event listeners get duplicated on each edit toggle.
   _bubbleDragData = null;
-  _bubbleResizeInitialized = false;
   _bubbleResizeData = null;
+  // Clean up dragging class from any stuck bubbles
+  document.querySelectorAll('.bento-bubble.dragging').forEach(function(el) { el.classList.remove('dragging'); });
 }
 
 function setupBubbleDragDrop() {
@@ -1252,6 +1276,9 @@ function setupBubbleDragDrop() {
     }
   });
 
+  // Window blur cancels drag/resize (mouseup lost when clicking outside browser)
+  window.addEventListener('blur', cancelDrag);
+
   document.addEventListener('mousemove', function(e) {
     if (!_bubbleDragData) return;
     const gridRect = grid.getBoundingClientRect();
@@ -1301,18 +1328,19 @@ function setupBubbleDragDrop() {
     bubble.style.left = x + 'px';
     bubble.style.top = y + 'px';
     const uid = bubble.dataset.bubble;
-    const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
-    const item = layout.find(i => i.uid === uid);
+    // Use the live dragLayout (accumulated from real-time pushes) instead of a fresh copy
+    const dragLayout = _bubbleDragData.dragLayout;
+    const item = dragLayout.find(i => i.uid === uid);
     if (item) {
       item.x = Math.max(0, x);
       item.y = Math.max(0, y);
-      resolveBubbleCollisions(layout);
-      hubContent.bentoLayout = layout;
+      // Re-run collision one final time at the dropped position
+      resolveBubbleCollisions(dragLayout);
+      hubContent.bentoLayout = dragLayout;
       saveHubContent();
-      // Update pushed bubbles' DOM positions without full re-render
-      var grid = document.querySelector('.bento-grid');
+      // Update all bubbles' DOM positions without full re-render
       if (grid) {
-        layout.forEach(function(it) {
+        dragLayout.forEach(function(it) {
           var el = grid.querySelector('[data-bubble="' + it.uid + '"]');
           if (el) {
             el.style.left = it.x + 'px';
@@ -1461,6 +1489,8 @@ function setupBubbleResize() {
     updateAddBtnPosition();
     resizeTip.style.display = 'none';
     _bubbleResizeData = null;
+    _suppressClick = true;
+    setTimeout(function() { _suppressClick = false; }, 100);
   });
 }
 
@@ -2138,8 +2168,9 @@ function setupHubEditEvents() {
         var checked = c === itemColor ? ' data-checked="1"' : '';
         return '<div class="snap-color-swatch' + (c === itemColor ? ' snap-color-active' : '') + '" data-bubble-color="' + uid + '" data-color="' + (c === 'var(--text-primary)' ? '' : c) + '" style="background:' + c + '"' + checked + '></div>';
       }).join('') + '</div>';
-    menu.style.left = e.pageX + 'px';
-    menu.style.top = e.pageY + 'px';
+    var menuW = 180, menuH = 250;
+    menu.style.left = Math.min(e.pageX, window.innerWidth - menuW - 8) + 'px';
+    menu.style.top = Math.min(e.pageY, window.innerHeight - menuH - 8) + 'px';
     document.body.appendChild(menu);
     setTimeout(function() { menu.addEventListener('wheel', function(we) { we.stopPropagation(); }); }, 0);
   });
@@ -2151,7 +2182,7 @@ function setupHubEditEvents() {
       var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
       var item = layout.find(function(i) { return i.uid === uid; });
       if (item) {
-        var presets = {small:{w:160,h:100}, medium:{w:240,h:160}, large:{w:340,h:240}};
+        var presets = {small:{w:snap(160),h:snap(100)}, medium:{w:snap(240),h:snap(160)}, large:{w:snap(340),h:snap(240)}};
         var p = presets[snapItem.dataset.snapSize] || presets.medium;
         item.w = p.w; item.h = p.h;
         hubContent.bentoLayout = layout;
@@ -2191,7 +2222,7 @@ function setupHubEditEvents() {
         var text = '';
         switch (item.t) {
           case 'todos': case 'goals': case 'priorities': text = (hubContent[item.t] || []).map(function(x) { return typeof x === 'string' ? x : x.text; }).join('\n'); break;
-          case 'quote': text = (hubContent.quote || '') + (hubContent.quoteAuthor ? ' — ' + hubContent.quoteAuthor : ''); break;
+          case 'quote': var q = hubContent.quote || {}; text = (q.text || '') + (q.author ? ' — ' + q.author : ''); break;
           case 'notes': text = hubContent.notes || ''; break;
           case 'habits': text = (hubContent.habits || []).join('\n'); break;
           default: text = '';
@@ -2459,6 +2490,7 @@ if (document.getElementById('hubAccessHub')) {
       var ifr = w.querySelector('iframe');
       if (ifr && _active) {
         ifr.src = 'https://open.spotify.com/embed/playlist/' + _active.id + '?utm_source=generator';
+        ifr.style.height = 'calc(100% - 32px)';
       } else if (w.querySelector('.spotify-empty') && _active) {
         // Had empty state, now has playlist — re-render to get the iframe
         renderHubBento();
