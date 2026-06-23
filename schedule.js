@@ -39,8 +39,6 @@ dom.taskModalClose = $('#taskModalClose');
 dom.taskRepeat = $('#taskRepeat');
 dom.taskReminder = $('#taskReminder');
 
-dom.filterSearchInput = $('#filterSearchInput');
-dom.filterSearchClear = $('#filterSearchClear');
 dom.todayBtn       = $('#todayBtn');
 dom.prevWeek       = $('#prevWeek');
 dom.nextWeek       = $('#nextWeek');
@@ -50,10 +48,6 @@ dom.apiStatus      = $('#apiStatus');
 dom.apiStatusText  = $('#apiStatusText');
 dom.tzTooltip      = $('#tzTooltip');
 dom.addIdeaBtn     = $('#addIdeaBtn');
-dom.filterTagList  = $('#filterTagList');
-dom.filterShowWeekends = $('#filterShowWeekends');
-dom.filterShowCompleted = $('#filterShowCompleted');
-dom.filterTodayBtn = $('#filterTodayBtn');
   dom.whiteboardList = $('#whiteboardList');
   dom.themeBtn       = $('#themeBtnSidebar');
   dom.settingsBtn    = $('#settingsBtnSidebar');
@@ -454,8 +448,6 @@ function renderTasks() {
   $$('.calendar-task').forEach(el => el.remove());
   $$('.current-time-line').forEach(el => el.remove());
 
-  // Search query
-  const searchQ = (state.searchQuery || '').toLowerCase().trim();
 
   // Expand recurring tasks for the visible week
   const ws = state.currentWeekStart;
@@ -465,13 +457,6 @@ function renderTasks() {
   const filtered = expanded.filter(t => {
     if (isWhiteboardTask(t)) return false;
     if (state.selectedTag && t.tag !== state.selectedTag) return false;
-    if (searchQ) {
-      const inTitle = t.title.toLowerCase().includes(searchQ);
-      const inTag = t.tag.toLowerCase().includes(searchQ);
-      const inNotes = (t.notes || '').toLowerCase().includes(searchQ);
-      const inDate = t.date.includes(searchQ);
-      if (!inTitle && !inTag && !inNotes && !inDate) return false;
-    }
     return true;
   });
 
@@ -658,6 +643,14 @@ function instantCreateTask(date, timeMins) {
   showToast(`Created <strong>${escapeHtml(title)}</strong> — <span style="cursor:pointer;text-decoration:underline" onclick="openTaskModal('${task.id}')">edit</span>`, 'success', 3000);
 }
 
+const QUICK_ADD_TITLES = {
+  'deep-work': 'Deep Work Session',
+  'meeting': 'Meeting',
+  'exercise': 'Workout Session',
+  'study': 'Study Session',
+  'hobby': 'Hobby Time',
+};
+
 // ─── UNIFIED DRAG AND DROP ────────────────────────────────
 // One handler for all: task-reschedule, whiteboard→grid, quick-add→grid
 function startDrag(e, source) {
@@ -699,7 +692,7 @@ function startDrag(e, source) {
   }
 
   // If dragging a template pill (or category pill), use its tag/duration/title
-  const tplPill = source.closest('.template-pill');
+  const tplPill = source.closest('.sch-pm-dropdown-pill');
   if (tplPill && tplPill.dataset.tag && !tplPill.closest('[data-delete-template]')) {
     gridDrag.type = 'quickadd';
     gridDrag.tag = tplPill.dataset.tag;
@@ -747,6 +740,9 @@ function startDrag(e, source) {
       }
     }
   }
+
+  // Add visual drag feedback to source
+  source.classList.add('dragging');
 
   document.body.style.cursor = 'grabbing';
   document.addEventListener('mousemove', onDragMove);
@@ -1087,7 +1083,8 @@ function onDragEnd() {
   // Capture ghost rect BEFORE cleanup so FLIP can use it
   const oldGhostRect = gridDrag.ghost ? gridDrag.ghost.getBoundingClientRect() : null;
 
-  // Clean up
+  // Clean up dragging feedback
+  if (gridDrag.source) gridDrag.source.classList.remove('dragging');
   if (gridDrag.ghost) gridDrag.ghost.remove();
   removeDropPreview();
   clearConflictPreview();
@@ -1589,6 +1586,21 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ─── EVENT BINDING ─────────────────────────────────────────
+function initPrioritySelect() {
+  document.querySelectorAll('#prioritySelectGroup .tf-pr').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#prioritySelectGroup .tf-pr').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  document.querySelectorAll('#taskTagPills .tf-tag').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('#taskTagPills .tf-tag').forEach(b => b.classList.remove('active'));
+      pill.classList.add('active');
+    });
+  });
+}
+
 function bindEvents() {
   dom.todayBtn?.addEventListener('click', goToday);
   dom.prevWeek?.addEventListener('click', goPrev);
@@ -1629,56 +1641,7 @@ function bindEvents() {
     notes.addEventListener('input', autoResize);
   }
   dom.quickTaskBtn?.addEventListener('click', () => { const now = new Date(); openNewTaskModal(formatDate(now), roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES)); });
-  dom.filterTagList?.addEventListener('click', (e) => {
-    const pill = e.target.closest('.sch-filter-pill');
-    if (!pill) return;
-    const dot = e.target.closest('.pill-dot');
-    if (dot) {
-      e.stopPropagation();
-      const tag = pill.dataset.tag;
-      if (!tag) return;
-      const curColor = cardColors[tag]?.light || DEFAULT_TAG_COLORS[tag].light;
-      openCardColorPicker(dot, tag, curColor, () => {
-        renderCalendar();
-        renderSchTemplates();
-      });
-      return;
-    }
-    const tag = pill.dataset.tag || null;
-    state.selectedTag = state.selectedTag === tag ? null : tag;
-    dom.filterTagList.querySelectorAll('.sch-filter-pill').forEach(p => p.classList.remove('active'));
-    if (state.selectedTag) {
-      dom.filterTagList.querySelector(`.sch-filter-pill[data-tag="${state.selectedTag}"]`)?.classList.add('active');
-      dom.filterTagList.querySelector(`.sch-filter-pill[data-tag=""]`)?.classList.remove('active');
-    } else {
-      dom.filterTagList.querySelector(`.sch-filter-pill[data-tag=""]`)?.classList.add('active');
-    }
-    renderCalendar();
-  });
-  dom.filterShowWeekends?.addEventListener('change', (e) => { state.showWeekends = e.target.checked; saveState(); renderCalendar(); });
-  dom.filterShowCompleted?.addEventListener('change', (e) => { state.showCompleted = e.target.checked; saveState(); renderCalendar(); });
-  dom.filterTodayBtn?.addEventListener('click', goToday);
 
-  // Search with debounce
-  let searchT;
-  dom.filterSearchInput?.addEventListener('input', (e) => {
-    const val = e.target.value;
-    state.searchQuery = val;
-    if (dom.filterSearchClear) {
-      dom.filterSearchClear.classList.toggle('hidden', !val);
-    }
-    clearTimeout(searchT);
-    searchT = setTimeout(renderCalendar, 100);
-  });
-  dom.filterSearchClear?.addEventListener('click', () => {
-    if (dom.filterSearchInput) {
-      dom.filterSearchInput.value = '';
-      state.searchQuery = '';
-      dom.filterSearchClear.classList.add('hidden');
-      renderCalendar();
-      dom.filterSearchInput.focus();
-    }
-  });
   dom.exportDataBtn?.addEventListener('click', exportData);
   dom.importDataBtn?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
   dom.importFileInput?.addEventListener('change', importData);
@@ -1742,7 +1705,7 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
     });
   });
 
-  // Init priority select
+  // Init priority select + task modal tag pills
   initPrioritySelect();
 
   // Render combined templates/drag bar
@@ -1801,7 +1764,7 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
   });
 
   // Whiteboard drag — unified via startDrag (pills are handled dynamically in renderSchTemplates)
-  document.querySelectorAll('.whiteboard-item, .sch-whiteboard-item').forEach(el => {
+  document.querySelectorAll('.whiteboard-item, .sch-whiteboard-item, .sch-pm-dropdown-pill').forEach(el => {
     el.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || e.target.closest('.w-delete, .w-del')) return;
       startDrag(e, el);
@@ -1828,13 +1791,8 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
   let resizeT;
   window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(renderCalendar, 200); });
   setInterval(() => { if (gridDrag) return; $$('.current-time-line').forEach(el => el.remove()); renderCurrentTime(); }, 60000);
-}  const QUICK_ADD_TITLES = {
-  'deep-work': 'Deep Work Session',
-  'meeting': 'Meeting',
-  'exercise': 'Workout Session',
-  'study': 'Study Session',
-  'hobby': 'Hobby Time',
-};
+}
+
 
 // ─── ACCESS HUB TOGGLE ──────────────────────────────────
 function toggleAccessHub() {
@@ -1848,167 +1806,6 @@ function toggleAccessHub() {
   }
 }
 
-// ─── RENDER UNIFIED PILL BAR ──────────────────────────────
-function renderSchTemplates() {
-  const container = document.getElementById('schTemplatePills');
-  if (!container) return;
-  const templates = loadTemplates();
-  let html = '';
-
-  // Render saved templates
-  for (const tpl of templates) {
-    const c = TAG_COLORS[tpl.tag] || TAG_COLORS.meeting;
-    html += `<button class="template-pill" data-template-id="${tpl.id}"
-      data-tag="${tpl.tag}" data-duration="${tpl.duration}" data-template-title="${escapeHtml(tpl.title)}"
-      title="${escapeHtml(tpl.title)} · ${formatDuration(tpl.duration)}"
-      style="--tpl-accent:${c.text};--tpl-bg:${c.bg}">
-      <span class="tpl-dot" style="background:${c.text}"></span>
-      ${escapeHtml(tpl.name)}
-      <span class="tpl-edit" data-edit-template="${tpl.id}" title="Rename template">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      </span>
-      <span class="tpl-delete" data-delete-template="${tpl.id}" title="Delete template">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </span>
-    </button>`;
-  }
-
-
-
-  container.innerHTML = html;
-
-  // Attach handlers to template pills: click + rename + drag + delete
-  container.querySelectorAll('.template-pill').forEach(pill => {
-    // Click — open cmd palette with template title
-    pill.addEventListener('click', (e) => {
-      if (e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]') || e.target.closest('.tpl-rename-input')) return;
-      const id = pill.dataset.templateId;
-      const templates = loadTemplates();
-      const tpl = templates.find(t => t.id === id);
-      if (tpl) {
-        showCmdPalette();
-        if (dom.cmdInput) {
-          dom.cmdInput.value = tpl.title;
-          dom.cmdInput.focus();
-        }
-      }
-    });
-    // Edit button — trigger inline rename
-    const editBtn = pill.querySelector('[data-edit-template]');
-    if (editBtn) {
-      editBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        startRename(pill, pill.dataset.templateId);
-      });
-    }
-    // Double-click — inline rename
-    pill.addEventListener('dblclick', (e) => {
-      if (e.target.closest('[data-delete-template]')) return;
-      startRename(pill, pill.dataset.templateId);
-    });
-
-      // Focus and select text
-      requestAnimationFrame(() => {
-        input.focus();
-        input.select();
-      });
-      // Save on Enter
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          finishRename(input, id);
-        } else if (e.key === 'Escape') {
-          cancelRename(input);
-        }
-      });
-      // Save on blur (suppressed if already handled by Enter/Escape)
-      input.addEventListener('blur', () => {
-        if (input.dataset.saving) return;
-        finishRename(input, id);
-      });
-    });
-    // Delete (only for template pills that have a delete button)
-    const delBtn = pill.querySelector('[data-delete-template]');
-    if (delBtn) {
-      delBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = delBtn.dataset.deleteTemplate;
-        if (confirm(`Delete template "${pill.textContent.replace(/\s+/g, ' ').trim()}"?`)) {
-          deleteTemplate(id);
-        }
-      });
-    }
-    // Drag to calendar
-    pill.addEventListener('mousedown', (e) => {
-      if (e.button !== 0 || e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]') || e.target.closest('.tpl-rename-input')) return;
-      startDrag(e, pill);
-    });
-  });
-}
-
-// ─── TEMPLATE RENAME HELPERS ────────────────────────────
-function startRename(pill, id) {
-  if (!id) return;
-  const templates = loadTemplates();
-  const tpl = templates.find(t => t.id === id);
-  if (!tpl) return;
-  // Build inline editor
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'tpl-rename-input';
-  input.value = tpl.name;
-  input.maxLength = 40;
-  input.autofocus = true;
-  // Insert before the edit/delete buttons (or at end)
-  const ref = pill.querySelector('[data-edit-template]') || pill.querySelector('[data-delete-template]');
-  if (ref) {
-    pill.insertBefore(input, ref);
-  } else {
-    pill.appendChild(input);
-  }
-  // Focus and select text
-  requestAnimationFrame(() => {
-    input.focus();
-    input.select();
-  });
-  // Save on Enter
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      finishRename(input, id);
-    } else if (e.key === 'Escape') {
-      cancelRename(input);
-    }
-  });
-  // Save on blur (suppressed if already handled by Enter/Escape)
-  input.addEventListener('blur', () => {
-    if (input.dataset.saving) return;
-    finishRename(input, id);
-  });
-}
-
-function finishRename(input, id) {
-  input.dataset.saving = '1'; // prevent blur from re-triggering
-  const newName = input.value.trim();
-  if (newName && newName.length > 0) {
-    const templates = loadTemplates();
-    const tpl = templates.find(t => t.id === id);
-    if (tpl) {
-      tpl.name = newName;
-      saveTemplates(templates);
-      renderSchTemplates();
-      showToast(`Template renamed to "${escapeHtml(newName)}"`, 'info', 1500);
-    }
-  } else {
-    // Empty name — just cancel
-    cancelRename(input);
-  }
-}
-
-function cancelRename(input) {
-  input.dataset.saving = '1'; // prevent blur from re-triggering
-  renderSchTemplates();
-}
 
 // ─── TEMPLATE MANAGEMENT ────────────────────────────────────
 function deleteTemplate(id) {
@@ -2114,60 +1911,56 @@ function saveCurrentTaskAsTemplate() {
   showToast(`Template "${escapeHtml(title)}" saved`, 'success');
 }
 
-function applyTemplate(tpl, date, startTime) {
-  const dur = tpl.duration || 60;
-  const hour = startTime ? parseInt(startTime.split(':')[0]) : 9;
-  const startMins = startTime ? parseTime(startTime) : hour * 60;
-  const task = createTask({
-    title: tpl.title || tpl.name,
-    date: date || formatDate(new Date()),
-    startTime: toTimeStr(startMins),
-    endTime: toTimeStr(startMins + dur),
-    tag: tpl.tag || 'meeting',
-    priority: tpl.priority || 3,
-  });
-  return task;
-}
-
-// ─── QUICK TEMPLATE PICKER ───────────────────────────────
+// ─── QUICK TEMPLATES PICKER ────────────────────────────────
 function openQuickTpl() {
   closeQuickIdea();
   const popup = document.getElementById('quickTpl');
-  if (!popup) { showCmdPalette(); return; }
   const list = document.getElementById('quickTplList');
-  if (!list) return;
+  if (!popup || !list) { showCmdPalette(); return; }
   const templates = loadTemplates();
   list.innerHTML = '';
-  for (const tpl of templates) {
+  templates.forEach(tpl => {
     const c = TAG_COLORS[tpl.tag] || TAG_COLORS.meeting;
     const item = document.createElement('button');
     item.className = 'quick-tpl-item';
     item.innerHTML = `<span class="tpl-dot" style="background:${c.text}"></span>
       <span class="quick-tpl-item-title">${escapeHtml(tpl.name)}</span>
-      <span class="quick-tpl-item-meta">${escapeHtml(tpl.title)} &middot; ${formatDuration(tpl.duration)}</span>
-      <span class="quick-tpl-item-del" data-delete-template="${tpl.id}" title="Delete template">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      <span class="quick-tpl-item-meta">${tpl.title} · ${formatDuration(tpl.duration)}</span>
+      <span class="quick-tpl-item-del" data-del-tpl="${tpl.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </span>`;
+    // Apply template on click
     item.addEventListener('click', (e) => {
-      if (e.target.closest('[data-delete-template]')) return;
+      if (e.target.closest('[data-del-tpl]')) return;
+      const now = new Date();
+      const date = formatDate(now);
+      const startMins = roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES);
+      createTask({
+        title: tpl.title || tpl.name,
+        date,
+        startTime: toTimeStr(startMins),
+        endTime: toTimeStr(startMins + tpl.duration),
+        tag: tpl.tag,
+        priority: tpl.priority || 3,
+      });
       popup.classList.add('hidden');
-      const today = formatDate(new Date());
-      applyTemplate(tpl, today, null);
       renderCalendar();
-      showToast(`Applied "${tpl.name}"`, 'success');
+      showToast(`"${escapeHtml(tpl.name)}" added`, 'success');
     });
-    const delBtn = item.querySelector('[data-delete-template]');
+    // Delete button
+    const delBtn = item.querySelector('[data-del-tpl]');
     if (delBtn) {
       delBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (confirm(`Delete template "${tpl.name}"?`)) {
-          deleteTemplate(tpl.id);
+        const id = delBtn.dataset.delTpl;
+        if (confirm(`Delete template "${escapeHtml(tpl.name)}"?`)) {
+          deleteTemplate(id);
           openQuickTpl();
         }
       });
     }
     list.appendChild(item);
-  }
+  });
   popup.classList.remove('hidden');
 }
 
@@ -2175,8 +1968,158 @@ function closeQuickTpl() {
   document.getElementById('quickTpl')?.classList.add('hidden');
 }
 
-// ─── POMODORO TIMER ──────────────────────────────────────
+// ─── POMODORO TIMER ────────────────────────────────────────
 let pomodoroInterval = null;
+
+function setPomodoroPreset(mins) {
+  document.querySelectorAll('.pomodoro-preset').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.pomodoro-preset[data-minutes="${mins}"]`)?.classList.add('active');
+  if (!pomodoroState || (pomodoroState && !pomodoroState.isRunning && pomodoroState.elapsedSeconds === 0)) {
+    pomodoroState = createPomodoroSession(null, 'Focus Session', mins);
+    if (!pomodoroState) return;
+    pomodoroState.totalMinutes = mins;
+    savePomodoroState();
+    updatePomodoroDisplay();
+  }
+}
+
+function startPomodoro() {
+  loadPomodoroState();
+  if (!pomodoroState) {
+    // Find a task for this pomodoro
+    const today = formatDate(new Date());
+    const focusTask = state.tasks.find(t => t.date === today && !t.completed && (t.tag === 'deep-work' || t.title.toLowerCase().includes('focus')));
+    const taskTitle = focusTask ? focusTask.title : 'Deep Work Session';
+    createPomodoroSession(focusTask?.id || null, taskTitle, 25);
+  }
+  if (!pomodoroState) return;
+  
+  if (!pomodoroState.isRunning) {
+    pomodoroState.isRunning = true;
+    pomodoroState.startedAt = Date.now() - (pomodoroState.elapsedSeconds || 0) * 1000;
+    savePomodoroState();
+    updatePomodoroDisplay();
+    if (pomodoroInterval) clearInterval(pomodoroInterval);
+    pomodoroInterval = setInterval(updatePomodoroDisplay, 1000);
+    document.getElementById('accessMain')?.classList.add('running');
+    const btn = document.getElementById('pomodoroStartBtn');
+    if (btn) btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause`;
+  } else {
+    pausePomodoro();
+  }
+}
+
+function pausePomodoro() {
+  if (!pomodoroState) return;
+  pomodoroState.isRunning = false;
+  if (pomodoroState.startedAt) {
+    pomodoroState.elapsedSeconds = Math.floor((Date.now() - pomodoroState.startedAt) / 1000);
+  }
+  savePomodoroState();
+  if (pomodoroInterval) clearInterval(pomodoroInterval);
+  pomodoroInterval = null;
+  updatePomodoroDisplay();
+  document.getElementById('accessMain')?.classList.remove('running');
+  const btn = document.getElementById('pomodoroStartBtn');
+  if (btn) btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg> Resume`;
+}
+
+function resetPomodoro() {
+  if (pomodoroInterval) clearInterval(pomodoroInterval);
+  pomodoroInterval = null;
+  const mins = pomodoroState?.totalMinutes || 25;
+  pomodoroState = null;
+  savePomodoroState();
+  document.getElementById('pomodoroTime').textContent = `${String(mins).padStart(2, '0')}:00`;
+  const btn = document.getElementById('pomodoroStartBtn');
+  if (btn) btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start`;
+  document.getElementById('pomodoroStatus').textContent = 'Ready to focus';
+  document.getElementById('accessMain')?.classList.remove('running');
+  document.getElementById('pomodoroCard')?.classList.remove('is-running');
+  const icon = document.getElementById('pomodoroPeriodIcon');
+  if (icon) icon.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+  updateRingProgress(0);
+}
+
+function updatePomodoroDisplay() {
+  if (!pomodoroState) return;
+  if (pomodoroState.isRunning && pomodoroState.startedAt) {
+    pomodoroState.elapsedSeconds = Math.floor((Date.now() - pomodoroState.startedAt) / 1000);
+  }
+  const total = pomodoroState.totalMinutes * 60;
+  const elapsed = pomodoroState.elapsedSeconds || 0;
+  const remaining = Math.max(0, total - elapsed);
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  document.getElementById('pomodoroTime').textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  
+  // Task name
+  const taskEl = document.getElementById('pomodoroTaskName');
+  if (taskEl) taskEl.textContent = pomodoroState.taskTitle || 'Focus Session';
+  
+  // Progress ring
+  const pct = total > 0 ? (elapsed / total) : 0;
+  updateRingProgress(pct);
+  
+  // Status
+  const statusEl = document.getElementById('pomodoroStatus');
+  if (pomodoroState.isRunning) {
+    statusEl.textContent = pomodoroState.isBreak ? 'Break time' : 'Focusing...';
+  } else if (elapsed > 0 && !pomodoroState.isRunning) {
+    statusEl.textContent = 'Paused';
+  } else {
+    statusEl.textContent = 'Ready to focus';
+  }
+  
+  // Period icon
+  const iconEl = document.getElementById('pomodoroPeriodIcon');
+  if (iconEl) {
+    if (pomodoroState.isBreak) {
+      iconEl.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`;
+    } else {
+      iconEl.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+    }
+  }
+  
+  // Completion check
+  if (remaining <= 0 && pomodoroState.isRunning) {
+    pausePomodoro();
+    pomodoroState.completedCycles = (pomodoroState.completedCycles || 0) + 1;
+    savePomodoroState();
+    statusEl.textContent = '🎉 Session complete!';
+    const iconEl2 = document.getElementById('pomodoroPeriodIcon');
+    if (iconEl2) iconEl2.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    playPomodoroSound();
+    // Browser notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try { new Notification('🎉 Pomodoro Complete!', { body: 'Time for a break!' }); } catch(e) {}
+    }
+  }
+}
+
+function updateRingProgress(pct) {
+  const ring = document.getElementById('pomodoroRingFg');
+  if (!ring) return;
+  const circumference = 282.74; // 2 * PI * 45
+  const offset = circumference * (1 - Math.min(Math.max(pct, 0), 1));
+  ring.style.strokeDashoffset = offset;
+}
+
+function playPomodoroSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch(e) { /* ignore */ }
+}
 
 function openPomodoro() {
   const card = document.getElementById('pomodoroCard');
@@ -2185,141 +2128,6 @@ function openPomodoro() {
     if (!card.classList.contains('hidden')) loadPomodoroState();
   }
 }
-
-function getPomodoroDuration() {
-  return pomodoroState ? pomodoroState.totalMinutes : 25;
-}
-
-function setPomodoroPreset(mins) {
-  document.querySelectorAll('.pomodoro-preset').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.pomodoro-preset[data-minutes="${mins}"]`)?.classList.add('active');
-  if (pomodoroState && !pomodoroState.isRunning && pomodoroState.elapsedSeconds === 0) {
-    pomodoroState.totalMinutes = mins;
-    savePomodoroState();
-    updatePomodoroDisplay();
-  }
-}
-
-function setPomodoroTaskName(name) {
-  if (pomodoroState) { pomodoroState.taskTitle = name; pomodoroState.taskId = null; savePomodoroState(); }
-}
-
-function startPomodoro() {
-  loadPomodoroState();
-  if (!pomodoroState) {
-    const today = formatDate(new Date());
-    const focusTasks = state.tasks.filter(t => t.date === today && !t.completed && (t.tag === 'deep-work' || t.title.toLowerCase().includes('focus')));
-    const bestTask = focusTasks.length > 0 ? focusTasks[0] : { id: null, title: 'Focus Session', startTime: '09:00' };
-    const activePreset = parseInt(document.querySelector('.pomodoro-preset.active')?.dataset.minutes) || 25;
-    createPomodoroSession(bestTask.id, bestTask.title, activePreset);
-  }
-  
-  if (!pomodoroState.isRunning) {
-    pomodoroState.isRunning = true;
-    pomodoroState.startedAt = Date.now() - pomodoroState.elapsedSeconds * 1000;
-    savePomodoroState();
-    updatePomodoroDisplay();
-    
-    if (pomodoroInterval) clearInterval(pomodoroInterval);
-    pomodoroInterval = setInterval(updatePomodoroDisplay, 1000);
-    
-    document.getElementById('pomodoroStartBtn').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause`;
-    document.getElementById('accessMain').classList.add('running');
-    document.getElementById('pomodoroCard')?.classList.add('is-running');
-  } else {
-    pausePomodoro();
-  }
-}
-
-function pausePomodoro() {
-  if (pomodoroState) {
-    pomodoroState.isRunning = false;
-    savePomodoroState();
-    if (pomodoroInterval) clearInterval(pomodoroInterval);
-    document.getElementById('pomodoroStartBtn').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg> Resume`;
-    document.getElementById('accessMain').classList.remove('running');
-    document.getElementById('pomodoroCard')?.classList.remove('is-running');
-  }
-}
-
-function resetPomodoro() {
-  if (pomodoroInterval) clearInterval(pomodoroInterval);
-  const mins = pomodoroState ? pomodoroState.totalMinutes : 25;
-  pomodoroState = null;
-  savePomodoroState();
-  document.getElementById('pomodoroTime').textContent = `${String(mins).padStart(2, '0')}:00`;
-  document.getElementById('pomodoroStartBtn').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start`;
-  document.getElementById('pomodoroStatus').textContent = 'Ready to focus';
-  document.getElementById('accessMain').classList.remove('running');
-  document.getElementById('pomodoroCard')?.classList.remove('is-running');
-  document.getElementById('pomodoroPeriodIcon').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-  updateRingProgress(0);
-}
-
-function updateRingProgress(pct) {
-  const ring = document.getElementById('pomodoroRingFg');
-  if (ring) {
-    const circumference = 2 * Math.PI * 45;
-    ring.style.strokeDashoffset = circumference - (pct / 100) * circumference;
-  }
-}
-
-function playPomodoroSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.type = 'sine'; osc.frequency.value = 880;
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-    osc.start(); osc.stop(ctx.currentTime + 0.5);
-  } catch (e) { /* sound unavailable */ }
-}
-
-function updatePomodoroDisplay() {
-  if (!pomodoroState) return;
-  
-  if (pomodoroState.isRunning && pomodoroState.startedAt) {
-    pomodoroState.elapsedSeconds = Math.floor((Date.now() - pomodoroState.startedAt) / 1000);
-  }
-  
-  const totalSeconds = pomodoroState.totalMinutes * 60;
-  const remaining = Math.max(0, totalSeconds - pomodoroState.elapsedSeconds);
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
-  
-  document.getElementById('pomodoroTime').textContent = 
-    `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  document.getElementById('pomodoroTaskName').textContent = pomodoroState.taskTitle || 'Focus Session';
-  
-  const pct = ((totalSeconds - remaining) / totalSeconds) * 100;
-  updateRingProgress(pct);
-  
-  if (pomodoroState.isRunning) {
-    document.getElementById('pomodoroStatus').textContent = `Focusing... Cycle ${pomodoroState.completedCycles + 1}`;
-    document.getElementById('pomodoroPeriodIcon').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-  } else if (pomodoroState.elapsedSeconds > 0) {
-    document.getElementById('pomodoroStatus').textContent = 'Paused';
-    document.getElementById('pomodoroPeriodIcon').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
-  } else {
-    document.getElementById('pomodoroPeriodIcon').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
-  }
-  
-  if (remaining <= 0 && pomodoroState.elapsedSeconds > 0) {
-    pausePomodoro();
-    pomodoroState.completedCycles++;
-    savePomodoroState();
-    document.getElementById('pomodoroStatus').textContent = `✅ Completed! (${pomodoroState.completedCycles} cycle${pomodoroState.completedCycles > 1 ? 's' : ''})`;
-    document.getElementById('pomodoroPeriodIcon').innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
-    playPomodoroSound();
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('Pomodoro Complete!', { body: 'Great focus session. Take a break!', icon: '/icon.svg' });
-    }
-  }
-}
-
-
 
 function initPomodoro() {
   loadPomodoroState();
@@ -2368,56 +2176,295 @@ function initPomodoro() {
   }
 }
 
-// ─── HANDLE TASK MODAL PRIORITY ────────────────────────────
-function initPrioritySelect() {
-  const group = document.getElementById('prioritySelectGroup');
-  if (!group) return;
-  group.querySelectorAll('.tf-pr').forEach(opt => {
-    opt.addEventListener('click', () => {
-      group.querySelectorAll('.tf-pr').forEach(o => o.classList.remove('active'));
-      opt.classList.add('active');
-      state._selectedPriority = parseInt(opt.dataset.priority) || 3;
+// ─── TEMPLATE EDIT POPUP ────────────────────────────────────
+function startEditTemplate(pill, id) {
+  if (!id) return;
+  const templates = loadTemplates();
+  const tpl = templates.find(t => t.id === id);
+  if (!tpl) return;
+
+  // Remove any existing edit popup
+  document.getElementById('tplEditPopup')?.remove();
+
+  const popup = document.createElement('div');
+  popup.className = 'tpl-edit-popup';
+  popup.id = 'tplEditPopup';
+
+  const c = TAG_COLORS[tpl.tag] || TAG_COLORS.meeting;
+
+  popup.innerHTML = `
+    <div class="tpl-edit-popup-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span>Edit Template</span>
+    </div>
+    <div class="tpl-edit-popup-body">
+      <div class="tf-group">
+        <label class="tf-label">Name</label>
+        <input type="text" id="tplEditName" class="form-input" value="${escapeHtml(tpl.name)}" autocomplete="off" maxlength="40">
+      </div>
+      <div class="tf-group">
+        <label class="tf-label">Task Title</label>
+        <input type="text" id="tplEditTitle" class="form-input" value="${escapeHtml(tpl.title || tpl.name)}" autocomplete="off">
+      </div>
+      <div class="tf-group">
+        <label class="tf-label">Category</label>
+        <div class="tf-tags" id="tplEditTagPills">
+          ${TAG_ORDER.map(tag => `
+            <button type="button" class="tf-tag${tag === tpl.tag ? ' active' : ''}" data-tag="${tag}"
+              style="--tag-c:var(--tag-${tag}-text);--tag-b:var(--tag-${tag}-bg)">${TAG_LABELS[tag]}</button>
+          `).join('')}
+        </div>
+      </div>
+      <div class="tf-group">
+        <label class="tf-label">Duration (minutes)</label>
+        <div class="tpl-add-dur-row">
+          ${[15, 30, 60, 90, 120].map(d =>
+            `<button class="tpl-add-dur${d === tpl.duration ? ' active' : ''}" data-minutes="${d}">${d < 60 ? d + 'm' : d === 60 ? '1h' : d === 90 ? '1.5h' : d === 120 ? '2h' : d + 'm'}</button>`
+          ).join('')}
+        </div>
+      </div>
+      <div class="tpl-edit-popup-actions">
+        <button class="tf-btn tf-btn-ghost" id="tplEditCancel">Cancel</button>
+        <button class="tf-btn tf-btn-primary" id="tplEditSave">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  // Position near the pill
+  requestAnimationFrame(() => {
+    const pillRect = pill.getBoundingClientRect();
+    const popupRect = popup.getBoundingClientRect();
+    let left = pillRect.left;
+    let top = pillRect.bottom + 4;
+    // Keep within viewport
+    if (left + popupRect.width > window.innerWidth - 8) {
+      left = window.innerWidth - popupRect.width - 8;
+    }
+    if (left < 8) left = 8;
+    if (top + popupRect.height > window.innerHeight - 8) {
+      top = pillRect.top - popupRect.height - 4;
+    }
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+
+    // Focus name field
+    document.getElementById('tplEditName')?.focus();
+    document.getElementById('tplEditName')?.select();
+  });
+
+  // Tag pills
+  popup.querySelectorAll('#tplEditTagPills .tf-tag').forEach(p => {
+    p.addEventListener('click', () => {
+      popup.querySelectorAll('#tplEditTagPills .tf-tag').forEach(b => b.classList.remove('active'));
+      p.classList.add('active');
+    });
+  });
+
+  // Duration buttons
+  popup.querySelectorAll('.tpl-add-dur').forEach(btn => {
+    btn.addEventListener('click', () => {
+      popup.querySelectorAll('.tpl-add-dur').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Save
+  const save = () => {
+    const nameEl = document.getElementById('tplEditName');
+    const titleEl = document.getElementById('tplEditTitle');
+    const name = nameEl?.value?.trim();
+    if (!name) {
+      nameEl?.focus();
+      nameEl?.classList.add('tpl-add-input-error');
+      setTimeout(() => nameEl?.classList.remove('tpl-add-input-error'), 2000);
+      return;
+    }
+    const tag = popup.querySelector('#tplEditTagPills .tf-tag.active')?.dataset?.tag || tpl.tag;
+    const durEl = popup.querySelector('.tpl-add-dur.active');
+    const duration = durEl ? parseInt(durEl.dataset.minutes) : tpl.duration;
+    const title = (titleEl?.value?.trim()) || name;
+
+    tpl.name = name;
+    tpl.title = title;
+    tpl.tag = tag;
+    tpl.duration = duration;
+    saveTemplates(templates);
+    renderSchTemplates();
+    showToast(`Template "${escapeHtml(name)}" updated`, 'success', 1500);
+    popup.remove();
+  };
+
+  popup.querySelector('#tplEditSave')?.addEventListener('click', save);
+  popup.querySelector('#tplEditCancel')?.addEventListener('click', () => popup.remove());
+
+  // Enter to save, Escape to cancel
+  popup.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { popup.remove(); }
+    if (e.key === 'Enter' && e.target.closest('.tpl-edit-popup-body')) { save(); }
+  });
+
+  // Close on outside click
+  const onEditPopupClick = (e) => {
+    if (!popup.contains(e.target) && !e.target.closest('.sch-pm-dropdown-pill') && !e.target.closest('.sch-pm-chip')) {
+      popup.remove();
+      document.removeEventListener('click', onEditPopupClick);
+    }
+  };
+  setTimeout(() => {
+    document.addEventListener('click', onEditPopupClick);
+  }, 0);
+}
+
+// ─── RENDER PILL MANAGER (compact chip row + dropdown) ────
+function renderSchTemplates() {
+  const container = document.getElementById('pmChips');
+  if (!container) return;
+  const templates = loadTemplates();
+  let html = '';
+  for (const tag of TAG_ORDER) {
+    const tpls = templates.filter(t => t.tag === tag);
+    const col = TAG_COLORS[tag] || TAG_COLORS.meeting;
+    const accent = col.text;
+    const isOpen = state._openPmTag === tag;
+    html += `<button class="sch-pm-chip${isOpen ? ' active' : ''}" data-pm-tag="${tag}"
+      style="--chip-accent:${accent}">
+      <span class="sch-pm-chip-dot" style="background:${accent}"></span>
+      ${TAG_LABELS[tag]}
+      ${tpls.length > 0 ? `<span class="sch-pm-chip-count">${tpls.length}</span>` : ''}
+    </button>`;
+  }
+  container.innerHTML = html;
+  
+  // Chip click — toggle dropdown
+  container.querySelectorAll('.sch-pm-chip').forEach(chip => {
+    chip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tag = chip.dataset.pmTag;
+      if (state._openPmTag === tag) {
+        closePmDropdown();
+      } else {
+        state._openPmTag = tag;
+        renderSchTemplates();
+        showPmDropdown(tag);
+      }
     });
   });
 }
 
-// ─── LEARNING HELPERS ─────────────────────────────────────
-function getPreferredTag() {
-  if (!state.userProfile?.tags) return null;
-  let bestTag = null, bestCount = 0;
-  for (const tag of TAG_ORDER) {
-    const t = state.userProfile.tags[tag];
-    if (t && t.count > bestCount) { bestCount = t.count; bestTag = tag; }
+function showPmDropdown(tag) {
+  // Remove any existing dropdown
+  document.getElementById('schPmDropdown')?.remove();
+  document.removeEventListener('click', closePmDropdown);
+  
+  const pm = document.getElementById('schPillManager');
+  if (!pm || !tag) return;
+  
+  const templates = loadTemplates();
+  const tpls = templates.filter(t => t.tag === tag);
+  const col = TAG_COLORS[tag] || TAG_COLORS.meeting;
+  
+  const dropdown = document.createElement('div');
+  dropdown.className = 'sch-pm-dropdown';
+  dropdown.id = 'schPmDropdown';
+  
+  let html = `<div class="sch-pm-dropdown-header">
+    <span class="dp-header-dot" style="background:${col.text}"></span>
+    ${TAG_LABELS[tag]} — ${tpls.length} template${tpls.length !== 1 ? 's' : ''}
+  </div>`;
+  
+  if (tpls.length === 0) {
+    html += `<span class="sch-pm-dropdown-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      No templates in this category
+    </span>`;
+  } else {
+    for (const tpl of tpls) {
+      const dur = formatDuration(tpl.duration);
+      html += `<button class="sch-pm-dropdown-pill" data-template-id="${tpl.id}"
+        data-tag="${tpl.tag}" data-duration="${tpl.duration}" data-template-title="${escapeHtml(tpl.title || tpl.name)}"
+        style="--dp-accent:${col.text}">
+        <span class="dp-dot" style="background:${col.text}"></span>
+        <span class="dp-name">${escapeHtml(tpl.name)}</span>
+        <span class="dp-dur">${dur}</span>
+        <span class="dp-edit" data-edit-template="${tpl.id}" title="Edit template">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </span>
+        <span class="dp-del" data-delete-template="${tpl.id}" title="Delete template">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </span>
+      </button>`;
+    }
   }
-  return bestTag;
+  
+  dropdown.innerHTML = html;
+  pm.appendChild(dropdown);
+  
+  // Event handlers for pills
+  dropdown.querySelectorAll('.sch-pm-dropdown-pill').forEach(pill => {
+    // Click to use template (open command palette)
+    pill.addEventListener('click', (e) => {
+      if (e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]')) return;
+      const id = pill.dataset.templateId;
+      const tpl = tpls.find(t => t.id === id);
+      if (tpl) { showCmdPalette(); if (dom.cmdInput) { dom.cmdInput.value = tpl.title || tpl.name; dom.cmdInput.focus(); } }
+    });
+    // Edit
+    const editBtn = pill.querySelector('[data-edit-template]');
+    if (editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); startEditTemplate(pill, pill.dataset.templateId); });
+    // Delete
+    const delBtn = pill.querySelector('[data-delete-template]');
+    if (delBtn) delBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const name = pill.querySelector('.dp-name')?.textContent || 'template';
+      if (confirm(`Delete template "${name}"?`)) { deleteTemplate(delBtn.dataset.deleteTemplate); }
+    });
+    // Drag
+    pill.addEventListener('mousedown', (e) => {
+      if (e.button !== 0 || e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]')) return;
+      startDrag(e, pill);
+    });
+  });
+  
+  // Close on outside click (delayed so the chip click doesn't auto-close)
+  setTimeout(() => {
+    document.addEventListener('click', closePmDropdown);
+  }, 0);
 }
 
-function getPreferredTitle(tag) {
-  const t = state.userProfile?.tags?.[tag];
-  if (t && t.titles.length > 0) {
-    return getModeValue(t.titles);
-  }
-  return null;
+function closePmDropdown(e) {
+  const dropdown = document.getElementById('schPmDropdown');
+  const pm = document.getElementById('schPillManager');
+  if (!dropdown) return;
+  // If click is inside the pill manager or dropdown, don't close
+  if (e && (pm?.contains(e.target) || dropdown?.contains(e.target))) return;
+  dropdown.remove();
+  state._openPmTag = null;
+  document.removeEventListener('click', closePmDropdown);
+  // Update chip active states
+  document.querySelectorAll('.sch-pm-chip').forEach(chip => chip.classList.remove('active'));
 }
 
-// ─── INIT ──────────────────────────────────────────────────
-function init() {
+// ─── INITIALIZATION ─────────────────────────────────────────
+(function initSchedule() {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initSchedule);
+    return;
+  }
   loadState();
   applyTheme();
-  document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
-  if (typeof renderSidebarImages === 'function') renderSidebarImages();
-  if (dom.filterShowWeekends) dom.filterShowWeekends.checked = state.showWeekends;
-  if (dom.filterShowCompleted) dom.filterShowCompleted.checked = state.showCompleted;
-  state.currentWeekStart = getMonday(new Date());
-  updateTzDisplay();
-  updateApiStatus();
+  if (!state.currentWeekStart) {
+    state.currentWeekStart = getMonday(new Date());
+  }
   renderCalendar();
-  scrollToCurrentTime();
   bindEvents();
-  requestNotifPermission();
+  updateApiStatus();
+  updateTzDisplay();
+  scrollToCurrentTime();
   scheduleReminderCheck();
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.darkMode === null) applyTheme(); });
-}
-
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-else init();
+  requestNotifPermission();
+})();

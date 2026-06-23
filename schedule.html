@@ -103,246 +103,213 @@
     .sch-cmd-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-xl); }
     .sch-cmd-btn:active { transform: scale(0.95); }
 
-    /* ─── FILTER TOOLBAR ─────────────────────────────────── */
-    .sch-filter-bar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: var(--space-1) var(--space-5);
+    /* ─── PILL MANAGER (compact chip row + dropdown) ───── */
+    .sch-pill-manager {
+      padding: 2px var(--space-4) 2px;
       border-bottom: 1px solid var(--border-color);
       background: var(--bg-primary);
       flex-shrink: 0;
-      gap: var(--space-3);
-      overflow-x: auto;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      position: relative;
+      min-height: 28px;
     }
-    .sch-filter-tags {
-      display: flex; align-items: center; gap: var(--space-1);
-      flex: 1;
-    }
-    .sch-filter-pill {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 10px;
-      border-radius: 14px;
-      border: 1px solid var(--border-color);
-      background: transparent;
-      color: var(--text-secondary);
-      font-size: 0.72rem; font-family: var(--font-family); font-weight: 500;
-      cursor: pointer;
-      transition: all var(--t-fast);
-      white-space: nowrap;
-    }
-    .sch-filter-pill:hover {
-      border-color: var(--text-primary);
-      color: var(--text-primary);
-      background: var(--accent-soft);
-    }
-    .sch-filter-pill.active {
-      background: var(--accent);
-      color: var(--text-inverse);
-      border-color: var(--accent);
-    }
-    .sch-filter-pill .pill-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--tag-color, var(--gray-300));
-      flex-shrink: 0;
-    }
-    .sch-filter-pill.active .pill-dot { background: currentColor; }
-    .sch-filter-pill svg { flex-shrink: 0; }
-    .sch-filter-toggles {
-      display: flex; align-items: center; gap: var(--space-1);
-      flex-shrink: 0;
-    }
-    .sch-toggle-label {
+    .sch-pm-chip {
       display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 8px;
-      border-radius: 14px;
-      font-size: 0.7rem; font-family: var(--font-family); font-weight: 500;
-      color: var(--text-tertiary);
-      cursor: pointer;
-      transition: all var(--t-fast);
-      white-space: nowrap;
-      border: 1px solid transparent;
-    }
-    .sch-toggle-label:hover {
-      color: var(--text-primary);
-      border-color: var(--border-color);
-    }
-    .sch-toggle-label input[type="checkbox"] {
-      width: 12px; height: 12px;
-      accent-color: var(--accent);
-      cursor: pointer;
-      display: none;
-    }
-    .sch-toggle-label svg { opacity: 0.5; }
-    .sch-toggle-label:has(input:checked) { color: var(--text-primary); }
-    .sch-toggle-label:has(input:checked) svg { opacity: 1; }
-    .sch-filter-divider {
-      width: 1px; height: 16px;
-      background: var(--border-color);
-      margin: 0 var(--space-1);
-    }
-    .sch-filter-action {
-      padding: 3px 10px;
-      border-radius: 14px;
-      border: 1px solid var(--border-color);
+      padding: 2px 8px 2px 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
       background: transparent;
-      color: var(--text-secondary);
-      font-size: 0.7rem; font-family: var(--font-family); font-weight: 600;
-      cursor: pointer;
-      transition: all var(--t-fast);
-      white-space: nowrap;
-    }
-    .sch-filter-action:hover {
-      border-color: var(--text-primary);
-      color: var(--text-primary);
-      background: var(--accent-soft);
-    }
-
-    /* Filter pill dot colors */
-    .sch-filter-pill[data-tag="deep-work"] .pill-dot { background: var(--tag-deep-work-text); }
-    .sch-filter-pill[data-tag="meeting"] .pill-dot { background: var(--tag-meeting-text); }
-    .sch-filter-pill[data-tag="exercise"] .pill-dot { background: var(--tag-exercise-text); }
-    .sch-filter-pill[data-tag="study"] .pill-dot { background: var(--tag-study-text); }
-    .sch-filter-pill[data-tag="hobby"] .pill-dot { background: var(--tag-hobby-text); }
-
-    /* ─── SEARCH BAR ────────────────────────────────────── */
-    .sch-search-wrapper {
-      position: relative;
-      display: flex; align-items: center;
-    }
-    .sch-search-icon {
-      position: absolute;
-      left: 8px;
       color: var(--text-tertiary);
-      pointer-events: none;
-      flex-shrink: 0;
-    }
-    .sch-search-input {
-      width: 130px;
-      padding: 4px 24px 4px 26px;
-      border: 1px solid var(--border-color);
-      border-radius: 14px;
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      font-size: 0.72rem;
-      font-family: var(--font-family);
-      font-weight: 500;
-      outline: none;
-      transition: all var(--t-fast);
-    }
-    .sch-search-input::placeholder { color: var(--text-tertiary); font-weight: 400; }
-    .sch-search-input:focus {
-      width: 180px;
-      border-color: var(--text-primary);
-      background: var(--bg-primary);
-    }
-    .sch-search-clear {
-      position: absolute;
-      right: 4px;
-      width: 16px; height: 16px;
-      border: none; background: transparent;
-      color: var(--text-tertiary);
-      cursor: pointer; padding: 0;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 50%;
-      transition: all var(--t-fast);
-    }
-    .sch-search-clear:hover { background: var(--accent-soft); color: var(--text-primary); }
-
-    /* ─── QUICK ADD BAR ─────────────────────────────────── */
-    .sch-quickadd {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-1) var(--space-5);
-      border-bottom: 1px solid var(--border-color);
-      background: var(--bg-primary);
-      flex-shrink: 0;
-      overflow-x: auto;
-    }
-    .sch-quickadd-label {
-      font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.06em; color: var(--text-tertiary); opacity: 0.6;
-      margin-right: var(--space-2); white-space: nowrap;
-    }
-
-
-    /* ─── PILL BAR ─────────────────────────────────────────── */
-    .sch-templates-bar {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-1) var(--space-5);
-      border-bottom: 1px solid var(--border-color);
-      background: var(--bg-primary);
-      flex-shrink: 0;
-      overflow-x: auto;
-    }
-    .sch-templates-label {
-      font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.06em; color: var(--text-tertiary); opacity: 0.6;
-      margin-right: var(--space-2); white-space: nowrap; flex-shrink: 0;
-    }
-    .template-pills {
-      display: flex; align-items: center; gap: var(--space-1);
-      flex: 1; overflow-x: auto;
-    }
-    .template-pills::-webkit-scrollbar { display: none; }
-    .template-pill {
-      position: relative;
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 10px 3px 8px;
-      border-radius: 14px;
-      border: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      color: var(--text-secondary);
-      font-size: 0.7rem; font-family: var(--font-family); font-weight: 500;
+      font-size: 0.62rem; font-family: var(--font-family); font-weight: 500;
       cursor: pointer;
       transition: all var(--t-fast);
       white-space: nowrap;
       user-select: none;
+      line-height: 1.3;
     }
-    .template-pill:hover {
-      border-color: var(--tpl-accent, var(--text-primary));
+    .sch-pm-chip:hover {
+      border-color: var(--chip-accent, var(--border-color));
       color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
+      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 6%, transparent);
     }
-    .template-pill .tpl-dot {
-      width: 6px; height: 6px; border-radius: 50%; background: var(--tpl-accent, var(--gray-300));
+    .sch-pm-chip.active {
+      border-color: var(--chip-accent, var(--accent));
+      color: var(--chip-accent, var(--accent));
+      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 10%, transparent);
+    }
+    .sch-pm-chip-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--chip-accent, var(--gray-300));
       flex-shrink: 0;
     }
-    .template-pill .tpl-delete {
-      width: 14px; height: 14px; border-radius: 50%;
-      border: none; background: transparent;
-      color: var(--text-tertiary);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0;
-      opacity: 0;
-      flex-shrink: 0;
-      transition: all var(--t-fast);
-      margin-left: 2px;
-    }
-    .template-pill:hover .tpl-delete { opacity: 0.5; }
-    .template-pill .tpl-delete:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
-    .template-pill .tpl-delete svg { width: 10px; height: 10px; }
-    /* Edit (rename) button */
-    .template-pill .tpl-edit {
-      width: 14px; height: 14px; border-radius: 50%;
-      border: none; background: transparent;
-      color: var(--text-tertiary);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0;
-      opacity: 0;
-      flex-shrink: 0;
-      transition: all var(--t-fast);
+    .sch-pm-chip-count {
+      font-size: 0.5rem;
+      opacity: 0.5;
       margin-left: 1px;
     }
-    .template-pill:hover .tpl-edit { opacity: 0.5; }
-    .template-pill .tpl-edit:hover { opacity: 1; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
-    .template-pill .tpl-edit svg { width: 10px; height: 10px; }
-    /* Inline rename input */
-    .tpl-rename-input {
-      background: transparent; border: none; outline: none;
-      font: inherit; font-size: inherit; color: var(--text-primary);
-      padding: 0; margin: 0; min-width: 20px; width: auto;
-      flex: 1; letter-spacing: inherit;
+    .sch-pm-add-chip {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--t-fast);
+      padding: 0;
+      opacity: 0.4;
+      margin-left: auto;
     }
+    .sch-pm-add-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      transform: scale(1.1);
+      opacity: 1;
+    }
+    .sch-pm-add-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    
+    /* Dropdown */
+    .sch-pm-dropdown {
+      position: absolute;
+      top: 100%; left: 0; right: 0;
+      z-index: 30;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      padding: var(--space-2);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      animation: snavPopupIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .sch-pm-dropdown-header {
+      width: 100%;
+      display: flex; align-items: center; gap: var(--space-1);
+      padding-bottom: var(--space-1);
+      margin-bottom: var(--space-1);
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.55rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-tertiary); opacity: 0.5;
+    }
+    .sch-pm-dropdown-header .dp-header-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .sch-pm-dropdown-pill {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 8px 2px 5px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-size: 0.62rem; font-family: var(--font-family); font-weight: 500;
+      cursor: grab;
+      transition: all var(--t-fast);
+      white-space: nowrap;
+      user-select: none;
+      line-height: 1.3;
+      min-height: 20px;
+    }
+    .sch-pm-dropdown-pill:hover {
+      border-color: var(--dp-accent, var(--border-color));
+      color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-1px);
+    }
+    .sch-pm-dropdown-pill:active { transform: scale(0.97); cursor: grabbing; }
+    .sch-pm-dropdown-pill.dragging { opacity: 0.5; transform: scale(0.95); }
+    .sch-pm-dropdown-pill .dp-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--dp-accent, var(--gray-300));
+      flex-shrink: 0;
+    }
+    .sch-pm-dropdown-pill .dp-name {
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sch-pm-dropdown-pill .dp-dur {
+      font-size: 0.5rem;
+      opacity: 0.4;
+      margin-left: 1px;
+    }
+    .sch-pm-dropdown-pill .dp-edit,
+    .sch-pm-dropdown-pill .dp-del {
+      width: 12px; height: 12px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0;
+      opacity: 0;
+      flex-shrink: 0;
+      transition: all var(--t-fast);
+    }
+    .sch-pm-dropdown-pill:hover .dp-edit,
+    .sch-pm-dropdown-pill:hover .dp-del { opacity: 0.4; }
+    .sch-pm-dropdown-pill .dp-edit:hover { opacity: 1; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); transform: scale(1.15); }
+    .sch-pm-dropdown-pill .dp-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); transform: scale(1.15); }
+    .sch-pm-dropdown-pill .dp-edit svg,
+    .sch-pm-dropdown-pill .dp-del svg { width: 8px; height: 8px; }
+    .sch-pm-dropdown-pill:focus-visible { outline: 2px solid var(--dp-accent); outline-offset: 2px; }
+    .sch-pm-dropdown-empty {
+      width: 100%;
+      font-size: 0.58rem;
+      color: var(--text-tertiary);
+      opacity: 0.4;
+      padding: 4px 0;
+      font-style: italic;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .sch-pm-dropdown-empty svg { width: 9px; height: 9px; opacity: 0.5; }
+    @keyframes dp-pill-enter {
+      0% { opacity: 0; transform: scale(0.92); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .sch-pm-dropdown-pill { animation: dp-pill-enter 200ms var(--curve) both; }
+    /* Edit template popup */
+    .tpl-edit-popup {
+      position: fixed;
+      z-index: 70;
+      width: 280px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      animation: snavPopupIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    .tpl-edit-popup-header {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+    }
+    .tpl-edit-popup-header svg { flex-shrink: 0; opacity: 0.5; }
+    .tpl-edit-popup-header span { flex: 1; font-size: 0.78rem; font-weight: 600; }
+    .tpl-edit-popup-body {
+      padding: var(--space-3);
+      display: flex; flex-direction: column; gap: var(--space-2);
+    }
+    .tpl-edit-popup-body .tf-group { margin: 0; }
+    .tpl-edit-popup-body .tf-label { font-size: 0.62rem; margin-bottom: 3px; }
+    .tpl-edit-popup-body .form-input { font-size: 0.8rem; padding: 5px 8px; }
+    .tpl-edit-popup-body .tf-tags { gap: 3px; }
+    .tpl-edit-popup-body .tf-tag { font-size: 0.65rem; padding: 3px 10px 3px 7px; }
+    .tpl-edit-popup-actions {
+      display: flex; gap: var(--space-2);
+      margin-top: var(--space-1);
+    }
+    .tpl-edit-popup-actions .tf-btn { flex: 1; justify-content: center; font-size: 0.75rem; }
+    .tpl-edit-popup-actions .tf-btn svg { width: 11px; height: 11px; }
 
     /* Add template button */
     .tpl-add-btn {
@@ -416,11 +383,15 @@
       text-align: center;
     }
     .tpl-add-dur:hover { border-color: var(--border-color); color: var(--text-secondary); }
+    .tpl-add-dur:active { transform: scale(0.96); }
     .tpl-add-dur.active {
       border-color: var(--accent);
       background: color-mix(in srgb, var(--accent) 10%, transparent);
       color: var(--accent);
+      box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 20%, transparent);
+      transform: scale(1.02);
     }
+    .tpl-add-dur:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .tpl-add-popup-actions {
       display: flex; gap: var(--space-2);
       margin-top: var(--space-1);
@@ -459,14 +430,7 @@
     .quick-tpl-item-del:hover { opacity: 1 !important; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
     .quick-tpl-item svg { width: 12px; height: 12px; }
 
-    /* ─── MOBILE — combined bar ───────────────────────────────── */
-    @media (max-width: 640px) {
-      .sch-templates-bar { padding: var(--space-2) var(--space-3); gap: var(--space-1); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-      .sch-templates-bar::-webkit-scrollbar { display: none; }
-      .sch-templates-label { font-size: 0.55rem; margin-right: var(--space-1); }
-      .template-pill { padding: 2px 8px 2px 6px; font-size: 0.65rem; }
 
-    }
 
     /* ─── MOBILE HAMBURGER ───────────────────────────────── */
     .sch-hamburger {
@@ -519,22 +483,25 @@
       .sch-header-right { gap: var(--space-1); }
       .sch-api-badge { font-size: 0.6rem; padding: 1px 6px; }
 
-      /* Filter bar mobile — horizontal scroll */
-      .sch-filter-bar {
-        padding: var(--space-2) var(--space-3);
-        gap: var(--space-2);
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
+      /* Pill manager mobile */
+      .sch-pill-manager {
+        padding: 1px var(--space-2) 1px;
+        gap: 2px;
+        min-height: 24px;
       }
-      .sch-filter-bar::-webkit-scrollbar { display: none; }
-      .sch-filter-tags { flex: 0 0 auto; gap: var(--space-1); }
-      .sch-filter-pill { padding: 2px 8px; font-size: 0.65rem; }
-      .sch-filter-toggles { flex: 0 0 auto; gap: var(--space-1); }
-      .sch-toggle-label span { display: none; }
-      .sch-toggle-label { padding: 3px 6px; }
-      .sch-search-input { width: 100px; font-size: 0.68rem; }
-      .sch-search-input:focus { width: 140px; }
+      .sch-pm-chip {
+        font-size: 0.55rem;
+        padding: 1px 6px 1px 4px;
+      }
+      .sch-pm-dropdown {
+        padding: var(--space-1);
+        max-height: 160px;
+      }
+      .sch-pm-dropdown-pill {
+        font-size: 0.58rem;
+        padding: 1px 6px 1px 4px;
+        min-height: 18px;
+      }
 
       /* Calendar grid mobile */
       #calendarContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -722,59 +689,11 @@
         </div>
       </header>
 
-      <!-- Filter toolbar -->
-      <div class="sch-filter-bar hub-anim-in hub-anim-in-2" id="filterBar">
-        <div class="sch-filter-tags" id="filterTagList">
-          <button class="sch-filter-pill active" data-tag="" title="Show all tasks">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            All
-          </button>
-          <button class="sch-filter-pill" data-tag="deep-work">
-            <span class="pill-dot"></span>Deep Work
-          </button>
-          <button class="sch-filter-pill" data-tag="meeting">
-            <span class="pill-dot"></span>Meeting
-          </button>
-          <button class="sch-filter-pill" data-tag="exercise">
-            <span class="pill-dot"></span>Exercise
-          </button>
-          <button class="sch-filter-pill" data-tag="study">
-            <span class="pill-dot"></span>Study
-          </button>
-          <button class="sch-filter-pill" data-tag="hobby">
-            <span class="pill-dot"></span>Hobby
-          </button>
-        </div>
-        <div class="sch-filter-toggles">
-          <label class="sch-toggle-label" title="Show weekends">
-            <input type="checkbox" id="filterShowWeekends" checked>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
-            <span>Weekends</span>
-          </label>
-          <label class="sch-toggle-label" title="Show completed tasks">
-            <input type="checkbox" id="filterShowCompleted" checked>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span>Done</span>
-          </label>
-          <span class="sch-filter-divider"></span>
-          <button id="filterTodayBtn" class="sch-filter-action" title="Today">Today</button>
-          <span class="sch-filter-divider"></span>
-          <div class="sch-search-wrapper">
-            <svg class="sch-search-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="filterSearchInput" class="sch-search-input" placeholder="Search tasks..." autocomplete="off">
-            <button id="filterSearchClear" class="sch-search-clear hidden" title="Clear search">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Unified pill bar: templates + quick-add -->
-      <div class="sch-templates-bar hub-anim-in hub-anim-in-3" id="schTemplatesBar">
-        <span class="sch-templates-label">Pills</span>
-        <div class="template-pills" id="schTemplatePills"></div>
-        <button class="tpl-add-btn" id="tplAddBtn" title="Add template">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <!-- Pill Manager: compact chip row + dropdown -->
+      <div class="sch-pill-manager hub-anim-in hub-anim-in-2" id="schPillManager">
+        <div id="pmChips"><!-- Populated by JS --></div>
+        <button class="sch-pm-add-chip" id="tplAddBtn" title="Add template">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
       </div>
 

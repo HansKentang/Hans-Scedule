@@ -544,14 +544,99 @@ const DEFAULT_TAG_COLORS = {
 
 let cardColors = {};
 
+// ─── CUSTOM TAGS ─────────────────────────────────────────────
+const CUSTOM_TAGS_KEY = 'haven-custom-tags';
+
+function loadCustomTags() {
+  try {
+    const data = localStorage.getItem(CUSTOM_TAGS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) { return []; }
+}
+
+function saveCustomTags(tags) {
+  try { localStorage.setItem(CUSTOM_TAGS_KEY, JSON.stringify(tags)); } catch (e) {}
+}
+
+function initCustomTags() {
+  const customTags = loadCustomTags();
+  for (const ct of customTags) {
+    if (TAG_ORDER.includes(ct.id)) continue;
+    TAG_ORDER.push(ct.id);
+    TAG_LABELS[ct.id] = ct.name;
+    TAG_COLORS[ct.id] = { bg: `var(--tag-${ct.id}-bg)`, text: `var(--tag-${ct.id}-text)` };
+  }
+  injectCustomTagStyles();
+}
+
+function addCustomTag(name, hexColor) {
+  const customTags = loadCustomTags();
+  const id = 'c' + Date.now().toString(36);
+  customTags.push({ id, name, color: hexColor });
+  saveCustomTags(customTags);
+  TAG_ORDER.push(id);
+  TAG_LABELS[id] = name;
+  TAG_COLORS[id] = { bg: `var(--tag-${id}-bg)`, text: `var(--tag-${id}-text)` };
+  cardColors[id] = { light: hexColor, dark: lightenColor(hexColor, 0.45) };
+  applyCardColors();
+  injectCustomTagStyles();
+  return id;
+}
+
+function removeCustomTag(id) {
+  let customTags = loadCustomTags();
+  customTags = customTags.filter(ct => ct.id !== id);
+  saveCustomTags(customTags);
+  const idx = TAG_ORDER.indexOf(id);
+  if (idx > -1) TAG_ORDER.splice(idx, 1);
+  delete TAG_LABELS[id];
+  delete TAG_COLORS[id];
+  delete cardColors[id];
+  for (const task of state.tasks) {
+    if (task.tag === id) task.tag = 'meeting';
+  }
+  saveState();
+  applyCardColors();
+  injectCustomTagStyles();
+}
+
+function injectCustomTagStyles() {
+  const existing = document.getElementById('custom-tag-styles');
+  if (existing) existing.remove();
+  const customTags = loadCustomTags();
+  if (customTags.length === 0) return;
+  let css = '';
+  for (const ct of customTags) {
+    const id = ct.id;
+    css += `
+.tag-column[data-board-tag="${id}"] { --ctc: var(--tag-${id}-text); --ctb: var(--tag-${id}-bg); }
+.tag-col-task[data-tag="${id}"] { --tct-accent: var(--tag-${id}-text); }
+.act-timeline-task[data-tag="${id}"] .tct-check.checked { --tct-accent: var(--tag-${id}-text); }
+.act-tl-tag[data-tag="${id}"] { background: var(--tag-${id}-bg); color: var(--tag-${id}-text); }
+.act-log-item[data-tag="${id}"] .act-log-item-dot { background: var(--tag-${id}-text); }
+.act-chart-bar-segment[data-tag="${id}"] { background: var(--tag-${id}-text); }
+.act-chart-legend-dot[data-tag="${id}"] { background: var(--tag-${id}-text); }`;
+  }
+  const style = document.createElement('style');
+  style.id = 'custom-tag-styles';
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+
 function loadCardColors() {
   try {
     const stored = localStorage.getItem(CARD_COLORS_KEY);
     cardColors = stored ? JSON.parse(stored) : {};
-    // Merge with defaults for any missing tags
     for (const tag of TAG_ORDER) {
       if (!cardColors[tag]) {
-        cardColors[tag] = { ...DEFAULT_TAG_COLORS[tag] };
+        if (DEFAULT_TAG_COLORS[tag]) {
+          cardColors[tag] = { ...DEFAULT_TAG_COLORS[tag] };
+        } else {
+          const customTags = loadCustomTags();
+          const ct = customTags.find(c => c.id === tag);
+          const hex = ct ? ct.color : '#6366f1';
+          cardColors[tag] = { light: hex, dark: lightenColor(hex, 0.45) };
+        }
       }
     }
   } catch (e) {
@@ -567,7 +652,12 @@ function saveCardColors(colors) {
 }
 
 function resetCardColors() {
-  saveCardColors(JSON.parse(JSON.stringify(DEFAULT_TAG_COLORS)));
+  const colors = JSON.parse(JSON.stringify(DEFAULT_TAG_COLORS));
+  const customTags = loadCustomTags();
+  for (const ct of customTags) {
+    colors[ct.id] = { light: ct.color, dark: lightenColor(ct.color, 0.45) };
+  }
+  saveCardColors(colors);
 }
 
 function applyCardColors() {
@@ -941,6 +1031,21 @@ function getPreferredDuration(tag) {
   return t && t.durations.length > 0 ? getModeValue(t.durations) : null;
 }
 
+function getPreferredTag() {
+  const tags = state.userProfile?.tags;
+  if (!tags) return null;
+  let bestTag = null, bestCount = 0;
+  for (const [tag, data] of Object.entries(tags)) {
+    if (data.count > bestCount) { bestCount = data.count; bestTag = tag; }
+  }
+  return bestTag;
+}
+
+function getPreferredTitle(tag) {
+  const t = state.userProfile?.tags?.[tag];
+  return t && t.titles.length > 0 ? getModeValue(t.titles) : null;
+}
+
 function predictTagFromTitle(title) {
   if (!title || !state.userProfile?.titleKeywords) return null;
   const words = title.toLowerCase().split(/[\s,]+/);
@@ -1240,6 +1345,7 @@ function loadState() {
     if (model) state.apiModel = model;
     const provider = localStorage.getItem(API_PROVIDER_STORAGE);
     if (provider) state.apiProvider = provider;
+    initCustomTags();
     loadCardColors();
     loadUserProfile();
     loadImages();
@@ -2013,6 +2119,9 @@ function renderCardColorsInSettings() {
         </div>
       </div>
       <span class="cc-swatch-dot" style="background:${accent}"></span>
+      ${!DEFAULT_TAG_COLORS[tag] ? `<button class="cc-swatch-del" data-del-tag="${tag}" title="Delete category">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>` : ''}
     </div>`;
   }
   html += '</div>';
@@ -5147,10 +5256,14 @@ function openCardColorPicker(anchorEl, tag, currentHex, onPick) {
     const def = DEFAULT_TAG_COLORS[tag];
     if (def) {
       currentColor = def.light;
-      hue = hexToHsv(currentColor).h;
-      updatePicker();
-      pickColor();
+    } else {
+      const customTags = loadCustomTags();
+      const ct = customTags.find(c => c.id === tag);
+      if (ct) currentColor = ct.color;
     }
+    hue = hexToHsv(currentColor).h;
+    updatePicker();
+    pickColor();
   });
 
   // Position

@@ -63,16 +63,7 @@ function getCompletionLog() {
   return completionLog;
 }
 
-// --- TAGS BOARD HELPERS ---------------------------------------------------
-function getTagColumnMeta(tag) {
-  const c = cardColors[tag] || DEFAULT_TAG_COLORS[tag];
-  const isDark = document.documentElement.classList.contains('dark');
-  if (isDark) {
-    return { color: darkenColor(c.light, 0.82), textColor: c.dark || lightenColor(c.light, 0.45), darkColor: darkenColor(c.light, 0.82), darkText: c.dark || lightenColor(c.light, 0.45) };
-  }
-  return { color: lightenColor(c.light, 0.85), textColor: c.light, darkColor: darkenColor(c.light, 0.82), darkText: c.dark || lightenColor(c.light, 0.45) };
-}
-
+// --- FORMAT HELPERS --------------------------------------------------------
 function formatHrs(mins) {
   const h = Math.floor(mins / 60); const m = mins % 60;
   if (h === 0) return `${m}m`; if (m === 0) return `${h}h`; return `${h}h ${m}m`;
@@ -152,6 +143,7 @@ function renderActivities() {
   renderTags();
   renderTimeline();
   renderActivityLog();
+  renderActivityChart();
   updateView();
 }
 
@@ -184,25 +176,21 @@ function renderTags() {
 
   for (const tag of TAG_ORDER) {
     const d = tagData[tag];
-    const meta = getTagColumnMeta(tag);
     const pct = Math.round((d.totalMinutes / totalAll) * 100);
-    const colColor = meta.color;
-    const txtColor = meta.textColor;
-    const accentColor = cardColors[tag]?.light || DEFAULT_TAG_COLORS[tag].light;
     grandTotal += d.count;
 
     html += `<div class="tag-column" data-board-tag="${tag}">
       <div class="tag-column-header">
-        <span class="tag-column-dot" style="background:${colColor}"></span>
-        <span class="tag-column-name" style="color:${txtColor}">${TAG_LABELS[tag]}</span>
+        <span class="tag-column-dot"></span>
+        <span class="tag-column-name">${TAG_LABELS[tag]}</span>
         <span class="tag-column-count">${d.count}</span>
         <button class="btn btn-ghost tag-color-btn" data-tag="${tag}" title="Change card color" style="margin-left:auto;padding:2px;line-height:0">
-          <span class="tag-color-swatch" style="background:${accentColor};display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--border-color)"></span>
+          <span class="tag-color-swatch" style="display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--border-color)"></span>
         </button>
       </div>
       <div class="tag-column-stats">
         <div class="tag-column-stat">
-          <div class="val" style="color:${txtColor}">${formatHrs(d.totalMinutes)}</div>
+          <div class="val">${formatHrs(d.totalMinutes)}</div>
           <div class="lbl">Time</div>
         </div>
         <div class="tag-column-stat">
@@ -211,14 +199,13 @@ function renderTags() {
         </div>
       </div>
       <div class="tag-column-progress">
-        <div class="fill" style="width:${pct}%;background:${txtColor}"></div>
+        <div class="fill" style="width:${pct}%"></div>
       </div>
       <div class="tag-column-tasks" data-tag="${tag}">
         ${d.tasks.length === 0 ? '<div class="tag-column-empty">No tasks</div>' : ''}
         ${d.tasks.map(t => {
           const isComp = t.completed;
-          const accent = txtColor;
-          return `<div class="tag-col-task${isComp ? ' completed' : ''}" data-task-id="${t.id}" style="--tct-accent:${accent}" draggable="true">
+          return `<div class="tag-col-task${isComp ? ' completed' : ''}" data-task-id="${t.id}" data-tag="${t.tag}" draggable="true">
             <button class="tct-delete" data-delete-task="${t.id}" title="Delete task">
               <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -227,7 +214,7 @@ function renderTags() {
               <span class="tct-title-text" data-inline-edit="${t.id}">${escapeHtml(t.title)}</span>
             </div>
             <div class="tct-meta">
-              <span class="tct-tag" style="color:${accent};cursor:pointer" data-switch-tag="${t.id}">${t.tag}</span>
+              <span class="tct-tag" data-switch-tag="${t.id}">${t.tag}</span>
               <span>${t.startTime}-${t.endTime}</span>
             </div>
           </div>`;
@@ -239,6 +226,14 @@ function renderTags() {
       </div>
     </div>`;
   }
+
+  // Add category column
+  html += `<div class="tag-column-add" id="addCategoryCol" title="Add new category">
+    <div class="tag-column-add-inner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>Category</span>
+    </div>
+  </div>`;
 
   boardInner.innerHTML = html;
   if (tagsSummaryTotal) tagsSummaryTotal.textContent = `${grandTotal} tasks across all categories`;
@@ -368,6 +363,90 @@ function renderTags() {
 
   // --- DRAG & DROP EVENT LISTENERS -----------------------------------------
   setupBoardDragDrop();
+
+  // Add category column click
+  const addCol = document.getElementById('addCategoryCol');
+  if (addCol) {
+    addCol.addEventListener('click', () => {
+      openAddCategoryPopup(addCol);
+    });
+  }
+}
+
+// --- ADD CATEGORY POPUP ---------------------------------------------------
+function openAddCategoryPopup(anchorEl) {
+  const existing = document.getElementById('addCatPopup');
+  if (existing) existing.remove();
+
+  const popup = document.createElement('div');
+  popup.id = 'addCatPopup';
+  popup.className = 'add-cat-popup';
+  popup.innerHTML = `
+    <div class="add-cat-popup-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>New Category</span>
+    </div>
+    <div class="add-cat-popup-body">
+      <div class="tf-group">
+        <label class="tf-label">Name</label>
+        <input type="text" id="addCatName" class="form-input" placeholder="e.g. Reading" autocomplete="off" maxlength="30">
+      </div>
+      <div class="tf-group">
+        <label class="tf-label">Color</label>
+        <div class="add-cat-color-row">
+          <input type="color" id="addCatColor" value="#6366f1">
+          <span style="font-size:0.65rem;color:var(--text-tertiary);opacity:0.6">Pick a color</span>
+        </div>
+      </div>
+      <div class="add-cat-actions">
+        <button class="tf-btn tf-btn-ghost" id="addCatCancel">Cancel</button>
+        <button class="tf-btn tf-btn-primary" id="addCatSave">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Add
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(popup);
+
+  requestAnimationFrame(() => {
+    const rect = anchorEl.getBoundingClientRect();
+    const pw = 240, ph = popup.offsetHeight || 280;
+    let left = rect.right - pw;
+    let top = rect.top;
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    if (left < 8) left = 8;
+    if (top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
+    if (top < 8) top = 8;
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+    document.getElementById('addCatName')?.focus();
+  });
+
+  document.getElementById('addCatCancel')?.addEventListener('click', () => popup.remove());
+  document.getElementById('addCatSave')?.addEventListener('click', saveNewCategory);
+  popup.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { popup.remove(); }
+    if (e.key === 'Enter') { e.preventDefault(); saveNewCategory(); }
+  });
+}
+
+function saveNewCategory() {
+  const nameEl = document.getElementById('addCatName');
+  const colorEl = document.getElementById('addCatColor');
+  if (!nameEl || !colorEl) return;
+  const name = nameEl.value.trim();
+  if (!name) {
+    nameEl.focus();
+    nameEl.classList.add('tpl-add-input-error');
+    setTimeout(() => nameEl.classList.remove('tpl-add-input-error'), 2000);
+    return;
+  }
+  const hex = colorEl.value;
+  addCustomTag(name, hex);
+  document.getElementById('addCatPopup')?.remove();
+  renderActivities();
+  showToast(`Category "<strong>${escapeHtml(name)}</strong>" created`, 'success', 2000);
 }
 
 // --- DRAG & DROP BETWEEN COLUMNS -------------------------------------------
@@ -458,8 +537,6 @@ function renderTimeline() {
       <div class="act-timeline-tasks">`;
 
     for (const task of dayTasks) {
-      const meta = TAG_COLORS[task.tag] || TAG_COLORS.meeting;
-      const col = cardColors[task.tag]?.light || DEFAULT_TAG_COLORS[task.tag].light;
       const startM = parseTime(task.startTime);
       const endM = parseTime(task.endTime) || startM + 60;
       const durMins = endM - startM;
@@ -468,9 +545,9 @@ function renderTimeline() {
         : `${durMins}m`;
       const doneCls = task.completed ? ' completed' : '';
 
-      html += `<div class="act-timeline-task${doneCls}" data-task-id="${task.id}">
+      html += `<div class="act-timeline-task${doneCls}" data-task-id="${task.id}" data-tag="${task.tag}">
         <div class="act-tl-check">
-          <span class="tct-check${task.completed ? ' checked' : ''}" data-toggle-complete="${task.id}" style="--tct-accent:${col}"></span>
+          <span class="tct-check${task.completed ? ' checked' : ''}" data-toggle-complete="${task.id}"></span>
         </div>
         <div class="act-timeline-time">
           <span class="act-tl-time-range">${task.startTime}–${task.endTime}</span>
@@ -479,7 +556,7 @@ function renderTimeline() {
         <div class="act-timeline-body">
           <div class="act-tl-title">${escapeHtml(task.title)}</div>
           <div class="act-tl-meta">
-            <span class="act-tl-tag" style="background:color-mix(in srgb, ${col} 18%, transparent);color:${col}">${task.tag}</span>
+            <span class="act-tl-tag" data-tag="${task.tag}">${task.tag}</span>
           </div>
         </div>
         <button class="act-timeline-delete" data-delete-task="${task.id}" title="Delete task">
@@ -562,13 +639,12 @@ function renderActivityLog() {
 
   let html = '';
   for (const entry of log) {
-    const col = cardColors[entry.tag]?.light || DEFAULT_TAG_COLORS[entry.tag]?.light || '#888';
     const date = new Date(entry.completedAt);
     const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
     const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-    html += `<div class="act-log-item" data-task-id="${entry.taskId}">
-      <span class="act-log-item-dot" style="background:${col}"></span>
+    html += `<div class="act-log-item" data-task-id="${entry.taskId}" data-tag="${entry.tag}">
+      <span class="act-log-item-dot"></span>
       <span class="act-log-item-title done">${escapeHtml(entry.title)}</span>
       <span class="act-log-item-time">${dateStr} ${timeStr}</span>
       <button class="act-log-item-undo" data-undo-task="${entry.taskId}" title="Undo completion">
@@ -602,6 +678,93 @@ function switchActivitiesView(view) {
     btn.classList.toggle('active', btn.dataset.view === view);
   });
   updateView();
+}
+
+// --- WEEKLY ACTIVITY CHART (stacked bar by tag) ----------------------------
+function renderActivityChart() {
+  const chart = document.getElementById('activityChart');
+  const totalEl = document.getElementById('actChartTotal');
+  const legendEl = document.getElementById('actChartLegend');
+  if (!chart) return;
+
+  const now = new Date();
+  const weekStart = getMonday(now);
+  const todayStr = formatDate(now);
+  const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const tags = TAG_ORDER;
+
+  const dayData = [];
+  let grandTotal = 0;
+  let maxDayTotal = 0;
+
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(weekStart, i);
+    const ds = formatDate(d);
+    const dayTasks = state.tasks.filter(t => t.date === ds && !isWhiteboardTask(t));
+
+    const tagMins = {};
+    let dayTotal = 0;
+    for (const tag of tags) tagMins[tag] = 0;
+
+    for (const t of dayTasks) {
+      const start = parseTime(t.startTime);
+      const end = parseTime(t.endTime) || start + 60;
+      const dur = Math.max(end - start, 15);
+      if (tagMins[t.tag] !== undefined) {
+        tagMins[t.tag] += dur;
+        dayTotal += dur;
+      }
+    }
+
+    grandTotal += dayTotal;
+    if (dayTotal > maxDayTotal) maxDayTotal = dayTotal;
+
+    dayData.push({ date: ds, isToday: ds === todayStr, total: dayTotal, tagMins });
+  }
+
+  if (maxDayTotal === 0) {
+    chart.innerHTML = '';
+    if (totalEl) totalEl.textContent = 'No tasks this week';
+    if (legendEl) legendEl.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const dd = dayData[i];
+    const todayCls = dd.isToday ? ' today' : '';
+    html += `<div class="act-chart-bar-col${todayCls}">`;
+
+    if (dd.total > 0) {
+      html += `<div class="act-chart-bar" title="${dayLabels[i]}: ${formatDuration(dd.total)}">`;
+      const sortedTags = [...tags].filter(tag => dd.tagMins[tag] > 0);
+      sortedTags.sort((a, b) => dd.tagMins[b] - dd.tagMins[a]);
+      for (const tag of sortedTags) {
+        const pct = (dd.tagMins[tag] / dd.total) * 100;
+        html += `<div class="act-chart-bar-segment" data-tag="${tag}" style="height:${pct}%" title="${TAG_LABELS[tag]}: ${formatDuration(dd.tagMins[tag])}"></div>`;
+      }
+      html += `</div>`;
+    } else {
+      html += `<div class="act-chart-bar-empty"></div>`;
+    }
+
+    html += `<span class="act-chart-bar-label">${dayLabels[i]}</span>`;
+    html += `</div>`;
+  }
+  chart.innerHTML = html;
+
+  if (totalEl) totalEl.textContent = formatDuration(grandTotal) + ' this week';
+
+  let legendHtml = '';
+  for (const tag of tags) {
+    const hasAny = dayData.some(dd => dd.tagMins[tag] > 0);
+    if (!hasAny) continue;
+    legendHtml += `<span class="act-chart-legend-item">
+      <span class="act-chart-legend-dot" data-tag="${tag}"></span>
+      ${TAG_LABELS[tag]}
+    </span>`;
+  }
+  if (legendEl) legendEl.innerHTML = legendHtml;
 }
 
 function updateView() {
