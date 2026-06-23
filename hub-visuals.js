@@ -823,8 +823,8 @@ function renderHubBento() {
         if (!hubEditMode) return;
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
-        // Don't select when clicking remove/duplicate/handle
-        if (e.target.closest('[data-remove-bubble]') || e.target.closest('[data-duplicate-bubble]') || e.target.closest('.bento-bubble-handle') || e.target.closest('.bento-bubble-btn') || e.target.closest('.bento-resize-handle')) return;
+        // Don't select when clicking interactive elements inside the bubble
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-copy-bubble], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], .bento-bubble-handle, .bento-bubble-btn, .bento-resize-handle, .w-add-btn, .hub-edit-item-btn')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -914,7 +914,7 @@ function renderHubBento() {
 
   if (visible.length > 0) {
     var lowest = visible.reduce(function(max, i) { return Math.max(max, i.y + (i.h || 240)); }, 0);
-    grid.style.minHeight = Math.min(Math.max(800, lowest + 160), MAX_CANVAS_HEIGHT) + 'px';
+    grid.style.minHeight = Math.min(Math.max(800, lowest + 480), MAX_CANVAS_HEIGHT) + 'px';
   }
 
   document.querySelectorAll('img[data-image-id]').forEach(el => {
@@ -1224,8 +1224,9 @@ function resetBentoInteractions() {
   // otherwise event listeners get duplicated on each edit toggle.
   _bubbleDragData = null;
   _bubbleResizeData = null;
-  // Clean up dragging class from any stuck bubbles
+  // Clean up dragging and selected classes from any stuck bubbles
   document.querySelectorAll('.bento-bubble.dragging').forEach(function(el) { el.classList.remove('dragging'); });
+  document.querySelectorAll('.bento-bubble.selected').forEach(function(el) { el.classList.remove('selected'); });
 }
 
 function setupBubbleDragDrop() {
@@ -1237,17 +1238,20 @@ function setupBubbleDragDrop() {
   if (!grid) return;
 
   grid.addEventListener('mousedown', function(e) {
-    // Drag can be initiated from the handle, .w-head, .spotify-header, .pomo-header, or .clock-face
-    var dragZone = e.target.closest('.bento-bubble-handle, .w-head, .spotify-header, .pomo-header, .clock-face');
+    // Drag can only be initiated from the 6-dots handle
+    var dragZone = e.target.closest('.bento-bubble-handle');
     if (!dragZone) return;
     // Don't start drag if clicking interactive elements inside the zone
     if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-copy-bubble], [data-duplicate-bubble]')) return;
     const bubble = dragZone.closest('.bento-bubble');
     if (!bubble) return;
+    var gr = grid.getBoundingClientRect();
     _bubbleDragData = {
       bubble,
       offsetX: e.clientX - bubble.getBoundingClientRect().left,
       offsetY: e.clientY - bubble.getBoundingClientRect().top,
+      gridLeft: gr.left,
+      gridTop: gr.top,
       startMouseX: e.clientX,
       startMouseY: e.clientY,
       originalX: parseInt(bubble.style.left) || 0,
@@ -1306,29 +1310,24 @@ function setupBubbleDragDrop() {
       _bubbleDragData.dragLayout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
       _bubbleDragData.bubble.classList.add('dragging');
     }
-    const gridRect = grid.getBoundingClientRect();
-    let newX = e.clientX - _bubbleDragData.offsetX - gridRect.left;
-    let newY = e.clientY - _bubbleDragData.offsetY - gridRect.top;
+    let newX = snap(e.clientX - _bubbleDragData.offsetX - _bubbleDragData.gridLeft);
+    let newY = Math.max(0, snap(e.clientY - _bubbleDragData.offsetY - _bubbleDragData.gridTop));
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
-    // Real-time collision push
     const dragLayout = _bubbleDragData.dragLayout;
     const dragItem = dragLayout.find(i => i.uid === _bubbleDragData.bubble.dataset.bubble);
     if (dragItem) {
       dragItem.x = newX;
       dragItem.y = newY;
+      // Real-time collision push during drag
       resolveBubbleCollisions(dragLayout, undefined, undefined, _bubbleDragData.bubble.dataset.bubble);
-      var g = document.querySelector('.bento-grid');
-      if (g) {
-        dragLayout.forEach(function(it) {
-          if (it.uid === _bubbleDragData.bubble.dataset.bubble) return;
-          var el = g.querySelector('[data-bubble="' + it.uid + '"]');
-          if (el) {
-            el.style.left = it.x + 'px';
-            el.style.top = it.y + 'px';
-          }
-        });
-      }
+      grid.querySelectorAll('.bento-bubble').forEach(function(el) {
+        var it = dragLayout.find(i => i.uid === el.dataset.bubble);
+        if (it && it.uid !== _bubbleDragData.bubble.dataset.bubble) {
+          el.style.left = it.x + 'px';
+          el.style.top = it.y + 'px';
+        }
+      });
       updateAddBtnPosition();
     }
   });
@@ -1376,6 +1375,7 @@ function setupBubbleDragDrop() {
     updateAddBtnPosition();
     _bubbleDragData = null;
     _suppressClick = true;
+    bubble.classList.remove('selected');
     setTimeout(function() { _suppressClick = false; }, 100);
   });
 }
@@ -1513,6 +1513,7 @@ function setupBubbleResize() {
     updateAddBtnPosition();
     resizeTip.style.display = 'none';
     _bubbleResizeData = null;
+    bubble.classList.remove('selected');
     _suppressClick = true;
     setTimeout(function() { _suppressClick = false; }, 100);
   });

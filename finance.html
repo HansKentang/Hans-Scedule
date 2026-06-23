@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Havën">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -25,18 +25,13 @@
     .fin-kpi:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
     .fin-kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
     .fin-kpi.income::before { background: var(--fin-income); }
-    .fin-kpi.income .fin-kpi-icon { background: color-mix(in srgb, var(--fin-income) 12%, transparent); color: var(--fin-income); }
     .fin-kpi.income .fin-kpi-value { color: var(--fin-income); }
     .fin-kpi.expense::before { background: var(--fin-expense); }
-    .fin-kpi.expense .fin-kpi-icon { background: color-mix(in srgb, var(--fin-expense) 12%, transparent); color: var(--fin-expense); }
     .fin-kpi.expense .fin-kpi-value { color: var(--fin-expense); }
     .fin-kpi.net::before { background: var(--fin-accent); }
-    .fin-kpi.net .fin-kpi-icon { background: color-mix(in srgb, var(--fin-accent) 12%, transparent); color: var(--fin-accent); }
     .fin-kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
-    .fin-kpi-icon { width: 32px; height: 32px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .fin-kpi-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
     .fin-kpi-value { font-size: 1.8rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-    .fin-kpi-sub { font-size: 0.7rem; color: var(--text-tertiary); margin-top: var(--space-1); }
 
     .fin-toolbar { display:flex; align-items:center; justify-content:space-between; gap: var(--space-3); margin-bottom: var(--space-4); flex-wrap: wrap; }
     .fin-toolbar-left { display: flex; align-items: center; gap: var(--space-2); }
@@ -49,10 +44,7 @@
     .fin-export-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); padding: 0; }
     .fin-export-btn:hover { background: var(--accent-soft); color: var(--text-primary); }
     .fin-export-btn svg { width: 16px; height: 16px; }
-    .fin-kpi-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 0.65rem; font-weight: 700; padding: 2px 6px; border-radius: 999px; }
-    .fin-kpi-delta.up { color: var(--fin-income); background: color-mix(in srgb, var(--fin-income) 10%, transparent); }
-    .fin-kpi-delta.down { color: var(--fin-expense); background: color-mix(in srgb, var(--fin-expense) 10%, transparent); }
-    .fin-kpi-delta.neutral { color: var(--text-tertiary); background: var(--bg-secondary); }
+
 
     .fin-panels { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space-4); margin-bottom: var(--space-6); }
     @media (max-width: 900px) { .fin-panels { grid-template-columns: 1fr; } .fin-kpi-row { grid-template-columns: 1fr; } }
@@ -119,8 +111,6 @@
     .fin-empty svg { opacity: 0.15; width: 32px; height: 32px; }
     .fin-empty p { font-size: 0.8rem; margin: 0; }
     .fin-empty .sub { font-size: 0.68rem; opacity: 0.6; }
-    .fin-tip { font-size: 0.7rem; color: var(--text-tertiary); margin-top: var(--space-3); line-height: 1.4; }
-
     .fin-hero-decor { position: absolute; right: 10px; top: 10px; width: 120px; height: 120px; opacity: 0.12; pointer-events: none; }
     .fin-hero-decor svg { width: 100%; height: 100%; }
 
@@ -136,11 +126,6 @@
     .fin-wallet-card:hover { border-color: #a28d6b; box-shadow: 0 4px 24px rgba(162,141,107,0.12); }
 
     .fin-piggy-header, .fin-wallet-header { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-4); }
-    .fin-piggy-icon, .fin-wallet-icon {
-      width: 72px; height: 72px; flex-shrink: 0; position: relative;
-      display: flex; align-items: center; justify-content: center;
-    }
-
     .fin-piggy-label, .fin-wallet-label {
       font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
       color: var(--text-tertiary); margin-bottom: 2px;
@@ -151,8 +136,6 @@
     }
     .fin-piggy-balance { color: #fbbf24; }
     .fin-wallet-balance { color: #c4a882; }
-    .fin-piggy-balance.pop, .fin-wallet-balance.pop { transform: scale(1.08); }
-
     .fin-piggy-actions, .fin-wallet-actions { display: flex; gap: var(--space-2); align-items: center; }
     .fin-piggy-input, .fin-wallet-input {
       flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px;
@@ -177,61 +160,7 @@
     .fin-wallet-btn.sub:hover { border-color: var(--text-primary); color: var(--text-primary); }
     .fin-piggy-btn:active, .fin-wallet-btn:active { transform: scale(0.95); }
 
-    /* ─── PIGGY BANK SVG ────────────────────────────────── */
-    .piggy-svg { width: 72px; height: 72px; overflow: visible; }
-    .piggy-svg .piggy-body { fill: url(#piggyGrad); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .piggy-svg.jiggle .piggy-body { animation: piggyJiggle 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    @keyframes piggyJiggle {
-      0% { transform: translateX(0); }
-      15% { transform: translateX(-4px) rotate(-3deg); }
-      30% { transform: translateX(4px) rotate(3deg); }
-      45% { transform: translateX(-3px) rotate(-2deg); }
-      60% { transform: translateX(3px) rotate(2deg); }
-      80% { transform: translateX(-1px) rotate(-1deg); }
-      100% { transform: translateX(0) rotate(0); }
-    }
-    .piggy-svg .piggy-eye { fill: #292524; }
-    .piggy-svg .piggy-snout { fill: #fbbf24; stroke: #d97706; stroke-width: 1.5; }
-    .piggy-svg .piggy-ear { fill: #fbbf24; stroke: #d97706; stroke-width: 1.2; }
-    .piggy-svg .piggy-leg { fill: #fbbf24; }
-    .piggy-svg .piggy-tail { fill: none; stroke: #d97706; stroke-width: 2; stroke-linecap: round; }
-    .piggy-svg .piggy-slot { fill: #292524; }
-    .piggy-svg .piggy-coin-in { fill: #fde047; stroke: #d97706; stroke-width: 1; }
 
-    /* ─── WALLET SVG ────────────────────────────────────── */
-    .wallet-svg { width: 72px; height: 72px; }
-    .wallet-svg .wallet-body { fill: #a28d6b; rx: 8; transition: transform 0.3s ease; }
-    .wallet-svg .wallet-flap { fill: #8a7456; rx: 6; }
-    .wallet-svg .wallet-stitch { fill: none; stroke: #6b5a3e; stroke-width: 1; stroke-dasharray: 3,3; }
-    .wallet-svg .wallet-card { fill: #d4d4d8; rx: 3; }
-    .wallet-svg .wallet-coin { fill: #fde047; stroke: #d97706; stroke-width: 1; }
-
-    /* ─── COIN ANIMATION ─────────────────────────────────── */
-    .fin-coin-particle {
-      position: fixed; z-index: 999; width: 20px; height: 20px;
-      border-radius: 50%; background: linear-gradient(135deg, #fde047, #f59e0b);
-      border: 2px solid #d97706; pointer-events: none;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 800; color: #d97706;
-      box-shadow: 0 2px 8px rgba(251,191,36,0.4);
-      animation: coinFly 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    }
-    @keyframes coinFly {
-      0% { transform: translate(0,0) scale(1) rotate(0deg); opacity: 1; }
-      50% { transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(180deg); opacity: 1; }
-      100% { transform: translate(var(--dx-end, var(--dx)), var(--dy-end, var(--dy))) scale(0.3) rotate(360deg); opacity: 0; }
-    }
-
-    /* ─── SPARKLE OVERLAY ───────────────────────────────── */
-    .fin-sparkle {
-      position: absolute; pointer-events: none; font-size: 1.2rem;
-      animation: sparkleFloat 0.8s ease-out forwards;
-      z-index: 5;
-    }
-    @keyframes sparkleFloat {
-      0% { transform: translateY(0) scale(0.5); opacity: 1; }
-      100% { transform: translateY(-60px) scale(1.2); opacity: 0; }
-    }
 
     /* ─── ADVANCED CHARTS ──────────────────────────────── */
     .fin-adv-section { margin-bottom: var(--space-6); }
@@ -573,102 +502,29 @@
 
       <div class="hub-content hub-page-transition">
 
-        <!-- Page Header -->
-        <div class="hub-page-header hub-anim-in hub-anim-in-2">
-          <div class="hub-page-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
-            </svg>
-          </div>
-          <h1 class="hub-page-title">Finance</h1>
-          <div class="hub-page-meta">
-            <span style="font-size:0.72rem;color:var(--text-tertiary)" id="finPageMeta">Track your spending</span>
-          </div>
-        </div>
-
-        <!-- KPI Cards -->
-        <div class="fin-kpi-row hub-anim-in hub-anim-in-3">
+        <div class="fin-kpi-row hub-anim-in hub-anim-in-2">
           <div class="fin-kpi income">
-            <div class="fin-kpi-header">
-              <span class="fin-kpi-label">Income</span>
-              <span class="fin-kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>
-            </div>
+            <div class="fin-kpi-label">Income</div>
             <div class="fin-kpi-value" id="finIncome">—</div>
-            <div class="fin-kpi-sub" id="finIncomeDelta">This period <span id="finIncomeDeltaKpi"></span></div>
           </div>
           <div class="fin-kpi expense">
-            <div class="fin-kpi-header">
-              <span class="fin-kpi-label">Expenses</span>
-              <span class="fin-kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></span>
-            </div>
+            <div class="fin-kpi-label">Expenses</div>
             <div class="fin-kpi-value" id="finExpenses">—</div>
-            <div class="fin-kpi-sub" id="finExpensesDelta">— <span id="finExpensesDeltaKpi"></span></div>
           </div>
           <div class="fin-kpi net">
-            <div class="fin-kpi-header">
-              <span class="fin-kpi-label">Savings</span>
-              <span class="fin-kpi-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
-            </div>
+            <div class="fin-kpi-label">Savings</div>
             <div class="fin-kpi-value" id="finNet">—</div>
-            <div class="fin-kpi-sub" id="finNetNote">Based on current filters <span id="finNetDeltaKpi"></span></div>
           </div>
         </div>
 
         <!-- ─── PIGGY BANK & WALLET ───────────────────── -->
         <div class="fin-savings-row hub-anim-in hub-anim-in-4">
 
-          <!-- Piggy Bank -->
           <div class="fin-piggy-card">
             <div class="fin-piggy-header">
-              <div class="fin-piggy-icon" id="piggyIcon">
-                <svg class="piggy-svg" id="piggySvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <linearGradient id="piggyGrad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stop-color="#fde047"/>
-                      <stop offset="50%" stop-color="#fbbf24"/>
-                      <stop offset="100%" stop-color="#f59e0b"/>
-                    </linearGradient>
-                    <linearGradient id="piggyShine" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
-                      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
-                    </linearGradient>
-                  </defs>
-                  <!-- Tail -->
-                  <path class="piggy-tail" d="M68 40 Q78 30 76 22 Q74 16 70 18"/>
-                  <!-- Coin slot -->
-                  <rect class="piggy-slot" x="42" y="12" width="16" height="4" rx="2"/>
-                  <!-- Ears -->
-                  <ellipse class="piggy-ear" cx="32" cy="16" rx="6" ry="8" transform="rotate(-15 32 16)"/>
-                  <ellipse class="piggy-ear" cx="62" cy="16" rx="6" ry="8" transform="rotate(15 62 16)"/>
-                  <!-- Body -->
-                  <ellipse class="piggy-body" cx="48" cy="52" rx="32" ry="26"/>
-                  <!-- Shine -->
-                  <ellipse cx="36" cy="40" rx="12" ry="10" fill="url(#piggyShine)"/>
-                  <!-- Eyes -->
-                  <circle class="piggy-eye" cx="34" cy="46" r="3.5"/>
-                  <circle class="piggy-eye" cx="58" cy="46" r="3.5"/>
-                  <!-- Eye shine -->
-                  <circle cx="35" cy="44.5" r="1.2" fill="#fff"/>
-                  <circle cx="59" cy="44.5" r="1.2" fill="#fff"/>
-                  <!-- Snout -->
-                  <ellipse class="piggy-snout" cx="46" cy="58" rx="12" ry="8"/>
-                  <!-- Nostrils -->
-                  <circle cx="42" cy="58" r="2" fill="#d97706" opacity="0.6"/>
-                  <circle cx="50" cy="58" r="2" fill="#d97706" opacity="0.6"/>
-                  <!-- Smile -->
-                  <path d="M38 62 Q46 68 54 62" fill="none" stroke="#d97706" stroke-width="1.2" stroke-linecap="round"/>
-                  <!-- Legs -->
-                  <rect class="piggy-leg" x="26" y="72" width="10" height="8" rx="3"/>
-                  <rect class="piggy-leg" x="38" y="72" width="10" height="8" rx="3"/>
-                  <rect class="piggy-leg" x="50" y="72" width="10" height="8" rx="3"/>
-                  <rect class="piggy-leg" x="62" y="72" width="10" height="8" rx="3"/>
-                  <!-- Coin in slot -->
-                  <circle class="piggy-coin-in" cx="50" cy="10" r="4" opacity="0.8"/>
-                  <text x="50" y="13" text-anchor="middle" font-size="5" font-weight="700" fill="#d97706" opacity="0.8">$</text>
-                </svg>
-              </div>
+              <span style="font-size:2rem;line-height:1">🐷</span>
               <div>
-                <div class="fin-piggy-label">🐷 Piggy Bank</div>
+                <div class="fin-piggy-label">Piggy Bank</div>
                 <div class="fin-piggy-balance" id="piggyBalance">Rp 0</div>
               </div>
             </div>
@@ -679,35 +535,11 @@
             </div>
           </div>
 
-          <!-- Wallet -->
           <div class="fin-wallet-card">
             <div class="fin-wallet-header">
-              <div class="fin-wallet-icon">
-                <svg class="wallet-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Wallet outer -->
-                  <rect class="wallet-body" x="8" y="20" width="84" height="60" rx="10" stroke="#8a7456" stroke-width="1.5"/>
-                  <!-- Flap -->
-                  <path class="wallet-flap" d="M18 30 L50 18 L82 30 L82 48 L18 48 Z"/>
-                  <!-- Stitching -->
-                  <rect class="wallet-stitch" x="12" y="24" width="76" height="52" rx="8"/>
-                  <!-- Cards -->
-                  <rect class="wallet-card" x="22" y="34" width="56" height="12" rx="3"/>
-                  <rect class="wallet-card" x="22" y="44" width="52" height="12" rx="3" opacity="0.7"/>
-                  <rect class="wallet-card" x="22" y="54" width="48" height="12" rx="3" opacity="0.5"/>
-                  <!-- Chip on first card -->
-                  <rect x="30" y="38" width="10" height="6" rx="1" fill="#fbbf24" opacity="0.6"/>
-                  <!-- Deco lines on cards -->
-                  <line x1="46" y1="39" x2="70" y2="39" stroke="#a1a1aa" stroke-width="1.5" stroke-linecap="round"/>
-                  <line x1="46" y1="43" x2="64" y2="43" stroke="#a1a1aa" stroke-width="1" stroke-linecap="round"/>
-                  <!-- Coin peeking out -->
-                  <circle class="wallet-coin" cx="82" cy="68" r="7"/>
-                  <text x="82" y="71" text-anchor="middle" font-size="6" font-weight="700" fill="#d97706">$</text>
-                  <!-- Dollar sign on flap -->
-                  <text x="50" y="40" text-anchor="middle" font-size="10" font-weight="700" fill="#6b5a3e" opacity="0.15">$</text>
-                </svg>
-              </div>
+              <span style="font-size:2rem;line-height:1">👛</span>
               <div>
-                <div class="fin-wallet-label">👛 Wallet</div>
+                <div class="fin-wallet-label">Wallet</div>
                 <div class="fin-wallet-balance" id="walletBalance">Rp 0</div>
               </div>
             </div>
@@ -794,7 +626,7 @@
               <button class="fin-btn secondary hidden" id="finCancelEditBtn">Cancel</button>
               <button class="fin-btn secondary" id="finClearBtn">Clear all data</button>
             </div>
-            <div class="fin-tip">Tip: use consistent categories to unlock better monthly insights.</div>
+
           </div>
         </div>
 
@@ -867,7 +699,6 @@
       return 'Rp ' + Math.round(num).toLocaleString('id-ID');
     }
     function fmtPct(n) { return (Number(n) || 0).toFixed(1) + '%'; }
-    function fmtDelta(n) { if (!Number.isFinite(n)) return '—'; const sign = n > 0 ? '+' : ''; return sign + fmtMoney(n); }
     function escapeHtml(str) { return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
     function dayKey(d) { return new Date(d).toISOString().slice(0,10); }
     function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
@@ -924,34 +755,14 @@
 
     function renderCards() {
       const s = getSummary();
-      const prev = getPrevSummary();
       set('finHeroTitle', s.rate === -999 ? 'No income data' : `${fmtPct(s.rate)} savings rate`);
       set('finIncome', fmtMoney(s.income));
       set('finExpenses', fmtMoney(s.expenses));
-      set('finPageMeta', s.income || s.expenses ? 'Track your spending' : 'No transactions yet');
       const netEl = document.getElementById('finNet');
       if (netEl) {
         netEl.textContent = s.rate === -999 ? '—' : fmtPct(s.rate);
         netEl.style.color = s.rate >= 0 ? 'inherit' : '#ef4444';
       }
-      set('finIncomeDelta', (currentRange === 'month' ? 'This month' : 'Selected range') + ' ');
-      set('finExpensesDelta', fmtDelta(s.expenses) + ' ');
-      set('finNetNote', (s.income || s.expenses ? 'Based on current filters' : 'No data') + ' ');
-
-      const renderDelta = (id, curr, prevVal) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        if (prevVal === 0 && curr === 0) { el.innerHTML = ''; return; }
-        let dp;
-        if (prevVal === 0) dp = curr > 0 ? 100 : -100;
-        else dp = ((curr - prevVal) / prevVal) * 100;
-        const cls = dp > 0.01 ? 'up' : dp < -0.01 ? 'down' : 'neutral';
-        const sign = dp > 0.01 ? '\u25B2' : dp < -0.01 ? '\u25BC' : '\u2014';
-        el.innerHTML = `<span class="fin-kpi-delta ${cls}">${sign} ${Math.abs(dp).toFixed(1)}%</span>`;
-      };
-      renderDelta('finIncomeDeltaKpi', s.income, prev.income);
-      renderDelta('finExpensesDeltaKpi', s.expenses, prev.expenses);
-      renderDelta('finNetDeltaKpi', s.net, prev.net);
     }
 
     function renderCount() {
@@ -1177,62 +988,7 @@
         el.src = getImage(el.dataset.imageId) || '';
       });
       renderAll();
-
-    }
-
-    // ─── AUDIO CONTEXT (lazy) ─────────────────────────────
-    let _audioCtx = null;
-    function getAudioCtx() {
-      if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (_audioCtx.state === 'suspended') _audioCtx.resume();
-      return _audioCtx;
-    }
-
-    // ─── PLAY "CHING" SOUND ───────────────────────────────
-    function playChingSound() {
-      try {
-        const ctx = getAudioCtx();
-        const now = ctx.currentTime;
-
-        // Main tone ~880Hz (A5) — bell-like
-        const osc1 = ctx.createOscillator();
-        const gain1 = ctx.createGain();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(880, now);
-        osc1.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
-        gain1.gain.setValueAtTime(0.3, now);
-        gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-        osc1.connect(gain1);
-        gain1.connect(ctx.destination);
-        osc1.start(now);
-        osc1.stop(now + 0.5);
-
-        // Harmonic ~1760Hz (A6) — sparkle
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(1760, now);
-        gain2.gain.setValueAtTime(0.12, now);
-        gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        osc2.start(now);
-        osc2.stop(now + 0.35);
-
-        // Third overtone ~2640Hz (E7) — extra shimmer
-        const osc3 = ctx.createOscillator();
-        const gain3 = ctx.createGain();
-        osc3.type = 'sine';
-        osc3.frequency.setValueAtTime(2640, now);
-        gain3.gain.setValueAtTime(0.05, now);
-        gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-        osc3.connect(gain3);
-        gain3.connect(ctx.destination);
-        osc3.start(now);
-        osc3.stop(now + 0.25);
-      } catch (e) {
-        // Audio not available, silently ignore
-      }
+      initSavings();
     }
 
     // ─── PIGGY BANK & WALLET ────────────────────────────────
@@ -1251,112 +1007,20 @@
     function saveWallet(val) {
       try { localStorage.setItem(WALLET_KEY, JSON.stringify(val)); } catch (e) { /* ignore */ }
     }
-
     function renderPiggy() {
-      const bal = loadPiggy();
       const el = document.getElementById('piggyBalance');
-      if (el) el.textContent = fmtMoney(bal);
+      if (el) el.textContent = fmtMoney(loadPiggy());
     }
     function renderWallet() {
-      const bal = loadWallet();
       const el = document.getElementById('walletBalance');
-      if (el) el.textContent = fmtMoney(bal);
+      if (el) el.textContent = fmtMoney(loadWallet());
     }
-
-    function piggyPop() {
-      const el = document.getElementById('piggyBalance');
-      if (!el) return;
-      el.classList.remove('pop');
-      void el.offsetWidth;
-      el.classList.add('pop');
-      setTimeout(function() { el.classList.remove('pop'); }, 400);
-    }
-    function walletPop() {
-      const el = document.getElementById('walletBalance');
-      if (!el) return;
-      el.classList.remove('pop');
-      void el.offsetWidth;
-      el.classList.add('pop');
-      setTimeout(function() { el.classList.remove('pop'); }, 400);
-    }
-
-    // ─── COIN FLY ANIMATION ────────────────────────────────
-    function spawnCoinParticles(originBtn, targetId, count) {
-      count = count || 3;
-      const target = document.getElementById(targetId);
-      if (!target || !originBtn) return;
-      const btnRect = originBtn.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const cx = btnRect.left + btnRect.width / 2;
-      const cy = btnRect.top;
-      const tx = targetRect.left + targetRect.width / 2;
-      const ty = targetRect.top + targetRect.height / 2;
-
-      for (let i = 0; i < count; i++) {
-        const coin = document.createElement('div');
-        coin.className = 'fin-coin-particle';
-        coin.textContent = 'R';
-        coin.style.left = (cx + (Math.random() - 0.5) * 20) + 'px';
-        coin.style.top = (cy + (Math.random() - 0.5) * 10) + 'px';
-        // Randomize flight path
-        const midX = (cx + tx) / 2 + (Math.random() - 0.5) * 80;
-        const midY = (cy + ty) / 2 - 60 - Math.random() * 40;
-        const dx = midX - (cx + (Math.random() - 0.5) * 20);
-        const dy = midY - (cy + (Math.random() - 0.5) * 10);
-        const dxEnd = tx - (cx + (Math.random() - 0.5) * 20);
-        const dyEnd = ty - (cy + (Math.random() - 0.5) * 10);
-        coin.style.setProperty('--dx', dx + 'px');
-        coin.style.setProperty('--dy', dy + 'px');
-        coin.style.setProperty('--dx-end', dxEnd + 'px');
-        coin.style.setProperty('--dy-end', dyEnd + 'px');
-        coin.style.animationDuration = (0.5 + Math.random() * 0.3) + 's';
-        coin.style.animationDelay = (i * 0.08) + 's';
-        document.body.appendChild(coin);
-        coin.addEventListener('animationend', function() { coin.remove(); });
-      }
-    }
-
-    // ─── SPARKLE TEXT OVERLAY ──────────────────────────────
-    function spawnSparkle(parent, amount, type) {
-      if (!parent) return;
-      const emojis = type === 'save' ? ['✨','🪙','💰','🌟'] : ['💸','🪙','💵'];
-      for (let i = 0; i < 3; i++) {
-        const sp = document.createElement('div');
-        sp.className = 'fin-sparkle';
-        sp.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-        sp.style.left = (20 + Math.random() * 60) + '%';
-        sp.style.top = (30 + Math.random() * 40) + '%';
-        sp.style.animationDelay = (i * 0.12) + 's';
-        parent.appendChild(sp);
-        sp.addEventListener('animationend', function() { sp.remove(); });
-      }
-    }
-
-    // ─── PIGGY SHAKE ───────────────────────────────────────
-    function jigglePiggy() {
-      const svg = document.getElementById('piggySvg');
-      if (!svg) return;
-      svg.classList.remove('jiggle');
-      void svg.offsetWidth;
-      svg.classList.add('jiggle');
-      setTimeout(function() { svg.classList.remove('jiggle'); }, 600);
-    }
-
-    // ─── HANDLE PIGGY ADD/SUBTRACT ─────────────────────────
     function handlePiggyAdd() {
       const input = document.getElementById('piggyInput');
       const amt = parseInt(input?.value) || 0;
       if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
-      let bal = loadPiggy();
-      bal += amt;
-      savePiggy(bal);
-      input.value = '';
-      renderPiggy();
-      piggyPop();
-      jigglePiggy();
-      playChingSound();
-      spawnCoinParticles(document.getElementById('piggyAddBtn'), 'piggyIcon', 4);
-      spawnSparkle(document.querySelector('.fin-piggy-card'), amt, 'save');
+      savePiggy(loadPiggy() + amt);
+      input.value = ''; renderPiggy();
     }
     function handlePiggySub() {
       const input = document.getElementById('piggyInput');
@@ -1364,26 +1028,15 @@
       if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
       let bal = loadPiggy();
       if (amt > bal) { showToast('Not enough savings!', 'info', 2000); return; }
-      bal -= amt;
-      savePiggy(bal);
-      input.value = '';
-      renderPiggy();
-      piggyPop();
-      jigglePiggy();
-      spawnSparkle(document.querySelector('.fin-piggy-card'), amt, 'spend');
+      savePiggy(bal - amt);
+      input.value = ''; renderPiggy();
     }
-
-    // ─── HANDLE WALLET ADD/SUBTRACT ────────────────────────
     function handleWalletAdd() {
       const input = document.getElementById('walletInput');
       const amt = parseInt(input?.value) || 0;
       if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
-      let bal = loadWallet();
-      bal += amt;
-      saveWallet(bal);
-      input.value = '';
-      renderWallet();
-      walletPop();
+      saveWallet(loadWallet() + amt);
+      input.value = ''; renderWallet();
     }
     function handleWalletSub() {
       const input = document.getElementById('walletInput');
@@ -1391,36 +1044,18 @@
       if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
       let bal = loadWallet();
       if (amt > bal) { showToast('Not enough cash in wallet!', 'info', 2000); return; }
-      bal -= amt;
-      saveWallet(bal);
-      input.value = '';
-      renderWallet();
-      walletPop();
+      saveWallet(bal - amt);
+      input.value = ''; renderWallet();
     }
-
-    // ─── INIT PIGGY & WALLET ────────────────────────────────
     function initSavings() {
-      renderPiggy();
-      renderWallet();
+      renderPiggy(); renderWallet();
       document.getElementById('piggyAddBtn')?.addEventListener('click', handlePiggyAdd);
       document.getElementById('piggySubBtn')?.addEventListener('click', handlePiggySub);
       document.getElementById('walletAddBtn')?.addEventListener('click', handleWalletAdd);
       document.getElementById('walletSubBtn')?.addEventListener('click', handleWalletSub);
-      // Enter key support
-      document.getElementById('piggyInput')?.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') handlePiggyAdd();
-      });
-      document.getElementById('walletInput')?.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') handleWalletAdd();
-      });
+      document.getElementById('piggyInput')?.addEventListener('keydown', function(e) { if (e.key === 'Enter') handlePiggyAdd(); });
+      document.getElementById('walletInput')?.addEventListener('keydown', function(e) { if (e.key === 'Enter') handleWalletAdd(); });
     }
-
-    // ─── EXTENDED INIT ──────────────────────────────────────
-    var origInit = init;
-    init = function() {
-      if (typeof origInit === 'function') origInit();
-      initSavings();
-    };
 
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
   </script>
