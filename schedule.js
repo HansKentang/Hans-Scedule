@@ -698,13 +698,13 @@ function startDrag(e, source) {
     }
   }
 
-  // If dragging a quick-add pill, store tag
-  const pill = source.closest('.sch-quickadd-pill');
-  if (pill && pill.dataset.tag) {
+  // If dragging a template pill (or category pill), use its tag/duration/title
+  const tplPill = source.closest('.template-pill');
+  if (tplPill && tplPill.dataset.tag && !tplPill.closest('[data-delete-template]')) {
     gridDrag.type = 'quickadd';
-    gridDrag.tag = pill.dataset.tag;
-    gridDrag.duration = 60; // default 1 hour
-    ghost.innerHTML = `New Task`;
+    gridDrag.tag = tplPill.dataset.tag;
+    gridDrag.duration = parseInt(tplPill.dataset.duration) || 60;
+    ghost.innerHTML = tplPill.dataset.templateTitle || QUICK_ADD_TITLES[tplPill.dataset.tag] || 'New Task';
   }
 
   // If dragging a whiteboard item
@@ -1745,8 +1745,46 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
   // Init priority select
   initPrioritySelect();
 
-  // Render templates
+  // Render combined templates/drag bar
   renderSchTemplates();
+
+  // Template add popup bindings
+  document.getElementById('tplAddBtn')?.addEventListener('click', openAddTemplatePopup);
+  document.getElementById('tplAddPopupClose')?.addEventListener('click', closeAddTemplatePopup);
+  document.getElementById('tplAddCancel')?.addEventListener('click', closeAddTemplatePopup);
+  document.getElementById('tplAddSave')?.addEventListener('click', saveAddTemplate);
+  
+  // Template add popup - tag pills
+  document.querySelectorAll('#tplAddTagPills .tf-tag').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('#tplAddTagPills .tf-tag').forEach(b => b.classList.remove('active'));
+      pill.classList.add('active');
+    });
+  });
+  
+  // Template add popup - duration buttons
+  document.querySelectorAll('.tpl-add-dur').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tpl-add-dur').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  
+  // Template add popup close on Escape, Enter, and outside click
+  document.getElementById('tplAddPopup')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAddTemplatePopup();
+    if (e.key === 'Enter' && e.target.closest('.tpl-add-popup-body')) saveAddTemplate();
+  });
+  document.addEventListener('click', (e) => {
+    const popup = document.getElementById('tplAddPopup');
+    if (!popup || popup.classList.contains('hidden')) return;
+    if (!popup.contains(e.target) && !e.target.closest('#tplAddBtn')) {
+      closeAddTemplatePopup();
+    }
+  });
+  
+  // Save as template button in task modal
+  document.getElementById('taskSaveAsTemplateBtn')?.addEventListener('click', saveCurrentTaskAsTemplate);
 
   // Load focus mode
   loadFocusMode();
@@ -1762,8 +1800,8 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
     }
   });
 
-  // Quick add + whiteboard drag — unified via startDrag
-  document.querySelectorAll('.sch-quickadd-pill, .whiteboard-item, .sch-whiteboard-item').forEach(el => {
+  // Whiteboard drag — unified via startDrag (pills are handled dynamically in renderSchTemplates)
+  document.querySelectorAll('.whiteboard-item, .sch-whiteboard-item').forEach(el => {
     el.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || e.target.closest('.w-delete, .w-del')) return;
       startDrag(e, el);
@@ -1810,36 +1848,213 @@ function toggleAccessHub() {
   }
 }
 
-// ─── RENDER TEMPLATES ──────────────────────────────────────
+// ─── RENDER UNIFIED PILL BAR ──────────────────────────────
 function renderSchTemplates() {
   const container = document.getElementById('schTemplatePills');
   if (!container) return;
   const templates = loadTemplates();
   let html = '';
+
+  // Render saved templates
   for (const tpl of templates) {
     const c = TAG_COLORS[tpl.tag] || TAG_COLORS.meeting;
-    html += `<button class="template-pill" data-template-id="${tpl.id}" title="${escapeHtml(tpl.title)} · ${formatDuration(tpl.duration)}"
+    html += `<button class="template-pill" data-template-id="${tpl.id}"
+      data-tag="${tpl.tag}" data-duration="${tpl.duration}" data-template-title="${escapeHtml(tpl.title)}"
+      title="${escapeHtml(tpl.title)} · ${formatDuration(tpl.duration)}"
       style="--tpl-accent:${c.text};--tpl-bg:${c.bg}">
       <span class="tpl-dot" style="background:${c.text}"></span>
       ${escapeHtml(tpl.name)}
+      <span class="tpl-delete" data-delete-template="${tpl.id}" title="Delete template">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </span>
     </button>`;
   }
+
+  // Render category pills (always present) — same visual style as templates
+  const categories = [
+    { tag: 'deep-work', label: 'Deep Work' },
+    { tag: 'meeting', label: 'Meeting' },
+    { tag: 'exercise', label: 'Exercise' },
+    { tag: 'study', label: 'Study' },
+    { tag: 'hobby', label: 'Hobby' },
+  ];
+  for (const cat of categories) {
+    const c = TAG_COLORS[cat.tag] || TAG_COLORS.meeting;
+    html += `<button class="template-pill category-pill" data-tag="${cat.tag}"
+      title="Click to create and edit, or drag to calendar"
+      style="--tpl-accent:${c.text};--tpl-bg:${c.bg}">
+      <span class="tpl-dot" style="background:${c.text}"></span>
+      ${cat.label}
+    </button>`;
+  }
+
   container.innerHTML = html;
+
+  // Attach handlers to template pills (and category pills): click + drag + delete
   container.querySelectorAll('.template-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
+    // Click — open cmd palette (template title or default title for categories)
+    pill.addEventListener('click', (e) => {
+      if (e.target.closest('[data-delete-template]')) return;
       const id = pill.dataset.templateId;
-      const templates = loadTemplates();
-      const tpl = templates.find(t => t.id === id);
-      if (tpl) {
-        // Show command palette prefilled
+      if (id) {
+        const templates = loadTemplates();
+        const tpl = templates.find(t => t.id === id);
+        if (tpl) {
+          showCmdPalette();
+          if (dom.cmdInput) {
+            dom.cmdInput.value = tpl.title;
+            dom.cmdInput.focus();
+          }
+          return;
+        }
+      }
+      // Category pill fallback
+      const tag = pill.dataset.tag;
+      if (tag) {
+        const title = QUICK_ADD_TITLES[tag] || 'New Task';
         showCmdPalette();
         if (dom.cmdInput) {
-          dom.cmdInput.value = tpl.title;
+          dom.cmdInput.value = title;
           dom.cmdInput.focus();
         }
       }
     });
+    // Delete (only for template pills that have a delete button)
+    const delBtn = pill.querySelector('[data-delete-template]');
+    if (delBtn) {
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = delBtn.dataset.deleteTemplate;
+        if (confirm(`Delete template "${pill.textContent.replace(/\s+/g, ' ').trim()}"?`)) {
+          deleteTemplate(id);
+        }
+      });
+    }
+    // Drag to calendar
+    pill.addEventListener('mousedown', (e) => {
+      if (e.button !== 0 || e.target.closest('[data-delete-template]')) return;
+      startDrag(e, pill);
+    });
   });
+}
+
+// ─── TEMPLATE MANAGEMENT ────────────────────────────────────
+function deleteTemplate(id) {
+  let templates = loadTemplates();
+  templates = templates.filter(t => t.id !== id);
+  saveTemplates(templates);
+  renderSchTemplates();
+  showToast('Template deleted', 'info', 2000);
+}
+
+function openAddTemplatePopup() {
+  closeQuickTpl();
+  closeQuickIdea();
+  const popup = document.getElementById('tplAddPopup');
+  if (!popup) return;
+  // Reset form
+  document.getElementById('tplAddName').value = '';
+  document.getElementById('tplAddTitle').value = '';
+  // Reset tag pills
+  document.querySelectorAll('#tplAddTagPills .tf-tag').forEach(b => b.classList.remove('active'));
+  document.querySelector('#tplAddTagPills .tf-tag[data-tag="deep-work"]')?.classList.add('active');
+  // Reset duration
+  document.querySelectorAll('.tpl-add-dur').forEach(b => b.classList.remove('active'));
+  document.querySelector('.tpl-add-dur[data-minutes="60"]')?.classList.add('active');
+  
+  popup.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    // Position near the templates bar
+    const btn = document.getElementById('tplAddBtn');
+    if (btn) {
+      const rect = btn.getBoundingClientRect();
+      popup.style.left = Math.max(8, Math.min(rect.left - 140, window.innerWidth - 308)) + 'px';
+      popup.style.top = (rect.bottom + 4) + 'px';
+    }
+    document.getElementById('tplAddName')?.focus();
+  });
+}
+
+function closeAddTemplatePopup() {
+  const popup = document.getElementById('tplAddPopup');
+  if (popup) popup.classList.add('hidden');
+}
+
+function saveAddTemplate() {
+  const nameEl = document.getElementById('tplAddName');
+  const titleEl = document.getElementById('tplAddTitle');
+  if (!nameEl || !titleEl) return;
+  
+  const name = nameEl.value.trim();
+  const title = titleEl.value.trim() || name;
+  if (!name) {
+    nameEl.focus();
+    nameEl.classList.add('tpl-add-input-error');
+    setTimeout(() => nameEl.classList.remove('tpl-add-input-error'), 2000);
+    return;
+  }
+  
+  const tag = document.querySelector('#tplAddTagPills .tf-tag.active')?.dataset?.tag || 'deep-work';
+  const durEl = document.querySelector('.tpl-add-dur.active');
+  const duration = durEl ? parseInt(durEl.dataset.minutes) : 60;
+  
+  const templates = loadTemplates();
+  const newTpl = {
+    id: 'tpl-' + uid(),
+    name,
+    title,
+    tag,
+    duration,
+    priority: 3,
+  };
+  templates.push(newTpl);
+  saveTemplates(templates);
+  renderSchTemplates();
+  closeAddTemplatePopup();
+  showToast(`Template "${escapeHtml(name)}" created`, 'success');
+}
+
+function saveCurrentTaskAsTemplate() {
+  const title = document.getElementById('taskTitle')?.value?.trim();
+  if (!title) {
+    showToast('Save the task first, then save as template', 'warning', 3000);
+    return;
+  }
+  const tag = document.querySelector('#taskTagPills .tf-tag.active')?.dataset?.tag || 'meeting';
+  const start = document.getElementById('taskStart')?.value || '09:00';
+  const end = document.getElementById('taskEnd')?.value || '10:00';
+  const dur = getDurationMinutes({ startTime: start, endTime: end });
+  const activePr = document.querySelector('#prioritySelectGroup .tf-pr.active');
+  const priority = activePr ? parseInt(activePr.dataset.priority) : 3;
+  
+  const templates = loadTemplates();
+  const newTpl = {
+    id: 'tpl-' + uid(),
+    name: title.length > 30 ? title.slice(0, 30) + '…' : title,
+    title,
+    tag,
+    duration: dur,
+    priority,
+  };
+  templates.push(newTpl);
+  saveTemplates(templates);
+  renderSchTemplates();
+  showToast(`Template "${escapeHtml(title)}" saved`, 'success');
+}
+
+function applyTemplate(tpl, date, startTime) {
+  const dur = tpl.duration || 60;
+  const hour = startTime ? parseInt(startTime.split(':')[0]) : 9;
+  const startMins = startTime ? parseTime(startTime) : hour * 60;
+  const task = createTask({
+    title: tpl.title || tpl.name,
+    date: date || formatDate(new Date()),
+    startTime: toTimeStr(startMins),
+    endTime: toTimeStr(startMins + dur),
+    tag: tpl.tag || 'meeting',
+    priority: tpl.priority || 3,
+  });
+  return task;
 }
 
 // ─── QUICK TEMPLATE PICKER ───────────────────────────────
@@ -1857,14 +2072,28 @@ function openQuickTpl() {
     item.className = 'quick-tpl-item';
     item.innerHTML = `<span class="tpl-dot" style="background:${c.text}"></span>
       <span class="quick-tpl-item-title">${escapeHtml(tpl.name)}</span>
-      <span class="quick-tpl-item-meta">${escapeHtml(tpl.title)} &middot; ${formatDuration(tpl.duration)}</span>`;
-    item.addEventListener('click', () => {
+      <span class="quick-tpl-item-meta">${escapeHtml(tpl.title)} &middot; ${formatDuration(tpl.duration)}</span>
+      <span class="quick-tpl-item-del" data-delete-template="${tpl.id}" title="Delete template">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </span>`;
+    item.addEventListener('click', (e) => {
+      if (e.target.closest('[data-delete-template]')) return;
       popup.classList.add('hidden');
       const today = formatDate(new Date());
       applyTemplate(tpl, today, null);
       renderCalendar();
       showToast(`Applied "${tpl.name}"`, 'success');
     });
+    const delBtn = item.querySelector('[data-delete-template]');
+    if (delBtn) {
+      delBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`Delete template "${tpl.name}"?`)) {
+          deleteTemplate(tpl.id);
+          openQuickTpl();
+        }
+      });
+    }
     list.appendChild(item);
   }
   popup.classList.remove('hidden');

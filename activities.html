@@ -50,9 +50,22 @@
       background: var(--bg-card); border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm); padding: var(--space-1) var(--space-2);
       cursor: pointer; transition: border-color var(--t-fast), box-shadow var(--t-fast);
+      position: relative;
     }
     .tag-col-task:hover { border-color: var(--text-tertiary); box-shadow: var(--shadow-xs); }
     .tag-col-task.completed { opacity: 0.45; }
+    .tct-delete {
+      position: absolute; top: 2px; right: 2px;
+      width: 16px; height: 16px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0; opacity: 0;
+      transition: all var(--t-fast);
+      line-height: 0; font-size: 0.55rem;
+    }
+    .tag-col-task:hover .tct-delete { opacity: 0.4; }
+    .tct-delete:hover { opacity: 1 !important; color: #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
     .tct-title {
       display: flex; align-items: center; gap: var(--space-1);
       font-size: 0.72rem; font-weight: 500; margin-bottom: 2px;
@@ -108,6 +121,174 @@
       padding: var(--space-2) var(--space-3); margin-top: var(--space-3);
       font-size: 0.7rem; color: var(--text-tertiary);
       border-top: 1px solid var(--border-subtle);
+    }
+
+    /* ─── VIEW TOGGLE ──────────────────────────── */
+    .act-view-toggle {
+      display: flex; gap: 2px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 2px;
+      border: 1px solid var(--border-subtle);
+    }
+    .act-view-btn {
+      padding: 4px 12px;
+      border: none; background: transparent;
+      color: var(--text-tertiary);
+      font-size: 0.68rem; font-weight: 600;
+      font-family: var(--font-family);
+      cursor: pointer; border-radius: var(--radius-sm);
+      transition: all var(--t-fast);
+      display: flex; align-items: center; gap: var(--space-1);
+    }
+    .act-view-btn:hover { color: var(--text-secondary); }
+    .act-view-btn.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: var(--shadow-xs); }
+    .act-view-btn svg { width: 12px; height: 12px; }
+
+    /* ─── TIMELINE VIEW ──────────────────────────── */
+    .act-timeline { display: flex; flex-direction: column; gap: var(--space-4); }
+    .act-timeline-day { }
+    .act-timeline-day-header {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2) 0; margin-bottom: var(--space-2);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .act-timeline-day-label {
+      font-size: 0.75rem; font-weight: 600; color: var(--text-primary);
+    }
+    .act-timeline-day-label.today { color: var(--accent); }
+    .act-timeline-day-count {
+      font-size: 0.6rem; color: var(--text-tertiary);
+      font-weight: 500;
+    }
+    .act-timeline-tasks { display: flex; flex-direction: column; gap: 2px; }
+    .act-timeline-task {
+      display: flex; align-items: stretch; gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      cursor: pointer;
+      transition: all var(--t-fast);
+      animation: slideUp 250ms var(--curve) both;
+    }
+    .act-timeline-task:hover { border-color: var(--border-color); }
+    .act-timeline-task.completed { opacity: 0.5; }
+    .act-timeline-task.completed .act-tl-title { text-decoration: line-through; }
+    .act-timeline-time {
+      display: flex; flex-direction: column; align-items: flex-end;
+      min-width: 60px; flex-shrink: 0; padding-top: 1px;
+    }
+    .act-tl-time-range {
+      font-size: 0.65rem; font-weight: 600;
+      font-family: var(--font-mono); color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .act-tl-dur {
+      font-size: 0.55rem; color: var(--text-tertiary);
+    }
+    .act-timeline-body { flex: 1; min-width: 0; }
+    .act-tl-title {
+      font-size: 0.78rem; font-weight: 600; color: var(--text-primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .act-tl-meta {
+      display: flex; gap: var(--space-2); margin-top: 2px;
+      font-size: 0.6rem; color: var(--text-tertiary);
+    }
+    .act-tl-tag {
+      display: inline-block; padding: 1px 6px; border-radius: 3px;
+      font-weight: 600; font-size: 0.5rem; text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .act-tl-check {
+      display: flex; align-items: center; flex-shrink: 0;
+    }
+    .act-tl-check .tct-check { width: 14px; height: 14px; }
+    .act-timeline-delete {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0; flex-shrink: 0;
+      opacity: 0; transition: all var(--t-fast);
+      align-self: center;
+    }
+    .act-timeline-task:hover .act-timeline-delete { opacity: 0.4; }
+    .act-timeline-delete:hover { opacity: 1 !important; color: #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
+    .act-timeline-empty {
+      text-align: center; padding: var(--space-6);
+      color: var(--text-tertiary); font-size: 0.75rem;
+    }
+
+    /* ─── ACTIVITY LOG ───────────────────────────── */
+    .act-log-section { margin-top: var(--space-6); }
+    .act-log-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-3);
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .act-log-header h3 {
+      font-size: 0.75rem; font-weight: 600; color: var(--text-primary);
+      display: flex; align-items: center; gap: var(--space-2);
+    }
+    .act-log-header h3 svg { width: 14px; height: 14px; opacity: 0.6; }
+    .act-log-header .act-log-count {
+      font-size: 0.65rem; color: var(--text-tertiary);
+    }
+    .act-log-list { display: flex; flex-direction: column; gap: 1px; }
+    .act-log-item {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-sm);
+      transition: background var(--t-fast);
+      animation: slideUp 200ms var(--curve) both;
+      font-size: 0.72rem;
+    }
+    .act-log-item:hover { background: var(--accent-soft); }
+    .act-log-item-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .act-log-item-title {
+      flex: 1; color: var(--text-secondary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .act-log-item-title.done { text-decoration: line-through; color: var(--text-tertiary); }
+    .act-log-item-time {
+      font-size: 0.6rem; color: var(--text-tertiary);
+      font-family: var(--font-mono); white-space: nowrap;
+    }
+    .act-log-item-undo {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0; opacity: 0; transition: all var(--t-fast);
+      flex-shrink: 0;
+    }
+    .act-log-item:hover .act-log-item-undo { opacity: 0.6; }
+    .act-log-item-undo:hover { opacity: 1 !important; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .act-log-empty {
+      text-align: center; padding: var(--space-5);
+      color: var(--text-tertiary); font-size: 0.72rem;
+    }
+
+    /* ─── DRAG & DROP ────────────────────────────── */
+    .tag-column.drag-over {
+      border-color: var(--accent) !important;
+      box-shadow: 0 0 0 1px var(--accent), 0 0 16px color-mix(in srgb, var(--accent) 15%, transparent);
+      transition: all 150ms ease;
+    }
+    .tag-col-task.dragging {
+      opacity: 0.35;
+      transform: scale(0.95);
+    }
+    .tag-col-task {
+      cursor: grab;
+    }
+    .tag-col-task:active {
+      cursor: grabbing;
     }
 
     /* ─── RESPONSIVE ────────────────────────────── */
@@ -300,12 +481,18 @@
 
       <div class="hub-content hub-page-transition">
 
-        <!-- Board header -->
+        <!-- View toggle + header -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2)">
-          <h2 style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:var(--space-2)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            Kanban Board
-          </h2>
+          <div class="act-view-toggle">
+            <button class="act-view-btn active" data-view="board" title="Kanban Board">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              Board
+            </button>
+            <button class="act-view-btn" data-view="timeline" title="Chronological Timeline">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="2" x2="10" y2="22"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              Timeline
+            </button>
+          </div>
           <span id="boardTaskCount" style="font-size:0.72rem;color:var(--text-tertiary)">0 tasks</span>
         </div>
 
@@ -321,10 +508,31 @@
             </div>
           </div>
           <div class="tags-summary hub-anim-in hub-anim-in-4">
-            <span>Click a card to edit</span>
+            <span>Click a card to edit. Drag cards between columns to change category.</span>
             <span id="tagsSummaryTotal">0 tasks across all categories</span>
           </div>
-      </div>
+        </div>
+
+        <!-- ─── TIMELINE VIEW ──────────────────────────── -->
+        <div id="timelineView" style="display:none">
+          <div class="act-timeline hub-anim-in hub-anim-in-3" id="actTimeline">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- ─── ACTIVITY LOG ───────────────────────────── -->
+        <div class="act-log-section hub-anim-in hub-anim-in-5" id="actLogSection">
+          <div class="act-log-header">
+            <h3>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              Activity Log
+            </h3>
+            <span class="act-log-count" id="actLogCount">0 completed</span>
+          </div>
+          <div class="act-log-list" id="actLogList">
+            <div class="act-log-empty">Complete a task to see it here</div>
+          </div>
+        </div>
 
     <!-- Minimal footer -->
     <footer class="hub-minifooter hub-anim-in hub-anim-in-5">

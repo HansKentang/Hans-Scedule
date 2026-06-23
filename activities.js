@@ -1,16 +1,67 @@
 /* ============================================
    Haven Schedule — Activities Page
-   Kanban Board only (editable)
+   Kanban Board + Timeline + Activity Log
    ============================================ */
+
+// --- VIEW STATE -------------------------------------------------------------
+let activitiesView = 'board'; // 'board' | 'timeline'
 
 // --- DOM REFS -------------------------------------------------------------
 const boardInner = document.getElementById('tagsBoardInner');
 const tagsSummaryTotal = document.getElementById('tagsSummaryTotal');
 const boardView = document.getElementById('boardView');
 const boardTaskCount = document.getElementById('boardTaskCount');
+const timelineView = document.getElementById('timelineView');
+const actTimeline = document.getElementById('actTimeline');
+const actLogList = document.getElementById('actLogList');
+const actLogCount = document.getElementById('actLogCount');
 
-pageAfterTaskSave = () => { renderTags(); };
-pageAfterImport = () => { renderTags(); };
+pageAfterTaskSave = () => { renderActivities(); };
+pageAfterImport = () => { renderActivities(); };
+
+// --- ACTIVITY LOG STATE ----------------------------------------------------
+// Store completed_at timestamps per task in localStorage
+const COMPLETION_LOG_KEY = 'haven-activities-completions';
+let completionLog = [];
+
+function loadCompletionLog() {
+  try {
+    const data = localStorage.getItem(COMPLETION_LOG_KEY);
+    completionLog = data ? JSON.parse(data) : [];
+  } catch (e) {
+    completionLog = [];
+  }
+}
+
+function saveCompletionLog() {
+  try {
+    localStorage.setItem(COMPLETION_LOG_KEY, JSON.stringify(completionLog));
+  } catch (e) { /* ignore */ }
+}
+
+function addCompletionEntry(taskId, taskTitle, tag, completedAt) {
+  // Remove any existing entry for this task (in case of re-toggle)
+  completionLog = completionLog.filter(e => e.taskId !== taskId);
+  completionLog.unshift({
+    taskId,
+    title: taskTitle,
+    tag: tag || 'meeting',
+    completedAt: completedAt || new Date().toISOString(),
+  });
+  // Keep max 100 entries
+  if (completionLog.length > 100) completionLog = completionLog.slice(0, 100);
+  saveCompletionLog();
+}
+
+function removeCompletionEntry(taskId) {
+  completionLog = completionLog.filter(e => e.taskId !== taskId);
+  saveCompletionLog();
+}
+
+function getCompletionLog() {
+  loadCompletionLog();
+  return completionLog;
+}
 
 // --- TAGS BOARD HELPERS ---------------------------------------------------
 function getTagColumnMeta(tag) {
@@ -76,19 +127,17 @@ function showTagSwitcher(taskId, anchorEl) {
       e.stopPropagation();
       updateTask(taskId, { tag });
       popover.remove();
-      renderTags();
+      renderActivities();
     });
     popover.appendChild(btn);
   }
 
-  // Position relative to anchor
   const rect = anchorEl.getBoundingClientRect();
   popover.style.position = 'fixed';
   popover.style.left = `${rect.left}px`;
   popover.style.top = `${rect.bottom + 4}px`;
   document.body.appendChild(popover);
 
-  // Close on outside click
   const close = (e) => {
     if (!popover.contains(e.target)) {
       popover.remove();
@@ -96,6 +145,14 @@ function showTagSwitcher(taskId, anchorEl) {
     }
   };
   setTimeout(() => document.addEventListener('click', close), 0);
+}
+
+// --- RENDER ALL ACTIVITIES ------------------------------------------------
+function renderActivities() {
+  renderTags();
+  renderTimeline();
+  renderActivityLog();
+  updateView();
 }
 
 // --- RENDER TAGS BOARD ----------------------------------------------------
@@ -161,7 +218,10 @@ function renderTags() {
         ${d.tasks.map(t => {
           const isComp = t.completed;
           const accent = txtColor;
-          return `<div class="tag-col-task${isComp ? ' completed' : ''}" data-task-id="${t.id}" style="--tct-accent:${accent}">
+          return `<div class="tag-col-task${isComp ? ' completed' : ''}" data-task-id="${t.id}" style="--tct-accent:${accent}" draggable="true">
+            <button class="tct-delete" data-delete-task="${t.id}" title="Delete task">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
             <div class="tct-title${isComp ? ' done' : ''}">
               <span class="tct-check${isComp ? ' checked' : ''}" data-toggle-complete="${t.id}"></span>
               <span class="tct-title-text" data-inline-edit="${t.id}">${escapeHtml(t.title)}</span>
@@ -191,6 +251,25 @@ function renderTags() {
 
   // --- EVENT LISTENERS ----------------------------------------------------
 
+  // Delete task
+  boardInner.querySelectorAll('[data-delete-task]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tid = btn.dataset.deleteTask;
+      const task = getTask(tid);
+      if (task && confirm(`Delete "${task.title}"?`)) {
+        // Remove log entry first, then deleteTask (which triggers render via callback)
+        removeCompletionEntry(tid);
+        const savedCallback = pageAfterTaskSave;
+        pageAfterTaskSave = null;
+        deleteTask(tid);
+        pageAfterTaskSave = savedCallback;
+        renderActivities();
+        showToast('Task deleted', 'info', 2000);
+      }
+    });
+  });
+
   // Click card to open modal
   boardInner.querySelectorAll('.tag-col-task').forEach(el => {
     const taskId = el.dataset.taskId;
@@ -198,6 +277,7 @@ function renderTags() {
       if (e.target.closest('[data-toggle-complete]')) return;
       if (e.target.closest('[data-inline-edit]')) return;
       if (e.target.closest('[data-switch-tag]')) return;
+      if (e.target.closest('[data-delete-task]')) return;
       if (e.target.closest('.board-add-task')) return;
       openTaskModal(taskId);
     });
@@ -210,9 +290,21 @@ function renderTags() {
       const tid = el.dataset.toggleComplete;
       const task = getTask(tid);
       const wasCompleted = task?.completed;
+      
+      // Suspend page callback to avoid double render
+      const savedCallback = pageAfterTaskSave;
+      pageAfterTaskSave = null;
       toggleComplete(tid);
-      if (!wasCompleted && task && typeof celebrateComplete === 'function') setTimeout(() => celebrateComplete(), 100);
-      renderTags();
+      pageAfterTaskSave = savedCallback;
+      
+      // Update completion log
+      if (!wasCompleted && task) {
+        addCompletionEntry(tid, task.title, task.tag);
+        if (typeof celebrateComplete === 'function') setTimeout(() => celebrateComplete(), 100);
+      } else if (wasCompleted && task) {
+        removeCompletionEntry(tid);
+      }
+      renderActivities();
     });
   });
 
@@ -240,7 +332,7 @@ function renderTags() {
       e.stopPropagation();
       const tag = btn.dataset.tag;
       const curColor = cardColors[tag]?.light || DEFAULT_TAG_COLORS[tag].light;
-      openCardColorPicker(btn, tag, curColor, () => { renderTags(); });
+      openCardColorPicker(btn, tag, curColor, () => { renderActivities(); });
     });
   });
 
@@ -265,7 +357,7 @@ function renderTags() {
         endTime,
         tag,
       });
-      renderTags();
+      renderActivities();
       // Auto-edit title after creation
       setTimeout(() => {
         const el = document.querySelector(`.tag-col-task[data-task-id="${task.id}"] [data-inline-edit]`);
@@ -273,6 +365,254 @@ function renderTags() {
       }, 100);
     });
   });
+
+  // --- DRAG & DROP EVENT LISTENERS -----------------------------------------
+  setupBoardDragDrop();
+}
+
+// --- DRAG & DROP BETWEEN COLUMNS -------------------------------------------
+function setupBoardDragDrop() {
+  // Drag start
+  boardInner.querySelectorAll('.tag-col-task').forEach(el => {
+    el.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', el.dataset.taskId);
+      e.dataTransfer.effectAllowed = 'move';
+      el.classList.add('dragging');
+      // Add a slight delay for the ghost image
+      setTimeout(() => {
+        el.style.opacity = '0.4';
+      }, 0);
+    });
+    el.addEventListener('dragend', (e) => {
+      el.classList.remove('dragging');
+      el.style.opacity = '';
+      document.querySelectorAll('.tag-column.drag-over').forEach(c => c.classList.remove('drag-over'));
+    });
+  });
+
+  // Column drop zones
+  boardInner.querySelectorAll('.tag-column').forEach(col => {
+    col.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      col.classList.add('drag-over');
+    });
+    col.addEventListener('dragleave', (e) => {
+      // Only remove if we're actually leaving the column
+      if (!e.currentTarget.contains(e.relatedTarget)) {
+        col.classList.remove('drag-over');
+      }
+    });
+    col.addEventListener('drop', (e) => {
+      e.preventDefault();
+      col.classList.remove('drag-over');
+
+      const taskId = e.dataTransfer.getData('text/plain');
+      if (!taskId) return;
+
+      const newTag = col.dataset.boardTag;
+      if (!newTag) return;
+
+      const task = getTask(taskId);
+      if (!task || task.tag === newTag) {
+        // Reset opacity if same tag
+        const draggedEl = document.querySelector(`.tag-col-task[data-task-id="${taskId}"]`);
+        if (draggedEl) draggedEl.style.opacity = '';
+        return;
+      }
+
+      updateTask(taskId, { tag: newTag });
+      renderActivities();
+      showToast(`Moved to <strong>${TAG_LABELS[newTag]}</strong>`, 'success', 2000);
+    });
+  });
+}
+
+// --- RENDER TIMELINE VIEW --------------------------------------------------
+function renderTimeline() {
+  if (!actTimeline) return;
+
+  const today = new Date();
+  const weekStart = getMonday(today);
+  const days = getWeekRange(weekStart);
+  const todayStr = formatDate(today);
+
+  let html = '';
+
+  for (const day of days) {
+    const ds = formatDate(day);
+    const dayTasks = state.tasks.filter(t => t.date === ds && !isWhiteboardTask(t));
+    if (dayTasks.length === 0) continue;
+
+    // Sort by start time
+    dayTasks.sort((a, b) => parseTime(a.startTime) - parseTime(b.startTime));
+
+    const isT = ds === todayStr;
+    const dayLabel = day.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
+    html += `<div class="act-timeline-day">
+      <div class="act-timeline-day-header">
+        <span class="act-timeline-day-label${isT ? ' today' : ''}">${dayLabel}</span>
+        <span class="act-timeline-day-count">${dayTasks.length} task${dayTasks.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="act-timeline-tasks">`;
+
+    for (const task of dayTasks) {
+      const meta = TAG_COLORS[task.tag] || TAG_COLORS.meeting;
+      const col = cardColors[task.tag]?.light || DEFAULT_TAG_COLORS[task.tag].light;
+      const startM = parseTime(task.startTime);
+      const endM = parseTime(task.endTime) || startM + 60;
+      const durMins = endM - startM;
+      const durStr = durMins >= 60
+        ? `${Math.floor(durMins / 60)}h${durMins % 60 ? ` ${durMins % 60}m` : ''}`
+        : `${durMins}m`;
+      const doneCls = task.completed ? ' completed' : '';
+
+      html += `<div class="act-timeline-task${doneCls}" data-task-id="${task.id}">
+        <div class="act-tl-check">
+          <span class="tct-check${task.completed ? ' checked' : ''}" data-toggle-complete="${task.id}" style="--tct-accent:${col}"></span>
+        </div>
+        <div class="act-timeline-time">
+          <span class="act-tl-time-range">${task.startTime}–${task.endTime}</span>
+          <span class="act-tl-dur">${durStr}</span>
+        </div>
+        <div class="act-timeline-body">
+          <div class="act-tl-title">${escapeHtml(task.title)}</div>
+          <div class="act-tl-meta">
+            <span class="act-tl-tag" style="background:color-mix(in srgb, ${col} 18%, transparent);color:${col}">${task.tag}</span>
+          </div>
+        </div>
+        <button class="act-timeline-delete" data-delete-task="${task.id}" title="Delete task">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>`;
+    }
+
+    html += `</div></div>`;
+  }
+
+  if (html === '') {
+    html = `<div class="act-timeline-empty">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3;margin-bottom:8px"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <div>No scheduled tasks this week</div>
+    </div>`;
+  }
+
+  actTimeline.innerHTML = html;
+
+  // Delete task
+  actTimeline.querySelectorAll('[data-delete-task]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tid = btn.dataset.deleteTask;
+      const task = getTask(tid);
+      if (task && confirm(`Delete "${task.title}"?`)) {
+        // Remove log entry first, then deleteTask (which triggers render via callback)
+        removeCompletionEntry(tid);
+        const savedCallback = pageAfterTaskSave;
+        pageAfterTaskSave = null;
+        deleteTask(tid);
+        pageAfterTaskSave = savedCallback;
+        renderActivities();
+        showToast('Task deleted', 'info', 2000);
+      }
+    });
+  });
+
+  // Event handlers
+  actTimeline.querySelectorAll('.act-timeline-task').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('[data-toggle-complete]')) {
+        const tid = e.target.closest('[data-toggle-complete]').dataset.toggleComplete;
+        const task = getTask(tid);
+        const wasCompleted = task?.completed;
+        
+        // Suspend page callback to avoid double render
+        const savedCallback = pageAfterTaskSave;
+        pageAfterTaskSave = null;
+        toggleComplete(tid);
+        pageAfterTaskSave = savedCallback;
+        
+        if (!wasCompleted && task) {
+          addCompletionEntry(tid, task.title, task.tag);
+        } else if (wasCompleted && task) {
+          removeCompletionEntry(tid);
+        }
+        renderActivities();
+        return;
+      }
+      if (e.target.closest('[data-delete-task]')) return;
+      const taskId = el.dataset.taskId;
+      if (taskId) openTaskModal(taskId);
+    });
+  });
+}
+
+// --- RENDER ACTIVITY LOG ---------------------------------------------------
+function renderActivityLog() {
+  if (!actLogList) return;
+
+  const log = getCompletionLog();
+  if (actLogCount) actLogCount.textContent = `${log.length} completed`;
+
+  if (log.length === 0) {
+    actLogList.innerHTML = '<div class="act-log-empty">Complete a task to see it here</div>';
+    return;
+  }
+
+  let html = '';
+  for (const entry of log) {
+    const col = cardColors[entry.tag]?.light || DEFAULT_TAG_COLORS[entry.tag]?.light || '#888';
+    const date = new Date(entry.completedAt);
+    const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    html += `<div class="act-log-item" data-task-id="${entry.taskId}">
+      <span class="act-log-item-dot" style="background:${col}"></span>
+      <span class="act-log-item-title done">${escapeHtml(entry.title)}</span>
+      <span class="act-log-item-time">${dateStr} ${timeStr}</span>
+      <button class="act-log-item-undo" data-undo-task="${entry.taskId}" title="Undo completion">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      </button>
+    </div>`;
+  }
+
+  actLogList.innerHTML = html;
+
+  // Undo completion handler
+  actLogList.querySelectorAll('[data-undo-task]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tid = btn.dataset.undoTask;
+      const task = getTask(tid);
+      if (task) {
+        updateTask(tid, { completed: false });
+        removeCompletionEntry(tid);
+        renderActivities();
+        showToast('Completion undone', 'info', 2000);
+      }
+    });
+  });
+}
+
+// --- VIEW TOGGLE -----------------------------------------------------------
+function switchActivitiesView(view) {
+  activitiesView = view;
+  document.querySelectorAll('.act-view-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+  updateView();
+}
+
+function updateView() {
+  if (!boardView || !timelineView) return;
+  if (activitiesView === 'board') {
+    boardView.style.display = '';
+    timelineView.style.display = 'none';
+  } else {
+    boardView.style.display = 'none';
+    timelineView.style.display = '';
+  }
 }
 
 // --- SETUP -----------------------------------------------------------------
@@ -308,6 +648,13 @@ function setupPage() {
   dom.aiChatSend?.addEventListener('click', sendAIMessage);
   dom.aiChatInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); } });
 
+  // View toggle
+  document.querySelectorAll('.act-view-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      switchActivitiesView(btn.dataset.view);
+    });
+  });
+
   // Keyboard shortcut: N for new task
   document.addEventListener('keydown', (e) => {
     if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey) {
@@ -322,7 +669,7 @@ function setupPage() {
   });
 
   // Re-render on theme change
-  const observer = new MutationObserver(() => { renderTags(); });
+  const observer = new MutationObserver(() => { renderActivities(); });
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 }
 
@@ -330,8 +677,9 @@ function setupPage() {
 function init() {
   loadState();
   applyTheme();
+  loadCompletionLog();
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
-  renderTags();
+  renderActivities();
   setupPage();
   document.getElementById('exportBtn')?.addEventListener('click', exportData);
   document.getElementById('importBtn')?.addEventListener('click', () => { document.getElementById('importFileInput')?.click(); });

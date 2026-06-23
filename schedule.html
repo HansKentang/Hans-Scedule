@@ -261,35 +261,189 @@
       letter-spacing: 0.06em; color: var(--text-tertiary); opacity: 0.6;
       margin-right: var(--space-2); white-space: nowrap;
     }
-    .sch-quickadd-pill {
-      display: inline-flex; align-items: center; gap: 4px;
+
+
+    /* ─── PILL BAR ─────────────────────────────────────────── */
+    .sch-templates-bar {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-1) var(--space-5);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      flex-shrink: 0;
+      overflow-x: auto;
+    }
+    .sch-templates-label {
+      font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-tertiary); opacity: 0.6;
+      margin-right: var(--space-2); white-space: nowrap; flex-shrink: 0;
+    }
+    .template-pills {
+      display: flex; align-items: center; gap: var(--space-1);
+      flex: 1; overflow-x: auto;
+    }
+    .template-pills::-webkit-scrollbar { display: none; }
+    .template-pill {
+      position: relative;
+      display: inline-flex; align-items: center; gap: 5px;
       padding: 3px 10px 3px 8px;
       border-radius: 14px;
       border: 1px solid var(--border-color);
       background: var(--bg-secondary);
       color: var(--text-secondary);
       font-size: 0.7rem; font-family: var(--font-family); font-weight: 500;
-      cursor: grab;
+      cursor: pointer;
       transition: all var(--t-fast);
       white-space: nowrap;
       user-select: none;
     }
-    .sch-quickadd-pill:hover {
-      border-color: var(--text-primary);
+    .template-pill:hover {
+      border-color: var(--tpl-accent, var(--text-primary));
       color: var(--text-primary);
       box-shadow: var(--shadow-sm);
     }
-    .sch-quickadd-pill:active { cursor: grabbing; }
-    .sch-quickadd-pill .qa-plus {
-      width: 14px; height: 14px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; font-size: 0.65rem; font-weight: 700;
+    .template-pill .tpl-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--tpl-accent, var(--gray-300));
+      flex-shrink: 0;
     }
-    .sch-quickadd-pill[data-tag="deep-work"] .qa-plus { background: var(--tag-deep-work-text); color: #fff; }
-    .sch-quickadd-pill[data-tag="meeting"] .qa-plus { background: var(--tag-meeting-text); color: #fff; }
-    .sch-quickadd-pill[data-tag="exercise"] .qa-plus { background: var(--tag-exercise-text); color: #fff; }
-    .sch-quickadd-pill[data-tag="study"] .qa-plus { background: var(--tag-study-text); color: #fff; }
-    .sch-quickadd-pill[data-tag="hobby"] .qa-plus { background: var(--tag-hobby-text); color: #fff; }
+    .template-pill .tpl-delete {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0;
+      opacity: 0;
+      flex-shrink: 0;
+      transition: all var(--t-fast);
+      margin-left: 2px;
+    }
+    .template-pill:hover .tpl-delete { opacity: 0.5; }
+    .template-pill .tpl-delete:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
+    .template-pill .tpl-delete svg { width: 10px; height: 10px; }
+
+    /* Add template button */
+    .tpl-add-btn {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--t-fast);
+      padding: 0;
+      margin-left: 4px;
+    }
+    .tpl-add-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      transform: scale(1.1);
+    }
+
+    /* Add template popup */
+    .tpl-add-popup {
+      position: fixed;
+      z-index: 60;
+      width: 300px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: var(--shadow-lg);
+      animation: snavPopupIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    .tpl-add-popup-header {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+    }
+    .tpl-add-popup-header svg { flex-shrink: 0; opacity: 0.5; }
+    .tpl-add-popup-header span { flex: 1; font-size: 0.82rem; font-weight: 600; }
+    .tpl-add-popup-close {
+      width: 22px; height: 22px; border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; transition: all var(--t-fast);
+      padding: 0; flex-shrink: 0;
+    }
+    .tpl-add-popup-close:hover { background: var(--accent-soft); color: var(--text-primary); }
+    .tpl-add-popup-body {
+      padding: var(--space-3) var(--space-4);
+      display: flex; flex-direction: column; gap: var(--space-3);
+    }
+    .tpl-add-popup-body .tf-group { margin: 0; }
+    .tpl-add-popup-body .tf-label { font-size: 0.65rem; margin-bottom: 4px; }
+    .tpl-add-popup-body .form-input { font-size: 0.82rem; padding: 6px 10px; }
+    .tpl-add-dur-row {
+      display: flex; gap: var(--space-1);
+    }
+    .tpl-add-dur {
+      flex: 1;
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 0.72rem; font-family: var(--font-family); font-weight: 500;
+      cursor: pointer;
+      transition: all var(--t-fast);
+      text-align: center;
+    }
+    .tpl-add-dur:hover { border-color: var(--border-color); color: var(--text-secondary); }
+    .tpl-add-dur.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      color: var(--accent);
+    }
+    .tpl-add-popup-actions {
+      display: flex; gap: var(--space-2);
+      margin-top: var(--space-1);
+    }
+    .tpl-add-popup-actions .tf-btn { flex: 1; justify-content: center; }
+    .tpl-add-input-error { border-color: #e04040 !important; }
+
+    /* Quick template picker delete button */
+    .quick-tpl-item {
+      display: flex; align-items: center; gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-primary);
+      font-size: 0.82rem; font-family: var(--font-family); font-weight: 500;
+      cursor: pointer;
+      transition: all var(--t-fast);
+      width: 100%; text-align: left;
+      animation: slideUp 200ms var(--curve) both;
+    }
+    .quick-tpl-item:hover { background: var(--accent-soft); }
+    .quick-tpl-item .tpl-dot { width: 8px; height: 8px; flex-shrink: 0; }
+    .quick-tpl-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .quick-tpl-item-meta { font-size: 0.65rem; color: var(--text-tertiary); white-space: nowrap; }
+    .quick-tpl-item-del {
+      width: 18px; height: 18px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: all var(--t-fast);
+      flex-shrink: 0;
+    }
+    .quick-tpl-item:hover .quick-tpl-item-del { opacity: 0.4; }
+    .quick-tpl-item-del:hover { opacity: 1 !important; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
+    .quick-tpl-item svg { width: 12px; height: 12px; }
+
+    /* ─── MOBILE — combined bar ───────────────────────────────── */
+    @media (max-width: 640px) {
+      .sch-templates-bar { padding: var(--space-2) var(--space-3); gap: var(--space-1); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+      .sch-templates-bar::-webkit-scrollbar { display: none; }
+      .sch-templates-label { font-size: 0.55rem; margin-right: var(--space-1); }
+      .template-pill { padding: 2px 8px 2px 6px; font-size: 0.65rem; }
+
+    }
 
     /* ─── MOBILE HAMBURGER ───────────────────────────────── */
     .sch-hamburger {
@@ -358,18 +512,6 @@
       .sch-toggle-label { padding: 3px 6px; }
       .sch-search-input { width: 100px; font-size: 0.68rem; }
       .sch-search-input:focus { width: 140px; }
-
-      /* Quick add bar mobile — horizontal scroll */
-      .sch-quickadd {
-        padding: var(--space-2) var(--space-3);
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        gap: var(--space-1);
-      }
-      .sch-quickadd::-webkit-scrollbar { display: none; }
-      .sch-quickadd-label { font-size: 0.55rem; margin-right: var(--space-1); }
-      .sch-quickadd-pill { padding: 2px 8px 2px 6px; font-size: 0.65rem; }
 
       /* Calendar grid mobile */
       #calendarContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -604,29 +746,12 @@
         </div>
       </div>
 
-      <!-- Templates bar -->
+      <!-- Unified pill bar: templates + quick-add -->
       <div class="sch-templates-bar hub-anim-in hub-anim-in-3" id="schTemplatesBar">
-        <span class="sch-templates-label">Templates</span>
+        <span class="sch-templates-label">Pills</span>
         <div class="template-pills" id="schTemplatePills"></div>
-      </div>
-
-      <!-- Quick add bar (drag-to-create) -->
-      <div class="sch-quickadd hub-anim-in hub-anim-in-3" id="quickAddBar">
-        <span class="sch-quickadd-label">Drag to add</span>
-        <button class="sch-quickadd-pill" data-tag="deep-work" title="Drag to calendar to create a Deep Work session">
-          <span class="qa-plus">+</span> Deep Work
-        </button>
-        <button class="sch-quickadd-pill" data-tag="meeting" title="Drag to calendar to create a Meeting">
-          <span class="qa-plus">+</span> Meeting
-        </button>
-        <button class="sch-quickadd-pill" data-tag="exercise" title="Drag to calendar to create an Exercise session">
-          <span class="qa-plus">+</span> Exercise
-        </button>
-        <button class="sch-quickadd-pill" data-tag="study" title="Drag to calendar to create a Study session">
-          <span class="qa-plus">+</span> Study
-        </button>
-        <button class="sch-quickadd-pill" data-tag="hobby" title="Drag to calendar to create a Hobby task">
-          <span class="qa-plus">+</span> Hobby
+        <button class="tpl-add-btn" id="tplAddBtn" title="Add template">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
       </div>
 
@@ -674,6 +799,54 @@
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
         </button>
+      </div>
+
+      <!-- Add Template Popup -->
+      <div class="tpl-add-popup hidden" id="tplAddPopup">
+        <div class="tpl-add-popup-header">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>New Template</span>
+          <button class="tpl-add-popup-close" id="tplAddPopupClose" aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="tpl-add-popup-body">
+          <div class="tf-group">
+            <label class="tf-label">Template Name</label>
+            <input type="text" id="tplAddName" class="form-input" placeholder="e.g. Deep Work Session" autocomplete="off">
+          </div>
+          <div class="tf-group">
+            <label class="tf-label">Task Title</label>
+            <input type="text" id="tplAddTitle" class="form-input" placeholder="e.g. Deep Work: Focus session" autocomplete="off">
+          </div>
+          <div class="tf-group">
+            <label class="tf-label">Category</label>
+            <div class="tf-tags" id="tplAddTagPills">
+              <button type="button" class="tf-tag active" data-tag="deep-work" style="--tag-c:var(--tag-deep-work-text);--tag-b:var(--tag-deep-work-bg)">Deep Work</button>
+              <button type="button" class="tf-tag" data-tag="meeting" style="--tag-c:var(--tag-meeting-text);--tag-b:var(--tag-meeting-bg)">Meeting</button>
+              <button type="button" class="tf-tag" data-tag="exercise" style="--tag-c:var(--tag-exercise-text);--tag-b:var(--tag-exercise-bg)">Exercise</button>
+              <button type="button" class="tf-tag" data-tag="study" style="--tag-c:var(--tag-study-text);--tag-b:var(--tag-study-bg)">Study</button>
+              <button type="button" class="tf-tag" data-tag="hobby" style="--tag-c:var(--tag-hobby-text);--tag-b:var(--tag-hobby-bg)">Hobby</button>
+            </div>
+          </div>
+          <div class="tf-group">
+            <label class="tf-label">Duration (minutes)</label>
+            <div class="tpl-add-dur-row">
+              <button class="tpl-add-dur" data-minutes="15">15m</button>
+              <button class="tpl-add-dur" data-minutes="30">30m</button>
+              <button class="tpl-add-dur active" data-minutes="60">1h</button>
+              <button class="tpl-add-dur" data-minutes="90">1.5h</button>
+              <button class="tpl-add-dur" data-minutes="120">2h</button>
+            </div>
+          </div>
+          <div class="tpl-add-popup-actions">
+            <button class="tf-btn tf-btn-ghost" id="tplAddCancel">Cancel</button>
+            <button class="tf-btn tf-btn-primary" id="tplAddSave">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Add Template
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Quick Template Picker -->
@@ -890,6 +1063,10 @@
               Delete
             </button>
             <div class="tf-footer-right">
+              <button type="button" id="taskSaveAsTemplateBtn" class="tf-btn tf-btn-ghost" title="Save as template">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Template
+              </button>
               <button type="button" id="taskCancelBtn" class="tf-btn tf-btn-ghost">Cancel</button>
               <button type="submit" id="taskSaveBtn" class="tf-btn tf-btn-primary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
