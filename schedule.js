@@ -1864,60 +1864,68 @@ function renderSchTemplates() {
       style="--tpl-accent:${c.text};--tpl-bg:${c.bg}">
       <span class="tpl-dot" style="background:${c.text}"></span>
       ${escapeHtml(tpl.name)}
+      <span class="tpl-edit" data-edit-template="${tpl.id}" title="Rename template">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </span>
       <span class="tpl-delete" data-delete-template="${tpl.id}" title="Delete template">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </span>
     </button>`;
   }
 
-  // Render category pills (always present) — same visual style as templates
-  const categories = [
-    { tag: 'deep-work', label: 'Deep Work' },
-    { tag: 'meeting', label: 'Meeting' },
-    { tag: 'exercise', label: 'Exercise' },
-    { tag: 'study', label: 'Study' },
-    { tag: 'hobby', label: 'Hobby' },
-  ];
-  for (const cat of categories) {
-    const c = TAG_COLORS[cat.tag] || TAG_COLORS.meeting;
-    html += `<button class="template-pill category-pill" data-tag="${cat.tag}"
-      title="Click to create and edit, or drag to calendar"
-      style="--tpl-accent:${c.text};--tpl-bg:${c.bg}">
-      <span class="tpl-dot" style="background:${c.text}"></span>
-      ${cat.label}
-    </button>`;
-  }
+
 
   container.innerHTML = html;
 
-  // Attach handlers to template pills (and category pills): click + drag + delete
+  // Attach handlers to template pills: click + rename + drag + delete
   container.querySelectorAll('.template-pill').forEach(pill => {
-    // Click — open cmd palette (template title or default title for categories)
+    // Click — open cmd palette with template title
     pill.addEventListener('click', (e) => {
-      if (e.target.closest('[data-delete-template]')) return;
+      if (e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]') || e.target.closest('.tpl-rename-input')) return;
       const id = pill.dataset.templateId;
-      if (id) {
-        const templates = loadTemplates();
-        const tpl = templates.find(t => t.id === id);
-        if (tpl) {
-          showCmdPalette();
-          if (dom.cmdInput) {
-            dom.cmdInput.value = tpl.title;
-            dom.cmdInput.focus();
-          }
-          return;
-        }
-      }
-      // Category pill fallback
-      const tag = pill.dataset.tag;
-      if (tag) {
-        const title = QUICK_ADD_TITLES[tag] || 'New Task';
+      const templates = loadTemplates();
+      const tpl = templates.find(t => t.id === id);
+      if (tpl) {
         showCmdPalette();
         if (dom.cmdInput) {
-          dom.cmdInput.value = title;
+          dom.cmdInput.value = tpl.title;
           dom.cmdInput.focus();
         }
       }
+    });
+    // Edit button — trigger inline rename
+    const editBtn = pill.querySelector('[data-edit-template]');
+    if (editBtn) {
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        startRename(pill, pill.dataset.templateId);
+      });
+    }
+    // Double-click — inline rename
+    pill.addEventListener('dblclick', (e) => {
+      if (e.target.closest('[data-delete-template]')) return;
+      startRename(pill, pill.dataset.templateId);
+    });
+
+      // Focus and select text
+      requestAnimationFrame(() => {
+        input.focus();
+        input.select();
+      });
+      // Save on Enter
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          finishRename(input, id);
+        } else if (e.key === 'Escape') {
+          cancelRename(input);
+        }
+      });
+      // Save on blur (suppressed if already handled by Enter/Escape)
+      input.addEventListener('blur', () => {
+        if (input.dataset.saving) return;
+        finishRename(input, id);
+      });
     });
     // Delete (only for template pills that have a delete button)
     const delBtn = pill.querySelector('[data-delete-template]');
@@ -1932,10 +1940,74 @@ function renderSchTemplates() {
     }
     // Drag to calendar
     pill.addEventListener('mousedown', (e) => {
-      if (e.button !== 0 || e.target.closest('[data-delete-template]')) return;
+      if (e.button !== 0 || e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]') || e.target.closest('.tpl-rename-input')) return;
       startDrag(e, pill);
     });
   });
+}
+
+// ─── TEMPLATE RENAME HELPERS ────────────────────────────
+function startRename(pill, id) {
+  if (!id) return;
+  const templates = loadTemplates();
+  const tpl = templates.find(t => t.id === id);
+  if (!tpl) return;
+  // Build inline editor
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'tpl-rename-input';
+  input.value = tpl.name;
+  input.maxLength = 40;
+  input.autofocus = true;
+  // Insert before the edit/delete buttons (or at end)
+  const ref = pill.querySelector('[data-edit-template]') || pill.querySelector('[data-delete-template]');
+  if (ref) {
+    pill.insertBefore(input, ref);
+  } else {
+    pill.appendChild(input);
+  }
+  // Focus and select text
+  requestAnimationFrame(() => {
+    input.focus();
+    input.select();
+  });
+  // Save on Enter
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      finishRename(input, id);
+    } else if (e.key === 'Escape') {
+      cancelRename(input);
+    }
+  });
+  // Save on blur (suppressed if already handled by Enter/Escape)
+  input.addEventListener('blur', () => {
+    if (input.dataset.saving) return;
+    finishRename(input, id);
+  });
+}
+
+function finishRename(input, id) {
+  input.dataset.saving = '1'; // prevent blur from re-triggering
+  const newName = input.value.trim();
+  if (newName && newName.length > 0) {
+    const templates = loadTemplates();
+    const tpl = templates.find(t => t.id === id);
+    if (tpl) {
+      tpl.name = newName;
+      saveTemplates(templates);
+      renderSchTemplates();
+      showToast(`Template renamed to "${escapeHtml(newName)}"`, 'info', 1500);
+    }
+  } else {
+    // Empty name — just cancel
+    cancelRename(input);
+  }
+}
+
+function cancelRename(input) {
+  input.dataset.saving = '1'; // prevent blur from re-triggering
+  renderSchTemplates();
 }
 
 // ─── TEMPLATE MANAGEMENT ────────────────────────────────────
