@@ -275,6 +275,29 @@
       100% { opacity: 1; transform: scale(1); }
     }
     .sch-pm-dropdown-pill { animation: dp-pill-enter 200ms var(--curve) both; }
+    /* Subcategory groups inside dropdown */
+    .sch-pm-subcat-group {
+      width: 100%;
+      margin-bottom: 2px;
+    }
+    .sch-pm-subcat-group:last-child { margin-bottom: 0; }
+    .sch-pm-subcat-label {
+      display: block;
+      font-size: 0.5rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+      opacity: 0.4;
+      padding: 3px 2px 2px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 2px;
+    }
+    .sch-pm-subcat-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+    }
     /* Edit template popup */
     .tpl-edit-popup {
       position: fixed;
@@ -780,6 +803,12 @@
               <button class="tpl-add-dur" data-minutes="90">1.5h</button>
               <button class="tpl-add-dur" data-minutes="120">2h</button>
             </div>
+          </div>
+          <div class="tf-group">
+            <label class="tf-label">Subcategory (optional)</label>
+            <select id="tplAddSubcategory" class="form-input">
+              <option value="">None</option>
+            </select>
           </div>
           <div class="tpl-add-popup-actions">
             <button class="tf-btn tf-btn-ghost" id="tplAddCancel">Cancel</button>

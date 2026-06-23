@@ -412,6 +412,16 @@ function formatTimeAMPM(timeStr) {
 
 const TAG_ORDER = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
 
+
+// ─── SUBCATEGORIES ────────────────────────────────────────────
+const SUBCATEGORIES = {
+  'deep-work': ['Coding', 'Writing', 'Design', 'Research', 'Planning', 'Deep Reading'],
+  'meeting': ['Team Standup', '1:1', 'Client Call', 'Brainstorm', 'Review', 'Planning', 'Retro'],
+  'exercise': ['Chest Day', 'Back Day', 'Leg Day', 'Shoulder Day', 'Arm Day', 'Cardio', 'HIIT', 'Yoga', 'Stretching', 'Running', 'Swimming', 'Cycling', 'Full Body'],
+  'study': ['Math', 'Science', 'Language', 'History', 'Programming', 'Reading', 'Exam Prep', 'Coursework'],
+  'hobby': ['Music', 'Art', 'Gaming', 'Reading', 'Cooking', 'Photography', 'Gardening', 'DIY', 'Writing'],
+};
+
 // ─── PRIORITY ────────────────────────────────────────────────
 const PRIORITY_LEVELS = [1, 2, 3, 4];
 const PRIORITY_LABELS = { 1: 'P1 - Critical', 2: 'P2 - High', 3: 'P3 - Normal', 4: 'P4 - Low' };
@@ -437,11 +447,16 @@ function loadTemplates() {
 
 function getDefaultTemplates() {
   return [
-    { id: 'tpl-dw', name: 'Deep Work Session', title: 'Deep Work: Focus session', tag: 'deep-work', duration: 120, priority: 2 },
-    { id: 'tpl-mtg', name: 'Team Meeting', title: 'Team standup', tag: 'meeting', duration: 30, priority: 2 },
-    { id: 'tpl-ex', name: 'Workout', title: 'Morning workout', tag: 'exercise', duration: 60, priority: 3 },
-    { id: 'tpl-st', name: 'Study Session', title: 'Study session', tag: 'study', duration: 60, priority: 3 },
-    { id: 'tpl-hb', name: 'Hobby Time', title: 'Personal project', tag: 'hobby', duration: 90, priority: 4 },
+    { id: 'tpl-dw', name: 'Deep Work Session', title: 'Deep Work: Focus session', tag: 'deep-work', subcategory: 'Coding', duration: 120, priority: 2 },
+    { id: 'tpl-mtg', name: 'Team Meeting', title: 'Team standup', tag: 'meeting', subcategory: 'Team Standup', duration: 30, priority: 2 },
+    { id: 'tpl-ex', name: 'Workout', title: 'Morning workout', tag: 'exercise', subcategory: 'Full Body', duration: 60, priority: 3 },
+    { id: 'tpl-ex-chest', name: 'Chest Day', title: 'Chest workout', tag: 'exercise', subcategory: 'Chest Day', duration: 60, priority: 3 },
+    { id: 'tpl-ex-back', name: 'Back Day', title: 'Back workout', tag: 'exercise', subcategory: 'Back Day', duration: 60, priority: 3 },
+    { id: 'tpl-ex-leg', name: 'Leg Day', title: 'Leg workout', tag: 'exercise', subcategory: 'Leg Day', duration: 60, priority: 3 },
+    { id: 'tpl-ex-cardio', name: 'Cardio', title: 'Cardio session', tag: 'exercise', subcategory: 'Cardio', duration: 45, priority: 3 },
+    { id: 'tpl-ex-yoga', name: 'Yoga Flow', title: 'Yoga & stretching', tag: 'exercise', subcategory: 'Yoga', duration: 45, priority: 3 },
+    { id: 'tpl-st', name: 'Study Session', title: 'Study session', tag: 'study', subcategory: 'Reading', duration: 60, priority: 3 },
+    { id: 'tpl-hb', name: 'Hobby Time', title: 'Personal project', tag: 'hobby', subcategory: 'Music', duration: 90, priority: 4 },
   ];
 }
 

@@ -128,7 +128,7 @@ function normalizeBentoLayout(layout, parent) {
         const ratio = aspectRatios[oldAspect] || 1.333;
         norm.h = snap(norm.w / ratio);
       } else if (norm.t === 'spotify') {
-        norm.h = 400;
+        norm.h = snap(420);
       } else {
         norm.h = snap(280);
       }
@@ -877,7 +877,7 @@ function renderHubBento() {
             var item = layout.find(function(i) { return i.uid === uid; });
             if (item) {
               item.w = snap(320);
-              item.h = item.t === 'spotify' ? 480 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+              item.h = item.t === 'spotify' ? snap(420) : item.t === 'images' ? snap(320 / 1.333) : snap(280);
               item.x = snap(24);
               item.y = snap(24);
               resolveBubbleCollisions(layout);

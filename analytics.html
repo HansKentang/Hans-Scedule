@@ -16,9 +16,9 @@
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
-    /* ─── ANALYTICS: DATA DASHBOARD (inside Hub layout) ── */
+    /* ─── ANALYTICS: DATA DASHBOARD ── */
 
-    /* KPI cards */
+    /* KPI cards — minimal, no colored borders */
     .an-kpi-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -26,56 +26,60 @@
       margin-bottom: var(--space-6);
     }
     .an-kpi {
-      padding: var(--space-5);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--border-color);
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
       background: var(--bg-card);
-      position: relative; overflow: hidden;
       transition: all var(--t-base);
     }
-    .an-kpi:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
-    .an-kpi::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    .an-kpi {
+      position: relative;
+      overflow: hidden;
     }
-    .an-kpi:nth-child(1)::before { background: var(--tag-deep-work-text); }
-    .an-kpi:nth-child(2)::before { background: var(--tag-meeting-text); }
-    .an-kpi:nth-child(3)::before { background: var(--tag-exercise-text); }
-    .an-kpi:nth-child(4)::before { background: var(--tag-study-text); }
+    .an-kpi::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%; border-radius: 3px 0 0 3px;
+      background: var(--accent);
+    }
+    .an-kpi:nth-child(3)::before { background: var(--tag-deep-work-text, var(--accent)); }
+    .an-kpi:nth-child(4)::before { background: var(--tag-study-text, var(--accent)); }
+    .an-kpi:hover { border-color: var(--border-color); }
     .an-kpi-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: var(--space-2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-1);
     }
     .an-kpi-icon {
-      width: 32px; height: 32px; border-radius: var(--radius-md);
+      width: 28px; height: 28px; border-radius: var(--radius-sm);
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.9rem; flex-shrink: 0;
+      color: var(--text-tertiary);
+      opacity: 0.5;
     }
-    .an-kpi:nth-child(1) .an-kpi-icon { background: color-mix(in srgb, var(--tag-deep-work-text) 10%, transparent); color: var(--tag-deep-work-text); }
-    .an-kpi:nth-child(2) .an-kpi-icon { background: color-mix(in srgb, var(--tag-meeting-text) 10%, transparent); color: var(--tag-meeting-text); }
-    .an-kpi:nth-child(3) .an-kpi-icon { background: color-mix(in srgb, var(--tag-exercise-text) 10%, transparent); color: var(--tag-exercise-text); }
-    .an-kpi:nth-child(4) .an-kpi-icon { background: color-mix(in srgb, var(--tag-study-text) 10%, transparent); color: var(--tag-study-text); }
+    .an-kpi-icon svg { width: 14px; height: 14px; }
     .an-kpi-label {
-      font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.07em; color: var(--text-tertiary);
+      font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-tertiary);
     }
     .an-kpi-value {
-      font-size: 1.8rem; font-weight: 800; line-height: 1;
+      font-size: 1.6rem; font-weight: 700; line-height: 1.2;
       font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
     }
     .an-kpi-sub {
-      font-size: 0.7rem; color: var(--text-tertiary); margin-top: var(--space-1);
+      font-size: 0.68rem; color: var(--text-tertiary); margin-top: 1px;
       display: flex; align-items: center; gap: var(--space-1);
     }
     .an-kpi-trend {
       display: inline-flex; align-items: center; gap: 2px;
-      font-size: 0.65rem; font-weight: 600; padding: 1px 6px;
+      font-size: 0.6rem; font-weight: 600; padding: 1px 6px;
       border-radius: 10px;
     }
     .an-kpi-trend.up { background: color-mix(in srgb, #10b981 10%, transparent); color: #10b981; }
     .an-kpi-trend.down { background: color-mix(in srgb, #ef4444 10%, transparent); color: #ef4444; }
     .an-kpi-trend.flat { background: var(--accent-soft); color: var(--text-tertiary); }
 
-    /* Completion row */
+    /* Completion + Streak row */
     .an-completion-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -83,182 +87,218 @@
       margin-bottom: var(--space-6);
     }
     .an-completion-card {
-      padding: var(--space-5);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--border-color);
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
       background: var(--bg-card);
       transition: all var(--t-base);
     }
-    .an-completion-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .an-completion-card:hover { border-color: var(--border-color); }
     .an-completion-header {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: var(--space-3);
     }
-    .an-completion-header h3 { font-size: 0.8rem; font-weight: 600; }
-    .an-completion-header span { font-size: 0.68rem; color: var(--text-tertiary); }
+    .an-completion-header h3 { font-size: 0.75rem; font-weight: 600; }
+    .an-completion-header span { font-size: 0.65rem; color: var(--text-tertiary); }
+    .an-comp-ring-wrap { display: flex; align-items: center; gap: var(--space-2); }
+    .an-comp-ring {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: conic-gradient(var(--accent) 0%, var(--bg-secondary) 0%);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .an-comp-ring span {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--bg-card);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.55rem; font-weight: 700; line-height: 1;
+    }
     .an-completion-bar {
-      height: 8px; background: var(--bg-secondary); border-radius: 4px;
+      height: 6px; background: var(--bg-secondary); border-radius: 3px;
       overflow: hidden; margin-bottom: var(--space-3);
     }
     .an-completion-fill {
-      height: 100%; border-radius: 4px;
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, transparent));
       transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .an-completion-fill.deep-work { background: linear-gradient(90deg, var(--tag-deep-work-text), color-mix(in srgb, var(--tag-deep-work-text) 70%, transparent)); }
-    .an-completion-fill.meeting { background: linear-gradient(90deg, var(--tag-meeting-text), color-mix(in srgb, var(--tag-meeting-text) 70%, transparent)); }
-    .an-completion-fill.exercise { background: linear-gradient(90deg, var(--tag-exercise-text), color-mix(in srgb, var(--tag-exercise-text) 70%, transparent)); }
-    .an-completion-fill.study { background: linear-gradient(90deg, var(--tag-study-text), color-mix(in srgb, var(--tag-study-text) 70%, transparent)); }
-    .an-completion-fill.hobby { background: linear-gradient(90deg, var(--tag-hobby-text), color-mix(in srgb, var(--tag-hobby-text) 70%, transparent)); }
     .an-completion-stats {
-      display: flex; gap: var(--space-4);
+      display: flex; gap: var(--space-5);
     }
     .an-completion-stat {
       display: flex; flex-direction: column; gap: 2px;
     }
     .an-completion-stat .val {
-      font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums;
+      font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums;
     }
     .an-completion-stat .lbl {
-      font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase;
-      letter-spacing: 0.05em; font-weight: 600;
+      font-size: 0.58rem; color: var(--text-tertiary); text-transform: uppercase;
+      letter-spacing: 0.04em; font-weight: 600;
     }
 
     /* Streak card */
     .an-streak-card {
-      padding: var(--space-5);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--border-color);
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
       background: var(--bg-card);
       transition: all var(--t-base);
-      display: flex; flex-direction: column; gap: var(--space-4);
+      display: flex; flex-direction: column; gap: var(--space-3);
     }
-    .an-streak-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .an-streak-card:hover { border-color: var(--border-color); }
     .an-streak-header {
       display: flex; align-items: center; justify-content: space-between;
     }
-    .an-streak-header h3 { font-size: 0.8rem; font-weight: 600; }
+    .an-streak-header h3 { font-size: 0.75rem; font-weight: 600; }
     .an-streak-days {
-      display: flex; gap: var(--space-1);
+      display: flex; gap: 0;
+      position: relative;
+      padding: 0 var(--space-1);
+    }
+    .an-streak-days::before {
+      content: ''; position: absolute; top: 50%; left: var(--space-1); right: var(--space-1);
+      height: 2px; transform: translateY(-50%);
+      background: var(--border-subtle);
+      border-radius: 1px;
+      z-index: 0;
     }
     .an-streak-day {
-      width: 28px; height: 28px; border-radius: var(--radius-sm);
+      width: 28px; height: 28px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.6rem; font-weight: 600; color: var(--text-tertiary);
-      border: 1px solid var(--border-subtle);
+      font-size: 0.55rem; font-weight: 600; color: var(--text-tertiary);
+      background: var(--bg-card);
       transition: all var(--t-fast);
+      position: relative; z-index: 1;
+      flex-shrink: 0;
+    }
+    .an-streak-day:not(:last-child)::after {
+      content: ''; position: absolute; top: 50%; left: 100%;
+      width: calc(100% + var(--space-1)); height: 2px;
+      background: var(--border-subtle);
+      transform: translateY(-50%);
+      z-index: -1;
     }
     .an-streak-day.active {
       background: var(--accent); color: var(--text-inverse);
-      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--accent);
     }
+    .an-streak-day.active::after { background: var(--accent); }
     .an-streak-day.today {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
+      box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px color-mix(in srgb, var(--accent) 40%, transparent);
+    }
+    .an-streak-day.active.today {
+      box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--accent);
     }
     .an-streak-summary {
-      display: flex; gap: var(--space-4);
+      display: flex; gap: var(--space-5);
     }
     .an-streak-stat {
       display: flex; flex-direction: column; gap: 2px;
     }
     .an-streak-stat .val {
-      font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums;
+      font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums;
     }
     .an-streak-stat .lbl {
-      font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase;
-      letter-spacing: 0.05em; font-weight: 600;
+      font-size: 0.58rem; color: var(--text-tertiary); text-transform: uppercase;
+      letter-spacing: 0.04em; font-weight: 600;
     }
 
     /* Chart grid */
     .an-chart-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: var(--space-5);
+      gap: var(--space-4);
       margin-bottom: var(--space-6);
     }
     .an-chart-card {
-      padding: var(--space-5);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--border-color);
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
       background: var(--bg-card);
       transition: all var(--t-base);
     }
-    .an-chart-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .an-chart-card:hover { border-color: var(--border-color); }
     .an-chart-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: var(--space-4);
+      margin-bottom: var(--space-3);
     }
-    .an-chart-header h3 { font-size: 0.8rem; font-weight: 600; }
-    .an-chart-header span { font-size: 0.68rem; color: var(--text-tertiary); }
-    .an-chart-card canvas { width: 100%; height: 220px; display: block; }
+    .an-chart-header h3 { font-size: 0.75rem; font-weight: 600; }
+    .an-chart-header span { font-size: 0.65rem; color: var(--text-tertiary); }
+    .an-chart-card canvas { width: 100%; height: 200px; display: block; }
     .an-chart-legend {
-      display: flex; flex-wrap: wrap; gap: var(--space-3);
-      margin-top: var(--space-3); padding-top: var(--space-3);
-      border-top: 1px solid var(--border-subtle);
+      display: flex; flex-wrap: wrap; gap: var(--space-2);
+      margin-top: var(--space-2);
     }
     .an-legend-item {
-      display: flex; align-items: center; gap: var(--space-2);
-      font-size: 0.7rem; color: var(--text-secondary);
+      display: flex; align-items: center; gap: var(--space-1);
+      font-size: 0.68rem; color: var(--text-secondary);
     }
-    .an-legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .an-legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
     /* Full-width chart */
-    .an-full-chart {
-      margin-bottom: var(--space-6);
-    }
-    .an-full-chart .an-chart-card {
-      padding: var(--space-5);
-    }
-    .an-full-chart canvas { height: 180px; }
+    .an-full-chart { margin-bottom: var(--space-6); }
+    .an-full-chart canvas { height: 160px; }
 
     /* Table card */
     .an-table-card {
-      padding: var(--space-5);
-      border-radius: var(--radius-xl);
-      border: 1px solid var(--border-color);
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
       background: var(--bg-card);
       margin-bottom: var(--space-6);
     }
     .an-table-header {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: var(--space-4);
+      margin-bottom: var(--space-3);
     }
-    .an-table-header h3 { font-size: 0.8rem; font-weight: 600; }
-    .an-table-header span { font-size: 0.68rem; color: var(--text-tertiary); }
+    .an-table-header h3 { font-size: 0.75rem; font-weight: 600; }
+    .an-table-header span { font-size: 0.65rem; color: var(--text-tertiary); }
     .an-table {
-      width: 100%; border-collapse: collapse; font-size: 0.8rem;
+      width: 100%; border-collapse: collapse; font-size: 0.78rem;
     }
     .an-table th {
-      text-align: left; padding: var(--space-2) var(--space-3);
-      font-size: 0.62rem; color: var(--text-tertiary);
-      text-transform: uppercase; letter-spacing: 0.07em;
-      font-weight: 600; border-bottom: 1px solid var(--border-color);
+      text-align: left; padding: var(--space-1) var(--space-2);
+      font-size: 0.58rem; color: var(--text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      font-weight: 600; border-bottom: 1px solid var(--border-subtle);
     }
     .an-table td {
-      padding: var(--space-2) var(--space-3);
+      padding: var(--space-1) var(--space-2);
       border-bottom: 1px solid var(--border-subtle);
       color: var(--text-primary);
       font-variant-numeric: tabular-nums;
     }
-    .an-table tr:hover td { background: var(--accent-soft); }
-    .an-table .num { font-family: var(--font-mono); text-align: right; }
+    .an-table tbody tr:nth-child(2n) td { background: var(--bg-secondary); }
+    .an-table tbody tr:hover td { background: var(--accent-soft); }
+    .an-table .num { text-align: right; font-family: var(--font-mono); }
     .an-table .tag-pill {
-      display: inline-block; font-size: 0.55rem; font-weight: 600;
-      padding: 1px 6px; border-radius: 3px; text-transform: uppercase;
-      letter-spacing: 0.04em;
+      display: inline-block; font-size: 0.52rem; font-weight: 600;
+      padding: 1px 5px; border-radius: 3px; text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
 
-    /* Period select inline */
-    .an-period-select {
-      padding: var(--space-1) var(--space-3); border: 1px solid var(--border-color);
-      border-radius: 20px; font-size: 0.78rem; font-family: var(--font-family);
-      background: var(--bg-primary); color: var(--text-primary); outline: none;
-      cursor: pointer; appearance: none; -webkit-appearance: none;
-      padding-right: 28px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%238a8a96' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 10px center;
+    /* Filter bar — pill-style period selector */
+    .an-filter-bar {
+      display: flex; align-items: center; justify-content: flex-end;
+      margin-bottom: var(--space-4);
     }
-    .an-period-select:focus { border-color: var(--border-focus); }
+    .an-period-pills {
+      display: inline-flex; gap: 2px;
+      padding: 3px; border-radius: var(--radius-lg);
+      background: var(--bg-secondary);
+    }
+    .an-period-pill {
+      padding: 5px 14px; border: none; border-radius: 10px;
+      font-size: 0.72rem; font-weight: 600;
+      font-family: var(--font-family);
+      color: var(--text-tertiary); background: transparent;
+      cursor: pointer; transition: all var(--t-fast);
+    }
+    .an-period-pill:hover { color: var(--text-primary); }
+    .an-period-pill.active {
+      background: var(--bg-primary); color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
 
     /* Empty state */
     .an-empty {
@@ -271,13 +311,15 @@
 
     @media (max-width: 768px) {
       .an-kpi-row { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
-      .an-kpi { padding: var(--space-4); }
+      .an-kpi { padding: var(--space-3) var(--space-4); }
       .an-kpi-value { font-size: 1.3rem; }
       .an-completion-row { grid-template-columns: 1fr; }
       .an-chart-grid { grid-template-columns: 1fr; }
-      .an-chart-card { padding: var(--space-4); }
-      .an-table-card { padding: var(--space-4); }
-      .an-streak-days { flex-wrap: wrap; }
+      .an-chart-card { padding: var(--space-3) var(--space-4); }
+      .an-chart-card canvas { height: 160px; }
+      .an-table-card { padding: var(--space-3) var(--space-4); }
+      .an-period-pills { width: 100%; }
+      .an-period-pill { flex: 1; text-align: center; }
     }
   </style>
 </head>
@@ -423,7 +465,7 @@
     <div class="hub-main">
 
       <!-- ─── ANALYTICS HERO BANNER ──────────────────────── -->
-      <section style="position:relative;height:180px;overflow:hidden;flex-shrink:0">
+      <section style="position:relative;height:160px;overflow:hidden;flex-shrink:0">
           <img data-image-id="analytics-hero" src="" alt=""
                style="width:100%;height:100%;object-fit:cover;opacity:0.7"
                >
@@ -445,20 +487,12 @@
 
       <div class="hub-content hub-page-transition">
 
-        <!-- Page Header -->
-        <div class="hub-page-header hub-anim-in hub-anim-in-2">
-          <div class="hub-page-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-            </svg>
-          </div>
-          <h1 class="hub-page-title">Analytics</h1>
-          <div class="hub-page-meta">
-            <select id="analyticsPeriod" class="an-period-select">
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="all">All Time</option>
-            </select>
+        <!-- Period Filter -->
+        <div class="an-filter-bar hub-anim-in hub-anim-in-2">
+          <div class="an-period-pills" id="analyticsPeriodPills">
+            <button class="an-period-pill active" data-period="week">Week</button>
+            <button class="an-period-pill" data-period="month">Month</button>
+            <button class="an-period-pill" data-period="all">All</button>
           </div>
         </div>
 
@@ -511,9 +545,14 @@
           <div class="an-completion-card">
             <div class="an-completion-header">
               <h3>Completion Rate</h3>
-              <span id="completionPeriod">This Week</span>
+              <div class="an-comp-ring-wrap">
+                <div class="an-comp-ring" id="compRing">
+                  <span id="compRingPct">0%</span>
+                </div>
+                <span id="completionPeriod">This Week</span>
+              </div>
             </div>
-            <div class="an-completion-bar"><div class="an-completion-fill deep-work" id="completionFill" style="width:0%"></div></div>
+            <div class="an-completion-bar"><div class="an-completion-fill" id="completionFill" style="width:0%"></div></div>
             <div class="an-completion-stats">
               <div class="an-completion-stat"><span class="val" id="compDone">0</span><span class="lbl">Completed</span></div>
               <div class="an-completion-stat"><span class="val" id="compTotal">0</span><span class="lbl">Total</span></div>
@@ -575,7 +614,7 @@
             <div class="an-sleep-value" id="sleepAnalyticsQuality">—</div>
             <div class="an-sleep-sub" id="sleepAnalyticsQualitySub">No sleep data</div>
             <div style="margin-top:var(--space-3)">
-              <div class="an-completion-bar"><div class="an-completion-fill deep-work" id="sleepQualityFill" style="width:0%"></div></div>
+              <div class="an-completion-bar"><div class="an-completion-fill" id="sleepQualityFill" style="width:0%"></div></div>
               <div class="an-completion-stats">
                 <div class="an-completion-stat"><span class="val" id="sleepQualityScore">0</span><span class="lbl">Quality</span></div>
                 <div class="an-completion-stat"><span class="val" id="sleepLogCount">0</span><span class="lbl">Nights Logged</span></div>

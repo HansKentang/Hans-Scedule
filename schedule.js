@@ -1867,12 +1867,17 @@ function saveAddTemplate() {
   const durEl = document.querySelector('.tpl-add-dur.active');
   const duration = durEl ? parseInt(durEl.dataset.minutes) : 60;
   
+  // Get subcategory
+  const subcatEl = document.getElementById('tplAddSubcategory');
+  const subcategory = subcatEl ? subcatEl.value : '';
+  
   const templates = loadTemplates();
   const newTpl = {
     id: 'tpl-' + uid(),
     name,
     title,
     tag,
+    subcategory: subcategory || undefined,
     duration,
     priority: 3,
   };
@@ -2223,6 +2228,13 @@ function startEditTemplate(pill, id) {
           ).join('')}
         </div>
       </div>
+      
+      <div class="tf-group">
+        <label class="tf-label">Subcategory</label>
+        <select id="tplEditSubcategory" class="form-input">
+          <option value="">None</option>
+        </select>
+      </div>
       <div class="tpl-edit-popup-actions">
         <button class="tf-btn tf-btn-ghost" id="tplEditCancel">Cancel</button>
         <button class="tf-btn tf-btn-primary" id="tplEditSave">
@@ -2332,7 +2344,7 @@ function renderSchTemplates() {
     const accent = col.text;
     const isOpen = state._openPmTag === tag;
     html += `<button class="sch-pm-chip${isOpen ? ' active' : ''}" data-pm-tag="${tag}"
-      style="--chip-accent:${accent}">
+      style="--chip-accent:${accent}" draggable="true" data-pm-chip="${tag}">
       <span class="sch-pm-chip-dot" style="background:${accent}"></span>
       ${TAG_LABELS[tag]}
       ${tpls.length > 0 ? `<span class="sch-pm-chip-count">${tpls.length}</span>` : ''}
@@ -2354,8 +2366,60 @@ function renderSchTemplates() {
       }
     });
   });
+  
+  // Make chip-row buttons draggable to calendar
+  container.querySelectorAll('.sch-pm-chip').forEach(chip => {
+    chip.addEventListener('mousedown', (e) => {
+      if (e.button !== 0 || e.target.closest('.sch-pm-chip') !== chip) return;
+      // Only start drag if user explicitly moves (don't interfere with click)
+      const startX = e.clientX, startY = e.clientY;
+      let moved = false;
+      const onMove = (ev) => {
+        if (Math.abs(ev.clientX - startX) > 5 || Math.abs(ev.clientY - startY) > 5) {
+          moved = true;
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          // Simulate startDrag with a fake source
+          const tag = chip.dataset.pmTag;
+          const fakePill = document.createElement('div');
+          fakePill.dataset.tag = tag;
+          fakePill.dataset.duration = '60';
+          fakePill.dataset.templateTitle = TAG_LABELS[tag] || tag;
+          startDrag(ev, fakePill);
+        }
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        if (!moved) {
+          // It was a click, let click handler handle it
+          chip.click();
+        }
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
 }
 
+
+// ─── RENDER PILL HELPER (for subcategory groups) ─────────────
+function renderPmPill(tpl, col) {
+  const dur = formatDuration(tpl.duration);
+  return `<button class="sch-pm-dropdown-pill" data-template-id="${tpl.id}"
+    data-tag="${tpl.tag}" data-duration="${tpl.duration}" data-template-title="${escapeHtml(tpl.title || tpl.name)}"
+    style="--dp-accent:${col.text}">
+    <span class="dp-dot" style="background:${col.text}"></span>
+    <span class="dp-name">${escapeHtml(tpl.name)}</span>
+    <span class="dp-dur">${dur}</span>
+    <span class="dp-edit" data-edit-template="${tpl.id}" title="Edit template">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </span>
+    <span class="dp-del" data-delete-template="${tpl.id}" title="Delete template">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </span>
+  </button>`;
+}
 function showPmDropdown(tag) {
   // Remove any existing dropdown
   document.getElementById('schPmDropdown')?.remove();
@@ -2383,21 +2447,41 @@ function showPmDropdown(tag) {
       No templates in this category
     </span>`;
   } else {
+    // Group templates by subcategory
+    const subcats = SUBCATEGORIES[tag] || [];
+    const grouped = {};
+    const uncategorized = [];
     for (const tpl of tpls) {
-      const dur = formatDuration(tpl.duration);
-      html += `<button class="sch-pm-dropdown-pill" data-template-id="${tpl.id}"
-        data-tag="${tpl.tag}" data-duration="${tpl.duration}" data-template-title="${escapeHtml(tpl.title || tpl.name)}"
-        style="--dp-accent:${col.text}">
-        <span class="dp-dot" style="background:${col.text}"></span>
-        <span class="dp-name">${escapeHtml(tpl.name)}</span>
-        <span class="dp-dur">${dur}</span>
-        <span class="dp-edit" data-edit-template="${tpl.id}" title="Edit template">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </span>
-        <span class="dp-del" data-delete-template="${tpl.id}" title="Delete template">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </span>
-      </button>`;
+      if (tpl.subcategory && subcats.includes(tpl.subcategory)) {
+        if (!grouped[tpl.subcategory]) grouped[tpl.subcategory] = [];
+        grouped[tpl.subcategory].push(tpl);
+      } else {
+        uncategorized.push(tpl);
+      }
+    }
+    
+    // Render grouped templates
+    for (const subcat of subcats) {
+      const groupTpls = grouped[subcat];
+      if (!groupTpls || groupTpls.length === 0) continue;
+      html += `<div class="sch-pm-subcat-group">
+        <span class="sch-pm-subcat-label">${subcat}</span>
+        <div class="sch-pm-subcat-pills">`;
+      for (const tpl of groupTpls) {
+        html += renderPmPill(tpl, col);
+      }
+      html += `</div></div>`;
+    }
+    
+    // Render uncategorized templates
+    if (uncategorized.length > 0) {
+      html += `<div class="sch-pm-subcat-group">
+        <span class="sch-pm-subcat-label">Other</span>
+        <div class="sch-pm-subcat-pills">`;
+      for (const tpl of uncategorized) {
+        html += renderPmPill(tpl, col);
+      }
+      html += `</div></div>`;
     }
   }
   
@@ -2406,34 +2490,30 @@ function showPmDropdown(tag) {
   
   // Event handlers for pills
   dropdown.querySelectorAll('.sch-pm-dropdown-pill').forEach(pill => {
-    // Click to use template (open command palette)
     pill.addEventListener('click', (e) => {
       if (e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]')) return;
       const id = pill.dataset.templateId;
       const tpl = tpls.find(t => t.id === id);
       if (tpl) { showCmdPalette(); if (dom.cmdInput) { dom.cmdInput.value = tpl.title || tpl.name; dom.cmdInput.focus(); } }
     });
-    // Edit
     const editBtn = pill.querySelector('[data-edit-template]');
     if (editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); startEditTemplate(pill, pill.dataset.templateId); });
-    // Delete
     const delBtn = pill.querySelector('[data-delete-template]');
     if (delBtn) delBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const name = pill.querySelector('.dp-name')?.textContent || 'template';
-      if (confirm(`Delete template "${name}"?`)) { deleteTemplate(delBtn.dataset.deleteTemplate); }
+      if (confirm(`Delete template ` + JSON.stringify(name) + '?')) {
+        deleteTemplate(pill.dataset.templateId);
+      }
     });
-    // Drag
     pill.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]')) return;
       startDrag(e, pill);
     });
   });
   
-  // Close on outside click (delayed so the chip click doesn't auto-close)
-  setTimeout(() => {
-    document.addEventListener('click', closePmDropdown);
-  }, 0);
+  // Close on outside click
+  setTimeout(() => document.addEventListener('click', closePmDropdown), 0);
 }
 
 function closePmDropdown(e) {

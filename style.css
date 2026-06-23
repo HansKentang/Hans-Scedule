@@ -4550,19 +4550,19 @@ html.light .sleep-header h3 svg {
   margin-bottom: var(--space-6);
 }
 .an-sleep-card {
-  padding: var(--space-5);
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border-color);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   transition: all var(--t-base);
 }
-.an-sleep-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+.an-sleep-card:hover { border-color: var(--border-color); }
 .an-sleep-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: var(--space-3);
 }
-.an-sleep-header h3 { font-size: 0.8rem; font-weight: 600; }
-.an-sleep-header span { font-size: 0.68rem; color: var(--text-tertiary); }
+.an-sleep-header h3 { font-size: 0.75rem; font-weight: 600; }
+.an-sleep-header span { font-size: 0.65rem; color: var(--text-tertiary); }
 .an-sleep-value {
   font-size: 2rem; font-weight: 800; line-height: 1;
   font-variant-numeric: tabular-nums;

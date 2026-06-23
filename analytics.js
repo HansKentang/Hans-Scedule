@@ -3,7 +3,7 @@
    Canvas-based charts, stats, and day-by-day
    ============================================ */
 
-const periodSelect = document.getElementById('analyticsPeriod');
+let currentPeriod = 'week';
 const pieCanvas = document.getElementById('pieChart');
 const barCanvas = document.getElementById('barChart');
 const trendCanvas = document.getElementById('trendChart');
@@ -21,7 +21,7 @@ function getTagColorHex(tag) {
 
 // ─── FILTERING ─────────────────────────────────────────────
 function getFilteredTasks() {
-  const period = periodSelect?.value || 'week';
+  const period = currentPeriod;
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   let startDate = null;
@@ -105,8 +105,12 @@ function renderCompletion(tasks) {
   el('compTotal').textContent = total;
   el('compPct').textContent = `${pct}%`;
   el('completionFill').style.width = `${pct}%`;
+  const ring = el('compRing');
+  if (ring) ring.style.background = `conic-gradient(var(--accent) ${pct}%, var(--bg-secondary) ${pct}%)`;
+  const ringPct = el('compRingPct');
+  if (ringPct) ringPct.textContent = `${pct}%`;
 
-  const period = periodSelect?.value || 'week';
+  const period = currentPeriod;
   const periodMap = { week: 'This Week', month: 'This Month', all: 'All Time' };
   el('completionPeriod').textContent = periodMap[period] || 'All Time';
 }
@@ -758,11 +762,10 @@ function renderAnalytics() {
   renderTable(tasks);
   renderSleepAnalytics();
 
-  // Update period label
   const labelEl = document.getElementById('detailPeriodLabel');
-  if (labelEl && periodSelect) {
+  if (labelEl) {
     const map = { week: 'This Week', month: 'This Month', all: 'All Time' };
-    labelEl.textContent = map[periodSelect.value] || 'All Time';
+    labelEl.textContent = map[currentPeriod] || 'All Time';
   }
 }
 
@@ -810,7 +813,14 @@ function init() {
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
   renderAnalytics();
 
-  periodSelect?.addEventListener('change', renderAnalytics);
+  document.getElementById('analyticsPeriodPills')?.addEventListener('click', (e) => {
+    const pill = e.target.closest('.an-period-pill');
+    if (!pill) return;
+    document.querySelectorAll('.an-period-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    currentPeriod = pill.dataset.period;
+    renderAnalytics();
+  });
   window.addEventListener('resize', renderAnalytics);
 
   // Re-render on theme toggle
