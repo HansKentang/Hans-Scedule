@@ -320,6 +320,22 @@
     .template-pill:hover .tpl-delete { opacity: 0.5; }
     .template-pill .tpl-delete:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
     .template-pill .tpl-delete svg { width: 10px; height: 10px; }
+    /* Edit (rename) button */
+    .template-pill .tpl-edit {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0;
+      opacity: 0;
+      flex-shrink: 0;
+      transition: all var(--t-fast);
+      margin-left: 1px;
+    }
+    .template-pill:hover .tpl-edit { opacity: 0.5; }
+    .template-pill .tpl-edit:hover { opacity: 1; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+    .template-pill .tpl-edit svg { width: 10px; height: 10px; }
     /* Inline rename input */
     .tpl-rename-input {
       background: transparent; border: none; outline: none;
