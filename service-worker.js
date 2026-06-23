@@ -14,7 +14,9 @@ const URLS = [
   '/tags.js',
   '/analytics.js',
   '/icon.svg',
-  '/manifest.json'
+  '/manifest.json',
+  '/gallery.html',
+  '/gallery.js'
 ];
 
 self.addEventListener('install', (e) => {

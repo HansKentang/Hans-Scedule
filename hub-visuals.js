@@ -1218,6 +1218,7 @@ let _bubbleDragInitialized = false;
 let _bubbleResizeData = null;
 let _bubbleResizeInitialized = false;
 let _suppressClick = false;
+let _handleLastClickTime = 0;
 
 function resetBentoInteractions() {
   // Only clear active state — NEVER reset initialization flags,
@@ -1241,6 +1242,14 @@ function setupBubbleDragDrop() {
     // Drag can only be initiated from the 6-dots handle
     var dragZone = e.target.closest('.bento-bubble-handle');
     if (!dragZone) return;
+    // Double-click on handle cancels any pending/active drag and un-holds the widget
+    var now = Date.now();
+    if (now - _handleLastClickTime < 400) {
+      _handleLastClickTime = 0;
+      cancelDrag();
+      return;
+    }
+    _handleLastClickTime = now;
     // Don't start drag if clicking interactive elements inside the zone
     if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-copy-bubble], [data-duplicate-bubble]')) return;
     const bubble = dragZone.closest('.bento-bubble');

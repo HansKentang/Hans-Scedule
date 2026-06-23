@@ -1288,7 +1288,8 @@ const DEFAULT_IMAGES = {
   'hub-image-8': 'https://picsum.photos/seed/haven-canvas-8/600/400',
   'hub-image-9': 'https://picsum.photos/seed/haven-canvas-9/600/400',
   'hub-image-10': 'https://picsum.photos/seed/haven-canvas-10/600/400',
-  'sidebar-index': 'https://images.unsplash.com/photo-1752503650851-cbc3f8b00679?auto=format&fit=crop&w=440&q=80',
+  'gallery-hero': 'https://picsum.photos/seed/gallery-hero/1200/500',
+  'gallery-avatar': 'https://picsum.photos/seed/gallery-avatar/400/400',
   'sidebar-schedule': 'https://images.unsplash.com/photo-1562537218-26057ef20502?auto=format&fit=crop&w=440&q=80',
   'sidebar-activities': 'https://images.unsplash.com/photo-1742055700759-e393a5314287?auto=format&fit=crop&w=440&q=80',
   'sidebar-analytics': 'https://images.unsplash.com/photo-1759210358926-4673cc44d35f?auto=format&fit=crop&w=440&q=80',
@@ -1439,7 +1440,8 @@ function imageLabel(id) {
     'tags-hero': 'Tags Hero', 'tags-studio': 'Tags Studio',
     'analytics-hero': 'Analytics Hero', 'analytics-data': 'Analytics Data',
     'finance-hero': 'Finance Hero', 'finance-ceramic': 'Finance Avatar',
-    'goals-hero': 'Goals Hero', 'goals-ceramic': 'Goals Avatar'
+    'goals-hero': 'Goals Hero', 'goals-ceramic': 'Goals Avatar',
+    'gallery-hero': 'Gallery Hero', 'gallery-avatar': 'Gallery Avatar'
   };
   return map[id] || id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -2072,6 +2074,10 @@ const IMAGE_MANAGER_GROUPS = [
     label: 'Canvas',
     ids: ['hub-image-1', 'hub-image-2', 'hub-image-3', 'hub-image-4', 'hub-image-5',
            'hub-image-6', 'hub-image-7', 'hub-image-8', 'hub-image-9', 'hub-image-10']
+  },
+  {
+    label: 'Gallery',
+    ids: ['gallery-hero', 'gallery-avatar']
   }
 ];
 
@@ -2368,7 +2374,8 @@ const SIDEBAR_IMAGE_DEFAULTS = [
   { id: '_img_analytics', label: 'Analytics', page: 'analytics', url: 'https://images.unsplash.com/photo-1759210358926-4673cc44d35f?auto=format&fit=crop&w=440&q=80' },
   { id: '_img_goals', label: 'Goals', page: 'goals', url: 'https://images.unsplash.com/photo-1731176497854-f9ea4dd52eb6?auto=format&fit=crop&w=440&q=80' },
   { id: '_img_finance', label: 'Finance', page: 'finance', url: 'https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&w=440&q=80' },
-  { id: '_img_tags', label: 'Tags', page: 'tags', url: 'https://images.unsplash.com/photo-1768527049008-85f2cc0166be?auto=format&fit=crop&w=440&q=80' }
+  { id: '_img_tags', label: 'Tags', page: 'tags', url: 'https://images.unsplash.com/photo-1768527049008-85f2cc0166be?auto=format&fit=crop&w=440&q=80' },
+  { id: '_img_gallery', label: 'Gallery', page: 'gallery', url: 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=440&q=80' }
 ];
 
 function getCurrentPage() {
@@ -2389,7 +2396,7 @@ function loadSidebarConfig() {
       }
       // Ensure every page has at least one image
       if (!config.images) config.images = [];
-      var defaultPages = ['index','schedule','activities','analytics','goals','finance','tags'];
+      var defaultPages = ['index','schedule','activities','analytics','goals','finance','tags','gallery'];
       for (var p = 0; p < defaultPages.length; p++) {
         var pageName = defaultPages[p];
         var has = false;

@@ -16,50 +16,32 @@
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
-    /* ─── ACTIVITIES: TIMELINE JOURNAL (inside Hub layout) ── */
+    .act-feed { padding: var(--space-2) 0; }
 
-    /* Timeline feed — left time axis, right content */
-    .act-feed {
-      padding: var(--space-2) 0;
-    }
-
-    /* Day group — clean divider with date stamp */
-    .act-day {
-      margin-bottom: var(--space-8);
-      position: relative;
-    }
+    .act-day { margin-bottom: var(--space-6); }
     .act-day:last-child { margin-bottom: 0; }
     .act-day-stamp {
       display: flex; align-items: center; gap: var(--space-3);
-      margin-bottom: var(--space-3);
-      position: sticky; top: 0;
-      background: var(--bg-primary);
-      z-index: 2;
-      padding: var(--space-3) 0 var(--space-2);
+      margin-bottom: var(--space-3); position: sticky; top: 0;
+      background: var(--bg-primary); z-index: 2; padding: var(--space-2) 0;
     }
     .act-day-stamp::after {
-      content: ''; flex: 1; height: 1px;
-      background: linear-gradient(to right, var(--border-color), transparent);
-      opacity: 0.6;
+      content: ''; flex: 1; height: 1px; background: var(--border-subtle);
     }
     .act-day-label {
-      font-size: 0.82rem; font-weight: 600; color: var(--text-primary);
-      white-space: nowrap;
-      letter-spacing: -0.01em;
+      font-size: 0.8rem; font-weight: 600; color: var(--text-primary);
+      white-space: nowrap; letter-spacing: -0.01em;
     }
     .act-day-meta {
-      font-size: 0.66rem; color: var(--text-tertiary);
+      font-size: 0.65rem; color: var(--text-tertiary);
       display: flex; gap: var(--space-2); align-items: center;
     }
     .act-day-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      display: inline-block;
-      box-shadow: 0 0 0 2px var(--bg-primary);
+      width: 6px; height: 6px; border-radius: 50%; display: inline-block;
+      background: var(--text-tertiary); opacity: 0.25;
     }
-    .act-day-dot.today { background: var(--accent); box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent); }
-    .act-day-dot.past { background: var(--text-tertiary); opacity: 0.25; }
+    .act-day-dot.today { background: var(--accent); opacity: 1; }
 
-    /* Task card — minimal timeline style with colored left border */
     .act-card {
       display: flex; gap: var(--space-4);
       padding: var(--space-3) var(--space-5);
@@ -67,66 +49,46 @@
       border: 1px solid var(--border-subtle);
       background: var(--bg-card);
       margin-bottom: var(--space-2);
-      transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
-      position: relative;
-      overflow: hidden;
       border-left: 3px solid var(--act-accent, var(--gray-300));
-      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-    }
-    .act-card::before {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, color-mix(in srgb, var(--act-accent, var(--gray-300)) 3%, transparent) 0%, transparent 60%);
-      opacity: 0; transition: opacity 400ms ease;
-      pointer-events: none;
     }
     .act-card:hover {
       border-color: var(--border-color);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.08), 0 0 0 1px color-mix(in srgb, var(--text-primary) 4%, transparent);
-      transform: translateX(3px) translateY(-1px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      transform: translateY(-2px);
     }
-    .act-card:hover::before { opacity: 1; }
-    .act-card:active { transform: translateX(2px) translateY(0) scale(0.99); }
-    .act-card.completed {
-      opacity: 0.45;
-      filter: saturate(0.6);
-    }
-    .act-card.completed .act-card-title-display { text-decoration: line-through; opacity: 0.6; }
-    .act-card.completed::before { background: color-mix(in srgb, var(--bg-secondary) 60%, transparent); }
+    .act-card.completed { opacity: 0.4; }
+    .act-card.completed .act-card-title-display { text-decoration: line-through; }
 
     .act-card-time {
-      width: 60px; flex-shrink: 0;
+      width: 56px; flex-shrink: 0;
       font-size: 0.7rem; font-family: var(--font-mono);
       color: var(--text-tertiary);
-      padding-top: 3px;
-      text-align: right;
-      line-height: 1.3;
-      letter-spacing: -0.01em;
+      padding-top: 3px; text-align: right;
+      line-height: 1.3; letter-spacing: -0.01em;
     }
     .act-card-body { flex: 1; min-width: 0; }
     .act-card-header {
-      display: flex; align-items: center; gap: var(--space-2); margin-bottom: 2px;
+      display: flex; align-items: center; gap: var(--space-2);
     }
     .act-card-check {
-      width: 18px; height: 18px; border-radius: 50%;
+      width: 16px; height: 16px; border-radius: 50%;
       border: 2px solid var(--act-accent, var(--text-tertiary));
       flex-shrink: 0; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
-      position: relative;
     }
     .act-card-check:hover {
       border-color: var(--act-accent, var(--text-primary));
-      transform: scale(1.15);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--act-accent, var(--text-primary)) 15%, transparent);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--act-accent, var(--text-primary)) 12%, transparent);
     }
     .act-card-check.checked {
       background: var(--act-accent, currentColor);
       border-color: var(--act-accent, currentColor);
-      animation: checkPop 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .act-card-check.checked::after {
-      content: ''; width: 6px; height: 3px;
+      content: ''; width: 5px; height: 2.5px;
       border-left: 1.5px solid var(--bg-primary);
       border-bottom: 1.5px solid var(--bg-primary);
       transform: rotate(-45deg); margin-top: -1px;
@@ -134,13 +96,12 @@
     .act-card-title {
       font-size: 0.88rem; font-weight: 500; color: var(--text-primary);
       flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      transition: color var(--t-fast);
     }
     .act-card-notes {
       font-size: 0.72rem; color: var(--text-tertiary);
       margin-top: var(--space-1);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      padding-left: calc(18px + var(--space-2));
+      padding-left: calc(16px + var(--space-2));
     }
     .act-card-tag {
       font-size: 0.52rem; font-weight: 700; padding: 1px 7px;
@@ -151,36 +112,16 @@
       width: 24px; height: 24px; border: none; background: transparent;
       color: var(--text-tertiary); cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      border-radius: var(--radius-sm);
-      opacity: 0; transition: all var(--t-fast);
-      flex-shrink: 0;
+      border-radius: var(--radius-sm); transition: all var(--t-fast);
+      flex-shrink: 0; opacity: 0;
     }
-    .act-card:hover .act-card-del { opacity: 0.5; }
-    .act-card-del:hover { opacity: 1 !important; color: #e04040; background: color-mix(in srgb, #e04040 12%, transparent); transform: scale(1.1); }
-    @keyframes checkPop {
-      0% { transform: scale(1); }
-      35% { transform: scale(1.3); }
-      65% { transform: scale(0.92); }
-      100% { transform: scale(1); }
-    }
+    .act-card:hover .act-card-del { opacity: 0.4; }
+    .act-card-del:hover { opacity: 1 !important; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
 
-    .act-empty {
-      text-align: center; padding: var(--space-12) var(--space-8);
-      color: var(--text-tertiary);
-      animation: slideUp 400ms var(--curve);
-    }
-    .act-empty svg {
-      margin-bottom: var(--space-4); opacity: 0.12;
-      width: 64px; height: 64px;
-    }
-    .act-empty p {
-      font-size: 0.95rem; font-weight: 500; color: var(--text-secondary);
-    }
-    .act-empty .sub {
-      font-size: 0.78rem; margin-top: var(--space-2); opacity: 0.7;
-    }
+    .act-empty { text-align: center; padding: var(--space-10) var(--space-8); color: var(--text-tertiary); }
+    .act-empty p { font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
+    .act-empty .sub { font-size: 0.78rem; margin-top: var(--space-2); opacity: 0.6; }
 
-    /* Tag accent colors */
     .act-card.tag-deep-work { --act-accent: var(--tag-deep-work-text); }
     .act-card.tag-meeting { --act-accent: var(--tag-meeting-text); }
     .act-card.tag-exercise { --act-accent: var(--tag-exercise-text); }
@@ -188,14 +129,15 @@
     .act-card.tag-hobby { --act-accent: var(--tag-hobby-text); }
     .act-card.completed { --act-accent: var(--gray-400); }
 
-    /* Filter bar in hub-content */
     .act-filters {
       display: flex; align-items: center; gap: var(--space-3);
       margin-bottom: var(--space-5); flex-wrap: wrap;
     }
     .act-filters select {
-      padding: var(--space-1) var(--space-3); border: 1px solid var(--border-color);
-      border-radius: 20px; font-size: 0.78rem; font-family: var(--font-family);
+      padding: var(--space-1) var(--space-3);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      font-size: 0.78rem; font-family: var(--font-family);
       background: var(--bg-primary); color: var(--text-primary); outline: none;
       cursor: pointer; appearance: none; -webkit-appearance: none;
       padding-right: 28px;
@@ -204,7 +146,6 @@
     }
     .act-filters select:focus { border-color: var(--border-focus); }
 
-    /* ─── ACTIVITY STATS DASHBOARD ────────────────────────── */
     .act-stats {
       display: grid; grid-template-columns: repeat(4, 1fr);
       gap: var(--space-3); margin-bottom: var(--space-5);
@@ -215,87 +156,61 @@
       border: 1px solid var(--border-subtle);
       background: var(--bg-card);
       transition: all 300ms cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative; overflow: hidden;
+      border-left: 3px solid var(--stat-accent, var(--border-color));
     }
     .act-stat-card:hover {
       border-color: var(--border-color);
-      box-shadow: 0 4px 20px rgba(0,0,0,0.06), 0 0 0 1px color-mix(in srgb, var(--stat-accent, var(--accent)) 8%, transparent);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
       transform: translateY(-2px);
-    }
-    .act-stat-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: linear-gradient(90deg, var(--stat-accent, var(--accent)), color-mix(in srgb, var(--stat-accent, var(--accent)) 40%, transparent));
-      opacity: 0.7;
-    }
-    .act-stat-card::after {
-      content: ''; position: absolute;
-      top: 3px; right: 0; bottom: 0; left: 0;
-      background: radial-gradient(ellipse 80px 80px at 100% 0%, color-mix(in srgb, var(--stat-accent, var(--accent)) 4%, transparent), transparent);
-      pointer-events: none;
     }
     .act-stat-value {
       font-size: 1.5rem; font-weight: 700; color: var(--text-primary);
       font-variant-numeric: tabular-nums; line-height: 1.1;
-      position: relative; z-index: 1;
     }
     .act-stat-label {
       font-size: 0.6rem; color: var(--text-tertiary);
       text-transform: uppercase; letter-spacing: 0.08em;
       font-weight: 600; margin-top: 3px;
-      position: relative; z-index: 1;
     }
     .act-stat-sub {
       font-size: 0.6rem; color: var(--text-tertiary);
       margin-top: 2px; opacity: 0.65;
-      position: relative; z-index: 1;
-    }
-    .act-stat-icon {
-      position: absolute; top: var(--space-3); right: var(--space-3);
-      width: 22px; height: 22px; color: var(--stat-accent, var(--accent));
-      opacity: 0.15;
     }
 
-    /* ─── SEARCH BAR ────────────────────────────────────────── */
-    .act-search-wrap {
-      position: relative; margin-bottom: var(--space-3);
-    }
+    .act-search-wrap { position: relative; margin-bottom: var(--space-3); }
     .act-search {
       width: 100%; padding: var(--space-2) var(--space-4) var(--space-2) 38px;
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-full);
-      font-size: 0.8rem; font-family: var(--font-family);
+      border-radius: var(--radius-lg);
+      font-size: 0.82rem; font-family: var(--font-family);
       background: var(--bg-secondary); color: var(--text-primary);
       outline: none; transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .act-search:focus {
       border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent), inset 0 1px 2px rgba(0,0,0,0.04);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
     }
-    .act-search::placeholder { color: var(--text-tertiary); opacity: 0.7; }
+    .act-search::placeholder { color: var(--text-tertiary); opacity: 0.6; }
     .act-search-icon {
       position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
       width: 14px; height: 14px; color: var(--text-tertiary);
-      pointer-events: none;
-      opacity: 0.5;
+      pointer-events: none; opacity: 0.4;
     }
     .act-search-clear {
-      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-      width: 22px; height: 22px; border-radius: 50%;
-      border: none; background: var(--surface-container-high);
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 20px; height: 20px; border-radius: 50%;
+      border: none; background: transparent;
       color: var(--text-tertiary); cursor: pointer;
       display: none; align-items: center; justify-content: center;
-      font-size: 0.55rem; padding: 0;
-      transition: all var(--t-fast);
+      font-size: 0.6rem; padding: 0; transition: all var(--t-fast);
     }
     .act-search-clear.visible { display: flex; }
-    .act-search-clear:hover { background: var(--border-color); color: var(--text-primary); }
+    .act-search-clear:hover { color: var(--text-primary); }
 
-    /* ─── VIEW TOGGLE ────────────────────────────────────────── */
     .act-view-toggle {
-      display: inline-flex; gap: 4px;
+      display: inline-flex; gap: 2px;
       background: var(--bg-secondary);
-      padding: 3px;
-      border-radius: var(--radius-lg);
+      padding: 3px; border-radius: var(--radius-lg);
       border: 1px solid var(--border-subtle);
       margin-bottom: var(--space-4);
     }
@@ -313,135 +228,61 @@
     .act-view-btn.active {
       background: var(--bg-card);
       color: var(--text-primary);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px var(--border-subtle);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     }
-    .act-view-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .act-view-btn svg { width: 14px; height: 14px; flex-shrink: 0; stroke-width: 2; }
 
-    /* ─── INSIGHTS CHIPS ────────────────────────────────────── */
-    .act-insights {
-      display: flex; gap: var(--space-2); flex-wrap: wrap;
-      margin-bottom: var(--space-4);
-    }
+    .act-insights { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); }
     .act-insight {
       display: inline-flex; align-items: center; gap: var(--space-1);
       padding: var(--space-1) var(--space-3);
       border-radius: var(--radius-full);
       font-size: 0.68rem; font-weight: 500;
       border: 1px solid var(--border-subtle);
-      background: var(--accent-soft);
-      color: var(--text-secondary);
-      animation: insightPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      background: transparent; color: var(--text-secondary);
       transition: all var(--t-fast);
     }
-    .act-insight:hover {
-      border-color: var(--border-color);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-xs);
-    }
-    @keyframes insightPop {
-      from { opacity: 0; transform: scale(0.8); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    .act-insight:nth-child(1) { animation-delay: 0s; }
-    .act-insight:nth-child(2) { animation-delay: 0.08s; }
-    .act-insight:nth-child(3) { animation-delay: 0.16s; }
-    .act-insight svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .act-insight:hover { border-color: var(--border-color); }
     .act-insight strong { color: var(--text-primary); font-weight: 600; }
 
-    /* ─── INLINE EDITING ────────────────────────────────────── */
-    .act-card-title-inline {
-      flex: 1; overflow: hidden;
-    }
+    .act-card-title-inline { flex: 1; overflow: hidden; }
     .act-card-title-inline input {
       width: 100%; border: none; background: transparent;
       font-size: 0.88rem; font-weight: 500; color: var(--text-primary);
       font-family: var(--font-family); outline: none;
-      border-bottom: 1px solid var(--border-focus);
-      padding: 0; margin: 0;
+      border-bottom: 1px solid var(--border-focus); padding: 0; margin: 0;
     }
     .act-card-title-inline .act-card-title-display {
       width: 100%; cursor: text;
       font-size: 0.88rem; font-weight: 500; color: var(--text-primary);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      transition: color var(--t-fast);
-    }
-    .act-card:hover .act-card-title-display {
-      color: var(--accent);
     }
 
-    /* ─── MINI DURATION BAR ──────────────────────────────────── */
     .act-card-bar {
-      height: 3px; border-radius: var(--radius-full);
-      margin-top: var(--space-2); width: 60%; max-width: 160px;
-      background: linear-gradient(90deg, color-mix(in srgb, var(--act-accent, var(--gray-300)) 35%, transparent), color-mix(in srgb, var(--act-accent, var(--gray-300)) 15%, transparent) 80%);
+      height: 2px; border-radius: var(--radius-full);
+      margin-top: var(--space-2); width: 60%; max-width: 120px;
+      background: var(--act-accent, var(--gray-300));
+      opacity: 0.25;
       transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-      overflow: hidden;
     }
-    .act-card-bar::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--bg-card) 30%, transparent) 50%, transparent);
-      animation: shimmer 2.5s ease-in-out infinite;
-      background-size: 200% 100%;
-    }
-    .act-card.completed .act-card-bar {
-      background: color-mix(in srgb, var(--gray-400) 15%, transparent);
-    }
-    .act-card.completed .act-card-bar::after { display: none; }
+    .act-card.completed .act-card-bar { opacity: 0.08; }
 
-    /* ─── CONFETTI / CELEBRATION ────────────────────────────── */
-    .act-confetti-container {
-      position: fixed; inset: 0; z-index: 9999;
-      pointer-events: none; overflow: hidden;
-    }
-    .confetti-piece {
-      position: absolute; width: 8px; height: 8px;
-      border-radius: 2px;
-      animation: confettiFall var(--cf-dur, 2s) ease-out forwards;
-      opacity: 0;
-    }
-    @keyframes confettiFall {
-      0% {
-        opacity: 1;
-        transform: translateY(-20px) rotate(0deg) scale(1);
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(100vh) rotate(720deg) scale(0.3);
-      }
-    }
-    .act-celebration {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 10000; pointer-events: none;
-      font-size: 3rem; font-weight: 700;
-      animation: celebBurst 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      color: var(--accent);
-    }
-    @keyframes celebBurst {
-      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
-      30% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
-      70% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8) translateY(-30px); }
-    }
-
-    /* ─── FLOATING ACTION BUTTON ───────────────────────────── */
     .act-fab {
       position: fixed; bottom: 32px; right: 32px;
       z-index: 45;
-      width: 52px; height: 52px; border-radius: 50%;
+      width: 48px; height: 48px; border-radius: 50%;
       border: none; background: var(--text-primary);
       color: var(--bg-primary);
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 24px color-mix(in srgb, var(--text-primary) 25%, transparent);
-      transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 4px 20px color-mix(in srgb, var(--text-primary) 20%, transparent);
+      transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .act-fab:hover { transform: scale(1.1); box-shadow: 0 8px 32px color-mix(in srgb, var(--text-primary) 35%, transparent); }
-    .act-fab:active { transform: scale(0.92); }
+    .act-fab:hover { transform: scale(1.08); box-shadow: 0 8px 28px color-mix(in srgb, var(--text-primary) 28%, transparent); }
+    .act-fab:active { transform: scale(0.95); }
     .act-fab.open { transform: rotate(45deg); background: var(--accent-hover); }
-    .act-fab svg { width: 22px; height: 22px; }
+    .act-fab svg { width: 20px; height: 20px; stroke-width: 2; }
 
-    /* ─── QUICK ADD FORM ───────────────────────────────────── */
     .act-quick-overlay {
       position: fixed; inset: 0; z-index: 44;
       background: rgba(0,0,0,0.3);
@@ -453,29 +294,29 @@
     .act-quick-form {
       position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
       z-index: 46;
-      width: 100%; max-width: 480px;
+      width: 100%; max-width: 420px;
       background: var(--surface-container);
       border: 1px solid var(--border-color);
-      border-radius: 20px 20px 0 0;
+      border-radius: 16px 16px 0 0;
       padding: var(--space-4) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
       box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
       transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     .act-quick-form.open { transform: translateX(-50%) translateY(0); }
     .act-quick-handle {
-      width: 36px; height: 4px; border-radius: 2px;
-      background: var(--text-tertiary); opacity: 0.25;
+      width: 32px; height: 3px; border-radius: 2px;
+      background: var(--text-tertiary); opacity: 0.2;
       margin: 0 auto var(--space-3);
     }
     .act-quick-form h3 {
       font-size: 0.85rem; font-weight: 600; margin-bottom: var(--space-3);
       display: flex; align-items: center; gap: var(--space-2);
+      color: var(--text-primary);
     }
     .act-quick-form .qf-group { margin-bottom: var(--space-2); }
     .act-quick-form .qf-label {
       display: block; font-size: 0.65rem; font-weight: 600;
       color: var(--text-tertiary); margin-bottom: 4px;
-      text-transform: uppercase; letter-spacing: 0.04em;
     }
     .qf-input {
       width: 100%; padding: var(--space-2) var(--space-3);
@@ -486,9 +327,7 @@
     }
     .qf-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent); }
     .qf-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
-    .qf-tags {
-      display: flex; gap: var(--space-1); flex-wrap: wrap;
-    }
+    .qf-tags { display: flex; gap: var(--space-1); flex-wrap: wrap; }
     .qf-tag {
       padding: 3px 10px; border-radius: var(--radius-full);
       border: 1px solid var(--border-color); background: transparent;
@@ -505,7 +344,6 @@
     .qf-actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
     .qf-actions .btn { flex: 1; justify-content: center; font-size: 0.78rem; }
 
-    /* ─── BATCH TOOLBAR ───────────────────────────────────── */
     .act-batch-bar {
       display: flex; align-items: center; gap: var(--space-3);
       padding: var(--space-3) var(--space-4);
@@ -513,54 +351,47 @@
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       margin-bottom: var(--space-4);
-      animation: slideUp 200ms var(--curve);
     }
     .act-batch-count { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-right: auto; }
     .act-batch-bar .btn { font-size: 0.72rem; padding: var(--space-1) var(--space-3); }
 
-    /* ─── TIMELINE CONNECTOR ──────────────────────────────── */
     .act-tl-line {
-      position: absolute; left: 27px; top: 30px; bottom: 0;
+      position: absolute; left: 24px; top: 30px; bottom: 0;
       width: 1px; background: var(--border-subtle);
       pointer-events: none;
     }
     .act-day:last-child .act-tl-line { display: none; }
 
-    /* ─── PRIORITY BADGE ──────────────────────────────────── */
     .act-pr {
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 0.5rem; font-weight: 700; padding: 1px 4px;
       border-radius: 3px; line-height: 1.2; flex-shrink: 0;
       border: 1px solid currentColor;
     }
-    .act-pr.p1 { color: #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
-    .act-pr.p2 { color: #f59e0b; background: color-mix(in srgb, #f59e0b 12%, transparent); }
-    .act-pr.p3 { color: #6366f1; background: color-mix(in srgb, #6366f1 12%, transparent); }
-    .act-pr.p4 { color: #6b7280; background: color-mix(in srgb, #6b7280 12%, transparent); }
+    .act-pr.p1 { color: #ef4444; background: color-mix(in srgb, #ef4444 10%, transparent); }
+    .act-pr.p2 { color: #f59e0b; background: color-mix(in srgb, #f59e0b 10%, transparent); }
+    .act-pr.p3 { color: #6366f1; background: color-mix(in srgb, #6366f1 10%, transparent); }
+    .act-pr.p4 { color: #6b7280; background: color-mix(in srgb, #6b7280 10%, transparent); }
 
-    /* ─── DAY COLLAPSE ────────────────────────────────────── */
     .act-day-toggle { cursor: pointer; user-select: none; }
     .act-day-chevron {
-      width: 16px; height: 16px; color: var(--text-tertiary);
+      width: 14px; height: 14px; color: var(--text-tertiary);
       transition: transform 200ms var(--curve); flex-shrink: 0;
     }
     .act-day.collapsed .act-day-chevron { transform: rotate(-90deg); }
-    .act-day-body { transition: max-height 350ms ease, opacity 250ms ease; overflow: hidden; }
+    .act-day-body { transition: max-height 300ms ease, opacity 200ms ease; overflow: hidden; }
     .act-day.collapsed .act-day-body { max-height: 0 !important; opacity: 0; margin: 0; }
 
-    /* ─── DAY JOURNAL ─────────────────────────────────────── */
     .act-day-notes {
       margin: var(--space-2) 0 var(--space-3);
       padding: var(--space-2) var(--space-3);
-      background: var(--accent-soft);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      font-size: 0.72rem; color: var(--text-secondary);
+      font-size: 0.72rem; color: var(--text-tertiary);
       cursor: text; transition: all var(--t-fast);
       display: flex; align-items: center; gap: var(--space-2);
     }
     .act-day-notes:hover { border-color: var(--border-color); }
-    .act-day-notes svg { width: 14px; height: 14px; color: var(--text-tertiary); flex-shrink: 0; }
     .act-day-notes .act-dn-display { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-height: 18px; }
     .act-day-notes .act-dn-input {
       display: none; width: 100%; border: none; background: transparent;
@@ -570,26 +401,8 @@
     .act-day-notes.editing .act-dn-display { display: none; }
     .act-day-notes.editing .act-dn-input { display: block; }
 
-    /* ─── CARD STAGGER ────────────────────────────────────── */
-    .act-card {
-      animation: actCardIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-    .act-day .act-card:nth-child(1) { animation-delay: 0.02s; }
-    .act-day .act-card:nth-child(2) { animation-delay: 0.04s; }
-    .act-day .act-card:nth-child(3) { animation-delay: 0.06s; }
-    .act-day .act-card:nth-child(4) { animation-delay: 0.08s; }
-    .act-day .act-card:nth-child(5) { animation-delay: 0.10s; }
-    .act-day .act-card:nth-child(6) { animation-delay: 0.12s; }
-    .act-day .act-card:nth-child(7) { animation-delay: 0.14s; }
-    .act-day .act-card:nth-child(8) { animation-delay: 0.16s; }
-    @keyframes actCardIn {
-      from { opacity: 0; transform: translateX(-10px); }
-      to { opacity: 1; transform: translateX(0); }
-    }
-
-    /* ─── BATCH CHECKBOX ──────────────────────────────────── */
     .act-bchk {
-      display: none; width: 18px; height: 18px; border-radius: 4px;
+      display: none; width: 16px; height: 16px; border-radius: 4px;
       border: 2px solid var(--border-color); background: transparent;
       cursor: pointer; flex-shrink: 0;
       align-items: center; justify-content: center;
@@ -599,20 +412,17 @@
     body.act-batch-mode .act-card-time { opacity: 0.3; width: 30px; }
     body.act-batch-mode .act-card { cursor: default; }
     body.act-batch-mode .act-card:hover { transform: none; }
-    .act-bchk:hover { border-color: var(--text-primary); }
     .act-bchk.sel { background: var(--accent); border-color: var(--accent); }
     .act-bchk.sel::after {
-      content: ''; width: 6px; height: 3px;
+      content: ''; width: 5px; height: 2.5px;
       border-left: 1.5px solid var(--text-inverse);
       border-bottom: 1.5px solid var(--text-inverse);
       transform: rotate(-45deg); margin-top: -1px;
     }
 
-    /* ─── WEEKLY SPARKLINE ────────────────────────────────── */
-    .act-spark { margin-top: var(--space-2); height: 28px; opacity: 0.45; }
+    .act-spark { margin-top: var(--space-2); height: 28px; opacity: 0.25; }
     .act-spark svg { width: 100%; height: 100%; }
 
-    /* ─── UNDO TOAST ─────────────────────────────────────── */
     .act-undo-toast {
       position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(0);
       z-index: 60;
@@ -623,7 +433,7 @@
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-xl);
       font-size: 0.8rem; font-weight: 500;
-      animation: actUndoIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: actUndoIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
     @keyframes actUndoIn {
       from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
@@ -635,28 +445,20 @@
       .act-card { padding: var(--space-3) var(--space-4); }
       .act-card-time { width: 45px; font-size: 0.65rem; }
       .act-stat-value { font-size: 1.1rem; }
-      .act-fab { bottom: 20px; right: 20px; width: 48px; height: 48px; }
-      .act-fab svg { width: 20px; height: 20px; }
+      .act-fab { bottom: 20px; right: 20px; }
       .act-quick-form { max-width: 100%; border-radius: 16px 16px 0 0; }
       .act-day-stamp { flex-wrap: wrap; gap: var(--space-2); }
-      .act-view-toggle { gap: 2px; }
       .act-view-btn { padding: var(--space-1) var(--space-3); font-size: 0.68rem; }
-      .act-filters select { font-size: 0.72rem; padding: var(--space-1) var(--space-2); padding-right: 24px; }
       .act-stat-card { padding: var(--space-2) var(--space-3); }
-      .act-insight { font-size: 0.64rem; padding: var(--space-1) var(--space-2); }
-      .hub-hero-section { height: 200px !important; }
     }
     @media (max-width: 480px) {
       .act-stats { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
       .act-day { margin-bottom: var(--space-5); }
       .act-card { padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); }
       .act-card-time { width: 36px; font-size: 0.6rem; }
-      .act-card-title,
       .act-card-title-display { font-size: 0.78rem; }
       .act-card-check { width: 14px; height: 14px; }
-      .act-pr { font-size: 0.45rem; padding: 0 3px; }
-      .act-fab { bottom: 16px; right: 16px; width: 44px; height: 44px; }
-      .act-fab svg { width: 18px; height: 18px; }
+      .act-fab { bottom: 16px; right: 16px; }
       .act-search { font-size: 0.75rem; padding: var(--space-1) var(--space-3) var(--space-1) 32px; }
       .act-day-label { font-size: 0.75rem; }
       .act-day-meta { font-size: 0.64rem; }
@@ -734,6 +536,7 @@
             </span>
             <span class="snav-label">Finance</span>
           </a>
+          <a href="gallery.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
         </div>
       </nav>
       <div class="hub-sidebar-body">
@@ -828,19 +631,6 @@
 
       <div class="hub-content hub-page-transition">
 
-        <!-- Page Header (Notion page title with icon) -->
-        <div class="hub-page-header hub-anim-in hub-anim-in-2">
-          <div class="hub-page-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-            </svg>
-          </div>
-          <h1 class="hub-page-title">Activities</h1>
-          <div class="hub-page-meta">
-            <span id="actPageCount">0 tasks</span>
-          </div>
-        </div>
-
         <!-- View toggle -->
         <div class="act-view-toggle hub-anim-in hub-anim-in-3">
           <button class="act-view-btn active" data-view="timeline">
@@ -856,24 +646,20 @@
         <!-- Stats Dashboard -->
         <div class="act-stats hub-anim-in hub-anim-in-3" id="actStatsDashboard">
           <div class="act-stat-card" style="--stat-accent:var(--tag-deep-work-text)">
-            <svg class="act-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
             <div class="act-stat-value" id="actStatTotal">0</div>
             <div class="act-stat-label">Total Tasks</div>
           </div>
           <div class="act-stat-card" style="--stat-accent:var(--tag-exercise-text)">
-            <svg class="act-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             <div class="act-stat-value" id="actStatCompleted">0</div>
             <div class="act-stat-label">Completed</div>
             <div class="act-stat-sub" id="actStatRate">0% rate</div>
           </div>
           <div class="act-stat-card" style="--stat-accent:var(--tag-study-text)">
-            <svg class="act-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             <div class="act-stat-value" id="actStatStreak">0</div>
             <div class="act-stat-label">Day Streak</div>
             <div class="act-stat-sub" id="actStatBestStreak">Best: 0</div>
           </div>
           <div class="act-stat-card" style="--stat-accent:var(--tag-meeting-text)">
-            <svg class="act-stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             <div class="act-stat-value" id="actStatTopTag">—</div>
             <div class="act-stat-label">Best Tag</div>
             <div class="act-stat-sub" id="actStatTopCount">0 hours</div>
@@ -915,9 +701,6 @@
           <!-- Activity feed -->
           <div class="act-feed hub-anim-in hub-anim-in-4" id="activitiesList">
             <div class="act-empty">
-              <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-              </svg>
               <p>No activities found</p>
               <p class="sub">Create tasks in the Schedule view</p>
             </div>
@@ -952,7 +735,7 @@
 
   <!-- ─── FLOATING ACTION BUTTON ──────────────────────────── -->
   <button id="actFab" class="act-fab" title="Quick add task">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
   </button>
 
   <!-- ─── QUICK ADD OVERLAY ────────────────────────────── -->

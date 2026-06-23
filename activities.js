@@ -113,44 +113,7 @@ function batchDelete() {
   });
 }
 
-// ─── CONFETTI POOL ─────────────────────────────────────────
-const CONFETTI_COLORS = ['#6366f1','#3b82f6','#ef4444','#10b981','#f59e0b','#b4ccbc','#dfc1a6','#a5b4fc','#fca5a5','#6ee7b7','#fcd34d'];
-function fireConfetti(originX, originY) {
-  const container = document.createElement('div');
-  container.className = 'act-confetti-container';
-  document.body.appendChild(container);
-  for (let i = 0; i < 50; i++) {
-    const piece = document.createElement('div');
-    piece.className = 'confetti-piece';
-    const color = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
-    const size = 4 + Math.random() * 6;
-    const x = (originX || window.innerWidth / 2) + (Math.random() - 0.5) * 200;
-    const dur = 1.5 + Math.random() * 1.5;
-    const delay = Math.random() * 0.3;
-    const shapes = ['50%','2px','0'];
-    piece.style.cssText = `
-      left:${x}px;top:${originY || window.innerHeight * 0.6}px;
-      width:${size}px;height:${size * (0.4 + Math.random() * 0.8)}px;
-      background:${color};border-radius:${shapes[Math.floor(Math.random() * 3)]};
-      --cf-dur:${dur}s;animation-delay:${delay}s;
-      transform:rotate(${Math.random() * 360}deg);
-    `;
-    container.appendChild(piece);
-  }
-  setTimeout(() => container.remove(), 3500);
-}
-
-function celebrateComplete() {
-  // Confetti burst
-  fireConfetti(window.innerWidth / 2, window.innerHeight * 0.5);
-  // Text animation
-  const el = document.createElement('div');
-  el.className = 'act-celebration';
-  const msgs = ['✦ Done!','✓ Completed!','🎯 Nailed it!','✨ Well done!','⭐ Great!','💪 Awesome!'];
-  el.textContent = msgs[Math.floor(Math.random() * msgs.length)];
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 1500);
-}
+function celebrateComplete() {}
 
 pageAfterTaskSave = () => { renderCurrentView(); };
 pageAfterImport = () => { renderCurrentView(); };
@@ -217,8 +180,6 @@ function renderActivities() {
 
   if (tasks.length === 0) {
     activitiesList.innerHTML = `<div class="act-empty">
-      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
       <p>No activities found</p>
       <p class="sub">Try changing your filter or create tasks in the Schedule view</p>
     </div>`;

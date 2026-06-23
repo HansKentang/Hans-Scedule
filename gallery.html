@@ -7,333 +7,16 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Havën">
+  <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Havën Schedule — Gallery</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <title>Havën Schedule — Goals &amp; Resolutions</title>
   <style>
-    /* ─── GOALS BENTO LAYOUT ──────────────────────────── */
-    .gl-bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
-    .gl-card {
-      background: var(--bg-card); border: 1px solid var(--border-color);
-      border-radius: var(--radius-xl); padding: var(--space-5);
-      position: relative; overflow: hidden;
-      transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .gl-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
-    .gl-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: var(--gl-accent, var(--primary)); opacity: 0.7;
-    }
-    .gl-card::after {
-      content: ''; position: absolute; top: 3px; right: 0; bottom: 0; left: 0;
-      background: radial-gradient(ellipse 80px 80px at 100% 0%, color-mix(in srgb, var(--gl-accent, var(--primary)) 4%, transparent), transparent);
-      pointer-events: none;
-    }
-    .gl-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-3); position: relative; z-index: 1; }
-    .gl-card-icon {
-      width: 36px; height: 36px; border-radius: var(--radius-md);
-      display: flex; align-items: center; justify-content: center;
-      background: color-mix(in srgb, var(--gl-accent, var(--primary)) 12%, transparent);
-      color: var(--gl-accent, var(--primary)); flex-shrink: 0;
-    }
-    .gl-card-icon .material-symbols-outlined { font-size: 1.2rem; }
-    .gl-status-badge {
-      font-size: 0.55rem; font-weight: 700; padding: 2px 8px;
-      border-radius: var(--radius-full); text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    .gl-status-active { background: color-mix(in srgb, #6366f1 12%, transparent); color: #6366f1; }
-    .gl-status-in-progress { background: color-mix(in srgb, #f59e0b 12%, transparent); color: #f59e0b; }
-    .gl-status-milestone { background: color-mix(in srgb, #10b981 12%, transparent); color: #10b981; }
-    .gl-status-done { background: color-mix(in srgb, #6b7280 12%, transparent); color: #6b7280; }
-    .gl-card-title {
-      font-family: var(--font-serif); font-size: 1.15rem; font-weight: 500;
-      color: var(--text-primary); margin-bottom: var(--space-1); position: relative; z-index: 1;
-    }
-    .gl-card-desc {
-      font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: var(--space-4);
-      line-height: 1.5; position: relative; z-index: 1;
-    }
-
-    /* ─── PROGRESS BAR ──────────────────────────────────── */
-    .gl-progress-wrap { margin-bottom: var(--space-3); position: relative; z-index: 1; }
-    .gl-progress-header { display: flex; justify-content: space-between; font-size: 0.65rem; margin-bottom: 4px; }
-    .gl-progress-label { color: var(--text-tertiary); font-weight: 500; }
-    .gl-progress-pct { color: var(--gl-accent, var(--primary)); font-weight: 700; font-variant-numeric: tabular-nums; }
-    .gl-progress-track {
-      height: 4px; background: var(--bg-secondary); border-radius: var(--radius-full); overflow: hidden;
-    }
-    .gl-progress-fill {
-      height: 100%; border-radius: var(--radius-full);
-      background: linear-gradient(90deg, var(--gl-accent, var(--primary)), color-mix(in srgb, var(--gl-accent, var(--primary)) 60%, transparent));
-      transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    /* ─── SUB-TASK LIST ─────────────────────────────────── */
-    .gl-tasks { position: relative; z-index: 1; }
-    .gl-task {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-2) 0; border-top: 1px solid var(--border-subtle);
-      font-size: 0.78rem; cursor: pointer; transition: opacity var(--t-fast);
-      position: relative;
-    }
-    .gl-task:first-child { border-top: none; }
-    .gl-task:hover { opacity: 0.85; }
-    .gl-task-check {
-      width: 16px; height: 16px; border-radius: 50%;
-      border: 2px solid var(--gl-accent, var(--text-tertiary));
-      flex-shrink: 0; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .gl-task-check:hover {
-      transform: scale(1.15);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--gl-accent, var(--text-tertiary)) 15%, transparent);
-    }
-    .gl-task-check.checked {
-      background: var(--gl-accent, currentColor); border-color: var(--gl-accent, currentColor);
-      animation: glCheckPop 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .gl-task-check.checked::after {
-      content: ''; width: 6px; height: 3px;
-      border-left: 1.5px solid var(--text-inverse);
-      border-bottom: 1.5px solid var(--text-inverse);
-      transform: rotate(-45deg); margin-top: -1px;
-    }
-    .gl-task-text { flex: 1; color: var(--text-primary); }
-    .gl-task.done .gl-task-text { text-decoration: line-through; opacity: 0.5; }
-    @keyframes glCheckPop {
-      0% { transform: scale(1); }
-      35% { transform: scale(1.3); }
-      65% { transform: scale(0.92); }
-      100% { transform: scale(1); }
-    }
-    .gl-task-del {
-      width: 18px; height: 18px; border: none; background: transparent;
-      color: var(--text-tertiary); cursor: pointer; border-radius: 3px;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; transition: all var(--t-fast); font-size: 0.65rem; padding: 0;
-    }
-    .gl-task-wrap:hover .gl-task-del { opacity: 0.5; }
-    .gl-task-del:hover { opacity: 1 !important; color: #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
-    .gl-add-task-btn {
-      border: none; background: transparent; color: var(--text-tertiary);
-      cursor: pointer; font-size: 0.7rem; font-weight: 600; padding: var(--space-1) 0;
-      display: inline-flex; align-items: center; gap: 4px;
-      transition: color var(--t-fast); margin-top: var(--space-1);
-    }
-    .gl-add-task-btn:hover { color: var(--gl-accent, var(--primary)); }
-    .gl-add-task-input {
-      display: none; width: 100%; padding: var(--space-1) var(--space-2);
-      font-size: 0.78rem; font-family: var(--font-family);
-      background: var(--bg-primary); color: var(--text-primary);
-      border: 1px solid var(--border-color); border-radius: var(--radius-md);
-      outline: none; margin-top: var(--space-1);
-    }
-    .gl-add-task-input:focus { border-color: var(--border-focus); }
-    .gl-add-task-input.show { display: block; }
-
-    /* ─── CARD SIZES ──────────────────────────────────── */
-    .gl-card-sm { grid-column: span 4; }
-    .gl-card-md { grid-column: span 6; }
-    .gl-card-lg { grid-column: span 8; }
-    .gl-card-full { grid-column: span 12; }
-
-    /* ─── VISION BOARD ──────────────────────────────────── */
-    .gl-vision {
-      background: var(--surface-container-lowest); border: 1px solid var(--border-color);
-      border-radius: var(--radius-xl); padding: var(--space-5);
-      margin-bottom: var(--space-6); transition: all var(--t-base);
-    }
-    .gl-vision:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
-    .gl-vision-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: var(--space-4);
-    }
-    .gl-vision-title {
-      font-family: var(--font-serif); font-size: 1.2rem; font-weight: 500;
-      color: var(--text-primary);
-    }
-    .gl-vision-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-4); }
-    .gl-vision-img-wrap {
-      aspect-ratio: 4/3; border-radius: var(--radius-lg); overflow: hidden;
-      position: relative; background: var(--surface-container); cursor: pointer;
-      transition: all var(--t-fast);
-    }
-    .gl-vision-img-wrap:hover { transform: scale(1.02); box-shadow: var(--shadow-sm); }
-    .gl-vision-img-wrap img {
-      width: 100%; height: 100%; object-fit: cover;
-      filter: grayscale(0.6); transition: all 0.5s;
-    }
-    .gl-vision-img-wrap:hover img { filter: grayscale(0); }
-    .gl-vision-img-placeholder {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 6px;
-      border: 2px dashed var(--border-color); border-radius: var(--radius-lg);
-      color: var(--text-tertiary); font-size: 0.6rem; font-weight: 500;
-      text-align: center; transition: all var(--t-fast); padding: var(--space-2);
-    }
-    .gl-vision-img-placeholder:hover { border-color: var(--primary); color: var(--primary); }
-    .gl-vision-img-placeholder svg { width: 20px; height: 20px; opacity: 0.4; }
-    .gl-manifesto {
-      background: var(--accent-soft); border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg); padding: var(--space-4);
-      display: flex; flex-direction: column; gap: var(--space-2);
-    }
-    .gl-manifesto-label {
-      font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.1em; color: var(--text-tertiary);
-    }
-    .gl-manifesto-text {
-      font-family: var(--font-serif); font-size: 0.95rem; font-style: italic;
-      color: var(--text-secondary); line-height: 1.5;
-      cursor: text; transition: background var(--t-fast); padding: 2px 4px; margin: -2px -4px;
-      border-radius: 3px;
-    }
-    .gl-manifesto-text:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
-    .gl-manifesto-text:active {
-      background: transparent; font-style: normal;
-    }
-
-    /* ─── TASK DEEP DIVE ────────────────────────────────── */
-    .gl-dive-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: var(--space-4);
-    }
-    .gl-dive-title {
-      font-family: var(--font-serif); font-size: 1.2rem; font-weight: 500;
-    }
-    .gl-dive-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
-    .gl-dive-card {
-      padding: var(--space-4); background: var(--bg-card);
-      border: 1px solid var(--border-color); border-radius: var(--radius-lg);
-      position: relative; transition: all var(--t-base);
-    }
-    .gl-dive-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
-    .gl-dive-card::before {
-      content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
-      border-radius: 3px 0 0 3px;
-    }
-    .gl-dive-card.gl-accent-primary::before { background: var(--primary); }
-    .gl-dive-card.gl-accent-secondary::before { background: var(--secondary); }
-    .gl-dive-meta {
-      display: flex; align-items: center; gap: var(--space-2);
-      font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-tertiary); margin-bottom: var(--space-1);
-    }
-    .gl-dive-card-title { font-size: 0.85rem; font-weight: 600; margin-bottom: var(--space-1); }
-    .gl-dive-card-desc { font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.4; }
-
-    /* ─── EMPTY STATE / BUTTONS ─────────────────────────── */
-    .gl-empty {
-      text-align: center; padding: var(--space-8) var(--space-4);
-      color: var(--text-tertiary); animation: slideUp 400ms var(--curve);
-    }
-    .gl-empty svg { width: 40px; height: 40px; margin-bottom: var(--space-3); opacity: 0.15; }
-    .gl-empty p { font-size: 0.85rem; font-weight: 500; margin-bottom: var(--space-2); }
-    .gl-empty .sub { font-size: 0.72rem; opacity: 0.7; }
-
-    .gl-add-goal-btn {
-      display: flex; align-items: center; justify-content: center; gap: var(--space-2);
-      padding: var(--space-4); border: 2px dashed var(--border-color);
-      border-radius: var(--radius-xl); background: transparent;
-      color: var(--text-tertiary); cursor: pointer;
-      font-size: 0.8rem; font-weight: 600; font-family: var(--font-family);
-      transition: all var(--t-fast); grid-column: span 4;
-    }
-    .gl-add-goal-btn:hover { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); }
-    .gl-add-goal-btn svg { width: 18px; height: 18px; }
-
-    /* ─── CARD STAGGER ANIMATIONS ───────────────────────── */
-    .gl-card { animation: glCardIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-    .gl-card:nth-child(1) { animation-delay: 0.03s; }
-    .gl-card:nth-child(2) { animation-delay: 0.06s; }
-    .gl-card:nth-child(3) { animation-delay: 0.09s; }
-    .gl-card:nth-child(4) { animation-delay: 0.12s; }
-    .gl-card:nth-child(5) { animation-delay: 0.15s; }
-    .gl-card:nth-child(6) { animation-delay: 0.18s; }
-    .gl-card:nth-child(7) { animation-delay: 0.21s; }
-    .gl-card:nth-child(8) { animation-delay: 0.24s; }
-    @keyframes glCardIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ─── GOAL EDIT POPUP ──────────────────────────────── */
-    .gl-edit-popup {
-      position: fixed; z-index: 1002; background: var(--bg-card);
-      border: 1px solid var(--border-color); border-radius: var(--radius-lg);
-      padding: var(--space-4); box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-      min-width: 260px; max-width: 90vw;
-    }
-    .gl-edit-popup input, .gl-edit-popup select, .gl-edit-popup textarea {
-      display: block; width: 100%; padding: 8px 10px; border-radius: 8px;
-      border: 1px solid var(--border-color); background: var(--bg-primary);
-      color: var(--text-primary); font-family: var(--font-family);
-      font-size: 0.78rem; margin-bottom: var(--space-2); outline: none;
-    }
-    .gl-edit-popup input:focus, .gl-edit-popup select:focus, .gl-edit-popup textarea:focus {
-      border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
-    }
-    .gl-edit-popup textarea { resize: vertical; min-height: 50px; }
-    .gl-edit-popup-actions { display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-2); }
-    .gl-edit-popup-actions button {
-      border: none; padding: 6px 14px; border-radius: 8px;
-      font-weight: 600; font-size: 0.72rem; cursor: pointer;
-      transition: all var(--t-fast);
-    }
-    .gl-edit-popup-actions .primary { background: var(--primary); color: var(--text-inverse); }
-    .gl-edit-popup-actions .primary:hover { filter: brightness(1.1); }
-    .gl-edit-popup-actions .cancel { background: transparent; color: var(--text-secondary); }
-    .gl-edit-popup-actions .cancel:hover { color: var(--text-primary); background: var(--accent-soft); }
-    .gl-edit-popup-actions .danger { background: transparent; color: #ef4444; }
-    .gl-edit-popup-actions .danger:hover { background: color-mix(in srgb, #ef4444 12%, transparent); }
-
-    .gl-color-picker {
-      display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: var(--space-2);
-    }
-    .gl-color-swatch {
-      width: 24px; height: 24px; border-radius: 50%;
-      border: 2px solid transparent; cursor: pointer;
-      transition: all var(--t-fast);
-    }
-    .gl-color-swatch:hover { transform: scale(1.2); }
-    .gl-color-swatch.active { border-color: var(--text-primary); transform: scale(1.15); }
-
-    .gl-card .gl-edit-overlay {
-      position: absolute; top: var(--space-2); right: var(--space-2);
-      display: flex; gap: 2px; opacity: 0; transition: opacity var(--t-fast); z-index: 5;
-    }
-    .gl-card:hover .gl-edit-overlay { opacity: 1; }
-    .gl-edit-item-btn {
-      border: none; background: var(--surface-container); color: var(--text-tertiary);
-      cursor: pointer; width: 22px; height: 22px; border-radius: 4px;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0; font-size: 0.6rem; line-height: 1; transition: all var(--t-fast);
-    }
-    .gl-edit-item-btn:hover { color: var(--text-primary); background: var(--accent-soft); }
-    .gl-edit-item-btn.del:hover { color: #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
-
-    /* ─── RESPONSIVE ────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .gl-bento { gap: var(--space-3); }
-      .gl-card-sm, .gl-card-md, .gl-card-lg { grid-column: span 12; }
-      .gl-vision-grid { grid-template-columns: 1fr; }
-      .gl-dive-grid { grid-template-columns: 1fr; }
-      .gl-add-goal-btn { grid-column: span 12; }
-    }
-    @media (max-width: 640px) {
-      .gl-card { padding: var(--space-4); }
-      .gl-card-title { font-size: 1rem; }
-      .gl-card-desc { font-size: 0.72rem; }
-      .gl-vision { padding: var(--space-4); }
-      .gl-vision-title { font-size: 1rem; }
-    }
-
-    /* ─── HERO ────────────────────────────────────────── */
+    /* ─── GALLERY HERO ───────────────────────────────── */
     .gl-hero {
       position: relative; height: 200px; overflow: hidden; flex-shrink: 0;
     }
@@ -402,16 +85,160 @@
       .gl-hero-ceramic { width: 44px; height: 44px; }
       .gl-hero-inner { padding: var(--space-4) var(--space-4); }
     }
-    @media (max-width: 480px) {
-      .gl-hero { height: 150px; }
-      .gl-hero-title { font-size: 1.2rem; }
-      .gl-hero-ceramic { width: 38px; height: 38px; }
-      .gl-hero-meta { font-size: 0.68rem; }
+
+    /* ─── GALLERY VISION BOARD ───────────────────────── */
+    .gal-top-actions {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-2);
+    }
+    .gal-top-title {
+      font-family: var(--font-serif); font-size: 1.2rem; font-weight: 500;
+      color: var(--text-primary);
+    }
+    .gal-top-count {
+      font-size: 0.68rem; color: var(--text-tertiary);
+      font-weight: 500;
+    }
+    .gal-actions-row {
+      display: flex; gap: var(--space-2);
     }
 
-    /* ─── CUSTOM SCROLLBAR ──────────────────────────────── */
-    .hub-main::-webkit-scrollbar { width: 4px; }
-    .hub-main::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+    .gal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .gal-item {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--surface-container-low);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .gal-item:hover {
+      border-color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-2px);
+    }
+    .gal-item img {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+    .gal-item:hover img { transform: scale(1.04); }
+
+    /* Empty / placeholder state */
+    .gal-item-placeholder {
+      border: 2px dashed var(--border-color);
+      background: transparent;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: var(--space-2);
+      color: var(--text-tertiary);
+    }
+    .gal-item-placeholder:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 6%, transparent);
+    }
+    .gal-item-placeholder svg {
+      width: 28px; height: 28px; opacity: 0.4;
+    }
+    .gal-item-placeholder span {
+      font-size: 0.75rem; font-weight: 500;
+    }
+
+    /* Edit overlay (visible on hover in edit mode) */
+    .gal-item-remove {
+      position: absolute; top: 8px; right: 8px;
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none;
+      background: color-mix(in srgb, #000 50%, transparent);
+      color: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: all var(--t-fast);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      font-size: 0.9rem; padding: 0; z-index: 2;
+    }
+    .gal-item:hover .gal-item-remove,
+    .edit-mode .gal-item .gal-item-remove { opacity: 1; }
+    .gal-item-remove:hover {
+      background: rgba(239, 68, 68, 0.85);
+      transform: scale(1.15);
+    }
+
+    /* Drag handle overlay */
+    .gal-item-drag {
+      position: absolute; top: 8px; left: 8px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: color-mix(in srgb, #000 50%, transparent);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: all var(--t-fast);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      cursor: grab;
+      font-size: 0.8rem; z-index: 2;
+    }
+    .edit-mode .gal-item .gal-item-drag,
+    .gal-item:hover .gal-item-drag { opacity: 1; }
+    .gal-item-drag:active { cursor: grabbing; }
+
+    /* Empty state */
+    .gal-empty {
+      text-align: center; padding: var(--space-10) var(--space-4);
+      color: var(--text-tertiary);
+    }
+    .gal-empty svg { width: 48px; height: 48px; margin-bottom: var(--space-3); opacity: 0.15; }
+    .gal-empty p { font-size: 0.9rem; font-weight: 500; margin-bottom: var(--space-2); }
+    .gal-empty .sub { font-size: 0.75rem; opacity: 0.6; }
+    .gal-empty .btn {
+      margin-top: var(--space-3);
+    }
+
+    /* Stagger animations */
+    .gal-item { animation: galItemIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .gal-item:nth-child(1) { animation-delay: 0.03s; }
+    .gal-item:nth-child(2) { animation-delay: 0.06s; }
+    .gal-item:nth-child(3) { animation-delay: 0.09s; }
+    .gal-item:nth-child(4) { animation-delay: 0.12s; }
+    .gal-item:nth-child(5) { animation-delay: 0.15s; }
+    .gal-item:nth-child(6) { animation-delay: 0.18s; }
+    .gal-item:nth-child(7) { animation-delay: 0.21s; }
+    .gal-item:nth-child(8) { animation-delay: 0.24s; }
+    .gal-item:nth-child(9) { animation-delay: 0.27s; }
+    .gal-item:nth-child(10) { animation-delay: 0.30s; }
+    @keyframes galItemIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Dragging state */
+    .gal-item.dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+      transition: all 150ms ease !important;
+    }
+    .gal-item.drag-over {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+
+    @media (max-width: 640px) {
+      .gal-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+      .gal-hero-title { font-size: 1.3rem; }
+    }
+    @media (max-width: 400px) {
+      .gal-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -442,9 +269,9 @@
           <a href="schedule.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="snav-label">Schedule</span></a>
           <a href="activities.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span><span class="snav-label">Activities</span></a>
           <a href="analytics.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="snav-label">Analytics</span></a>
-          <a href="goals.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span class="snav-label">Goals</span></a>
+          <a href="goals.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span class="snav-label">Goals</span></a>
           <a href="finance.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="snav-label">Finance</span></a>
-          <a href="gallery.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
+          <a href="gallery.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
         </div>
       </nav>
       <div class="hub-sidebar-body">
@@ -481,7 +308,6 @@
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
         </div>
-
         </div>
       </div>
       </div>
@@ -497,76 +323,54 @@
     <div class="hub-main">
       <!-- ─── HERO ────────────────────────────────────── -->
       <section class="gl-hero">
-        <img data-image-id="goals-hero" src="" alt="Goals hero" class="gl-hero-bg">
+        <img data-image-id="gallery-hero" src="" alt="Gallery hero" class="gl-hero-bg">
         <div class="gl-hero-overlay"></div>
         <div class="gl-hero-inner">
           <div class="gl-hero-text">
-            <h1 class="gl-hero-title">Goals &amp; Resolutions</h1>
+            <h1 class="gl-hero-title">Gallery</h1>
             <div class="gl-hero-meta">
-              <span id="glPageMeta">Define what matters</span>
+              <span id="galPageMeta">Vision Board</span>
               <span class="gl-hero-dot"></span>
-              <span id="glGoalCount">0 goals</span>
+              <span id="galImageCount">0 images</span>
             </div>
-            <div class="gl-hero-sub" id="glHeroSub">Track your aspirations</div>
+            <div class="gl-hero-sub" id="galHeroSub">Your designs &amp; posters</div>
           </div>
           <div class="gl-hero-ceramic">
-            <img data-image-id="goals-ceramic" src="" alt="">
+            <img data-image-id="gallery-avatar" src="" alt="">
           </div>
         </div>
       </section>
 
       <div class="hub-content hub-page-transition">
 
-        <!-- ─── GOALS BENTO GRID ─────────────────────── -->
-        <div class="gl-bento hub-anim-in hub-anim-in-3" id="glBento"></div>
+        <!-- ─── GALLERY GRID ───────────────────────── -->
+        <div class="hub-anim-in hub-anim-in-2" style="margin-bottom:var(--space-6)">
+          <div class="gal-top-actions hub-anim-in hub-anim-in-3">
+            <div>
+              <div class="gal-top-title">Vision Board</div>
+              <span class="gal-top-count" id="galCount">0 images</span>
+            </div>
+            <div class="gal-actions-row">
+              <button class="btn btn-ghost" id="galResetBtn" title="Reset all gallery images" style="display:none">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+                Reset
+              </button>
+              <button class="btn btn-outline" id="galAddBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Image
+              </button>
+            </div>
+          </div>
 
-        <!-- ─── VISION BOARD ─────────────────────────── -->
-        <div class="gl-vision hub-anim-in hub-anim-in-4">
-          <div class="gl-vision-header">
-            <div class="gl-vision-title">Vision Board</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
-            <div class="gl-vision-grid" id="glVisionGrid">
-              <div class="gl-vision-img-wrap" data-img-picker="goals-tulips">
-                <div class="gl-vision-img-placeholder" style="display:flex">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  <span>Click to add photo</span>
-                </div>
-              </div>
-              <div class="gl-vision-img-wrap" data-img-picker="goals-book">
-                <div class="gl-vision-img-placeholder" style="display:flex">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  <span>Click to add photo</span>
-                </div>
-              </div>
-              <div class="gl-vision-img-wrap" data-img-picker="goals-studio">
-                <div class="gl-vision-img-placeholder" style="display:flex">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  <span>Click to add photo</span>
-                </div>
-              </div>
-            </div>
-            <div class="gl-manifesto">
-              <div class="gl-manifesto-label">Monthly Manifesto</div>
-              <div class="gl-manifesto-text" id="glManifestoText" contenteditable="false">&ldquo;Focus on the process, let go of the attachment to the outcome. Peace is the priority.&rdquo;</div>
-            </div>
-          </div>
+          <!-- Gallery Grid -->
+          <div class="gal-grid hub-anim-in hub-anim-in-4" id="galGrid"></div>
         </div>
 
-        <!-- ─── TASK DEEP DIVE ───────────────────────── -->
-        <div class="hub-anim-in hub-anim-in-5" style="margin-bottom:var(--space-6)">
-          <div class="gl-dive-header">
-            <div class="gl-dive-title">Related Tasks</div>
-            <span style="font-size:0.68rem;color:var(--text-tertiary)" id="glDiveCount">0 tasks across goals</span>
-          </div>
-          <div class="gl-dive-grid" id="glDiveGrid">
-            <div class="gl-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>No related tasks</p><div class="sub">Schedule tasks in the Schedule page linked to your goals.</div></div>
-          </div>
       </div>
 
-    <!-- ─── FOOTER ───────────────────────────────── -->
-    <footer class="hub-minifooter hub-anim-in hub-anim-in-6">
-      <span>Havën Schedule v1.0</span>
+      <!-- ─── FOOTER ───────────────────────────────── -->
+      <footer class="hub-minifooter hub-anim-in hub-anim-in-5">
+        <span>Havën Schedule v1.0</span>
         <div class="hub-minifooter-actions">
           <button id="exportBtn" class="btn btn-ghost">Export</button>
           <button id="importBtn" class="btn btn-ghost">Import</button>
@@ -728,10 +532,9 @@
       <div class="help-section">
         <div class="help-section-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Tips and Tricks</div>
         <div class="help-tips">
-          <div class="help-tip"><span class="help-tip-icon">🎯</span><div class="help-tip-text">Click a goal to edit its title, description, and color</div></div>
-          <div class="help-tip"><span class="help-tip-icon">✅</span><div class="help-tip-text">Check off sub-tasks to automatically update progress bars</div></div>
-          <div class="help-tip"><span class="help-tip-icon">🖼️</span><div class="help-tip-text">Toggle Edit Mode (Visuals) to customize images</div></div>
-          <div class="help-tip"><span class="help-tip-icon">📎</span><div class="help-tip-text">Attach images to AI chat for visual analysis</div></div>
+          <div class="help-tip"><span class="help-tip-icon">🖼️</span><div class="help-tip-text">Click any image to customize it — paste an image or URL</div></div>
+          <div class="help-tip"><span class="help-tip-icon">📎</span><div class="help-tip-text">Toggle Edit Mode (Visuals) to see the reset option on custom images</div></div>
+          <div class="help-tip"><span class="help-tip-icon">📋</span><div class="help-tip-text">Use "Add Image" to add new vision board slots</div></div>
         </div>
       </div>
     </div>
@@ -756,7 +559,7 @@
     <div class="ai-panel-body"><div class="ai-messages" id="aiChatMessages"></div></div>
     <div class="ai-panel-footer">
       <div class="ai-input-wrapper" id="aiChatInputWrapper">
-        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your goals..." autocomplete="off">
+        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your gallery..." autocomplete="off">
         <button id="aiChatSend" class="ai-send-btn show" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
       </div>
       <div class="ai-panel-footer-hint"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg><span>Natural language scheduling</span></div>
@@ -769,9 +572,7 @@
     }
   </script>
   <script src="shared.js"></script>
-
-  <script src="hub-visuals.js"></script>
-  <script src="goals.js"></script>
+  <script src="gallery.js"></script>
 
   <!-- ─── Spotify Settings Modal ──────────────── -->
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
