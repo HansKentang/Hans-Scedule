@@ -463,6 +463,66 @@
       .act-day-label { font-size: 0.75rem; }
       .act-day-meta { font-size: 0.64rem; }
     }
+
+    /* ─── BOARD / KANBAN VIEW ────────────────────────── */
+    .tags-board { overflow-x: auto; padding-bottom: var(--space-4); }
+    .tags-board-inner { display: flex; gap: var(--space-4); min-height: 400px; }
+    .tag-column {
+      min-width: 260px; max-width: 300px; flex: 1;
+      background: var(--surface-container-low);
+      border-radius: var(--radius-lg); border: 1px solid var(--border-color);
+      padding: var(--space-3); display: flex; flex-direction: column;
+    }
+    .tag-column-header {
+      display: flex; align-items: center; gap: var(--space-2);
+      margin-bottom: var(--space-3); font-size: 0.78rem; font-weight: 600;
+    }
+    .tag-column-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .tag-column-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tag-column-count {
+      font-size: 0.65rem; color: var(--text-tertiary); font-weight: 500;
+      background: var(--bg-secondary); padding: 1px 6px; border-radius: var(--radius-full);
+    }
+    .tag-column-stats { display: flex; gap: var(--space-3); margin-bottom: var(--space-3); }
+    .tag-column-stat { flex: 1; }
+    .tag-column-stat .val { font-size: 0.9rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+    .tag-column-stat .lbl { font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+    .tag-column-progress {
+      height: 3px; background: var(--bg-secondary); border-radius: var(--radius-full);
+      margin-bottom: var(--space-3); overflow: hidden;
+    }
+    .tag-column-progress .fill { height: 100%; border-radius: var(--radius-full); transition: width 0.4s ease; }
+    .tag-column-tasks { display: flex; flex-direction: column; gap: var(--space-2); flex: 1; }
+    .tag-column-empty { font-size: 0.72rem; color: var(--text-tertiary); text-align: center; padding: var(--space-4); }
+    .tag-col-task {
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md); padding: var(--space-2) var(--space-3);
+      cursor: pointer; transition: border-color var(--t-fast), box-shadow var(--t-fast);
+    }
+    .tag-col-task:hover { border-color: var(--text-primary); box-shadow: var(--shadow-xs); }
+    .tag-col-task.completed { opacity: 0.55; }
+    .tct-title {
+      display: flex; align-items: center; gap: var(--space-2);
+      font-size: 0.78rem; font-weight: 500; margin-bottom: var(--space-1);
+    }
+    .tct-title.done { text-decoration: line-through; }
+    .tct-check {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1.5px solid var(--tct-accent, var(--text-tertiary)); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast);
+    }
+    .tct-check.checked { background: var(--tct-accent, currentColor); border-color: var(--tct-accent, currentColor); }
+    .tct-check.checked::after {
+      content: ''; width: 5px; height: 2.5px;
+      border-left: 1.5px solid var(--text-inverse);
+      border-bottom: 1.5px solid var(--text-inverse);
+      transform: rotate(-45deg); margin-top: -1px;
+    }
+    .tct-meta {
+      display: flex; gap: var(--space-3); font-size: 0.62rem; color: var(--text-tertiary);
+      font-variant-numeric: tabular-nums;
+    }
   </style>
 </head>
 <body>
@@ -726,6 +786,7 @@
         <div class="hub-minifooter-actions">
           <button id="exportBtn" class="btn btn-ghost">Export</button>
           <button id="importBtn" class="btn btn-ghost">Import</button>
+          <input type="file" id="importFileInput" accept=".json" style="display:none">
         </div>
       </footer>
     </div>

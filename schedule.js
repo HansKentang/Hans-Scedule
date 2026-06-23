@@ -704,7 +704,7 @@ function startDrag(e, source) {
     gridDrag.type = 'quickadd';
     gridDrag.tag = pill.dataset.tag;
     gridDrag.duration = 60; // default 1 hour
-    ghost.innerHTML = `<span class="gg-plus">+</span> ${QUICK_ADD_TITLES[pill.dataset.tag] || 'New Task'}`;
+    ghost.innerHTML = `New Task`;
   }
 
   // If dragging a whiteboard item
@@ -731,12 +731,20 @@ function startDrag(e, source) {
   }
   if (ghostTag) {
     const meta = TAG_COLORS[ghostTag] || TAG_COLORS.meeting;
-    ghost.style.border = `2px solid ${meta.text}`;
-    ghost.style.boxShadow = `0 4px 20px color-mix(in srgb, ${meta.text} 25%, transparent)`;
-    // For non-task ghosts (quick-add, whiteboard), also set background/color
-    if (gridDrag.type !== 'reschedule') {
-      ghost.style.background = meta.bg;
-      ghost.style.color = meta.text;
+    // Quick-add ghost: white card with plain 'New Task'
+    if (gridDrag.type === 'quickadd') {
+      ghost.style.background = '#fff';
+      ghost.style.color = '#333';
+      ghost.style.border = '2px solid var(--border-color)';
+      ghost.style.boxShadow = '0 4px 20px rgba(0,0,0,0.12)';
+    } else {
+      ghost.style.border = `2px solid ${meta.text}`;
+      ghost.style.boxShadow = `0 4px 20px color-mix(in srgb, ${meta.text} 25%, transparent)`;
+      // For non-task ghosts (quick-add, whiteboard), also set background/color
+      if (gridDrag.type !== 'reschedule') {
+        ghost.style.background = meta.bg;
+        ghost.style.color = meta.text;
+      }
     }
   }
 
@@ -1810,7 +1818,8 @@ function renderSchTemplates() {
   let html = '';
   for (const tpl of templates) {
     const c = TAG_COLORS[tpl.tag] || TAG_COLORS.meeting;
-    html += `<button class="template-pill" data-template-id="${tpl.id}" title="${escapeHtml(tpl.title)} · ${formatDuration(tpl.duration)}">
+    html += `<button class="template-pill" data-template-id="${tpl.id}" title="${escapeHtml(tpl.title)} · ${formatDuration(tpl.duration)}"
+      style="--tpl-accent:${c.text};--tpl-bg:${c.bg}">
       <span class="tpl-dot" style="background:${c.text}"></span>
       ${escapeHtml(tpl.name)}
     </button>`;

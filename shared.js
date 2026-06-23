@@ -572,14 +572,12 @@ function resetCardColors() {
 
 function applyCardColors() {
   const root = document.documentElement;
-  const isDark = root.classList.contains('dark');
   for (const tag of TAG_ORDER) {
     const c = cardColors[tag] || DEFAULT_TAG_COLORS[tag];
     if (!c) continue;
-    const darkText = c.dark || lightenColor(c.light, 0.45);
-    const darkBg = darkenColor(c.light, 0.82);
-    root.style.setProperty(`--tag-${tag}-text`, isDark ? darkText : c.light);
-    root.style.setProperty(`--tag-${tag}-bg`, isDark ? darkBg : lightenColor(c.light, 0.88));
+    // Use same color in both light and dark mode
+    root.style.setProperty(`--tag-${tag}-text`, c.light);
+    root.style.setProperty(`--tag-${tag}-bg`, lightenColor(c.light, 0.88));
   }
 }
 
@@ -4871,11 +4869,15 @@ function positionAccessItems() {
   }
 }
 
-// Call on load and resize — items reposition so nothing clips
+// Render sidebar images on all pages on load
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', positionAccessItems);
+  document.addEventListener('DOMContentLoaded', function() {
+    positionAccessItems();
+    if (typeof renderSidebarImages === 'function') renderSidebarImages();
+  });
 } else {
   positionAccessItems();
+  if (typeof renderSidebarImages === 'function') renderSidebarImages();
 }
 window.addEventListener('resize', positionAccessItems);
 window.positionAccessItems = positionAccessItems;
@@ -5072,7 +5074,7 @@ function openCardColorPicker(anchorEl, tag, currentHex, onPick) {
     const allColors = { ...cardColors };
     allColors[tag] = {
       light: currentColor,
-      dark: DEFAULT_TAG_COLORS[tag]?.dark || lightenColor(currentColor, 0.45),
+      dark: lightenColor(currentColor, 0.45),
     };
     saveCardColors(allColors);
     onPick(currentColor);
