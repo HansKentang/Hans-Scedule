@@ -26,6 +26,8 @@ function _nextUid() { return 'b' + (++_bentoUidCounter) + '_' + Date.now(); }
 function initHubLayout() {
   const container = document.querySelector('.hub-layout');
   if (!container) return;
+  if (container._initHubLayoutWired) return;
+  container._initHubLayoutWired = true;
 
   const savedOrder = loadHubLayout();
   if (savedOrder && savedOrder.length) {
@@ -819,12 +821,12 @@ function renderHubBento() {
 
       // Selection click handler — click a bubble to select, click elsewhere to deselect
       grid.addEventListener('click', function(e) {
-        if (_suppressClick) return;
+        if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
         if (!hubEditMode) return;
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-copy-bubble], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], .bento-bubble-handle, .bento-bubble-btn, .bento-resize-handle, .w-add-btn, .hub-edit-item-btn')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-copy-bubble], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], .bento-bubble-handle, .bento-bubble-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -1217,7 +1219,6 @@ let _bubbleDragData = null;
 let _bubbleDragInitialized = false;
 let _bubbleResizeData = null;
 let _bubbleResizeInitialized = false;
-let _suppressClick = false;
 let _handleLastClickTime = 0;
 
 function resetBentoInteractions() {
@@ -1251,7 +1252,7 @@ function setupBubbleDragDrop() {
     }
     _handleLastClickTime = now;
     // Don't start drag if clicking interactive elements inside the zone
-    if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-copy-bubble], [data-duplicate-bubble]')) return;
+    if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-copy-bubble], [data-duplicate-bubble], .bento-resize-edge')) return;
     const bubble = dragZone.closest('.bento-bubble');
     if (!bubble) return;
     var gr = grid.getBoundingClientRect();
@@ -1293,8 +1294,8 @@ function setupBubbleDragDrop() {
     updateAddBtnPosition();
   }
 
-  // Double-click cancels any held drag/resize
-  document.addEventListener('dblclick', function(e) {
+  // Double-click on the grid cancels any held drag/resize
+  grid.addEventListener('dblclick', function(e) {
     cancelDrag();
   });
 
@@ -1383,14 +1384,14 @@ function setupBubbleDragDrop() {
     }
     updateAddBtnPosition();
     _bubbleDragData = null;
-    _suppressClick = true;
     bubble.classList.remove('selected');
-    setTimeout(function() { _suppressClick = false; }, 100);
+    bubble.setAttribute('data-suppress-click', '1');
+    setTimeout(function() { bubble.removeAttribute('data-suppress-click'); }, 50);
   });
 }
 
 function snapSpotifyHeight(h) {
-  var heights = [320, 480];
+  var heights = [280, 420];
   return heights.reduce(function(prev, curr) { return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev; });
 }
 
@@ -1523,8 +1524,8 @@ function setupBubbleResize() {
     resizeTip.style.display = 'none';
     _bubbleResizeData = null;
     bubble.classList.remove('selected');
-    _suppressClick = true;
-    setTimeout(function() { _suppressClick = false; }, 100);
+    bubble.setAttribute('data-suppress-click', '1');
+    setTimeout(function() { bubble.removeAttribute('data-suppress-click'); }, 50);
   });
 }
 
@@ -1633,7 +1634,7 @@ function addBubbleTypes(types) {
       if (layout.find(i => i.t === t)) return;
     }
     item.w = snap(320);
-    item.h = item.t === 'spotify' ? 480 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+    item.h = item.t === 'spotify' ? snap(420) : item.t === 'images' ? snap(320 / 1.333) : snap(280);
     // Smart gap-filling: find first horizontal gap that fits this item
     var pos = findBentoGap(layout, item.w, item.h, gridWidth);
     item.x = pos.x;
@@ -2013,7 +2014,10 @@ function showGalleryPopup(idx, anchor) {
 }
 
 /* ─── Event wiring ─────────────────────────── */
+var _hubEditEventsWired = false;
 function setupHubEditEvents() {
+  if (_hubEditEventsWired) return;
+  _hubEditEventsWired = true;
   document.getElementById('hubEditToggle')?.addEventListener('click', toggleHubEdit);
   document.getElementById('hubAddToggle')?.addEventListener('click', showHubAddPopup);
   document.getElementById('hubHideToggle')?.addEventListener('click', showHubHidePopup);
@@ -2127,7 +2131,7 @@ function setupHubEditEvents() {
   });
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
-    if (_suppressClick) return;
+    if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
     const delBtn = e.target.closest('[data-del]');
     if (!delBtn || !hubEditMode) return;
     const field = delBtn.dataset.del;
@@ -2141,7 +2145,7 @@ function setupHubEditEvents() {
   });
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
-    if (_suppressClick) return;
+    if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
     const addBtn = e.target.closest('[data-add]');
     if (!addBtn) return;
     const field = addBtn.dataset.add;
@@ -2246,7 +2250,7 @@ function setupHubEditEvents() {
   }, true);
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
-    if (_suppressClick) return;
+    if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
     const copyBtn = e.target.closest('[data-copy-bubble]');
     if (copyBtn) {
       var uid = copyBtn.dataset.copyBubble;

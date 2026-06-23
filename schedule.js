@@ -1721,16 +1721,8 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
     pill.addEventListener('click', () => {
       document.querySelectorAll('#tplAddTagPills .tf-tag').forEach(b => b.classList.remove('active'));
       pill.classList.add('active');
-      // Refresh subcategory dropdown for selected tag
-      const subcatEl = document.getElementById('tplAddSubcategory');
-      if (subcatEl) {
-        const tag = pill.dataset.tag;
-        const subs = typeof SUBCATEGORIES !== 'undefined' ? (SUBCATEGORIES[tag] || []) : [];
-        subcatEl.innerHTML = '<option value="">None</option>' + subs.map(s => '<option value="' + s + '">' + s + '</option>').join('');
-        subcatEl.value = '';
-      }
-    });
-  });ssList.add('active');
+      // Refresh subcategory bubble pills for selected tag
+      refreshSubcatPills('tplAddSubcategoryPills', pill.dataset.tag);
     });
   });
   
@@ -1876,9 +1868,9 @@ function saveAddTemplate() {
   const durEl = document.querySelector('.tpl-add-dur.active');
   const duration = durEl ? parseInt(durEl.dataset.minutes) : 60;
   
-  // Get subcategory
-  const subcatEl = document.getElementById('tplAddSubcategory');
-  const subcategory = subcatEl ? subcatEl.value : '';
+  // Get subcategory from active bubble pill
+  const subcatPill = document.querySelector('#tplAddSubcategoryPills .tf-tag.active');
+  const subcategory = subcatPill ? subcatPill.dataset.subcat || '' : '';
   
   const templates = loadTemplates();
   const newTpl = {
@@ -2191,6 +2183,26 @@ function initPomodoro() {
 }
 
 // ─── TEMPLATE EDIT POPUP ────────────────────────────────────
+
+// ─── REFRESH SUBCATEGORY PILLS ──────────────────────────────
+function refreshSubcatPills(containerId, tag, selectedSubcat) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const subs = typeof SUBCATEGORIES !== 'undefined' ? (SUBCATEGORIES[tag] || []) : [];
+  let html = '<button type="button" class="tf-tag' + (!selectedSubcat ? ' active' : '') + '" data-subcat="" style="--tag-c:var(--text-tertiary);--tag-b:var(--bg-secondary)">None</button>';
+  for (const s of subs) {
+    const active = s === selectedSubcat ? ' active' : '';
+    html += '<button type="button" class="tf-tag' + active + '" data-subcat="' + s + '" style="--tag-c:var(--text-secondary);--tag-b:var(--accent-soft)">' + s + '</button>';
+  }
+  container.innerHTML = html;
+  // Attach click handlers
+  container.querySelectorAll('.tf-tag').forEach(btn => {
+    btn.addEventListener('click', () => {
+      container.querySelectorAll('.tf-tag').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+}
 function startEditTemplate(pill, id) {
   if (!id) return;
   const templates = loadTemplates();
@@ -2240,9 +2252,9 @@ function startEditTemplate(pill, id) {
       
       <div class="tf-group">
         <label class="tf-label">Subcategory</label>
-        <select id="tplEditSubcategory" class="form-input">
-          <option value="">None</option>
-        </select>
+        <div class="tf-tags" id="tplEditSubcategoryPills">
+          <button type="button" class="tf-tag active" data-subcat="" style="--tag-c:var(--text-tertiary);--tag-b:var(--bg-secondary)">None</button>
+        </div>
       </div>
       <div class="tpl-edit-popup-actions">
         <button class="tf-btn tf-btn-ghost" id="tplEditCancel">Cancel</button>
@@ -2415,7 +2427,7 @@ function renderSchTemplates() {
       e.stopImmediatePropagation();
       delete chip.dataset._dragMoved;
     }
-  });
+  }, { capture: true });
 }
 
 
