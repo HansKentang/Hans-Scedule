@@ -877,7 +877,7 @@ function renderHubBento() {
             var item = layout.find(function(i) { return i.uid === uid; });
             if (item) {
               item.w = snap(320);
-              item.h = item.t === 'spotify' ? 400 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+              item.h = item.t === 'spotify' ? 480 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
               item.x = snap(24);
               item.y = snap(24);
               resolveBubbleCollisions(layout);
@@ -1390,7 +1390,7 @@ function setupBubbleDragDrop() {
 }
 
 function snapSpotifyHeight(h) {
-  var heights = [240, 480];
+  var heights = [320, 480];
   return heights.reduce(function(prev, curr) { return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev; });
 }
 
@@ -1633,7 +1633,7 @@ function addBubbleTypes(types) {
       if (layout.find(i => i.t === t)) return;
     }
     item.w = snap(320);
-    item.h = item.t === 'spotify' ? 400 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+    item.h = item.t === 'spotify' ? 480 : item.t === 'images' ? snap(320 / 1.333) : snap(280);
     // Smart gap-filling: find first horizontal gap that fits this item
     var pos = findBentoGap(layout, item.w, item.h, gridWidth);
     item.x = pos.x;
