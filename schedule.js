@@ -1717,11 +1717,20 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
   document.getElementById('tplAddCancel')?.addEventListener('click', closeAddTemplatePopup);
   document.getElementById('tplAddSave')?.addEventListener('click', saveAddTemplate);
   
-  // Template add popup - tag pills
   document.querySelectorAll('#tplAddTagPills .tf-tag').forEach(pill => {
     pill.addEventListener('click', () => {
       document.querySelectorAll('#tplAddTagPills .tf-tag').forEach(b => b.classList.remove('active'));
       pill.classList.add('active');
+      // Refresh subcategory dropdown for selected tag
+      const subcatEl = document.getElementById('tplAddSubcategory');
+      if (subcatEl) {
+        const tag = pill.dataset.tag;
+        const subs = typeof SUBCATEGORIES !== 'undefined' ? (SUBCATEGORIES[tag] || []) : [];
+        subcatEl.innerHTML = '<option value="">None</option>' + subs.map(s => '<option value="' + s + '">' + s + '</option>').join('');
+        subcatEl.value = '';
+      }
+    });
+  });ssList.add('active');
     });
   });
   
@@ -2367,21 +2376,22 @@ function renderSchTemplates() {
     });
   });
   
-  // Make chip-row buttons draggable to calendar
+    // Make chip-row buttons draggable to calendar
   container.querySelectorAll('.sch-pm-chip').forEach(chip => {
+    // Prevent native HTML5 drag from interfering
+    chip.addEventListener('dragstart', (e) => e.preventDefault());
+    
     chip.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || e.target.closest('.sch-pm-chip') !== chip) return;
-      // Only start drag if user explicitly moves (don't interfere with click)
       const startX = e.clientX, startY = e.clientY;
-      let moved = false;
       const onMove = (ev) => {
         if (Math.abs(ev.clientX - startX) > 5 || Math.abs(ev.clientY - startY) > 5) {
-          moved = true;
+          chip.dataset._dragMoved = 'true';
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
-          // Simulate startDrag with a fake source
           const tag = chip.dataset.pmTag;
           const fakePill = document.createElement('div');
+          fakePill.className = 'sch-pm-dropdown-pill';
           fakePill.dataset.tag = tag;
           fakePill.dataset.duration = '60';
           fakePill.dataset.templateTitle = TAG_LABELS[tag] || tag;
@@ -2391,14 +2401,20 @@ function renderSchTemplates() {
       const onUp = () => {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
-        if (!moved) {
-          // It was a click, let click handler handle it
-          chip.click();
-        }
       };
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     });
+  });
+  
+  // Patch the chip click handler to skip if a drag just happened
+  // We can't easily modify the already-registered handler, so use event delegation
+  container.addEventListener('click', (e) => {
+    const chip = e.target.closest('.sch-pm-chip');
+    if (chip && chip.dataset._dragMoved === 'true') {
+      e.stopImmediatePropagation();
+      delete chip.dataset._dragMoved;
+    }
   });
 }
 
