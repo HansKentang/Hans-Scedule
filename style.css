@@ -889,10 +889,10 @@ html.dark .theme-icon-dark { display: block; }
 
 .day-header {
   position: sticky; top: 0; z-index: 5;
-  padding: var(--space-4) var(--space-3); text-align: center;
+  padding: var(--space-3) var(--space-2); text-align: center;
   border-bottom: 1px solid var(--border-color);
   border-left: 1px solid var(--border-subtle);
-  min-height: 56px; display: flex; flex-direction: column;
+  min-height: 48px; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 3px;
   background: color-mix(in srgb, var(--bg-primary) 60%, transparent);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
@@ -904,10 +904,10 @@ html.dark .theme-icon-dark { display: block; }
   position: sticky; left: 0; 
 }
 .day-name { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
-.day-number { font-size: 1.15rem; font-weight: 600; color: var(--text-primary); line-height: 1; }
+.day-number { font-size: 1rem; font-weight: 600; color: var(--text-primary); line-height: 1; }
 .day-header.today .day-number {
-  background: var(--accent); color: var(--text-inverse); width: 32px; height: 32px;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+  background: var(--accent); color: var(--text-inverse); width: 28px; height: 28px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 20%, transparent), 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .day-header.today .day-name { color: var(--accent); }
@@ -980,8 +980,8 @@ html.dark .current-time-line { opacity: 0.5; }
 
 /* ─── TASKS ────────────────────────────────────────────────── */
 .calendar-task {
-  position: absolute; left: 5px; width: calc(100% - 10px); border-radius: var(--radius-lg);
-  padding: var(--space-3) var(--space-4); cursor: grab; overflow: hidden;
+  position: absolute; left: 5px; width: calc(100% - 10px); border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3); cursor: grab; overflow: hidden;
   z-index: var(--z-task);
   min-height: 28px; user-select: none;
   background: var(--bg-card);
@@ -1115,7 +1115,7 @@ html.dark .calendar-task .task-tag-badge {
 .calendar-task.tag-hobby { --task-accent: var(--tag-hobby-text); --task-accent-bg: var(--tag-hobby-bg); }
 .calendar-task.tag-deep-work { --task-accent: var(--tag-deep-work-text); --task-accent-bg: var(--tag-deep-work-bg); }
 
-.calendar-task.task-sm { padding: var(--space-2) var(--space-4); }
+.calendar-task.task-sm { padding: var(--space-1) var(--space-3); }
 .calendar-task.task-sm .task-time { display: none; }
 .calendar-task.task-sm .task-tag-badge { display: none; }
 .calendar-task.task-sm .task-check { width: 10px; height: 10px; }
@@ -3801,7 +3801,7 @@ html.light .td-progress-fill {
 /* ─── RESPONSIVE ───────────────────────────────────────────── */
 @media (max-width: 1024px) {
   :root { --time-axis-width: 52px; --hour-height: 48px; }
-  .day-header { padding: var(--space-3) var(--space-2); min-height: 44px; }
+  .day-header { padding: var(--space-2) var(--space-2); min-height: 40px; }
   .day-number { font-size: 1rem; }
   .day-header.today .day-number { width: 28px; height: 28px; font-size: 0.95rem; }
 }
@@ -4581,7 +4581,7 @@ html.light .sleep-header h3 svg {
   :root { --hour-height: 44px; --time-axis-width: 44px; }
   #calendarHeader { padding: var(--space-2) var(--space-3); }
   #weekLabel { font-size: 0.9rem; }
-  .day-header { padding: var(--space-2) var(--space-1); min-height: 38px; }
+  .day-header { padding: var(--space-1) var(--space-1); min-height: 36px; }
   .day-number { font-size: 0.85rem; }
   .day-header.today .day-number { width: 24px; height: 24px; font-size: 0.85rem; }
   .calendar-task { padding: var(--space-2) var(--space-3); }
@@ -5175,8 +5175,8 @@ html.focus-mode .time-slot { height: 36px; font-size: 0.55rem; }
 }
 /* ─── TEMPLATES BAR ──────────────────────────── */
 .sch-templates-bar {
-  display: flex; align-items: center; gap: var(--space-2);
-  padding: 4px var(--space-4);
+  display: flex; align-items: center; gap: var(--space-1);
+  padding: 2px var(--space-4);
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-primary);
   flex-shrink: 0; overflow-x: auto;

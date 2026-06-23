@@ -16,496 +16,50 @@
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
-    .act-feed { padding: var(--space-2) 0; }
-
-    .act-day { margin-bottom: var(--space-5); }
-    .act-day:last-child { margin-bottom: 0; }
-    .act-day-stamp {
-      display: flex; align-items: center; gap: var(--space-2);
-      margin-bottom: var(--space-2); position: sticky; top: 0;
-      background: var(--bg-primary); z-index: 2; padding: var(--space-1) 0;
-    }
-    .act-day-stamp::after {
-      content: ''; flex: 1; height: 1px; background: var(--border-subtle);
-    }
-    .act-day-label {
-      font-size: 0.75rem; font-weight: 600; color: var(--text-primary);
-      white-space: nowrap; letter-spacing: -0.01em;
-    }
-    .act-day-meta {
-      font-size: 0.65rem; color: var(--text-tertiary);
-      display: flex; gap: var(--space-2); align-items: center;
-    }
-    .act-day-dot {
-      width: 6px; height: 6px; border-radius: 50%; display: inline-block;
-      background: var(--text-tertiary); opacity: 0.25;
-    }
-    .act-day-dot.today { background: var(--accent); opacity: 1; }
-
-    .act-card {
-      display: flex; gap: var(--space-3);
-      padding: var(--space-2) var(--space-4);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-card);
-      margin-bottom: var(--space-2);
-      transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
-      cursor: pointer;
-      border-left: 3px solid var(--act-accent, var(--gray-300));
-    }
-    .act-card:hover {
-      border-color: var(--border-color);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-      transform: translateY(-1px);
-    }
-    .act-card.completed { opacity: 0.4; }
-    .act-card.completed .act-card-title-display { text-decoration: line-through; }
-
-    .act-card-time {
-      width: 44px; flex-shrink: 0;
-      font-size: 0.65rem; font-family: var(--font-mono);
-      color: var(--text-tertiary);
-      padding-top: 2px; text-align: right;
-      line-height: 1.2; letter-spacing: -0.01em;
-    }
-    .act-card-body { flex: 1; min-width: 0; }
-    .act-card-header {
-      display: flex; align-items: center; gap: var(--space-2);
-    }
-    .act-card-check {
-      width: 16px; height: 16px; border-radius: 50%;
-      border: 2px solid var(--act-accent, var(--text-tertiary));
-      flex-shrink: 0; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .act-card-check:hover {
-      border-color: var(--act-accent, var(--text-primary));
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--act-accent, var(--text-primary)) 12%, transparent);
-    }
-    .act-card-check.checked {
-      background: var(--act-accent, currentColor);
-      border-color: var(--act-accent, currentColor);
-    }
-    .act-card-check.checked::after {
-      content: ''; width: 5px; height: 2.5px;
-      border-left: 1.5px solid var(--bg-primary);
-      border-bottom: 1.5px solid var(--bg-primary);
-      transform: rotate(-45deg); margin-top: -1px;
-    }
-    .act-card-title {
-      font-size: 0.88rem; font-weight: 500; color: var(--text-primary);
-      flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .act-card-notes {
-      font-size: 0.72rem; color: var(--text-tertiary);
-      margin-top: var(--space-1);
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      padding-left: calc(16px + var(--space-2));
-    }
-    .act-card-tag {
-      font-size: 0.5rem; font-weight: 700; padding: 1px 6px;
-      border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em;
-      flex-shrink: 0;
-    }
-    .act-card-del {
-      width: 24px; height: 24px; border: none; background: transparent;
-      color: var(--text-tertiary); cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: var(--radius-sm); transition: all var(--t-fast);
-      flex-shrink: 0; opacity: 0;
-    }
-    .act-card:hover .act-card-del { opacity: 0.4; }
-    .act-card-del:hover { opacity: 1 !important; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
-
-    .act-empty { text-align: center; padding: var(--space-10) var(--space-8); color: var(--text-tertiary); }
-    .act-empty p { font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
-    .act-empty .sub { font-size: 0.78rem; margin-top: var(--space-2); opacity: 0.6; }
-
-    .act-card.tag-deep-work { --act-accent: var(--tag-deep-work-text); }
-    .act-card.tag-meeting { --act-accent: var(--tag-meeting-text); }
-    .act-card.tag-exercise { --act-accent: var(--tag-exercise-text); }
-    .act-card.tag-study { --act-accent: var(--tag-study-text); }
-    .act-card.tag-hobby { --act-accent: var(--tag-hobby-text); }
-    .act-card.completed { --act-accent: var(--gray-400); }
-
-    .act-filters {
-      display: flex; align-items: center; gap: var(--space-3);
-      margin-bottom: var(--space-5); flex-wrap: wrap;
-    }
-    .act-filters select {
-      padding: var(--space-1) var(--space-2);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      font-size: 0.78rem; font-family: var(--font-family);
-      background: var(--bg-primary); color: var(--text-primary); outline: none;
-      cursor: pointer; appearance: none; -webkit-appearance: none;
-      padding-right: 28px;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%238a8a96' d='M5 7L1 3h8z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 10px center;
-    }
-    .act-filters select:focus { border-color: var(--border-focus); }
-
-    .act-stats {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: var(--space-3); margin-bottom: var(--space-5);
-    }
-    .act-stat-card {
-      padding: var(--space-3) var(--space-4);
-      border-radius: var(--radius-lg);
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-card);
-      transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
-      border-left: 3px solid var(--stat-accent, var(--border-color));
-    }
-    .act-stat-card:hover {
-      border-color: var(--border-color);
-    }
-    .act-stat-value {
-      font-size: 1.25rem; font-weight: 700; color: var(--text-primary);
-      font-variant-numeric: tabular-nums; line-height: 1.1;
-    }
-    .act-stat-label {
-      font-size: 0.6rem; color: var(--text-tertiary);
-      text-transform: uppercase; letter-spacing: 0.08em;
-      font-weight: 600; margin-top: 3px;
-    }
-    .act-stat-sub {
-      font-size: 0.6rem; color: var(--text-tertiary);
-      margin-top: 2px; opacity: 0.65;
-    }
-
-    .act-search-wrap { position: relative; margin-bottom: var(--space-3); }
-    .act-search {
-      width: 100%; padding: var(--space-2) var(--space-4) var(--space-2) 38px;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-lg);
-      font-size: 0.82rem; font-family: var(--font-family);
-      background: var(--bg-secondary); color: var(--text-primary);
-      outline: none; transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .act-search:focus {
-      border-color: var(--border-focus);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
-    }
-    .act-search::placeholder { color: var(--text-tertiary); opacity: 0.6; }
-    .act-search-icon {
-      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-      width: 14px; height: 14px; color: var(--text-tertiary);
-      pointer-events: none; opacity: 0.4;
-    }
-    .act-search-clear {
-      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-      width: 20px; height: 20px; border-radius: 50%;
-      border: none; background: transparent;
-      color: var(--text-tertiary); cursor: pointer;
-      display: none; align-items: center; justify-content: center;
-      font-size: 0.6rem; padding: 0; transition: all var(--t-fast);
-    }
-    .act-search-clear.visible { display: flex; }
-    .act-search-clear:hover { color: var(--text-primary); }
-
-    .act-view-toggle {
-      display: inline-flex; gap: 2px;
-      background: var(--bg-secondary);
-      padding: 3px; border-radius: var(--radius-lg);
-      border: 1px solid var(--border-subtle);
-      margin-bottom: var(--space-4);
-    }
-    .act-view-btn {
-      display: inline-flex; align-items: center; gap: var(--space-1);
-      padding: var(--space-1) var(--space-4);
-      border: none; background: transparent;
-      border-radius: 6px;
-      font-size: 0.72rem; font-weight: 500; font-family: var(--font-family);
-      color: var(--text-tertiary); cursor: pointer;
-      transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
-      white-space: nowrap;
-    }
-    .act-view-btn:hover { color: var(--text-secondary); }
-    .act-view-btn.active {
-      background: var(--bg-card);
-      color: var(--text-primary);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
-    }
-    .act-view-btn svg { width: 14px; height: 14px; flex-shrink: 0; stroke-width: 2; }
-
-    .act-insights { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); }
-    .act-insight {
-      display: inline-flex; align-items: center; gap: var(--space-1);
-      padding: var(--space-1) var(--space-3);
-      border-radius: var(--radius-full);
-      font-size: 0.68rem; font-weight: 500;
-      border: 1px solid var(--border-subtle);
-      background: transparent; color: var(--text-secondary);
-      transition: all var(--t-fast);
-    }
-    .act-insight:hover { border-color: var(--border-color); }
-    .act-insight strong { color: var(--text-primary); font-weight: 600; }
-
-    .act-card-title-inline { flex: 1; overflow: hidden; }
-    .act-card-title-inline input {
-      width: 100%; border: none; background: transparent;
-      font-size: 0.88rem; font-weight: 500; color: var(--text-primary);
-      font-family: var(--font-family); outline: none;
-      border-bottom: 1px solid var(--border-focus); padding: 0; margin: 0;
-    }
-    .act-card-title-inline .act-card-title-display {
-      width: 100%; cursor: text;
-      font-size: 0.88rem; font-weight: 500; color: var(--text-primary);
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-
-    .act-card-bar {
-      height: 2px; border-radius: var(--radius-full);
-      margin-top: var(--space-1); width: 40%; max-width: 80px;
-      background: var(--act-accent, var(--gray-300));
-      opacity: 0.25;
-      transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .act-card.completed .act-card-bar { opacity: 0.08; }
-
-    .act-fab {
-      position: fixed; bottom: 32px; right: 32px;
-      z-index: 45;
-      width: 48px; height: 48px; border-radius: 50%;
-      border: none; background: var(--text-primary);
-      color: var(--bg-primary);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 20px color-mix(in srgb, var(--text-primary) 20%, transparent);
-      transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .act-fab:hover { transform: scale(1.08); box-shadow: 0 8px 28px color-mix(in srgb, var(--text-primary) 28%, transparent); }
-    .act-fab:active { transform: scale(0.95); }
-    .act-fab.open { transform: rotate(45deg); background: var(--accent-hover); }
-    .act-fab svg { width: 20px; height: 20px; stroke-width: 2; }
-
-    .act-quick-overlay {
-      position: fixed; inset: 0; z-index: 44;
-      background: rgba(0,0,0,0.3);
-      opacity: 0; visibility: hidden;
-      transition: opacity 250ms ease, visibility 250ms ease;
-      pointer-events: none;
-    }
-    .act-quick-overlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
-    .act-quick-form {
-      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
-      z-index: 46;
-      width: 100%; max-width: 420px;
-      background: var(--surface-container);
-      border: 1px solid var(--border-color);
-      border-radius: 16px 16px 0 0;
-      padding: var(--space-4) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
-      box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
-      transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .act-quick-form.open { transform: translateX(-50%) translateY(0); }
-    .act-quick-handle {
-      width: 32px; height: 3px; border-radius: 2px;
-      background: var(--text-tertiary); opacity: 0.2;
-      margin: 0 auto var(--space-3);
-    }
-    .act-quick-form h3 {
-      font-size: 0.85rem; font-weight: 600; margin-bottom: var(--space-3);
-      display: flex; align-items: center; gap: var(--space-2);
-      color: var(--text-primary);
-    }
-    .act-quick-form .qf-group { margin-bottom: var(--space-2); }
-    .act-quick-form .qf-label {
-      display: block; font-size: 0.65rem; font-weight: 600;
-      color: var(--text-tertiary); margin-bottom: 4px;
-    }
-    .qf-input {
-      width: 100%; padding: var(--space-2) var(--space-3);
-      font-size: 0.85rem; font-family: var(--font-family);
-      background: var(--bg-primary); color: var(--text-primary);
-      border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
-      outline: none; transition: border-color var(--t-fast);
-    }
-    .qf-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent); }
-    .qf-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
-    .qf-tags { display: flex; gap: var(--space-1); flex-wrap: wrap; }
-    .qf-tag {
-      padding: 3px 10px; border-radius: var(--radius-full);
-      border: 1px solid var(--border-color); background: transparent;
-      font-size: 0.68rem; font-weight: 500; font-family: var(--font-family);
-      color: var(--text-tertiary); cursor: pointer; transition: all var(--t-fast);
-    }
-    .qf-tag:hover { border-color: var(--text-primary); color: var(--text-primary); }
-    .qf-tag.active { background: var(--tag-accent, var(--accent)); color: var(--text-inverse); border-color: transparent; }
-    .qf-tag.tag-deep-work { --tag-accent: var(--tag-deep-work-text); }
-    .qf-tag.tag-meeting { --tag-accent: var(--tag-meeting-text); }
-    .qf-tag.tag-exercise { --tag-accent: var(--tag-exercise-text); }
-    .qf-tag.tag-study { --tag-accent: var(--tag-study-text); }
-    .qf-tag.tag-hobby { --tag-accent: var(--tag-hobby-text); }
-    .qf-actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
-    .qf-actions .btn { flex: 1; justify-content: center; font-size: 0.78rem; }
-
-    .act-batch-bar {
-      display: flex; align-items: center; gap: var(--space-3);
-      padding: var(--space-3) var(--space-4);
-      background: var(--surface-container-high);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      margin-bottom: var(--space-4);
-    }
-    .act-batch-count { font-size: 0.8rem; font-weight: 600; color: var(--text-primary); margin-right: auto; }
-    .act-batch-bar .btn { font-size: 0.72rem; padding: var(--space-1) var(--space-3); }
-
-    .act-tl-line {
-      position: absolute; left: 24px; top: 30px; bottom: 0;
-      width: 1px; background: var(--border-subtle);
-      pointer-events: none;
-    }
-    .act-day:last-child .act-tl-line { display: none; }
-
-    .act-pr {
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 0.5rem; font-weight: 700; padding: 1px 4px;
-      border-radius: 3px; line-height: 1.2; flex-shrink: 0;
-      border: 1px solid currentColor;
-    }
-    .act-pr.p1 { color: #ef4444; background: color-mix(in srgb, #ef4444 10%, transparent); }
-    .act-pr.p2 { color: #f59e0b; background: color-mix(in srgb, #f59e0b 10%, transparent); }
-    .act-pr.p3 { color: #6366f1; background: color-mix(in srgb, #6366f1 10%, transparent); }
-    .act-pr.p4 { color: #6b7280; background: color-mix(in srgb, #6b7280 10%, transparent); }
-
-    .act-day-toggle { cursor: pointer; user-select: none; }
-    .act-day-chevron {
-      width: 14px; height: 14px; color: var(--text-tertiary);
-      transition: transform 200ms var(--curve); flex-shrink: 0;
-    }
-    .act-day.collapsed .act-day-chevron { transform: rotate(-90deg); }
-    .act-day-body { transition: max-height 300ms ease, opacity 200ms ease; overflow: hidden; }
-    .act-day.collapsed .act-day-body { max-height: 0 !important; opacity: 0; margin: 0; }
-
-    .act-day-notes {
-      margin: 0 0 var(--space-2);
-      padding: var(--space-1) var(--space-3);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      font-size: 0.72rem; color: var(--text-tertiary);
-      cursor: text; transition: all var(--t-fast);
-      display: flex; align-items: center; gap: var(--space-2);
-    }
-    .act-day-notes:hover { border-color: var(--border-color); }
-    .act-day-notes .act-dn-display { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-height: 18px; }
-    .act-day-notes .act-dn-input {
-      display: none; width: 100%; border: none; background: transparent;
-      font-size: 0.72rem; font-family: var(--font-family);
-      color: var(--text-primary); outline: none; resize: none;
-    }
-    .act-day-notes.editing .act-dn-display { display: none; }
-    .act-day-notes.editing .act-dn-input { display: block; }
-
-    .act-bchk {
-      display: none; width: 16px; height: 16px; border-radius: 4px;
-      border: 2px solid var(--border-color); background: transparent;
-      cursor: pointer; flex-shrink: 0;
-      align-items: center; justify-content: center;
-      transition: all var(--t-fast); margin-right: var(--space-2);
-    }
-    body.act-batch-mode .act-bchk { display: flex; }
-    body.act-batch-mode .act-card-time { opacity: 0.3; width: 30px; }
-    body.act-batch-mode .act-card { cursor: default; }
-    body.act-batch-mode .act-card:hover { transform: none; }
-    .act-bchk.sel { background: var(--accent); border-color: var(--accent); }
-    .act-bchk.sel::after {
-      content: ''; width: 5px; height: 2.5px;
-      border-left: 1.5px solid var(--text-inverse);
-      border-bottom: 1.5px solid var(--text-inverse);
-      transform: rotate(-45deg); margin-top: -1px;
-    }
-
-    .act-spark { margin-top: var(--space-2); height: 28px; opacity: 0.25; }
-    .act-spark svg { width: 100%; height: 100%; }
-
-    .act-undo-toast {
-      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(0);
-      z-index: 60;
-      display: flex; align-items: center; gap: var(--space-3);
-      padding: var(--space-3) var(--space-5);
-      background: var(--surface-container-high);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-xl);
-      font-size: 0.8rem; font-weight: 500;
-      animation: actUndoIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    @keyframes actUndoIn {
-      from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(0.96); }
-      to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
-    }
-
-    @media (max-width: 768px) {
-      .act-stats { grid-template-columns: repeat(2, 1fr); }
-      .act-card { padding: var(--space-3) var(--space-4); }
-      .act-card-time { width: 45px; font-size: 0.65rem; }
-      .act-stat-value { font-size: 1.1rem; }
-      .act-fab { bottom: 20px; right: 20px; }
-      .act-quick-form { max-width: 100%; border-radius: 16px 16px 0 0; }
-      .act-day-stamp { flex-wrap: wrap; gap: var(--space-2); }
-      .act-view-btn { padding: var(--space-1) var(--space-3); font-size: 0.68rem; }
-      .act-stat-card { padding: var(--space-2) var(--space-3); }
-    }
-    @media (max-width: 480px) {
-      .act-stats { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
-      .act-day { margin-bottom: var(--space-5); }
-      .act-card { padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); }
-      .act-card-time { width: 36px; font-size: 0.6rem; }
-      .act-card-title-display { font-size: 0.78rem; }
-      .act-card-check { width: 14px; height: 14px; }
-      .act-fab { bottom: 16px; right: 16px; }
-      .act-search { font-size: 0.75rem; padding: var(--space-1) var(--space-3) var(--space-1) 32px; }
-      .act-day-label { font-size: 0.75rem; }
-      .act-day-meta { font-size: 0.64rem; }
-    }
-
     /* ─── BOARD / KANBAN VIEW ────────────────────────── */
     .tags-board { overflow-x: auto; padding-bottom: var(--space-4); }
-    .tags-board-inner { display: flex; gap: var(--space-4); min-height: 400px; }
+    .tags-board-inner { display: flex; gap: var(--space-3); min-height: 350px; }
     .tag-column {
-      min-width: 260px; max-width: 300px; flex: 1;
-      background: var(--surface-container-low);
-      border-radius: var(--radius-lg); border: 1px solid var(--border-color);
-      padding: var(--space-3); display: flex; flex-direction: column;
+      min-width: 240px; max-width: 280px; flex: 1;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);
+      padding: var(--space-2); display: flex; flex-direction: column;
     }
     .tag-column-header {
-      display: flex; align-items: center; gap: var(--space-2);
-      margin-bottom: var(--space-3); font-size: 0.78rem; font-weight: 600;
+      display: flex; align-items: center; gap: var(--space-1);
+      margin-bottom: var(--space-2); font-size: 0.72rem; font-weight: 600;
     }
-    .tag-column-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .tag-column-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
     .tag-column-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tag-column-count {
-      font-size: 0.65rem; color: var(--text-tertiary); font-weight: 500;
-      background: var(--bg-secondary); padding: 1px 6px; border-radius: var(--radius-full);
+      font-size: 0.6rem; color: var(--text-tertiary); font-weight: 500;
+      background: var(--bg-primary); padding: 1px 5px; border-radius: var(--radius-full);
     }
-    .tag-column-stats { display: flex; gap: var(--space-3); margin-bottom: var(--space-3); }
+    .tag-column-stats { display: flex; gap: var(--space-2); margin-bottom: var(--space-2); }
     .tag-column-stat { flex: 1; }
-    .tag-column-stat .val { font-size: 0.9rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
-    .tag-column-stat .lbl { font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+    .tag-column-stat .val { font-size: 0.8rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+    .tag-column-stat .lbl { font-size: 0.55rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
     .tag-column-progress {
-      height: 3px; background: var(--bg-secondary); border-radius: var(--radius-full);
-      margin-bottom: var(--space-3); overflow: hidden;
+      height: 2px; background: var(--bg-primary); border-radius: var(--radius-full);
+      margin-bottom: var(--space-2); overflow: hidden;
     }
     .tag-column-progress .fill { height: 100%; border-radius: var(--radius-full); transition: width 0.4s ease; }
-    .tag-column-tasks { display: flex; flex-direction: column; gap: var(--space-2); flex: 1; }
-    .tag-column-empty { font-size: 0.72rem; color: var(--text-tertiary); text-align: center; padding: var(--space-4); }
+    .tag-column-tasks { display: flex; flex-direction: column; gap: var(--space-1); flex: 1; }
+    .tag-column-empty { font-size: 0.68rem; color: var(--text-tertiary); text-align: center; padding: var(--space-2); }
     .tag-col-task {
       background: var(--bg-card); border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md); padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-sm); padding: var(--space-1) var(--space-2);
       cursor: pointer; transition: border-color var(--t-fast), box-shadow var(--t-fast);
     }
-    .tag-col-task:hover { border-color: var(--text-primary); box-shadow: var(--shadow-xs); }
-    .tag-col-task.completed { opacity: 0.55; }
+    .tag-col-task:hover { border-color: var(--text-tertiary); box-shadow: var(--shadow-xs); }
+    .tag-col-task.completed { opacity: 0.45; }
     .tct-title {
-      display: flex; align-items: center; gap: var(--space-2);
-      font-size: 0.78rem; font-weight: 500; margin-bottom: var(--space-1);
+      display: flex; align-items: center; gap: var(--space-1);
+      font-size: 0.72rem; font-weight: 500; margin-bottom: 2px;
     }
     .tct-title.done { text-decoration: line-through; }
     .tct-check {
-      width: 14px; height: 14px; border-radius: 50%;
+      width: 12px; height: 12px; border-radius: 50%;
       border: 1.5px solid var(--tct-accent, var(--text-tertiary)); flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; transition: background var(--t-fast), border-color var(--t-fast);
@@ -518,8 +72,65 @@
       transform: rotate(-45deg); margin-top: -1px;
     }
     .tct-meta {
-      display: flex; gap: var(--space-3); font-size: 0.62rem; color: var(--text-tertiary);
+      display: flex; gap: var(--space-2); font-size: 0.58rem; color: var(--text-tertiary);
       font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── BOARD INTERACTIVE ELEMENTS ────────────── */
+    .board-add-task {
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+      width: 100%; padding: var(--space-1); margin-top: var(--space-1);
+      border: 1px dashed var(--border-color); border-radius: var(--radius-sm);
+      background: transparent; color: var(--text-tertiary);
+      font-size: 0.68rem; font-weight: 500; cursor: pointer;
+      transition: all var(--t-fast);
+    }
+    .board-add-task:hover {
+      border-color: var(--text-tertiary); color: var(--text-secondary);
+      background: var(--bg-primary);
+    }
+    .board-tag-popover {
+      position: fixed; z-index: 100;
+      background: var(--surface-container-high);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); padding: 4px;
+      box-shadow: var(--shadow-lg);
+      display: flex; gap: 2px;
+    }
+    .board-tag-popover button {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid var(--border-color); cursor: pointer;
+      transition: transform var(--t-fast); padding: 0;
+    }
+    .board-tag-popover button:hover { transform: scale(1.25); }
+    .tags-summary {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-2) var(--space-3); margin-top: var(--space-3);
+      font-size: 0.7rem; color: var(--text-tertiary);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* ─── RESPONSIVE ────────────────────────────── */
+    @media (max-width: 768px) {
+      .tags-board-inner { gap: var(--space-2); min-height: 300px; }
+      .tag-column { min-width: 200px; max-width: 240px; }
+      .tag-column-header { font-size: 0.68rem; }
+      .tag-column-stat .val { font-size: 0.72rem; }
+      .tag-col-task { padding: var(--space-1); }
+      .tct-title { font-size: 0.68rem; }
+      .tct-meta { font-size: 0.55rem; gap: var(--space-1); }
+    }
+    @media (max-width: 480px) {
+      .tags-board-inner { flex-direction: column; min-height: auto; gap: var(--space-3); }
+      .tag-column { min-width: 100%; max-width: 100%; }
+      .tag-column-header { font-size: 0.72rem; }
+      .tag-column-stats { gap: var(--space-3); }
+      .tag-column-stat .val { font-size: 0.8rem; }
+      .tag-col-task { padding: var(--space-2) var(--space-3); }
+      .tct-title { font-size: 0.75rem; }
+      .tct-check { width: 14px; height: 14px; }
+      .tct-meta { font-size: 0.6rem; gap: var(--space-2); }
+      .tags-summary { flex-direction: column; gap: var(--space-1); text-align: center; }
     }
   </style>
 </head>
@@ -689,84 +300,21 @@
 
       <div class="hub-content hub-page-transition">
 
-        <!-- View toggle -->
-        <div class="act-view-toggle hub-anim-in hub-anim-in-3">
-          <button class="act-view-btn active" data-view="timeline">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-            Timeline
-          </button>
-          <button class="act-view-btn" data-view="board">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            Board
-          </button>
+        <!-- Board header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2)">
+          <h2 style="font-size:0.85rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:var(--space-2)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            Kanban Board
+          </h2>
+          <span id="boardTaskCount" style="font-size:0.72rem;color:var(--text-tertiary)">0 tasks</span>
         </div>
 
-        <!-- Stats Dashboard -->
-        <div class="act-stats hub-anim-in hub-anim-in-3" id="actStatsDashboard">
-          <div class="act-stat-card" style="--stat-accent:var(--tag-deep-work-text)">
-            <div class="act-stat-value" id="actStatTotal">0</div>
-            <div class="act-stat-label">Total Tasks</div>
-          </div>
-          <div class="act-stat-card" style="--stat-accent:var(--tag-exercise-text)">
-            <div class="act-stat-value" id="actStatCompleted">0</div>
-            <div class="act-stat-label">Completed</div>
-            <div class="act-stat-sub" id="actStatRate">0% rate</div>
-          </div>
-          <div class="act-stat-card" style="--stat-accent:var(--tag-study-text)">
-            <div class="act-stat-value" id="actStatStreak">0</div>
-            <div class="act-stat-label">Day Streak</div>
-            <div class="act-stat-sub" id="actStatBestStreak">Best: 0</div>
-          </div>
-          <div class="act-stat-card" style="--stat-accent:var(--tag-meeting-text)">
-            <div class="act-stat-value" id="actStatTopTag">—</div>
-            <div class="act-stat-label">Best Tag</div>
-            <div class="act-stat-sub" id="actStatTopCount">0 hours</div>
-            <div class="act-spark" id="actWeeklySpark"></div>
-          </div>
-        </div>
 
-        <!-- Insights -->
-        <div class="act-insights hub-anim-in hub-anim-in-3" id="actInsights"></div>
 
-        <!-- ─── TIMELINE VIEW ────────────────────────────── -->
-        <div id="activitiesView">
-          <!-- Search -->
-          <div class="act-search-wrap hub-anim-in hub-anim-in-3">
-            <svg class="act-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="actSearch" class="act-search" placeholder="Search activities by title or notes..." autocomplete="off">
-            <button class="act-search-clear" id="actSearchClear" aria-label="Clear search">✕</button>
-          </div>
 
-          <!-- Filters -->
-          <div class="act-filters hub-anim-in hub-anim-in-3">
-            <select id="actTagFilter">
-              <option value="">All Tags</option>
-              <option value="deep-work">Deep Work</option>
-              <option value="meeting">Meeting</option>
-              <option value="exercise">Exercise</option>
-              <option value="study">Study</option>
-              <option value="hobby">Hobby</option>
-            </select>
-            <select id="actDateFilter">
-              <option value="all">All Time</option>
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-            </select>
-            <span style="font-size:0.68rem;color:var(--text-tertiary);margin-left:auto" id="actResultCount"></span>
-          </div>
-
-          <!-- Activity feed -->
-          <div class="act-feed hub-anim-in hub-anim-in-4" id="activitiesList">
-            <div class="act-empty">
-              <p>No activities found</p>
-              <p class="sub">Create tasks in the Schedule view</p>
-            </div>
-          </div>
-        </div>
 
         <!-- ─── BOARD VIEW (Tags kanban) ─────────────────── -->
-        <div id="boardView" class="hidden">
+        <div id="boardView">
           <div class="tags-board hub-anim-in hub-anim-in-3" id="tagsBoard">
             <div class="tags-board-inner" id="tagsBoardInner">
               <!-- Populated by JS -->
@@ -786,67 +334,7 @@
           <button id="importBtn" class="btn btn-ghost">Import</button>
           <input type="file" id="importFileInput" accept=".json" style="display:none">
         </div>
-      </footer>
-    </div>
-  </div>
-
-
-
-  <!-- ─── FLOATING ACTION BUTTON ──────────────────────────── -->
-  <button id="actFab" class="act-fab" title="Quick add task">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
-
-  <!-- ─── QUICK ADD OVERLAY ────────────────────────────── -->
-  <div id="actQuickOverlay" class="act-quick-overlay"></div>
-  <div id="actQuickForm" class="act-quick-form">
-    <div class="act-quick-handle"></div>
-    <h3>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Quick Add Task
-    </h3>
-    <div class="qf-group">
-      <label class="qf-label">What are you doing?</label>
-      <input type="text" id="qfTitle" class="qf-input" placeholder="e.g. Design system review" autocomplete="off">
-    </div>
-    <div class="qf-row">
-      <div class="qf-group">
-        <label class="qf-label">Start</label>
-        <input type="time" id="qfStart" class="qf-input" value="09:00">
-      </div>
-      <div class="qf-group">
-        <label class="qf-label">End</label>
-        <input type="time" id="qfEnd" class="qf-input" value="10:00">
-      </div>
-    </div>
-    <div class="qf-group">
-      <label class="qf-label">Tag</label>
-      <div class="qf-tags" id="qfTags">
-        <span class="qf-tag tag-deep-work active" data-tag="deep-work">Deep Work</span>
-        <span class="qf-tag tag-meeting" data-tag="meeting">Meeting</span>
-        <span class="qf-tag tag-exercise" data-tag="exercise">Exercise</span>
-        <span class="qf-tag tag-study" data-tag="study">Study</span>
-        <span class="qf-tag tag-hobby" data-tag="hobby">Hobby</span>
-      </div>
-    </div>
-    <div class="qf-actions">
-      <button class="btn btn-ghost" id="qfCancel">Cancel</button>
-      <button class="btn btn-primary" id="qfSubmit">Add Task</button>
-    </div>
-  </div>
-
-  <!-- ─── BATCH TOOLBAR (hidden by default) ──────────────── -->
-  <div id="actBatchBar" class="act-batch-bar hidden">
-    <span class="act-batch-count" id="actBatchCount">0 selected</span>
-    <button class="btn btn-outline" id="actBatchComplete">✓ Complete</button>
-    <button class="btn btn-danger" id="actBatchDelete">✕ Delete</button>
-    <button class="btn btn-ghost" id="actBatchExit">Cancel</button>
-  </div>
-
-  <!-- ─── UNDO TOAST ─────────────────────────────────────── -->
-  <div id="actUndoToast" class="act-undo-toast hidden">
-    <span id="actUndoMsg">Task deleted</span>
-    <button class="btn btn-ghost" id="actUndoBtn" style="font-weight:600;padding:2px 8px;min-width:40px">Undo</button>
+      </footer>    </div>
   </div>
 
   <!-- AI Chat Modal -->
