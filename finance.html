@@ -160,7 +160,29 @@
     .fin-wallet-btn.sub:hover { border-color: var(--text-primary); color: var(--text-primary); }
     .fin-piggy-btn:active, .fin-wallet-btn:active { transform: scale(0.95); }
 
-
+    /* ─── SAVINGS LINE CHARTS ──────────────────────────── */
+    .fin-savings-charts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); }
+    @media (max-width: 700px) { .fin-savings-charts { grid-template-columns: 1fr; } }
+    .fin-savings-chart-card {
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl);
+      padding: var(--space-4); transition: all var(--t-base); overflow: hidden;
+    }
+    .fin-savings-chart-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .fin-savings-chart-title {
+      font-family: var(--font-sans); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--text-tertiary); margin-bottom: var(--space-3);
+    }
+    .fin-savings-chart-body { position: relative; min-height: 140px; }
+    .fin-savings-chart-body svg { display: block; }
+    .fin-savings-chart-tooltip {
+      position: fixed; z-index: 100; padding: 6px 12px;
+      background: var(--surface-container-high); border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); font-size: 0.68rem; font-weight: 500;
+      box-shadow: var(--shadow-lg); pointer-events: none;
+      display: none; color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .fin-savings-chart-tooltip .tt-date { font-size: 0.6rem; color: var(--text-tertiary); }
 
     /* ─── ADVANCED CHARTS ──────────────────────────────── */
     .fin-adv-section { margin-bottom: var(--space-6); }
@@ -553,8 +575,20 @@
 
         </div>
 
+        <!-- ─── SAVINGS LINE CHARTS ───────────────────── -->
+        <div class="fin-savings-charts hub-anim-in hub-anim-in-5">
+          <div class="fin-savings-chart-card">
+            <div class="fin-savings-chart-title">🐷 Piggy Bank Trend (30D)</div>
+            <div class="fin-savings-chart-body" id="piggyChart"></div>
+          </div>
+          <div class="fin-savings-chart-card">
+            <div class="fin-savings-chart-title">👛 Wallet Trend (30D)</div>
+            <div class="fin-savings-chart-body" id="walletChart"></div>
+          </div>
+        </div>
+
         <!-- Toolbar -->
-        <div class="fin-toolbar hub-anim-in hub-anim-in-5">
+        <div class="fin-toolbar hub-anim-in hub-anim-in-6">
           <div class="fin-toolbar-left">
             <div class="fin-tabs">
               <button class="fin-tab" data-range="7d">7D</button>
@@ -571,7 +605,7 @@
         </div>
 
         <!-- Panels: Table + Form -->
-        <div class="fin-panels hub-anim-in hub-anim-in-6">
+        <div class="fin-panels hub-anim-in hub-anim-in-7">
           <div>
             <div class="fin-table-wrap">
               <div class="fin-table-head">
@@ -632,7 +666,7 @@
         </div>
 
         <!-- Charts -->
-        <div class="fin-charts hub-anim-in hub-anim-in-7">
+        <div class="fin-charts hub-anim-in hub-anim-in-8">
           <div class="fin-chart-card">
             <div class="fin-chart-title">Spending by category</div>
             <div class="fin-category-bars" id="finCategoryBars">
@@ -648,7 +682,7 @@
         </div>
 
         <!-- ─── ADVANCED CHARTS ───────────────────────────── -->
-        <div class="fin-adv-section hub-anim-in hub-anim-in-8">
+        <div class="fin-adv-section hub-anim-in hub-anim-in-9">
           <div class="fin-adv-header">
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary)">Spending Intelligence</span>
             <div class="fin-adv-tabs" id="finAdvTabs">
@@ -698,6 +732,13 @@
       const num = Number(n);
       if (!Number.isFinite(num)) return '—';
       return 'Rp ' + Math.round(num).toLocaleString('id-ID');
+    }
+    function fmtShort(n) {
+      const num = Number(n);
+      if (!Number.isFinite(num) || num <= 0) return 'Rp 0';
+      if (num >= 1000000) return 'Rp ' + (num / 1000000).toFixed(1) + 'jt';
+      if (num >= 1000) return 'Rp ' + (num / 1000).toFixed(num >= 10000 ? 0 : 1) + 'rb';
+      return 'Rp ' + Math.round(num);
     }
     function fmtPct(n) { return (Number(n) || 0).toFixed(1) + '%'; }
     function escapeHtml(str) { return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
@@ -996,18 +1037,61 @@
     const PIGGY_KEY = 'haven-piggybank';
     const WALLET_KEY = 'haven-wallet';
 
-    function loadPiggy() {
-      try { const raw = localStorage.getItem(PIGGY_KEY); return raw ? JSON.parse(raw) : 0; } catch (e) { return 0; }
+    function loadPiggyData() {
+      try {
+        const raw = localStorage.getItem(PIGGY_KEY);
+        if (!raw) return { balance: 0, history: [] };
+        const parsed = JSON.parse(raw);
+        // Migrate old single-number format to new object format
+        if (typeof parsed === 'number') {
+          const data = { balance: parsed, history: [] };
+          localStorage.setItem(PIGGY_KEY, JSON.stringify(data));
+          return data;
+        }
+        return parsed;
+      } catch (e) { return { balance: 0, history: [] }; }
     }
-    function savePiggy(val) {
-      try { localStorage.setItem(PIGGY_KEY, JSON.stringify(val)); } catch (e) { /* ignore */ }
+    function savePiggyData(data) {
+      try { localStorage.setItem(PIGGY_KEY, JSON.stringify(data)); } catch (e) {}
     }
-    function loadWallet() {
-      try { const raw = localStorage.getItem(WALLET_KEY); return raw ? JSON.parse(raw) : 0; } catch (e) { return 0; }
+    function loadWalletData() {
+      try {
+        const raw = localStorage.getItem(WALLET_KEY);
+        if (!raw) return { balance: 0, history: [] };
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === 'number') {
+          const data = { balance: parsed, history: [] };
+          localStorage.setItem(WALLET_KEY, JSON.stringify(data));
+          return data;
+        }
+        return parsed;
+      } catch (e) { return { balance: 0, history: [] }; }
     }
-    function saveWallet(val) {
-      try { localStorage.setItem(WALLET_KEY, JSON.stringify(val)); } catch (e) { /* ignore */ }
+    function saveWalletData(data) {
+      try { localStorage.setItem(WALLET_KEY, JSON.stringify(data)); } catch (e) {}
     }
+    function loadPiggy() { return loadPiggyData().balance; }
+    function loadWallet() { return loadWalletData().balance; }
+
+    function recordPiggy(newBal) {
+      const data = loadPiggyData();
+      data.balance = newBal;
+      data.history.push({ b: newBal, d: new Date().toISOString().slice(0, 10) });
+      if (data.history.length > 365) data.history = data.history.slice(-365);
+      savePiggyData(data);
+      renderPiggy();
+      renderPiggyChart();
+    }
+    function recordWallet(newBal) {
+      const data = loadWalletData();
+      data.balance = newBal;
+      data.history.push({ b: newBal, d: new Date().toISOString().slice(0, 10) });
+      if (data.history.length > 365) data.history = data.history.slice(-365);
+      saveWalletData(data);
+      renderWallet();
+      renderWalletChart();
+    }
+
     function renderPiggy() {
       const el = document.getElementById('piggyBalance');
       if (el) el.textContent = fmtMoney(loadPiggy());
@@ -1020,8 +1104,8 @@
       const input = document.getElementById('piggyInput');
       const amt = parseInt(input?.value) || 0;
       if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
-      savePiggy(loadPiggy() + amt);
-      input.value = ''; renderPiggy();
+      recordPiggy(loadPiggy() + amt);
+      input.value = '';
     }
     function handlePiggySub() {
       const input = document.getElementById('piggyInput');
@@ -1029,15 +1113,15 @@
       if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
       let bal = loadPiggy();
       if (amt > bal) { showToast('Not enough savings!', 'info', 2000); return; }
-      savePiggy(bal - amt);
-      input.value = ''; renderPiggy();
+      recordPiggy(bal - amt);
+      input.value = '';
     }
     function handleWalletAdd() {
       const input = document.getElementById('walletInput');
       const amt = parseInt(input?.value) || 0;
       if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
-      saveWallet(loadWallet() + amt);
-      input.value = ''; renderWallet();
+      recordWallet(loadWallet() + amt);
+      input.value = '';
     }
     function handleWalletSub() {
       const input = document.getElementById('walletInput');
@@ -1045,11 +1129,126 @@
       if (amt <= 0) { if (input) { input.focus(); input.select(); } return; }
       let bal = loadWallet();
       if (amt > bal) { showToast('Not enough cash in wallet!', 'info', 2000); return; }
-      saveWallet(bal - amt);
-      input.value = ''; renderWallet();
+      recordWallet(bal - amt);
+      input.value = '';
     }
+
+    // ─── SAVINGS LINE CHART RENDERERS ──────────────────────
+    let _chartTooltipId = 0;
+    function renderPiggyChart() {
+      const body = document.getElementById('piggyChart');
+      if (!body) return;
+      const data = loadPiggyData();
+      renderLineChart(body, data.history, '#fbbf24', 'Piggy Bank');
+    }
+    function renderWalletChart() {
+      const body = document.getElementById('walletChart');
+      if (!body) return;
+      const data = loadWalletData();
+      renderLineChart(body, data.history, '#c4a882', 'Wallet');
+    }
+    function renderLineChart(container, history, lineColor, label) {
+      // Filter to last 30 days
+      const now = new Date();
+      const start = new Date(now);
+      start.setDate(start.getDate() - 29);
+      start.setHours(0, 0, 0, 0);
+      now.setHours(23, 59, 59, 999);
+
+      const filtered = history.filter(h => {
+        const d = new Date(h.d + 'T12:00:00');
+        return d >= start && d <= now;
+      });
+
+      // Deduplicate by date: keep last entry per date
+      const dateMap = new Map();
+      filtered.forEach(h => { dateMap.set(h.d, h); });
+      let points = Array.from(dateMap.values()).sort((a, b) => a.d.localeCompare(b.d));
+
+      if (points.length < 2) {
+        container.innerHTML = '<div class="fin-empty" style="height:130px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>Keep saving to see your trend.</p><span class="sub">Need at least 2 entries for a chart.</span></div>';
+        return;
+      }
+
+      const values = points.map(p => p.b);
+      const maxVal = Math.max(...values, 1);
+      const minVal = Math.min(...values, 0);
+      const range = maxVal - minVal || 1;
+
+      const w = container.clientWidth || 400;
+      const h = 160;
+      const pad = { t: 8, r: 8, b: 24, l: 52 };
+      const cw = w - pad.l - pad.r;
+      const ch = h - pad.t - pad.b;
+
+      const xF = (i) => pad.l + (i / (points.length - 1)) * cw;
+      const yF = (v) => pad.t + ch - ((v - minVal) / range) * ch;
+
+      const linePts = points.map((p, i) => `${xF(i)},${yF(p.b)}`).join(' ');
+      const areaPts = `${xF(0)},${yF(minVal)} ${linePts} ${xF(points.length - 1)},${yF(minVal)}`;
+
+      // Y-axis ticks
+      const yTicks = 4;
+      const tickStep = range / yTicks;
+
+      // X-axis date labels (show ~5 evenly spaced)
+      const labelInterval = Math.max(1, Math.floor((points.length - 1) / 5));
+      const xLabels = [];
+      points.forEach((p, i) => {
+        if (i % labelInterval === 0 || i === points.length - 1) {
+          const d = new Date(p.d + 'T12:00:00');
+          xLabels.push({ x: xF(i), label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) });
+        }
+      });
+
+      const tooltipId = 'stt-' + (++_chartTooltipId);
+
+      container.innerHTML = `
+<div class="fin-savings-chart-tooltip" id="${tooltipId}"></div>
+<svg width="100%" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" style="overflow:visible;display:block">
+  <defs>
+    <linearGradient id="areaGrad-${tooltipId}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${lineColor}" stop-opacity="0.2" />
+      <stop offset="100%" stop-color="${lineColor}" stop-opacity="0.02" />
+    </linearGradient>
+  </defs>
+  ${Array.from({ length: yTicks + 1 }, (_, i) => {
+    const y = yF(minVal + i * tickStep);
+    return `<line x1="${pad.l}" y1="${y}" x2="${w - pad.r}" y2="${y}" stroke="var(--border-color)" stroke-width="0.5" opacity="0.35" />`;
+  }).join('')}
+  ${Array.from({ length: yTicks + 1 }, (_, i) => {
+    const y = yF(minVal + i * tickStep);
+    const val = Math.round((minVal + i * tickStep) / (tickStep > 0 ? 1 : 1)) * (tickStep > 0 ? 1 : 1);
+    return `<text x="${pad.l - 6}" y="${y + 3}" text-anchor="end" fill="var(--text-tertiary)" font-size="9" font-family="var(--font-family)" font-weight="500">${fmtShort(val)}</text>`;
+  }).join('')}
+  <path d="${areaPts}" fill="url(#areaGrad-${tooltipId})" />
+  <path d="${linePts}" fill="none" stroke="${lineColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  ${points.map((p, i) => `<circle cx="${xF(i)}" cy="${yF(p.b)}" r="3" fill="${lineColor}" stroke="var(--bg-card)" stroke-width="1.5" data-idx="${i}" data-date="${p.d}" data-val="${p.b}" style="cursor:pointer" />`).join('')}
+  ${xLabels.map(l => `<text x="${l.x}" y="${h - 4}" text-anchor="middle" fill="var(--text-tertiary)" font-size="8" font-family="var(--font-family)">${l.label}</text>`).join('')}
+</svg>`;
+
+      // Wire up tooltip on circles
+      const tt = document.getElementById(tooltipId);
+      if (tt) {
+        container.querySelectorAll('circle').forEach(c => {
+          c.addEventListener('mouseenter', () => {
+            const d = new Date(c.dataset.date + 'T12:00:00');
+            const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            tt.innerHTML = '<div class="tt-date">' + label + '</div><div>' + fmtMoney(Number(c.dataset.val)) + '</div>';
+            tt.style.display = 'block';
+          });
+          c.addEventListener('mousemove', e => {
+            tt.style.left = (e.clientX + 14) + 'px';
+            tt.style.top = (e.clientY - 10) + 'px';
+          });
+          c.addEventListener('mouseleave', () => { tt.style.display = 'none'; });
+        });
+      }
+    }
+
     function initSavings() {
       renderPiggy(); renderWallet();
+      renderPiggyChart(); renderWalletChart();
       document.getElementById('piggyAddBtn')?.addEventListener('click', handlePiggyAdd);
       document.getElementById('piggySubBtn')?.addEventListener('click', handlePiggySub);
       document.getElementById('walletAddBtn')?.addEventListener('click', handleWalletAdd);

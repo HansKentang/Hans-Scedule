@@ -7,6 +7,16 @@
 /* ─── Snap helper (20px grid) ─────────────── */
 function snap(v) { return Math.round(v / 20) * 20; }
 
+/* ─── Spotify height snap (110, 180, 400, then free) ─── */
+function snapSpotifyHeight(v) {
+  var min = 110;
+  v = Math.max(min, v);
+  if (v < 145) return 110;
+  if (v < 290) return 180;
+  if (v < 400) return 400;
+  return snap(v);
+}
+
 /* ─── Storage keys ─────────────────────────── */
 const HUB_LAYOUT_KEY = 'haven-schedule-hub-layout';
 const HUB_EDIT_KEY = 'haven-hub-edit';
@@ -1468,7 +1478,8 @@ function setupBubbleResize() {
       startX: e.clientX,
       startY: e.clientY,
       cancelled: false,
-      resizeLayout: JSON.parse(JSON.stringify(normalizeBentoLayout(hubContent.bentoLayout, hubContent)))
+      resizeLayout: JSON.parse(JSON.stringify(normalizeBentoLayout(hubContent.bentoLayout, hubContent))),
+      isSpotify: !!bubble.querySelector('.spotify-widget')
     };
     bubble.classList.add('dragging');
     resizeTip.style.display = 'block';
@@ -1494,7 +1505,9 @@ function setupBubbleResize() {
       _bubbleResizeData.bubble.style.width = newW + 'px';
     }
     if (axis === 's' || axis === 'se') {
-      let newH = snap(Math.max(80, _bubbleResizeData.startH + dy));
+      var _snapH = _bubbleResizeData.isSpotify ? snapSpotifyHeight : snap;
+      var _minH = _bubbleResizeData.isSpotify ? 110 : 80;
+      let newH = _snapH(Math.max(_minH, _bubbleResizeData.startH + dy));
       newH = Math.min(newH, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - top);
       _bubbleResizeData.bubble.style.height = newH + 'px';
     }
@@ -1541,7 +1554,7 @@ function setupBubbleResize() {
     const item = layout.find(i => i.uid === uid);
     if (item) {
       if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
-      if (axis === 's' || axis === 'se') item.h = Math.max(80, snap(h));
+      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? Math.max(110, snapSpotifyHeight(h)) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       hubContent.bentoLayout = layout;
       saveHubContent();
