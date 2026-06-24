@@ -1272,14 +1272,13 @@
       <stop offset="100%" stop-color="${lineColor}" stop-opacity="0.02" />
     </linearGradient>
   </defs>
-  ${Array.from({ length: yTicks + 1 }, (_, i) => {
-    const y = yF(minVal + i * tickStep);
+  ${yTicks.map(tickVal => {
+    const y = yF(tickVal);
     return `<line x1="${pad.l}" y1="${y}" x2="${w - pad.r}" y2="${y}" stroke="var(--border-color)" stroke-width="0.5" opacity="0.35" />`;
   }).join('')}
-  ${Array.from({ length: yTicks + 1 }, (_, i) => {
-    const y = yF(minVal + i * tickStep);
-    const val = Math.round((minVal + i * tickStep) / (tickStep > 0 ? 1 : 1)) * (tickStep > 0 ? 1 : 1);
-    return `<text x="${pad.l - 6}" y="${y + 3}" text-anchor="end" fill="var(--text-tertiary)" font-size="9" font-family="var(--font-family)" font-weight="500">${fmtShort(val)}</text>`;
+  ${yTicks.map(tickVal => {
+    const y = yF(tickVal);
+    return `<text x="${pad.l - 6}" y="${y + 3}" text-anchor="end" fill="var(--text-tertiary)" font-size="9" font-family="var(--font-family)" font-weight="500">${fmtShort(tickVal)}</text>`;
   }).join('')}
   <path d="${areaPts}" fill="url(#areaGrad-${tooltipId})" />
   <path d="${linePts}" fill="none" stroke="${lineColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />

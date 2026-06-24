@@ -1779,6 +1779,9 @@ function handleImagePickerSave() {
     resetImage(id);
   }
   if (status) { status.textContent = 'Saved!'; status.style.color = 'var(--primary)'; }
+  if (typeof window._onImageSaved === 'function') {
+    window._onImageSaved(id, urlVal || (preview?.dataset.pasted) || null);
+  }
   // Re-render image manager in settings drawer if open
   var _settingsDrawer = document.getElementById('settingsDrawer');
   if (_settingsDrawer && _settingsDrawer.classList.contains('open')) {
@@ -1791,6 +1794,9 @@ function handleImagePickerReset() {
   const id = _pickerImageId;
   if (!id) return;
   resetImage(id);
+  if (typeof window._onImageSaved === 'function') {
+    window._onImageSaved(id, null);
+  }
   // Re-render image manager in settings drawer if open
   var _settingsDrawer = document.getElementById('settingsDrawer');
   if (_settingsDrawer && _settingsDrawer.classList.contains('open')) {
