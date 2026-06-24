@@ -1515,6 +1515,7 @@ function applyImages() {
 }
 
 function restoreDirectImageKeys() {
+  if (!state || !state.images) return;
   var _found = 0;
   var _knownIds = Object.keys(DEFAULT_IMAGES);
   for (var _i = 0; _i < _knownIds.length; _i++) {
@@ -2951,7 +2952,7 @@ function renderSidebarImages() {
       var url = img.url || getImage(sidebarId);
       if (!url) return;
       // Sync to state.images so Visuals image picker shows correct URL
-      state.images[sidebarId] = url;
+      if (state.images) state.images[sidebarId] = url;
 
       const item = document.createElement('div');
       item.className = 'hub-sidebar-image-item';

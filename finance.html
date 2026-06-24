@@ -802,8 +802,16 @@
       set('finExpenses', fmtMoney(s.expenses));
       const netEl = document.getElementById('finNet');
       if (netEl) {
-        netEl.textContent = s.rate === -999 ? '—' : fmtPct(s.rate);
-        netEl.style.color = s.rate >= 0 ? 'inherit' : '#ef4444';
+        netEl.textContent = s.net < 0 ? '- ' + fmtMoney(Math.abs(s.net)) : fmtMoney(s.net);
+        netEl.style.color = s.net >= 0 ? 'inherit' : '#ef4444';
+        // Show rate as a subtitle
+        const kpiCard = netEl.closest('.fin-kpi');
+        if (kpiCard) {
+          let sub = kpiCard.querySelector('.fin-kpi-sub');
+          if (!sub) { sub = document.createElement('div'); sub.className = 'fin-kpi-sub'; kpiCard.appendChild(sub); }
+          sub.textContent = s.rate === -999 ? '' : `${fmtPct(s.rate)} savings rate`;
+          sub.style.cssText = 'font-size:0.6rem;color:var(--text-tertiary);margin-top:2px;font-weight:500';
+        }
       }
     }
 
@@ -980,7 +988,7 @@
       }).join('');
     }
 
-    function renderAll() { renderCards(); renderCount(); renderTable(); renderCharts(); }
+    function renderAll() { renderCards(); renderCount(); renderTable(); renderCharts(); renderAdvView(); }
 
     // ─── INIT ────────────────────────────────────────────────
 
@@ -1561,9 +1569,7 @@
         <span>Natural language scheduling</span>
       </div>
     </div>
-  </div>
-
-  <script>
+  </div>      <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
     }

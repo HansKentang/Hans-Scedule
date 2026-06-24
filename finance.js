@@ -399,15 +399,6 @@ function renderTopMerchants(body, items) {
     </div>`;
 }
 
-// ─── HOOK INTO EXISTING RENDER ─────────────────────────────
-
-(function patchRenderAll() {
-  const orig = window.renderAll;
-  window.renderAll = function() {
-    if (typeof orig === 'function') orig();
-    renderAdvView();
-  };
-})();
 
 // ─── INIT ──────────────────────────────────────────────────
 
