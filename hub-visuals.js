@@ -1390,11 +1390,6 @@ function setupBubbleDragDrop() {
   });
 }
 
-function snapSpotifyHeight(h) {
-  var heights = [280, 420];
-  return heights.reduce(function(prev, curr) { return Math.abs(curr - h) < Math.abs(prev - h) ? curr : prev; });
-}
-
 function setupBubbleResize() {
   if (!hubEditMode) return;
   if (_bubbleResizeInitialized) return;
@@ -1416,7 +1411,6 @@ function setupBubbleResize() {
     const bubble = handle.closest('.bento-bubble');
     if (!bubble) return;
     const rect = bubble.getBoundingClientRect();
-    var isSpotify = !!bubble.querySelector('iframe[src*="spotify"]');
     var axis = (handle.dataset.resizeAxis || 'se');
     _bubbleResizeData = {
       bubble,
@@ -1427,7 +1421,6 @@ function setupBubbleResize() {
       originalH: rect.height,
       startX: e.clientX,
       startY: e.clientY,
-      isSpotify: isSpotify,
       cancelled: false,
       resizeLayout: JSON.parse(JSON.stringify(normalizeBentoLayout(hubContent.bentoLayout, hubContent)))
     };
@@ -1456,7 +1449,6 @@ function setupBubbleResize() {
     }
     if (axis === 's' || axis === 'se') {
       let newH = snap(Math.max(80, _bubbleResizeData.startH + dy));
-      if (_bubbleResizeData.isSpotify) newH = snapSpotifyHeight(newH);
       newH = Math.min(newH, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - top);
       _bubbleResizeData.bubble.style.height = newH + 'px';
     }
@@ -1496,7 +1488,6 @@ function setupBubbleResize() {
     var axis = _bubbleResizeData.axis;
     let w = parseInt(bubble.style.width) || 320;
     let h = parseInt(bubble.style.height) || 240;
-    if (_bubbleResizeData.isSpotify) h = snapSpotifyHeight(h);
     w = Math.min(w, gridRect.width - left);
     h = Math.min(h, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - top);
     const uid = bubble.dataset.bubble;
@@ -1504,7 +1495,7 @@ function setupBubbleResize() {
     const item = layout.find(i => i.uid === uid);
     if (item) {
       if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
-      if (axis === 's' || axis === 'se') item.h = _bubbleResizeData.isSpotify ? Math.max(80, h) : Math.max(80, snap(h));
+      if (axis === 's' || axis === 'se') item.h = Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       hubContent.bentoLayout = layout;
       saveHubContent();
