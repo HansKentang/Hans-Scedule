@@ -1075,7 +1075,13 @@
 
     function recordPiggy(newBal) {
       const data = loadPiggyData();
+      const oldBal = data.balance;
       data.balance = newBal;
+      // Seed initial balance so chart has 2+ points right away
+      if (data.history.length === 0) {
+        const yesterday = new Date(Date.now() - 86400000);
+        data.history.push({ b: oldBal, d: yesterday.toISOString().slice(0, 10) });
+      }
       data.history.push({ b: newBal, d: new Date().toISOString().slice(0, 10) });
       if (data.history.length > 365) data.history = data.history.slice(-365);
       savePiggyData(data);
@@ -1084,7 +1090,13 @@
     }
     function recordWallet(newBal) {
       const data = loadWalletData();
+      const oldBal = data.balance;
       data.balance = newBal;
+      // Seed initial balance so chart has 2+ points right away
+      if (data.history.length === 0) {
+        const yesterday = new Date(Date.now() - 86400000);
+        data.history.push({ b: oldBal, d: yesterday.toISOString().slice(0, 10) });
+      }
       data.history.push({ b: newBal, d: new Date().toISOString().slice(0, 10) });
       if (data.history.length > 365) data.history = data.history.slice(-365);
       saveWalletData(data);
@@ -1147,7 +1159,7 @@
       const data = loadWalletData();
       renderLineChart(body, data.history, '#c4a882', 'Wallet');
     }
-    function renderLineChart(container, history, lineColor, label) {
+    function renderLineChart(container, history, lineColor) {
       // Filter to last 30 days
       const now = new Date();
       const start = new Date(now);
@@ -1166,8 +1178,13 @@
       let points = Array.from(dateMap.values()).sort((a, b) => a.d.localeCompare(b.d));
 
       if (points.length < 2) {
-        container.innerHTML = '<div class="fin-empty" style="height:130px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>Keep saving to see your trend.</p><span class="sub">Need at least 2 entries for a chart.</span></div>';
-        return;
+        if (points.length === 1) {
+          // Duplicate the point so we can draw a visual line
+          points = [points[0], { b: points[0].b, d: points[0].d }];
+        } else {
+          container.innerHTML = '<div class="fin-empty" style="height:130px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>Keep saving to see your trend.</p><span class="sub">Add your first saving to start tracking.</span></div>';
+          return;
+        }
       }
 
       const values = points.map(p => p.b);
@@ -1184,8 +1201,8 @@
       const xF = (i) => pad.l + (i / (points.length - 1)) * cw;
       const yF = (v) => pad.t + ch - ((v - minVal) / range) * ch;
 
-      const linePts = points.map((p, i) => `${xF(i)},${yF(p.b)}`).join(' ');
-      const areaPts = `${xF(0)},${yF(minVal)} ${linePts} ${xF(points.length - 1)},${yF(minVal)}`;
+      const linePts = `M${points.map((p, i) => `${xF(i)},${yF(p.b)}`).join(' L')}`;
+      const areaPts = `${linePts} L${xF(points.length - 1)},${yF(minVal)} L${xF(0)},${yF(minVal)} Z`;
 
       // Y-axis ticks
       const yTicks = 4;
