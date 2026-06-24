@@ -962,6 +962,7 @@ function renderHubBento() {
   }
 
   document.querySelectorAll('img[data-image-id]').forEach(el => {
+    if (el.dataset.imageId && el.dataset.imageId.indexOf('sidebar-') === 0) return;
     el.src = getImage(el.dataset.imageId) || '';
   });
   // Apply per-widget imageUrl overrides
@@ -2392,7 +2393,7 @@ function setupHubEditEvents() {
       if (!_uid) return;
       var _layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
       var _item = _layout.find(function(i) { return i.uid === _uid; });
-      if (_item && _item.t === 'images') {
+      if (_item && _item.t === 'images' && _item.imageId === _imgId) {
         if (_url) {
           _item.imageUrl = _url;
         } else {

@@ -1614,10 +1614,15 @@ function resetImage(id) {
     var pageName = id.replace('sidebar-', '');
     if (pageName) {
       var cfg = loadSidebarConfig();
+      var sidebarUrl = url;
+      if (!sidebarUrl) {
+        var _sbDef = SIDEBAR_IMAGE_DEFAULTS.find(function(d) { return d.page === pageName; });
+        if (_sbDef) sidebarUrl = _sbDef.url;
+      }
       if (cfg.images) {
         for (var i = 0; i < cfg.images.length; i++) {
           if ((cfg.images[i].page || '') === pageName) {
-            cfg.images[i].url = url;
+            cfg.images[i].url = sidebarUrl;
             break;
           }
         }
@@ -1640,7 +1645,15 @@ function imageLabel(id) {
     'analytics-hero': 'Analytics Hero', 'analytics-data': 'Analytics Data',
     'finance-hero': 'Finance Hero', 'finance-ceramic': 'Finance Avatar',
     'goals-hero': 'Goals Hero', 'goals-ceramic': 'Goals Avatar',
-    'gallery-hero': 'Gallery Hero', 'gallery-avatar': 'Gallery Avatar'
+    'gallery-hero': 'Gallery Hero', 'gallery-avatar': 'Gallery Avatar',
+    'sidebar-index': 'Hub Sidebar',
+    'sidebar-schedule': 'Schedule Sidebar',
+    'sidebar-activities': 'Activities Sidebar',
+    'sidebar-analytics': 'Analytics Sidebar',
+    'sidebar-goals': 'Goals Sidebar',
+    'sidebar-finance': 'Finance Sidebar',
+    'sidebar-tags': 'Tags Sidebar',
+    'sidebar-gallery': 'Gallery Sidebar'
   };
   return map[id] || id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
@@ -2950,6 +2963,10 @@ function renderSidebarImages() {
       var sidebarId = 'sidebar-' + currentPage;
       // Use URL from sidebar config, fall back to main image system (haven-image-sidebar-*)
       var url = img.url || getImage(sidebarId);
+      if (!url) {
+        var _sbDef = SIDEBAR_IMAGE_DEFAULTS.find(function(d) { return d.page === currentPage; });
+        if (_sbDef) url = _sbDef.url;
+      }
       if (!url) return;
       // Sync to state.images so Visuals image picker shows correct URL
       if (state.images) state.images[sidebarId] = url;
