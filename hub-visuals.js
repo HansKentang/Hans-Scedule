@@ -20,6 +20,8 @@ let _clockInterval = null;
 let _timerIntervals = {};
 let _pomodoroState = {};
 let _calView = { year: 0, month: -1 }; // tracks displayed month/year for refresh
+let _weatherFetched = false;
+let _weatherLastData = null;
 function _nextUid() { return 'b' + (++_bentoUidCounter) + '_' + Date.now(); }
 
 /* ─── Section drag/drop reordering ─────────── */
@@ -362,9 +364,38 @@ function saveHubVisibility(vis) {
 }
 
 /* ─── Edit mode ────────────────────────────── */
-function toggleHubEdit() {
-  hubEditMode = !hubEditMode;
+function toggleHubEdit(on) {
+  // Blur any focused editable field to trigger save before we exit
+  if (document.activeElement && document.activeElement.closest('[contenteditable],[data-edit],[data-save]')) {
+    document.activeElement.blur();
+  }
+  // Sync live DOM bubble dimensions into the layout before saving
+  if (hubEditMode) {
+    document.querySelectorAll('.bento-bubble').forEach(function(el) {
+      var uid = el.dataset.bubble;
+      if (!uid) return;
+      var w = el.offsetWidth;
+      var h = el.offsetHeight;
+      if (!w || !h) return;
+      var item = hubContent.bentoLayout.find(function(i) { return i.uid === uid; });
+      if (item) {
+        item.w = Math.max(100, snap(w));
+        item.h = Math.max(80, snap(h));
+      }
+    });
+    resolveBubbleCollisions(hubContent.bentoLayout);
+  }
+  hubEditMode = on !== undefined ? on : !hubEditMode;
   localStorage.setItem(HUB_EDIT_KEY, hubEditMode);
+  if (!hubEditMode) saveHubContent();
+  // Sync with global state.editMode when exiting edit mode
+  if (!hubEditMode && typeof state !== 'undefined' && state.editMode) {
+    state.editMode = false;
+    document.documentElement.classList.remove('edit-mode');
+    var ind = document.getElementById('editModeIndicator');
+    if (ind) { ind.classList.remove('active'); setTimeout(function() { ind.classList.add('hidden'); }, 300); }
+    document.dispatchEvent(new CustomEvent('editModeChange'));
+  }
   try { applyHubEditMode(); } catch (e) { console.error('applyHubEditMode error:', e); }
 }
 
@@ -454,7 +485,7 @@ function renderHubBento() {
             ${hubContent.goals.map((g, i) =>
               `<div class="w-item" data-idx="${i}">
                 <span class="w-item-num">${i+1}</span>
-                <span class="w-item-text hub-editable" contenteditable="true" data-edit="goals" data-idx="${i}">${e(g)}</span>
+                <span class="w-item-text${isEdit ? ' hub-editable' : ''}" contenteditable="${isEdit}" data-edit="goals" data-idx="${i}">${e(g)}</span>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="goals" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
@@ -486,7 +517,7 @@ function renderHubBento() {
             ${hubContent.priorities.map((p, i) =>
               `<div class="w-item w-item-card" data-idx="${i}">
                 <span class="w-pri-dot" style="background:${priColors[i % priColors.length]}"></span>
-                <span class="w-item-text hub-editable" contenteditable="true" data-edit="priorities" data-idx="${i}">${e(p)}</span>
+                <span class="w-item-text${isEdit ? ' hub-editable' : ''}" contenteditable="${isEdit}" data-edit="priorities" data-idx="${i}">${e(p)}</span>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="priorities" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
@@ -500,7 +531,7 @@ function renderHubBento() {
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg><span>Quote</span><button class="w-shuffle-btn" data-quote-shuffle title="Random quote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button></div>
           <div class="w-quote-content">
             <span class="w-quote-mark">\u201C</span>
-            <div class="w-quote-text hub-editable" contenteditable="true">${e(q.text)}</div>
+            <div class="w-quote-text${isEdit ? ' hub-editable' : ''}" contenteditable="${isEdit}">${e(q.text)}</div>
           </div>
           ${q.author ? `<div class="w-quote-attribution">&mdash; ${e(q.author)}</div>` : ''}
           <div class="w-quote-bar"></div>
@@ -516,7 +547,7 @@ function renderHubBento() {
                 <span class="w-todo-box ${t.done ? 'w-todo-checked' : ''}">
                   ${t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
                 </span>
-                <span class="w-item-text ${t.done ? 'w-todo-done' : ''} hub-editable" contenteditable="true" data-edit="todos" data-idx="${i}">${e(t.text)}</span>
+                <span class="w-item-text ${t.done ? 'w-todo-done' : ''}${isEdit ? ' hub-editable' : ''}" contenteditable="${isEdit}" data-edit="todos" data-idx="${i}">${e(t.text)}</span>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="todos" data-idx="${i}">×</button>` : ''}
               </div>`
             ).join('')}
@@ -527,7 +558,7 @@ function renderHubBento() {
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-text-wrap">
-            <div class="hub-editable" contenteditable="true" data-save="text">${e(hubContent.text || 'Write something...')}</div>
+            <div class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-save="text">${e(hubContent.text || 'Write something...')}</div>
           </div>
         </div>`;
       case 'habits':
@@ -541,7 +572,7 @@ function renderHubBento() {
               const checked = habitDone[i] ? ' w-habit-checked' : '';
               return `<div class="w-habit-chip" data-idx="${i}">
                 <span class="w-habit-check${checked}" data-habit-toggle="${i}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                <span class="hub-editable" contenteditable="true" data-edit="habits" data-idx="${i}">${e(h)}</span>
+                <span class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-edit="habits" data-idx="${i}">${e(h)}</span>
                 ${isEdit ? `<button class="hub-edit-item-btn del" data-del="habits" data-idx="${i}">×</button>` : ''}
               </div>`;
             }).join('')}
@@ -553,7 +584,7 @@ function renderHubBento() {
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Notes</span></div>
           <div class="w-notes-wrap">
-            <div class="hub-editable" contenteditable="true" data-save="notes">${e(hubContent.notes || '')}</div>
+            <div class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-save="notes">${e(hubContent.notes || '')}</div>
           </div>
         </div>`;
       case 'links':
@@ -565,9 +596,9 @@ function renderHubBento() {
               `<div class="w-link-card" data-idx="${i}">
                 <div class="w-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
                 <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
-                  <span class="hub-editable" contenteditable="true" data-edit="links-label" data-idx="${i}" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">${e(l.label)}</span>
+                  <span class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-edit="links-label" data-idx="${i}" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">${e(l.label)}</span>
                   <span style="display:flex;align-items:center;gap:4px">
-                    <span class="hub-editable" contenteditable="true" data-edit="links-url" data-idx="${i}" style="font-size:0.65rem;color:var(--text-tertiary);flex:1">${e(l.url)}</span>
+                    <span class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-edit="links-url" data-idx="${i}" style="font-size:0.65rem;color:var(--text-tertiary);flex:1">${e(l.url)}</span>
                     <a href="${e(l.url)}" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
                   </span>
                 </div>
@@ -836,6 +867,8 @@ function renderHubBento() {
       grid.addEventListener('contextmenu', function(e) {
       var editable = e.target.closest('[contenteditable]');
       if (editable) return; // allow default paste menu
+      // Handles/buttons area -> snap preset menu handles this, skip bubble menu
+      if (e.target.closest('.bento-bubble-handle, .bento-bubble-remove, .bento-bubble-btn')) return;
       var bubble = e.target.closest('.bento-bubble');
       if (!bubble) { e.preventDefault(); return; }
       e.preventDefault();
@@ -1039,11 +1072,13 @@ function renderHubBento() {
   }
 
   // ─── Clock updater ────────────────────────────
-  if (_clockInterval) { clearInterval(_clockInterval); _clockInterval = null; }
   const clockFaces = grid.querySelectorAll('.clock-face[data-clock-uid]');
   if (clockFaces.length > 0) {
-    var _calMonthCheck = -1;
-    _clockInterval = setInterval(function() {
+    if (_clockInterval) {
+      // Interval already running, no need to restart
+    } else {
+      var _calMonthCheck = -1;
+      _clockInterval = setInterval(function() {
       const n = new Date();
       const hh = String(n.getHours()).padStart(2,'0');
       const mm = String(n.getMinutes()).padStart(2,'0');
@@ -1066,45 +1101,54 @@ function renderHubBento() {
       }
       _calMonthCheck = cm;
     }, 1000);
+    }
   }
 
-  // ─── Weather fetcher ──────────────────────────
+  // ─── Weather fetcher (runs at most once) ──────
   const weatherWidgets = grid.querySelectorAll('.weather-widget[data-weather-uid]');
-  if (weatherWidgets.length > 0 && typeof navigator !== 'undefined' && navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      const cacheKey = 'hub-weather-' + Math.round(lat * 10) + '-' + Math.round(lon * 10);
-      var cached = null;
-      try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) {}
-      if (cached && Date.now() - cached.ts < 600000) {
-        weatherWidgets.forEach(function(w) { updateWeatherWidget(w, cached.data); });
-        return;
-      }
-      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&timezone=auto';
-      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
-        if (!data || !data.current_weather) return;
-        var wd = {
-          temp: data.current_weather.temperature,
-          code: data.current_weather.weathercode,
-          wind: data.current_weather.windspeed
-        };
-        try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: wd})); } catch(e) {}
-        weatherWidgets.forEach(function(w) { updateWeatherWidget(w, wd); });
-      }).catch(function() {
-        weatherWidgets.forEach(function(w) {
-          w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Could not load weather</span></div>';
+  if (weatherWidgets.length > 0) {
+    // Apply cached data immediately if available
+    if (_weatherLastData) {
+      weatherWidgets.forEach(function(w) { updateWeatherWidget(w, _weatherLastData); });
+    } else if (!_weatherFetched && typeof navigator !== 'undefined' && navigator.geolocation) {
+      _weatherFetched = true;
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const cacheKey = 'hub-weather-' + Math.round(lat * 10) + '-' + Math.round(lon * 10);
+        var cached = null;
+        try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) {}
+        if (cached && Date.now() - cached.ts < 600000) {
+          _weatherLastData = cached.data;
+          weatherWidgets.forEach(function(w) { updateWeatherWidget(w, cached.data); });
+          return;
+        }
+        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&timezone=auto';
+        fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+          if (!data || !data.current_weather) return;
+          var wd = {
+            temp: data.current_weather.temperature,
+            code: data.current_weather.weathercode,
+            wind: data.current_weather.windspeed
+          };
+          _weatherLastData = wd;
+          try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: wd})); } catch(e) {}
+          weatherWidgets.forEach(function(w) { updateWeatherWidget(w, wd); });
+        }).catch(function() {
+          weatherWidgets.forEach(function(w) {
+            w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Could not load weather</span></div>';
+          });
         });
-      });
-    }, function() {
+      }, function() {
+        weatherWidgets.forEach(function(w) {
+          w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Location access needed</span></div>';
+        });
+      }, {timeout: 8000, enableHighAccuracy: false});
+    } else if (weatherWidgets.length > 0) {
       weatherWidgets.forEach(function(w) {
-        w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Location access needed</span></div>';
+        w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Geolocation unavailable</span></div>';
       });
-    }, {timeout: 8000, enableHighAccuracy: false});
-  } else if (weatherWidgets.length > 0) {
-    weatherWidgets.forEach(function(w) {
-      w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Geolocation unavailable</span></div>';
-    });
+    }
   }
 
   setupBubbleDragDrop();
@@ -1874,8 +1918,7 @@ function showHubHidePopup() {
   overlay.addEventListener('click', () => { overlay.remove(); popup.remove(); });
   document.body.appendChild(overlay);
 
-  const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
-  hubContent.bentoLayout = layout;
+  const layout = JSON.parse(JSON.stringify(normalizeBentoLayout(hubContent.bentoLayout, hubContent)));
   const popup = document.createElement('div');
   popup.className = 'hub-edit-popup hub-hide-popup';
 
@@ -2033,6 +2076,7 @@ function setupHubEditEvents() {
   document.addEventListener('blur', function(e) {
     const span = e.target.closest('[data-edit]');
     if (!span) return;
+    if (!hubEditMode) return;
     const field = span.dataset.edit;
     const idx = parseInt(span.dataset.idx);
     if (field === 'goals' && !isNaN(idx)) {
@@ -2053,25 +2097,24 @@ function setupHubEditEvents() {
     } else if (field === 'links-url' && !isNaN(idx)) {
       hubContent.links[idx].url = span.textContent.trim();
       saveHubContent();
-    } else if (!hubEditMode) return;
+    }
   }, true);
 
   document.querySelector('.bento-grid')?.addEventListener('blur', function(e) {
     const q = e.target.closest('.w-quote-text');
-    if (!q) return;
+    if (!q || !hubEditMode) return;
     hubContent.quote.text = q.textContent.trim().replace(/^["\u201C]|["\u201D]$/g, '');
     saveHubContent();
   }, true);
 
   document.querySelector('.bento-grid')?.addEventListener('blur', function(e) {
     const el = e.target.closest('[data-save]');
-    if (!el) return;
+    if (!el || !hubEditMode) return;
     const field = el.dataset.save;
     if (field === 'notes') {
       hubContent.notes = el.textContent.trim();
       saveHubContent();
-    } else if (!hubEditMode) return;
-    else if (field === 'text') {
+    } else if (field === 'text') {
       hubContent.text = el.textContent.trim();
       saveHubContent();
     }
