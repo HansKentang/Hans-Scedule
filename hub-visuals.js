@@ -467,7 +467,7 @@ function renderHubBento() {
       ? `<div class="bento-resize-edge" data-resize-axis="e" data-resize-bubble="${uid}"></div><div class="bento-resize-edge" data-resize-axis="s" data-resize-bubble="${uid}"></div><div class="bento-resize-handle" data-resize-axis="se" data-resize-bubble="${uid}"></div>`
       : '';
     const editUI = isEdit
-      ? `<div class="bento-bubble-handle" draggable="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><circle cx="8" cy="6" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg></div>
+      ? `<div class="bento-bubble-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><circle cx="8" cy="6" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg></div>
          <button class="bento-bubble-btn" data-duplicate-bubble="${uid}" title="Duplicate" style="right:34px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="10" height="10" rx="1"/><path d="M4 14V5a1 1 0 0 1 1-1h9"/></svg></button>
          <button class="bento-bubble-btn" data-copy-bubble="${uid}" title="Copy" style="right:62px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="8" width="10" height="10" rx="1"/><path d="M8 4V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-1"/></svg></button>
          <button class="bento-bubble-remove" data-remove-bubble="${uid}">×</button>${resizeHandle}`
@@ -1287,6 +1287,7 @@ function setupBubbleDragDrop() {
     // Drag can only be initiated from the 6-dots handle
     var dragZone = e.target.closest('.bento-bubble-handle');
     if (!dragZone) return;
+    e.preventDefault();
     // Double-click on handle cancels any pending/active drag and un-holds the widget
     var now = Date.now();
     if (now - _handleLastClickTime < 400) {
@@ -1364,8 +1365,9 @@ function setupBubbleDragDrop() {
       _bubbleDragData.dragLayout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
       _bubbleDragData.bubble.classList.add('dragging');
     }
-    let newX = snap(e.clientX - _bubbleDragData.offsetX - _bubbleDragData.gridLeft);
-    let newY = Math.max(0, snap(e.clientY - _bubbleDragData.offsetY - _bubbleDragData.gridTop));
+    var gr = grid.getBoundingClientRect();
+    let newX = snap(e.clientX - _bubbleDragData.offsetX - gr.left);
+    let newY = Math.max(0, snap(e.clientY - _bubbleDragData.offsetY - gr.top));
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
     const dragLayout = _bubbleDragData.dragLayout;
