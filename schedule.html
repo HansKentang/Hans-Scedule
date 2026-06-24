@@ -161,7 +161,6 @@
       transition: all var(--t-fast);
       padding: 0;
       opacity: 0.4;
-      margin-left: auto;
     }
     .sch-pm-add-chip:hover {
       border-color: var(--accent);
@@ -172,286 +171,148 @@
     }
     .sch-pm-add-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     
-    /* Dropdown */
-    .sch-pm-dropdown {
-      position: absolute;
-      top: 100%; left: 0; right: 0;
-      z-index: 30;
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      box-shadow: var(--shadow-lg);
-      padding: var(--space-2);
-      display: flex;
+    /* ─── INLINE SUBCATEGORY BAR (below pill manager) ── */
+    .sch-sc-bar {
+      padding: 4px var(--space-3);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      display: flex; align-items: center; gap: 4px;
       flex-wrap: wrap;
-      gap: 4px;
-      animation: snavPopupIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
-      max-height: 200px;
-      overflow-y: auto;
+      animation: scBarIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
     }
-    .sch-pm-dropdown-header {
-      width: 100%;
-      display: flex; align-items: center; gap: var(--space-1);
-      padding-bottom: var(--space-1);
-      margin-bottom: var(--space-1);
-      border-bottom: 1px solid var(--border-subtle);
-      font-size: 0.55rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.06em; color: var(--text-tertiary); opacity: 0.5;
+    @keyframes scBarIn {
+      0% { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
+      100% { max-height: 60px; opacity: 1; }
     }
-    .sch-pm-dropdown-header .dp-header-dot {
-      width: 5px; height: 5px; border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .sch-pm-dropdown-pill {
-      display: inline-flex; align-items: center; gap: 3px;
+    .sch-sc-bar-pill {
+      display: inline-flex; align-items: center; gap: 4px;
       padding: 2px 8px 2px 5px;
       border-radius: 999px;
       border: 1px solid var(--border-subtle);
-      background: var(--bg-secondary);
+      background: var(--bg-primary);
       color: var(--text-secondary);
       font-size: 0.62rem; font-family: var(--font-family); font-weight: 500;
       cursor: grab;
       transition: all var(--t-fast);
-      white-space: nowrap;
       user-select: none;
-      line-height: 1.3;
-      min-height: 20px;
-    }
-    .sch-pm-dropdown-pill:hover {
-      border-color: var(--dp-accent, var(--border-color));
-      color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
-      transform: translateY(-1px);
-    }
-    .sch-pm-dropdown-pill:active { transform: scale(0.97); cursor: grabbing; }
-    .sch-pm-dropdown-pill.dragging { opacity: 0.5; transform: scale(0.95); }
-    .sch-pm-dropdown-pill .dp-dot {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: var(--dp-accent, var(--gray-300));
-      flex-shrink: 0;
-    }
-    .sch-pm-dropdown-pill .dp-name {
-      max-width: 80px;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.4;
       white-space: nowrap;
+      flex-shrink: 0;
     }
-    .sch-pm-dropdown-pill .dp-dur {
-      font-size: 0.5rem;
-      opacity: 0.4;
-      margin-left: 1px;
-    }
-    .sch-pm-dropdown-pill .dp-edit,
-    .sch-pm-dropdown-pill .dp-del {
-      width: 12px; height: 12px; border-radius: 50%;
+    .sch-sc-bar-pill:hover { border-color: var(--sc-accent, var(--border-color)); color: var(--text-primary); }
+    .sch-sc-bar-pill:active { cursor: grabbing; transform: scale(0.97); }
+    .sch-sc-bar-pill.dragging { opacity: 0.5; }
+    .sch-sc-bar-pill .sc-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sc-accent); flex-shrink: 0; }
+    .sch-sc-bar-pill .sc-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+    .sch-sc-bar-pill .sc-bar-edit,
+    .sch-sc-bar-pill .sc-bar-del {
+      width: 14px; height: 14px; border-radius: 50%;
       border: none; background: transparent;
-      color: var(--text-tertiary);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0;
-      opacity: 0;
-      flex-shrink: 0;
-      transition: all var(--t-fast);
-    }
-    .sch-pm-dropdown-pill:hover .dp-edit,
-    .sch-pm-dropdown-pill:hover .dp-del { opacity: 0.4; }
-    .sch-pm-dropdown-pill .dp-edit:hover { opacity: 1; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); transform: scale(1.15); }
-    .sch-pm-dropdown-pill .dp-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); transform: scale(1.15); }
-    .sch-pm-dropdown-pill .dp-edit svg,
-    .sch-pm-dropdown-pill .dp-del svg { width: 8px; height: 8px; }
-    .sch-pm-dropdown-pill:focus-visible { outline: 2px solid var(--dp-accent); outline-offset: 2px; }
-    .sch-pm-dropdown-empty {
-      width: 100%;
-      font-size: 0.58rem;
-      color: var(--text-tertiary);
-      opacity: 0.4;
-      padding: 4px 0;
-      font-style: italic;
-      display: flex; align-items: center; gap: 4px;
-    }
-    .sch-pm-dropdown-empty svg { width: 9px; height: 9px; opacity: 0.5; }
-    @keyframes dp-pill-enter {
-      0% { opacity: 0; transform: scale(0.92); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-    .sch-pm-dropdown-pill { animation: dp-pill-enter 200ms var(--curve) both; }
-    /* Subcategory groups inside dropdown */
-    .sch-pm-subcat-group {
-      width: 100%;
-      margin-bottom: 2px;
-    }
-    .sch-pm-subcat-group:last-child { margin-bottom: 0; }
-    .sch-pm-subcat-label {
-      display: block;
-      font-size: 0.5rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-tertiary);
-      opacity: 0.4;
-      padding: 3px 2px 2px;
-      border-bottom: 1px solid var(--border-subtle);
-      margin-bottom: 2px;
-    }
-    .sch-pm-subcat-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 3px;
-    }
-    /* Edit template popup */
-    .tpl-edit-popup {
-      position: fixed;
-      z-index: 70;
-      width: 280px;
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      box-shadow: var(--shadow-lg);
-      animation: snavPopupIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
-    }
-    .tpl-edit-popup-header {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-2) var(--space-3);
-      border-bottom: 1px solid var(--border-subtle);
-      background: var(--bg-secondary);
-    }
-    .tpl-edit-popup-header svg { flex-shrink: 0; opacity: 0.5; }
-    .tpl-edit-popup-header span { flex: 1; font-size: 0.78rem; font-weight: 600; }
-    .tpl-edit-popup-body {
-      padding: var(--space-3);
-      display: flex; flex-direction: column; gap: var(--space-2);
-    }
-    .tpl-edit-popup-body .tf-group { margin: 0; }
-    .tpl-edit-popup-body .tf-label { font-size: 0.62rem; margin-bottom: 3px; }
-    .tpl-edit-popup-body .form-input { font-size: 0.8rem; padding: 5px 8px; }
-    .tpl-edit-popup-body .tf-tags { gap: 3px; }
-    .tpl-edit-popup-body .tf-tag { font-size: 0.65rem; padding: 3px 10px 3px 7px; }
-    .tpl-edit-popup-actions {
-      display: flex; gap: var(--space-2);
-      margin-top: var(--space-1);
-    }
-    .tpl-edit-popup-actions .tf-btn { flex: 1; justify-content: center; font-size: 0.75rem; }
-    .tpl-edit-popup-actions .tf-btn svg { width: 11px; height: 11px; }
-
-    /* Add template button */
-    .tpl-add-btn {
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      border: 1px solid var(--border-color);
-      background: transparent;
-      color: var(--text-tertiary);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      transition: all var(--t-fast);
-      padding: 0;
-      margin-left: 4px;
-    }
-    .tpl-add-btn:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 8%, transparent);
-      transform: scale(1.1);
-    }
-
-    /* Add template popup */
-    .tpl-add-popup {
-      position: fixed;
-      z-index: 60;
-      width: 300px;
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      box-shadow: var(--shadow-lg);
-      animation: snavPopupIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
-    }
-    .tpl-add-popup-header {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-3) var(--space-4);
-      border-bottom: 1px solid var(--border-subtle);
-      background: var(--bg-secondary);
-    }
-    .tpl-add-popup-header svg { flex-shrink: 0; opacity: 0.5; }
-    .tpl-add-popup-header span { flex: 1; font-size: 0.82rem; font-weight: 600; }
-    .tpl-add-popup-close {
-      width: 22px; height: 22px; border: none; background: transparent;
       color: var(--text-tertiary); cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 50%; transition: all var(--t-fast);
-      padding: 0; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; padding: 0;
+      opacity: 0; flex-shrink: 0;
+      transition: all var(--t-fast);
     }
-    .tpl-add-popup-close:hover { background: var(--accent-soft); color: var(--text-primary); }
-    .tpl-add-popup-body {
-      padding: var(--space-3) var(--space-4);
-      display: flex; flex-direction: column; gap: var(--space-3);
+    .sch-sc-bar-pill:hover .sc-bar-edit,
+    .sch-sc-bar-pill:hover .sc-bar-del { opacity: 0.35; }
+    .sch-sc-bar-pill .sc-bar-edit:hover { opacity: 1; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); transform: scale(1.15); }
+    .sch-sc-bar-pill .sc-bar-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); transform: scale(1.15); }
+    .sch-sc-bar-pill .sc-bar-edit svg,
+    .sch-sc-bar-pill .sc-bar-del svg { width: 9px; height: 9px; }
+
+    .sch-sc-bar-add-row {
+      display: inline-flex; align-items: center; gap: 3px;
+      flex-shrink: 0;
     }
-    .tpl-add-popup-body .tf-group { margin: 0; }
-    .tpl-add-popup-body .tf-label { font-size: 0.65rem; margin-bottom: 4px; }
-    .tpl-add-popup-body .form-input { font-size: 0.82rem; padding: 6px 10px; }
-    .tpl-add-dur-row {
-      display: flex; gap: var(--space-1);
-    }
-    .tpl-add-dur {
-      flex: 1;
-      padding: 4px 6px;
-      border-radius: 6px;
+    .sch-sc-bar-add-input {
+      width: 100px;
+      padding: 2px 8px;
+      border-radius: 999px;
       border: 1px solid var(--border-subtle);
       background: transparent;
-      color: var(--text-tertiary);
-      font-size: 0.72rem; font-family: var(--font-family); font-weight: 500;
-      cursor: pointer;
-      transition: all var(--t-fast);
-      text-align: center;
-    }
-    .tpl-add-dur:hover { border-color: var(--border-color); color: var(--text-secondary); }
-    .tpl-add-dur:active { transform: scale(0.96); }
-    .tpl-add-dur.active {
-      border-color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 10%, transparent);
-      color: var(--accent);
-      box-shadow: 0 1px 4px color-mix(in srgb, var(--accent) 20%, transparent);
-      transform: scale(1.02);
-    }
-    .tpl-add-dur:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .tpl-add-popup-actions {
-      display: flex; gap: var(--space-2);
-      margin-top: var(--space-1);
-    }
-    .tpl-add-popup-actions .tf-btn { flex: 1; justify-content: center; }
-    .tpl-add-input-error { border-color: #e04040 !important; }
-
-    /* Quick template picker delete button */
-    .quick-tpl-item {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-2) var(--space-3);
-      border-radius: var(--radius-md);
-      background: transparent;
-      border: 1px solid transparent;
       color: var(--text-primary);
-      font-size: 0.82rem; font-family: var(--font-family); font-weight: 500;
-      cursor: pointer;
-      transition: all var(--t-fast);
-      width: 100%; text-align: left;
-      animation: slideUp 200ms var(--curve) both;
+      font-size: 0.6rem; font-family: var(--font-family);
+      outline: none;
+      transition: border-color var(--t-fast);
     }
-    .quick-tpl-item:hover { background: var(--accent-soft); }
-    .quick-tpl-item .tpl-dot { width: 8px; height: 8px; flex-shrink: 0; }
-    .quick-tpl-item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .quick-tpl-item-meta { font-size: 0.65rem; color: var(--text-tertiary); white-space: nowrap; }
-    .quick-tpl-item-del {
-      width: 18px; height: 18px; border-radius: 50%;
-      border: none; background: transparent;
-      color: var(--text-tertiary);
-      cursor: pointer; padding: 0;
+    .sch-sc-bar-add-input:focus { border-color: var(--accent); width: 120px; }
+    .sch-sc-bar-add-btn {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: var(--text-inverse);
+      cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      opacity: 0; transition: all var(--t-fast);
+      padding: 0;
+      transition: all var(--t-fast);
       flex-shrink: 0;
     }
-    .quick-tpl-item:hover .quick-tpl-item-del { opacity: 0.4; }
-    .quick-tpl-item-del:hover { opacity: 1 !important; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
-    .quick-tpl-item svg { width: 12px; height: 12px; }
+    .sch-sc-bar-add-btn:hover { opacity: 0.85; }
+    .sch-sc-bar-add-btn svg { width: 8px; height: 8px; stroke-width: 2.5; }
+    .sch-sc-bar-empty {
+      font-size: 0.6rem; color: var(--text-tertiary); opacity: 0.4;
+      font-style: italic;
+    }
+    .tpl-add-input-error { border-color: #e04040 !important; }
+
+    /* ─── ADD CATEGORY POPUP ── */
+    .cat-add-popup {
+      position: fixed; z-index: 60;
+      width: 200px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      padding: var(--space-2);
+      animation: snavPopupIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .cat-add-header {
+      font-size: 0.65rem; font-weight: 600; color: var(--text-primary);
+      margin-bottom: var(--space-1);
+    }
+    .cat-add-input {
+      width: 100%; padding: 4px 8px;
+      border-radius: 6px; border: 1px solid var(--border-subtle);
+      background: var(--bg-secondary); color: var(--text-primary);
+      font-size: 0.75rem; font-family: var(--font-family);
+      outline: none; transition: border-color var(--t-fast);
+      box-sizing: border-box;
+    }
+    .cat-add-input:focus { border-color: var(--accent); }
+    .cat-color-triangle {
+      width: 100%; height: auto;
+      border-radius: 6px;
+      cursor: crosshair;
+      margin: var(--space-1) 0;
+      display: block;
+    }
+    .cat-color-preview {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: var(--space-1);
+    }
+    .cat-color-preview-swatch {
+      width: 18px; height: 18px; border-radius: 4px;
+      border: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .cat-color-preview-label {
+      font-size: 0.62rem; font-family: monospace;
+      color: var(--text-tertiary);
+    }
+    .cat-add-actions {
+      display: flex; gap: var(--space-1);
+    }
+    .cat-add-actions button {
+      flex: 1; padding: 4px; border-radius: 6px;
+      border: none; font-size: 0.68rem; font-family: var(--font-family);
+      font-weight: 600; cursor: pointer; transition: all var(--t-fast);
+    }
+    .cat-add-cancel { background: var(--bg-secondary); color: var(--text-tertiary); }
+    .cat-add-cancel:hover { color: var(--text-primary); }
+    .cat-add-save { background: var(--accent); color: var(--text-inverse); }
+    .cat-add-save:hover { opacity: 0.9; }
 
 
 
@@ -507,7 +368,8 @@
       .sch-api-badge { font-size: 0.6rem; padding: 1px 6px; }
 
       /* Pill manager mobile */
-      .sch-pill-manager {
+    #pmChips { display: contents; }
+    .sch-pill-manager {
         padding: 1px var(--space-2) 1px;
         gap: 2px;
         min-height: 24px;
@@ -516,15 +378,19 @@
         font-size: 0.55rem;
         padding: 1px 6px 1px 4px;
       }
-      .sch-pm-dropdown {
-        padding: var(--space-1);
-        max-height: 160px;
+      .sch-sc-bar {
+        padding: 3px var(--space-2);
+        gap: 3px;
       }
-      .sch-pm-dropdown-pill {
+      .sch-sc-bar-pill {
         font-size: 0.58rem;
         padding: 1px 6px 1px 4px;
-        min-height: 18px;
       }
+      .sch-sc-bar-pill .sc-name { max-width: 60px; }
+      .sch-sc-bar-pill .sc-bar-edit,
+      .sch-sc-bar-pill .sc-bar-del { opacity: 0.35; }
+      .sch-sc-bar-add-input { width: 80px; }
+      .sch-sc-bar-add-input:focus { width: 100px; }
 
       /* Calendar grid mobile */
       #calendarContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -712,12 +578,27 @@
         </div>
       </header>
 
-      <!-- Pill Manager: compact chip row + dropdown -->
+      <!-- Pill Manager: category chips → subcategory bubble -->
       <div class="sch-pill-manager hub-anim-in hub-anim-in-2" id="schPillManager">
         <div id="pmChips"><!-- Populated by JS --></div>
-        <button class="sch-pm-add-chip" id="tplAddBtn" title="Add template">
+        <button class="sch-pm-add-chip" id="catAddBtn" title="Add category">
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
+      </div>
+
+      <!-- Add Category Popup -->
+      <div class="cat-add-popup hidden" id="catAddPopup">
+        <div class="cat-add-header">New Category</div>
+        <input type="text" class="cat-add-input" id="catAddInput" placeholder="Category name..." maxlength="24" autocomplete="off">
+        <canvas class="cat-color-triangle" id="catColorTriangle" width="188" height="150"></canvas>
+        <div class="cat-color-preview" id="catColorPreview">
+          <span class="cat-color-preview-swatch" id="catColorPreviewSwatch" style="background:#8b5cf6"></span>
+          <span class="cat-color-preview-label" id="catColorPreviewLabel">#8b5cf6</span>
+        </div>
+        <div class="cat-add-actions">
+          <button class="cat-add-cancel" id="catAddCancel">Cancel</button>
+          <button class="cat-add-save" id="catAddSave">Add</button>
+        </div>
       </div>
 
       <div id="calendarContainer" class="hub-anim-in hub-anim-in-4">
@@ -766,71 +647,7 @@
         </button>
       </div>
 
-      <!-- Add Template Popup -->
-      <div class="tpl-add-popup hidden" id="tplAddPopup">
-        <div class="tpl-add-popup-header">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span>New Template</span>
-          <button class="tpl-add-popup-close" id="tplAddPopupClose" aria-label="Close">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <div class="tpl-add-popup-body">
-          <div class="tf-group">
-            <label class="tf-label">Template Name</label>
-            <input type="text" id="tplAddName" class="form-input" placeholder="e.g. Deep Work Session" autocomplete="off">
-          </div>
-          <div class="tf-group">
-            <label class="tf-label">Task Title</label>
-            <input type="text" id="tplAddTitle" class="form-input" placeholder="e.g. Deep Work: Focus session" autocomplete="off">
-          </div>
-          <div class="tf-group">
-            <label class="tf-label">Category</label>
-            <div class="tf-tags" id="tplAddTagPills">
-              <button type="button" class="tf-tag active" data-tag="deep-work" style="--tag-c:var(--tag-deep-work-text);--tag-b:var(--tag-deep-work-bg)">Deep Work</button>
-              <button type="button" class="tf-tag" data-tag="meeting" style="--tag-c:var(--tag-meeting-text);--tag-b:var(--tag-meeting-bg)">Meeting</button>
-              <button type="button" class="tf-tag" data-tag="exercise" style="--tag-c:var(--tag-exercise-text);--tag-b:var(--tag-exercise-bg)">Exercise</button>
-              <button type="button" class="tf-tag" data-tag="study" style="--tag-c:var(--tag-study-text);--tag-b:var(--tag-study-bg)">Study</button>
-              <button type="button" class="tf-tag" data-tag="hobby" style="--tag-c:var(--tag-hobby-text);--tag-b:var(--tag-hobby-bg)">Hobby</button>
-            </div>
-          </div>
-          <div class="tf-group">
-            <label class="tf-label">Duration (minutes)</label>
-            <div class="tpl-add-dur-row">
-              <button class="tpl-add-dur" data-minutes="15">15m</button>
-              <button class="tpl-add-dur" data-minutes="30">30m</button>
-              <button class="tpl-add-dur active" data-minutes="60">1h</button>
-              <button class="tpl-add-dur" data-minutes="90">1.5h</button>
-              <button class="tpl-add-dur" data-minutes="120">2h</button>
-            </div>
-          </div>
-          <div class="tf-group">
-            <label class="tf-label">Subcategory (optional)</label>
-            <div class="tf-tags" id="tplAddSubcategoryPills">
-              <button type="button" class="tf-tag active" data-subcat="" style="--tag-c:var(--text-tertiary);--tag-b:var(--bg-secondary)">None</button>
-            </div>
-          </div>
-          <div class="tpl-add-popup-actions">
-            <button class="tf-btn tf-btn-ghost" id="tplAddCancel">Cancel</button>
-            <button class="tf-btn tf-btn-primary" id="tplAddSave">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Add Template
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Template Picker -->
-      <div class="quick-tpl hidden" id="quickTpl">
-        <div class="quick-tpl-header">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span>Quick Templates</span>
-          <button class="quick-tpl-close" id="quickTplClose" aria-label="Close">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <div class="quick-tpl-body" id="quickTplList"></div>
-      </div>
+      <!-- Add Subcategory Bubble (rendered by JS) -->
 
       <!-- Quick Idea Popup -->
       <div class="quick-idea hidden" id="quickIdea">
@@ -1034,10 +851,7 @@
               Delete
             </button>
             <div class="tf-footer-right">
-              <button type="button" id="taskSaveAsTemplateBtn" class="tf-btn tf-btn-ghost" title="Save as template">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Template
-              </button>
+
               <button type="button" id="taskCancelBtn" class="tf-btn tf-btn-ghost">Cancel</button>
               <button type="submit" id="taskSaveBtn" class="tf-btn tf-btn-primary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>

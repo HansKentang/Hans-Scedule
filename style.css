@@ -5112,48 +5112,7 @@ html.focus-mode .time-slot { height: 36px; font-size: 0.55rem; }
 html.dark .quick-idea-tag.active { background: color-mix(in srgb, var(--tag-bg) 22%, transparent); }
 .quick-idea-tag:focus-visible { outline: 2px solid var(--tag-bg); outline-offset: 2px; }
 
-/* Quick Template popup */
-.quick-tpl {
-  position: fixed; bottom: calc(var(--space-5) + 138px); right: var(--space-5);
-  z-index: 57; width: 280px; max-height: 320px;
-  background: var(--bg-card); border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl); box-shadow: var(--shadow-xl);
-  animation: slideUp 200ms var(--curve); overflow: hidden;
-  display: flex; flex-direction: column;
-}
-.quick-tpl-header {
-  display: flex; align-items: center; gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  font-size: 0.72rem; font-weight: 600; color: var(--text-primary);
-  border-bottom: 1px solid var(--border-color); flex-shrink: 0;
-}
-.quick-tpl-header svg { flex-shrink: 0; opacity: 0.5; }
-.quick-tpl-header span { flex: 1; }
-.quick-tpl-close {
-  width: 20px; height: 20px; border: none; background: transparent;
-  color: var(--text-tertiary); cursor: pointer; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; padding: 0;
-  transition: all var(--t-fast);
-}
-.quick-tpl-close:hover { background: var(--accent-soft); color: var(--text-primary); }
-.quick-tpl-body { padding: var(--space-2); overflow-y: auto; flex: 1; }
-.quick-tpl-item {
-  display: flex; align-items: center; gap: var(--space-2);
-  width: 100%; padding: var(--space-2) var(--space-2);
-  border: none; border-radius: var(--radius-md);
-  background: transparent; cursor: pointer;
-  text-align: left; transition: background var(--t-fast);
-}
-.quick-tpl-item:hover { background: var(--accent-soft); }
-.quick-tpl-item .tpl-dot { width: 8px; height: 8px; flex-shrink: 0; }
-.quick-tpl-item-title {
-  font-size: 0.72rem; font-weight: 600; color: var(--text-primary);
-  flex-shrink: 0;
-}
-.quick-tpl-item-meta {
-  font-size: 0.6rem; color: var(--text-tertiary);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+
 
 /* ─── FAB QUICK MENU ────────────────────────────────────── */
 .fab-container {

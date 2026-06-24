@@ -411,16 +411,127 @@ function formatTimeAMPM(timeStr) {
 
 
 const TAG_ORDER = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
+const BUILTIN_TAGS = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
 
 
-// ─── SUBCATEGORIES ────────────────────────────────────────────
-const SUBCATEGORIES = {
-  'deep-work': ['Coding', 'Writing', 'Design', 'Research', 'Planning', 'Deep Reading'],
-  'meeting': ['Team Standup', '1:1', 'Client Call', 'Brainstorm', 'Review', 'Planning', 'Retro'],
-  'exercise': ['Chest Day', 'Back Day', 'Leg Day', 'Shoulder Day', 'Arm Day', 'Cardio', 'HIIT', 'Yoga', 'Stretching', 'Running', 'Swimming', 'Cycling', 'Full Body'],
-  'study': ['Math', 'Science', 'Language', 'History', 'Programming', 'Reading', 'Exam Prep', 'Coursework'],
-  'hobby': ['Music', 'Art', 'Gaming', 'Reading', 'Cooking', 'Photography', 'Gardening', 'DIY', 'Writing'],
-};
+// ─── SUBCATEGORIES (editable, localStorage-backed) ──────────
+const SUBCATEGORIES_KEY = 'haven-subcategories';
+
+function getDefaultSubcategories() {
+  return {
+    'deep-work': ['Coding', 'Writing', 'Design', 'Research', 'Planning', 'Deep Reading'],
+    'meeting': ['Team Standup', '1:1', 'Client Call', 'Brainstorm', 'Review', 'Planning', 'Retro'],
+    'exercise': ['Chest Day', 'Back Day', 'Leg Day', 'Shoulder Day', 'Arm Day', 'Cardio', 'HIIT', 'Yoga', 'Stretching', 'Running', 'Swimming', 'Cycling', 'Full Body'],
+    'study': ['Math', 'Science', 'Language', 'History', 'Programming', 'Reading', 'Exam Prep', 'Coursework'],
+    'hobby': ['Music', 'Art', 'Gaming', 'Reading', 'Cooking', 'Photography', 'Gardening', 'DIY', 'Writing'],
+  };
+}
+
+function loadSubcategories() {
+  try {
+    const data = localStorage.getItem(SUBCATEGORIES_KEY);
+    if (data) {
+      const parsed = JSON.parse(data);
+      // Merge with defaults so new categories always have defaults
+      const defaults = getDefaultSubcategories();
+      for (const tag of Object.keys(defaults)) {
+        if (!parsed[tag]) parsed[tag] = [...defaults[tag]];
+      }
+      return parsed;
+    }
+  } catch (e) { /* ignore */ }
+  return getDefaultSubcategories();
+}
+
+function saveSubcategories(subcats) {
+  try {
+    localStorage.setItem(SUBCATEGORIES_KEY, JSON.stringify(subcats));
+  } catch (e) { /* ignore */ }
+}
+
+function addSubcategory(tag, name) {
+  const subcats = loadSubcategories();
+  if (!subcats[tag]) subcats[tag] = [];
+  if (!subcats[tag].includes(name)) {
+    subcats[tag].push(name);
+    saveSubcategories(subcats);
+  }
+  return subcats;
+}
+
+function removeSubcategory(tag, name) {
+  const subcats = loadSubcategories();
+  if (subcats[tag]) {
+    subcats[tag] = subcats[tag].filter(s => s !== name);
+    saveSubcategories(subcats);
+  }
+  return subcats;
+}
+
+function renameSubcategory(tag, oldName, newName) {
+  if (!newName.trim() || oldName === newName) return;
+  const subcats = loadSubcategories();
+  if (subcats[tag]) {
+    const idx = subcats[tag].indexOf(oldName);
+    if (idx !== -1) {
+      subcats[tag][idx] = newName.trim();
+      saveSubcategories(subcats);
+    }
+  }
+  return subcats;
+}
+
+// ─── CUSTOM CATEGORIES (editable, localStorage-backed) ─────
+const CUSTOM_CATEGORIES_KEY = 'haven-schedule-categories';
+
+function loadCustomCategories() {
+  try {
+    const data = localStorage.getItem(CUSTOM_CATEGORIES_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch (e) { return []; }
+}
+
+function saveCustomCategories(cats) {
+  try { localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(cats)); } catch (e) { }
+}
+
+function addCustomCategory(label, color) {
+  const cats = loadCustomCategories();
+  const id = 'cat-' + uid();
+  cats.push({ id, label, color });
+  saveCustomCategories(cats);
+  TAG_ORDER.push(id);
+  TAG_LABELS[id] = label;
+  TAG_COLORS[id] = { text: color, bg: lightenColor(color, 0.85) };
+  const subs = loadSubcategories();
+  subs[id] = [];
+  saveSubcategories(subs);
+  return id;
+}
+
+function removeCustomCategory(id) {
+  let cats = loadCustomCategories();
+  cats = cats.filter(c => c.id !== id);
+  saveCustomCategories(cats);
+  const idx = TAG_ORDER.indexOf(id);
+  if (idx !== -1) TAG_ORDER.splice(idx, 1);
+  delete TAG_LABELS[id];
+  delete TAG_COLORS[id];
+  const subs = loadSubcategories();
+  delete subs[id];
+  saveSubcategories(subs);
+}
+
+function initCustomCategories() {
+  const custom = loadCustomCategories();
+  for (const cat of custom) {
+    if (!TAG_ORDER.includes(cat.id)) {
+      TAG_ORDER.push(cat.id);
+      TAG_LABELS[cat.id] = cat.label;
+      TAG_COLORS[cat.id] = { text: cat.color, bg: lightenColor(cat.color, 0.85) };
+    }
+  }
+}
 
 // ─── PRIORITY ────────────────────────────────────────────────
 const PRIORITY_LEVELS = [1, 2, 3, 4];
@@ -432,39 +543,6 @@ const PRIORITY_COLORS = {
   3: { text: '#6366f1', bg: '#eef2ff', border: '#a5b4fc' },
   4: { text: '#6b7280', bg: '#f3f4f6', border: '#d1d5db' },
 };
-
-// ─── TASK TEMPLATES ──────────────────────────────────────────
-const TEMPLATES_KEY = 'haven-schedule-templates';
-
-function loadTemplates() {
-  try {
-    const data = localStorage.getItem(TEMPLATES_KEY);
-    return data ? JSON.parse(data) : getDefaultTemplates();
-  } catch (e) {
-    return getDefaultTemplates();
-  }
-}
-
-function getDefaultTemplates() {
-  return [
-    { id: 'tpl-dw', name: 'Deep Work Session', title: 'Deep Work: Focus session', tag: 'deep-work', subcategory: 'Coding', duration: 120, priority: 2 },
-    { id: 'tpl-mtg', name: 'Team Meeting', title: 'Team standup', tag: 'meeting', subcategory: 'Team Standup', duration: 30, priority: 2 },
-    { id: 'tpl-ex', name: 'Workout', title: 'Morning workout', tag: 'exercise', subcategory: 'Full Body', duration: 60, priority: 3 },
-    { id: 'tpl-ex-chest', name: 'Chest Day', title: 'Chest workout', tag: 'exercise', subcategory: 'Chest Day', duration: 60, priority: 3 },
-    { id: 'tpl-ex-back', name: 'Back Day', title: 'Back workout', tag: 'exercise', subcategory: 'Back Day', duration: 60, priority: 3 },
-    { id: 'tpl-ex-leg', name: 'Leg Day', title: 'Leg workout', tag: 'exercise', subcategory: 'Leg Day', duration: 60, priority: 3 },
-    { id: 'tpl-ex-cardio', name: 'Cardio', title: 'Cardio session', tag: 'exercise', subcategory: 'Cardio', duration: 45, priority: 3 },
-    { id: 'tpl-ex-yoga', name: 'Yoga Flow', title: 'Yoga & stretching', tag: 'exercise', subcategory: 'Yoga', duration: 45, priority: 3 },
-    { id: 'tpl-st', name: 'Study Session', title: 'Study session', tag: 'study', subcategory: 'Reading', duration: 60, priority: 3 },
-    { id: 'tpl-hb', name: 'Hobby Time', title: 'Personal project', tag: 'hobby', subcategory: 'Music', duration: 90, priority: 4 },
-  ];
-}
-
-function saveTemplates(templates) {
-  try {
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
-  } catch (e) { /* ignore */ }
-}
 
 // ─── POMODORO TIMER ──────────────────────────────────────────
 const POMODORO_KEY = 'haven-schedule-pomodoro';
@@ -1361,6 +1439,7 @@ function loadState() {
     const provider = localStorage.getItem(API_PROVIDER_STORAGE);
     if (provider) state.apiProvider = provider;
     initCustomTags();
+    initCustomCategories();
     loadCardColors();
     loadUserProfile();
     loadImages();
@@ -3715,50 +3794,7 @@ function localParse(text) {
   return { title, date: dateStr, startTime: `${String(startH).padStart(2,'0')}:${String(startM).padStart(2,'0')}`, endTime: `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`, tag };
 }
 
-// ─── APPLY TEMPLATE ────────────────────────────────────────
-function applyTemplate(tpl, date, startMins) {
-  const endMins = startMins + tpl.duration;
-  return createTask({
-    title: tpl.title,
-    tag: tpl.tag,
-    priority: tpl.priority || 3,
-    date: date || formatDate(new Date()),
-    startTime: toTimeStr(startMins),
-    endTime: toTimeStr(endMins),
-  });
-}
 
-// ─── RENDER HUB TEMPLATES ────────────────────────────────
-function renderHubTemplates() {
-  const container = document.getElementById('hubTemplates');
-  if (!container) return;
-  const templates = loadTemplates();
-  let html = '';
-  for (const tpl of templates) {
-    const c = TAG_COLORS[tpl.tag] || TAG_COLORS.meeting;
-    html += `<button class="template-pill" data-template-id="${tpl.id}" title="${escapeHtml(tpl.title)} · ${formatDuration(tpl.duration)}">
-      <span class="tpl-dot" style="background:${c.text}"></span>
-      ${escapeHtml(tpl.name)}
-    </button>`;
-  }
-  container.innerHTML = html;
-  container.querySelectorAll('.template-pill').forEach(pill => {
-    pill.addEventListener('click', () => {
-      const id = pill.dataset.templateId;
-      const templates = loadTemplates();
-      const tpl = templates.find(t => t.id === id);
-      if (tpl) {
-        const now = new Date();
-        const currentMins = now.getHours() * 60 + now.getMinutes();
-        const snap = roundToNearest(currentMins + 30, SNAP_MINUTES);
-        applyTemplate(tpl, formatDate(now), snap);
-        if (typeof pageAfterTaskSave === 'function') pageAfterTaskSave();
-        if (typeof updateHub === 'function') updateHub();
-        showToast(`📌 Added ${escapeHtml(tpl.name)}`, 'success', 2000);
-      }
-    });
-  });
-}
 
 function parseFindGap(text) {
   const lower = text.toLowerCase();

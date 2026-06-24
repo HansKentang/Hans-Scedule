@@ -691,13 +691,14 @@ function startDrag(e, source) {
     }
   }
 
-  // If dragging a template pill (or category pill), use its tag/duration/title
-  const tplPill = source.closest('.sch-pm-dropdown-pill');
-  if (tplPill && tplPill.dataset.tag && !tplPill.closest('[data-delete-template]')) {
+  // If dragging a subcategory pill, use its tag + subcategory name as title
+  const scPill = source.closest('.sch-sc-pill, .sch-sc-bar-pill');
+  if (scPill && scPill.dataset.tag) {
     gridDrag.type = 'quickadd';
-    gridDrag.tag = tplPill.dataset.tag;
-    gridDrag.duration = parseInt(tplPill.dataset.duration) || 60;
-    ghost.innerHTML = tplPill.dataset.templateTitle || QUICK_ADD_TITLES[tplPill.dataset.tag] || 'New Task';
+    gridDrag.tag = scPill.dataset.tag;
+    gridDrag.duration = 60;
+    gridDrag.title = scPill.dataset.scName || '';
+    ghost.innerHTML = gridDrag.title || QUICK_ADD_TITLES[scPill.dataset.tag] || 'New Task';
   }
 
   // If dragging a whiteboard item
@@ -1129,7 +1130,7 @@ function onDragEnd() {
     }
   } else if (gridDrag.type === 'quickadd') {
     const newTask = createTask({
-      title: QUICK_ADD_TITLES[gridDrag.tag] || 'New Task',
+      title: gridDrag.title || QUICK_ADD_TITLES[gridDrag.tag] || 'New Task',
       date: gridDrag.dropDate,
       startTime: toTimeStr(gridDrag.dropTime),
       endTime: toTimeStr(gridDrag.dropTime + 60),
@@ -1664,7 +1665,7 @@ function bindEvents() {
   // Access Hub
   document.getElementById('accessMain')?.addEventListener('click', toggleAccessHub);
   document.getElementById('accessFocusTimer')?.addEventListener('click', () => { toggleAccessHub(); openPomodoro(); });
-document.getElementById('accessTemplates')?.addEventListener('click', () => { toggleAccessHub(); openQuickTpl(); });
+document.getElementById('accessTemplates')?.addEventListener('click', () => { toggleAccessHub(); showCmdPalette(); });
   document.getElementById('accessFocusMode')?.addEventListener('click', () => { toggleAccessHub(); toggleFocusMode(); showToast('🎯 Focus mode ' + (focusModeActive ? 'activated' : 'deactivated'), 'info', 2000); });
   document.getElementById('accessToday')?.addEventListener('click', () => { toggleAccessHub(); goToday(); });
   document.getElementById('accessIdea')?.addEventListener('click', () => { toggleAccessHub(); openQuickIdea(); });
@@ -1681,11 +1682,9 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
   // Init pomodoro
   initPomodoro();
 
-  // Quick template bindings
-  document.getElementById('quickTplClose')?.addEventListener('click', closeQuickTpl);
   // Close on Escape
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeQuickTpl(); closeQuickIdea(); }
+    if (e.key === 'Escape') { closeQuickIdea(); }
   });
 
   // Quick idea bindings
@@ -1708,47 +1707,153 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
   // Init priority select + task modal tag pills
   initPrioritySelect();
 
-  // Render combined templates/drag bar
   renderSchTemplates();
 
-  // Template add popup bindings
-  document.getElementById('tplAddBtn')?.addEventListener('click', openAddTemplatePopup);
-  document.getElementById('tplAddPopupClose')?.addEventListener('click', closeAddTemplatePopup);
-  document.getElementById('tplAddCancel')?.addEventListener('click', closeAddTemplatePopup);
-  document.getElementById('tplAddSave')?.addEventListener('click', saveAddTemplate);
-  
-  document.querySelectorAll('#tplAddTagPills .tf-tag').forEach(pill => {
-    pill.addEventListener('click', () => {
-      document.querySelectorAll('#tplAddTagPills .tf-tag').forEach(b => b.classList.remove('active'));
-      pill.classList.add('active');
-      // Refresh subcategory bubble pills for selected tag
-      refreshSubcatPills('tplAddSubcategoryPills', pill.dataset.tag);
-    });
+  // ─── Add Category button + color triangle ──
+  let selectedCatColor = '#8b5cf6';
+  const catAddBtn = document.getElementById('catAddBtn');
+  const catAddPopup = document.getElementById('catAddPopup');
+  const catAddInput = document.getElementById('catAddInput');
+  const catAddCanvas = document.getElementById('catColorTriangle');
+  const catAddPreviewSwatch = document.getElementById('catColorPreviewSwatch');
+  const catAddPreviewLabel = document.getElementById('catColorPreviewLabel');
+  const catAddSave = document.getElementById('catAddSave');
+  const catAddCancel = document.getElementById('catAddCancel');
+
+  // Draw RGB color triangle on canvas
+  function drawColorTriangle(ctx, w, h) {
+    const cx = w / 2;
+    const corners = [
+      { x: cx, y: 6, r: 255, g: 0, b: 0 },       // top - red
+      { x: 6, y: h - 6, r: 0, g: 255, b: 0 },      // left - green
+      { x: w - 6, y: h - 6, r: 0, g: 0, b: 255 },   // right - blue
+    ];
+    const imgData = ctx.createImageData(w, h);
+    const d = imgData.data;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        // Barycentric coordinates via area ratios
+        const denom = ((corners[1].y - corners[2].y) * (corners[0].x - corners[2].x) + (corners[2].x - corners[1].x) * (corners[0].y - corners[2].y));
+        const u = ((corners[1].y - corners[2].y) * (x - corners[2].x) + (corners[2].x - corners[1].x) * (y - corners[2].y)) / denom;
+        const v = ((corners[2].y - corners[0].y) * (x - corners[2].x) + (corners[0].x - corners[2].x) * (y - corners[2].y)) / denom;
+        const wc = 1 - u - v;
+        if (u >= 0 && v >= 0 && wc >= 0) {
+          const r = Math.round(u * corners[0].r + v * corners[1].r + wc * corners[2].r);
+          const g = Math.round(u * corners[0].g + v * corners[1].g + wc * corners[2].g);
+          const b = Math.round(u * corners[0].b + v * corners[1].b + wc * corners[2].b);
+          const idx = (y * w + x) * 4;
+          d[idx] = r; d[idx + 1] = g; d[idx + 2] = b; d[idx + 3] = 255;
+        }
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  // Init canvas
+  if (catAddCanvas) {
+    drawColorTriangle(catAddCanvas.getContext('2d'), catAddCanvas.width, catAddCanvas.height);
+  }
+
+  function updateColorPreview(hex) {
+    selectedCatColor = hex;
+    if (catAddPreviewSwatch) catAddPreviewSwatch.style.background = hex;
+    if (catAddPreviewLabel) catAddPreviewLabel.textContent = hex;
+  }
+
+  // Click on triangle → pick color
+  catAddCanvas?.addEventListener('click', (e) => {
+    const rect = catAddCanvas.getBoundingClientRect();
+    const scaleX = catAddCanvas.width / rect.width;
+    const scaleY = catAddCanvas.height / rect.height;
+    const mx = Math.round((e.clientX - rect.left) * scaleX);
+    const my = Math.round((e.clientY - rect.top) * scaleY);
+    const ctx = catAddCanvas.getContext('2d');
+    const pixel = ctx.getImageData(mx, my, 1, 1).data;
+    if (pixel[3] === 0) return; // clicked outside triangle
+    const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(c => c.toString(16).padStart(2, '0')).join('');
+    updateColorPreview(hex);
   });
-  
-  // Template add popup - duration buttons
-  document.querySelectorAll('.tpl-add-dur').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tpl-add-dur').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
-  
-  // Template add popup close on Escape, Enter, and outside click
-  document.getElementById('tplAddPopup')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeAddTemplatePopup();
-    if (e.key === 'Enter' && e.target.closest('.tpl-add-popup-body')) saveAddTemplate();
-  });
-  document.addEventListener('click', (e) => {
-    const popup = document.getElementById('tplAddPopup');
-    if (!popup || popup.classList.contains('hidden')) return;
-    if (!popup.contains(e.target) && !e.target.closest('#tplAddBtn')) {
-      closeAddTemplatePopup();
+
+  function closeCatAddPopup() {
+    catAddPopup?.classList.add('hidden');
+  }
+
+  catAddBtn?.addEventListener('click', (e) => {
+    const rect = catAddBtn.getBoundingClientRect();
+    catAddPopup.style.left = Math.min(rect.left, window.innerWidth - 220) + 'px';
+    catAddPopup.style.top = (rect.bottom + 6) + 'px';
+    catAddPopup.classList.toggle('hidden');
+    if (!catAddPopup.classList.contains('hidden')) {
+      catAddInput.value = '';
+      updateColorPreview('#8b5cf6');
+      catAddInput.focus();
     }
   });
-  
-  // Save as template button in task modal
-  document.getElementById('taskSaveAsTemplateBtn')?.addEventListener('click', saveCurrentTaskAsTemplate);
+
+  catAddInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); catAddSave?.click(); }
+    if (e.key === 'Escape') closeCatAddPopup();
+  });
+
+  catAddSave?.addEventListener('click', () => {
+    const name = catAddInput.value.trim();
+    if (!name) return;
+    addCustomCategory(name, selectedCatColor);
+    renderSchTemplates();
+    closeCatAddPopup();
+    showToast(`Category "${name}" added`, 'success', 2000);
+  });
+
+  catAddCancel?.addEventListener('click', closeCatAddPopup);
+
+  // Close add-category popup on outside click
+  document.addEventListener('click', (e) => {
+    if (!catAddPopup?.classList.contains('hidden') && !catAddPopup.contains(e.target) && e.target !== catAddBtn && !catAddBtn?.contains(e.target)) {
+      closeCatAddPopup();
+    }
+  });
+
+  // ─── Right-click delete category chip ──
+  document.getElementById('pmChips')?.addEventListener('contextmenu', (e) => {
+    const chip = e.target.closest('.sch-pm-chip');
+    if (!chip) return;
+    const tag = chip.dataset.pmTag;
+    if (!tag || BUILTIN_TAGS.includes(tag)) return;
+    e.preventDefault();
+    const label = TAG_LABELS[tag] || tag;
+    if (confirm(`Delete category "${label}"? All subcategories will be removed.`)) {
+      removeCustomCategory(tag);
+      if (state._openPmTag === tag) {
+        state._openPmTag = TAG_ORDER[0];
+      }
+      showSubcategoryBubble(state._openPmTag);
+      renderSchTemplates();
+      showToast(`Category "${label}" deleted`, 'info', 2000);
+    }
+  });
+
+  // ─── Long-press delete on mobile ──
+  let longPressTimer = null;
+  document.getElementById('pmChips')?.addEventListener('touchstart', (e) => {
+    const chip = e.target.closest('.sch-pm-chip');
+    if (!chip) return;
+    const tag = chip.dataset.pmTag;
+    if (!tag || BUILTIN_TAGS.includes(tag)) return;
+    longPressTimer = setTimeout(() => {
+      const label = TAG_LABELS[tag] || tag;
+      if (confirm(`Delete category "${label}"? All subcategories will be removed.`)) {
+        removeCustomCategory(tag);
+        if (state._openPmTag === tag) {
+          state._openPmTag = TAG_ORDER[0];
+        }
+        showSubcategoryBubble(state._openPmTag);
+        renderSchTemplates();
+        showToast(`Category "${label}" deleted`, 'info', 2000);
+      }
+    }, 600);
+  });
+  document.getElementById('pmChips')?.addEventListener('touchmove', () => { clearTimeout(longPressTimer); });
+  document.getElementById('pmChips')?.addEventListener('touchend', () => { clearTimeout(longPressTimer); });
 
   // Load focus mode
   loadFocusMode();
@@ -1764,8 +1869,8 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
     }
   });
 
-  // Whiteboard drag — unified via startDrag (pills are handled dynamically in renderSchTemplates)
-  document.querySelectorAll('.whiteboard-item, .sch-whiteboard-item, .sch-pm-dropdown-pill').forEach(el => {
+  // Whiteboard drag — unified via startDrag (subcategory pills are handled in showSubcategoryBubble)
+  document.querySelectorAll('.whiteboard-item, .sch-whiteboard-item').forEach(el => {
     el.addEventListener('mousedown', (e) => {
       if (e.button !== 0 || e.target.closest('.w-delete, .w-del')) return;
       startDrag(e, el);
@@ -1807,172 +1912,6 @@ function toggleAccessHub() {
   }
 }
 
-
-// ─── TEMPLATE MANAGEMENT ────────────────────────────────────
-function deleteTemplate(id) {
-  let templates = loadTemplates();
-  templates = templates.filter(t => t.id !== id);
-  saveTemplates(templates);
-  renderSchTemplates();
-  showToast('Template deleted', 'info', 2000);
-}
-
-function openAddTemplatePopup() {
-  closeQuickTpl();
-  closeQuickIdea();
-  const popup = document.getElementById('tplAddPopup');
-  if (!popup) return;
-  // Reset form
-  document.getElementById('tplAddName').value = '';
-  document.getElementById('tplAddTitle').value = '';
-  // Reset tag pills
-  document.querySelectorAll('#tplAddTagPills .tf-tag').forEach(b => b.classList.remove('active'));
-  document.querySelector('#tplAddTagPills .tf-tag[data-tag="deep-work"]')?.classList.add('active');
-  // Reset duration
-  document.querySelectorAll('.tpl-add-dur').forEach(b => b.classList.remove('active'));
-  document.querySelector('.tpl-add-dur[data-minutes="60"]')?.classList.add('active');
-  
-  popup.classList.remove('hidden');
-  requestAnimationFrame(() => {
-    // Position near the templates bar
-    const btn = document.getElementById('tplAddBtn');
-    if (btn) {
-      const rect = btn.getBoundingClientRect();
-      popup.style.left = Math.max(8, Math.min(rect.left - 140, window.innerWidth - 308)) + 'px';
-      popup.style.top = (rect.bottom + 4) + 'px';
-    }
-    document.getElementById('tplAddName')?.focus();
-  });
-}
-
-function closeAddTemplatePopup() {
-  const popup = document.getElementById('tplAddPopup');
-  if (popup) popup.classList.add('hidden');
-}
-
-function saveAddTemplate() {
-  const nameEl = document.getElementById('tplAddName');
-  const titleEl = document.getElementById('tplAddTitle');
-  if (!nameEl || !titleEl) return;
-  
-  const name = nameEl.value.trim();
-  const title = titleEl.value.trim() || name;
-  if (!name) {
-    nameEl.focus();
-    nameEl.classList.add('tpl-add-input-error');
-    setTimeout(() => nameEl.classList.remove('tpl-add-input-error'), 2000);
-    return;
-  }
-  
-  const tag = document.querySelector('#tplAddTagPills .tf-tag.active')?.dataset?.tag || 'deep-work';
-  const durEl = document.querySelector('.tpl-add-dur.active');
-  const duration = durEl ? parseInt(durEl.dataset.minutes) : 60;
-  
-  // Get subcategory from active bubble pill
-  const subcatPill = document.querySelector('#tplAddSubcategoryPills .tf-tag.active');
-  const subcategory = subcatPill ? subcatPill.dataset.subcat || '' : '';
-  
-  const templates = loadTemplates();
-  const newTpl = {
-    id: 'tpl-' + uid(),
-    name,
-    title,
-    tag,
-    subcategory: subcategory || undefined,
-    duration,
-    priority: 3,
-  };
-  templates.push(newTpl);
-  saveTemplates(templates);
-  renderSchTemplates();
-  closeAddTemplatePopup();
-  showToast(`Template "${escapeHtml(name)}" created`, 'success');
-}
-
-function saveCurrentTaskAsTemplate() {
-  const title = document.getElementById('taskTitle')?.value?.trim();
-  if (!title) {
-    showToast('Save the task first, then save as template', 'warning', 3000);
-    return;
-  }
-  const tag = document.querySelector('#taskTagPills .tf-tag.active')?.dataset?.tag || 'meeting';
-  const start = document.getElementById('taskStart')?.value || '09:00';
-  const end = document.getElementById('taskEnd')?.value || '10:00';
-  const dur = getDurationMinutes({ startTime: start, endTime: end });
-  const activePr = document.querySelector('#prioritySelectGroup .tf-pr.active');
-  const priority = activePr ? parseInt(activePr.dataset.priority) : 3;
-  
-  const templates = loadTemplates();
-  const newTpl = {
-    id: 'tpl-' + uid(),
-    name: title.length > 30 ? title.slice(0, 30) + '…' : title,
-    title,
-    tag,
-    duration: dur,
-    priority,
-  };
-  templates.push(newTpl);
-  saveTemplates(templates);
-  renderSchTemplates();
-  showToast(`Template "${escapeHtml(title)}" saved`, 'success');
-}
-
-// ─── QUICK TEMPLATES PICKER ────────────────────────────────
-function openQuickTpl() {
-  closeQuickIdea();
-  const popup = document.getElementById('quickTpl');
-  const list = document.getElementById('quickTplList');
-  if (!popup || !list) { showCmdPalette(); return; }
-  const templates = loadTemplates();
-  list.innerHTML = '';
-  templates.forEach(tpl => {
-    const c = TAG_COLORS[tpl.tag] || TAG_COLORS.meeting;
-    const item = document.createElement('button');
-    item.className = 'quick-tpl-item';
-    item.innerHTML = `<span class="tpl-dot" style="background:${c.text}"></span>
-      <span class="quick-tpl-item-title">${escapeHtml(tpl.name)}</span>
-      <span class="quick-tpl-item-meta">${tpl.title} · ${formatDuration(tpl.duration)}</span>
-      <span class="quick-tpl-item-del" data-del-tpl="${tpl.id}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </span>`;
-    // Apply template on click
-    item.addEventListener('click', (e) => {
-      if (e.target.closest('[data-del-tpl]')) return;
-      const now = new Date();
-      const date = formatDate(now);
-      const startMins = roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES);
-      createTask({
-        title: tpl.title || tpl.name,
-        date,
-        startTime: toTimeStr(startMins),
-        endTime: toTimeStr(startMins + tpl.duration),
-        tag: tpl.tag,
-        priority: tpl.priority || 3,
-      });
-      popup.classList.add('hidden');
-      renderCalendar();
-      showToast(`"${escapeHtml(tpl.name)}" added`, 'success');
-    });
-    // Delete button
-    const delBtn = item.querySelector('[data-del-tpl]');
-    if (delBtn) {
-      delBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = delBtn.dataset.delTpl;
-        if (confirm(`Delete template "${escapeHtml(tpl.name)}"?`)) {
-          deleteTemplate(id);
-          openQuickTpl();
-        }
-      });
-    }
-    list.appendChild(item);
-  });
-  popup.classList.remove('hidden');
-}
-
-function closeQuickTpl() {
-  document.getElementById('quickTpl')?.classList.add('hidden');
-}
 
 // ─── POMODORO TIMER ────────────────────────────────────────
 let pomodoroInterval = null;
@@ -2182,379 +2121,173 @@ function initPomodoro() {
   }
 }
 
-// ─── TEMPLATE EDIT POPUP ────────────────────────────────────
-
-// ─── REFRESH SUBCATEGORY PILLS ──────────────────────────────
-function refreshSubcatPills(containerId, tag, selectedSubcat) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  const subs = typeof SUBCATEGORIES !== 'undefined' ? (SUBCATEGORIES[tag] || []) : [];
-  let html = '<button type="button" class="tf-tag' + (!selectedSubcat ? ' active' : '') + '" data-subcat="" style="--tag-c:var(--text-tertiary);--tag-b:var(--bg-secondary)">None</button>';
-  for (const s of subs) {
-    const active = s === selectedSubcat ? ' active' : '';
-    html += '<button type="button" class="tf-tag' + active + '" data-subcat="' + s + '" style="--tag-c:var(--text-secondary);--tag-b:var(--accent-soft)">' + s + '</button>';
-  }
-  container.innerHTML = html;
-  // Attach click handlers
-  container.querySelectorAll('.tf-tag').forEach(btn => {
-    btn.addEventListener('click', () => {
-      container.querySelectorAll('.tf-tag').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
+// ─── SUBCATEGORY BUBBLE ─────────────────────────────────────
+function renderSubcategoryBarPill(subcatName, tag, col) {
+  return `<span class="sch-sc-bar-pill" data-tag="${tag}" data-sc-name="${escapeHtml(subcatName)}" style="--sc-accent:${col.text}" draggable="true">
+    <span class="sc-dot"></span>
+    <span class="sc-name">${escapeHtml(subcatName)}</span>
+    <button class="sc-bar-edit" data-sc-edit="${escapeHtml(subcatName)}" title="Rename">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
+    <button class="sc-bar-del" data-sc-del="${escapeHtml(subcatName)}" title="Delete">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </span>`;
 }
-function startEditTemplate(pill, id) {
-  if (!id) return;
-  const templates = loadTemplates();
-  const tpl = templates.find(t => t.id === id);
-  if (!tpl) return;
 
-  // Remove any existing edit popup
-  document.getElementById('tplEditPopup')?.remove();
+function showSubcategoryBubble(tag) {
+  document.getElementById('schScBar')?.remove();
+  document.removeEventListener('click', closeSubcategoryBubble);
 
-  const popup = document.createElement('div');
-  popup.className = 'tpl-edit-popup';
-  popup.id = 'tplEditPopup';
+  const pm = document.getElementById('schPillManager');
+  if (!pm || !tag) return;
 
-  const c = TAG_COLORS[tpl.tag] || TAG_COLORS.meeting;
+  const subcats = loadSubcategories();
+  const subs = subcats[tag] || [];
+  const col = TAG_COLORS[tag] || TAG_COLORS.meeting;
 
-  popup.innerHTML = `
-    <div class="tpl-edit-popup-header">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-      <span>Edit Template</span>
-    </div>
-    <div class="tpl-edit-popup-body">
-      <div class="tf-group">
-        <label class="tf-label">Name</label>
-        <input type="text" id="tplEditName" class="form-input" value="${escapeHtml(tpl.name)}" autocomplete="off" maxlength="40">
-      </div>
-      <div class="tf-group">
-        <label class="tf-label">Task Title</label>
-        <input type="text" id="tplEditTitle" class="form-input" value="${escapeHtml(tpl.title || tpl.name)}" autocomplete="off">
-      </div>
-      <div class="tf-group">
-        <label class="tf-label">Category</label>
-        <div class="tf-tags" id="tplEditTagPills">
-          ${TAG_ORDER.map(tag => `
-            <button type="button" class="tf-tag${tag === tpl.tag ? ' active' : ''}" data-tag="${tag}"
-              style="--tag-c:var(--tag-${tag}-text);--tag-b:var(--tag-${tag}-bg)">${TAG_LABELS[tag]}</button>
-          `).join('')}
-        </div>
-      </div>
-      <div class="tf-group">
-        <label class="tf-label">Duration (minutes)</label>
-        <div class="tpl-add-dur-row">
-          ${[15, 30, 60, 90, 120].map(d =>
-            `<button class="tpl-add-dur${d === tpl.duration ? ' active' : ''}" data-minutes="${d}">${d < 60 ? d + 'm' : d === 60 ? '1h' : d === 90 ? '1.5h' : d === 120 ? '2h' : d + 'm'}</button>`
-          ).join('')}
-        </div>
-      </div>
-      
-      <div class="tf-group">
-        <label class="tf-label">Subcategory</label>
-        <div class="tf-tags" id="tplEditSubcategoryPills">
-          <button type="button" class="tf-tag active" data-subcat="" style="--tag-c:var(--text-tertiary);--tag-b:var(--bg-secondary)">None</button>
-        </div>
-      </div>
-      <div class="tpl-edit-popup-actions">
-        <button class="tf-btn tf-btn-ghost" id="tplEditCancel">Cancel</button>
-        <button class="tf-btn tf-btn-primary" id="tplEditSave">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Save
-        </button>
-      </div>
-    </div>
-  `;
+  const bar = document.createElement('div');
+  bar.className = 'sch-sc-bar';
+  bar.id = 'schScBar';
 
-  document.body.appendChild(popup);
-
-  // Position near the pill
-  requestAnimationFrame(() => {
-    const pillRect = pill.getBoundingClientRect();
-    const popupRect = popup.getBoundingClientRect();
-    let left = pillRect.left;
-    let top = pillRect.bottom + 4;
-    // Keep within viewport
-    if (left + popupRect.width > window.innerWidth - 8) {
-      left = window.innerWidth - popupRect.width - 8;
+  if (subs.length === 0) {
+    bar.innerHTML = `<span class="sch-sc-bar-empty">No subcategories</span>`;
+  } else {
+    for (const s of subs) {
+      bar.innerHTML += renderSubcategoryBarPill(s, tag, col);
     }
-    if (left < 8) left = 8;
-    if (top + popupRect.height > window.innerHeight - 8) {
-      top = pillRect.top - popupRect.height - 4;
-    }
-    popup.style.left = left + 'px';
-    popup.style.top = top + 'px';
+  }
 
-    // Focus name field
-    document.getElementById('tplEditName')?.focus();
-    document.getElementById('tplEditName')?.select();
-  });
+  // Add input row
+  bar.innerHTML += `<span class="sch-sc-bar-add-row">
+    <input type="text" class="sch-sc-bar-add-input" id="scAddInput" placeholder="Add..." maxlength="30" autocomplete="off">
+    <button class="sch-sc-bar-add-btn" id="scAddBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+  </span>`;
 
-  // Tag pills
-  popup.querySelectorAll('#tplEditTagPills .tf-tag').forEach(p => {
-    p.addEventListener('click', () => {
-      popup.querySelectorAll('#tplEditTagPills .tf-tag').forEach(b => b.classList.remove('active'));
-      p.classList.add('active');
-    });
-  });
+  pm.parentNode.insertBefore(bar, pm.nextSibling);
 
-  // Duration buttons
-  popup.querySelectorAll('.tpl-add-dur').forEach(btn => {
-    btn.addEventListener('click', () => {
-      popup.querySelectorAll('.tpl-add-dur').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
+  // Focus add input
+  const addInput = bar.querySelector('#scAddInput');
+  if (addInput) setTimeout(() => addInput.focus(), 50);
 
-  // Save
-  const save = () => {
-    const nameEl = document.getElementById('tplEditName');
-    const titleEl = document.getElementById('tplEditTitle');
-    const name = nameEl?.value?.trim();
-    if (!name) {
-      nameEl?.focus();
-      nameEl?.classList.add('tpl-add-input-error');
-      setTimeout(() => nameEl?.classList.remove('tpl-add-input-error'), 2000);
-      return;
-    }
-    const tag = popup.querySelector('#tplEditTagPills .tf-tag.active')?.dataset?.tag || tpl.tag;
-    const durEl = popup.querySelector('.tpl-add-dur.active');
-    const duration = durEl ? parseInt(durEl.dataset.minutes) : tpl.duration;
-    const title = (titleEl?.value?.trim()) || name;
-
-    tpl.name = name;
-    tpl.title = title;
-    tpl.tag = tag;
-    tpl.duration = duration;
-    saveTemplates(templates);
-    renderSchTemplates();
-    showToast(`Template "${escapeHtml(name)}" updated`, 'success', 1500);
-    popup.remove();
+  // Add subcategory
+  const addBtn = bar.querySelector('#scAddBtn');
+  const doAdd = () => {
+    const val = addInput?.value?.trim();
+    if (!val) return;
+    addSubcategory(tag, val);
+    showSubcategoryBubble(tag);
   };
+  addBtn?.addEventListener('click', doAdd);
+  addInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); doAdd(); } });
 
-  popup.querySelector('#tplEditSave')?.addEventListener('click', save);
-  popup.querySelector('#tplEditCancel')?.addEventListener('click', () => popup.remove());
+  // Edit subcategory (inline rename)
+  bar.querySelectorAll('[data-sc-edit]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const oldName = btn.dataset.scEdit;
+      const pill = btn.closest('.sch-sc-bar-pill');
+      const nameEl = pill?.querySelector('.sc-name');
+      if (!nameEl) return;
 
-  // Enter to save, Escape to cancel
-  popup.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { popup.remove(); }
-    if (e.key === 'Enter' && e.target.closest('.tpl-edit-popup-body')) { save(); }
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'sch-sc-bar-add-input';
+      input.value = oldName;
+      input.maxLength = 30;
+      input.style.width = '60px';
+
+      nameEl.replaceWith(input);
+      input.focus();
+      input.select();
+
+      const finish = () => {
+        const newName = input.value.trim();
+        if (newName && newName !== oldName) {
+          renameSubcategory(tag, oldName, newName);
+          showSubcategoryBubble(tag);
+        } else {
+          showSubcategoryBubble(tag);
+        }
+      };
+      input.addEventListener('blur', finish);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = oldName; input.blur(); }
+      });
+    });
+  });
+
+  // Delete subcategory
+  bar.querySelectorAll('[data-sc-del]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const name = btn.dataset.scDel;
+      removeSubcategory(tag, name);
+      showSubcategoryBubble(tag);
+    });
+  });
+
+  // Drag start on each pill
+  bar.querySelectorAll('.sch-sc-bar-pill').forEach(pill => {
+    pill.addEventListener('mousedown', (e) => {
+      if (e.button !== 0 || e.target.closest('[data-sc-edit]') || e.target.closest('[data-sc-del]')) return;
+      startDrag(e, pill);
+    });
   });
 
   // Close on outside click
-  const onEditPopupClick = (e) => {
-    if (!popup.contains(e.target) && !e.target.closest('.sch-pm-dropdown-pill') && !e.target.closest('.sch-pm-chip')) {
-      popup.remove();
-      document.removeEventListener('click', onEditPopupClick);
-    }
-  };
-  setTimeout(() => {
-    document.addEventListener('click', onEditPopupClick);
-  }, 0);
+  setTimeout(() => document.addEventListener('click', closeSubcategoryBubble), 0);
 }
 
-// ─── RENDER PILL MANAGER (compact chip row + dropdown) ────
+function closeSubcategoryBubble(e) {
+  const bar = document.getElementById('schScBar');
+  const pm = document.getElementById('schPillManager');
+  if (!bar) return;
+  if (e && (pm?.contains(e.target) || bar?.contains(e.target))) return;
+  bar.remove();
+  state._openPmTag = null;
+  document.removeEventListener('click', closeSubcategoryBubble);
+  document.querySelectorAll('.sch-pm-chip').forEach(chip => chip.classList.remove('active'));
+}
+
+// ─── RENDER PILL MANAGER (category chips) ─────────────────
 function renderSchTemplates() {
   const container = document.getElementById('pmChips');
   if (!container) return;
-  const templates = loadTemplates();
+  const subcats = loadSubcategories();
   let html = '';
   for (const tag of TAG_ORDER) {
-    const tpls = templates.filter(t => t.tag === tag);
+    const subs = subcats[tag] || [];
     const col = TAG_COLORS[tag] || TAG_COLORS.meeting;
     const accent = col.text;
     const isOpen = state._openPmTag === tag;
     html += `<button class="sch-pm-chip${isOpen ? ' active' : ''}" data-pm-tag="${tag}"
-      style="--chip-accent:${accent}" draggable="true" data-pm-chip="${tag}">
+      style="--chip-accent:${accent}">
       <span class="sch-pm-chip-dot" style="background:${accent}"></span>
       ${TAG_LABELS[tag]}
-      ${tpls.length > 0 ? `<span class="sch-pm-chip-count">${tpls.length}</span>` : ''}
+      ${subs.length > 0 ? `<span class="sch-pm-chip-count">${subs.length}</span>` : ''}
     </button>`;
   }
   container.innerHTML = html;
-  
-  // Chip click — toggle dropdown
+
+  // Chip click — toggle drawer
   container.querySelectorAll('.sch-pm-chip').forEach(chip => {
     chip.addEventListener('click', (e) => {
       e.stopPropagation();
       const tag = chip.dataset.pmTag;
       if (state._openPmTag === tag) {
-        closePmDropdown();
+        closeSubcategoryBubble();
       } else {
         state._openPmTag = tag;
         renderSchTemplates();
-        showPmDropdown(tag);
+        showSubcategoryBubble(tag);
       }
     });
   });
-  
-    // Make chip-row buttons draggable to calendar
-  container.querySelectorAll('.sch-pm-chip').forEach(chip => {
-    // Prevent native HTML5 drag from interfering
-    chip.addEventListener('dragstart', (e) => e.preventDefault());
-    
-    chip.addEventListener('mousedown', (e) => {
-      if (e.button !== 0 || e.target.closest('.sch-pm-chip') !== chip) return;
-      const startX = e.clientX, startY = e.clientY;
-      const onMove = (ev) => {
-        if (Math.abs(ev.clientX - startX) > 5 || Math.abs(ev.clientY - startY) > 5) {
-          chip.dataset._dragMoved = 'true';
-          document.removeEventListener('mousemove', onMove);
-          document.removeEventListener('mouseup', onUp);
-          const tag = chip.dataset.pmTag;
-          const fakePill = document.createElement('div');
-          fakePill.className = 'sch-pm-dropdown-pill';
-          fakePill.dataset.tag = tag;
-          fakePill.dataset.duration = '60';
-          fakePill.dataset.templateTitle = TAG_LABELS[tag] || tag;
-          startDrag(ev, fakePill);
-        }
-      };
-      const onUp = () => {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-    });
-  });
-  
-  // Patch the chip click handler to skip if a drag just happened
-  // We can't easily modify the already-registered handler, so use event delegation
-  container.addEventListener('click', (e) => {
-    const chip = e.target.closest('.sch-pm-chip');
-    if (chip && chip.dataset._dragMoved === 'true') {
-      e.stopImmediatePropagation();
-      delete chip.dataset._dragMoved;
-    }
-  }, { capture: true });
-}
 
-
-// ─── RENDER PILL HELPER (for subcategory groups) ─────────────
-function renderPmPill(tpl, col) {
-  const dur = formatDuration(tpl.duration);
-  return `<button class="sch-pm-dropdown-pill" data-template-id="${tpl.id}"
-    data-tag="${tpl.tag}" data-duration="${tpl.duration}" data-template-title="${escapeHtml(tpl.title || tpl.name)}"
-    style="--dp-accent:${col.text}">
-    <span class="dp-dot" style="background:${col.text}"></span>
-    <span class="dp-name">${escapeHtml(tpl.name)}</span>
-    <span class="dp-dur">${dur}</span>
-    <span class="dp-edit" data-edit-template="${tpl.id}" title="Edit template">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-    </span>
-    <span class="dp-del" data-delete-template="${tpl.id}" title="Delete template">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </span>
-  </button>`;
-}
-function showPmDropdown(tag) {
-  // Remove any existing dropdown
-  document.getElementById('schPmDropdown')?.remove();
-  document.removeEventListener('click', closePmDropdown);
-  
-  const pm = document.getElementById('schPillManager');
-  if (!pm || !tag) return;
-  
-  const templates = loadTemplates();
-  const tpls = templates.filter(t => t.tag === tag);
-  const col = TAG_COLORS[tag] || TAG_COLORS.meeting;
-  
-  const dropdown = document.createElement('div');
-  dropdown.className = 'sch-pm-dropdown';
-  dropdown.id = 'schPmDropdown';
-  
-  let html = `<div class="sch-pm-dropdown-header">
-    <span class="dp-header-dot" style="background:${col.text}"></span>
-    ${TAG_LABELS[tag]} — ${tpls.length} template${tpls.length !== 1 ? 's' : ''}
-  </div>`;
-  
-  if (tpls.length === 0) {
-    html += `<span class="sch-pm-dropdown-empty">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      No templates in this category
-    </span>`;
-  } else {
-    // Group templates by subcategory
-    const subcats = SUBCATEGORIES[tag] || [];
-    const grouped = {};
-    const uncategorized = [];
-    for (const tpl of tpls) {
-      if (tpl.subcategory && subcats.includes(tpl.subcategory)) {
-        if (!grouped[tpl.subcategory]) grouped[tpl.subcategory] = [];
-        grouped[tpl.subcategory].push(tpl);
-      } else {
-        uncategorized.push(tpl);
-      }
-    }
-    
-    // Render grouped templates
-    for (const subcat of subcats) {
-      const groupTpls = grouped[subcat];
-      if (!groupTpls || groupTpls.length === 0) continue;
-      html += `<div class="sch-pm-subcat-group">
-        <span class="sch-pm-subcat-label">${subcat}</span>
-        <div class="sch-pm-subcat-pills">`;
-      for (const tpl of groupTpls) {
-        html += renderPmPill(tpl, col);
-      }
-      html += `</div></div>`;
-    }
-    
-    // Render uncategorized templates
-    if (uncategorized.length > 0) {
-      html += `<div class="sch-pm-subcat-group">
-        <span class="sch-pm-subcat-label">Other</span>
-        <div class="sch-pm-subcat-pills">`;
-      for (const tpl of uncategorized) {
-        html += renderPmPill(tpl, col);
-      }
-      html += `</div></div>`;
-    }
-  }
-  
-  dropdown.innerHTML = html;
-  pm.appendChild(dropdown);
-  
-  // Event handlers for pills
-  dropdown.querySelectorAll('.sch-pm-dropdown-pill').forEach(pill => {
-    pill.addEventListener('click', (e) => {
-      if (e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]')) return;
-      const id = pill.dataset.templateId;
-      const tpl = tpls.find(t => t.id === id);
-      if (tpl) { showCmdPalette(); if (dom.cmdInput) { dom.cmdInput.value = tpl.title || tpl.name; dom.cmdInput.focus(); } }
-    });
-    const editBtn = pill.querySelector('[data-edit-template]');
-    if (editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); startEditTemplate(pill, pill.dataset.templateId); });
-    const delBtn = pill.querySelector('[data-delete-template]');
-    if (delBtn) delBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const name = pill.querySelector('.dp-name')?.textContent || 'template';
-      if (confirm(`Delete template ` + JSON.stringify(name) + '?')) {
-        deleteTemplate(pill.dataset.templateId);
-      }
-    });
-    pill.addEventListener('mousedown', (e) => {
-      if (e.button !== 0 || e.target.closest('[data-delete-template]') || e.target.closest('[data-edit-template]')) return;
-      startDrag(e, pill);
-    });
-  });
-  
-  // Close on outside click
-  setTimeout(() => document.addEventListener('click', closePmDropdown), 0);
-}
-
-function closePmDropdown(e) {
-  const dropdown = document.getElementById('schPmDropdown');
-  const pm = document.getElementById('schPillManager');
-  if (!dropdown) return;
-  // If click is inside the pill manager or dropdown, don't close
-  if (e && (pm?.contains(e.target) || dropdown?.contains(e.target))) return;
-  dropdown.remove();
-  state._openPmTag = null;
-  document.removeEventListener('click', closePmDropdown);
-  // Update chip active states
-  document.querySelectorAll('.sch-pm-chip').forEach(chip => chip.classList.remove('active'));
 }
 
 // ─── INITIALIZATION ─────────────────────────────────────────
