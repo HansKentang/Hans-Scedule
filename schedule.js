@@ -1709,70 +1709,16 @@ document.getElementById('accessTemplates')?.addEventListener('click', () => { to
 
   renderSchTemplates();
 
-  // ─── Add Category button + color triangle ──
+  // ─── Add Category button + color picker ──
   let selectedCatColor = '#8b5cf6';
   const catAddBtn = document.getElementById('catAddBtn');
   const catAddPopup = document.getElementById('catAddPopup');
   const catAddInput = document.getElementById('catAddInput');
-  const catAddCanvas = document.getElementById('catColorTriangle');
-  const catAddPreviewSwatch = document.getElementById('catColorPreviewSwatch');
-  const catAddPreviewLabel = document.getElementById('catColorPreviewLabel');
+  const catAddColor = document.getElementById('catColorPicker');
   const catAddSave = document.getElementById('catAddSave');
   const catAddCancel = document.getElementById('catAddCancel');
 
-  // Draw RGB color triangle on canvas
-  function drawColorTriangle(ctx, w, h) {
-    const cx = w / 2;
-    const corners = [
-      { x: cx, y: 6, r: 255, g: 0, b: 0 },       // top - red
-      { x: 6, y: h - 6, r: 0, g: 255, b: 0 },      // left - green
-      { x: w - 6, y: h - 6, r: 0, g: 0, b: 255 },   // right - blue
-    ];
-    const imgData = ctx.createImageData(w, h);
-    const d = imgData.data;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        // Barycentric coordinates via area ratios
-        const denom = ((corners[1].y - corners[2].y) * (corners[0].x - corners[2].x) + (corners[2].x - corners[1].x) * (corners[0].y - corners[2].y));
-        const u = ((corners[1].y - corners[2].y) * (x - corners[2].x) + (corners[2].x - corners[1].x) * (y - corners[2].y)) / denom;
-        const v = ((corners[2].y - corners[0].y) * (x - corners[2].x) + (corners[0].x - corners[2].x) * (y - corners[2].y)) / denom;
-        const wc = 1 - u - v;
-        if (u >= 0 && v >= 0 && wc >= 0) {
-          const r = Math.round(u * corners[0].r + v * corners[1].r + wc * corners[2].r);
-          const g = Math.round(u * corners[0].g + v * corners[1].g + wc * corners[2].g);
-          const b = Math.round(u * corners[0].b + v * corners[1].b + wc * corners[2].b);
-          const idx = (y * w + x) * 4;
-          d[idx] = r; d[idx + 1] = g; d[idx + 2] = b; d[idx + 3] = 255;
-        }
-      }
-    }
-    ctx.putImageData(imgData, 0, 0);
-  }
-
-  // Init canvas
-  if (catAddCanvas) {
-    drawColorTriangle(catAddCanvas.getContext('2d'), catAddCanvas.width, catAddCanvas.height);
-  }
-
-  function updateColorPreview(hex) {
-    selectedCatColor = hex;
-    if (catAddPreviewSwatch) catAddPreviewSwatch.style.background = hex;
-    if (catAddPreviewLabel) catAddPreviewLabel.textContent = hex;
-  }
-
-  // Click on triangle → pick color
-  catAddCanvas?.addEventListener('click', (e) => {
-    const rect = catAddCanvas.getBoundingClientRect();
-    const scaleX = catAddCanvas.width / rect.width;
-    const scaleY = catAddCanvas.height / rect.height;
-    const mx = Math.round((e.clientX - rect.left) * scaleX);
-    const my = Math.round((e.clientY - rect.top) * scaleY);
-    const ctx = catAddCanvas.getContext('2d');
-    const pixel = ctx.getImageData(mx, my, 1, 1).data;
-    if (pixel[3] === 0) return; // clicked outside triangle
-    const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(c => c.toString(16).padStart(2, '0')).join('');
-    updateColorPreview(hex);
-  });
+  catAddColor?.addEventListener('input', () => { selectedCatColor = catAddColor.value; });
 
   function closeCatAddPopup() {
     catAddPopup?.classList.add('hidden');

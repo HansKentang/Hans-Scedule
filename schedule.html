@@ -265,48 +265,38 @@
       border: 1px solid var(--border-color);
       border-radius: 10px;
       box-shadow: var(--shadow-lg);
-      padding: var(--space-2);
+      padding: 10px 12px;
       animation: snavPopupIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .cat-add-header {
-      font-size: 0.65rem; font-weight: 600; color: var(--text-primary);
-      margin-bottom: var(--space-1);
-    }
     .cat-add-input {
-      width: 100%; padding: 4px 8px;
-      border-radius: 6px; border: 1px solid var(--border-subtle);
+      width: 100%; padding: 6px 10px;
+      border-radius: 8px; border: 1.5px solid var(--border-subtle);
       background: var(--bg-secondary); color: var(--text-primary);
-      font-size: 0.75rem; font-family: var(--font-family);
+      font-size: 0.8rem; font-family: var(--font-family);
       outline: none; transition: border-color var(--t-fast);
-      box-sizing: border-box;
+      box-sizing: border-box; margin-bottom: 10px;
     }
     .cat-add-input:focus { border-color: var(--accent); }
-    .cat-color-triangle {
-      width: 100%; height: auto;
-      border-radius: 6px;
-      cursor: crosshair;
-      margin: var(--space-1) 0;
-      display: block;
+    .cat-add-color-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px;
     }
-    .cat-color-preview {
-      display: flex; align-items: center; gap: 6px;
-      margin-bottom: var(--space-1);
+    .cat-add-color-row input[type="color"] {
+      width: 34px; height: 34px; padding: 0; border: none;
+      border-radius: 8px; cursor: pointer;
+      background: none; flex-shrink: 0;
     }
-    .cat-color-preview-swatch {
-      width: 18px; height: 18px; border-radius: 4px;
-      border: 1px solid var(--border-subtle);
-      flex-shrink: 0;
-    }
-    .cat-color-preview-label {
-      font-size: 0.62rem; font-family: monospace;
-      color: var(--text-tertiary);
+    .cat-add-color-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
+    .cat-add-color-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+    .cat-add-color-label {
+      font-size: 0.7rem; color: var(--text-tertiary);
     }
     .cat-add-actions {
-      display: flex; gap: var(--space-1);
+      display: flex; gap: 8px;
     }
     .cat-add-actions button {
-      flex: 1; padding: 4px; border-radius: 6px;
-      border: none; font-size: 0.68rem; font-family: var(--font-family);
+      flex: 1; padding: 6px 0; border-radius: 8px;
+      border: none; font-size: 0.7rem; font-family: var(--font-family);
       font-weight: 600; cursor: pointer; transition: all var(--t-fast);
     }
     .cat-add-cancel { background: var(--bg-secondary); color: var(--text-tertiary); }
@@ -588,12 +578,10 @@
 
       <!-- Add Category Popup -->
       <div class="cat-add-popup hidden" id="catAddPopup">
-        <div class="cat-add-header">New Category</div>
-        <input type="text" class="cat-add-input" id="catAddInput" placeholder="Category name..." maxlength="24" autocomplete="off">
-        <canvas class="cat-color-triangle" id="catColorTriangle" width="188" height="150"></canvas>
-        <div class="cat-color-preview" id="catColorPreview">
-          <span class="cat-color-preview-swatch" id="catColorPreviewSwatch" style="background:#8b5cf6"></span>
-          <span class="cat-color-preview-label" id="catColorPreviewLabel">#8b5cf6</span>
+        <input type="text" class="cat-add-input" id="catAddInput" placeholder="Category name" maxlength="24" autocomplete="off">
+        <div class="cat-add-color-row">
+          <input type="color" id="catColorPicker" value="#8b5cf6">
+          <span class="cat-add-color-label">Pick a colour</span>
         </div>
         <div class="cat-add-actions">
           <button class="cat-add-cancel" id="catAddCancel">Cancel</button>

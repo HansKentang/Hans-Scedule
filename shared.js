@@ -1828,6 +1828,7 @@ function createTask(data) {
     startTime: data.startTime || '09:00',
     endTime: data.endTime || '10:00',
     tag: data.tag || 'meeting',
+    subcategory: data.subcategory || '',
     notes: data.notes || '',
     completed: false,
     createdAt: new Date().toISOString(),
@@ -1912,8 +1913,19 @@ Parse the user's request into a JSON object with these exact fields:
 - date: string (YYYY-MM-DD)
 - startTime: string (HH:MM 24h)
 - endTime: string (HH:MM 24h)
-- tag: string ("meeting" | "deep-work" | "exercise" | "study" | "hobby")
+- tag: string (${TAG_ORDER.map(t => `"${t}"`).join(' | ')})
+- subcategory: string (optional, use a known subcategory name if the user mentions one)
 
+Tag labels: ${TAG_ORDER.map(t => `"${t}" = "${TAG_LABELS[t]}"`).join(', ')}
+${(() => {
+  const subcatMap = loadSubcategories();
+  const parts = [];
+  for (const t of TAG_ORDER) {
+    const subs = subcatMap[t] || [];
+    if (subs.length > 0) parts.push(`"${t}" subcategories: ${subs.map(s => `"${s}"`).join(', ')}`);
+  }
+  return parts.length > 0 ? 'Known subcategories:\n' + parts.join('\n') : '';
+})()}
 Tag rules: "deep work"/"focus"/"heads down" = deep-work. "gym"/"workout"/"run"/"cardio"/"exercise" = exercise. "math"/"english"/"class"/"chemistry"/"physics"/"mandarin"/"study" = study. "design"/"movie"/"build"/"app"/"hobby" = hobby. Default tag = "meeting".
 Default duration: 1 hour. Default time: 9 AM. "tomorrow" = next day. Day names = next occurrence. "morning" ≈ 9am, "afternoon" ≈ 2pm, "evening" ≈ 7pm.
 
@@ -1949,7 +1961,7 @@ Return ONLY valid JSON. No markdown, no code fences, no extra text.`;
     }
     if (!p.title || !p.date || !p.startTime || !p.endTime) throw new Error('Incomplete data');
     if (isNaN(new Date(p.date + 'T' + p.startTime).getTime())) throw new Error('Invalid date');
-    return { title: p.title, date: p.date, startTime: p.startTime, endTime: p.endTime, tag: p.tag || 'meeting' };
+    return { title: p.title, date: p.date, startTime: p.startTime, endTime: p.endTime, tag: p.tag || 'meeting', subcategory: p.subcategory || '' };
   });
 }
 
@@ -3630,8 +3642,19 @@ Parse the user's request into a JSON object with these exact fields:
 - date: string (YYYY-MM-DD)
 - startTime: string (HH:MM 24h)
 - endTime: string (HH:MM 24h)
-- tag: string ("meeting" | "deep-work" | "exercise" | "study" | "hobby")
+- tag: string (${TAG_ORDER.map(t => `"${t}"`).join(' | ')})
+- subcategory: string (optional, use a known subcategory name if the user mentions one)
 
+Tag labels: ${TAG_ORDER.map(t => `"${t}" = "${TAG_LABELS[t]}"`).join(', ')}
+${(() => {
+  const subcatMap = loadSubcategories();
+  const parts = [];
+  for (const t of TAG_ORDER) {
+    const subs = subcatMap[t] || [];
+    if (subs.length > 0) parts.push(`"${t}" subcategories: ${subs.map(s => `"${s}"`).join(', ')}`);
+  }
+  return parts.length > 0 ? 'Known subcategories:\n' + parts.join('\n') : '';
+})()}
 Tag rules: "deep work"/"focus"/"heads down" = deep-work. "gym"/"workout"/"run"/"cardio"/"exercise" = exercise. "math"/"english"/"class"/"chemistry"/"physics"/"mandarin"/"study" = study. "design"/"movie"/"build"/"app"/"hobby" = hobby. Default tag = "meeting".
 Default duration: 1 hour. Default time: 9 AM. "tomorrow" = next day. Day names = next occurrence. "morning" ≈ 9am, "afternoon" ≈ 2pm, "evening" ≈ 7pm.
 
@@ -3669,7 +3692,7 @@ Return ONLY valid JSON. No markdown, no code fences, no extra text.`;
     }
     if (!p.title || !p.date || !p.startTime || !p.endTime) throw new Error('Incomplete data');
     if (isNaN(new Date(p.date + 'T' + p.startTime).getTime())) throw new Error('Invalid date');
-    return { title: p.title, date: p.date, startTime: p.startTime, endTime: p.endTime, tag: p.tag || 'meeting' };
+    return { title: p.title, date: p.date, startTime: p.startTime, endTime: p.endTime, tag: p.tag || 'meeting', subcategory: p.subcategory || '' };
   });
 }
 
@@ -3770,12 +3793,18 @@ function localParse(text) {
     }
   }
 
-  // Tag detection — with time-of-day smart defaults if no keyword match
+  // Tag detection — match built-in keywords, then custom tag labels
   let tag = 'meeting';
   if (lower.includes('deep work') || lower.includes('focus') || lower.includes('heads down') || lower.includes('concentrate')) tag = 'deep-work';
   else if (lower.includes('gym') || lower.includes('workout') || lower.includes('cardio') || lower.includes('run') || lower.includes('running') || lower.includes('jog') || lower.includes('exercise') || lower.includes('fitness') || lower.includes('yoga') || lower.includes('swim')) tag = 'exercise';
   else if (lower.includes('study') || lower.includes('math') || lower.includes('english') || lower.includes('chemistry') || lower.includes('biology') || lower.includes('physics') || lower.includes('mandarin') || lower.includes('class') || lower.includes('lesson') || lower.includes('tutor') || lower.includes('read') || lower.includes('learn') || lower.includes('homework')) tag = 'study';
   else if (lower.includes('design') || lower.includes('movie') || lower.includes('film') || lower.includes('hobby') || lower.includes('app') || lower.includes('build') || lower.includes('project') || lower.includes('creative') || lower.includes('art') || lower.includes('music') || lower.includes('game')) tag = 'hobby';
+  // Match custom tag labels
+  for (const t of TAG_ORDER) {
+    if (t === 'deep-work' || t === 'meeting' || t === 'exercise' || t === 'study' || t === 'hobby') continue;
+    const label = (TAG_LABELS[t] || '').toLowerCase();
+    if (label && lower.includes(label)) { tag = t; break; }
+  }
   // Time-of-day smart default if no tag keyword matched
   if (tag === 'meeting') {
     if (startH >= 5 && startH < 12) tag = 'deep-work';
@@ -3789,9 +3818,9 @@ function localParse(text) {
   if (conflict) {
     const dur = tEndM - tStartM;
     const slot = findFreeSlot(dateStr, dur);
-    if (slot) { return { title, date: dateStr, startTime: slot.startTime, endTime: slot.endTime, tag, _adjusted: true }; }
+    if (slot) { return { title, date: dateStr, startTime: slot.startTime, endTime: slot.endTime, tag, subcategory: '', _adjusted: true }; }
   }
-  return { title, date: dateStr, startTime: `${String(startH).padStart(2,'0')}:${String(startM).padStart(2,'0')}`, endTime: `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`, tag };
+  return { title, date: dateStr, startTime: `${String(startH).padStart(2,'0')}:${String(startM).padStart(2,'0')}`, endTime: `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`, tag, subcategory: '' };
 }
 
 
@@ -4734,9 +4763,20 @@ TASK TITLE QUALITY — make every task title specific and descriptive:
 
 WEEKLY SCHEDULE RULE: When the user says "schedule my week", "make a weekly schedule", or similar, create tasks for ALL 5-7 days (Monday through Sunday) unless they specify otherwise. Fill each day with a balanced mix: typically 1 deep work block, 1 meeting, 1 exercise, and optional study/hobby. The actions array can hold many tasks — don't limit yourself to 1-2 days. Aim for a complete, realistic week.
 
-Available tags: "deep-work", "meeting", "exercise", "study", "hobby" (default: "meeting")
+Available tags: ${TAG_ORDER.map(t => `"${t}"`).join(', ')} (default: "meeting")
+Tag labels: ${TAG_ORDER.map(t => `"${t}" = "${TAG_LABELS[t]}"`).join(', ')}
+${(() => {
+  const subcatMap = loadSubcategories();
+  const parts = [];
+  for (const t of TAG_ORDER) {
+    const subs = subcatMap[t] || [];
+    if (subs.length > 0) parts.push(`"${t}" subcategories: ${subs.map(s => `"${s}"`).join(', ')}`);
+  }
+  return parts.length > 0 ? 'SUBCATEGORIES per tag:\n' + parts.join('\n') : '';
+})()}
 Default duration: 60 minutes. Default time: 09:00.
 Tomorrow = next day from today. Day names = next occurrence.
+When creating a task, if the user mentions a known subcategory, include "subcategory" in the data.
 
 You MUST return your response as VALID JSON with this exact format:
 {
@@ -4749,15 +4789,16 @@ You MUST return your response as VALID JSON with this exact format:
         "date": "YYYY-MM-DD",
         "startTime": "HH:MM",
         "endTime": "HH:MM",
-        "tag": "tag-name"
+        "tag": "tag-name",
+        "subcategory": "subcategory-name or empty"
       }
     }
   ]
 }
 
 AVAILABLE ACTION TYPES:
-- "createTask": create a new task. data: { title, date, startTime, endTime, tag }
-- "updateTask": modify an existing task. data: { id, changes: { title?, date?, startTime?, endTime?, tag?, completed? } }
+- "createTask": create a new task. data: { title, date, startTime, endTime, tag, subcategory? }
+- "updateTask": modify an existing task. data: { id, changes: { title?, date?, startTime?, endTime?, tag?, subcategory?, completed? } }
 - "deleteTask": delete a single task by its id. data: { id }
 - "clearAllTasks": delete EVERY task on the schedule (keeps whiteboard ideas). data: {} (empty)
 - "clearDate": delete all tasks on a specific date. data: { date: "YYYY-MM-DD" }
