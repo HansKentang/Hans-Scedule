@@ -1588,11 +1588,11 @@ const DEFAULT_IMAGES = {
   'sidebar-tags': 'https://images.unsplash.com/photo-1768527049008-85f2cc0166be?auto=format&fit=crop&w=440&q=80',
   'sidebar-index': 'https://images.unsplash.com/photo-1752503650851-cbc3f8b00679?auto=format&fit=crop&w=440&q=80',
   'sidebar-gallery': 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=440&q=80',
-  'gallery-schedule': '',
-  'gallery-activities': '',
-  'gallery-tags': '',
-  'gallery-analytics': '',
-  'gallery-goals': ''
+  'gallery-schedule': 'https://picsum.photos/seed/haven-gallery-schedule/600/200',
+  'gallery-activities': 'https://picsum.photos/seed/haven-gallery-activities/600/200',
+  'gallery-tags': 'https://picsum.photos/seed/haven-gallery-tags/600/200',
+  'gallery-analytics': 'https://picsum.photos/seed/haven-gallery-analytics/600/200',
+  'gallery-goals': 'https://picsum.photos/seed/haven-gallery-goals/600/200'
 };
 
 // ─── INDEXEDDB FOR IMAGES (unlimited storage) ──────────────

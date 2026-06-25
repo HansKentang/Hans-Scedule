@@ -385,55 +385,6 @@
           </section>
         </div>
 
-        <div class="hub-section-wrap" data-hub-section="today-schedule">
-          <div class="hub-section-header">
-            <span class="hub-section-drag-handle" draggable="true">⠿</span>
-            <span class="hub-section-label">Today's Schedule</span>
-          </div>
-          <div class="hub-anim-in hub-anim-in-5" style="margin-bottom:var(--space-5)">
-
-            <!-- Day summary bar -->
-            <div class="td-summary" id="tdSummary">
-              <div class="td-summary-top">
-                <div class="td-summary-left">
-                  <span class="td-summary-date" id="tdDate"></span>
-                  <span class="td-summary-count" id="tdCount"></span>
-                </div>
-                <div class="td-summary-right">
-                  <span class="td-summary-completed" id="tdCompleted"></span>
-                </div>
-              </div>
-              <div class="td-progress-track">
-                <div class="td-progress-fill" id="tdProgressFill"></div>
-              </div>
-            </div>
-
-            <!-- Visual timeline -->
-            <div class="td-timeline" id="hubTimeline">
-              <div class="td-empty">No tasks today</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="hub-section-wrap" data-hub-section="this-week">
-          <div class="hub-section-header">
-            <span class="hub-section-drag-handle" draggable="true">⠿</span>
-            <span class="hub-section-label">This Week</span>
-          </div>
-          <div class="hub-weekly hub-anim-in hub-anim-in-6">
-            <div class="hub-db-header" style="margin-bottom:var(--space-3)">
-              <div class="hub-db-title">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                This Week
-              </div>
-              <span class="hub-db-count"><strong id="statWeekDayCount2">0</strong> tasks</span>
-            </div>
-            <div class="hub-weekly-chart" id="hubWeeklyChart"></div>
-          </div>
-        </div>
-
         <div class="hub-section-wrap" data-hub-section="gallery">
           <div class="hub-section-header">
             <span class="hub-section-drag-handle" draggable="true">⠿</span>
@@ -635,107 +586,15 @@
 
       var _c1 = document.getElementById('statWeekDayCount');
       if (_c1) _c1.textContent = todayTasks.length;
-      document.getElementById('statWeekDayCount2').textContent = weekTasks.length;
       const weekTasksEl = document.getElementById('hubWeekTasks');
       if (weekTasksEl) weekTasksEl.textContent = weekTasks.length + ' this week';
       const totalTasksEl = document.getElementById('hubTotalTasks');
       if (totalTasksEl) totalTasksEl.textContent = all.length + ' total';
 
-      renderTimeline(todayTasks);
-      renderWeeklyChart(ws);
       if (typeof renderSleepHub === 'function') renderSleepHub();
     }
 
-    // ─── WEEKLY PLANNER GRID ──────────────────────────────
-    // ─── TIMELINE RENDER (Horizontal Cards) ──────────────
-    function parseTimeMins(t) {
-      if (!t) return 0;
-      var p = t.split(':').map(Number);
-      return p[0] * 60 + (p[1] || 0);
-    }
-    function renderTimeline(todayTasks) {
-      var list = document.getElementById('hubTimeline');
-      if (!list) return;
 
-      var now = new Date();
-      var dateEl = document.getElementById('tdDate');
-      if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-
-      var total = todayTasks.length;
-      var completed = todayTasks.filter(t => t.completed).length;
-      var countEl = document.getElementById('tdCount');
-      if (countEl) countEl.textContent = total + ' task' + (total !== 1 ? 's' : '');
-      var compEl = document.getElementById('tdCompleted');
-      if (compEl) compEl.textContent = completed + '/' + total + ' done';
-      var progEl = document.getElementById('tdProgressFill');
-      if (progEl) progEl.style.width = total > 0 ? (completed / total * 100) + '%' : '0%';
-
-      if (total === 0) {
-        list.innerHTML = '<div class="td-empty">No tasks today</div>';
-        return;
-      }
-
-      var sorted = [...todayTasks].sort((a, b) => parseTimeMins(a.startTime) - parseTimeMins(b.startTime));
-
-      var html = '<div class="td-timeline-body">';
-      for (var ti = 0; ti < sorted.length; ti++) {
-        var task = sorted[ti];
-        var meta = getTagMeta(task.tag);
-        var doneCls = task.completed ? ' td-task-done' : '';
-        html += '<div class="td-task' + doneCls + '" data-task-id="' + task.id + '" style="--td-task-color:' + meta.text + '">';
-        html += '<span class="td-task-check' + (task.completed ? ' checked' : '') + '" data-toggle-complete="' + task.id + '"></span>';
-        html += '<div class="td-task-info">';
-        html += '<span class="td-task-time">' + task.startTime + (task.endTime ? '\u2013' + task.endTime : '') + '</span>';
-        html += '<span class="td-task-title">' + escapeHtml(task.title) + '</span>';
-        html += '</div>';
-        html += '<span class="td-task-tag" style="color:' + meta.text + ';background:' + meta.bg + '">' + task.tag + '</span>';
-        html += '</div>';
-      }
-      html += '</div>';
-      list.innerHTML = html;
-
-      list.querySelectorAll('.td-task').forEach(function(el) {
-        el.addEventListener('click', function(e) {
-          if (e.target.closest('[data-toggle-complete]')) {
-            var id = e.target.closest('[data-toggle-complete]').dataset.toggleComplete;
-            toggleComplete(id);
-            updateHub();
-            return;
-          }
-          openTaskModal(this.dataset.taskId);
-        });
-      });
-    }
-    // ─── WEEKLY CHART RENDER ─────────────────────────────
-    function renderWeeklyChart(weekStart) {
-      const chart = document.getElementById('hubWeeklyChart');
-      if (!chart) return;
-      const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-      const todayStr = formatDate(new Date());
-      const dayCounts = [];
-      let max = 0;
-      for (let i = 0; i < 7; i++) {
-        const d = addDays(weekStart, i);
-        const ds = formatDate(d);
-        const count = state.tasks.filter(t => t.date === ds && !isWhiteboardTask(t) && !t.completed).length;
-        dayCounts.push(count);
-        if (count > max) max = count;
-      }
-      if (max === 0) {
-        chart.innerHTML = '';
-        return;
-      }
-      let html = '';
-      for (let i = 0; i < 7; i++) {
-        const pct = (dayCounts[i] / max) * 100;
-        const isT = formatDate(addDays(weekStart, i)) === todayStr;
-        html += `<div class="hub-weekly-bar ${isT ? 'hub-weekly-bar-today' : ''}">
-          <div class="hub-weekly-bar-fill" style="height:${Math.max(pct, 4)}%"></div>
-          <span class="hub-weekly-bar-label">${dayLabels[i]}</span>
-        </div>`;
-      }
-      chart.innerHTML = html;
-    }
     // ─── QUICK ADD ───────────────────────────────────────
     const _hubQuickTags = ['meeting', 'deep-work', 'exercise', 'study', 'hobby'];
     let _hubQuickTagIdx = 0;

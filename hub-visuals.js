@@ -2528,9 +2528,11 @@ function setupHubEditEvents() {
   // Gallery card images — clickable in hub edit mode
   document.addEventListener('click', function(e) {
     if (!hubEditMode) return;
-    var galImg = e.target.closest('.hub-gallery-cover img[data-image-id]');
+    var cover = e.target.closest('.hub-gallery-cover');
+    if (!cover) return;
+    var galImg = cover.querySelector('img[data-image-id]');
     if (!galImg) return;
-    e.preventDefault();
+    if (e.target.closest('a')) e.preventDefault();
     openImagePicker(galImg.dataset.imageId);
   });
 }
