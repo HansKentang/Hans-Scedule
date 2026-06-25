@@ -1371,7 +1371,7 @@ function resetBentoInteractions() {
   _bubbleDragData = null;
   _bubbleResizeData = null;
   // Clean up dragging and selected classes from any stuck bubbles
-  document.querySelectorAll('.bento-bubble.dragging').forEach(function(el) { el.classList.remove('dragging'); });
+  document.querySelectorAll('.bento-bubble.dragging').forEach(function(el) { el.style.zIndex = ''; el.classList.remove('dragging'); });
   document.querySelectorAll('.bento-bubble.selected').forEach(function(el) { el.classList.remove('selected'); });
 }
 
@@ -1423,6 +1423,7 @@ function setupBubbleDragDrop() {
         _bubbleDragData.bubble.style.left = _bubbleDragData.originalX + 'px';
         _bubbleDragData.bubble.style.top = _bubbleDragData.originalY + 'px';
         _bubbleDragData.bubble.classList.remove('dragging');
+        _bubbleDragData.bubble.style.zIndex = '';
       }
       _bubbleDragData.cancelled = true;
       _bubbleDragData = null;
@@ -1432,6 +1433,7 @@ function setupBubbleDragDrop() {
       _bubbleResizeData.bubble.style.height = _bubbleResizeData.originalH + 'px';
       _bubbleResizeData.cancelled = true;
       _bubbleResizeData.bubble.classList.remove('dragging');
+      _bubbleResizeData.bubble.style.zIndex = '';
       var tip = document.querySelector('.bento-resize-tooltip');
       if (tip) tip.style.display = 'none';
       _bubbleResizeData = null;
@@ -1464,26 +1466,19 @@ function setupBubbleDragDrop() {
       _bubbleDragData.active = true;
       _bubbleDragData.dragLayout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
       _bubbleDragData.bubble.classList.add('dragging');
+      _bubbleDragData.bubble.style.zIndex = '9999';
     }
     var gr = grid.getBoundingClientRect();
     let newX = snap(e.clientX - _bubbleDragData.offsetX - gr.left);
     let newY = Math.max(0, snap(e.clientY - _bubbleDragData.offsetY - gr.top));
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
+    // Update layout for final collision on drop, but don't push other bubbles in real-time
     const dragLayout = _bubbleDragData.dragLayout;
     const dragItem = dragLayout.find(i => i.uid === _bubbleDragData.bubble.dataset.bubble);
     if (dragItem) {
       dragItem.x = newX;
       dragItem.y = newY;
-      // Real-time collision push during drag
-      resolveBubbleCollisions(dragLayout, undefined, undefined, _bubbleDragData.bubble.dataset.bubble);
-      grid.querySelectorAll('.bento-bubble').forEach(function(el) {
-        var it = dragLayout.find(i => i.uid === el.dataset.bubble);
-        if (it && it.uid !== _bubbleDragData.bubble.dataset.bubble) {
-          el.style.left = it.x + 'px';
-          el.style.top = it.y + 'px';
-        }
-      });
       updateAddBtnPosition();
     }
   });
@@ -1496,6 +1491,7 @@ function setupBubbleDragDrop() {
       return;
     }
     _bubbleDragData.bubble.classList.remove('dragging');
+    _bubbleDragData.bubble.style.zIndex = '';
     const bubble = _bubbleDragData.bubble;
     const gridRect = grid.getBoundingClientRect();
     const bRect = bubble.getBoundingClientRect();
@@ -1574,6 +1570,7 @@ function setupBubbleResize() {
       isSpotify: !!bubble.querySelector('.spotify-widget')
     };
     bubble.classList.add('dragging');
+    bubble.style.zIndex = '9999';
     resizeTip.style.display = 'block';
     resizeTip.textContent = Math.round(rect.width) + ' × ' + Math.round(rect.height);
     resizeTip.style.left = (e.clientX + 12) + 'px';
@@ -1608,21 +1605,13 @@ function setupBubbleResize() {
     resizeTip.textContent = Math.round(finalW) + ' × ' + Math.round(finalH);
     resizeTip.style.left = (e.clientX + 12) + 'px';
     resizeTip.style.top = (e.clientY - 32) + 'px';
-    // Real-time collision push during resize
+    // Update layout for final collision on drop, but don't push other bubbles in real-time
     var resizeLayout = _bubbleResizeData.resizeLayout;
     var resizeUid = bubble.dataset.bubble;
     var resizeItem = resizeLayout.find(function(i) { return i.uid === resizeUid; });
     if (resizeItem) {
       if (axis === 'e' || axis === 'se') resizeItem.w = finalW;
       if (axis === 's' || axis === 'se') resizeItem.h = finalH;
-      resolveBubbleCollisions(resizeLayout, undefined, undefined, resizeUid);
-      grid.querySelectorAll('.bento-bubble').forEach(function(el) {
-        var it = resizeLayout.find(function(i) { return i.uid === el.dataset.bubble; });
-        if (it && it.uid !== resizeUid) {
-          el.style.left = it.x + 'px';
-          el.style.top = it.y + 'px';
-        }
-      });
       updateAddBtnPosition();
     }
   });
@@ -1631,6 +1620,7 @@ function setupBubbleResize() {
     if (!_bubbleResizeData) return;
     var cancelled = _bubbleResizeData.cancelled;
     _bubbleResizeData.bubble.classList.remove('dragging');
+    _bubbleResizeData.bubble.style.zIndex = '';
     if (cancelled) { resizeTip.style.display = 'none'; _bubbleResizeData = null; return; }
     const bubble = _bubbleResizeData.bubble;
     const gridRect = grid.getBoundingClientRect();
