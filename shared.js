@@ -1644,10 +1644,6 @@ function setImage(id, url) {
   });
   // Best-effort localStorage cache (silent if full — IndexedDB has the image)
   try { localStorage.setItem('haven-image-' + id, url); } catch(e) { /* ignore */ }
-  if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
-    var _item = hubContent.bentoLayout.find(function(i){return i.imageId === id;});
-    if (_item) _item._imgUrl = url;
-  }
   document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(function(el) {
     el.src = url;
     el.style.display = url ? 'block' : 'none';
@@ -1681,10 +1677,6 @@ function resetImage(id) {
   delete state.images[id];
   _imgDBDelete(id).catch(function() {});
   try { localStorage.removeItem('haven-image-' + id); } catch(e) { /* ignore */ }
-  if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
-    const item = hubContent.bentoLayout.find(i => i.imageId === id);
-    if (item && item._imgUrl) delete item._imgUrl;
-  }
   const url = DEFAULT_IMAGES[id] || '';
   document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => {
     el.src = url;

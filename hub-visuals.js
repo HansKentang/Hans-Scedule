@@ -556,7 +556,7 @@ function renderHubBento() {
         </div>`;
       case 'images':
         const imgId = item.imageId || 'hub-tulips';
-        const imgUrl = item.imageUrl || getImage(imgId);
+        const imgUrl = getImage(imgId);
         const imgFit = 'cover';
         const hasImg = !!imgUrl;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:var(--gutter);border:1px solid var(--border-color);background:var(--surface-container)">
@@ -1022,15 +1022,7 @@ function renderHubBento() {
     if (el.dataset.imageId && el.dataset.imageId.indexOf('sidebar-') === 0) return;
     el.src = getImage(el.dataset.imageId) || '';
   });
-  // Apply per-widget imageUrl overrides
-  document.querySelectorAll('.bento-grid .bento-bubble[data-bubble]').forEach(function(el) {
-    var _uid = el.dataset.bubble;
-    var _item = hubContent.bentoLayout.find(function(i) { return i.uid === _uid; });
-    if (_item && _item.t === 'images' && _item.imageUrl) {
-      var _img = el.querySelector('img');
-      if (_img) _img.src = _item.imageUrl;
-    }
-  });
+
 
   // Bottom padding for fixed Done button in edit mode
   grid.style.paddingBottom = isEdit ? '64px' : '';
@@ -2526,16 +2518,8 @@ function setupHubEditEvents() {
       var _uid = _pickerBubble ? _pickerBubble.dataset.bubble : null;
       if (!_uid) return;
       var _layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
-      var _item = _layout.find(function(i) { return i.uid === _uid; });
-      if (_item && _item.t === 'images' && _item.imageId === _imgId) {
-        if (_url) {
-          _item.imageUrl = _url;
-        } else {
-          delete _item.imageUrl;
-        }
-        hubContent.bentoLayout = _layout;
-        saveHubContent();
-      }
+      hubContent.bentoLayout = _layout;
+      saveHubContent();
     };
     openImagePicker(wrap.dataset.imgPicker);
   });
