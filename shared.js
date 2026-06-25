@@ -1493,7 +1493,9 @@ const DEFAULT_IMAGES = {
   'sidebar-analytics': 'https://images.unsplash.com/photo-1759210358926-4673cc44d35f?auto=format&fit=crop&w=440&q=80',
   'sidebar-goals': 'https://images.unsplash.com/photo-1731176497854-f9ea4dd52eb6?auto=format&fit=crop&w=440&q=80',
   'sidebar-finance': 'https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&w=440&q=80',
-  'sidebar-tags': 'https://images.unsplash.com/photo-1768527049008-85f2cc0166be?auto=format&fit=crop&w=440&q=80'
+  'sidebar-tags': 'https://images.unsplash.com/photo-1768527049008-85f2cc0166be?auto=format&fit=crop&w=440&q=80',
+  'sidebar-index': 'https://images.unsplash.com/photo-1752503650851-cbc3f8b00679?auto=format&fit=crop&w=440&q=80',
+  'sidebar-gallery': 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=440&q=80'
 };
 
 function loadImages() {
@@ -2629,22 +2631,33 @@ function loadSidebarConfig() {
       }
       // Ensure every page has at least one image
       if (!config.images) config.images = [];
+      var _needsSave = false;
       var defaultPages = ['index','schedule','activities','analytics','goals','finance','tags','gallery'];
       for (var p = 0; p < defaultPages.length; p++) {
         var pageName = defaultPages[p];
         var has = false;
         for (var i = 0; i < config.images.length; i++) {
-          if (config.images[i].page === pageName) { has = true; break; }
+          if (config.images[i].page === pageName) {
+            has = true;
+            // Unhide entries that match a default — likely accidentally hidden
+            if (config.images[i].hidden) {
+              config.images[i].hidden = false;
+              _needsSave = true;
+            }
+            break;
+          }
         }
         if (!has) {
           for (var d = 0; d < SIDEBAR_IMAGE_DEFAULTS.length; d++) {
             if (SIDEBAR_IMAGE_DEFAULTS[d].page === pageName) {
               config.images.push({ id: SIDEBAR_IMAGE_DEFAULTS[d].id, label: SIDEBAR_IMAGE_DEFAULTS[d].label, page: SIDEBAR_IMAGE_DEFAULTS[d].page, url: SIDEBAR_IMAGE_DEFAULTS[d].url });
+              _needsSave = true;
               break;
             }
           }
         }
       }
+      if (_needsSave) saveSidebarConfig(config);
       return config;
     }
   } catch {}
@@ -2967,7 +2980,6 @@ function renderSidebarImages() {
         var _sbDef = SIDEBAR_IMAGE_DEFAULTS.find(function(d) { return d.page === currentPage; });
         if (_sbDef) url = _sbDef.url;
       }
-      if (!url) return;
       // Sync to state.images so Visuals image picker shows correct URL
       if (state.images) state.images[sidebarId] = url;
 
@@ -2976,13 +2988,13 @@ function renderSidebarImages() {
       if (img.hidden) item.classList.add('hub-sidebar-image-hidden');
       item.dataset.imageId = img.id;
       const label = img.label || img.id;
-      item.innerHTML = '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' +
+      item.innerHTML = (url ? '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' : '<div class="hub-sidebar-image-empty">No image</div>') +
         '<span class="hub-sidebar-image-label">' + label + '</span>';
       // Click: in Visuals edit mode → image picker, else → lightbox
       item.addEventListener('click', function() {
         if (state.editMode) {
           openImagePicker(sidebarId);
-        } else {
+        } else if (url) {
           openImageLightbox(url, label);
         }
       });
