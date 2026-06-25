@@ -2524,6 +2524,15 @@ function setupHubEditEvents() {
     };
     openImagePicker(wrap.dataset.imgPicker);
   });
+
+  // Gallery card images — clickable in hub edit mode
+  document.addEventListener('click', function(e) {
+    if (!hubEditMode) return;
+    var galImg = e.target.closest('.hub-gallery-cover img[data-image-id]');
+    if (!galImg) return;
+    e.preventDefault();
+    openImagePicker(galImg.dataset.imageId);
+  });
 }
 
 /* ─── Hub FAB (speed-dial) ──────────────────── */

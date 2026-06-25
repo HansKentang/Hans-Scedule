@@ -451,6 +451,7 @@
           <nav class="hub-gallery">
             <a href="schedule.html" class="hub-gallery-card">
               <div class="hub-gallery-cover" style="background:var(--tag-deep-work-bg)">
+                <img data-image-id="gallery-schedule" src="" alt="">
                 <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, var(--tag-deep-work-text), transparent)"></div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tag-deep-work-text)">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
@@ -468,6 +469,7 @@
 
             <a href="activities.html" class="hub-gallery-card">
               <div class="hub-gallery-cover" style="background:var(--tag-meeting-bg)">
+                <img data-image-id="gallery-activities" src="" alt="">
                 <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, var(--tag-meeting-text), transparent)"></div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tag-meeting-text)">
                   <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
@@ -485,6 +487,7 @@
 
             <a href="tags.html" class="hub-gallery-card">
               <div class="hub-gallery-cover" style="background:var(--tag-study-bg)">
+                <img data-image-id="gallery-tags" src="" alt="">
                 <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, var(--tag-study-text), transparent)"></div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tag-study-text)">
                   <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
@@ -502,6 +505,7 @@
 
             <a href="analytics.html" class="hub-gallery-card">
               <div class="hub-gallery-cover" style="background:var(--tag-hobby-bg)">
+                <img data-image-id="gallery-analytics" src="" alt="">
                 <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, var(--tag-hobby-text), transparent)"></div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tag-hobby-text)">
                   <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
@@ -519,6 +523,7 @@
 
             <a href="goals.html" class="hub-gallery-card">
               <div class="hub-gallery-cover" style="background:var(--tag-deep-work-bg)">
+                <img data-image-id="gallery-goals" src="" alt="">
                 <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, var(--tag-deep-work-text), transparent)"></div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tag-deep-work-text)">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -642,30 +647,22 @@
     }
 
     // ─── WEEKLY PLANNER GRID ──────────────────────────────
-    // ─── TIMELINE RENDER (Full Day Timetable) ────────────
+    // ─── TIMELINE RENDER (Horizontal Cards) ──────────────
     function parseTimeMins(t) {
       if (!t) return 0;
       var p = t.split(':').map(Number);
       return p[0] * 60 + (p[1] || 0);
     }
-    function formatMins(m) {
-      var h = Math.floor(m / 60);
-      var min = m % 60;
-      return String(h).padStart(2, '0') + ':' + String(min).padStart(2, '0');
-    }
     function renderTimeline(todayTasks) {
       var list = document.getElementById('hubTimeline');
       if (!list) return;
 
-      // Date
       var now = new Date();
       var dateEl = document.getElementById('tdDate');
       if (dateEl) dateEl.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-      // Stats
       var total = todayTasks.length;
-      var completed = todayTasks.filter(function(t) { return t.completed; }).length;
-      var remaining = total - completed;
+      var completed = todayTasks.filter(t => t.completed).length;
       var countEl = document.getElementById('tdCount');
       if (countEl) countEl.textContent = total + ' task' + (total !== 1 ? 's' : '');
       var compEl = document.getElementById('tdCompleted');
@@ -678,69 +675,14 @@
         return;
       }
 
-      var sorted = [...todayTasks].sort(function(a, b) { return parseTimeMins(a.startTime) - parseTimeMins(b.startTime); });
+      var sorted = [...todayTasks].sort((a, b) => parseTimeMins(a.startTime) - parseTimeMins(b.startTime));
 
-      // Compute time bounds with 1h padding before earliest and after latest (min 7am–10pm)
-      var earliest = 420; // 7am default
-      var latest = 1320;  // 10pm default (22*60)
-      if (sorted.length > 0) {
-        var firstMin = parseTimeMins(sorted[0].startTime);
-        var lastTaskEnd = parseTimeMins(sorted[sorted.length - 1].startTime) + 60; // assume 1h duration
-        earliest = Math.max(360, Math.min(firstMin - 60, earliest));
-        latest = Math.min(1440, Math.max(lastTaskEnd + 60, latest));
-      }
-
-      var totalMins = latest - earliest;
-      var nowMins = now.getHours() * 60 + now.getMinutes();
-      var nowPct = ((nowMins - earliest) / totalMins) * 100;
-
-      var hourLabels = [];
-      for (var h = Math.ceil(earliest / 60); h <= Math.floor(latest / 60); h++) {
-        hourLabels.push(h);
-      }
-
-      var html = '<div class="td-timeline-body" style="--td-now-pct:' + Math.max(0, Math.min(100, nowPct)) + '%">';
-
-      // Hour markers
-      html += '<div class="td-hours">';
-      for (var hi = 0; hi < hourLabels.length; hi++) {
-        var hVal = hourLabels[hi];
-        var ampm = hVal < 12 ? 'AM' : 'PM';
-        var h12 = hVal % 12 || 12;
-        var topPct = ((hVal * 60 - earliest) / totalMins) * 100;
-        html += '<div class="td-hour-marker" style="top:' + topPct + '%"><span class="td-hour-label">' + h12 + ampm + '</span><span class="td-hour-line"></span></div>';
-      }
-      html += '</div>';
-
-      // Now indicator (only if within bounds)
-      if (nowMins >= earliest && nowMins <= latest) {
-        html += '<div class="td-now-indicator"><span class="td-now-dot"></span><span class="td-now-line"></span></div>';
-      }
-
-      // Task blocks
-      html += '<div class="td-slots">';
-      var prevEnd = earliest;
+      var html = '<div class="td-timeline-body">';
       for (var ti = 0; ti < sorted.length; ti++) {
         var task = sorted[ti];
-        var startMins = parseTimeMins(task.startTime);
-        var endMins = parseTimeMins(task.endTime) || (startMins + 60);
-        if (endMins <= startMins) endMins = startMins + 60;
-        startMins = Math.max(earliest, Math.min(latest, startMins));
-        endMins = Math.max(earliest, Math.min(latest, endMins));
-
-        // Gap before this task
-        if (startMins > prevEnd + 15) {
-          var gapPct = ((startMins - prevEnd) / totalMins) * 100;
-          var gapMins = startMins - prevEnd;
-          var gapLabel = gapMins >= 60 ? Math.floor(gapMins / 60) + 'h ' + (gapMins % 60) + 'm free' : gapMins + 'm free';
-          html += '<div class="td-gap" style="height:' + gapPct + '%"><span class="td-gap-label">' + gapLabel + '</span></div>';
-        }
-
-        // Task block
-        var taskPct = ((endMins - startMins) / totalMins) * 100;
         var meta = getTagMeta(task.tag);
         var doneCls = task.completed ? ' td-task-done' : '';
-        html += '<div class="td-task' + doneCls + '" data-task-id="' + task.id + '" style="height:' + taskPct + '%;--td-task-color:' + meta.text + '">';
+        html += '<div class="td-task' + doneCls + '" data-task-id="' + task.id + '" style="--td-task-color:' + meta.text + '">';
         html += '<span class="td-task-check' + (task.completed ? ' checked' : '') + '" data-toggle-complete="' + task.id + '"></span>';
         html += '<div class="td-task-info">';
         html += '<span class="td-task-time">' + task.startTime + (task.endTime ? '\u2013' + task.endTime : '') + '</span>';
@@ -748,23 +690,10 @@
         html += '</div>';
         html += '<span class="td-task-tag" style="color:' + meta.text + ';background:' + meta.bg + '">' + task.tag + '</span>';
         html += '</div>';
-
-        prevEnd = endMins;
       }
-
-      // Gap after last task
-      if (prevEnd < latest) {
-        var gapPct = ((latest - prevEnd) / totalMins) * 100;
-        var gapMins = latest - prevEnd;
-        var gapLabel = gapMins >= 60 ? Math.floor(gapMins / 60) + 'h ' + (gapMins % 60) + 'm free' : gapMins + 'm free';
-        html += '<div class="td-gap td-gap-end" style="height:' + gapPct + '%"><span class="td-gap-label">' + gapLabel + '</span></div>';
-      }
-
-      html += '</div>'; // td-slots
-      html += '</div>'; // td-timeline-body
+      html += '</div>';
       list.innerHTML = html;
 
-      // Click handlers
       list.querySelectorAll('.td-task').forEach(function(el) {
         el.addEventListener('click', function(e) {
           if (e.target.closest('[data-toggle-complete]')) {

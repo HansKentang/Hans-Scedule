@@ -1587,7 +1587,12 @@ const DEFAULT_IMAGES = {
   'sidebar-finance': 'https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&w=440&q=80',
   'sidebar-tags': 'https://images.unsplash.com/photo-1768527049008-85f2cc0166be?auto=format&fit=crop&w=440&q=80',
   'sidebar-index': 'https://images.unsplash.com/photo-1752503650851-cbc3f8b00679?auto=format&fit=crop&w=440&q=80',
-  'sidebar-gallery': 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=440&q=80'
+  'sidebar-gallery': 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=440&q=80',
+  'gallery-schedule': '',
+  'gallery-activities': '',
+  'gallery-tags': '',
+  'gallery-analytics': '',
+  'gallery-goals': ''
 };
 
 // ─── INDEXEDDB FOR IMAGES (unlimited storage) ──────────────
@@ -2481,7 +2486,7 @@ const IMAGE_MANAGER_GROUPS = [
   },
   {
     label: 'Gallery',
-    ids: ['gallery-hero', 'gallery-avatar']
+    ids: ['gallery-hero', 'gallery-avatar', 'gallery-schedule', 'gallery-activities', 'gallery-tags', 'gallery-analytics', 'gallery-goals']
   }
 ];
 

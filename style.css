@@ -3561,93 +3561,41 @@ html.light .td-progress-fill {
   width: 0%;
 }
 
-/* ─── Visual Timeline ───────────────────────────────── */
+/* ─── Visual Timeline (horizontal cards) ─────────────── */
 .td-timeline {
-  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
 }
+.td-timeline::-webkit-scrollbar { height: 4px; }
+.td-timeline::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
 .td-timeline-body {
-  position: relative;
-  padding-left: 48px;
-}
-.td-hours {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 40px;
-  pointer-events: none;
-}
-.td-hour-marker {
-  position: absolute;
-  left: 0;
-  right: 0;
   display: flex;
-  align-items: center;
-  transform: translateY(-50%);
-  z-index: 1;
-}
-.td-hour-label {
-  font-size: 0.55rem;
-  font-weight: 700;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-  width: 40px;
-  text-align: right;
-  padding-right: 6px;
-  flex-shrink: 0;
-}
-.td-hour-line {
-  flex: 1;
-  height: 1px;
-  background: var(--border-subtle);
-}
-.td-now-indicator {
-  position: absolute;
-  left: 48px;
-  right: 0;
-  top: var(--td-now-pct, 0%);
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-  transform: translateY(-50%);
-}
-.td-now-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ef4444;
-  flex-shrink: 0;
-  margin-left: -4px;
-  box-shadow: 0 0 6px rgba(239,68,68,0.5);
-}
-.td-now-line {
-  flex: 1;
-  height: 2px;
-  background: #ef4444;
-  opacity: 0.7;
-}
-.td-slots {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  gap: var(--space-2);
+  min-height: 64px;
+  align-items: stretch;
 }
 .td-task {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
   border-left: 3px solid var(--td-task-color, var(--text-tertiary));
   background: color-mix(in srgb, var(--td-task-color, var(--text-tertiary)) 8%, var(--bg-primary));
   cursor: pointer;
   transition: all var(--t-fast);
-  min-height: 28px;
+  min-height: 48px;
+  min-width: 160px;
+  max-width: 220px;
+  flex-shrink: 0;
   overflow: hidden;
 }
 .td-task:hover {
   background: color-mix(in srgb, var(--td-task-color, var(--text-tertiary)) 15%, var(--bg-primary));
+  border-color: var(--td-task-color, var(--border-color));
 }
 .td-task.td-task-done {
   opacity: 0.5;
@@ -3689,14 +3637,14 @@ html.light .td-progress-fill {
   gap: 1px;
 }
 .td-task-time {
-  font-size: 0.5rem;
+  font-size: 0.55rem;
   font-weight: 600;
   color: var(--text-tertiary);
   font-family: var(--font-mono);
-  opacity: 0.7;
+  white-space: nowrap;
 }
 .td-task-title {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 500;
   color: var(--text-primary);
   white-space: nowrap;
@@ -3711,22 +3659,7 @@ html.light .td-progress-fill {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   flex-shrink: 0;
-}
-.td-gap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 20px;
-}
-.td-gap-label {
-  font-size: 0.5rem;
-  color: var(--text-tertiary);
-  opacity: 0.4;
-  font-style: italic;
-  letter-spacing: 0.02em;
-}
-.td-gap-end .td-gap-label {
-  opacity: 0.25;
+  align-self: flex-start;
 }
 
 /* ─── GALLERY CARDS ───────────────────────────────────── */
@@ -3752,9 +3685,19 @@ html.light .td-progress-fill {
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
 }
+.hub-gallery-cover img[data-image-id] {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
 .hub-gallery-cover-bg {
   position: absolute; inset: 0;
   opacity: 0.12;
+  z-index: 1;
+}
+.hub-gallery-cover svg {
+  position: relative; z-index: 2;
 }
 .hub-gallery-body {
   padding: var(--space-3) var(--space-4);
