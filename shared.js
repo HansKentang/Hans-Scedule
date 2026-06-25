@@ -1519,13 +1519,12 @@ function applyImages() {
 function restoreDirectImageKeys() {
   if (!state || !state.images) return;
   var _found = 0;
-  var _knownIds = Object.keys(DEFAULT_IMAGES);
-  for (var _i = 0; _i < _knownIds.length; _i++) {
-    var _id = _knownIds[_i];
-    var _v = localStorage.getItem('haven-image-' + _id);
-    if (_v) {
-      state.images[_id] = _v;
-      _found++;
+  for (var _j = 0; _j < localStorage.length; _j++) {
+    var _key = localStorage.key(_j);
+    if (_key && _key.indexOf('haven-image-') === 0) {
+      var _imgId = _key.slice('haven-image-'.length);
+      var _val = localStorage.getItem(_key);
+      if (_val) { state.images[_imgId] = _val; _found++; }
     }
   }
   if (_found) console.warn('[img] restoreDirectImageKeys found', _found, 'keys');
