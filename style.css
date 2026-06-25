@@ -6106,6 +6106,15 @@ html.light .hub-add-popup {
 
 /* ─── Edit mode enhancements ──────────── */
 .hub-edit .bento-bubble { cursor:pointer; }
+.hub-edit .hub-gallery-cover img[data-image-id] {
+  cursor: pointer !important;
+  filter: brightness(1.08);
+  transition: filter var(--t-fast), box-shadow var(--t-fast), transform var(--t-fast);
+}
+.hub-edit .hub-gallery-cover img[data-image-id]:hover {
+  filter: brightness(1.2);
+  box-shadow: 0 0 0 3px var(--primary), 0 0 24px color-mix(in srgb, var(--primary) 30%, transparent);
+}
 
 /* .bento-bubble-duplicate now uses .bento-bubble-btn class */
 .bento-resize-tooltip { position:fixed; background:var(--bg-primary); color:var(--text-primary); font-size:0.7rem; font-weight:600; padding:3px 8px; border-radius:6px; border:1px solid var(--border-color); pointer-events:none; z-index:1000; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.08); display:none; font-variant-numeric:tabular-nums; }
