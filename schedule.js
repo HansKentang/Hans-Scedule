@@ -2209,11 +2209,13 @@ function renderSchTemplates() {
     const col = TAG_COLORS[tag] || TAG_COLORS.meeting;
     const accent = col.text;
     const isOpen = state._openPmTag === tag;
+    const isBuiltin = BUILTIN_TAGS.includes(tag);
     html += `<button class="sch-pm-chip${isOpen ? ' active' : ''}" data-pm-tag="${tag}"
       style="--chip-accent:${accent}">
       <span class="sch-pm-chip-dot" style="background:${accent}"></span>
       ${TAG_LABELS[tag]}
       ${subs.length > 0 ? `<span class="sch-pm-chip-count">${subs.length}</span>` : ''}
+      ${!isBuiltin ? `<button class="sch-pm-chip-del" data-del-tag="${tag}" title="Delete category">✕</button>` : ''}
     </button>`;
   }
   container.innerHTML = html;
@@ -2230,6 +2232,23 @@ function renderSchTemplates() {
         renderSchTemplates();
         showSubcategoryBubble(tag);
       }
+    });
+  });
+
+  // Delete button on custom category chips
+  container.querySelectorAll('.sch-pm-chip-del').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tag = btn.dataset.delTag;
+      if (!tag) return;
+      const label = TAG_LABELS[tag] || tag;
+      removeCustomCategory(tag);
+      if (state._openPmTag === tag) {
+        state._openPmTag = TAG_ORDER[0] || null;
+      }
+      renderSchTemplates();
+      if (state._openPmTag) showSubcategoryBubble(state._openPmTag);
+      showToast(`"${label}" deleted`, 'info', 2000);
     });
   });
 
