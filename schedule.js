@@ -1664,11 +1664,10 @@ function bindEvents() {
 
   // Access Hub
   document.getElementById('accessMain')?.addEventListener('click', toggleAccessHub);
-  document.getElementById('accessFocusTimer')?.addEventListener('click', () => { toggleAccessHub(); openPomodoro(); });
-document.getElementById('accessTemplates')?.addEventListener('click', () => { toggleAccessHub(); showCmdPalette(); });
   document.getElementById('accessFocusMode')?.addEventListener('click', () => { toggleAccessHub(); toggleFocusMode(); showToast('🎯 Focus mode ' + (focusModeActive ? 'activated' : 'deactivated'), 'info', 2000); });
-  document.getElementById('accessToday')?.addEventListener('click', () => { toggleAccessHub(); goToday(); });
-  document.getElementById('accessIdea')?.addEventListener('click', () => { toggleAccessHub(); openQuickIdea(); });
+  document.getElementById('accessAIChat')?.addEventListener('click', () => { toggleAccessHub(); if (typeof showAIChat === 'function') showAIChat(); });
+  document.getElementById('accessScreenshot')?.addEventListener('click', () => { toggleAccessHub(); setTimeout(captureWeekScreenshot, 200); });
+  document.getElementById('accessCopyWeek')?.addEventListener('click', () => { toggleAccessHub(); copyWeekToNext(); });
 
   // Close Access Hub on outside click
   document.addEventListener('click', (e) => {
@@ -2254,4 +2253,72 @@ function renderSchTemplates() {
   scrollToCurrentTime();
   scheduleReminderCheck();
   requestNotifPermission();
+
+  /* ─── Screenshot week ─────────────────────── */
+  window.captureWeekScreenshot = function() {
+    if (typeof showToast !== 'function') return;
+    var grid = document.getElementById('calendarGrid') || document.getElementById('calendarContainer');
+    if (!grid) { showToast('Schedule grid not found', 'error'); return; }
+    if (typeof html2canvas === 'undefined') { showToast('Screenshot library not loaded', 'error'); return; }
+    showToast('Capturing screenshot...', 'info', 1500);
+    html2canvas(grid, { backgroundColor: '#fff', scale: 2, useCORS: true, allowTaint: false }).then(function(canvas) {
+      canvas.toBlob(function(blob) {
+        try {
+          navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]).then(function() {
+            showToast('Screenshot copied to clipboard!', 'success', 2000);
+          }).catch(function() {
+            // Fallback: download
+            var link = document.createElement('a');
+            link.download = 'schedule-' + formatDate(new Date()) + '.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            showToast('Screenshot downloaded', 'success', 2000);
+          });
+        } catch(e) {
+          var link = document.createElement('a');
+          link.download = 'schedule-' + formatDate(new Date()) + '.png';
+          link.href = canvas.toDataURL();
+          link.click();
+          showToast('Screenshot downloaded', 'success', 2000);
+        }
+      });
+    }).catch(function() {
+      showToast('Screenshot failed', 'error');
+    });
+  };
+
+  /* ─── Copy week to next week ──────────────── */
+  window.copyWeekToNext = function() {
+    if (typeof showToast !== 'function') return;
+    var ws = state.currentWeekStart;
+    if (!ws) { showToast('No week loaded', 'error'); return; }
+    var weekEnd = addDays(ws, 7);
+    var nextMon = addDays(ws, 7);
+    var tasks = typeof loadTasks === 'function' ? loadTasks() : (state.tasks || []);
+    var weekTasks = tasks.filter(function(t) {
+      return t.date && t.date >= formatDate(ws) && t.date < formatDate(weekEnd) && !t.completed;
+    });
+    if (!weekTasks.length) { showToast('No uncompleted tasks this week', 'info', 2000); return; }
+    var copied = 0;
+    weekTasks.forEach(function(t) {
+      var oldDate = new Date(t.date);
+      var newDate = addDays(oldDate, 7);
+      createTask({
+        title: t.title,
+        date: formatDate(newDate),
+        startTime: t.startTime,
+        endTime: t.endTime,
+        tag: t.tag,
+        subcategory: t.subcategory || '',
+        notes: t.notes || '',
+        priority: t.priority || 3
+      });
+      copied++;
+    });
+    if (typeof pageAfterTaskSave === 'function') pageAfterTaskSave();
+    renderCalendar();
+    showToast('Copied ' + copied + ' task' + (copied > 1 ? 's' : '') + ' to next week', 'success', 3000);
+  };
 })();

@@ -2020,6 +2020,7 @@ function showHubAddPopup(e) {
     <div class="add-title">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
       Add to Canvas
+      <button class="add-guide-btn" id="hubAddGuide" title="Canvas Guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
     </div>
 
     <div class="add-list">
@@ -2036,6 +2037,7 @@ function showHubAddPopup(e) {
     <div class="hub-edit-popup-actions" id="hubAddActions"><button class="cancel primary" id="hubAddConfirm">Add Selected</button></div>
   `;
   document.body.appendChild(popup);
+  popup.querySelector('#hubAddGuide')?.addEventListener('click', function(e) { e.stopPropagation(); showCanvasGuide(); });
 
   var selected = {};
   // Toggle selection on click
@@ -2215,7 +2217,6 @@ function setupHubEditEvents() {
     _fabMain.addEventListener('click', toggleHubAccess);
     document.getElementById('hubFabEdit')?.addEventListener('click', function() { toggleHubAccess(); showHubEditToggle(); });
     document.getElementById('hubFabAdd')?.addEventListener('click', function() { toggleHubAccess(); showHubAddPopup(); });
-    document.getElementById('hubFabChat')?.addEventListener('click', function() { toggleHubAccess(); if (typeof showAIChat === 'function') showAIChat(); });
     document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
   }
   document.addEventListener('click', function(e) {
@@ -2668,7 +2669,6 @@ if (document.getElementById('hubAccessHub')) {
       });
       document.getElementById('hubFabEdit')?.addEventListener('click', function() { try { toggleHubAccess(); showHubEditToggle(); } catch(e) { console.error('Edit error:', e); } });
       document.getElementById('hubFabAdd')?.addEventListener('click', function() { toggleHubAccess(); showHubAddPopup(); });
-      document.getElementById('hubFabChat')?.addEventListener('click', function() { toggleHubAccess(); if (typeof showAIChat === 'function') showAIChat(); });
       document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
     }
   };

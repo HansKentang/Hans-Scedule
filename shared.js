@@ -4131,6 +4131,15 @@ function toggleAISendBtn() {
   }
 }
 
+function resetAIChat() {
+  if (!confirm('Clear all chat history?')) return;
+  aiChatHistory = [];
+  attachedFile = null;
+  try { localStorage.removeItem(CHAT_HISTORY_KEY); } catch(e) {}
+  hideAIChat();
+  setTimeout(showAIChat, 100);
+}
+
 function showAIChat() {
   if (!dom.aiChatPanel) return;
   const provider = state.apiProvider || 'groq';
@@ -4219,6 +4228,20 @@ function showAIChat() {
 
   // Show file badge if file is attached
   updateFileBadge();
+
+  // Add reset button to header if not already present
+  if (!document.getElementById('aiChatResetBtn')) {
+    var _actions = dom.aiChatPanel.querySelector('.ai-panel-header-actions');
+    if (_actions) {
+      var _resetBtn = document.createElement('button');
+      _resetBtn.id = 'aiChatResetBtn';
+      _resetBtn.className = 'ai-panel-icon-btn';
+      _resetBtn.title = 'Clear chat history';
+      _resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
+      _resetBtn.addEventListener('click', resetAIChat);
+      _actions.insertBefore(_resetBtn, _actions.querySelector('#aiChatClose'));
+    }
+  }
 
   dom.aiChatPanel.classList.remove('hidden');
   dom.aiChatOverlay.classList.remove('hidden');

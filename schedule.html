@@ -596,37 +596,31 @@
       <!-- Access Hub (Accessibility menu) -->
       <div class="access-hub hub-anim-in hub-anim-in-5" id="accessHub">
         <div class="access-items" id="accessItems">
-          <button class="access-item" data-action="focus-timer" id="accessFocusTimer" title="Focus Timer">
-            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </span>
-            <span class="access-item-label">Focus</span>
-          </button>
-
-          <button class="access-item" data-action="templates" id="accessTemplates" title="Templates">
-            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            </span>
-            <span class="access-item-label">Templates</span>
-          </button>
           <button class="access-item" data-action="focus-mode" id="accessFocusMode" title="Focus Mode">
             <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
             </span>
             <span class="access-item-label">Focus</span>
           </button>
-          <button class="access-item" data-action="today" id="accessToday" title="Go Today">
+          <button class="access-item" id="accessAIChat" title="Open AI assistant">
             <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
             </span>
-            <span class="access-item-label">Today</span>
+            <span class="access-item-label">AI</span>
           </button>
-          <button class="access-item" data-action="idea" id="accessIdea" title="New Idea">
+          <button class="access-item" id="accessScreenshot" title="Screenshot week">
             <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </span>
-            <span class="access-item-label">Idea</span>
+            <span class="access-item-label">Screenshot</span>
           </button>
+          <button class="access-item" id="accessCopyWeek" title="Copy this week to next">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </span>
+            <span class="access-item-label">Copy Week</span>
+          </button>
+
         </div>
         <button class="access-main" id="accessMain" aria-label="Accessibility menu">
           <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -1120,6 +1114,7 @@
   </script>
   <script src="shared.js"></script>
   <script src="schedule.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <!-- ─── Spotify Settings Modal ──────────────── -->
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">

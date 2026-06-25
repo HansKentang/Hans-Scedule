@@ -5922,6 +5922,24 @@ html.light .hub-add-popup {
   color: var(--primary);
   flex-shrink: 0;
 }
+.add-guide-btn {
+  margin-left: auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--t-fast);
+}
+.add-guide-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
 
 /* Bubble type list (like hide-popup rows) */
 .add-list {
@@ -6171,7 +6189,7 @@ html.light .hub-add-popup {
 .bento-shortcut-row { display:flex; align-items:center; gap:10px; padding:4px 0; font-size:0.72rem; }
 .bento-shortcut-row kbd { background:var(--surface-container); border:1px solid var(--border-color); border-radius:4px; padding:1px 6px; font-size:0.65rem; font-family:var(--font-family); color:var(--text-secondary); min-width:44px; text-align:center; font-weight:500; }
 .bento-shortcut-row span { color:var(--text-secondary); }
-.canvas-guide-panel { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:90vw; max-height:80vh; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-lg); z-index:120; box-shadow:0 16px 48px rgba(0,0,0,0.2); display:flex; flex-direction:column; overflow:hidden; }
+.canvas-guide-panel { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:90vw; max-height:80vh; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-lg); z-index:1002; box-shadow:0 16px 48px rgba(0,0,0,0.2); display:flex; flex-direction:column; overflow:hidden; }
 .canvas-guide-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border-subtle); font-size:0.82rem; font-weight:600; color:var(--text-primary); }
 .canvas-guide-close { width:26px; height:26px; border-radius:50%; border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all var(--t-fast); }
 .canvas-guide-close:hover { background:var(--bg-secondary); color:var(--text-primary); }
