@@ -31,7 +31,35 @@ let _pomodoroState = {};
 let _calView = { year: 0, month: -1 }; // tracks displayed month/year for refresh
 let _weatherFetched = false;
 let _weatherLastData = null;
+let _undoStack = [];
+let _redoStack = [];
+const BENTO_UNDO_MAX = 30;
 function _nextUid() { return 'b' + (++_bentoUidCounter) + '_' + Date.now(); }
+function pushUndoState() {
+  _undoStack.push(JSON.stringify(hubContent.bentoLayout));
+  if (_undoStack.length > BENTO_UNDO_MAX) _undoStack.shift();
+  _redoStack = [];
+}
+function undoCanvas() {
+  if (!_undoStack.length) return;
+  _redoStack.push(JSON.stringify(hubContent.bentoLayout));
+  hubContent.bentoLayout = normalizeBentoLayout(JSON.parse(_undoStack.pop()), hubContent);
+  saveHubContent();
+  renderHubBento();
+}
+function redoCanvas() {
+  if (!_redoStack.length) return;
+  _undoStack.push(JSON.stringify(hubContent.bentoLayout));
+  hubContent.bentoLayout = normalizeBentoLayout(JSON.parse(_redoStack.pop()), hubContent);
+  saveHubContent();
+  renderHubBento();
+}
+function updateUndoButtons() {
+  var ub = document.getElementById('bentoEditUndo');
+  var rb = document.getElementById('bentoEditRedo');
+  if (ub) ub.disabled = !_undoStack.length;
+  if (rb) rb.disabled = !_redoStack.length;
+}
 
 /* ─── Section drag/drop reordering ─────────── */
 function initHubLayout() {
@@ -421,6 +449,31 @@ function applyHubEditMode() {
   else greetEl?.classList.remove('hub-editable');
   resetBentoInteractions();
   updateSectionHandles();
+  // Undo/redo buttons inside bento section header
+  var _headerBtns = document.getElementById('bentoEditHeaderBtns');
+  if (hubEditMode) {
+    if (!_headerBtns) {
+      var _header = document.querySelector('.hub-section-wrap[data-hub-section="bento"] .hub-section-header');
+      if (_header) {
+        _headerBtns = document.createElement('div');
+        _headerBtns.id = 'bentoEditHeaderBtns';
+        _headerBtns.style.cssText = 'margin-left:auto;display:flex;align-items:center;gap:4px;';
+        _headerBtns.innerHTML =
+          '<button class="bento-bar-btn bento-bar-undo" id="bentoEditUndo" title="Undo (Ctrl+Z)">' +
+            '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 14 2 10 6 6"/><path d="M2 10h10a4 4 0 0 1 0 8"/></svg>' +
+            '<span>Undo</span>' +
+          '</button>' +
+          '<button class="bento-bar-btn bento-bar-redo" id="bentoEditRedo" title="Redo (Ctrl+Shift+Z)">' +
+            '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14 6 18 10 14 14"/><path d="M18 10H8a4 4 0 0 0 0 8"/></svg>' +
+            '<span>Redo</span>' +
+          '</button>';
+        _header.appendChild(_headerBtns);
+        document.getElementById('bentoEditUndo')?.addEventListener('click', undoCanvas);
+        document.getElementById('bentoEditRedo')?.addEventListener('click', redoCanvas);
+      }
+    }
+    updateUndoButtons();
+  }
   renderHubBento();
   renderHubGallery();
   applyHubVisibility();
@@ -460,7 +513,7 @@ function renderHubGreeting() {
 /* ─── Bento render ─────────────────────────── */
 function renderHubBento() {
   // Ensure images are loaded before rendering bubbles (only on first render)
-  if (!state.images && typeof loadImages === 'function') loadImages();
+  if (typeof state !== 'undefined' && !state.images && typeof loadImages === 'function') loadImages();
   const grid = document.querySelector('.bento-grid');
   if (!grid) return;
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
@@ -792,7 +845,7 @@ function renderHubBento() {
       var uid = this.dataset.removeBubble;
       var layout2 = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
       var idx = layout2.findIndex(function(it) { return it.uid === uid; });
-      if (idx !== -1) layout2.splice(idx, 1);
+      if (idx !== -1) { pushUndoState(); layout2.splice(idx, 1); }
       hubContent.bentoLayout = layout2;
       saveHubContent();
       renderHubBento();
@@ -807,6 +860,7 @@ function renderHubBento() {
       var layout2 = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
       var src = layout2.find(function(it) { return it.uid === uid; });
       if (!src) return;
+      pushUndoState();
       var copy = JSON.parse(JSON.stringify(src));
       copy.uid = 'bubble-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
       copy.x = src.x + 24;
@@ -840,12 +894,13 @@ function renderHubBento() {
     updateAddBtnPosition();
     addBtn.addEventListener('click', showHubAddPopup);
 
-    // Done Editing button
+    // Done Editing button (fixed bottom)
     var doneBtn = document.createElement('button');
     doneBtn.className = 'bento-edit-done-btn';
     doneBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Done Editing';
     grid.appendChild(doneBtn);
     doneBtn.addEventListener('click', function() { toggleHubEdit(); });
+    updateUndoButtons();
 
     // Register grid-level event listeners only once (guard via _hubEventsWired)
     if (!grid._hubEventsWired) {
@@ -958,6 +1013,9 @@ function renderHubBento() {
   if (visible.length > 0) {
     var lowest = visible.reduce(function(max, i) { return Math.max(max, i.y + (i.h || 240)); }, 0);
     grid.style.minHeight = Math.min(Math.max(800, lowest + 480), MAX_CANVAS_HEIGHT) + 'px';
+  } else if (!isEdit) {
+    grid.style.minHeight = '400px';
+    grid.insertAdjacentHTML('beforeend', '<div class="bento-empty-state"><div class="bento-empty-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="32" height="32" rx="4"/><line x1="24" y1="18" x2="24" y2="30"/><line x1="18" y1="24" x2="30" y2="24"/></svg></div><div class="bento-empty-title">Canvas is empty</div><div class="bento-empty-desc">Toggle edit mode and click <strong>Add Bubble</strong> to populate your canvas</div></div>');
   }
 
   document.querySelectorAll('img[data-image-id]').forEach(el => {
@@ -973,6 +1031,9 @@ function renderHubBento() {
       if (_img) _img.src = _item.imageUrl;
     }
   });
+
+  // Bottom padding for fixed Done button in edit mode
+  grid.style.paddingBottom = isEdit ? '64px' : '';
 
   // ─── Timer / Pomodoro wiring ──────────────────
   if (!grid._timerWired) {
@@ -1177,6 +1238,9 @@ function renderHubBento() {
     grid._editKeysWired = true;
     document.addEventListener('keydown', function(e) {
       if (!hubEditMode) return;
+      // Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y: undo/redo layout changes
+      if (e.ctrlKey && e.key === 'z') { e.preventDefault(); if (e.shiftKey) redoCanvas(); else undoCanvas(); return; }
+      if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redoCanvas(); return; }
       // Ctrl+D: duplicate selected bubble
       if (e.ctrlKey && e.key === 'd') {
         e.preventDefault();
@@ -1229,37 +1293,55 @@ function renderHubBento() {
           if (el) { el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; }
         });
         saveHubContent();
+        updateUndoButtons();
       }
     });
+  }
+}
 
-    // Keyboard shortcuts reference button
-    var shortBtn = document.createElement('button');
-    shortBtn.className = 'bento-shortcuts-btn';
-    shortBtn.id = 'bentoShortcutsBtn';
-    shortBtn.textContent = '?';
-    shortBtn.title = 'Keyboard shortcuts';
-    document.body.appendChild(shortBtn);
-    shortBtn.addEventListener('click', function() {
-      var existing = document.getElementById('bentoShortcutsPanel');
-      if (existing) { existing.remove(); return; }
-      var panel = document.createElement('div');
-      panel.className = 'bento-shortcuts-panel';
-      panel.id = 'bentoShortcutsPanel';
-      panel.innerHTML =
-        '<div class="bento-shortcuts-title">Keyboard Shortcuts</div>' +
+/* ─── Canvas Guide popup ──────────────────── */
+function showCanvasGuide() {
+  var existing = document.getElementById('canvasGuidePanel');
+  if (existing) { existing.remove(); return; }
+
+  var overlay = document.createElement('div');
+  overlay.className = 'hub-popup-overlay';
+  overlay.addEventListener('click', function() { overlay.remove(); var p = document.getElementById('canvasGuidePanel'); if (p) p.remove(); });
+  document.body.appendChild(overlay);
+
+  var panel = document.createElement('div');
+  panel.className = 'canvas-guide-panel';
+  panel.id = 'canvasGuidePanel';
+  panel.innerHTML =
+    '<div class="canvas-guide-header">' +
+      '<span>Canvas Guide</span>' +
+      '<button class="canvas-guide-close" id="canvasGuideClose">×</button>' +
+    '</div>' +
+    '<div class="canvas-guide-body">' +
+      '<div class="canvas-guide-section">' +
+        '<div class="canvas-guide-section-title">Keyboard Shortcuts</div>' +
+        '<div class="bento-shortcut-row"><kbd>Ctrl+Z</kbd><span>Undo layout change</span></div>' +
+        '<div class="bento-shortcut-row"><kbd>Ctrl+Shift+Z</kbd><span>Redo layout change</span></div>' +
         '<div class="bento-shortcut-row"><kbd>Ctrl+D</kbd><span>Duplicate selected bubble</span></div>' +
         '<div class="bento-shortcut-row"><kbd>↑ ↓ ← →</kbd><span>Nudge by 20px</span></div>' +
         '<div class="bento-shortcut-row"><kbd>Shift+↑ ↓ ← →</kbd><span>Nudge by 1px</span></div>' +
         '<div class="bento-shortcut-row"><kbd>Escape</kbd><span>Deselect / Cancel drag</span></div>' +
-        '<div class="bento-shortcut-row"><kbd>Double-click</kbd><span>Cancel drag / resize</span></div>';
-      document.body.appendChild(panel);
-      // Close on click outside
-      var closer = function(ev) {
-        if (!panel.contains(ev.target) && ev.target !== shortBtn) { panel.remove(); document.removeEventListener('mousedown', closer); }
-      };
-      setTimeout(function() { document.addEventListener('mousedown', closer); }, 0);
-    });
-  }
+        '<div class="bento-shortcut-row"><kbd>Double-click</kbd><span>Cancel drag / resize</span></div>' +
+      '</div>' +
+      '<div class="canvas-guide-section">' +
+        '<div class="canvas-guide-section-title">Edit Mode</div>' +
+        '<div class="canvas-guide-item"><span class="canvas-guide-bullet">1.</span> Click the <strong>Edit</strong> button (✎) in the FAB to toggle edit mode</div>' +
+        '<div class="canvas-guide-item"><span class="canvas-guide-bullet">2.</span> <strong>Drag</strong> any widget by its <kbd>⠿</kbd> handle to reposition</div>' +
+        '<div class="canvas-guide-item"><span class="canvas-guide-bullet">3.</span> <strong>Resize</strong> by dragging the bottom or corner edges of a widget</div>' +
+        '<div class="canvas-guide-item"><span class="canvas-guide-bullet">4.</span> <strong>Edit content</strong> — click text directly in edit mode to type</div>' +
+        '<div class="canvas-guide-item"><span class="canvas-guide-bullet">5.</span> Click <strong>Add</strong> (+) in the FAB to add new widgets to the canvas</div>' +
+        '<div class="canvas-guide-item"><span class="canvas-guide-bullet">6.</span> Click <strong>Hide</strong> (eye) in the FAB to toggle widget visibility</div>' +
+        '<div class="canvas-guide-item"><span class="canvas-guide-bullet">7.</span> Press <kbd>Escape</kbd> or click the Edit button again to exit edit mode</div>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(panel);
+
+  document.getElementById('canvasGuideClose')?.addEventListener('click', function() { panel.remove(); overlay.remove(); });
 }
 
 /* ─── Helper: keep add button below lowest widget ── */
@@ -1433,6 +1515,7 @@ function setupBubbleDragDrop() {
       item.y = Math.max(0, y);
       // Re-run collision one final time at the dropped position
       resolveBubbleCollisions(dragLayout);
+      pushUndoState();
       hubContent.bentoLayout = dragLayout;
       saveHubContent();
       // Update all bubbles' DOM positions without full re-render
@@ -1447,6 +1530,7 @@ function setupBubbleDragDrop() {
       }
     }
     updateAddBtnPosition();
+    updateUndoButtons();
     _bubbleDragData = null;
     bubble.classList.remove('selected');
     bubble.setAttribute('data-suppress-click', '1');
@@ -1564,6 +1648,7 @@ function setupBubbleResize() {
       if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
       if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? Math.max(115, snapSpotifyHeight(h)) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
+      pushUndoState();
       hubContent.bentoLayout = layout;
       saveHubContent();
       // Update pushed bubbles' DOM positions without full re-render
@@ -1579,6 +1664,7 @@ function setupBubbleResize() {
       }
     }
     updateAddBtnPosition();
+    updateUndoButtons();
     resizeTip.style.display = 'none';
     _bubbleResizeData = null;
     bubble.classList.remove('selected');
@@ -1673,6 +1759,7 @@ function addBubbleTypes(types) {
   // Get grid width for gap-finding
   var gridEl = document.querySelector('.bento-grid');
   var gridWidth = gridEl ? gridEl.clientWidth : 800;
+  pushUndoState();
   types.forEach(t => {
     const item = {t, uid: _nextUid()};
     if (t === 'images') {
@@ -1921,7 +2008,7 @@ function showHubAddPopup(e) {
     });
   });
   // Confirm: add all selected types
-  document.getElementById('hubAddConfirm').addEventListener('click', function() {
+  document.getElementById('hubAddConfirm')?.addEventListener('click', function() {
     var typesToAdd = Object.keys(selected).filter(function(k) { return selected[k]; });
     if (typesToAdd.length === 0) { popup.remove(); overlay.remove(); return; }
     addBubbleTypes(typesToAdd);
@@ -1970,6 +2057,7 @@ function showHubHidePopup() {
       const type = row.dataset.btype;
       const item = layout.find(i => i.t === type);
       if (!item) return;
+      pushUndoState();
       item.hidden = !item.hidden;
       row.querySelector('.hide-toggle').className = 'hide-toggle ' + (item.hidden ? 'off' : 'on');
       hubContent.bentoLayout = layout;
@@ -2077,7 +2165,6 @@ function setupHubEditEvents() {
   _hubEditEventsWired = true;
   document.getElementById('hubEditToggle')?.addEventListener('click', toggleHubEdit);
   document.getElementById('hubAddToggle')?.addEventListener('click', showHubAddPopup);
-  document.getElementById('hubHideToggle')?.addEventListener('click', showHubHidePopup);
 
   // Hub FAB speed-dial
   const _fabMain = document.getElementById('hubAccessMain');
@@ -2086,7 +2173,8 @@ function setupHubEditEvents() {
     _fabMain.addEventListener('click', toggleHubAccess);
     document.getElementById('hubFabEdit')?.addEventListener('click', function() { toggleHubAccess(); showHubEditToggle(); });
     document.getElementById('hubFabAdd')?.addEventListener('click', function() { toggleHubAccess(); showHubAddPopup(); });
-    document.getElementById('hubFabHide')?.addEventListener('click', function() { toggleHubAccess(); showHubHidePopup(); });
+    document.getElementById('hubFabChat')?.addEventListener('click', function() { toggleHubAccess(); if (typeof showAIChat === 'function') showAIChat(); });
+    document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
   }
   document.addEventListener('click', function(e) {
     const hub = document.getElementById('hubAccessHub');
@@ -2549,7 +2637,8 @@ if (document.getElementById('hubAccessHub')) {
       });
       document.getElementById('hubFabEdit')?.addEventListener('click', function() { try { toggleHubAccess(); showHubEditToggle(); } catch(e) { console.error('Edit error:', e); } });
       document.getElementById('hubFabAdd')?.addEventListener('click', function() { toggleHubAccess(); showHubAddPopup(); });
-      document.getElementById('hubFabHide')?.addEventListener('click', function() { toggleHubAccess(); showHubHidePopup(); });
+      document.getElementById('hubFabChat')?.addEventListener('click', function() { toggleHubAccess(); if (typeof showAIChat === 'function') showAIChat(); });
+      document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
     }
   };
   if (document.readyState === 'loading') {

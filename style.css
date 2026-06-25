@@ -6155,16 +6155,33 @@ html.light .hub-add-popup {
 
 /* .bento-bubble-duplicate now uses .bento-bubble-btn class */
 .bento-resize-tooltip { position:fixed; background:var(--bg-primary); color:var(--text-primary); font-size:0.7rem; font-weight:600; padding:3px 8px; border-radius:6px; border:1px solid var(--border-color); pointer-events:none; z-index:1000; white-space:nowrap; box-shadow:0 2px 8px rgba(0,0,0,0.08); display:none; font-variant-numeric:tabular-nums; }
-.bento-edit-done-btn { position:sticky; bottom:16px; z-index:50; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; background:var(--primary); color:var(--text-inverse); border:none; font-weight:600; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 16px color-mix(in srgb, var(--primary) 40%, transparent); transition:all var(--t-fast); margin:16px auto; width:fit-content; }
-.bento-edit-done-btn:hover { filter:brightness(1.1); transform:translateY(-1px); box-shadow:0 6px 24px color-mix(in srgb, var(--primary) 50%, transparent); }
+.bento-bar-btn { display:flex; align-items:center; gap:5px; padding:4px 10px; border-radius:6px; background:var(--surface-container); color:var(--text-primary); border:1px solid var(--border-color); cursor:pointer; font-size:.7rem; font-weight:500; transition:all var(--t-fast); user-select:none; white-space:nowrap; }
+.bento-bar-btn:hover { background:var(--bg-tertiary); border-color:var(--text-tertiary); color:var(--text-primary); }
+.bento-bar-btn:disabled { opacity:.35; cursor:default; pointer-events:none; }
+.bento-bar-btn svg { width:15px; height:15px; display:block; color:var(--primary); }
+.bento-edit-done-btn { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:100; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; background:var(--primary); color:var(--text-inverse); border:none; font-weight:600; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 16px color-mix(in srgb, var(--primary) 40%, transparent); transition:all var(--t-fast); width:fit-content; }
+.bento-edit-done-btn:hover { filter:brightness(1.1); transform:translateX(-50%) translateY(-1px); box-shadow:0 6px 24px color-mix(in srgb, var(--primary) 50%, transparent); }
 .bento-edit-done-btn svg { width:16px; height:16px; }
-.bento-shortcuts-btn { position:fixed; bottom:80px; right:20px; width:32px; height:32px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container); color:var(--text-tertiary); font-size:0.75rem; font-weight:700; cursor:pointer; z-index:100; display:flex; align-items:center; justify-content:center; transition:all var(--t-fast); padding:0; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-.bento-shortcuts-btn:hover { color:var(--primary); background:color-mix(in srgb, var(--primary) 8%, transparent); border-color:var(--primary); }
-.bento-shortcuts-panel { position:fixed; right:20px; bottom:120px; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:14px 18px; z-index:110; box-shadow:0 8px 32px rgba(0,0,0,0.12); min-width:220px; }
-.bento-shortcuts-title { font-size:0.72rem; font-weight:600; color:var(--text-primary); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.06em; }
+.bento-empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:40px 24px; text-align:center; user-select:none; }
+.bento-empty-icon { color:var(--text-tertiary); opacity:0.4; }
+.bento-empty-icon svg { width:48px; height:48px; }
+.bento-empty-title { font-size:1rem; font-weight:600; color:var(--text-secondary); }
+.bento-empty-desc { font-size:0.75rem; color:var(--text-tertiary); max-width:280px; line-height:1.45; }
 .bento-shortcut-row { display:flex; align-items:center; gap:10px; padding:4px 0; font-size:0.72rem; }
 .bento-shortcut-row kbd { background:var(--surface-container); border:1px solid var(--border-color); border-radius:4px; padding:1px 6px; font-size:0.65rem; font-family:var(--font-family); color:var(--text-secondary); min-width:44px; text-align:center; font-weight:500; }
 .bento-shortcut-row span { color:var(--text-secondary); }
+.canvas-guide-panel { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:420px; max-width:90vw; max-height:80vh; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-lg); z-index:120; box-shadow:0 16px 48px rgba(0,0,0,0.2); display:flex; flex-direction:column; overflow:hidden; }
+.canvas-guide-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border-subtle); font-size:0.82rem; font-weight:600; color:var(--text-primary); }
+.canvas-guide-close { width:26px; height:26px; border-radius:50%; border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all var(--t-fast); }
+.canvas-guide-close:hover { background:var(--bg-secondary); color:var(--text-primary); }
+.canvas-guide-body { padding:14px 18px 18px; overflow-y:auto; }
+.canvas-guide-section { margin-bottom:16px; }
+.canvas-guide-section:last-child { margin-bottom:0; }
+.canvas-guide-section-title { font-size:0.7rem; font-weight:600; color:var(--text-primary); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+.canvas-guide-item { display:flex; align-items:flex-start; gap:6px; padding:3px 0; font-size:0.72rem; color:var(--text-secondary); line-height:1.45; }
+.canvas-guide-bullet { flex-shrink:0; color:var(--text-tertiary); min-width:16px; }
+.canvas-guide-item kbd { background:var(--surface-container); border:1px solid var(--border-color); border-radius:4px; padding:0 5px; font-size:0.65rem; font-family:var(--font-family); color:var(--text-secondary); font-weight:500; }
+.canvas-guide-item strong { color:var(--text-primary); font-weight:600; }
 .bento-context-menu { position:absolute; background:var(--bg-primary); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:4px; z-index:1000; box-shadow:0 8px 32px rgba(0,0,0,0.12); min-width:150px; display:flex; flex-direction:column; gap:1px; }
 .bento-context-menu button { display:flex; align-items:center; gap:8px; padding:7px 10px; border:none; background:transparent; color:var(--text-primary); font-size:0.72rem; cursor:pointer; border-radius:6px; text-align:left; font-family:var(--font-family); transition:background var(--t-fast); }
 .bento-context-menu button:hover { background:var(--accent-soft); }
