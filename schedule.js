@@ -2254,7 +2254,7 @@ function renderSchTemplates() {
   scheduleReminderCheck();
   requestNotifPermission();
 
-  /* ─── Screenshot week ─────────────────────── */
+  /* ─── Screenshot week (enhanced) ────────────── */
   window.captureWeekScreenshot = function() {
     if (!state || !state.tasks) return;
     var weekStart = state.currentWeekStart;
@@ -2263,78 +2263,231 @@ function renderSchTemplates() {
     var visibleDays = state.showWeekends !== false ? days : days.filter(function(d) { return d.getDay() !== 0 && d.getDay() !== 6; });
     var colCount = visibleDays.length;
     if (!colCount) return;
-    var todayStr = formatDate(new Date());
-    var headerH = 44, rowH = 38, timeW = 50;
+
+    var now = new Date();
+    var todayStr = formatDate(now);
+    var currentMins = now.getHours() * 60 + now.getMinutes();
+
+    // Check if it's dark mode
+    var isDark = document.documentElement.classList.contains('dark') ||
+                 (!document.documentElement.classList.contains('light') &&
+                  window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    // ─── Layout constants ───
+    var HEADER_H = 60;      // app branding header
+    var DAY_HDR_H = 52;     // day-of-week header row
+    var ROW_H = 38;         // per-hour row
+    var TIME_W = 56;        // time axis width
+    var COL_W = 145;        // each day column
     var totalHours = (typeof VISIBLE_HOURS !== 'undefined' ? VISIBLE_HOURS : 23);
     var startH = (typeof START_HOUR !== 'undefined' ? START_HOUR : 5);
     var scale = 2;
-    var colW = 140;
-    var cw = timeW + colCount * colW, ch = headerH + totalHours * rowH;
+    var topH = HEADER_H + DAY_HDR_H;
+    var cw = TIME_W + colCount * COL_W;
+    var ch = topH + totalHours * ROW_H;
+
+    // Theme colours
+    var bg1 = isDark ? '#1c1b1b' : '#f9f8f4';
+    var bg2 = isDark ? '#2a2a2a' : '#f0ece6';
+    var textPrimary = isDark ? '#e5e2e1' : '#1c1b1b';
+    var textSecondary = isDark ? '#8c928d' : '#7a7670';
+    var textTertiary = isDark ? '#6b6b6b' : '#a09c96';
+    var borderColor = isDark ? '#3a3939' : '#d7d2ca';
+    var borderLight = isDark ? '#2a2a2a' : '#e2ddd6';
+    var accent = '#4d6356';
+    var accentLight = isDark ? '#b4ccbc' : '#d4e8d8';
+    var white = '#ffffff';
+    var todayColor = '#3b82f6';
+    var weekendBg = isDark ? '#222' : '#f4f2ed';
+    var gridLineColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+    var headerBg = isDark ? '#131313' : '#ffffff';
+    var rowAltBg = isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)';
+
+    // Build canvas with outer rounded rect + shadow
+    var PAD = 24;
+    var RADIUS = 16;
+    var innerW = cw;
+    var innerH = ch;
+    var outerW = innerW + PAD * 2;
+    var outerH = innerH + PAD * 2;
 
     var c = document.createElement('canvas');
-    c.width = cw * scale; c.height = ch * scale;
+    c.width = outerW * scale;
+    c.height = outerH * scale;
     var ctx = c.getContext('2d');
     ctx.scale(scale, scale);
+
+    // Shadow behind the card
+    ctx.shadowColor = 'rgba(0,0,0,' + (isDark ? '0.5' : '0.12') + ')';
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetY = 8;
+    ctx.beginPath();
+    roundedRect(ctx, PAD, PAD, innerW, innerH, RADIUS);
+    ctx.fillStyle = bg1;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Clip to inner rounded rect
+    ctx.save();
+    ctx.beginPath();
+    roundedRect(ctx, PAD, PAD, innerW, innerH, RADIUS);
+    ctx.clip();
+
+    var ox = PAD, oy = PAD;
+
+    // ─── APP HEADER ───
+    var hdrGrad = ctx.createLinearGradient(0, oy, 0, oy + HEADER_H);
+    hdrGrad.addColorStop(0, isDark ? '#2a2a2a' : '#ffffff');
+    hdrGrad.addColorStop(1, isDark ? '#1c1b1b' : '#f5f2ed');
+    ctx.fillStyle = hdrGrad;
+    ctx.fillRect(ox, oy, innerW, HEADER_H);
+
+    // Bottom border under header
+    ctx.fillStyle = borderColor;
+    ctx.fillRect(ox, oy + HEADER_H - 1, innerW, 1);
+
+    // "Havën" logo text
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
+    ctx.font = '600 13px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = textPrimary;
+    ctx.fillText('Havën', ox + 16, oy + HEADER_H / 2 - 8);
+    ctx.font = '400 9px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = textSecondary;
+    ctx.fillText('Schedule', ox + 16, oy + HEADER_H / 2 + 10);
 
-    // Background
-    ctx.fillStyle = '#fafafa';
-    ctx.fillRect(0, 0, cw, ch);
+    // Week label on right side of header
+    var firstDayMonth = visibleDays[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    var lastDayMonth = visibleDays[visibleDays.length - 1];
+    var lastLabel = lastDayMonth.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = textPrimary;
+    ctx.fillText(firstDayMonth + ' — ' + lastLabel, ox + innerW - 16, oy + HEADER_H / 2);
 
-    // Alternating row stripes
-    ctx.fillStyle = '#f3f4f6';
-    for (var i = 0; i < totalHours; i += 2) {
-      ctx.fillRect(timeW, headerH + i * rowH, cw - timeW, rowH);
+    // ─── MAIN BACKGROUND ───
+    ctx.fillStyle = bg1;
+    ctx.fillRect(ox, oy + HEADER_H, innerW, innerH - HEADER_H);
+
+    // Alternating hour stripes
+    ctx.fillStyle = rowAltBg;
+    for (var ri = 0; ri < totalHours; ri += 2) {
+      ctx.fillRect(ox + TIME_W, oy + topH + ri * ROW_H, innerW - TIME_W, ROW_H);
     }
 
-    // Grid lines
-    ctx.strokeStyle = '#d1d5db';
+    // ─── HORIZONTAL GRID LINES ───
+    ctx.strokeStyle = gridLineColor;
     ctx.lineWidth = 0.5;
     for (var i = 0; i <= totalHours; i++) {
-      var y = headerH + i * rowH;
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw, y); ctx.stroke();
-    }
-    ctx.strokeStyle = '#d1d5db';
-    for (var j = 0; j <= colCount; j++) {
-      var x = timeW + j * colW;
-      ctx.beginPath(); ctx.moveTo(x, headerH); ctx.lineTo(x, ch); ctx.stroke();
+      var y = oy + topH + i * ROW_H;
+      ctx.beginPath();
+      ctx.moveTo(ox, y);
+      ctx.lineTo(ox + innerW, y);
+      ctx.stroke();
     }
 
-    // Day headers
+    // ─── VERTICAL GRID LINES ───
+    for (var j = 0; j <= colCount; j++) {
+      var x = ox + TIME_W + j * COL_W;
+      ctx.beginPath();
+      ctx.moveTo(x, oy + topH);
+      ctx.lineTo(x, oy + topH + totalHours * ROW_H);
+      ctx.stroke();
+    }
+
+    // ─── DAY HEADERS ───
     for (var k = 0; k < visibleDays.length; k++) {
       var d = visibleDays[k];
       var ds = formatDate(d);
-      var isToday = ds === todayStr;
-      var x = timeW + k * colW;
-      ctx.fillStyle = isToday ? '#3b82f6' : '#f0f0f0';
-      ctx.fillRect(x, 0, colW, headerH);
-      // Bottom accent for today
-      if (isToday) {
-        ctx.fillStyle = '#2563eb';
-        ctx.fillRect(x, headerH - 3, colW, 3);
+      var isT = ds === todayStr;
+      var isWE = isWeekend(d);
+      var x = ox + TIME_W + k * COL_W;
+
+      // Weekend column background (behind the whole column)
+      if (isWE) {
+        ctx.fillStyle = weekendBg;
+        ctx.fillRect(x, oy + HEADER_H, COL_W, innerH - HEADER_H);
       }
+
+      // Day header cell background
+      ctx.fillStyle = isT ? todayColor : (isDark ? '#333' : '#f0f0f0');
+      ctx.fillRect(x, oy + HEADER_H, COL_W, DAY_HDR_H);
+
+      // Today accent bar at bottom of header
+      if (isT) {
+        ctx.fillStyle = '#2563eb';
+        ctx.fillRect(x, oy + HEADER_H + DAY_HDR_H - 3, COL_W, 3);
+      }
+
+      // Day name label
+      var dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
       ctx.textAlign = 'center';
-      ctx.font = (isToday ? 'bold 12px ' : '600 11px ') + '-apple-system, sans-serif';
-      ctx.fillStyle = isToday ? '#fff' : '#333';
-      var label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      ctx.fillText(label, x + colW / 2, headerH / 2);
+      ctx.textBaseline = 'middle';
+      ctx.font = (isT ? 'bold 10px ' : '600 10px ') + '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+      ctx.fillStyle = isT ? white : textSecondary;
+      ctx.fillText(dayName.toUpperCase(), x + COL_W / 2, oy + HEADER_H + DAY_HDR_H / 2 - 8);
+
+      // Day number
+      ctx.font = (isT ? 'bold 16px ' : '600 14px ') + '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+      if (isT) {
+        // Circle for today's number
+        ctx.fillStyle = white;
+        var cx = x + COL_W / 2;
+        var cy = oy + HEADER_H + DAY_HDR_H / 2 + 10;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 11, 0, Math.PI * 2);
+        ctx.fillStyle = todayColor;
+        ctx.fill();
+        ctx.fillStyle = white;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+        ctx.fillText(String(d.getDate()), cx, cy);
+      } else {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = textPrimary;
+        ctx.font = '600 14px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+        ctx.fillText(String(d.getDate()), x + COL_W / 2, oy + HEADER_H + DAY_HDR_H / 2 + 10);
+      }
     }
-    // Time axis header
-    ctx.fillStyle = '#e5e7eb';
-    ctx.fillRect(0, 0, timeW, headerH);
+
+    // ─── TIME AXIS ───
+    ctx.fillStyle = isDark ? '#222' : '#f0ece6';
+    ctx.fillRect(ox, oy + HEADER_H, TIME_W, innerH - HEADER_H);
 
     // Time labels
     ctx.textAlign = 'right';
-    ctx.font = '10px -apple-system, sans-serif';
-    ctx.fillStyle = '#666';
+    ctx.textBaseline = 'middle';
+    ctx.font = '9px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = textSecondary;
     for (var hh = 0; hh < totalHours; hh++) {
       var hour = startH + hh;
       var disp = hour === 0 ? 12 : (hour > 12 ? hour - 12 : hour);
       var ampm = hour < 12 ? 'AM' : 'PM';
-      ctx.fillText(disp + ' ' + ampm, timeW - 5, headerH + hh * rowH + rowH / 2);
+      ctx.fillText(disp + ' ' + ampm, ox + TIME_W - 8, oy + topH + hh * ROW_H + ROW_H / 2);
     }
 
-    // Filter this week's tasks
+    // ─── CURRENT TIME LINE ───
+    if (currentMins >= startH * 60 && currentMins < (startH + totalHours) * 60) {
+      var lineY = oy + topH + ((currentMins - startH * 60) / 60) * ROW_H;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ox + TIME_W, lineY);
+      ctx.lineTo(ox + innerW, lineY);
+      ctx.stroke();
+      // Small dot/circle at left edge
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(ox + TIME_W + 4, lineY, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // ─── TASKS ───
     var ds = formatDate(weekStart);
     var de = formatDate(addDays(weekStart, 7));
     var weekTasks = [];
@@ -2343,7 +2496,24 @@ function renderSchTemplates() {
       if (t.date && t.date >= ds && t.date < de && !isWhiteboardTask(t)) weekTasks.push(t);
     }
 
-    // Draw task blocks
+    // Resolve tag colors to actual hex values
+    function getTagHex(tag) {
+      var fallback = '#8b5cf6';
+      if (typeof TAG_COLORS === 'undefined' || !TAG_COLORS[tag]) return fallback;
+      var c = TAG_COLORS[tag].text;
+      if (!c) return fallback;
+      // If it's a CSS variable, try to read its computed value
+      if (typeof c === 'string' && c.startsWith('var(')) {
+        var varName = c.slice(4, -1).trim();
+        var val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+        if (val) return val;
+        // Fallback defaults
+        var defaults = { 'deep-work': '#6366f1', 'meeting': '#3b82f6', 'exercise': '#ef4444', 'study': '#10b981', 'hobby': '#f59e0b' };
+        return defaults[tag] || fallback;
+      }
+      return c;
+    }
+
     for (var ti = 0; ti < weekTasks.length; ti++) {
       var t = weekTasks[ti];
       var dayIdx = -1;
@@ -2367,54 +2537,162 @@ function renderSchTemplates() {
       if (endMins > gridEnd) endMins = gridEnd;
       if (startMins >= endMins) continue;
 
-      var y1 = headerH + ((startMins - gridStart) / 60) * rowH;
-      var y2 = headerH + ((endMins - gridStart) / 60) * rowH;
-      var x1 = timeW + dayIdx * colW + 4;
-      var bw = colW - 8;
-      var bh = Math.max(y2 - y1, 16);
+      var y1 = oy + topH + ((startMins - gridStart) / 60) * ROW_H;
+      var y2 = oy + topH + ((endMins - gridStart) / 60) * ROW_H;
+      var x1 = ox + TIME_W + dayIdx * COL_W + 5;
+      var bw = COL_W - 10;
+      var bh = Math.max(y2 - y1, 20);
 
-      var tagColor = '#8b5cf6';
-      if (typeof TAG_COLORS !== 'undefined' && TAG_COLORS[t.tag]) tagColor = TAG_COLORS[t.tag].text || TAG_COLORS[t.tag];
+      var tagColor = getTagHex(t.tag);
+      var isCompleted = t.completed || false;
+      var taskOpacity = isCompleted ? 0.55 : 1;
 
-      // Task block background (rounded rect)
-      var r = 4;
+      ctx.globalAlpha = taskOpacity;
+
+      // Task card shadow
+      ctx.shadowColor = isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 2;
+
+      // Task card background (rounded rect)
+      var r = 6;
       ctx.beginPath();
-      ctx.moveTo(x1 + r, y1);
-      ctx.lineTo(x1 + bw - r, y1);
-      ctx.quadraticCurveTo(x1 + bw, y1, x1 + bw, y1 + r);
-      ctx.lineTo(x1 + bw, y1 + bh - r);
-      ctx.quadraticCurveTo(x1 + bw, y1 + bh, x1 + bw - r, y1 + bh);
-      ctx.lineTo(x1 + r, y1 + bh);
-      ctx.quadraticCurveTo(x1, y1 + bh, x1, y1 + bh - r);
-      ctx.lineTo(x1, y1 + r);
-      ctx.quadraticCurveTo(x1, y1, x1 + r, y1);
-      ctx.closePath();
-      ctx.fillStyle = tagColor + '1A';
+      roundedRect(ctx, x1, y1, bw, bh, r);
+      ctx.fillStyle = isDark ? '#2a2a2a' : '#ffffff';
       ctx.fill();
-      // Left accent bar
-      ctx.fillStyle = tagColor;
-      ctx.fillRect(x1, y1 + 2, 3, bh - 4);
 
-      // Title (white if block is tall, dark otherwise)
+      // Reset shadow for inner elements
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+
+      // Task card border (subtle tag-colored)
+      ctx.strokeStyle = tagColor + (isDark ? '40' : '30');
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      roundedRect(ctx, x1, y1, bw, bh, r);
+      ctx.stroke();
+
+      // Left accent bar (3px thick)
+      ctx.fillStyle = tagColor;
+      ctx.beginPath();
+      roundedRect(ctx, x1 + 1, y1 + 4, 3, bh - 8, 1.5);
+      ctx.fill();
+
+      // Subtle tag-colored background tint
+      ctx.fillStyle = tagColor + (isDark ? '12' : '0A');
+      ctx.beginPath();
+      roundedRect(ctx, x1, y1, bw, bh, r);
+      ctx.fill();
+
+      // Title text
       var title = t.title || '';
       ctx.textAlign = 'left';
-      ctx.font = 'bold 10px -apple-system, sans-serif';
-      ctx.fillStyle = '#1f2937';
+      ctx.textBaseline = 'middle';
+      ctx.font = (isCompleted ? '500 10px ' : '600 10px ') + '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+      ctx.fillStyle = isCompleted ? (isDark ? '#888' : '#999') : textPrimary;
+
       ctx.save();
       ctx.beginPath();
-      ctx.rect(x1 + 8, y1 + 2, bw - 16, bh - 4);
+      ctx.rect(x1 + 10, y1 + 4, bw - 18, bh - 8);
       ctx.clip();
-      ctx.fillText(title, x1 + 8, y1 + bh / 2);
+
+      if (isCompleted) {
+        // Draw strikethrough line
+        var textX = x1 + 10;
+        var textY = y1 + bh / 2;
+        ctx.fillText(title, textX, textY);
+        var tw = ctx.measureText(title).width;
+        ctx.strokeStyle = isDark ? '#888' : '#999';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(textX, textY);
+        ctx.lineTo(textX + Math.min(tw, bw - 20), textY);
+        ctx.stroke();
+      } else {
+        ctx.fillText(title, x1 + 10, y1 + bh / 2);
+      }
       ctx.restore();
+
+      // Time badge for taller tasks
+      if (bh >= 36) {
+        var timeStr = formatTimeRangeShort(t.startTime, t.endTime);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font = '400 8px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+        ctx.fillStyle = tagColor;
+        var badgeX = x1 + 10;
+        var badgeY = y1 + bh - 8;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(badgeX - 1, badgeY - 5, ctx.measureText(timeStr).width + 6, 12);
+        ctx.clip();
+        ctx.fillText(timeStr, badgeX, badgeY + 1);
+        ctx.restore();
+      }
+
+      ctx.globalAlpha = 1;
     }
 
-    var link = document.createElement('a');
-    link.download = 'schedule-' + formatDate(new Date()) + '.png';
-    link.href = c.toDataURL('image/png');
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(function() { document.body.removeChild(link); }, 100);
+    // ─── FOOTER: Task count summary ───
+    var total = weekTasks.length;
+    var completed = weekTasks.filter(function(t) { return t.completed; }).length;
+    var footerY = oy + innerH - 2;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.font = '9px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = textTertiary;
+    var footerText = total + ' task' + (total !== 1 ? 's' : '');
+    if (completed > 0) footerText += ' \u00B7 ' + completed + ' completed';
+    ctx.fillText(footerText, ox + innerW - 16, footerY - 4);
+
+    // ─── EXPORT ───
+    ctx.restore(); // remove clip
+
+    c.toBlob(function(blob) {
+      var link = document.createElement('a');
+      link.download = 'Haven-Schedule-' + formatDate(now) + '.png';
+      link.href = URL.createObjectURL(blob);
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(function() {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+      }, 100);
+      if (typeof showToast === 'function') {
+        showToast('\uD83D\uDCF7 Schedule screenshot saved!', 'success', 2000);
+      }
+    }, 'image/png', 0.95);
   };
+
+  // Helper: rounded rect path
+  function roundedRect(ctx, x, y, w, h, r) {
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  // Helper: short time range
+  function formatTimeRangeShort(start, end) {
+    var fmt = function(t) {
+      var parts = t.split(':');
+      var h = parseInt(parts[0]);
+      var m = parseInt(parts[1] || 0);
+      var ampm = h < 12 ? 'AM' : 'PM';
+      var h12 = h % 12 || 12;
+      return h12 + ':' + String(m).padStart(2, '0') + ampm;
+    };
+    return fmt(start) + ' \u2013 ' + fmt(end);
+  }
 
   /* ─── Copy week to next week ──────────────── */
   window.copyWeekToNext = function() {
