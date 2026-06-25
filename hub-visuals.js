@@ -10,8 +10,8 @@ function snap(v) { return Math.round(v / 20) * 20; }
 /* ─── Spotify height snap (115, 190, 400, then free) ─── */
 function snapSpotifyHeight(v) {
   v = Math.max(115, v);
-  if (v < 152) return 115;
-  if (v < 295) return 190;
+  if (v < 151) return 115;
+  if (v < 294) return 187;
   if (v < 400) return 400;
   return snap(v);
 }
