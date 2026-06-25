@@ -330,7 +330,7 @@ const HUB_DEFAULTS = {
   quote: getQuoteOfTheWeek(),
   todos: [{ text: 'get driver\'s license', done: false }, { text: 'get gym membership', done: false }],
   habits: ['drink water', 'exercise', 'read'],
-  text: 'Write something...',
+
   notes: '',
   links: [{ label: 'GitHub', url: 'https://github.com' }, { label: 'Reddit', url: 'https://reddit.com' }],
   gallery: [
@@ -351,7 +351,7 @@ function loadHubContent() {
     const raw = localStorage.getItem(HUB_CONTENT_KEY);
     if (raw) {
       const hc = JSON.parse(raw);
-      hc.bentoLayout = normalizeBentoLayout(hc.bentoLayout, hc);
+      hc.bentoLayout = normalizeBentoLayout(hc.bentoLayout, hc).filter(i => i.t !== 'text');
       if (!hc.bentoLayout || !hc.bentoLayout.length) hc.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
       if (!hc.gallery) hc.gallery = defaults.gallery.map(g => ({...g}));
       if (!hc.goals) hc.goals = [...defaults.goals];
@@ -615,13 +615,6 @@ function renderHubBento() {
             <button class="w-add-btn" data-add="todos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to-do</button>
           </div>
         </div>`;
-      case 'text':
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
-          ${editUI}
-          <div class="w-text-wrap">
-            <div class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-save="text">${e(hubContent.text || 'Write something...')}</div>
-          </div>
-        </div>`;
       case 'habits':
         const todayKey = new Date().toISOString().slice(0,10);
         const habitDone = hubContent.habitData?.[todayKey] || {};
@@ -670,20 +663,27 @@ function renderHubBento() {
           </div>
         </div>`;
       case 'progress':
+        const _now_ = new Date();
         const progData = generateProgressData();
-        const maxVal = Math.max(...progData.daily, 1);
-        const chartBars = progData.daily.map((v, i) => {
-          const pct = Math.max(4, (v / maxVal) * 100);
-          const dayLabels = ['M','T','W','T','F','S','S'];
-          return `<div class="prog-bar-col"><div class="prog-bar" style="height:${pct}%"></div><span class="prog-bar-label">${dayLabels[i]}</span></div>`;
+        const maxVal = Math.max(...progData.daily.map(d => d.done), 1);
+        const todayCol = _now_.getDay() === 0 ? 6 : _now_.getDay() - 1;
+        const dayLabels = ['M','T','W','T','F','S','S'];
+        const chartBars = progData.daily.map((d, i) => {
+          const pct = Math.max(4, (d.done / maxVal) * 100);
+          const todayClass = i === todayCol ? ' today' : '';
+          return `<div class="prog-bar-col${todayClass}">
+            <span class="prog-bar-count">${d.done}<span style="opacity:0.4">/${d.total}</span></span>
+            <div class="prog-bar" style="height:${pct}%"></div>
+            <span class="prog-bar-label">${dayLabels[i]}</span>
+          </div>`;
         }).join('');
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+        return `<div class="bento-bubble prog-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head" style="color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Progress</span></div>
           <div class="prog-stats-row">
             <div class="prog-stat"><span class="prog-stat-val">${progData.total}</span><span class="prog-stat-lbl">completed</span></div>
             <div class="prog-stat"><span class="prog-stat-val">${progData.streak}</span><span class="prog-stat-lbl">day streak</span></div>
-            <div class="prog-stat"><span class="prog-stat-val">${progData.rate}%</span><span class="prog-stat-lbl">rate</span></div>
+            <div class="prog-stat"><span class="prog-stat-val">${progData.todayRemaining}</span><span class="prog-stat-lbl">remaining today</span></div>
           </div>
           <div class="prog-chart">${chartBars}</div>
         </div>`;
@@ -1230,6 +1230,19 @@ function renderHubBento() {
     }
   }
 
+  // ─── Progress auto-refresh ─────────────────────
+  if (grid.querySelector('.prog-chart')) {
+    if (!_progressRefreshInterval) {
+      _progressRefreshInterval = setInterval(function() {
+        if (_bubbleDragData || _bubbleResizeData) return;
+        refreshProgressWidget();
+      }, 15000);
+    }
+  } else if (_progressRefreshInterval) {
+    clearInterval(_progressRefreshInterval);
+    _progressRefreshInterval = null;
+  }
+
   setupBubbleDragDrop();
   setupBubbleResize();
 
@@ -1464,9 +1477,10 @@ function setupBubbleDragDrop() {
       var dy = e.clientY - _bubbleDragData.startMouseY;
       if (dx * dx + dy * dy < 25) return;
       _bubbleDragData.active = true;
-      _bubbleDragData.dragLayout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+      _bubbleDragData.dragLayout = JSON.parse(JSON.stringify(hubContent.bentoLayout));
       _bubbleDragData.bubble.classList.add('dragging');
       _bubbleDragData.bubble.style.zIndex = '9999';
+      _bubbleDragData.bubble.parentNode.appendChild(_bubbleDragData.bubble);
     }
     var gr = grid.getBoundingClientRect();
     let newX = snap(e.clientX - _bubbleDragData.offsetX - gr.left);
@@ -1509,7 +1523,6 @@ function setupBubbleDragDrop() {
     if (item) {
       item.x = Math.max(0, x);
       item.y = Math.max(0, y);
-      // Re-run collision one final time at the dropped position
       resolveBubbleCollisions(dragLayout);
       pushUndoState();
       hubContent.bentoLayout = dragLayout;
@@ -1527,6 +1540,7 @@ function setupBubbleDragDrop() {
     }
     updateAddBtnPosition();
     updateUndoButtons();
+    refreshProgressWidget();
     _bubbleDragData = null;
     bubble.classList.remove('selected');
     bubble.setAttribute('data-suppress-click', '1');
@@ -1571,6 +1585,7 @@ function setupBubbleResize() {
     };
     bubble.classList.add('dragging');
     bubble.style.zIndex = '9999';
+    bubble.parentNode.appendChild(bubble);
     resizeTip.style.display = 'block';
     resizeTip.textContent = Math.round(rect.width) + ' × ' + Math.round(rect.height);
     resizeTip.style.left = (e.clientX + 12) + 'px';
@@ -1632,7 +1647,7 @@ function setupBubbleResize() {
     w = Math.min(w, gridRect.width - left);
     h = Math.min(h, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - top);
     const uid = bubble.dataset.bubble;
-    const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+    const layout = JSON.parse(JSON.stringify(hubContent.bentoLayout));
     const item = layout.find(i => i.uid === uid);
     if (item) {
       if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
@@ -1642,10 +1657,10 @@ function setupBubbleResize() {
       hubContent.bentoLayout = layout;
       saveHubContent();
       // Update pushed bubbles' DOM positions without full re-render
-      var grid = document.querySelector('.bento-grid');
-      if (grid) {
+      var _grid = document.querySelector('.bento-grid');
+      if (_grid) {
         layout.forEach(function(it) {
-          var el = grid.querySelector('[data-bubble="' + it.uid + '"]');
+          var el = _grid.querySelector('[data-bubble="' + it.uid + '"]');
           if (el) {
             el.style.left = it.x + 'px';
             el.style.top = it.y + 'px';
@@ -1655,6 +1670,7 @@ function setupBubbleResize() {
     }
     updateAddBtnPosition();
     updateUndoButtons();
+    refreshProgressWidget();
     resizeTip.style.display = 'none';
     _bubbleResizeData = null;
     bubble.classList.remove('selected');
@@ -1671,7 +1687,6 @@ function bubbleTypeIcon(t) {
     priorities: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
     quote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>',
     todos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
-    text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
     habits: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
     notes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
     links: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
@@ -1720,8 +1735,7 @@ function generateProgressData() {
   const ws = new Date(now);
   ws.setDate(ws.getDate() - ((ws.getDay() + 6) % 7));
   ws.setHours(0,0,0,0);
-  const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const daily = [0,0,0,0,0,0,0];
+  const daily = [];
   let totalDone = 0, totalAll = 0;
   let streak = 0;
   for (let i = 0; i < 7; i++) {
@@ -1730,17 +1744,63 @@ function generateProgressData() {
     const dateStr = d.toISOString().slice(0,10);
     const dayTasks = allT.filter(t => t.date === dateStr);
     const done = dayTasks.filter(t => t.completed).length;
-    daily[i] = Math.min(done, 20);
+    daily.push({ done, total: dayTasks.length });
     totalDone += done;
     totalAll += dayTasks.length;
   }
   for (let i = 6; i >= 0; i--) {
-    if (daily[i] > 0) streak++;
+    if (daily[i].done > 0) streak++;
     else break;
   }
+  // Last week's total for trend
+  const lws = new Date(ws);
+  lws.setDate(lws.getDate() - 7);
+  let lastWeekDone = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(lws);
+    d.setDate(d.getDate() + i);
+    const dateStr = d.toISOString().slice(0,10);
+    lastWeekDone += allT.filter(t => t.date === dateStr).filter(t => t.completed).length;
+  }
+  const todayStr = now.toISOString().slice(0,10);
+  const todayTasks = allT.filter(t => t.date === todayStr);
+  const todayDone = todayTasks.filter(t => t.completed).length;
   const rate = totalAll > 0 ? Math.round((totalDone / totalAll) * 100) : 0;
-  return { daily, total: totalDone, streak, rate, count: totalAll };
+  return { daily, total: totalDone, streak, rate, count: totalAll, trend: totalDone - lastWeekDone, todayRemaining: todayTasks.length - todayDone, todayTotal: todayTasks.length };
 }
+
+/* ─── Progress widget live refresh ─────────── */
+function refreshProgressWidget() {
+  const el = document.querySelector('.bento-bubble .prog-chart');
+  if (!el) return;
+  const progBubble = el.closest('.bento-bubble');
+  if (!progBubble) return;
+  const data = generateProgressData();
+  const now = new Date();
+  const todayCol = now.getDay() === 0 ? 6 : now.getDay() - 1;
+  const maxVal = Math.max(...data.daily.map(d => d.done), 1);
+  const dayLabels = ['M','T','W','T','F','S','S'];
+  const statVals = progBubble.querySelectorAll('.prog-stat-val');
+  if (statVals.length >= 3) {
+    statVals[0].textContent = data.total;
+    statVals[1].textContent = data.streak;
+    statVals[2].textContent = data.todayRemaining;
+  }
+  const chart = progBubble.querySelector('.prog-chart');
+  if (chart) {
+    const cols = chart.querySelectorAll('.prog-bar-col');
+    cols.forEach(function(col, i) {
+      if (!data.daily[i]) return;
+      var pct = Math.max(4, (data.daily[i].done / maxVal) * 100);
+      var bar = col.querySelector('.prog-bar');
+      var cnt = col.querySelector('.prog-bar-count');
+      if (bar) bar.style.height = pct + '%';
+      if (cnt) cnt.innerHTML = data.daily[i].done + '<span style="opacity:0.4">/' + data.daily[i].total + '</span>';
+      col.classList.toggle('today', i === todayCol);
+    });
+  }
+}
+let _progressRefreshInterval = null;
 
 /* ─── Add bubble types ─────────────────────── */
 function addBubbleTypes(types) {
@@ -1961,8 +2021,8 @@ function showHubAddPopup(e) {
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   const has = t => layout.some(i => i.t === t);
 
-  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
-  const types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','timer','pomodoro','spotify','quote','text','notes','images','links'];
+  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
+  const types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','timer','pomodoro','spotify','quote','notes','images','links'];
 
   popup.innerHTML = `
     <div class="add-title">
@@ -2022,7 +2082,7 @@ function showHubHidePopup() {
   const popup = document.createElement('div');
   popup.className = 'hub-edit-popup hub-hide-popup';
 
-  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', text:'Text', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
+  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
 
   popup.innerHTML = `
     <div class="hide-title">
@@ -2214,9 +2274,6 @@ function setupHubEditEvents() {
     const field = el.dataset.save;
     if (field === 'notes') {
       hubContent.notes = el.textContent.trim();
-      saveHubContent();
-    } else if (field === 'text') {
-      hubContent.text = el.textContent.trim();
       saveHubContent();
     }
   }, true);
