@@ -147,6 +147,10 @@
 
     /* ─── TIMELINE VIEW ──────────────────────────── */
     .act-timeline { display: flex; flex-direction: column; gap: var(--space-4); }
+    .act-tl-weeklabel {
+      font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-tertiary); opacity: 0.5; margin-bottom: var(--space-2);
+    }
     .act-timeline-day { }
     .act-timeline-day-header {
       display: flex; align-items: center; gap: var(--space-2);
@@ -292,6 +296,13 @@
       margin: 0; display: flex; align-items: center; gap: var(--space-1);
     }
     .act-chart-header h3 svg { width: 12px; height: 12px; }
+    .act-week-arrows { display: inline-flex; gap: 1px; margin-left: 6px; }
+    .act-week-arr {
+      font-size: 1.6rem; line-height: 1; color: var(--text-tertiary); cursor: pointer;
+      padding: 0 3px; user-select: none; opacity: 0.4; transition: opacity var(--t-fast);
+    }
+    .act-week-arr:hover { opacity: 1; color: var(--text-primary); }
+    .act-chart-hdr-right { display: flex; align-items: center; gap: 4px; }
     .act-chart-total {
       font-size: 0.6rem; color: var(--text-tertiary);
       font-weight: 500;
@@ -698,9 +709,15 @@
           <div class="act-chart-header">
             <h3>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              This Week
+              <span id="actWeekLabel">This Week</span>
             </h3>
-            <span class="act-chart-total" id="actChartTotal">0 min</span>
+            <div class="act-chart-hdr-right">
+              <span class="act-chart-total" id="actChartTotal">0 min</span>
+              <span class="act-week-arrows">
+                <span class="act-week-arr" id="actWeekPrev" title="Previous week">‹</span>
+                <span class="act-week-arr" id="actWeekNext" title="Next week">›</span>
+              </span>
+            </div>
           </div>
           <div class="act-chart" id="activityChart"></div>
           <div class="act-chart-legend" id="actChartLegend"></div>

@@ -596,7 +596,7 @@
       <!-- Access Hub (Accessibility menu) -->
       <div class="access-hub hub-anim-in hub-anim-in-5" id="accessHub">
         <div class="access-items" id="accessItems">
-          <button class="access-item" data-action="focus-mode" id="accessFocusMode" title="Focus Mode">
+          <button class="access-item" id="accessFocusMode" title="Focus Mode">
             <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
             </span>
@@ -1114,8 +1114,6 @@
   </script>
   <script src="shared.js"></script>
   <script src="schedule.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
   <!-- ─── Spotify Settings Modal ──────────────── -->
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
     <div class="sp-modal">

@@ -5055,14 +5055,6 @@ html.focus-mode .time-slot { height: 36px; font-size: 0.55rem; }
 }
 .day-header.today-flash { animation: todayFlash 1.2s ease-out; }
 
-/* Focus mode bubble active indicator */
-.access-item[data-action="focus-mode"].active .access-item-icon {
-  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent);
-}
-.access-item[data-action="focus-mode"].active .access-item-label {
-  color: var(--accent); font-weight: 600;
-}
-
 /* Quick Idea popup */
 .quick-idea {
   position: fixed; bottom: calc(var(--space-5) + 138px); right: var(--space-5);

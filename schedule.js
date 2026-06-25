@@ -2256,37 +2256,164 @@ function renderSchTemplates() {
 
   /* ─── Screenshot week ─────────────────────── */
   window.captureWeekScreenshot = function() {
-    if (typeof showToast !== 'function') return;
-    var grid = document.getElementById('calendarGrid') || document.getElementById('calendarContainer');
-    if (!grid) { showToast('Schedule grid not found', 'error'); return; }
-    if (typeof html2canvas === 'undefined') { showToast('Screenshot library not loaded', 'error'); return; }
-    showToast('Capturing screenshot...', 'info', 1500);
-    html2canvas(grid, { backgroundColor: '#fff', scale: 2, useCORS: true, allowTaint: false }).then(function(canvas) {
-      canvas.toBlob(function(blob) {
-        try {
-          navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
-          ]).then(function() {
-            showToast('Screenshot copied to clipboard!', 'success', 2000);
-          }).catch(function() {
-            // Fallback: download
-            var link = document.createElement('a');
-            link.download = 'schedule-' + formatDate(new Date()) + '.png';
-            link.href = canvas.toDataURL();
-            link.click();
-            showToast('Screenshot downloaded', 'success', 2000);
-          });
-        } catch(e) {
-          var link = document.createElement('a');
-          link.download = 'schedule-' + formatDate(new Date()) + '.png';
-          link.href = canvas.toDataURL();
-          link.click();
-          showToast('Screenshot downloaded', 'success', 2000);
-        }
-      });
-    }).catch(function() {
-      showToast('Screenshot failed', 'error');
-    });
+    if (!state || !state.tasks) return;
+    var weekStart = state.currentWeekStart;
+    if (!weekStart) weekStart = getMonday(new Date());
+    var days = getWeekRange(weekStart);
+    var visibleDays = state.showWeekends !== false ? days : days.filter(function(d) { return d.getDay() !== 0 && d.getDay() !== 6; });
+    var colCount = visibleDays.length;
+    if (!colCount) return;
+    var todayStr = formatDate(new Date());
+    var headerH = 44, rowH = 38, timeW = 50;
+    var totalHours = (typeof VISIBLE_HOURS !== 'undefined' ? VISIBLE_HOURS : 23);
+    var startH = (typeof START_HOUR !== 'undefined' ? START_HOUR : 5);
+    var scale = 2;
+    var colW = 140;
+    var cw = timeW + colCount * colW, ch = headerH + totalHours * rowH;
+
+    var c = document.createElement('canvas');
+    c.width = cw * scale; c.height = ch * scale;
+    var ctx = c.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.textBaseline = 'middle';
+
+    // Background
+    ctx.fillStyle = '#fafafa';
+    ctx.fillRect(0, 0, cw, ch);
+
+    // Alternating row stripes
+    ctx.fillStyle = '#f3f4f6';
+    for (var i = 0; i < totalHours; i += 2) {
+      ctx.fillRect(timeW, headerH + i * rowH, cw - timeW, rowH);
+    }
+
+    // Grid lines
+    ctx.strokeStyle = '#d1d5db';
+    ctx.lineWidth = 0.5;
+    for (var i = 0; i <= totalHours; i++) {
+      var y = headerH + i * rowH;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cw, y); ctx.stroke();
+    }
+    ctx.strokeStyle = '#d1d5db';
+    for (var j = 0; j <= colCount; j++) {
+      var x = timeW + j * colW;
+      ctx.beginPath(); ctx.moveTo(x, headerH); ctx.lineTo(x, ch); ctx.stroke();
+    }
+
+    // Day headers
+    for (var k = 0; k < visibleDays.length; k++) {
+      var d = visibleDays[k];
+      var ds = formatDate(d);
+      var isToday = ds === todayStr;
+      var x = timeW + k * colW;
+      ctx.fillStyle = isToday ? '#3b82f6' : '#f0f0f0';
+      ctx.fillRect(x, 0, colW, headerH);
+      // Bottom accent for today
+      if (isToday) {
+        ctx.fillStyle = '#2563eb';
+        ctx.fillRect(x, headerH - 3, colW, 3);
+      }
+      ctx.textAlign = 'center';
+      ctx.font = (isToday ? 'bold 12px ' : '600 11px ') + '-apple-system, sans-serif';
+      ctx.fillStyle = isToday ? '#fff' : '#333';
+      var label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      ctx.fillText(label, x + colW / 2, headerH / 2);
+    }
+    // Time axis header
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillRect(0, 0, timeW, headerH);
+
+    // Time labels
+    ctx.textAlign = 'right';
+    ctx.font = '10px -apple-system, sans-serif';
+    ctx.fillStyle = '#666';
+    for (var hh = 0; hh < totalHours; hh++) {
+      var hour = startH + hh;
+      var disp = hour === 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+      var ampm = hour < 12 ? 'AM' : 'PM';
+      ctx.fillText(disp + ' ' + ampm, timeW - 5, headerH + hh * rowH + rowH / 2);
+    }
+
+    // Filter this week's tasks
+    var ds = formatDate(weekStart);
+    var de = formatDate(addDays(weekStart, 7));
+    var weekTasks = [];
+    for (var ti = 0; ti < state.tasks.length; ti++) {
+      var t = state.tasks[ti];
+      if (t.date && t.date >= ds && t.date < de && !isWhiteboardTask(t)) weekTasks.push(t);
+    }
+
+    // Draw task blocks
+    for (var ti = 0; ti < weekTasks.length; ti++) {
+      var t = weekTasks[ti];
+      var dayIdx = -1;
+      for (var di = 0; di < visibleDays.length; di++) {
+        if (formatDate(visibleDays[di]) === t.date) { dayIdx = di; break; }
+      }
+      if (dayIdx === -1) continue;
+
+      var startMins = parseTime(t.startTime);
+      if (isNaN(startMins)) {
+        var parts = t.startTime.split(':');
+        startMins = parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+      }
+      var endMins = parseTime(t.endTime);
+      if (isNaN(endMins)) endMins = startMins + 60;
+
+      if (startMins >= endMins) endMins = startMins + 30;
+      var gridStart = startH * 60;
+      var gridEnd = (startH + totalHours) * 60;
+      if (startMins < gridStart) startMins = gridStart;
+      if (endMins > gridEnd) endMins = gridEnd;
+      if (startMins >= endMins) continue;
+
+      var y1 = headerH + ((startMins - gridStart) / 60) * rowH;
+      var y2 = headerH + ((endMins - gridStart) / 60) * rowH;
+      var x1 = timeW + dayIdx * colW + 4;
+      var bw = colW - 8;
+      var bh = Math.max(y2 - y1, 16);
+
+      var tagColor = '#8b5cf6';
+      if (typeof TAG_COLORS !== 'undefined' && TAG_COLORS[t.tag]) tagColor = TAG_COLORS[t.tag].text || TAG_COLORS[t.tag];
+
+      // Task block background (rounded rect)
+      var r = 4;
+      ctx.beginPath();
+      ctx.moveTo(x1 + r, y1);
+      ctx.lineTo(x1 + bw - r, y1);
+      ctx.quadraticCurveTo(x1 + bw, y1, x1 + bw, y1 + r);
+      ctx.lineTo(x1 + bw, y1 + bh - r);
+      ctx.quadraticCurveTo(x1 + bw, y1 + bh, x1 + bw - r, y1 + bh);
+      ctx.lineTo(x1 + r, y1 + bh);
+      ctx.quadraticCurveTo(x1, y1 + bh, x1, y1 + bh - r);
+      ctx.lineTo(x1, y1 + r);
+      ctx.quadraticCurveTo(x1, y1, x1 + r, y1);
+      ctx.closePath();
+      ctx.fillStyle = tagColor + '1A';
+      ctx.fill();
+      // Left accent bar
+      ctx.fillStyle = tagColor;
+      ctx.fillRect(x1, y1 + 2, 3, bh - 4);
+
+      // Title (white if block is tall, dark otherwise)
+      var title = t.title || '';
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 10px -apple-system, sans-serif';
+      ctx.fillStyle = '#1f2937';
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x1 + 8, y1 + 2, bw - 16, bh - 4);
+      ctx.clip();
+      ctx.fillText(title, x1 + 8, y1 + bh / 2);
+      ctx.restore();
+    }
+
+    var link = document.createElement('a');
+    link.download = 'schedule-' + formatDate(new Date()) + '.png';
+    link.href = c.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(function() { document.body.removeChild(link); }, 100);
   };
 
   /* ─── Copy week to next week ──────────────── */

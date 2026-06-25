@@ -584,9 +584,7 @@ const FOCUS_MODE_KEY = 'haven-schedule-focus';
 let focusModeActive = false;
 
 function updateFocusModeBubble() {
-  const el = document.getElementById('accessFocusMode');
-  if (!el) return;
-  el.classList.toggle('active', focusModeActive);
+  // Focus mode state is tracked via focusModeActive variable
 }
 
 function toggleFocusMode() {
@@ -1033,6 +1031,9 @@ function createDefaultProfile() {
     tags: {},
     titleKeywords: {},
     completions: {},
+    conversationMemory: {},   // { key: { fact, date, source } }
+    planStats: { accepted: 0, rejected: 0, total: 0 },
+    suggestedTitles: {},      // { tag: [titles the user tends to use] }
   };
 }
 
@@ -1162,7 +1163,7 @@ function predictTagFromTitle(title) {
 function getLearningContext() {
   if (!state.userProfile) loadUserProfile();
   const p = state.userProfile;
-  if (p.totalTasksCreated === 0) return '';
+  if (p.totalTasksCreated === 0 && p.totalSessions === 0) return getConversationMemory() + getScheduleInsights() + getPlanLearning();
 
   const lines = [];
   lines.push(`USER'S LEARNED PATTERNS (based on ${p.totalTasksCreated} tasks across ${p.totalSessions} sessions):`);
@@ -1235,6 +1236,97 @@ function getLearningContext() {
   const routine = loadRoutine();
   if (routine) {
     lines.push(`\nUSER'S TYPICAL SCHEDULE (follow this routine when suggesting times):\n${routine}`);
+  }
+
+  return '\n' + lines.join('\n') + getConversationMemory() + getScheduleInsights() + getPlanLearning();
+}
+
+// ─── CONVERSATION MEMORY (AI learns from chats) ──────────
+function storeMemory(key, fact, source) {
+  if (!state.userProfile) loadUserProfile();
+  if (!state.userProfile.conversationMemory) state.userProfile.conversationMemory = {};
+  state.userProfile.conversationMemory[key] = {
+    fact: String(fact).slice(0, 500),
+    date: formatDate(new Date()),
+    source: source || 'chat',
+    updated: Date.now()
+  };
+  saveUserProfile();
+}
+
+function getConversationMemory() {
+  if (!state.userProfile?.conversationMemory) return '';
+  const mems = state.userProfile.conversationMemory;
+  const keys = Object.keys(mems);
+  if (keys.length === 0) return '';
+  const lines = keys.map(k => {
+    const m = mems[k];
+    return `- ${k}: ${m.fact}`;
+  });
+  return '\n\nTHINGS I\'VE LEARNED ABOUT YOU:\n' + lines.join('\n');
+}
+
+function trackPlanResult(accepted) {
+  if (!state.userProfile) loadUserProfile();
+  if (!state.userProfile.planStats) state.userProfile.planStats = { accepted: 0, rejected: 0, total: 0 };
+  state.userProfile.planStats.total++;
+  if (accepted) state.userProfile.planStats.accepted++;
+  else state.userProfile.planStats.rejected++;
+  saveUserProfile();
+}
+
+function getPlanLearning() {
+  if (!state.userProfile?.planStats || state.userProfile.planStats.total === 0) return '';
+  const s = state.userProfile.planStats;
+  const acceptRate = Math.round((s.accepted / s.total) * 100);
+  return `\nPlan acceptance rate: ${acceptRate}% (${s.accepted} accepted, ${s.rejected} rejected out of ${s.total})`;
+}
+
+// Deeper schedule pattern analysis
+function getScheduleInsights() {
+  const tasks = state.tasks;
+  if (!tasks || tasks.length < 3) return '';
+
+  const lines = [];
+  // Most common task durations by tag
+  const durByTag = {};
+  for (const t of tasks) {
+    if (!t.startTime || !t.endTime || isWhiteboardTask(t)) continue;
+    const d = getDurationMinutes(t);
+    if (!durByTag[t.tag]) durByTag[t.tag] = [];
+    durByTag[t.tag].push(d);
+  }
+  const durInsights = [];
+  for (const [tag, durs] of Object.entries(durByTag)) {
+    if (durs.length >= 3) {
+      const avg = Math.round(durs.reduce((s, v) => s + v, 0) / durs.length);
+      const label = TAG_LABELS[tag] || tag;
+      durInsights.push(`${label}: avg ${formatDuration(avg)}`);
+    }
+  }
+  if (durInsights.length > 0) {
+    lines.push('\nAVERAGE DURATIONS BY TYPE:');
+    lines.push(durInsights.join(', '));
+  }
+
+  // Task density — how many tasks per day on average
+  const taskDates = {};
+  for (const t of tasks) {
+    if (!t.date || isWhiteboardTask(t)) continue;
+    taskDates[t.date] = (taskDates[t.date] || 0) + 1;
+  }
+  const dateCounts = Object.values(taskDates);
+  if (dateCounts.length > 0) {
+    const avgPerDay = Math.round(dateCounts.reduce((s, v) => s + v, 0) / dateCounts.length * 10) / 10;
+    lines.push(`Avg tasks per day: ${avgPerDay}`);
+  }
+
+  // Completion rate
+  const total = tasks.filter(t => !isWhiteboardTask(t)).length;
+  const completed = tasks.filter(t => t.completed).length;
+  if (total > 0) {
+    const compRate = Math.round((completed / total) * 100);
+    lines.push(`Overall completion rate: ${compRate}% (${completed}/${total})`);
   }
 
   return '\n' + lines.join('\n');
@@ -4476,6 +4568,13 @@ function executeActions(actions, responseText) {
       saveState();
       actionSummary.push(`🧹 Deleted <strong>${toRemove.length}</strong> task${toRemove.length !== 1 ? 's' : ''} matching "${escapeHtml(action.data.query)}"`);
       actionsModified = true;
+    } else if (action.type === 'rememberFact') {
+      var key = action.data.key;
+      var fact = action.data.fact;
+      if (key && fact) {
+        storeMemory(key, fact, 'ai');
+        actionSummary.push(`🧠 Noted: ${escapeHtml(key)} — ${escapeHtml(fact)}`);
+      }
     }
   }
 
@@ -4560,10 +4659,12 @@ function sendAIMessage() {
       msgEl.querySelector('.ai-plan-confirm')?.addEventListener('click', () => {
         const resultHtml = executeActions(response.actions, response.text);
         msgEl.querySelector('.ai-bubble').innerHTML = resultHtml;
+        trackPlanResult(true);
         showToast('✅ Plan executed', 'success', 2000);
       });
       msgEl.querySelector('.ai-plan-cancel')?.addEventListener('click', () => {
         msgEl.querySelector('.ai-bubble').innerHTML = response.text + '\n\n<em style="color:var(--text-tertiary)">✖ Plan cancelled</em>';
+        trackPlanResult(false);
         showToast('Plan cancelled', 'info', 2000);
       });
     } else {
@@ -4599,6 +4700,31 @@ function sendAIMessage() {
   });
 }
 
+function renderMD(text) {
+  // Simple markdown → HTML for AI responses (safe: doesn't break existing HTML)
+  var t = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .split(/\n{2,}/).map(function(b) {
+      b = b.trim();
+      if (!b) return '';
+      if (/^[\-\*]\s/.test(b)) {
+        var items = b.split('\n').map(function(l) { return '<li>' + l.replace(/^[\-\*]\s/, '') + '</li>'; }).join('');
+        return '<ul>' + items + '</ul>';
+      }
+      if (/^\d+\.\s/.test(b)) {
+        var items = b.split('\n').map(function(l) { return '<li>' + l.replace(/^\d+\.\s/, '') + '</li>'; }).join('');
+        return '<ol>' + items + '</ol>';
+      }
+      return '<p>' + b.replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+  return t;
+}
+
 function appendAIMessage(role, html) {
   if (!dom.aiChatMessages) return;
   const div = document.createElement('div');
@@ -4606,8 +4732,13 @@ function appendAIMessage(role, html) {
     div.className = 'ai-message ai-message-user';
     div.innerHTML = `<div class="ai-bubble">${escapeHtml(html)}</div>`;
   } else if (role === 'assistant') {
+    var content = html;
+    // Only render markdown if no HTML tags present (plain text responses)
+    if (content.indexOf('<') === -1 || content.indexOf('>') === -1) {
+      content = renderMD(content);
+    }
     div.className = 'ai-message ai-message-assistant';
-    div.innerHTML = `<div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div><div class="ai-bubble">${html}</div>`;
+    div.innerHTML = `<div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div><div class="ai-bubble">${content}</div>`;
   } else {
     div.className = 'ai-message ai-message-system';
     div.innerHTML = `<div class="ai-bubble">${html}</div>`;
@@ -4854,6 +4985,7 @@ CAPABILITIES:
 5. Give advice on scheduling and time management
 6. Process uploaded files — the user can attach images (photos of schedules, class timetables, handwritten notes), PDFs, or text files. When an image is attached, carefully examine the image contents and extract any schedule, task, or event information from it, then offer to add them to the calendar.
 7. Understand natural language about time — "morning" = 6-12, "afternoon" = 12-17, "evening" = 17-21, "night" = 21-6
+8. **LEARN AND REMEMBER** — You get smarter over time. When the user tells you something about themselves (preferences, habits, routines, personal facts), use the "rememberFact" action to store it permanently. In future conversations, you'll see everything you've learned in the "THINGS I'VE LEARNED ABOUT YOU" section above. Proactively apply what you know — if they told you they're vegetarian, don't suggest cooking tasks; if they said they work remote Tuesdays, remember that.
 
 GRID RULES (the calendar grid runs ${toTimeStr(START_HOUR * 60)} – ${toTimeStr((START_HOUR + VISIBLE_HOURS) * 60)}):
 - Tasks snap to 30-minute increments (0 or 30 past the hour)
@@ -4941,6 +5073,7 @@ AVAILABLE ACTION TYPES:
 - "clearCompletedTasks": delete all completed tasks. data: {} (empty)
 - "deleteTasksByTag": delete all tasks of a specific tag type. data: { tag: "tag-name" }
 - "deleteTasksByQuery": delete all tasks whose title contains the given text. data: { query: "search text" }
+- "rememberFact": store something you learned about the user for future conversations. data: { key: "short-unique-key", fact: "the fact to remember" }. Use this when the user shares personal info, preferences, habits, or anything useful to recall later. Example: { type: "rememberFact", data: { key: "work-hours", fact: "works 10am-6pm Tue-Sat" } }
 
 EXAMPLES:
 - "Clear my whole schedule" → use "clearAllTasks"

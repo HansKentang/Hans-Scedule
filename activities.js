@@ -5,6 +5,11 @@
 
 // --- VIEW STATE -------------------------------------------------------------
 let activitiesView = 'board'; // 'board' | 'timeline'
+let weekOffset = 0; // 0 = current week, -1 = last week, +1 = next week
+function getActivitiesWeekStart() {
+  const today = new Date();
+  return addDays(getMonday(today), weekOffset * 7);
+}
 
 // --- DOM REFS -------------------------------------------------------------
 const boardInner = document.getElementById('tagsBoardInner');
@@ -512,11 +517,13 @@ function renderTimeline() {
   if (!actTimeline) return;
 
   const today = new Date();
-  const weekStart = getMonday(today);
+  const weekStart = getActivitiesWeekStart();
   const days = getWeekRange(weekStart);
   const todayStr = formatDate(today);
 
-  let html = '';
+  const firstStr = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const lastStr = addDays(weekStart, 6).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  html = `<div class="act-tl-weeklabel">${firstStr} – ${lastStr}</div>`;
 
   for (const day of days) {
     const ds = formatDate(day);
@@ -685,11 +692,26 @@ function renderActivityChart() {
   const chart = document.getElementById('activityChart');
   const totalEl = document.getElementById('actChartTotal');
   const legendEl = document.getElementById('actChartLegend');
+  const weekLabel = document.getElementById('actWeekLabel');
   if (!chart) return;
 
   const now = new Date();
-  const weekStart = getMonday(now);
+  const weekStart = getActivitiesWeekStart();
   const todayStr = formatDate(now);
+
+  // Update week label
+  if (weekLabel) {
+    const offset = weekOffset;
+    const firstDay = weekStart;
+    const lastDay = addDays(weekStart, 6);
+    const monthLabel = firstDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endLabel = lastDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (offset === 0) {
+      weekLabel.textContent = 'This Week';
+    } else {
+      weekLabel.textContent = `${monthLabel} – ${endLabel}`;
+    }
+  }
   const dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const tags = TAG_ORDER;
 
@@ -811,6 +833,10 @@ function setupPage() {
   dom.aiChatSend?.addEventListener('click', sendAIMessage);
   dom.aiChatInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); } });
 
+  // Week navigation
+  document.getElementById('actWeekPrev')?.addEventListener('click', () => { weekOffset--; renderActivities(); });
+  document.getElementById('actWeekNext')?.addEventListener('click', () => { weekOffset++; renderActivities(); });
+
   // View toggle
   document.querySelectorAll('.act-view-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -842,6 +868,7 @@ function init() {
   applyTheme();
   loadCompletionLog();
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
+  weekOffset = 0;
   renderActivities();
   setupPage();
   document.getElementById('exportBtn')?.addEventListener('click', exportData);

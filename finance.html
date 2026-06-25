@@ -20,7 +20,7 @@
       --fin-expense: #ef4444;
       --fin-accent: var(--primary);
     }
-    .fin-kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
+    .fin-kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
     .fin-kpi { padding: var(--space-5); border-radius: var(--radius-xl); border: 1px solid var(--border-color); background: var(--bg-card); position: relative; overflow: hidden; transition: all var(--t-base); cursor: default; }
     .fin-kpi:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
     .fin-kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
@@ -534,10 +534,6 @@
             <div class="fin-kpi-label">Expenses</div>
             <div class="fin-kpi-value" id="finExpenses">—</div>
           </div>
-          <div class="fin-kpi net">
-            <div class="fin-kpi-label">Savings</div>
-            <div class="fin-kpi-value" id="finNet">—</div>
-          </div>
         </div>
 
         <!-- ─── PIGGY BANK & WALLET ───────────────────── -->
@@ -797,22 +793,9 @@
 
     function renderCards() {
       const s = getSummary();
-      set('finHeroTitle', s.rate === -999 ? 'No income data' : `${fmtPct(s.rate)} savings rate`);
+      set('finHeroTitle', s.rate === -999 ? '' : `${fmtPct(s.rate)} savings rate`);
       set('finIncome', fmtMoney(s.income));
       set('finExpenses', fmtMoney(s.expenses));
-      const netEl = document.getElementById('finNet');
-      if (netEl) {
-        netEl.textContent = s.net < 0 ? '- ' + fmtMoney(Math.abs(s.net)) : fmtMoney(s.net);
-        netEl.style.color = s.net >= 0 ? 'inherit' : '#ef4444';
-        // Show rate as a subtitle
-        const kpiCard = netEl.closest('.fin-kpi');
-        if (kpiCard) {
-          let sub = kpiCard.querySelector('.fin-kpi-sub');
-          if (!sub) { sub = document.createElement('div'); sub.className = 'fin-kpi-sub'; kpiCard.appendChild(sub); }
-          sub.textContent = s.rate === -999 ? '' : `${fmtPct(s.rate)} savings rate`;
-          sub.style.cssText = 'font-size:0.6rem;color:var(--text-tertiary);margin-top:2px;font-weight:500';
-        }
-      }
     }
 
     function renderCount() {
