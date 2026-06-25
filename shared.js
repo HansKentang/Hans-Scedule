@@ -1498,11 +1498,90 @@ const DEFAULT_IMAGES = {
   'sidebar-gallery': 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=440&q=80'
 };
 
+// ─── INDEXEDDB FOR IMAGES (unlimited storage) ──────────────
+var _IMG_DB = null;
+var _IMG_DB_PENDING = null;
+function _imgDB() {
+  if (_IMG_DB) return Promise.resolve(_IMG_DB);
+  if (_IMG_DB_PENDING) return _IMG_DB_PENDING;
+  _IMG_DB_PENDING = new Promise(function(resolve, reject) {
+    var req = indexedDB.open('haven-images', 1);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains('images')) db.createObjectStore('images');
+    };
+    req.onsuccess = function(e) {
+      _IMG_DB = e.target.result;
+      _IMG_DB_PENDING = null;
+      resolve(_IMG_DB);
+    };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+  return _IMG_DB_PENDING;
+}
+function _imgDBPut(id, url) {
+  return _imgDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction('images', 'readwrite');
+      tx.objectStore('images').put(url, id);
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+function _imgDBGet(id) {
+  return _imgDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction('images', 'readonly');
+      var req = tx.objectStore('images').get(id);
+      req.onsuccess = function() { resolve(req.result); };
+      req.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+function _imgDBDelete(id) {
+  return _imgDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction('images', 'readwrite');
+      tx.objectStore('images').delete(id);
+      tx.oncomplete = function() { resolve(); };
+      tx.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+function _imgDBGetAll() {
+  return _imgDB().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      var tx = db.transaction('images', 'readonly');
+      var store = tx.objectStore('images');
+      var req = store.openCursor();
+      var results = {};
+      req.onsuccess = function(e) {
+        var cursor = e.target.result;
+        if (cursor) { results[cursor.key] = cursor.value; cursor.continue(); }
+        else resolve(results);
+      };
+      req.onerror = function(e) { reject(e.target.error); };
+    });
+  });
+}
+
 function loadImages() {
   state.images = { ...DEFAULT_IMAGES };
   try { restoreDirectImageKeys(); } catch(e) { /* skip */ }
   // After restoring, re-apply images to the DOM in case DOM is ready
   try { applyImages(); } catch(e) { /* DOM may not be ready yet */ }
+  // Async: load from IndexedDB (unlimited storage) and merge in
+  _imgDBGetAll().then(function(dbImages) {
+    var changed = false;
+    for (var k in dbImages) {
+      if (dbImages.hasOwnProperty(k) && state.images[k] !== dbImages[k]) {
+        state.images[k] = dbImages[k];
+        changed = true;
+      }
+    }
+    if (changed) try { applyImages(); } catch(e) {}
+  }).catch(function() {});
 }
 
 // --- APPLY IMAGES TO DOM ---
@@ -1555,10 +1634,16 @@ function getImage(id) {
 function setImage(id, url) {
   if (!state.images) loadImages();
   state.images[id] = url;
-  try { localStorage.setItem('haven-image-' + id, url); } catch(e) {
-    console.warn('[img] localStorage quota may be exceeded for image:', id, e);
-    if (typeof showToast === 'function') showToast('Could not save image: localStorage full. Try a smaller image.', 'error', 4000);
-  }
+  // Primary: save to IndexedDB (unlimited storage)
+  _imgDBPut(id, url).catch(function() {
+    // IndexedDB failed, fall back to localStorage
+    try { localStorage.setItem('haven-image-' + id, url); } catch(e) {
+      console.warn('[img] storage quota exceeded for image:', id, e);
+      if (typeof showToast === 'function') showToast('Could not save image: storage full. Try a smaller image.', 'error', 4000);
+    }
+  });
+  // Best-effort localStorage cache (silent if full — IndexedDB has the image)
+  try { localStorage.setItem('haven-image-' + id, url); } catch(e) { /* ignore */ }
   if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
     var _item = hubContent.bentoLayout.find(function(i){return i.imageId === id;});
     if (_item) _item._imgUrl = url;
@@ -1594,6 +1679,7 @@ function setImage(id, url) {
 function resetImage(id) {
   if (!state.images) loadImages();
   delete state.images[id];
+  _imgDBDelete(id).catch(function() {});
   try { localStorage.removeItem('haven-image-' + id); } catch(e) { /* ignore */ }
   if (typeof hubContent !== 'undefined' && hubContent && hubContent.bentoLayout) {
     const item = hubContent.bentoLayout.find(i => i.imageId === id);
