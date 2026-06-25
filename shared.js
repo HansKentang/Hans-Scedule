@@ -1543,7 +1543,7 @@ function loadState() {
 // ─── CUSTOM IMAGES ─────────────────────────────────────────
 const DEFAULT_IMAGES = {
   'hub-hero': 'https://picsum.photos/seed/haven-hub-hero/1200/600',
-  'hub-tulips': '',
+  'hub-tulips': 'https://picsum.photos/seed/haven-hub-tulips/600/400',
   'hub-desk-water': '',
   'hub-lamp': '',
   'hub-ceramic': 'https://picsum.photos/seed/haven-hub-ceramic/400/400',
