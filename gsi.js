@@ -139,8 +139,18 @@ function guestSignOut() {
 }
 
 // ─── Firebase Google Sign-In ──────────────────────────
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBLrSNOLrpGEsvkUMddC4aZONqQ6AAVyWc",
+  authDomain: "haven-schdule.firebaseapp.com",
+  projectId: "haven-schdule",
+  storageBucket: "haven-schdule.firebasestorage.app",
+  messagingSenderId: "115419547977",
+  appId: "1:115419547977:web:473fed3b70a004ca8a7298"
+};
+
 function firebaseSignIn() {
   if (typeof firebase === 'undefined') { showToast('Firebase SDK not loaded. Refresh the page.', 'error', 4000); return; }
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
   var provider = new firebase.auth.GoogleAuthProvider();
   firebase.auth().signInWithPopup(provider)
     .then(function(result) { handleFirebaseUser(result.user); })
