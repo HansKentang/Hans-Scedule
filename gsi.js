@@ -138,30 +138,18 @@ function guestSignOut() {
   location.href = 'login.html';
 }
 
-// ─── Firebase Google Sign-In ──────────────────────────
-function firebaseSignIn() {
-  if (typeof firebase === 'undefined') { showToast('Firebase SDK not loaded. Refresh the page.', 'error', 4000); return; }
-  var provider = new firebase.auth.GoogleAuthProvider();
-  firebase.auth().signInWithPopup(provider)
-    .then(function(result) { handleFirebaseUser(result.user); })
-    .catch(function(error) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        showToast('Sign-in failed: ' + error.message, 'error', 4000);
-      }
-    });
-}
-
-function handleFirebaseUser(fbUser) {
-  if (!fbUser) return;
-  var uid = fbUser.uid;
-  var existing = localUsers.find(function(u) { return u.id === 'firebase-' + uid; });
+// ─── Google OAuth (full-page redirect) ─────────────
+function handleGoogleOAuthUser(payload) {
+  if (!payload || !payload.sub) return;
+  var id = 'google-' + payload.sub;
+  var existing = localUsers.find(function(u) { return u.id === id; });
   if (existing) { switchAccount(existing.id); return; }
   var user = {
-    id: 'firebase-' + uid,
-    name: fbUser.displayName || fbUser.email || 'User',
-    email: fbUser.email || '',
-    picture: fbUser.photoURL || '',
-    _color: getColorForId('firebase-' + uid)
+    id: id,
+    name: payload.name || payload.email || 'User',
+    email: payload.email || '',
+    picture: payload.picture || '',
+    _color: getColorForId(id)
   };
   localUsers.push(user);
   saveUsers();
@@ -170,8 +158,7 @@ function handleFirebaseUser(fbUser) {
   migrateExistingData(user.id);
   renderAuthUI();
   showToast('Signed in as ' + user.name, 'info', 2000);
-  if (isLoginPage()) location.href = 'index.html';
-  else location.reload();
+  location.href = 'index.html';
 }
 
 // ─── Local profile ────────────────────────────────────
@@ -270,5 +257,4 @@ window.gsiSignOut = removeProfile;
 window.switchGSIAccount = switchAccount;
 window.getGSIActiveSub = getActiveUserId;
 window.createLocalProfile = createLocalProfile;
-window.firebaseSignIn = firebaseSignIn;
-window.handleFirebaseUser = handleFirebaseUser;
+window.handleGoogleOAuthUser = handleGoogleOAuthUser;
