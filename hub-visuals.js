@@ -425,6 +425,11 @@ function toggleHubEdit(on) {
   hubEditMode = on !== undefined ? on : !hubEditMode;
   localStorage.setItem(HUB_EDIT_KEY, hubEditMode);
   if (!hubEditMode) saveHubContent();
+  // If entering edit mode, close the add-bubble dock (they are mutually exclusive)
+  if (hubEditMode) {
+    var d = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
+    if (d) d.remove();
+  }
   // Sync with global state.editMode when exiting edit mode
   if (!hubEditMode && typeof state !== 'undefined' && state.editMode) {
     state.editMode = false;
@@ -1016,6 +1021,11 @@ function renderHubBento() {
 
   // Bottom padding for fixed Done button in edit mode
   grid.style.paddingBottom = isEdit ? '64px' : '';
+  // Clean up dock when not in edit mode
+  if (!isEdit) {
+    var d = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
+    if (d) d.remove();
+  }
 
   // ─── Timer / Pomodoro wiring ──────────────────
   if (!grid._timerWired) {
@@ -2000,16 +2010,15 @@ function _pomoClearTickIfIdle() {
 
 /* ─── ADD popup (hide-popup style) ──────────── */
 function showHubAddPopup(e) {
-  // In edit mode, toggle the bubble dock instead of the popup
-  if (hubEditMode) {
-    var grid = document.querySelector('.bento-grid');
-    if (grid) {
-      var existing = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
-      if (existing) {
-        existing.remove();
-      } else {
-        renderBubbleDock(grid);
-      }
+  // Exit edit mode if active, then toggle the dock
+  if (hubEditMode) toggleHubEdit(false);
+  var g = document.querySelector('.bento-grid');
+  if (g) {
+    var dockEl = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
+    if (dockEl) {
+      dockEl.remove();
+    } else {
+      renderBubbleDock(g);
     }
     return;
   }
@@ -2080,7 +2089,6 @@ function showHubAddPopup(e) {
 
 /* ─── BUBBLE DOCK (draggable add panel below canvas) ─── */
 function renderBubbleDock(grid) {
-  if (!hubEditMode) return;
   var existing = document.querySelector('.bento-bubble-dock');
   if (existing) existing.remove();
   var dock = document.createElement('div');

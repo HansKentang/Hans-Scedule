@@ -774,14 +774,23 @@ function renderActivityChart() {
     return;
   }
 
+  const avgDaily = Math.round(grandTotal / 7);
+  const busiestIdx = dayData.reduce((best, d, i) => d.total > dayData[best].total ? i : best, 0);
+
   let html = '';
   for (let i = 0; i < 7; i++) {
     const dd = dayData[i];
+    const d = addDays(weekStart, i);
     const todayCls = dd.isToday ? ' today' : '';
+    const isBusiest = i === busiestIdx && dd.total > 0;
+    const barHeight = maxDayTotal > 0 ? Math.max((dd.total / maxDayTotal) * 100, 8) : 8;
+    const dayNum = d.getDate();
+
     html += `<div class="act-chart-bar-col${todayCls}">`;
+    html += `<span class="act-chart-bar-val">${dd.total > 0 ? formatDuration(dd.total) : '—'}</span>`;
 
     if (dd.total > 0) {
-      html += `<div class="act-chart-bar" title="${dayLabels[i]}: ${formatDuration(dd.total)}">`;
+      html += `<div class="act-chart-bar${isBusiest ? ' busiest' : ''}" style="height:${barHeight}%" title="${dayLabels[i]}: ${formatDuration(dd.total)}">`;
       const sortedTags = [...tags].filter(tag => dd.tagMins[tag] > 0);
       sortedTags.sort((a, b) => dd.tagMins[b] - dd.tagMins[a]);
       for (const tag of sortedTags) {
@@ -790,15 +799,15 @@ function renderActivityChart() {
       }
       html += `</div>`;
     } else {
-      html += `<div class="act-chart-bar-empty"></div>`;
+      html += `<div class="act-chart-bar-empty" style="height:${barHeight}%"></div>`;
     }
 
-    html += `<span class="act-chart-bar-label">${dayLabels[i]}</span>`;
+    html += `<span class="act-chart-bar-label">${dayLabels[i]} <small>${dayNum}</small></span>`;
     html += `</div>`;
   }
   chart.innerHTML = html;
 
-  if (totalEl) totalEl.textContent = formatDuration(grandTotal) + ' this week';
+  if (totalEl) totalEl.textContent = `${formatDuration(grandTotal)} total · avg ${formatDuration(avgDaily)}/day`;
 
   let legendHtml = '';
   for (const tag of tags) {
