@@ -1,4 +1,4 @@
-// ─── Google Sign-In ──────────────────────────────────────
+// ─── Google Sign-In (Sign In With Google / ID token) ─────
 const GSI_ACCOUNTS_KEY = 'haven-gsi-accounts';
 const GSI_ACTIVE_KEY = 'haven-gsi-active';
 const GSI_CLIENT_ID = '111398603822-qucnj9i3bipbcbgjmmr98b43gjusk4ph.apps.googleusercontent.com';
@@ -54,7 +54,6 @@ function renderGSIUI() {
         </div>
       </div>`;
 
-    container.querySelector('#gsiDropdown');
     // Toggle dropdown on avatar click
     const avatar = container.querySelector('.gsi-avatar');
     const dropdown = container.querySelector('#gsiDropdown');
@@ -96,18 +95,9 @@ function renderGSIUI() {
 }
 
 function gsiSignIn() {
-  if (typeof google === 'undefined' || !google.accounts) return;
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: GSI_CLIENT_ID,
-    scope: 'openid profile email',
-    callback: (response) => {
-      if (response.error) return;
-      // Decode the JWT to get user info
-      const payload = JSON.parse(atob(response.access_token.split('.')[1]));
-      handleGSICredential(payload);
-    },
-  });
-  client.requestAccessToken();
+  // If already signed in, pass ?add=1 to allow adding another account
+  var active = getGSIActiveSub();
+  location.href = active ? 'login.html?add=1' : 'login.html';
 }
 
 function handleGSICredential(payload) {
@@ -133,9 +123,12 @@ function handleGSICredential(payload) {
   // Migrate existing un-prefixed data to prefixed keys (first sign-in)
   migrateExistingData(sub);
   renderGSIUI();
-  showToast('Signed in as ' + account.name, 'info', 2000);
-  // Reload the page to pick up data from prefixed keys
-  location.reload();
+  // Go to app (or reload current page to pick up prefixed data)
+  if (isLoginPage()) {
+    location.href = 'index.html';
+  } else {
+    location.reload();
+  }
 }
 
 function migrateExistingData(sub) {
@@ -184,7 +177,6 @@ function gsiSignOut(sub) {
   renderGSIUI();
   showToast('Signed out', 'info', 1500);
   if (typeof loadState === 'function') {
-    // Reload to use un-prefixed or other user's keys
     location.reload();
   }
 }
@@ -198,12 +190,73 @@ function initGSI() {
   }
   renderGSIUI();
   gsiInitialized = true;
+
+  // Login page: render Google's own button
+  if (isLoginPage()) {
+    // If signed in but not adding an account, go to app
+    if (activeSub && !isAddingAccount()) {
+      location.href = 'index.html';
+      return;
+    }
+    initGSIProvider();
+    renderLoginPageButton();
+    return;
+  }
+
+  // App pages: redirect to login if no user and not guest
+  if (!activeSub && !isGuestMode()) {
+    location.href = 'login.html';
+    return;
+  }
 }
 
-// Expose for inline onclick usage
+function initGSIProvider() {
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+    setTimeout(function() { initGSIProvider(); renderLoginPageButton(); }, 500);
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GSI_CLIENT_ID,
+    callback: function(response) {
+      if (!response || !response.credential) return;
+      var payload = JSON.parse(atob(response.credential.split('.')[1]));
+      handleGSICredential(payload);
+    },
+    cancel_on_tap_outside: false,
+  });
+  renderLoginPageButton();
+}
+
+function renderLoginPageButton() {
+  var container = document.getElementById('gsiButtonContainer');
+  if (!container) return;
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
+  google.accounts.id.renderButton(container, {
+    type: 'standard',
+    shape: 'pill',
+    theme: 'outline',
+    size: 'large',
+    text: 'signin_with',
+    logo_alignment: 'left',
+    width: container.clientWidth || 280,
+  });
+}
+
+function isLoginPage() {
+  return location.pathname.indexOf('login.html') !== -1;
+}
+
+function isGuestMode() {
+  return sessionStorage.getItem('haven-guest') === '1';
+}
+
+function isAddingAccount() {
+  return location.search.indexOf('add=1') !== -1;
+}
+
+// Expose for inline usage
 window.initGSI = initGSI;
 window.gsiSignIn = gsiSignIn;
 window.gsiSignOut = gsiSignOut;
 window.switchGSIAccount = switchGSIAccount;
 window.getGSIActiveSub = getGSIActiveSub;
-
