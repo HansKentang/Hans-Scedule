@@ -140,12 +140,12 @@ function guestSignOut() {
 
 // ─── Firebase Google Sign-In ──────────────────────────
 var FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBLrSNOLrpGEsvkUMddC4aZONqQ6AAVyWc",
-  authDomain: "haven-schdule.firebaseapp.com",
-  projectId: "haven-schdule",
-  storageBucket: "haven-schdule.firebasestorage.app",
-  messagingSenderId: "115419547977",
-  appId: "1:115419547977:web:473fed3b70a004ca8a7298"
+  apiKey: "AIzaSyDhGJuLw9TW7i6GUQkhVQwOSRkX4nAoS8g",
+  authDomain: "haven-schedule-c8fec.firebaseapp.com",
+  projectId: "haven-schedule-c8fec",
+  storageBucket: "haven-schedule-c8fec.firebasestorage.app",
+  messagingSenderId: "372760068715",
+  appId: "1:372760068715:web:e18957b41d42b727ab272e"
 };
 
 function firebaseSignIn() {
