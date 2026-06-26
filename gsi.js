@@ -1,245 +1,259 @@
-// ─── Google Sign-In (Sign In With Google / ID token) ─────
-const GSI_ACCOUNTS_KEY = 'haven-gsi-accounts';
-const GSI_ACTIVE_KEY = 'haven-gsi-active';
-const GSI_CLIENT_ID = '111398603822-qucnj9i3bipbcbgjmmr98b43gjusk4ph.apps.googleusercontent.com';
+// ─── Auth (Firebase + local fallback) ────────────────
+var AUTH_USERS_KEY = 'haven-gsi-accounts';
+var AUTH_ACTIVE_KEY = 'haven-gsi-active';
+var localUsers = [];
+var authInitialized = false;
 
-let gsiAccounts = [];
-let gsiInitialized = false;
-
-function loadGSIAccounts() {
-  try { gsiAccounts = JSON.parse(localStorage.getItem(GSI_ACCOUNTS_KEY) || '[]'); } catch (e) { gsiAccounts = []; }
+function loadUsers() {
+  try { localUsers = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '[]'); } catch (e) { localUsers = []; }
 }
 
-function saveGSIAccounts() {
-  localStorage.setItem(GSI_ACCOUNTS_KEY, JSON.stringify(gsiAccounts));
+function saveUsers() {
+  localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(localUsers));
 }
 
-function getGSIActiveSub() {
-  try { return localStorage.getItem(GSI_ACTIVE_KEY); } catch (e) { return null; }
+function getActiveUserId() {
+  try { return localStorage.getItem(AUTH_ACTIVE_KEY); } catch (e) { return null; }
 }
 
-function setGSIActiveSub(sub) {
-  if (sub) { localStorage.setItem(GSI_ACTIVE_KEY, sub); }
-  else { localStorage.removeItem(GSI_ACTIVE_KEY); }
+function setActiveUserId(id) {
+  if (id) localStorage.setItem(AUTH_ACTIVE_KEY, id);
+  else localStorage.removeItem(AUTH_ACTIVE_KEY);
 }
 
-function renderGSIUI() {
-  const container = document.getElementById('gsiContainer');
+function generateId() {
+  return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function getInitials(name) {
+  return name.trim().split(/\s+/).slice(0, 2).map(function(s) { return s[0]; }).join('').toUpperCase() || '?';
+}
+
+function getColorForId(id) {
+  var colors = ['#b4ccbc','#c4a4c8','#c8b88a','#a4c8c4','#c8a4a4','#a4b4c8','#b8c8a4','#c8b4a4'];
+  var hash = 0;
+  for (var i = 0; i < id.length; i++) hash = ((hash << 5) - hash) + id.charCodeAt(i);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function renderAuthUI() {
+  var container = document.getElementById('gsiContainer');
   if (!container) return;
-  const activeSub = getGSIActiveSub();
-  const activeAccount = gsiAccounts.find(a => a.sub === activeSub);
+  var activeId = getActiveUserId();
+  var activeUser = localUsers.find(function(u) { return u.id === activeId; });
 
-  if (activeAccount) {
-    container.innerHTML = `
-      <div class="gsi-avatar-wrap">
-        <img class="gsi-avatar" src="${activeAccount.picture}" alt="${escapeHtml(activeAccount.name)}" title="${escapeHtml(activeAccount.name)}">
-        <div class="gsi-avatar-name">${escapeHtml(activeAccount.name)}</div>
-        <div class="gsi-avatar-dropdown" id="gsiDropdown">
-          ${gsiAccounts.map(a => `
-            <div class="gsi-dd-item${a.sub === activeSub ? ' active' : ''}" data-gsi-switch="${a.sub}">
-              <img class="gsi-dd-avatar" src="${escapeHtml(a.picture)}" alt="">
-              <span class="gsi-dd-name">${escapeHtml(a.name)}</span>
-              <span class="gsi-dd-email">${escapeHtml(a.email)}</span>
-            </div>
-          `).join('')}
-          <div class="gsi-dd-divider"></div>
-          <div class="gsi-dd-item" id="gsiAddAccountBtn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span>Add account</span>
-          </div>
-          <div class="gsi-dd-item danger" id="gsiSignOutBtn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span>Sign out</span>
-          </div>
-        </div>
-      </div>`;
+  if (activeUser) {
+    var initials = getInitials(activeUser.name);
+    var color = activeUser._color || getColorForId(activeUser.id);
+    var avatarHtml = activeUser.picture
+      ? '<img class="gsi-avatar" src="' + activeUser.picture + '" alt="' + escapeHtml(activeUser.name) + '">'
+      : '<div class="gsi-avatar gsi-avatar-local" style="background:' + color + '"><span class="gsi-avatar-initials">' + escapeHtml(initials) + '</span></div>';
+    var dropdownItems = localUsers.map(function(u) {
+      var i2 = getInitials(u.name);
+      var c2 = u._color || getColorForId(u.id);
+      var icon = u.picture
+        ? '<img class="gsi-dd-avatar" src="' + u.picture + '" alt="">'
+        : '<span class="gsi-dd-initials" style="background:' + c2 + '">' + escapeHtml(i2) + '</span>';
+      return '<div class="gsi-dd-item' + (u.id === activeId ? ' active' : '') + '" data-gsi-switch="' + u.id + '">' +
+        icon + '<span class="gsi-dd-name">' + escapeHtml(u.name) + '</span></div>';
+    }).join('');
 
-    // Toggle dropdown on avatar click
-    const avatar = container.querySelector('.gsi-avatar');
-    const dropdown = container.querySelector('#gsiDropdown');
-    avatar.addEventListener('click', (e) => {
+    container.innerHTML =
+      '<div class="gsi-avatar-wrap">' + avatarHtml +
+        '<div class="gsi-avatar-name">' + escapeHtml(activeUser.name) + '</div>' +
+        '<div class="gsi-avatar-dropdown" id="gsiDropdown">' +
+          dropdownItems +
+          '<div class="gsi-dd-divider"></div>' +
+          '<div class="gsi-dd-item" id="gsiAddAccountBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add profile</span></div>' +
+          '<div class="gsi-dd-item danger" id="gsiSignOutBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Remove profile</span></div>' +
+        '</div></div>';
+
+    var avatar = container.querySelector('.gsi-avatar, .gsi-avatar-local');
+    var dropdown = container.querySelector('#gsiDropdown');
+    avatar.addEventListener('click', function(e) {
       e.stopPropagation();
       dropdown.classList.toggle('open');
     });
-    dropdown.querySelectorAll('[data-gsi-switch]').forEach(el => {
-      el.addEventListener('click', () => { switchGSIAccount(el.dataset.gsiSwitch); });
+    dropdown.querySelectorAll('[data-gsi-switch]').forEach(function(el) {
+      el.addEventListener('click', function() { switchAccount(el.dataset.gsiSwitch); });
     });
-    container.querySelector('#gsiAddAccountBtn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dropdown.classList.remove('open');
+    container.querySelector('#gsiAddAccountBtn').addEventListener('click', function(e) {
+      e.stopPropagation(); dropdown.classList.remove('open');
       gsiSignIn();
     });
-    container.querySelector('#gsiSignOutBtn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dropdown.classList.remove('open');
-      gsiSignOut(activeSub);
+    container.querySelector('#gsiSignOutBtn').addEventListener('click', function(e) {
+      e.stopPropagation(); dropdown.classList.remove('open');
+      removeProfile(activeId);
     });
-    // Close dropdown on outside click (each render adds one, so remove old first)
     var existing = document._gsiOutsideClick;
     if (existing) document.removeEventListener('click', existing);
     document._gsiOutsideClick = function(e) {
       var dd = document.getElementById('gsiDropdown');
-      if (dd && !dd.contains(e.target) && !e.target.closest('.gsi-avatar')) dd.classList.remove('open');
+      if (dd && !dd.contains(e.target) && !e.target.closest('.gsi-avatar') && !e.target.closest('.gsi-avatar-local')) dd.classList.remove('open');
+    };
+    document.addEventListener('click', document._gsiOutsideClick);
+  } else if (isGuestMode()) {
+    container.innerHTML =
+      '<div class="gsi-avatar-wrap" style="cursor:default">' +
+        '<div class="gsi-avatar gsi-avatar-local" style="background:var(--text-tertiary);opacity:0.5"><span class="gsi-avatar-initials" style="font-size:0.45rem">?</span></div>' +
+        '<div class="gsi-avatar-name" style="opacity:0.5">Guest</div>' +
+        '<div class="gsi-avatar-dropdown" id="gsiDropdown">' +
+          '<div class="gsi-dd-item danger" id="gsiGuestSignOut">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
+            '<span>Sign out</span>' +
+          '</div>' +
+        '</div></div>';
+    var avatar = container.querySelector('.gsi-avatar-local');
+    var dropdown = container.querySelector('#gsiDropdown');
+    avatar.addEventListener('click', function(e) {
+      e.stopPropagation();
+      dropdown.classList.toggle('open');
+    });
+    container.querySelector('#gsiGuestSignOut').addEventListener('click', function(e) {
+      e.stopPropagation(); dropdown.classList.remove('open');
+      guestSignOut();
+    });
+    var existing = document._gsiOutsideClick;
+    if (existing) document.removeEventListener('click', existing);
+    document._gsiOutsideClick = function(e) {
+      var dd = document.getElementById('gsiDropdown');
+      if (dd && !dd.contains(e.target) && !e.target.closest('.gsi-avatar-local')) dd.classList.remove('open');
     };
     document.addEventListener('click', document._gsiOutsideClick);
   } else {
-    container.innerHTML = `
-      <div class="gsi-signin-wrap">
-        <div id="gsiButton" class="gsi-signin-btn">
-          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.95 1 11.02 1 13s.43 4.05 1.18 5.93l2.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          <span>Sign in with Google</span>
-        </div>
-      </div>`;
-    container.querySelector('#gsiButton')?.addEventListener('click', gsiSignIn);
+    container.innerHTML =
+      '<div class="gsi-signin-wrap"><div id="gsiButton" class="gsi-signin-btn">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+        '<span>Create profile</span></div></div>';
+    container.querySelector('#gsiButton').addEventListener('click', gsiSignIn);
   }
 }
 
 function gsiSignIn() {
-  // If already signed in, pass ?add=1 to allow adding another account
-  var active = getGSIActiveSub();
-  location.href = active ? 'login.html?add=1' : 'login.html';
+  location.href = 'login.html';
 }
 
-function handleGSICredential(payload) {
-  const sub = payload.sub;
-  // If already signed in, skip
-  if (gsiAccounts.some(a => a.sub === sub)) {
-    switchGSIAccount(sub);
-    return;
-  }
-  const account = {
-    sub,
-    name: payload.name || '',
-    email: payload.email || '',
-    picture: payload.picture || '',
+function guestSignOut() {
+  sessionStorage.removeItem('haven-guest');
+  location.href = 'login.html';
+}
+
+// ─── Firebase Google Sign-In ──────────────────────────
+function firebaseSignIn() {
+  if (typeof firebase === 'undefined') { showToast('Firebase SDK not loaded. Refresh the page.', 'error', 4000); return; }
+  var provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider)
+    .then(function(result) { handleFirebaseUser(result.user); })
+    .catch(function(error) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        showToast('Sign-in failed: ' + error.message, 'error', 4000);
+      }
+    });
+}
+
+function handleFirebaseUser(fbUser) {
+  if (!fbUser) return;
+  var uid = fbUser.uid;
+  var existing = localUsers.find(function(u) { return u.id === 'firebase-' + uid; });
+  if (existing) { switchAccount(existing.id); return; }
+  var user = {
+    id: 'firebase-' + uid,
+    name: fbUser.displayName || fbUser.email || 'User',
+    email: fbUser.email || '',
+    picture: fbUser.photoURL || '',
+    _color: getColorForId('firebase-' + uid)
   };
-  gsiAccounts.push(account);
-  saveGSIAccounts();
-  // Set active user and apply prefix
-  setGSIActiveSub(sub);
-  if (typeof state !== 'undefined') {
-    state.currentUserSub = sub;
-  }
-  // Migrate existing un-prefixed data to prefixed keys (first sign-in)
-  migrateExistingData(sub);
-  renderGSIUI();
-  // Go to app (or reload current page to pick up prefixed data)
-  if (isLoginPage()) {
-    location.href = 'index.html';
-  } else {
-    location.reload();
-  }
+  localUsers.push(user);
+  saveUsers();
+  setActiveUserId(user.id);
+  if (typeof state !== 'undefined') state.currentUserId = user.id;
+  migrateExistingData(user.id);
+  renderAuthUI();
+  showToast('Signed in as ' + user.name, 'info', 2000);
+  if (isLoginPage()) location.href = 'index.html';
+  else location.reload();
 }
 
-function migrateExistingData(sub) {
-  var prefix = sub + ':';
-  var migrated = 0;
+// ─── Local profile ────────────────────────────────────
+function createLocalProfile(name) {
+  if (!name || !name.trim()) return;
+  name = name.trim();
+  var user = { id: generateId(), name: name, _color: getColorForId(generateId()) };
+  localUsers.push(user);
+  saveUsers();
+  setActiveUserId(user.id);
+  if (typeof state !== 'undefined') state.currentUserId = user.id;
+  renderAuthUI();
+  if (isLoginPage()) location.href = 'index.html';
+  else location.reload();
+}
+
+function switchAccount(id) {
+  var user = localUsers.find(function(u) { return u.id === id; });
+  if (!user) return;
+  setActiveUserId(id);
+  if (typeof state !== 'undefined') state.currentUserId = id;
+  renderAuthUI();
+  showToast('Switched to ' + user.name, 'info', 1500);
+  location.reload();
+}
+
+function removeProfile(id) {
+  var user = localUsers.find(function(u) { return u.id === id; });
+  if (!user) return;
+  if (!confirm('Remove "' + user.name + '" and all their data?')) return;
+  var prefix = user.id + ':';
+  for (var i = 0; i < __origLS.length; i++) {
+    var key = __origLS.key(i);
+    if (key && key.indexOf(prefix) === 0) __origLS.removeItem(key);
+  }
+  localUsers = localUsers.filter(function(u) { return u.id !== id; });
+  saveUsers();
+  var active = getActiveUserId();
+  if (active === id) {
+    if (localUsers.length > 0) {
+      setActiveUserId(localUsers[0].id);
+      if (typeof state !== 'undefined') state.currentUserId = localUsers[0].id;
+    } else {
+      setActiveUserId(null);
+      if (typeof state !== 'undefined') state.currentUserId = null;
+    }
+  }
+  renderAuthUI();
+  showToast('Profile removed', 'info', 1500);
+  location.reload();
+}
+
+function migrateExistingData(id) {
+  var prefix = id + ':';
   for (var i = 0; i < __origLS.length; i++) {
     var key = __origLS.key(i);
     if (key && key.indexOf('haven-') === 0 && key.indexOf('haven-gsi-') !== 0 && key.indexOf(prefix) !== 0) {
       var val = __origLS.getItem(key);
-      if (val) {
-        __origLS.setItem(prefix + key, val);
-        migrated++;
-      }
+      if (val) __origLS.setItem(prefix + key, val);
     }
-  }
-  if (migrated > 0) console.warn('[gsi] migrated ' + migrated + ' keys to user ' + sub);
-}
-
-function switchGSIAccount(sub) {
-  const account = gsiAccounts.find(a => a.sub === sub);
-  if (!account) return;
-  setGSIActiveSub(sub);
-  if (typeof state !== 'undefined') {
-    state.currentUserSub = sub;
-  }
-  renderGSIUI();
-  showToast('Switched to ' + account.name, 'info', 1500);
-  if (typeof loadState === 'function') {
-    location.reload();
-  }
-}
-
-function gsiSignOut(sub) {
-  gsiAccounts = gsiAccounts.filter(a => a.sub !== sub);
-  saveGSIAccounts();
-  const active = getGSIActiveSub();
-  if (active === sub) {
-    if (gsiAccounts.length > 0) {
-      setGSIActiveSub(gsiAccounts[0].sub);
-      if (typeof state !== 'undefined') state.currentUserSub = gsiAccounts[0].sub;
-    } else {
-      setGSIActiveSub(null);
-      if (typeof state !== 'undefined') state.currentUserSub = null;
-    }
-  }
-  renderGSIUI();
-  showToast('Signed out', 'info', 1500);
-  if (typeof loadState === 'function') {
-    location.reload();
   }
 }
 
 function initGSI() {
-  loadGSIAccounts();
-  const activeSub = getGSIActiveSub();
+  loadUsers();
+  var activeId = getActiveUserId();
   if (typeof state !== 'undefined') {
-    state.currentUserSub = activeSub || null;
-    state.gsiAccounts = gsiAccounts;
+    state.currentUserId = activeId || null;
+    state.localUsers = localUsers;
   }
-  renderGSIUI();
-  gsiInitialized = true;
+  renderAuthUI();
+  authInitialized = true;
 
-  // Login page: render Google's own button
   if (isLoginPage()) {
-    // If signed in but not adding an account, go to app
-    if (activeSub && !isAddingAccount()) {
-      location.href = 'index.html';
-      return;
-    }
-    initGSIProvider();
-    renderLoginPageButton();
+    if (activeId) { location.href = 'index.html'; return; }
     return;
   }
 
-  // App pages: redirect to login if no user and not guest
-  if (!activeSub && !isGuestMode()) {
+  if (!activeId && !isGuestMode()) {
     location.href = 'login.html';
     return;
   }
-}
-
-function initGSIProvider() {
-  if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
-    setTimeout(function() { initGSIProvider(); renderLoginPageButton(); }, 500);
-    return;
-  }
-  google.accounts.id.initialize({
-    client_id: GSI_CLIENT_ID,
-    callback: function(response) {
-      if (!response || !response.credential) return;
-      var payload = JSON.parse(atob(response.credential.split('.')[1]));
-      handleGSICredential(payload);
-    },
-    cancel_on_tap_outside: false,
-  });
-  renderLoginPageButton();
-}
-
-function renderLoginPageButton() {
-  var container = document.getElementById('gsiButtonContainer');
-  if (!container) return;
-  if (typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
-  google.accounts.id.renderButton(container, {
-    type: 'standard',
-    shape: 'pill',
-    theme: 'outline',
-    size: 'large',
-    text: 'signin_with',
-    logo_alignment: 'left',
-    width: container.clientWidth || 280,
-  });
 }
 
 function isLoginPage() {
@@ -250,13 +264,11 @@ function isGuestMode() {
   return sessionStorage.getItem('haven-guest') === '1';
 }
 
-function isAddingAccount() {
-  return location.search.indexOf('add=1') !== -1;
-}
-
-// Expose for inline usage
 window.initGSI = initGSI;
 window.gsiSignIn = gsiSignIn;
-window.gsiSignOut = gsiSignOut;
-window.switchGSIAccount = switchGSIAccount;
-window.getGSIActiveSub = getGSIActiveSub;
+window.gsiSignOut = removeProfile;
+window.switchGSIAccount = switchAccount;
+window.getGSIActiveSub = getActiveUserId;
+window.createLocalProfile = createLocalProfile;
+window.firebaseSignIn = firebaseSignIn;
+window.handleFirebaseUser = handleFirebaseUser;

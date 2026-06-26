@@ -1019,13 +1019,13 @@ let state = {
   userProfile: null,
   editMode: false,
   accessBubbles: {},
-  currentUserSub: null,
-  gsiAccounts: [],
+  currentUserId: null,
+  localUsers: [],
 };
 
 // ─── GSI STORAGE PREFIX ──────────────────────────────
 function getStoragePrefix() {
-  return state && state.currentUserSub ? state.currentUserSub + ':' : '';
+  return state && state.currentUserId ? state.currentUserId + ':' : '';
 }
 
 var __origLS = {};

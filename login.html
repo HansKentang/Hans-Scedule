@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Havën — Sign In</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -17,105 +17,213 @@
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    .login-card {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-subtle);
-      border-radius: 20px;
-      padding: 48px 40px 36px;
-      width: 340px;
-      text-align: center;
-      box-shadow: var(--shadow-lg);
-    }
-    .login-avatar {
-      width: 68px; height: 68px;
-      border-radius: 50%;
-      margin: 0 auto 20px;
-      border: 2px solid color-mix(in srgb, var(--primary) 40%, transparent);
-      box-shadow: 0 0 30px color-mix(in srgb, var(--primary) 10%, transparent);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: relative;
       overflow: hidden;
     }
-    .login-avatar svg {
-      width: 38px; height: 38px;
-      color: var(--primary);
-      opacity: 0.7;
+    .login-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .login-bg-glow {
+      position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15;
+      animation: loginFloat 12s ease-in-out infinite alternate;
     }
-    .login-title {
-      font-family: 'EB Garamond', serif;
-      font-size: 1.6rem;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      margin-bottom: 4px;
-      color: var(--text-primary);
+    .login-bg-glow:nth-child(1) { width: 400px; height: 400px; background: var(--primary); top: -10%; left: -5%; animation-duration: 14s; }
+    .login-bg-glow:nth-child(2) { width: 300px; height: 300px; background: color-mix(in srgb, var(--primary) 60%, var(--accent)); bottom: -8%; right: -5%; animation-duration: 10s; animation-delay: -3s; }
+    .login-bg-glow:nth-child(3) { width: 200px; height: 200px; background: var(--accent); top: 40%; left: 60%; animation-duration: 16s; animation-delay: -6s; opacity: 0.08; }
+    @keyframes loginFloat { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(40px,-30px) scale(1.15); } }
+    .login-dots { position: fixed; inset: 0; pointer-events: none; z-index: 1; background-image: radial-gradient(circle, var(--text-tertiary) 0.7px, transparent 0.7px); background-size: 24px 24px; opacity: 0.15; }
+    html.light .login-dots { opacity: 0.08; }
+
+    .login-card {
+      position: relative; z-index: 2; background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 24px;
+      padding: 52px 44px 40px; width: 380px; text-align: center;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.06), 0 0 80px color-mix(in srgb, var(--primary) 4%, transparent);
+      animation: loginFadeIn 0.8s ease both;
     }
-    .login-tagline {
-      font-size: 0.85rem;
-      color: var(--text-tertiary);
-      margin-bottom: 28px;
-      line-height: 1.5;
+    html.light .login-card { box-shadow: 0 8px 40px rgba(0,0,0,0.04), 0 0 80px color-mix(in srgb, var(--primary) 6%, transparent); }
+    @keyframes loginFadeIn { 0% { opacity: 0; transform: translateY(16px) scale(0.98); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+
+    .login-avatar-wrap { position: relative; width: 80px; height: 80px; margin: 0 auto 22px; }
+    .login-avatar-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--primary) 25%, transparent); animation: loginRingPulse 3s ease-in-out infinite; }
+    @keyframes loginRingPulse { 0%,100% { transform: scale(1); opacity: 0.5; } 50% { transform: scale(1.08); opacity: 0.15; } }
+    .login-avatar {
+      width: 100%; height: 100%; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--primary) 40%, transparent);
+      display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--bg-primary);
+      position: relative; z-index: 1; transition: border-color 0.4s, box-shadow 0.4s;
     }
-    .login-btn-wrap {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 4px;
-      min-height: 44px;
+    .login-card:hover .login-avatar { border-color: color-mix(in srgb, var(--primary) 55%, transparent); box-shadow: 0 0 30px color-mix(in srgb, var(--primary) 12%, transparent); }
+    .login-avatar svg { width: 40px; height: 40px; color: var(--primary); opacity: 0.65; transition: opacity 0.4s, transform 0.4s; }
+    .login-card:hover .login-avatar svg { opacity: 0.85; transform: scale(1.04); }
+
+    .login-title { font-family: 'EB Garamond', serif; font-size: 1.8rem; font-weight: 500; letter-spacing: 0.06em; margin-bottom: 3px; color: var(--text-primary); }
+    .login-subtitle { font-family: 'EB Garamond', serif; font-style: italic; font-size: 0.82rem; color: var(--text-tertiary); margin-bottom: 24px; letter-spacing: 0.03em; }
+
+    #loginGoogleBtn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+      padding: 13px 20px; border: 1px solid var(--border-color); border-radius: 14px;
+      background: transparent; color: var(--text-primary); font-family: inherit; font-size: 0.88rem; font-weight: 500;
+      cursor: pointer; transition: background 0.25s, border-color 0.25s;
     }
-    .login-btn-wrap iframe { border-radius: 24px !important; }
-    .login-skip {
-      display: inline-block;
-      margin-top: 20px;
-      font-size: 0.78rem;
-      color: var(--text-tertiary);
-      text-decoration: none;
-      border-bottom: 1px solid transparent;
-      transition: color 0.2s, border-color 0.2s;
-      cursor: pointer;
+    #loginGoogleBtn:hover { background: color-mix(in srgb, var(--primary) 5%, transparent); border-color: var(--primary); }
+    #loginGoogleBtn svg { flex-shrink: 0; }
+
+    .login-firebase-toggle {
+      font-size: 0.65rem; color: var(--text-tertiary); cursor: pointer;
+      display: inline-block; margin-top: 8px; transition: color 0.2s;
     }
-    .login-skip:hover {
-      color: var(--text-secondary);
-      border-color: var(--border-color);
+    .login-firebase-toggle:hover { color: var(--text-secondary); }
+    .login-firebase-area { display: none; margin-top: 10px; text-align: left; }
+    .login-firebase-area.open { display: block; }
+    .login-firebase-area label { font-size: 0.65rem; color: var(--text-tertiary); display: block; margin-bottom: 4px; }
+    .login-firebase-input {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 10px;
+      background: var(--bg-primary); color: var(--text-primary); font-family: inherit; font-size: 0.72rem;
+      outline: none; transition: border-color 0.2s; word-break: break-all; resize: vertical; min-height: 80px;
     }
-    .login-footer {
-      margin-top: 32px;
-      font-size: 0.68rem;
-      color: var(--text-tertiary);
-      opacity: 0.5;
+    .login-firebase-input:focus { border-color: var(--primary); }
+    .login-firebase-save {
+      margin-top: 6px; padding: 6px 14px; border: none; border-radius: 8px;
+      background: var(--primary); color: #fff; font-family: inherit; font-size: 0.7rem;
+      cursor: pointer; font-weight: 500;
+    }
+    html.light .login-firebase-save { color: #fff; }
+    .login-firebase-hint { font-size: 0.6rem; color: var(--text-tertiary); margin-top: 4px; line-height: 1.4; }
+    .login-firebase-hint a { color: var(--primary); text-decoration: none; }
+
+    .login-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; opacity: 0.3; }
+    .login-divider::before, .login-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+    .login-divider span { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-tertiary); white-space: nowrap; }
+
+    .login-input-wrap { display: flex; gap: 8px; }
+    .login-input {
+      flex: 1; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 14px;
+      background: var(--bg-primary); color: var(--text-primary); font-family: inherit; font-size: 0.85rem;
+      outline: none; transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .login-input::placeholder { color: var(--text-tertiary); opacity: 0.5; }
+    .login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent); }
+    .login-name-btn {
+      padding: 12px 18px; border: none; border-radius: 14px; background: var(--primary);
+      color: #fff; font-family: inherit; font-size: 0.85rem; font-weight: 500;
+      cursor: pointer; transition: opacity 0.25s, transform 0.15s; white-space: nowrap;
+    }
+    .login-name-btn:active { transform: scale(0.97); }
+    html.light .login-name-btn { color: #fff; }
+
+    .login-skip-wrap { margin-top: 16px; }
+    .login-skip { display: inline-block; font-size: 0.72rem; color: var(--text-tertiary); text-decoration: none; transition: color 0.2s; cursor: pointer; }
+    .login-skip:hover { color: var(--text-secondary); }
+    .login-footer { margin-top: 24px; font-size: 0.62rem; color: var(--text-tertiary); opacity: 0.35; letter-spacing: 0.06em; }
+
+    @media (max-width: 440px) {
+      .login-card { padding: 40px 28px 32px; width: 92vw; }
+      .login-avatar-wrap { width: 66px; height: 66px; }
+      .login-avatar svg { width: 32px; height: 32px; }
+      .login-title { font-size: 1.5rem; }
+      .login-input-wrap { flex-direction: column; }
+    }
+    @media (max-width: 360px) {
+      .login-card { padding: 32px 20px 28px; }
+      .login-avatar-wrap { width: 56px; height: 56px; }
+      .login-avatar svg { width: 28px; height: 28px; }
     }
   </style>
 </head>
 <body>
+  <div class="login-bg"><div class="login-bg-glow"></div><div class="login-bg-glow"></div><div class="login-bg-glow"></div></div>
+  <div class="login-dots"></div>
+
   <div class="login-card">
-    <div class="login-avatar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 7a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7z"/>
-        <path d="M8 5V3h8v2"/>
-        <circle cx="9" cy="12" r="1" fill="currentColor"/>
-        <circle cx="15" cy="12" r="1" fill="currentColor"/>
-        <path d="M8 16a3.5 3.5 0 018 0"/>
-      </svg>
+    <div class="login-avatar-wrap">
+      <div class="login-avatar-ring"></div>
+      <div class="login-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4.5 8c0-1.4 0-2.1.44-2.65C5.08 5 5.73 4.9 7 4.7l10-.4c1.28-.2 1.92-.3 2.36.25.44.54.44 1.24.44 2.65v.3c0 .9 0 1.35-.2 1.7-.1.18-.24.33-.4.44-.33.26-.77.26-1.66.26H6.46c-.89 0-1.33 0-1.66-.26a1.5 1.5 0 01-.4-.44c-.2-.35-.2-.8-.2-1.7V8z" stroke-width="1.1"/>
+          <path d="M5 10l1.6 7.5c.22 1 .33 1.5.7 1.88.38.37.9.52 1.93.62h5.54c1.04-.1 1.55-.25 1.93-.62.37-.38.48-.87.7-1.87L19 10" stroke-width="1.1"/>
+          <circle cx="9.5" cy="10" r="0.6" fill="currentColor" stroke="none"/>
+          <circle cx="14.5" cy="10" r="0.6" fill="currentColor" stroke="none"/>
+          <path d="M11.5 13.5a1.5 1.5 0 001 0" stroke-width="1.1"/>
+        </svg>
+      </div>
     </div>
+
     <div class="login-title">Havën</div>
-    <div class="login-tagline">Your mindful schedule</div>
-    <div class="login-btn-wrap" id="gsiButtonContainer"></div>
-    <div>
+    <div class="login-subtitle">your mindful schedule</div>
+
+    <button id="loginGoogleBtn">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.95 1 11.02 1 13s.43 4.05 1.18 5.93l2.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Sign in with Google
+    </button>
+
+    <span class="login-firebase-toggle" id="firebaseToggle">Configure Firebase</span>
+    <div class="login-firebase-area" id="firebaseArea">
+      <label for="firebaseConfigInput">Paste your Firebase config JSON</label>
+      <textarea class="login-firebase-input" id="firebaseConfigInput" spellcheck="false" placeholder="{ apiKey: '...', authDomain: '...', projectId: '...' }"></textarea>
+      <button class="login-firebase-save" id="firebaseSaveBtn">Save Config</button>
+      <div class="login-firebase-hint">Need a project? <a href="https://console.firebase.google.com" target="_blank">Firebase Console →</a> Enable <strong>Google</strong> under Authentication &gt; Sign-in method. Then grab your config from Project Settings.</div>
+    </div>
+
+    <div class="login-divider"><span>or</span></div>
+
+    <div class="login-input-wrap">
+      <input class="login-input" id="loginNameInput" type="text" placeholder="Continue with a name" autocomplete="name" spellcheck="false" maxlength="30">
+      <button class="login-name-btn" id="loginNameBtn">Start</button>
+    </div>
+
+    <div class="login-skip-wrap">
       <a class="login-skip" id="loginSkip">Continue without signing in</a>
     </div>
     <div class="login-footer">Havën Schedule</div>
   </div>
+
   <script src="shared.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
   <script src="gsi.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      initGSI();
-      document.getElementById('loginSkip').addEventListener('click', function(e) {
-        e.preventDefault();
-        sessionStorage.setItem('haven-guest', '1');
-        location.href = 'index.html';
+    (function() {
+      document.addEventListener('DOMContentLoaded', function() {
+        initGSI();
+
+        document.getElementById('loginGoogleBtn').addEventListener('click', firebaseSignIn);
+
+        // Firebase config toggle
+        var firebaseToggle = document.getElementById('firebaseToggle');
+        var firebaseArea = document.getElementById('firebaseArea');
+        var savedConfig = localStorage.getItem('haven-firebase-config');
+        if (savedConfig) {
+          try { document.getElementById('firebaseConfigInput').value = JSON.stringify(JSON.parse(savedConfig), null, 2); } catch(e) {}
+        }
+        firebaseToggle.addEventListener('click', function() {
+          firebaseArea.classList.toggle('open');
+          if (firebaseArea.classList.contains('open')) document.getElementById('firebaseConfigInput').focus();
+        });
+        document.getElementById('firebaseSaveBtn').addEventListener('click', function() {
+          var val = document.getElementById('firebaseConfigInput').value.trim();
+          try { JSON.parse(val); localStorage.setItem('haven-firebase-config', val); showToast('Firebase config saved', 'info', 2000); firebaseArea.classList.remove('open'); }
+          catch(e) { showToast('Invalid JSON', 'error', 3000); }
+        });
+
+        var input = document.getElementById('loginNameInput');
+        var nameBtn = document.getElementById('loginNameBtn');
+
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && input.value.trim()) goLocal();
+        });
+        nameBtn.addEventListener('click', goLocal);
+        document.getElementById('loginSkip').addEventListener('click', function(e) {
+          e.preventDefault();
+          sessionStorage.setItem('haven-guest', '1');
+          location.href = 'index.html';
+        });
+
+        function goLocal() {
+          var name = input.value.trim();
+          if (!name) return;
+          nameBtn.disabled = true;
+          nameBtn.textContent = '…';
+          createLocalProfile(name);
+        }
       });
-    });
+    })();
   </script>
 </body>
 </html>
