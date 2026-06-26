@@ -2044,8 +2044,24 @@ html.light .s-schedule-label {
 }
 
 .hub-sidebar-footer {
-  padding: var(--space-2) var(--space-2);
   border-top: 1px solid var(--border-color);
+  display: flex; flex-direction: column;
+}
+.hub-sidebar-footer .gsi-section {
+  margin: 0; padding: 2px 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.hub-sidebar-footer .gsi-avatar-wrap {
+  padding: 4px 2px;
+}
+.hub-sidebar-footer .gsi-avatar-name {
+  font-size: 0.68rem;
+}
+.hub-sidebar-footer .gsi-avatar-dropdown {
+  left: 0; right: 0; bottom: 100%; margin-bottom: 4px;
+}
+.hub-sidebar-footer .hub-footer-btns {
+  padding: var(--space-2) var(--space-2);
   display: flex; gap: var(--space-1);
 }
 .hub-sidebar-footer .btn {
