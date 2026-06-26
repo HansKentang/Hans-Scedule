@@ -5716,7 +5716,56 @@ html.light .hub-add-popup {
 /* ─── Bento Bubbles ──────────────────────────── */
 .bento-grid { position:relative; width:100%; min-height:800px; display:block; }
 .bento-bubble { position:absolute; display:block; border-radius:var(--radius-lg); transition:opacity 0.2s, box-shadow 0.2s, left 0.12s cubic-bezier(0.34,1.56,0.64,1), top 0.12s cubic-bezier(0.34,1.56,0.64,1); }
-.bento-bubble.dragging { opacity:0.92; z-index:1000; transform:translateY(-4px); box-shadow:0 16px 48px rgba(0,0,0,0.18); transition:opacity 0.2s, box-shadow 0.2s, transform 0.15s, left 0s, top 0s; cursor:grabbing; will-change:left,top,transform; }
+.bento-bubble.dragging { opacity:0.95; z-index:1000; transform:scale(1.02) rotate(-0.5deg); box-shadow:0 20px 60px rgba(0,0,0,0.30), 0 8px 24px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.06); transition:opacity 0.15s ease, box-shadow 0.2s ease, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), left 0s, top 0s; cursor:grabbing; will-change:transform, left, top; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); border-color:var(--accent); border-radius:var(--radius-lg); pointer-events:none; user-select:none; }
+
+/* ─── BUBBLE DRAG DROP BOUNCE ──────────────────── */
+@keyframes bubbleDropBounce {
+  0% { transform:scale(1.02) rotate(-0.5deg); }
+  25% { transform:scale(1.04); box-shadow:0 20px 60px rgba(0,0,0,0.25); }
+  50% { transform:scale(0.97); }
+  75% { transform:scale(1.01); }
+  100% { transform:scale(1) rotate(0deg); }
+}
+.bento-bubble.drop-bounce {
+  animation:bubbleDropBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index:100;
+}
+
+/* ─── BUBBLE DRAG TOOLTIP ─────────────────────── */
+.bento-drag-tooltip {
+  position:fixed;
+  z-index:calc(var(--z-dragging) + 5);
+  pointer-events:none;
+  background:var(--text-primary);
+  color:var(--bg-primary);
+  font-size:0.7rem;
+  font-weight:600;
+  padding:4px 10px;
+  border-radius:var(--radius-md);
+  box-shadow:var(--shadow-lg);
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+  transform:translateY(-100%);
+  transition:opacity 0.15s ease;
+}
+
+/* ─── BUBBLE DRAG ORIGIN GHOST ─────────────────── */
+.bento-drag-origin {
+  position:absolute;
+  z-index:2;
+  pointer-events:none;
+  border-radius:var(--radius-lg);
+  border:2px dashed var(--accent);
+  opacity:0.35;
+  background:color-mix(in srgb, var(--accent) 4%, transparent);
+  animation:bubbleOriginPulse 1s ease-in-out infinite alternate;
+}
+@keyframes bubbleOriginPulse {
+  0% { opacity:0.25; border-color:color-mix(in srgb, var(--accent) 40%, transparent); }
+  100% { opacity:0.45; border-color:color-mix(in srgb, var(--accent) 70%, transparent); }
+}
+
+
 .bento-bubble.drag-over { box-shadow:0 4px 20px rgba(0,0,0,0.12); transform:scale(1.01); }
 .bento-bubble-handle { position:absolute; top:6px; left:6px; width:32px; height:32px; border-radius:10px; background:var(--surface-container-high); color:var(--text-tertiary); display:none; align-items:center; justify-content:center; cursor:grab; z-index:10; border:1.5px solid var(--border-color); transition:all 0.15s; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
 .hub-edit .bento-bubble-handle { display:flex; }
@@ -5760,6 +5809,12 @@ html.light .hub-add-popup {
   display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto;
   align-items:center; min-height:68px;
   scrollbar-width:thin;
+  animation:dockSlideIn 0.3s cubic-bezier(0.16,1,0.3,1);
+}
+
+@keyframes dockSlideIn {
+  from { transform:translateY(100%); opacity:0; }
+  to { transform:translateY(0); opacity:1; }
 }
 .bento-bubble-dock::-webkit-scrollbar { height:3px; }
 .bento-bubble-dock::-webkit-scrollbar-thumb { background:var(--outline-variant); border-radius:2px; }
@@ -6110,5 +6165,46 @@ html.light .hub-add-popup {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   font-weight: 600;
 }
+
+/* ─── Google Sign-In ──────────────────────────────── */
+.gsi-section { margin: 8px 12px; }
+.gsi-signin-wrap { display: flex; justify-content: center; }
+.gsi-signin-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: var(--radius-full);
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary); cursor: pointer;
+  font-size: 0.72rem; font-weight: 500; color: var(--text-primary);
+  transition: all var(--t-fast); white-space: nowrap;
+}
+.gsi-signin-btn:hover { border-color: var(--text-tertiary); background: var(--accent-soft); }
+.gsi-signin-btn svg { flex-shrink: 0; }
+
+.gsi-avatar-wrap { position: relative; display: flex; align-items: center; gap: 6px; padding: 2px 8px; cursor: pointer; }
+.gsi-avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; object-fit: cover; border: 1.5px solid var(--border-color); }
+.gsi-avatar-name { font-size: 0.65rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+
+.gsi-avatar-dropdown {
+  display: none; position: absolute; bottom: 100%; left: 8px; right: 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border-color);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  padding: 4px; z-index: 1000; margin-bottom: 4px;
+}
+.gsi-avatar-dropdown.open { display: block; }
+.gsi-dd-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 0.72rem; color: var(--text-primary);
+  transition: background var(--t-fast);
+}
+.gsi-dd-item:hover { background: var(--accent-soft); }
+.gsi-dd-item.active { background: var(--accent-soft); font-weight: 600; }
+.gsi-dd-item.danger { color: var(--danger, #ef4444); }
+.gsi-dd-item.danger:hover { background: color-mix(in srgb, var(--danger, #ef4444) 8%, transparent); }
+.gsi-dd-avatar { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; object-fit: cover; }
+.gsi-dd-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.gsi-dd-email { font-size: 0.6rem; color: var(--text-tertiary); display: none; }
+.gsi-dd-divider { height: 1px; background: var(--border-subtle); margin: 3px 0; }
+.gsi-dd-item svg { flex-shrink: 0; }
 
 

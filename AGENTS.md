@@ -4,8 +4,8 @@
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `layout [page]` | Show full page structure as ASCII diagram | `layout finance` |
-| `layout [page]` | Diagrams: finance, schedule, activities, hub | `layout schedule` |
+| `layout [page]` | Show structured page diagram with sections, controls, and modals | `layout analytics` |
+| `layout all` | Show all 7 pages at a glance (hub, schedule, activities, analytics, goals, finance, gallery) | `layout all` |
 
 ## Code Conventions
 
@@ -35,6 +35,9 @@
 | `haven-schedule-profile` | `{...}` | User profile + AI memory |
 | `haven-subcategories` | `{tag: [...]}` | Subcategory presets per tag |
 | `haven-hub-layout` | `[{x,y,w,h,t,id}]` | Bento canvas layout |
+| `haven-activity-completions` | `[{taskId,tag,title,completedAt}]` | Activity completion log |
+| `haven-routine` | `string` | User's daily routine description |
+| `haven-chickbot-profile` | `{name,pronouns,occupation,goals,routines,preferences}` | AI profile settings |
 | `haven-image-*` / `hub-image-*` | Data URL | Image widget cache (IndexedDB primary) |
 | `haven-custom-tags` | `[{id, name, color}]` | Custom tags for board/activities |
 | `haven-card-colors` | `{tag: {light, dark}}` | Per-tag card color overrides |
@@ -71,6 +74,326 @@
 6. **Screenshot**: Pure canvas render (no html2canvas) — uses `state.currentWeekStart`, `state.tasks`, `TAG_COLORS`, `START_HOUR`, `VISIBLE_HOURS`
 7. **AI memory**: Facts stored in `state.userProfile.conversationMemory`, persisted under `haven-schedule-profile`
 8. **Built-in categories**: `deep-work`, `meeting`, `exercise`, `study`, `hobby` — cannot be deleted
+
+## Page Layouts
+
+All pages share a common shell: `.hub-layout` (flex row) → `.hub-sidebar` (220px, nav + Spotify + footer) + `.hub-main` (flex column, scrollable).
+
+### `layout all` — 7 Pages at a Glance
+
+```
+hub        │ hero(220px) → bento canvas → sleep → gallery cards → footer
+schedule   │ hero(180px) → header+pills → time grid → FAB → pomodoro → footer
+activities │ hero → board(columns) / timeline ↔ chart + activity log
+analytics  │ hero → KPIs(4) → completion+streak → pie+bar charts → trend → sleep → table
+goals      │ hero → goal cards(grid) → vision board(3 imgs) → related tasks → footer
+finance    │ hero → income/expense KPIs → piggy+wallet → charts → table+form → intelligence
+gallery    │ hero → image grid → footer
+```
+
+---
+
+### `layout hub`
+
+```
+┌────────────────────────────────────────────────────┐
+│ Sidebar (220px)         │ Main (.hub-main)          │
+│ ┌────────────────────┐  │ ┌───────────────────────┐ │
+│ │ H  Havën     ☰ ≡  │  │ │ Hero (220px, flex-     │ │
+│ │────────────────────│  │ │ shrink:0)              │ │
+│ │ ● Hub              │  │ │ ┌─┬─┬─┬─┬─┬─┐         │ │
+│ │ ○ Schedule         │  │ │ img│ovly│title│       │ │
+│ │ ○ Activities       │  │ │ │ ceramic │greeting   │ │
+│ │ ○ Analytics        │  │ │ │ Today  │ Week  │   │ │
+│ │ ○ Goals            │  │ │ └─┴─┴─┴─┴─┴─┘         │ │
+│ │ ○ Finance          │  │ ├───────────────────────┤ │
+│ │ ○ Gallery          │  │ │ FAB (#hubAccessHub)   │ │
+│ │────────────────────│  │ │ [Edit] [Add] [Guide]  │ │
+│ │ [Spotify embed]    │  │ ├───────────────────────┤ │
+│ │ [Prev] ▶ ⏸ [Next] │  │ │ Bento Canvas            │ │
+│ │────────────────────│  │ │ (widget grid, dy-      │ │
+│ │ Theme │ AI │       │  │ │ namic bubbles)          │ │
+│ │ Visuals │ Settings │  │ ├───────────────────────┤ │
+│ └────────────────────┘  │ │ Sleep Section           │ │
+│                         │ │ [Log Sleep] tab1 tab2  │ │
+│                         │ │ score ring │ metrics   │ │
+│                         │ │ timeline │ routine     │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Gallery Cards           │ │
+│                         │ │ [Schedule] [Activities] │ │
+│                         │ │ [Tags] [Analytics]     │ │
+│                         │ │ [Goals]                │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ footer: export/import  │ │
+│                         │ └───────────────────────┘ │
+│                         │                           │
+│ Modals: AI Chat │ Sleep Log │ Image Picker │        │
+│         Settings Drawer │ Spotify Settings          │
+└────────────────────────────────────────────────────┘
+```
+
+**Key IDs:** `#hubGreeting`, `#hubDateLine`, `#statTodayBlock`, `#statWeek`, `#hubAccessHub`, `#hubFabEdit`, `#hubFabAdd`, `#hubFabGuide`, `#bentoGrid`, `#hubWeekTasks`, `#hubTotalTasks`, `#hubTagCount`, `#hubAnalyticsHint`, `#hubGoalCount`
+
+---
+
+### `layout schedule`
+
+```
+┌────────────────────────────────────────────────────┐
+│ Sidebar                  │ Main                     │
+│ ┌────────────────────┐  │ ┌───────────────────────┐ │
+│ │ H  Havën     +    │  │ │ Hero (180px)           │ │
+│ │────────────────────│  │ │ img │ "Schedule"     │ │
+│ │ ○ Hub              │  │ ├───────────────────────┤ │
+│ │ ● Schedule         │  │ │ Header (#sch-header)   │ │
+│ │ ○ Activities       │  │ │ ┌─┬─┬─┬─┬─┬─┬─┬─┬─┐ │ │
+│ │ ○ Analytics        │  │ │ ☰│Today│◀│Jun│▶│ │ │ │
+│ │ ○ Goals            │  │ │ │ Wk/Mo/Ag │⚙│   │ │ │
+│ │ ○ Finance          │  │ │ │ Holiday badge       │ │
+│ │ ○ Gallery          │  │ │ └─┴─┴─┴─┴─┴─┴─┴─┴─┘ │ │
+│ │────────────────────│  │ ├───────────────────────┤ │
+│ │ Mini Week          │  │ │ Pills (#pmChips)      │ │
+│ │  M  T  W  T  F  S │  │ │ [deep-work] [meeting]  │ │
+│ │────────────────────│  │ │ [exercise] [study] +  │ │
+│ │ [Spotify]          │  │ ├───────────────────────┤ │
+│ │────────────────────│  │ │ Calendar Grid          │ │
+│ │ Theme│AI│Visuals│  │  │ │ (7am-9pm, Mon-Sun)    │ │
+│ │ Settings│Help     │  │ │ hour rows, task blocks  │ │
+│ └────────────────────┘  │ ├───────────────────────┤ │
+│                         │ │ FAB (#accessHub)       │ │
+│                         │ │ [Focus] [AI] [SS] [CW]│ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Pomodoro Timer         │ │
+│                         │ │ ring │ 5/10/25/50 min │ │
+│                         │ └───────────────────────┘ │
+│ Modals: Command Palette │ Task Modal │ Help │       │
+│         Settings │ AI Chat │ Image Picker           │
+│         Spotify Settings                             │
+└────────────────────────────────────────────────────┘
+```
+
+**Key IDs:** `#todayBtn`, `#prevWeek`, `#nextWeek`, `#weekLabel`, `#holidayToggle`, `#schSettingsBtn`, `#pmChips`, `#catAddBtn`, `#calendarGrid`, `#accessHub`, `#accessFocusMode`, `#accessAIChat`, `#accessScreenshot`, `#accessCopyWeek`, `#taskModal`, `#cmdPalette`, `#pomodoroCard`
+
+---
+
+### `layout activities`
+
+```
+┌────────────────────────────────────────────────────┐
+│ Sidebar                  │ Main                     │
+│ ┌────────────────────┐  │ ┌───────────────────────┐ │
+│ │ H  Havën          │  │ │ Hero (180px)           │ │
+│ │────────────────────│  │ │ img │ "Activities"    │ │
+│ │ ○ Hub              │  │ │ N tasks               │ │
+│ │ ○ Schedule         │  │ ├───────────────────────┤ │
+│ │ ● Activities       │  │ │ View: [Board] [Timeline]│ │
+│ │ ○ Analytics        │  │ ├───────────────────────┤ │
+│ │ ○ Goals            │  │ │ Board View (tag cols)   │ │
+│ │ ○ Finance          │  │ │ ┌─────┬─────┬─────┐   │ │
+│ │ ○ Gallery          │  │ │ │Deep │Meet │Exer │   │ │
+│ │────────────────────│  │ │ │Work │ing  │cise │   │ │
+│ │ [Spotify]          │  │ │ │ N   │ N   │ N   │   │ │
+│ │────────────────────│  │ │ │ 2h  │ 30m │ 1h  │   │ │
+│ │ Theme│AI│Visuals│  │  │ │ [···] [···] [···] │   │ │
+│ │ Settings           │  │ │ │+Add │+Add │+Add  │   │ │
+│ └────────────────────┘  │ │ └─────┴─────┴─────┘   │ │
+│                         │ │ [+ Category]           │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Chart — This Week      │ │
+│                         │ │ ┌───┬───┬───┬───┬───┐ │ │
+│                         │ │ │   │   │   │   │   │ │ │
+│                         │ │ │   │   │   │   │   │ │ │
+│                         │ │ └───┴───┴───┴───┴───┘ │ │
+│                         │ │ Mon Tue Wed Thu Fri    │ │
+│                         │ │ total · avg/day        │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Activity Log           │ │
+│                         │ │ (filtered by week)     │ │
+│                         │ │ ○ Run 5k . . . Exer   │ │
+│                         │ │ ○ Study . . . . Study │ │
+│                         │ └───────────────────────┘ │
+│ Modals: Settings │ AI Chat │ Image Picker │ Help     │
+│         Spotify Settings                             │
+└────────────────────────────────────────────────────┘
+```
+
+**Key IDs:** `#boardView`, `#timelineView`, `#activityChart`, `#actWeekLabel`, `#actWeekPrev`, `#actWeekNext`, `#actChartTotal`, `#actLogList`, `#actLogCount`, `#addCategoryCol`
+
+---
+
+### `layout analytics`
+
+```
+┌────────────────────────────────────────────────────┐
+│ Sidebar                  │ Main                     │
+│ ┌────────────────────┐  │ ┌───────────────────────┐ │
+│ │ H  Havën          │  │ │ Hero (180px)           │ │
+│ │────────────────────│  │ │ img │ "Analytics"     │ │
+│ │ ○ Hub              │  │ │ title + subtitle       │ │
+│ │ ○ Schedule         │  │ ├───────────────────────┤ │
+│ │ ○ Activities       │  │ │ Filter: [Week][Month][All]│
+│ │ ● Analytics        │  │ ├───────────────────────┤ │
+│ │ ○ Goals            │  │ │ KPI Row (4 cards)      │ │
+│ │ ○ Finance          │  │ │ ┌──────┬──────┬──────┐│ │
+│ │ ○ Gallery          │  │ │ │Tasks │ Time │Deep  ││ │
+│ │────────────────────│  │ │ │      │      │Work  ││ │
+│ │ [Spotify]          │  │ │ │ 12   │ 24h  │ 8h   ││ │
+│ │────────────────────│  │ │ └──────┴──────┴──────┘│ │
+│ │ Theme│AI│Visuals│  │  │ ├───────────────────────┤ │
+│ │ Settings           │  │ │ Completion + Streak    │ │
+│ └────────────────────┘  │ │ ring │ bar │ dots     │ │
+│                         │ │ done/total │ current/  │ │
+│                         │ │ best streak            │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Charts (2-col)         │ │
+│                         │ │ ┌─────────┬─────────┐ │ │
+│                         │ │ │ Pie     │ Bar     │ │ │
+│                         │ │ │(cat     │(daily   │ │ │
+│                         │ │ │ dist)   │breakdown│ │ │
+│                         │ │ └─────────┴─────────┘ │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Weekly Trend (line)    │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Sleep (2-col)          │ │
+│                         │ │ ┌─────────┬─────────┐ │ │
+│                         │ │ │Duration │Quality  │ │ │
+│                         │ │ │+ chart  │+ score  │ │ │
+│                         │ │ └─────────┴─────────┘ │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Day-by-Day Table       │ │
+│                         │ └───────────────────────┘ │
+│ Modals: Settings │ AI Chat │ Image Picker │ Help     │
+└────────────────────────────────────────────────────┘
+```
+
+**Key IDs:** `#statTasks`, `#statTime`, `#statDeep`, `#statStudy`, `#compRing`, `#compRingPct`, `#streakDays`, `#streakCurrent`, `#streakBest`, `#pieChart`, `#barChart`, `#trendChart`, `#sleepAnalyticsDuration`, `#sleepAnalyticsQuality`, `#analyticsTableBody`, `#detailPeriodLabel`, `#analyticsPeriodPills`
+
+---
+
+### `layout goals`
+
+```
+┌────────────────────────────────────────────────────┐
+│ Sidebar                  │ Main                     │
+│ ┌────────────────────┐  │ ┌───────────────────────┐ │
+│ │ H  Havën          │  │ │ Hero (180px)           │ │
+│ │────────────────────│  │ │ img │ "Goals"         │ │
+│ │ ○ Hub              │  │ │ N goals │ subtitle    │ │
+│ │ ○ Schedule         │  │ ├───────────────────────┤ │
+│ │ ○ Activities       │  │ │ Goals Bento Grid       │ │
+│ │ ○ Analytics        │  │ │ (.gl-bento, 12-col)   │ │
+│ │ ● Goals            │  │ │ ┌───┬───┬───┬───┬───┐ │ │
+│ │ ○ Finance          │  │ │ │Goal│Goal│Goal│   │ │ │
+│ │ ○ Gallery          │  │ │ │1   │2   │3   │+  │ │ │
+│ │────────────────────│  │ │ │prg │prg │prg │   │ │ │
+│ │ [Spotify]          │  │ │ │sub │sub │sub │   │ │ │
+│ │────────────────────│  │ │ └───┴───┴───┴───┴───┘ │ │
+│ │ Theme│AI│Visuals│  │  │ ├───────────────────────┤ │
+│ │ Settings           │  │ │ Vision Board           │ │
+│ └────────────────────┘  │ │ ┌──────┬──────┬──────┐│ │
+│                         │ │ │ img1 │ img2 │ img3 ││ │
+│                         │ │ └──────┴──────┴──────┘│ │
+│                         │ │ Monthly Manifesto      │ │
+│                         │ │ (contenteditable)      │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Related Tasks          │ │
+│                         │ │ (from schedule)        │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ footer: export/import  │ │
+│                         │ └───────────────────────┘ │
+│ Modals: Settings │ AI Chat │ Image Picker │ Help     │
+└────────────────────────────────────────────────────┘
+```
+
+**Key IDs:** `#glBento`, `#glGoalCount`, `#glHeroSub`, `#glVisionGrid`, `#glManifestoText`, `#glDiveGrid`, `#glDiveCount`, `#glPageMeta`
+
+---
+
+### `layout finance`
+
+```
+┌────────────────────────────────────────────────────┐
+│ Sidebar                  │ Main                     │
+│ ┌────────────────────┐  │ ┌───────────────────────┐ │
+│ │ H  Havën          │  │ │ Hero (180px)           │ │
+│ │────────────────────│  │ │ img │ "Finance"       │ │
+│ │ ○ Hub              │  │ │ savings rate + avatar │ │
+│ │ ○ Schedule         │  │ ├───────────────────────┤ │
+│ │ ○ Activities       │  │ │ KPI Row (2-col)       │ │
+│ │ ○ Analytics        │  │ │ ┌─────────┬─────────┐ │ │
+│ │ ● Goals            │  │ │ │ Income  │ Expense │ │ │
+│ │ ○ Finance          │  │ │ │ $2,400  │ $1,200  │ │ │
+│ │ ● Gallery          │  │ │ └─────────┴─────────┘ │ │
+│ │────────────────────│  │ ├───────────────────────┤ │
+│ │ [Spotify]          │  │ │ Piggy + Wallet (2-col) │ │
+│ │────────────────────│  │ │ ┌─────────┬─────────┐ │ │
+│ │ Theme│AI│Visuals│  │  │ │ 🐷      │ 👛      │ │ │
+│ │ Settings           │  │ │ $500    │ $200    │ │ │
+│ └────────────────────┘  │ │ [+/-]   │ [+/-]   │ │ │
+│                         │ └─────────┴─────────┘ │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Toolbar                │ │
+│                         │ │ [7D][30D][Month][All]  │ │
+│                         │ │ search │ export CSV    │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Panels (2-col)         │ │
+│                         │ │ ┌─────────┬─────────┐ │ │
+│                         │ │ │ Table   │ Form    │ │ │
+│                         │ │ │ (scroll)│ Expense │ │ │
+│                         │ │ │         │ Income  │ │ │
+│                         │ │ │ date/cat │amt cat │ │ │
+│                         │ │ │ amount  │date note│ │ │
+│                         │ │ └─────────┴─────────┘ │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Charts (2-col)         │ │
+│                         │ │ category bars │ daily │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ Spending Intelligence  │ │
+│                         │ │ [Treemap][MoM][Heat]  │ │
+│                         │ │ [Flow][Merchants]     │ │
+│                         │ └───────────────────────┘ │
+│ Modals: Settings │ AI Chat │ Image Picker │ Help     │
+└────────────────────────────────────────────────────┘
+```
+
+**Key IDs:** `#finIncome`, `#finExpenses`, `#piggyBalance`, `#piggyInput`, `#piggyAddBtn`, `#piggySubBtn`, `#walletBalance`, `#walletInput`, `#walletAddBtn`, `#walletSubBtn`, `#piggyChart`, `#walletChart`, `#finTable`, `#finAmount`, `#finCategory`, `#finDate`, `#finNote`, `#finAddBtn`, `#finChart`, `#finCategoryBars`, `#finAdvTabs`, `#finAdvBody`
+
+---
+
+### `layout gallery`
+
+```
+┌────────────────────────────────────────────────────┐
+│ Sidebar                  │ Main                     │
+│ ┌────────────────────┐  │ ┌───────────────────────┐ │
+│ │ H  Havën          │  │ │ Hero (180px)           │ │
+│ │────────────────────│  │ │ img │ "Gallery"       │ │
+│ │ ○ Hub              │  │ │ N images │ subtitle   │ │
+│ │ ○ Schedule         │  │ │ avatar ceramic        │ │
+│ │ ○ Activities       │  │ ├───────────────────────┤ │
+│ │ ○ Analytics        │  │ │ Top Actions            │ │
+│ │ ○ Goals            │  │ │ "Vision Board"  [Reset]│ │
+│ │ ○ Finance          │  │ │                 [+ Add]│ │
+│ │ ● Gallery          │  │ ├───────────────────────┤ │
+│ │────────────────────│  │ │ Image Grid (#galGrid)  │ │
+│ │ [Spotify]          │  │ │ ┌────┬────┬────┬────┐ │ │
+│ │────────────────────│  │ │ │    │    │    │    │ │ │
+│ │ Theme│AI│Visuals│  │  │ │ img │ img │ img │ img│ │ │
+│ │ Settings           │  │ │ │    │    │    │    │ │ │
+│ └────────────────────┘  │ │ ├────┼────┼────┼────┤ │ │
+│                         │ │ │    │    │    │    │ │ │
+│                         │ │ └────┴────┴────┴────┘ │ │
+│                         │ ├───────────────────────┤ │
+│                         │ │ footer: export/import  │ │
+│                         │ └───────────────────────┘ │
+│ Modals: Settings │ AI Chat │ Image Picker │ Help     │
+│         Spotify Settings                             │
+└────────────────────────────────────────────────────┘
+```
+
+**Key IDs:** `#galGrid`, `#galCount`, `#galImageCount`, `#galHeroSub`, `#galAddBtn`, `#galResetBtn`, `#galPageMeta`
+
+---
 
 ## Removed Features (do not reintroduce)
 

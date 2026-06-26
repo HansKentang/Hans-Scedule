@@ -1375,6 +1375,7 @@ let _bubbleResizeData = null;
 let _bubbleResizeInitialized = false;
 let _dockDragGlobalWired = false;
 let _handleLastClickTime = 0;
+let _dragTooltip = null;
 
 function resetBentoInteractions() {
   // Only clear active state — NEVER reset initialization flags,
@@ -1435,6 +1436,11 @@ function setupBubbleDragDrop() {
         _bubbleDragData.bubble.style.top = _bubbleDragData.originalY + 'px';
         _bubbleDragData.bubble.classList.remove('dragging');
         _bubbleDragData.bubble.style.zIndex = '';
+        // Remove origin ghost
+        var _og = document.querySelector('.bento-drag-origin');
+        if (_og) _og.remove();
+        // Remove tooltip
+        if (_dragTooltip) { if (_dragTooltip._hideTimer) clearTimeout(_dragTooltip._hideTimer); _dragTooltip.style.opacity = '0'; _dragTooltip._hideTimer = setTimeout(function() { if (_dragTooltip) { _dragTooltip.style.display = 'none'; _dragTooltip._hideTimer = null; } }, 150); }
       }
       _bubbleDragData.cancelled = true;
       _bubbleDragData = null;
@@ -1477,6 +1483,17 @@ function setupBubbleDragDrop() {
       _bubbleDragData.active = true;
       _bubbleDragData.dragLayout = JSON.parse(JSON.stringify(hubContent.bentoLayout));
       _bubbleDragData.bubble.classList.add('dragging');
+      // Create origin ghost marker
+      var _originGhost = document.createElement('div');
+      _originGhost.className = 'bento-drag-origin';
+      var _origRect = _bubbleDragData.bubble.getBoundingClientRect();
+      var _gridRect = grid.getBoundingClientRect();
+      _originGhost.style.left = (_bubbleDragData.bubble.offsetLeft || 0) + 'px';
+      _originGhost.style.top = (_bubbleDragData.bubble.offsetTop || 0) + 'px';
+      _originGhost.style.width = _bubbleDragData.bubble.offsetWidth + 'px';
+      _originGhost.style.height = _bubbleDragData.bubble.offsetHeight + 'px';
+      _bubbleDragData._originGhost = _originGhost;
+      grid.appendChild(_originGhost);
       _bubbleDragData.bubble.style.zIndex = '9999';
       _bubbleDragData.bubble.parentNode.appendChild(_bubbleDragData.bubble);
     }
@@ -1485,6 +1502,21 @@ function setupBubbleDragDrop() {
     let newY = Math.max(0, snap(e.clientY - _bubbleDragData.offsetY - gr.top));
     _bubbleDragData.bubble.style.left = newX + 'px';
     _bubbleDragData.bubble.style.top = newY + 'px';
+    // Update drag tooltip
+    if (!_dragTooltip) {
+      _dragTooltip = document.getElementById('bentoDragTooltip') || document.createElement('div');
+      if (!_dragTooltip.id) {
+        _dragTooltip.className = 'bento-drag-tooltip';
+        _dragTooltip.id = 'bentoDragTooltip';
+        document.body.appendChild(_dragTooltip);
+      }
+    }
+    _dragTooltip.textContent = _bubbleDragData.bubble.offsetWidth + ' \u00D7 ' + _bubbleDragData.bubble.offsetHeight;
+        if (_dragTooltip) { if (_dragTooltip._hideTimer) clearTimeout(_dragTooltip._hideTimer); _dragTooltip.style.opacity = '0'; _dragTooltip._hideTimer = setTimeout(function() { if (_dragTooltip) { _dragTooltip.style.display = 'none'; _dragTooltip._hideTimer = null; } }, 150); }
+    _dragTooltip.style.opacity = '1';
+    _dragTooltip.style.display = 'block';
+    _dragTooltip.style.left = (e.clientX + 16) + 'px';
+    _dragTooltip.style.top = (e.clientY - 12) + 'px';
     // Update layout for final collision on drop, but don't push other bubbles in real-time
     const dragLayout = _bubbleDragData.dragLayout;
     const dragItem = dragLayout.find(i => i.uid === _bubbleDragData.bubble.dataset.bubble);
@@ -1502,6 +1534,12 @@ function setupBubbleDragDrop() {
       _bubbleDragData = null;
       return;
     }
+    
+        // Remove origin ghost
+        var _og = document.querySelector('.bento-drag-origin');
+        if (_og) _og.remove();
+        // Remove tooltip
+        if (_dragTooltip) { if (_dragTooltip._hideTimer) clearTimeout(_dragTooltip._hideTimer); _dragTooltip.style.opacity = '0'; _dragTooltip._hideTimer = setTimeout(function() { if (_dragTooltip) { _dragTooltip.style.display = 'none'; _dragTooltip._hideTimer = null; } }, 150); }
     _bubbleDragData.bubble.classList.remove('dragging');
     _bubbleDragData.bubble.style.zIndex = '';
     const bubble = _bubbleDragData.bubble;
@@ -1525,6 +1563,11 @@ function setupBubbleDragDrop() {
       pushUndoState();
       hubContent.bentoLayout = dragLayout;
       saveHubContent();
+      // Trigger drop-bounce animation
+      bubble.classList.add('drop-bounce');
+      setTimeout(function() {
+        bubble.classList.remove('drop-bounce');
+      }, 500);
       // Update all bubbles' DOM positions without full re-render
       if (grid) {
         dragLayout.forEach(function(it) {
@@ -2022,67 +2065,6 @@ function showHubAddPopup(e) {
     }
     return;
   }
-  const existing = document.querySelector('.hub-add-popup');
-  if (existing) { existing.remove(); document.querySelector('.hub-popup-overlay')?.remove(); return; }
-
-  const overlay = document.createElement('div');
-  overlay.className = 'hub-popup-overlay';
-  overlay.addEventListener('click', () => { overlay.remove(); popup.remove(); });
-  document.body.appendChild(overlay);
-
-  const popup = document.createElement('div');
-  popup.className = 'hub-edit-popup hub-add-popup';
-
-  const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
-  const has = t => layout.some(i => i.t === t);
-
-  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
-  const types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','timer','pomodoro','spotify','quote','notes','images','links'];
-
-  popup.innerHTML = `
-    <div class="add-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-      Add to Canvas
-      <button class="add-guide-btn" id="hubAddGuide" title="Canvas Guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
-    </div>
-
-    <div class="add-list">
-      ${types.map(t => {
-        const disabled = t !== 'images' && has(t);
-        return `<button class="add-row${!disabled ? ' add-row-toggle' : ''}" data-btype="${t}" ${disabled ? 'disabled' : ''} type="button">
-          <span class="add-row-icon">${bubbleTypeIcon(t)}</span>
-          <span class="add-row-label">${labels[t] || t}</span>
-          <span class="add-row-check">${disabled ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg class="add-check-empty" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="12" cy="12" r="10"/></svg><svg class="add-check-fill" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:none"><polyline points="20 6 9 17 4 12"/></svg>'}</span>
-        </button>`;
-      }).join('')}
-    </div>
-
-    <div class="hub-edit-popup-actions" id="hubAddActions"><button class="cancel primary" id="hubAddConfirm">Add Selected</button></div>
-  `;
-  document.body.appendChild(popup);
-  popup.querySelector('#hubAddGuide')?.addEventListener('click', function(e) { e.stopPropagation(); showCanvasGuide(); });
-
-  var selected = {};
-  // Toggle selection on click
-  popup.querySelectorAll('.add-row-toggle').forEach(function(el) {
-    el.addEventListener('click', function(ev) {
-      ev.stopPropagation();
-      var t = this.dataset.btype;
-      selected[t] = !selected[t];
-      this.classList.toggle('add-row-selected', selected[t]);
-      this.querySelector('.add-check-empty').style.display = selected[t] ? 'none' : '';
-      this.querySelector('.add-check-fill').style.display = selected[t] ? '' : 'none';
-    });
-  });
-  // Confirm: add all selected types
-  document.getElementById('hubAddConfirm')?.addEventListener('click', function() {
-    var typesToAdd = Object.keys(selected).filter(function(k) { return selected[k]; });
-    if (typesToAdd.length === 0) { popup.remove(); overlay.remove(); return; }
-    addBubbleTypes(typesToAdd);
-    popup.remove();
-    overlay.remove();
-  });
-  // Also close on overlay click (already handled above)
 }
 
 

@@ -1019,7 +1019,29 @@ let state = {
   userProfile: null,
   editMode: false,
   accessBubbles: {},
+  currentUserSub: null,
+  gsiAccounts: [],
 };
+
+// ─── GSI STORAGE PREFIX ──────────────────────────────
+function getStoragePrefix() {
+  return state && state.currentUserSub ? state.currentUserSub + ':' : '';
+}
+
+var __origLS = {};
+(function() {
+  __origLS.getItem = localStorage.getItem.bind(localStorage);
+  __origLS.setItem = localStorage.setItem.bind(localStorage);
+  __origLS.removeItem = localStorage.removeItem.bind(localStorage);
+  function _p(key) {
+    var pre = getStoragePrefix();
+    if (!pre || (typeof key === 'string' && key.indexOf('haven-gsi-') === 0)) return key;
+    return pre + key;
+  }
+  localStorage.getItem = function(key) { return __origLS.getItem(_p(key)); };
+  localStorage.setItem = function(key, val) { return __origLS.setItem(_p(key), val); };
+  localStorage.removeItem = function(key) { return __origLS.removeItem(_p(key)); };
+})();
 
 const DEFAULT_BUBBLES = {
   'focus-timer': { visible: true, label: 'Focus', color: '#fff' },
@@ -1639,7 +1661,9 @@ function _imgDB() {
   if (_IMG_DB) return Promise.resolve(_IMG_DB);
   if (_IMG_DB_PENDING) return _IMG_DB_PENDING;
   _IMG_DB_PENDING = new Promise(function(resolve, reject) {
-    var req = indexedDB.open('haven-images', 1);
+    var pre = getStoragePrefix();
+    var dbName = pre ? 'haven-images-' + pre.slice(0, -1) : 'haven-images';
+    var req = indexedDB.open(dbName, 1);
     req.onupgradeneeded = function(e) {
       var db = e.target.result;
       if (!db.objectStoreNames.contains('images')) db.createObjectStore('images');
@@ -1732,11 +1756,18 @@ function applyImages() {
 function restoreDirectImageKeys() {
   if (!state || !state.images) return;
   var _found = 0;
+  var _prefix = getStoragePrefix();
   for (var _j = 0; _j < localStorage.length; _j++) {
     var _key = localStorage.key(_j);
-    if (_key && _key.indexOf('haven-image-') === 0) {
-      var _imgId = _key.slice('haven-image-'.length);
-      var _val = localStorage.getItem(_key);
+    if (!_key) continue;
+    var _imgId = null;
+    if (_key.indexOf('haven-image-') === 0) {
+      _imgId = _key.slice('haven-image-'.length);
+    } else if (_prefix && _key.indexOf(_prefix + 'haven-image-') === 0) {
+      _imgId = _key.slice((_prefix + 'haven-image-').length);
+    }
+    if (_imgId) {
+      var _val = __origLS.getItem(_key);
       if (_val) { state.images[_imgId] = _val; _found++; }
     }
   }
