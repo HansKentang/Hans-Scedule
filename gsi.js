@@ -138,18 +138,40 @@ function guestSignOut() {
   location.href = 'login.html';
 }
 
-// ─── Google OAuth (full-page redirect) ─────────────
-function handleGoogleOAuthUser(payload) {
-  if (!payload || !payload.sub) return;
-  var id = 'google-' + payload.sub;
-  var existing = localUsers.find(function(u) { return u.id === id; });
+// ─── Firebase Google Sign-In ──────────────────────────
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBLrSNOLrpGEsvkUMddC4aZONqQ6AAVyWc",
+  authDomain: "haven-schdule.firebaseapp.com",
+  projectId: "haven-schdule",
+  storageBucket: "haven-schdule.firebasestorage.app",
+  messagingSenderId: "115419547977",
+  appId: "1:115419547977:web:473fed3b70a004ca8a7298"
+};
+
+function firebaseSignIn() {
+  if (typeof firebase === 'undefined') { showToast('Firebase SDK not loaded. Refresh the page.', 'error', 4000); return; }
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  var provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider)
+    .then(function(result) { handleFirebaseUser(result.user); })
+    .catch(function(error) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        showToast('Sign-in failed: ' + error.message, 'error', 4000);
+      }
+    });
+}
+
+function handleFirebaseUser(fbUser) {
+  if (!fbUser) return;
+  var uid = fbUser.uid;
+  var existing = localUsers.find(function(u) { return u.id === 'firebase-' + uid; });
   if (existing) { switchAccount(existing.id); return; }
   var user = {
-    id: id,
-    name: payload.name || payload.email || 'User',
-    email: payload.email || '',
-    picture: payload.picture || '',
-    _color: getColorForId(id)
+    id: 'firebase-' + uid,
+    name: fbUser.displayName || fbUser.email || 'User',
+    email: fbUser.email || '',
+    picture: fbUser.photoURL || '',
+    _color: getColorForId('firebase-' + uid)
   };
   localUsers.push(user);
   saveUsers();
@@ -158,7 +180,8 @@ function handleGoogleOAuthUser(payload) {
   migrateExistingData(user.id);
   renderAuthUI();
   showToast('Signed in as ' + user.name, 'info', 2000);
-  location.href = 'index.html';
+  if (isLoginPage()) location.href = 'index.html';
+  else location.reload();
 }
 
 // ─── Local profile ────────────────────────────────────
@@ -257,4 +280,4 @@ window.gsiSignOut = removeProfile;
 window.switchGSIAccount = switchAccount;
 window.getGSIActiveSub = getActiveUserId;
 window.createLocalProfile = createLocalProfile;
-window.handleGoogleOAuthUser = handleGoogleOAuthUser;
+window.firebaseSignIn = firebaseSignIn;
