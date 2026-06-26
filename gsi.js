@@ -140,9 +140,9 @@ function guestSignOut() {
 
 // ─── Firebase Google Sign-In ──────────────────────────
 function firebaseSignIn() {
-  var fb = window.__firebase;
-  if (!fb || !fb.auth) { showToast('Firebase not loaded. Run npm run build first.', 'error', 4000); return; }
-  fb.signInWithPopup(fb.auth, fb.provider)
+  if (typeof firebase === 'undefined') { showToast('Firebase SDK not loaded. Refresh the page.', 'error', 4000); return; }
+  var provider = new firebase.auth.GoogleAuthProvider();
+  firebase.auth().signInWithPopup(provider)
     .then(function(result) { handleFirebaseUser(result.user); })
     .catch(function(error) {
       if (error.code !== 'auth/popup-closed-by-user') {
