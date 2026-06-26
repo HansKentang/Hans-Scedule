@@ -884,15 +884,6 @@ function renderHubBento() {
   });
 
   if (isEdit) {
-    const addBtn = document.createElement('button');
-    addBtn.className = 'bento-add-bubble-btn';
-    addBtn.id = 'bentoAddBubble';
-    addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Bubble';
-    addBtn.style.cssText = `position:absolute;left:24px;width:calc(100% - 48px)`;
-    grid.appendChild(addBtn);
-    updateAddBtnPosition();
-    addBtn.addEventListener('click', showHubAddPopup);
-
     // Done Editing button (fixed bottom)
     var doneBtn = document.createElement('button');
     doneBtn.className = 'bento-edit-done-btn';
@@ -1350,8 +1341,7 @@ function showCanvasGuide() {
 
 /* ─── Helper: keep add button below lowest widget ── */
 function updateAddBtnPosition() {
-  var btn = document.getElementById('bentoAddBubble');
-  if (!btn) return;
+  // Dock replaces the old add button - keep grid padded for dock visibility
   var g = document.querySelector('.bento-grid');
   if (!g) return;
   var lowest = 0;
@@ -1359,7 +1349,13 @@ function updateAddBtnPosition() {
     var btm = b.offsetTop + b.offsetHeight;
     if (btm > lowest) lowest = btm;
   });
-  btn.style.top = Math.min(Math.max(lowest + 50, 50), MAX_CANVAS_HEIGHT - 50) + 'px';
+  // Ensure grid is tall enough that dock has room below
+  var dockHeight = 80;
+  var needed = lowest + dockHeight + 24;
+  var currentMin = parseInt(g.style.minHeight) || 0;
+  if (needed > currentMin) {
+    g.style.minHeight = Math.min(needed, MAX_CANVAS_HEIGHT) + 'px';
+  }
 }
 
 /* ─── Bubble drag/resize ───────────────────── */
@@ -1367,6 +1363,7 @@ let _bubbleDragData = null;
 let _bubbleDragInitialized = false;
 let _bubbleResizeData = null;
 let _bubbleResizeInitialized = false;
+let _dockDragGlobalWired = false;
 let _handleLastClickTime = 0;
 
 function resetBentoInteractions() {
@@ -1794,7 +1791,7 @@ function refreshProgressWidget() {
 let _progressRefreshInterval = null;
 
 /* ─── Add bubble types ─────────────────────── */
-function addBubbleTypes(types) {
+function addBubbleTypes(types, dropPos) {
   // Start from fresh normalized layout
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   // Get grid width for gap-finding
@@ -1821,10 +1818,15 @@ function addBubbleTypes(types) {
     }
     item.w = snap(320);
     item.h = item.t === 'spotify' ? snap(420) : item.t === 'images' ? snap(320 / 1.333) : snap(280);
-    // Smart gap-filling: find first horizontal gap that fits this item
-    var pos = findBentoGap(layout, item.w, item.h, gridWidth);
-    item.x = pos.x;
-    item.y = pos.y;
+    // If a drop position is provided, use it; otherwise find a gap
+    if (dropPos && typeof dropPos.x === 'number' && typeof dropPos.y === 'number') {
+      item.x = snap(dropPos.x);
+      item.y = snap(dropPos.y);
+    } else {
+      var pos = findBentoGap(layout, item.w, item.h, gridWidth);
+      item.x = pos.x;
+      item.y = pos.y;
+    }
     layout.push(item);
   });
   // Force all collisions to be resolved — this will push the new item down if needed
@@ -1998,6 +2000,19 @@ function _pomoClearTickIfIdle() {
 
 /* ─── ADD popup (hide-popup style) ──────────── */
 function showHubAddPopup(e) {
+  // In edit mode, toggle the bubble dock instead of the popup
+  if (hubEditMode) {
+    var grid = document.querySelector('.bento-grid');
+    if (grid) {
+      var existing = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
+      if (existing) {
+        existing.remove();
+      } else {
+        renderBubbleDock(grid);
+      }
+    }
+    return;
+  }
   const existing = document.querySelector('.hub-add-popup');
   if (existing) { existing.remove(); document.querySelector('.hub-popup-overlay')?.remove(); return; }
 
@@ -2061,6 +2076,120 @@ function showHubAddPopup(e) {
   // Also close on overlay click (already handled above)
 }
 
+
+
+/* ─── BUBBLE DOCK (draggable add panel below canvas) ─── */
+function renderBubbleDock(grid) {
+  if (!hubEditMode) return;
+  var existing = document.querySelector('.bento-bubble-dock');
+  if (existing) existing.remove();
+  var dock = document.createElement('div');
+  dock.className = 'bento-bubble-dock';
+  dock.setAttribute('data-bubble-dock', '');
+  var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+  var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
+  var types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','timer','pomodoro','spotify','quote','notes','images','links'];
+  types.forEach(function(t) {
+    var placed = t === 'images' ? false : has(t);
+    var item = document.createElement('div');
+    item.className = 'bubble-dock-item' + (placed ? ' placed' : '');
+    item.dataset.bubbleDockType = t;
+    if (placed) item.title = labels[t] + ' (already on canvas)';
+    else item.title = 'Drag ' + labels[t] + ' onto canvas';
+    var icon = document.createElement('span');
+    icon.className = 'bdi-icon';
+    icon.innerHTML = bubbleTypeIcon(t);
+    var label = document.createElement('span');
+    label.className = 'bdi-label';
+    label.textContent = labels[t] || t;
+    item.appendChild(icon);
+    item.appendChild(label);
+    dock.appendChild(item);
+  });
+  // Add close button to dock
+  var closeBtn = document.createElement('button');
+  closeBtn.className = 'bubble-dock-close';
+  closeBtn.innerHTML = '×';
+  closeBtn.title = 'Close dock';
+  closeBtn.addEventListener('click', function() { dock.remove(); });
+  dock.appendChild(closeBtn);
+  
+  grid.parentNode.insertBefore(dock, grid.nextSibling);
+  initBubbleDockDrag(dock);
+}
+
+function initBubbleDockDrag(dock) {
+  if (!dock) dock = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
+  if (!dock || dock._dockDragWired) return;
+  dock._dockDragWired = true;
+  var ghost = null, dragData = null, dropPreview = null;
+  var grid = document.querySelector('.bento-grid');
+  
+  dock.addEventListener('mousedown', function(e) {
+    var item = e.target.closest('.bubble-dock-item');
+    if (!item || item.classList.contains('placed') || e.button !== 0) return;
+    e.preventDefault();
+    var type = item.dataset.bubbleDockType;
+    var rect = item.getBoundingClientRect();
+    ghost = document.createElement('div');
+    ghost.className = 'bubble-dock-ghost';
+    ghost.innerHTML = '<div class=dg-icon\>' + bubbleTypeIcon(type) + '</div><span class=dg-label\>' + (item.querySelector('.bdi-label')?.textContent || type) + '</span><span class=dg-dim\></span>';
+    ghost.style.left = (e.clientX - rect.width / 2) + 'px';
+    ghost.style.top = (e.clientY - rect.height / 2) + 'px';
+    document.body.appendChild(ghost);
+    dropPreview = document.createElement('div');
+    dropPreview.className = 'bubble-drop-preview';
+    dropPreview.style.display = 'none';
+    if (grid) grid.appendChild(dropPreview);
+    dragData = { type: type, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, itemWidth: 320, itemHeight: type === 'spotify' ? 420 : type === 'images' ? 240 : 280 };
+  });
+  
+  // Global handlers are initialized once via _dockDragGlobalWired guard
+  if (!_dockDragGlobalWired) {
+    _dockDragGlobalWired = true;
+    document.addEventListener('mousemove', function(e) {
+      if (!dragData || !ghost || !dropPreview || !grid) return;
+      ghost.style.left = (e.clientX - dragData.offsetX) + 'px';
+      ghost.style.top = (e.clientY - dragData.offsetY) + 'px';
+      var gridRect = grid.getBoundingClientRect();
+      var isOverGrid = e.clientX >= gridRect.left && e.clientX <= gridRect.right && e.clientY >= gridRect.top && e.clientY <= gridRect.bottom;
+      if (isOverGrid) {
+        var relX = e.clientX - gridRect.left - dragData.itemWidth / 2;
+        var relY = e.clientY - gridRect.top - dragData.itemHeight / 2;
+        var snappedX = Math.max(0, Math.min(snap(relX), gridRect.width - dragData.itemWidth));
+        var snappedY = Math.max(0, Math.min(snap(relY), gridRect.height - dragData.itemHeight));
+        dropPreview.style.display = 'block';
+        dropPreview.style.left = snappedX + 'px';
+        dropPreview.style.top = snappedY + 'px';
+        dropPreview.style.width = dragData.itemWidth + 'px';
+        dropPreview.style.height = dragData.itemHeight + 'px';
+        ghost.classList.add('bdg-over-grid');
+      } else {
+        dropPreview.style.display = 'none';
+        ghost.classList.remove('bdg-over-grid');
+      }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+      if (!dragData || !ghost) return;
+      var placed = false;
+      if (grid && dropPreview && dropPreview.style.display !== 'none') {
+        var x = parseInt(dropPreview.style.left) || 0;
+        var y = parseInt(dropPreview.style.top) || 0;
+        addBubbleTypes([dragData.type], { x: x, y: y });
+        placed = true;
+      }
+      if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+      if (dropPreview && dropPreview.parentNode) dropPreview.parentNode.removeChild(dropPreview);
+      ghost = null; dropPreview = null; dragData = null;
+      if (placed) {
+        var grid2 = document.querySelector('.bento-grid');
+        if (grid2) renderBubbleDock(grid2);
+      }
+    });
+  }
+}
 /* ─── HIDE popup ───────────────────────────── */
 function showHubHidePopup() {
   const existing = document.querySelector('.hub-hide-popup');

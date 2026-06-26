@@ -184,11 +184,13 @@ function renderTags() {
     const pct = Math.round((d.totalMinutes / totalAll) * 100);
     grandTotal += d.count;
 
+    const isBuiltin = BUILTIN_TAGS.includes(tag);
     html += `<div class="tag-column" data-board-tag="${tag}">
       <div class="tag-column-header">
         <span class="tag-column-dot"></span>
         <span class="tag-column-name">${TAG_LABELS[tag]}</span>
         <span class="tag-column-count">${d.count}</span>
+        ${!isBuiltin ? `<button class="tag-col-del" data-del-cat="${tag}" title="Delete category">✕</button>` : ''}
         <button class="btn btn-ghost tag-color-btn" data-tag="${tag}" title="Change card color" style="margin-left:auto;padding:2px;line-height:0">
           <span class="tag-color-swatch" style="display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--border-color)"></span>
         </button>
@@ -333,6 +335,21 @@ function renderTags() {
       const tag = btn.dataset.tag;
       const curColor = cardColors[tag]?.light || DEFAULT_TAG_COLORS[tag].light;
       openCardColorPicker(btn, tag, curColor, () => { renderActivities(); });
+    });
+  });
+
+  // Delete category button
+  boardInner.querySelectorAll('[data-del-cat]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tag = btn.dataset.delCat;
+      if (!tag || BUILTIN_TAGS.includes(tag)) return;
+      const label = TAG_LABELS[tag] || tag;
+      if (confirm(`Delete category "${label}"? All tasks with this category will also be deleted.`)) {
+        removeCustomCategory(tag);
+        renderActivities();
+        showToast(`"${label}" deleted`, 'info', 2000);
+      }
     });
   });
 
@@ -636,8 +653,14 @@ function renderTimeline() {
 function renderActivityLog() {
   if (!actLogList) return;
 
-  const log = getCompletionLog();
-  if (actLogCount) actLogCount.textContent = `${log.length} completed`;
+  const weekStart = getActivitiesWeekStart();
+  const weekEnd = addDays(weekStart, 6);
+  weekEnd.setHours(23, 59, 59, 999);
+  const log = getCompletionLog().filter(entry => {
+    const d = new Date(entry.completedAt);
+    return d >= weekStart && d <= weekEnd;
+  });
+  if (actLogCount) actLogCount.textContent = `${log.length} completed this week`;
 
   if (log.length === 0) {
     actLogList.innerHTML = '<div class="act-log-empty">Complete a task to see it here</div>';

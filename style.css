@@ -5750,10 +5750,117 @@ html.light .hub-add-popup {
 .bento-bubble .prog-stat-val { color:var(--bubble-accent); }
 .bento-bubble .cal-day.today { background:var(--bubble-accent); color:#fff; }
 .bento-bubble .pomo-timer { color:var(--bubble-accent); }
-.bento-add-bubble-btn { z-index:2; border:2px dashed var(--border-color); background:var(--surface-container); color:var(--text-tertiary); cursor:pointer; border-radius:var(--radius-lg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:28px; transition:all var(--t-fast); font-size:0.8rem; font-weight:500; min-height:130px; }
-.bento-add-bubble-btn:hover { border-color:var(--primary); color:var(--primary); background:color-mix(in srgb, var(--primary) 6%, transparent); }
-.bento-add-bubble-btn svg { width:22px; height:22px; }
 .bento-img-wrap { position:relative; border-radius:var(--radius-lg); overflow:hidden; background:var(--surface-container); }
+/* ─── BUBBLE DOCK (draggable add panel below canvas) ─── */
+.bento-bubble-dock {
+  position:sticky; bottom:0; z-index:10;
+  width:100%; padding:10px 16px 14px;
+  background:var(--surface-container);
+  border-top:1px solid var(--border-color);
+  display:flex; flex-wrap:nowrap; gap:6px; overflow-x:auto;
+  align-items:center; min-height:68px;
+  scrollbar-width:thin;
+}
+.bento-bubble-dock::-webkit-scrollbar { height:3px; }
+.bento-bubble-dock::-webkit-scrollbar-thumb { background:var(--outline-variant); border-radius:2px; }
+
+.bubble-dock-item {
+  flex-shrink:0;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  width:58px; height:58px;
+  border-radius:var(--radius-md);
+  border:1px solid var(--border-subtle);
+  background:var(--surface-container-high);
+  cursor:grab; user-select:none;
+  transition:all var(--t-fast);
+  gap:2px; padding:4px 2px;
+  position:relative;
+}
+.bubble-dock-item:hover {
+  border-color:var(--primary);
+  background:color-mix(in srgb, var(--primary) 8%, var(--surface-container-high));
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(0,0,0,0.15);
+}
+.bubble-dock-item:active {
+  cursor:grabbing;
+  transform:scale(0.95);
+  transition-duration:60ms;
+}
+.bubble-dock-item .bdi-icon {
+  width:16px; height:16px; color:var(--text-secondary);
+  flex-shrink:0;
+}
+.bubble-dock-item .bdi-label {
+  font-size:0.48rem; font-weight:600; color:var(--text-tertiary);
+  text-transform:uppercase; letter-spacing:0.02em;
+  white-space:nowrap; line-height:1; text-align:center;
+  max-width:48px; overflow:hidden; text-overflow:ellipsis;
+}
+.bubble-dock-item.placed {
+  opacity:0.4; cursor:default;
+  border-color:transparent;
+  background:var(--surface-container-low);
+}
+.bubble-dock-item.placed:hover {
+  transform:none; box-shadow:none; border-color:transparent;
+}
+.bubble-dock-item.placed::after {
+  content:''; position:absolute; top:3px; right:3px;
+  width:8px; height:8px; border-radius:50%;
+  background:var(--primary);
+  box-shadow:0 0 4px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+
+/* ─── BUBBLE DOCK DRAG GHOST ───────────────── */
+.bubble-dock-ghost {
+  position:fixed; z-index:calc(var(--z-dragging) + 10); pointer-events:none;
+  border-radius:var(--radius-lg);
+  transition:none;
+  box-shadow:0 16px 48px rgba(0,0,0,0.25), 0 4px 12px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06);
+  opacity:0.92;
+  transform:scale(1.06) rotate(-0.6deg);
+  cursor:grabbing;
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  background:var(--surface-container-high);
+  border:1px solid var(--border-color);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; padding:10px 14px;
+  width:120px; height:90px;
+}
+.bubble-dock-ghost .bdg-icon {
+  width:22px; height:22px;
+  color:var(--primary);
+}
+.bubble-dock-ghost .bdg-label {
+  font-size:0.65rem; font-weight:600;
+  color:var(--text-primary); text-align:center;
+}
+.bubble-dock-ghost .bdg-dim {
+  font-size:0.5rem; color:var(--text-tertiary);
+  font-family:var(--font-mono);
+}
+/* Ghost scale-up when over grid */
+.bubble-dock-ghost.bdg-over-grid { transform:scale(1.08); border-color:var(--primary); box-shadow:0 8px 32px color-mix(in srgb, var(--primary) 20%, transparent); }
+
+/* Close button for the dock */
+.bubble-dock-close { position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; border:none; background:var(--surface-container-high); color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; line-height:1; padding:0; transition:all var(--t-fast); z-index:2; }
+.bubble-dock-close:hover { background:var(--accent-soft); color:var(--text-primary); transform:scale(1.15); }
+
+
+
+/* ─── BUBBLE DROP PREVIEW (dashed outline on grid) ─── */
+.bubble-drop-preview {
+  position:absolute;
+  z-index:5; pointer-events:none;
+  border:2px dashed var(--primary);
+  border-radius:var(--radius-lg);
+  background:color-mix(in srgb, var(--primary) 6%, transparent);
+  box-shadow:inset 0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent),
+             0 0 20px color-mix(in srgb, var(--primary) 8%, transparent);
+  animation:dropPreviewPulse 1.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  transition:left 80ms ease, top 80ms ease, width 80ms ease, height 80ms ease;
+}
 .bento-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
 .bento-img-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; width:100%; height:100%; min-height:100px; border:2px dashed var(--border-color); border-radius:var(--radius-lg); background:var(--surface-container); color:var(--text-tertiary); cursor:pointer; transition:all var(--t-fast); text-align:center; padding:12px; box-sizing:border-box; }
 .bento-img-placeholder:hover { border-color:var(--primary); color:var(--primary); background:color-mix(in srgb, var(--primary) 6%, transparent); }
