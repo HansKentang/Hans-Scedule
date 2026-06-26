@@ -531,7 +531,6 @@ function renderHubBento() {
     const editUI = isEdit
       ? `<div class="bento-bubble-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><circle cx="8" cy="6" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg></div>
          <button class="bento-bubble-btn" data-duplicate-bubble="${uid}" title="Duplicate" style="right:34px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="10" height="10" rx="1"/><path d="M4 14V5a1 1 0 0 1 1-1h9"/></svg></button>
-         <button class="bento-bubble-btn" data-copy-bubble="${uid}" title="Copy" style="right:62px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="8" width="10" height="10" rx="1"/><path d="M8 4V3a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1h-1"/></svg></button>
          <button class="bento-bubble-remove" data-remove-bubble="${uid}">×</button>${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
@@ -920,7 +919,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-copy-bubble], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], .bento-bubble-handle, .bento-bubble-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], .bento-bubble-handle, .bento-bubble-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -1402,7 +1401,7 @@ function setupBubbleDragDrop() {
     }
     _handleLastClickTime = now;
     // Don't start drag if clicking interactive elements inside the zone
-    if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-copy-bubble], [data-duplicate-bubble], .bento-resize-edge')) return;
+    if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-duplicate-bubble], .bento-resize-edge')) return;
     const bubble = dragZone.closest('.bento-bubble');
     if (!bubble) return;
     var gr = grid.getBoundingClientRect();
@@ -2436,24 +2435,6 @@ function setupHubEditEvents() {
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
     if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
-    const copyBtn = e.target.closest('[data-copy-bubble]');
-    if (copyBtn) {
-      var uid = copyBtn.dataset.copyBubble;
-      var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
-      var item = layout.find(i => i.uid === uid);
-      if (item) {
-        var text = '';
-        switch (item.t) {
-          case 'todos': case 'goals': case 'priorities': text = (hubContent[item.t] || []).map(function(x) { return typeof x === 'string' ? x : x.text; }).join('\n'); break;
-          case 'quote': var q = hubContent.quote || {}; text = (q.text || '') + (q.author ? ' — ' + q.author : ''); break;
-          case 'notes': text = hubContent.notes || ''; break;
-          case 'habits': text = (hubContent.habits || []).join('\n'); break;
-          default: text = '';
-        }
-        if (text) navigator.clipboard.writeText(text).catch(function() {});
-      }
-      return;
-    }
     const todoBox = e.target.closest('.w-todo-box');
     if (todoBox) {
       const item = todoBox.closest('.w-item');

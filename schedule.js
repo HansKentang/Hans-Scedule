@@ -84,6 +84,21 @@ function updateApiStatus() {
   if (dom.apiStatusText) dom.apiStatusText.textContent = hasKey ? 'AI ready' : 'No key';
 }
 
+function updateHolidayToggle() {
+  var isHoliday = typeof getHolidayMode === 'function' && getHolidayMode();
+  var el = document.getElementById('holidayToggle');
+  var textEl = document.getElementById('holidayToggleText');
+  var iconEl = document.getElementById('holidayToggleIcon');
+  if (!el) return;
+  el.classList.toggle('active', isHoliday);
+  if (textEl) textEl.textContent = isHoliday ? 'Holiday' : 'School';
+  if (iconEl) {
+    iconEl.innerHTML = isHoliday
+      ? '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>'
+      : '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>';
+  }
+}
+
 // ─── VIEW SWITCH ──────────────────────────────────────────
 function switchView(view) {
   currentView = view;
@@ -2242,13 +2257,16 @@ function renderSchTemplates() {
       const tag = btn.dataset.delTag;
       if (!tag) return;
       const label = TAG_LABELS[tag] || tag;
-      removeCustomCategory(tag);
-      if (state._openPmTag === tag) {
-        state._openPmTag = TAG_ORDER[0] || null;
+      if (confirm(`Delete category "${label}"? All tasks with this category will also be permanently removed.`)) {
+        removeCustomCategory(tag);
+        if (state._openPmTag === tag) {
+          state._openPmTag = TAG_ORDER[0] || null;
+        }
+        renderSchTemplates();
+        if (state._openPmTag) showSubcategoryBubble(state._openPmTag);
+        renderCalendar();
+        showToast(`"${label}" deleted`, 'info', 2000);
       }
-      renderSchTemplates();
-      if (state._openPmTag) showSubcategoryBubble(state._openPmTag);
-      showToast(`"${label}" deleted`, 'info', 2000);
     });
   });
 
@@ -2268,6 +2286,7 @@ function renderSchTemplates() {
   renderCalendar();
   bindEvents();
   updateApiStatus();
+  updateHolidayToggle();
   updateTzDisplay();
   scrollToCurrentTime();
   scheduleReminderCheck();

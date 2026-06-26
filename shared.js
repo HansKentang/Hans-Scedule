@@ -413,6 +413,18 @@ function formatTimeAMPM(timeStr) {
 const TAG_ORDER = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
 const BUILTIN_TAGS = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
 
+const ACCENT_PALETTE = [
+  { name: 'Sage', dark: '#b4ccbc', light: '#4d6356' },
+  { name: 'Sky', dark: '#a8c8e8', light: '#4878a0' },
+  { name: 'Lavender', dark: '#c8b8e8', light: '#6a5a90' },
+  { name: 'Rose', dark: '#e8b8c0', light: '#905a68' },
+  { name: 'Peach', dark: '#e8d0b8', light: '#90784a' },
+  { name: 'Teal', dark: '#a8d8d0', light: '#488a7e' },
+  { name: 'Mint', dark: '#b8e8c8', light: '#5a906a' },
+  { name: 'Blush', dark: '#e8c0d0', light: '#905a6e' },
+  { name: 'Gold', dark: '#e8d8a8', light: '#90804a' },
+  { name: 'Plum', dark: '#d0b8e8', light: '#6e4a90' },
+];
 
 // ─── SUBCATEGORIES (editable, localStorage-backed) ──────────
 const SUBCATEGORIES_KEY = 'haven-subcategories';
@@ -520,6 +532,8 @@ function removeCustomCategory(id) {
   const subs = loadSubcategories();
   delete subs[id];
   saveSubcategories(subs);
+  state.tasks = state.tasks.filter(t => t.tag !== id);
+  saveTasks();
 }
 
 function initCustomCategories() {
@@ -998,6 +1012,7 @@ let state = {
   apiModel: 'llama-3.3-70b-versatile',
   apiProvider: 'groq',
   darkMode: null,
+  accentColor: null,
   userProfile: null,
   editMode: false,
   accessBubbles: {},
@@ -1034,6 +1049,7 @@ function createDefaultProfile() {
     conversationMemory: {},   // { key: { fact, date, source } }
     planStats: { accepted: 0, rejected: 0, total: 0 },
     suggestedTitles: {},      // { tag: [titles the user tends to use] }
+    isHoliday: false,
   };
 }
 
@@ -1041,6 +1057,18 @@ function saveUserProfile() {
   try {
     localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(state.userProfile));
   } catch (e) { /* ignore */ }
+}
+
+function getHolidayMode() {
+  if (!state.userProfile) loadUserProfile();
+  return state.userProfile && state.userProfile.isHoliday === true;
+}
+
+function toggleHolidayMode() {
+  if (!state.userProfile) loadUserProfile();
+  state.userProfile.isHoliday = !state.userProfile.isHoliday;
+  saveUserProfile();
+  return state.userProfile.isHoliday;
 }
 
 function trackTaskCreated(task) {
@@ -1506,7 +1534,8 @@ function saveState() {
       showWeekends: state.showWeekends,
       showCompleted: state.showCompleted,
       darkMode: state.darkMode,
-      accessBubbles: state.accessBubbles
+      accessBubbles: state.accessBubbles,
+      accentColor: state.accentColor
     }));
   } catch (e) { console.warn('[img] saveState failed:', e); }
 }
@@ -1522,6 +1551,7 @@ function loadState() {
       state.showCompleted = s.showCompleted ?? true;
       state.darkMode = s.darkMode !== undefined ? s.darkMode : null;
       state.accessBubbles = s.accessBubbles || {};
+      state.accentColor = s.accentColor || null;
       // Images are restored via haven-image-* keys directly
     }
     const key = localStorage.getItem(API_KEY_STORAGE);
@@ -1997,12 +2027,23 @@ function handleImagePickerReset() {
 
 
 // ─── THEME ──────────────────────────────────────────────────
+function applyAccentColor() {
+  const hex = state.accentColor;
+  const el = document.documentElement;
+  if (!hex) { el.style.removeProperty('--user-primary'); return; }
+  const isDark = el.classList.contains('dark');
+  const palette = ACCENT_PALETTE.find(p => p.dark === hex);
+  if (!palette) return;
+  el.style.setProperty('--user-primary', isDark ? palette.dark : palette.light);
+}
+
 function applyTheme() {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   const isDark = state.darkMode === null ? prefersDark : state.darkMode;
   document.documentElement.classList.toggle('light', !isDark);
   document.documentElement.classList.toggle('dark', isDark);
   applyCardColors();
+  applyAccentColor();
 }
 
 function toggleTheme() {
@@ -2405,6 +2446,34 @@ function updateSettingsKeyStatus() {
   dom.settingsKeyStatusText.textContent = hasKey ? `${label} key saved and active` : `No ${label.toLowerCase()} API key configured`;
 }
 
+function renderAccentPickerInSettings() {
+  var container = document.getElementById('settingsAccentColor');
+  if (!container) return;
+  var selected = state.accentColor;
+  var html = '<div class="acc-swatches">';
+  html += '<div class="acc-swatch' + (selected ? '' : ' active') + '" data-acc="" title="Default">';
+  html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  html += '</div>';
+  for (var i = 0; i < ACCENT_PALETTE.length; i++) {
+    var c = ACCENT_PALETTE[i];
+    var isOn = selected === c.dark;
+    html += '<div class="acc-swatch' + (isOn ? ' active' : '') + '" data-acc="' + c.dark + '" title="' + c.name + '" style="background:' + c.dark + '"></div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+  container.querySelectorAll('.acc-swatch').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var val = this.dataset.acc || null;
+      state.accentColor = val;
+      container.querySelectorAll('.acc-swatch').forEach(function(s) { s.classList.remove('active'); });
+      if (val) this.classList.add('active');
+      else container.querySelector('.acc-swatch[data-acc=""]')?.classList.add('active');
+      applyAccentColor();
+      saveState();
+    });
+  });
+}
+
 function renderCardColorsInSettings() {
   const container = document.getElementById('settingsCardColors');
   if (!container) return;
@@ -2626,6 +2695,7 @@ function openSettingsDrawer() {
   try { updateSettingsKeyStatus(); } catch (e) { console.warn('drawer: updateSettingsKeyStatus', e); }
   try { loadAIUsage(); } catch (e) { console.warn('drawer: loadAIUsage', e); }
   try { renderAIUsage(); } catch (e) { console.warn('drawer: renderAIUsage', e); }
+  try { renderAccentPickerInSettings(); } catch (e) { console.warn('drawer: renderAccentPickerInSettings', e); }
   try { renderCardColorsInSettings(); } catch (e) { console.warn('drawer: renderCardColorsInSettings', e); }
   try { renderImageManagerInSettings(); } catch (e) { console.warn('drawer: renderImageManagerInSettings', e); }
   try { renderBubbleConfigInSettings(); } catch (e) { console.warn('drawer: renderBubbleConfigInSettings', e); }
@@ -2695,7 +2765,7 @@ function handleSettingsSubmit(e) {
   state.accessBubbles = bubbleConfig;
   // Persist custom images to individual haven-image-* keys (single source of truth)
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles }));
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles, accentColor: state.accentColor }));
   } catch (e) {}
   if (state.images) {
     for (var _sk of Object.keys(state.images)) {
@@ -4974,7 +5044,7 @@ ${TAG_ORDER.map(t => `- ${TAG_LABELS[t]}: ${tagSummary[t].count} tasks, ${format
 
   const systemPrompt = `You are ChickBot, a friendly smart-schedule assistant integrated into Havën Schedule.
 
-Today's date is ${today}. Current time: ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}. The user's timezone is ${Intl.DateTimeFormat().resolvedOptions().timeZone}.${learningContext}${profileSection}
+Today's date is ${today}. Current time: ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}. The user's timezone is ${Intl.DateTimeFormat().resolvedOptions().timeZone}.${getHolidayMode() ? '\n\nThe user is currently on HOLIDAY — no school commitments. When scheduling, suggest lighter workloads, more free time, flexible timing, and focus on hobbies, exercise, social activities, and relaxation. Weekdays and weekends are more similar.' : '\n\nThe user is currently in SCHOOL mode — they have regular school/class commitments on weekdays. When scheduling, prioritize study sessions, deep work, and structured activities during weekdays.'}${learningContext}${profileSection}
 
 CURRENT SCHEDULE CONTEXT:
 ${context}
