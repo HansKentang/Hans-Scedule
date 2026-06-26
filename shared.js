@@ -1014,6 +1014,8 @@ let state = {
   apiProvider: 'groq',
   darkMode: null,
   accentColor: null,
+  accentCustomColors: [],
+  accentRemovedPresets: [],
   userProfile: null,
   editMode: false,
   accessBubbles: {},
@@ -1536,7 +1538,9 @@ function saveState() {
       showCompleted: state.showCompleted,
       darkMode: state.darkMode,
       accessBubbles: state.accessBubbles,
-      accentColor: state.accentColor
+      accentColor: state.accentColor,
+      accentCustomColors: state.accentCustomColors,
+      accentRemovedPresets: state.accentRemovedPresets
     }));
   } catch (e) { console.warn('[img] saveState failed:', e); }
 }
@@ -1553,6 +1557,8 @@ function loadState() {
       state.darkMode = s.darkMode !== undefined ? s.darkMode : null;
       state.accessBubbles = s.accessBubbles || {};
       state.accentColor = s.accentColor || null;
+      state.accentCustomColors = s.accentCustomColors || [];
+      state.accentRemovedPresets = s.accentRemovedPresets || [];
       // Images are restored via haven-image-* keys directly
     }
     const key = localStorage.getItem(API_KEY_STORAGE);
@@ -2003,11 +2009,6 @@ function handleImagePickerSave() {
   if (typeof window._onImageSaved === 'function') {
     window._onImageSaved(id, urlVal || (preview?.dataset.pasted) || null);
   }
-  // Re-render image manager in settings drawer if open
-  var _settingsDrawer = document.getElementById('settingsDrawer');
-  if (_settingsDrawer && _settingsDrawer.classList.contains('open')) {
-    renderImageManagerInSettings();
-  }
   setTimeout(closeImagePicker, 400);
 }
 
@@ -2018,24 +2019,28 @@ function handleImagePickerReset() {
   if (typeof window._onImageSaved === 'function') {
     window._onImageSaved(id, null);
   }
-  // Re-render image manager in settings drawer if open
-  var _settingsDrawer = document.getElementById('settingsDrawer');
-  if (_settingsDrawer && _settingsDrawer.classList.contains('open')) {
-    renderImageManagerInSettings();
-  }
   closeImagePicker();
 }
 
 
 // ─── THEME ──────────────────────────────────────────────────
+function darkenColor(hex, amount) {
+  var r = parseInt(hex.slice(1,3), 16), g = parseInt(hex.slice(3,5), 16), b = parseInt(hex.slice(5,7), 16);
+  var f = 1 - amount;
+  return '#' + [r,g,b].map(function(v) { return Math.max(0, Math.min(255, Math.round(v * f))).toString(16).padStart(2,'0'); }).join('');
+}
+
 function applyAccentColor() {
   const hex = state.accentColor;
   const el = document.documentElement;
   if (!hex) { el.style.removeProperty('--user-primary'); return; }
   const isDark = el.classList.contains('dark');
   const palette = ACCENT_PALETTE.find(p => p.dark === hex);
-  if (!palette) return;
-  el.style.setProperty('--user-primary', isDark ? palette.dark : palette.light);
+  if (palette) {
+    el.style.setProperty('--user-primary', isDark ? palette.dark : palette.light);
+  } else {
+    el.style.setProperty('--user-primary', isDark ? hex : darkenColor(hex, 0.5));
+  }
 }
 
 function applyTheme() {
@@ -2451,28 +2456,81 @@ function renderAccentPickerInSettings() {
   var container = document.getElementById('settingsAccentColor');
   if (!container) return;
   var selected = state.accentColor;
+  var custom = state.accentCustomColors || [];
+  var removed = state.accentRemovedPresets || [];
   var html = '<div class="acc-swatches">';
   html += '<div class="acc-swatch' + (selected ? '' : ' active') + '" data-acc="" title="Default">';
   html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   html += '</div>';
   for (var i = 0; i < ACCENT_PALETTE.length; i++) {
     var c = ACCENT_PALETTE[i];
+    if (removed.indexOf(c.dark) !== -1) continue;
     var isOn = selected === c.dark;
-    html += '<div class="acc-swatch' + (isOn ? ' active' : '') + '" data-acc="' + c.dark + '" title="' + c.name + '" style="background:' + c.dark + '"></div>';
+    html += '<div class="acc-swatch' + (isOn ? ' active' : '') + '" data-acc="' + c.dark + '" data-acc-preset="' + c.dark + '" title="' + c.name + ' — right-click to remove" style="background:' + c.dark + '"></div>';
+  }
+  for (var ci = 0; ci < custom.length; ci++) {
+    var isOn = selected === custom[ci];
+    html += '<div class="acc-swatch acc-swatch-custom' + (isOn ? ' active' : '') + '" data-acc-custom="' + ci + '" data-acc="' + custom[ci] + '" title="Right-click to remove" style="background:' + custom[ci] + '"></div>';
   }
   html += '</div>';
+  if (removed.length > 0) {
+    html += '<div style="display:flex;justify-content:center;margin-top:6px"><button class="acc-custom-add" id="accResetPresetsBtn">Reset palette</button></div>';
+  }
+  html += '<div class="acc-custom-hint">Right-click any swatch to remove it</div>';
+  html += '<div class="acc-custom-row"><input type="color" id="accCustomPicker" value="#a8c8e8" class="acc-custom-picker"><input type="text" id="accCustomHex" class="acc-custom-hex" value="#a8c8e8" maxlength="7" placeholder="#hex"><button class="acc-custom-add" id="accCustomAddBtn">Save</button></div>';
   container.innerHTML = html;
-  container.querySelectorAll('.acc-swatch').forEach(function(el) {
-    el.addEventListener('click', function() {
-      var val = this.dataset.acc || null;
+  if (!container._accInit) {
+    container._accInit = true;
+    container.addEventListener('click', function(e) {
+      var swatch = e.target.closest('.acc-swatch');
+      if (!swatch) return;
+      var val = swatch.dataset.acc || null;
       state.accentColor = val;
       container.querySelectorAll('.acc-swatch').forEach(function(s) { s.classList.remove('active'); });
-      if (val) this.classList.add('active');
+      if (val) swatch.classList.add('active');
       else container.querySelector('.acc-swatch[data-acc=""]')?.classList.add('active');
       applyAccentColor();
       saveState();
     });
+    container.addEventListener('contextmenu', function(e) {
+      var swatch = e.target.closest('.acc-swatch');
+      if (!swatch) return;
+      var acc = swatch.dataset.acc;
+      if (!acc) return;
+      e.preventDefault();
+      var idx = swatch.dataset.accCustom;
+      if (idx !== undefined) {
+        state.accentCustomColors.splice(parseInt(idx), 1);
+      } else if (swatch.dataset.accPreset) {
+        state.accentRemovedPresets.push(swatch.dataset.accPreset);
+      }
+      if (state.accentColor === acc) state.accentColor = null;
+      saveState();
+      applyAccentColor();
+      renderAccentPickerInSettings();
+    });
+  }
+  document.getElementById('accResetPresetsBtn')?.addEventListener('click', function() {
+    state.accentRemovedPresets = [];
+    saveState();
+    renderAccentPickerInSettings();
   });
+  var picker = document.getElementById('accCustomPicker');
+  var hexInput = document.getElementById('accCustomHex');
+  if (picker && hexInput) {
+    picker.addEventListener('input', function() { hexInput.value = this.value; });
+    hexInput.addEventListener('input', function() { if (/^#[0-9a-f]{6}$/i.test(this.value)) picker.value = this.value; });
+    document.getElementById('accCustomAddBtn')?.addEventListener('click', function() {
+      var hex = hexInput.value.trim();
+      if (!/^#[0-9a-f]{6}$/i.test(hex)) { showToast('Invalid hex color', 'error', 2000); return; }
+      if (state.accentCustomColors.indexOf(hex) !== -1) { showToast('Color already saved', 'info', 2000); return; }
+      state.accentCustomColors.push(hex);
+      state.accentColor = hex;
+      saveState();
+      applyAccentColor();
+      renderAccentPickerInSettings();
+    });
+  }
 }
 
 function renderCardColorsInSettings() {
@@ -2560,123 +2618,6 @@ const IMAGE_MANAGER_GROUPS = [
   }
 ];
 
-function renderImageManagerInSettings() {
-  const container = document.getElementById('settingsImageManager');
-  if (!container) return;
-
-  if (!state.images) loadImages();
-
-  // Count custom images
-  var _customCount = 0;
-  var _allImageIds = [];
-  for (var _g = 0; _g < IMAGE_MANAGER_GROUPS.length; _g++) {
-    var _group = IMAGE_MANAGER_GROUPS[_g];
-    for (var _i = 0; _i < _group.ids.length; _i++) {
-      var _id = _group.ids[_i];
-      _allImageIds.push(_id);
-      var _url = getImage(_id);
-      if (_url && _url !== DEFAULT_IMAGES[_id]) _customCount++;
-    }
-  }
-
-  var _html = '';
-
-  // Header bar with count + reset all button
-  _html += '<div class="img-mgr-header">';
-  _html += '<span class="img-mgr-count">' + _customCount + ' custom / ' + _allImageIds.length + ' total</span>';
-  if (_customCount > 0) {
-    _html += '<button type="button" class="img-mgr-reset-all drawer-btn" onclick="handleImageManagerResetAll()">Reset All</button>';
-  }
-  _html += '</div>';
-
-  // Grouped grid
-  _html += '<div class="img-mgr-groups">';
-  for (var _g = 0; _g < IMAGE_MANAGER_GROUPS.length; _g++) {
-    var _group = IMAGE_MANAGER_GROUPS[_g];
-    _html += '<div class="img-mgr-group">';
-    _html += '<div class="img-mgr-group-label">' + _group.label + '</div>';
-    _html += '<div class="img-mgr-grid" data-group="' + _group.label + '">';
-
-    for (var _i = 0; _i < _group.ids.length; _i++) {
-      var _id = _group.ids[_i];
-      var _label = imageLabel(_id);
-      var _url = getImage(_id);
-      var _isCustom = _url && _url !== DEFAULT_IMAGES[_id];
-      var _shortUrl = _url ? (_url.length > 50 ? _url.slice(0, 47) + '...' : _url) : '';
-
-      _html += '<div class="img-mgr-item' + (_isCustom ? ' custom' : '') + '" data-image-id="' + _id + '" title="Click to customize ' + _label + '">';
-      _html += '<div class="img-mgr-preview">';
-      if (_url) {
-        _html += '<img src="' + escapeHtml(_url) + '" alt="" loading="lazy" data-image-id="' + _id + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">';
-        _html += '<div class="img-mgr-preview-fallback" style="display:none">';
-        _html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
-        _html += '</div>';
-      } else {
-        _html += '<div class="img-mgr-preview-fallback">';
-        _html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
-        _html += '</div>';
-      }
-      _html += '</div>';
-      _html += '<div class="img-mgr-info">';
-      _html += '<div class="img-mgr-name">' + _label + '</div>';
-      _html += '<div class="img-mgr-meta">';
-      if (_isCustom) {
-        _html += '<span class="img-mgr-badge custom-badge">Custom</span>';
-      } else {
-        _html += '<span class="img-mgr-badge default-badge">Default</span>';
-      }
-      _html += '</div>';
-      _html += '</div>';
-      if (_isCustom) {
-        _html += '<button type="button" class="img-mgr-reset-btn" title="Reset to default" onclick="handleImageManagerReset(\'' + _id + '\')">';
-        _html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>';
-        _html += '</button>';
-      }
-      _html += '</div>';
-    }
-
-    _html += '</div>';
-    _html += '</div>';
-  }
-  _html += '</div>';
-
-  container.innerHTML = _html;
-
-  // Wire click on image manager items to open the image picker
-  container.querySelectorAll('.img-mgr-item').forEach(function(item) {
-    item.addEventListener('click', function(e) {
-      // Don't open picker if clicking the reset button
-      if (e.target.closest('.img-mgr-reset-btn')) return;
-      var id2 = this.dataset.imageId;
-      if (id2) openImagePicker(id2);
-    });
-  });
-}
-
-function handleImageManagerReset(id) {
-  resetImage(id);
-  renderImageManagerInSettings();
-  showToast('Reset ' + imageLabel(id) + ' to default', 'info');
-}
-
-function handleImageManagerResetAll() {
-  if (!state.images) loadImages();
-  var _count = 0;
-  for (var _g = 0; _g < IMAGE_MANAGER_GROUPS.length; _g++) {
-    var _group = IMAGE_MANAGER_GROUPS[_g];
-    for (var _i = 0; _i < _group.ids.length; _i++) {
-      var _id = _group.ids[_i];
-      var _url = getImage(_id);
-      if (_url && _url !== DEFAULT_IMAGES[_id]) {
-        resetImage(_id);
-        _count++;
-      }
-    }
-  }
-  renderImageManagerInSettings();
-  showToast('Reset ' + _count + ' custom images to default', 'info');
-}
-
 function openSettingsDrawer() {
   dom.settingsApiKey = document.getElementById('drawerApiKey');
   dom.settingsProvider = document.getElementById('drawerProvider');
@@ -2698,7 +2639,6 @@ function openSettingsDrawer() {
   try { renderAIUsage(); } catch (e) { console.warn('drawer: renderAIUsage', e); }
   try { renderAccentPickerInSettings(); } catch (e) { console.warn('drawer: renderAccentPickerInSettings', e); }
   try { renderCardColorsInSettings(); } catch (e) { console.warn('drawer: renderCardColorsInSettings', e); }
-  try { renderImageManagerInSettings(); } catch (e) { console.warn('drawer: renderImageManagerInSettings', e); }
   try { renderBubbleConfigInSettings(); } catch (e) { console.warn('drawer: renderBubbleConfigInSettings', e); }
   try { renderChickBotProfileInSettings(); } catch (e) { console.warn('drawer: renderChickBotProfileInSettings', e); }
   overlay.classList.remove('hidden');
@@ -2766,7 +2706,7 @@ function handleSettingsSubmit(e) {
   state.accessBubbles = bubbleConfig;
   // Persist custom images to individual haven-image-* keys (single source of truth)
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles, accentColor: state.accentColor }));
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles, accentColor: state.accentColor, accentCustomColors: state.accentCustomColors, accentRemovedPresets: state.accentRemovedPresets }));
   } catch (e) {}
   if (state.images) {
     for (var _sk of Object.keys(state.images)) {
