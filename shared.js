@@ -414,16 +414,17 @@ const TAG_ORDER = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
 const BUILTIN_TAGS = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
 
 const ACCENT_PALETTE = [
-  { name: 'Sage', dark: '#b4ccbc', light: '#4d6356' },
-  { name: 'Sky', dark: '#a8c8e8', light: '#4878a0' },
-  { name: 'Lavender', dark: '#c8b8e8', light: '#6a5a90' },
   { name: 'Rose', dark: '#e8b8c0', light: '#905a68' },
   { name: 'Peach', dark: '#e8d0b8', light: '#90784a' },
-  { name: 'Teal', dark: '#a8d8d0', light: '#488a7e' },
-  { name: 'Mint', dark: '#b8e8c8', light: '#5a906a' },
-  { name: 'Blush', dark: '#e8c0d0', light: '#905a6e' },
   { name: 'Gold', dark: '#e8d8a8', light: '#90804a' },
+  { name: 'Mint', dark: '#b8e8c8', light: '#5a906a' },
+  { name: 'Sage', dark: '#b4ccbc', light: '#4d6356' },
+  { name: 'Teal', dark: '#a8d8d0', light: '#487a7e' },
+  { name: 'Sky', dark: '#a8c8e8', light: '#4878a0' },
+  { name: 'Blue', dark: '#b0bce8', light: '#505c90' },
+  { name: 'Lavender', dark: '#c8b8e8', light: '#6a5a90' },
   { name: 'Plum', dark: '#d0b8e8', light: '#6e4a90' },
+  { name: 'Blush', dark: '#e8c0d0', light: '#905a6e' },
 ];
 
 // ─── SUBCATEGORIES (editable, localStorage-backed) ──────────
