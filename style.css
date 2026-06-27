@@ -2061,14 +2061,16 @@ html.light .s-schedule-label {
   left: 0; right: 0; bottom: 100%; margin-bottom: 4px;
 }
 .hub-sidebar-footer .hub-footer-btns {
-  padding: var(--space-2) var(--space-2);
-  display: flex; gap: var(--space-1);
+  padding: 6px 10px;
+  display: flex; gap: 3px;
 }
 .hub-sidebar-footer .btn {
   flex: 1; justify-content: center;
-  font-size: 0.72rem; padding: var(--space-1) var(--space-2);
-  border-radius: 5px;
+  font-size: 0.68rem; padding: 3px 4px; gap: 3px;
+  border-radius: 5px; white-space: nowrap; overflow: hidden;
 }
+.hub-sidebar-footer .btn svg { flex-shrink: 0; }
+.hub-sidebar-footer .btn span { overflow: hidden; text-overflow: ellipsis; }
 .hub-sidebar-footer .btn:hover { background: var(--accent-soft); }
 
 /* ─── SIDEBAR IMAGES SECTION (drawer front) ─── */
