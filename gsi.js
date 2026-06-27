@@ -274,219 +274,271 @@ function isGuestMode() {
   return sessionStorage.getItem('haven-guest') === '1';
 }
 
-// ─── Settings Bubble ───────────────────────────
+// ─── Settings Panel (Discord-style) ──────────
+var settingsPanelActiveCategory = 'account';
+
 function openSettingsBubble() {
-  var existing = document.getElementById('settingsBubbleOverlay');
-  if (existing) return;
+  if (document.getElementById('settingsOverlay')) return;
 
   var overlay = document.createElement('div');
-  overlay.className = 'settings-bubble-overlay';
-  overlay.id = 'settingsBubbleOverlay';
+  overlay.className = 'settings-overlay';
+  overlay.id = 'settingsOverlay';
 
-  var popup = document.createElement('div');
-  popup.className = 'settings-bubble';
-  popup.id = 'settingsBubble';
+  var panel = document.createElement('div');
+  panel.className = 'settings-panel';
+  panel.id = 'settingsPanel';
 
-  var activeId = getActiveUserId();
-  var activeUser = localUsers.find(function(u) { return u.id === activeId; });
-
-  var accHtml = localUsers.map(function(u) {
-    var isActive = u.id === activeId;
-    var initials = getInitials(u.name);
-    var color = u._color || getColorForId(u.id);
-    var avatar = u.picture
-      ? '<img class="settings-bubble-acc-avatar" src="' + escapeHtml(u.picture) + '">'
-      : '<div class="settings-bubble-acc-initials" style="background:' + color + '">' + escapeHtml(initials) + '</div>';
-    return '<div class="settings-bubble-acc-item' + (isActive ? ' active' : '') + '" data-acc-id="' + u.id + '">' +
-      avatar +
-      '<div class="settings-bubble-acc-info">' +
-        '<div class="settings-bubble-acc-name">' + escapeHtml(u.name) + '</div>' +
-        (u.email ? '<div class="settings-bubble-acc-email">' + escapeHtml(u.email) + '</div>' : '') +
-      '</div>' +
-      (!isActive ? '<button class="settings-bubble-acc-remove" data-acc-remove="' + u.id + '">✕</button>' : '') +
-    '</div>';
-  }).join('');
-
-  // Guest mode indicator
-  if (isGuestMode()) {
-    accHtml += '<div class="settings-bubble-acc-item">' +
-      '<div class="settings-bubble-acc-initials" style="background:var(--text-tertiary);opacity:0.5">?</div>' +
-      '<div class="settings-bubble-acc-info"><div class="settings-bubble-acc-name" style="opacity:0.5">Guest</div></div>' +
-    '</div>';
-  }
-
-  var theme = typeof state !== 'undefined' && state.darkMode === false ? 'light' : 'dark';
-  var accentSwatches = '';
-  if (typeof ACCENT_PALETTE !== 'undefined') {
-    ACCENT_PALETTE.forEach(function(c) {
-      var active = (typeof state !== 'undefined' && state.accentColor === c.id) ? ' active' : '';
-      accentSwatches += '<div class="settings-bubble-swatch' + active + '" data-acc-color="' + c.id + '" style="background:' + c.colors.dark + '"></div>';
-    });
-  }
-
-  var tagHtml = '';
-  if (typeof TAG_ORDER !== 'undefined') {
-    TAG_ORDER.forEach(function(t) {
-      if (t === 'deep-work' || t === 'meeting' || t === 'exercise' || t === 'study' || t === 'hobby' || t.indexOf('custom-') === 0) {
-        var tagLabel = t.replace('custom-', '').replace('-', ' ');
-        tagHtml += '<div class="settings-bubble-row"><span class="settings-bubble-label" style="text-transform:capitalize">' + tagLabel + '</span></div>';
-      }
-    });
-  }
-
-  popup.innerHTML =
-    '<div class="settings-bubble-header">' +
-      '<span>Settings</span>' +
-      '<button class="settings-bubble-close" id="settingsBubbleClose"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+  panel.innerHTML =
+    '<div class="settings-panel-header">' +
+      '<h2>Settings</h2>' +
+      '<button class="settings-close-btn" id="settingsCloseBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
     '</div>' +
-    '<div class="settings-bubble-body">' +
-      // Profile & Accounts
-      '<div class="settings-bubble-section">' +
-        '<div class="settings-bubble-section-title">Profile & Accounts</div>' +
-        accHtml +
-        '<button class="settings-bubble-add-btn" id="settingsBubbleAddGoogle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/></svg>Sign in with Google</button>' +
-        '<button class="settings-bubble-add-btn" id="settingsBubbleAddLocal" style="margin-top:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add local profile</button>' +
-      '</div>' +
-      // Theme & Accent
-      '<div class="settings-bubble-section">' +
-        '<div class="settings-bubble-section-title">Theme & Accent</div>' +
-        '<div class="settings-bubble-row">' +
-          '<span class="settings-bubble-label">Theme</span>' +
-          '<div class="settings-bubble-theme-chips">' +
-            '<button class="settings-bubble-theme-chip' + (theme === 'dark' ? ' active' : '') + '" data-theme="dark">Dark</button>' +
-            '<button class="settings-bubble-theme-chip' + (theme === 'light' ? ' active' : '') + '" data-theme="light">Light</button>' +
-          '</div>' +
-        '</div>' +
-        '<div class="settings-bubble-swatches">' + accentSwatches + '</div>' +
-      '</div>' +
-      // AI
-      '<div class="settings-bubble-section">' +
-        '<div class="settings-bubble-section-title">AI</div>' +
-        '<div class="settings-bubble-row">' +
-          '<span class="settings-bubble-label">Provider</span>' +
-          '<select class="settings-bubble-select" id="settingsBubbleProvider"><option value="groq">Groq</option><option value="gemini">Gemini</option></select>' +
-        '</div>' +
-        '<div class="settings-bubble-row">' +
-          '<span class="settings-bubble-label">API Key</span>' +
-          '<div class="settings-bubble-api-row"><input type="password" id="settingsBubbleApiKey" placeholder="Enter key" spellcheck="false"><button class="settings-bubble-btn" id="settingsBubbleApiToggle">Show</button></div>' +
-        '</div>' +
-      '</div>' +
-      // Data
-      '<div class="settings-bubble-section">' +
-        '<div class="settings-bubble-section-title">Data</div>' +
-        '<div class="settings-bubble-row">' +
-          '<button class="settings-bubble-btn" id="settingsBubbleExport">Export</button>' +
-          '<button class="settings-bubble-btn" id="settingsBubbleImport">Import</button>' +
-        '</div>' +
-      '</div>' +
+    '<div class="settings-body">' +
+      '<nav class="settings-nav" id="settingsNav"></nav>' +
+      '<div class="settings-content" id="settingsContent"></div>' +
     '</div>';
 
   document.body.appendChild(overlay);
-  document.body.appendChild(popup);
+  document.body.appendChild(panel);
 
-  function closeBubble() {
-    var o = document.getElementById('settingsBubbleOverlay');
-    var p = document.getElementById('settingsBubble');
-    if (o) o.remove();
-    if (p) p.remove();
-    document.removeEventListener('keydown', escapeHandler);
+  renderSettingsNav();
+  switchSettingsCategory(settingsPanelActiveCategory);
+
+  function closePanel() {
+    var o = document.getElementById('settingsOverlay');
+    var p = document.getElementById('settingsPanel');
+    if (o) o.remove(); if (p) p.remove();
+    document.removeEventListener('keydown', escHandler);
+  }
+  var escHandler = function(e) { if (e.key === 'Escape') closePanel(); };
+  document.addEventListener('keydown', escHandler);
+  overlay.addEventListener('click', closePanel);
+  document.getElementById('settingsCloseBtn').addEventListener('click', closePanel);
+}
+
+function renderSettingsNav() {
+  var nav = document.getElementById('settingsNav');
+  if (!nav) return;
+  var cats = [
+    { id: 'account', label: 'My Account', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
+    { id: 'appearance', label: 'Appearance', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>' },
+    { id: 'ai', label: 'AI & API', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4c0 2-2 3-2 3h-4s-2-1-2-3a4 4 0 014-4z"/><path d="M8 15h8v2a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2z"/><line x1="12" y1="19" x2="12" y2="22"/></svg>' },
+    { id: 'data', label: 'Data', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' },
+    { id: 'about', label: 'About', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' }
+  ];
+  nav.innerHTML = cats.map(function(c) {
+    return '<div class="settings-nav-item' + (c.id === settingsPanelActiveCategory ? ' active' : '') + '" data-cat="' + c.id + '">' + c.icon + '<span>' + c.label + '</span></div>';
+  }).join('');
+  nav.querySelectorAll('.settings-nav-item').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var cat = el.dataset.cat;
+      if (!cat || cat === settingsPanelActiveCategory) return;
+      settingsPanelActiveCategory = cat;
+      nav.querySelectorAll('.settings-nav-item').forEach(function(i) { i.classList.remove('active'); });
+      el.classList.add('active');
+      switchSettingsCategory(cat);
+    });
+  });
+}
+
+function switchSettingsCategory(cat) {
+  var content = document.getElementById('settingsContent');
+  if (!content) return;
+  settingsPanelActiveCategory = cat;
+  switch (cat) {
+    case 'account': renderAccountSettings(content); break;
+    case 'appearance': renderAppearanceSettings(content); break;
+    case 'ai': renderAISettings(content); break;
+    case 'data': renderDataSettings(content); break;
+    case 'about': renderAboutSettings(content); break;
+  }
+}
+
+function renderAccountSettings(el) {
+  var activeId = getActiveUserId();
+  var activeUser = localUsers.find(function(u) { return u.id === activeId; });
+  var guest = isGuestMode();
+
+  var avatarHtml = '';
+  if (guest) {
+    avatarHtml = '<div class="set-avatar-initials" style="background:var(--text-tertiary);opacity:0.5">?</div><div class="set-avatar-info"><div class="set-avatar-name" style="opacity:0.5">Guest</div></div>';
+  } else if (activeUser) {
+    var initials = getInitials(activeUser.name);
+    var color = activeUser._color || getColorForId(activeUser.id);
+    var img = activeUser.picture ? '<img class="set-avatar" src="' + escapeHtml(activeUser.picture) + '">' : '<div class="set-avatar-initials" style="background:' + color + '">' + escapeHtml(initials) + '</div>';
+    avatarHtml = img + '<div class="set-avatar-info"><div class="set-avatar-name">' + escapeHtml(activeUser.name) + '</div>' + (activeUser.email ? '<div class="set-avatar-email">' + escapeHtml(activeUser.email) + '</div>' : '') + '</div>';
+  } else {
+    avatarHtml = '<div style="font-size:0.78rem;color:var(--text-tertiary);padding:6px 0">No profile selected</div>';
   }
 
-  var escapeHandler = function(e) {
-    if (e.key === 'Escape') closeBubble();
-  };
-  document.addEventListener('keydown', escapeHandler);
+  // Account list
+  var listHtml = localUsers.map(function(u) {
+    var isActive = u.id === activeId;
+    var init = getInitials(u.name);
+    var col = u._color || getColorForId(u.id);
+    var av = u.picture ? '<img class="set-acc-avatar" src="' + escapeHtml(u.picture) + '">' : '<div class="set-acc-initials" style="background:' + col + '">' + escapeHtml(init) + '</div>';
+    return '<div class="set-acc-item' + (isActive ? ' active' : '') + '" data-acc-id="' + u.id + '">' +
+      av +
+      '<div class="set-acc-info"><div class="set-acc-name">' + escapeHtml(u.name) + '</div>' + (u.email ? '<div class="set-acc-email">' + escapeHtml(u.email) + '</div>' : '') + '</div>' +
+      (!isActive ? '<button class="set-acc-remove" data-acc-remove="' + u.id + '">✕</button>' : '') +
+    '</div>';
+  }).join('');
 
-  overlay.addEventListener('click', closeBubble);
-  document.getElementById('settingsBubbleClose').addEventListener('click', closeBubble);
+  if (guest) {
+    listHtml += '<div class="set-acc-item"><div class="set-acc-initials" style="background:var(--text-tertiary);opacity:0.5">?</div><div class="set-acc-info"><div class="set-acc-name" style="opacity:0.5">Guest</div></div></div>';
+  }
 
-  // Account switch
-  popup.querySelectorAll('[data-acc-id]').forEach(function(el) {
-    el.addEventListener('click', function() {
-      var id = el.dataset.accId;
-      if (id && id !== activeId) { switchAccount(id); closeBubble(); }
+  el.innerHTML =
+    '<h3>My Account</h3>' +
+    '<div class="set-group">' +
+      '<div class="set-avatar-row">' + avatarHtml + '</div>' +
+    '</div>' +
+    '<div class="set-divider"></div>' +
+    '<div class="set-group">' +
+      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">SWITCH ACCOUNT</div>' +
+      listHtml +
+      '<button class="set-link-btn" id="setAddGoogle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/></svg>Sign in with Google</button>' +
+      '<button class="set-link-btn" id="setAddLocal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add local profile</button>' +
+    '</div>' +
+    '<div class="set-divider"></div>' +
+    '<div class="set-logout">' +
+      '<button class="set-btn set-btn-danger" id="setSignOut">Sign Out</button>' +
+    '</div>';
+
+  // Event listeners
+  el.querySelectorAll('[data-acc-id]').forEach(function(item) {
+    item.addEventListener('click', function() {
+      var id = item.dataset.accId;
+      if (id && id !== activeId) { switchAccount(id); closeSettingsPanel(); }
     });
   });
-
-  // Account remove
-  popup.querySelectorAll('[data-acc-remove]').forEach(function(el) {
-    el.addEventListener('click', function(e) {
+  el.querySelectorAll('[data-acc-remove]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var id = el.dataset.accRemove;
-      closeBubble();
-      removeProfile(id);
+      closeSettingsPanel();
+      removeProfile(btn.dataset.accRemove);
     });
   });
+  document.getElementById('setAddGoogle')?.addEventListener('click', function() { closeSettingsPanel(); firebaseSignIn(); });
+  document.getElementById('setAddLocal')?.addEventListener('click', function() { closeSettingsPanel(); gsiSignIn(); });
+  document.getElementById('setSignOut')?.addEventListener('click', function() { closeSettingsPanel(); removeProfile(activeId); });
+}
 
-  // Add Google
-  document.getElementById('settingsBubbleAddGoogle').addEventListener('click', function() {
-    closeBubble();
-    firebaseSignIn();
-  });
-
-  // Add local
-  document.getElementById('settingsBubbleAddLocal').addEventListener('click', function() {
-    closeBubble();
-    gsiSignIn();
-  });
-
-  // Theme
-  popup.querySelectorAll('[data-theme]').forEach(function(el) {
-    el.addEventListener('click', function() {
-      if (typeof toggleTheme !== 'undefined') toggleTheme();
-      setTimeout(function() {
-        var chips = popup.querySelectorAll('[data-theme]');
-        var isDark = typeof state !== 'undefined' && (state.darkMode !== false);
-        chips.forEach(function(c) { c.classList.toggle('active', (isDark && c.dataset.theme === 'dark') || (!isDark && c.dataset.theme === 'light')); });
-      }, 100);
+function renderAppearanceSettings(el) {
+  var isDark = typeof state === 'undefined' || state.darkMode !== false;
+  var accent = typeof state !== 'undefined' && state.accentColor ? state.accentColor : null;
+  var swatches = '';
+  if (typeof ACCENT_PALETTE !== 'undefined') {
+    ACCENT_PALETTE.forEach(function(c) {
+      swatches += '<div class="set-swatch' + (accent === c.id ? ' active' : '') + '" data-acc-color="' + c.id + '" style="background:' + c.colors.dark + '"></div>';
     });
+  }
+
+  el.innerHTML =
+    '<h3>Appearance</h3>' +
+    '<div class="set-desc">Customize the theme and accent color</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Dark Mode</div><div class="set-row-desc">Switch between dark and light theme</div></div>' +
+        '<button class="set-toggle' + (isDark ? ' on' : '') + '" id="setThemeToggle"></button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">ACCENT COLOR</div>' +
+      '<div class="set-swatches">' + swatches + '</div>' +
+    '</div>';
+
+  document.getElementById('setThemeToggle')?.addEventListener('click', function() {
+    if (typeof toggleTheme !== 'undefined') toggleTheme();
+    this.classList.toggle('on');
   });
 
-  // Accent
-  popup.querySelectorAll('[data-acc-color]').forEach(function(el) {
-    el.addEventListener('click', function() {
+  el.querySelectorAll('[data-acc-color]').forEach(function(el2) {
+    el2.addEventListener('click', function() {
       if (typeof state === 'undefined') return;
-      state.accentColor = el.dataset.accColor;
+      state.accentColor = el2.dataset.accColor;
       if (typeof applyAccentColor !== 'undefined') applyAccentColor();
       if (typeof saveState !== 'undefined') saveState();
-      popup.querySelectorAll('[data-acc-color]').forEach(function(s) { s.classList.remove('active'); });
-      el.classList.add('active');
+      el.querySelectorAll('[data-acc-color]').forEach(function(s) { s.classList.remove('active'); });
+      el2.classList.add('active');
     });
   });
+}
 
-  // Provider
-  var savedProvider = localStorage.getItem('haven-schedule-provider');
-  if (savedProvider) document.getElementById('settingsBubbleProvider').value = savedProvider;
-  document.getElementById('settingsBubbleProvider').addEventListener('change', function() {
+function renderAISettings(el) {
+  var savedProvider = localStorage.getItem('haven-schedule-provider') || 'groq';
+  var savedKey = localStorage.getItem('haven-schedule-apikey') || '';
+
+  el.innerHTML =
+    '<h3>AI & API</h3>' +
+    '<div class="set-desc">Configure the AI assistant provider and API key</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Provider</div><div class="set-row-desc">Select which AI service to use</div></div>' +
+        '<div class="set-row-control"><select class="set-select" id="setAiProvider"><option value="groq">Groq</option><option value="gemini">Gemini</option></select></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">API Key</div><div class="set-row-desc">Your API key for the selected provider</div></div>' +
+        '<div class="set-row-control"><div class="set-api-row"><input class="set-input" type="password" id="setApiKey" placeholder="Enter key" spellcheck="false"><button class="set-btn" id="setApiToggle">Show</button></div></div>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('setAiProvider').value = savedProvider;
+  document.getElementById('setAiProvider').addEventListener('change', function() {
     localStorage.setItem('haven-schedule-provider', this.value);
     if (typeof state !== 'undefined') state.aiProvider = this.value;
   });
 
-  // API key
-  var savedKey = localStorage.getItem('haven-schedule-apikey');
-  if (savedKey) document.getElementById('settingsBubbleApiKey').value = savedKey;
-  document.getElementById('settingsBubbleApiKey').addEventListener('input', function() {
+  document.getElementById('setApiKey').value = savedKey;
+  document.getElementById('setApiKey').addEventListener('input', function() {
     localStorage.setItem('haven-schedule-apikey', this.value);
     if (typeof state !== 'undefined') state.apiKey = this.value;
   });
-  document.getElementById('settingsBubbleApiToggle').addEventListener('click', function() {
-    var input = document.getElementById('settingsBubbleApiKey');
+  document.getElementById('setApiToggle').addEventListener('click', function() {
+    var input = document.getElementById('setApiKey');
     if (input.type === 'password') { input.type = 'text'; this.textContent = 'Hide'; }
     else { input.type = 'password'; this.textContent = 'Show'; }
   });
-
-  // Export
-  document.getElementById('settingsBubbleExport').addEventListener('click', function() {
-    if (typeof exportData !== 'undefined') { closeBubble(); exportData(); }
-    else if (typeof window.exportData === 'function') { closeBubble(); window.exportData(); }
-  });
-
-  // Import
-  document.getElementById('settingsBubbleImport').addEventListener('click', function() {
-    if (typeof importData !== 'undefined') { closeBubble(); importData(); }
-    else if (typeof window.importData === 'function') { closeBubble(); window.importData(); }
-  });
 }
+
+function renderDataSettings(el) {
+  el.innerHTML =
+    '<h3>Data</h3>' +
+    '<div class="set-desc">Export your data or import from a backup</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Export</div><div class="set-row-desc">Download all your data as a JSON file</div></div>' +
+        '<button class="set-btn" id="setExportBtn">Export</button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Import</div><div class="set-row-desc">Restore data from a JSON backup</div></div>' +
+        '<button class="set-btn" id="setImportBtn">Import</button>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('setExportBtn')?.addEventListener('click', function() { closeSettingsPanel(); setTimeout(function() { if (typeof exportData !== 'undefined') exportData(); else if (typeof window.exportData === 'function') window.exportData(); }, 200); });
+  document.getElementById('setImportBtn')?.addEventListener('click', function() { closeSettingsPanel(); setTimeout(function() { if (typeof importData !== 'undefined') importData(); else if (typeof window.importData === 'function') window.importData(); }, 200); });
+}
+
+function renderAboutSettings(el) {
+  el.innerHTML =
+    '<h3>About</h3>' +
+    '<div class="set-about">' +
+      '<div class="set-about-name">Havën Schedule</div>' +
+      '<div class="set-about-ver">Version 1.0.0</div>' +
+      '<div class="set-about-links">' +
+        '<a href="https://github.com/HansKentang/Hans-Scedule" target="_blank" class="set-btn" style="text-decoration:none">GitHub</a>' +
+      '</div>' +
+    '</div>';
+}
+
+function closeSettingsPanel() {
+  var o = document.getElementById('settingsOverlay');
+  var p = document.getElementById('settingsPanel');
+  if (o) o.remove(); if (p) p.remove();
+  document.removeEventListener('keydown', escHandler);
+}
+var escHandler = function(e) { if (e.key === 'Escape') closeSettingsPanel(); };
 
 window.initGSI = initGSI;
 window.gsiSignIn = gsiSignIn;
