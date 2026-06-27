@@ -849,7 +849,7 @@ function undo() {
 // ─── NOTIFICATIONS ─────────────────────────────────────────
 let notificationInterval = null;
 let notifiedTaskIds = new Set();
-let _dailyBriefingNotified = false;
+let _dailyBriefingNotifiedDate = '';
 
 // Centralized notification sender with vibration support
 function _sendNotification(title, body, opts) {
@@ -890,9 +890,9 @@ function scheduleReminderCheck() {
   setTimeout(_sendDailyBrief, 3000);
 }
 function _sendDailyBrief() {
-  if (_dailyBriefingNotified || !('Notification' in window) || Notification.permission !== 'granted') return;
-  _dailyBriefingNotified = true;
   var today = formatDate(new Date());
+  if (_dailyBriefingNotifiedDate === today || !('Notification' in window) || Notification.permission !== 'granted') return;
+  _dailyBriefingNotifiedDate = today;
   var todayTasks = state.tasks.filter(function(t) { return t.date === today && !t.completed && !isWhiteboardTask(t); });
   if (todayTasks.length === 0) return;
   var tagCounts = {};
