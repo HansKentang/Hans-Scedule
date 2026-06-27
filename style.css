@@ -2047,18 +2047,16 @@ html.light .s-schedule-label {
   border-top: 1px solid var(--border-color);
   display: flex; flex-direction: column;
 }
-.hub-sidebar-footer .gsi-section {
-  margin: 0; padding: 2px 10px 0;
-  border-bottom: 1px solid var(--border-subtle);
+/* Top-right corner profile */
+.gsi-top-right {
+  position: absolute; top: 10px; right: 14px; z-index: 50;
 }
-.hub-sidebar-footer .gsi-avatar-wrap {
-  padding: 4px 2px;
-}
-.hub-sidebar-footer .gsi-avatar-name {
-  font-size: 0.68rem;
-}
-.hub-sidebar-footer .gsi-avatar-dropdown {
-  left: 0; right: 0; bottom: 100%; margin-bottom: 4px;
+.gsi-top-right .gsi-avatar-name { display: none; }
+.gsi-top-right .gsi-avatar-wrap { padding: 0; }
+.gsi-top-right .gsi-section { padding: 0 !important; }
+.gsi-top-right .gsi-avatar-dropdown {
+  top: 100%; bottom: auto; left: auto; right: 0;
+  margin-top: 6px; margin-bottom: 0;
 }
 .hub-sidebar-footer .hub-footer-btns {
   padding: 6px 10px;
@@ -2714,7 +2712,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 .hub-main {
   flex: 1; display: flex; flex-direction: column;
   height: 100dvh; overflow: hidden;
-  background: var(--bg-primary);
+  background: var(--bg-primary); position: relative;
 }
 
 /* ─── BREADCRUMB BAR (thin Notion-style) ─────────────── */
