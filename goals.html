@@ -379,33 +379,14 @@
       font-weight: 400;
       opacity: 0.65;
     }
-    .gl-hero-ceramic {
-      width: 52px; height: 52px; border-radius: 50%;
-      flex-shrink: 0;
-      overflow: hidden;
-      border: 1.5px solid color-mix(in srgb, var(--primary) 50%, transparent);
-      box-shadow: 0 0 20px color-mix(in srgb, var(--primary) 12%, transparent);
-      transition: all 0.4s ease;
-    }
-    .gl-hero-ceramic img {
-      width: 100%; height: 100%; object-fit: cover;
-      transition: transform 0.5s ease;
-    }
-    .gl-hero:hover .gl-hero-ceramic {
-      border-color: color-mix(in srgb, var(--primary) 70%, transparent);
-      box-shadow: 0 0 28px color-mix(in srgb, var(--primary) 18%, transparent);
-    }
-    .gl-hero:hover .gl-hero-ceramic img { transform: scale(1.05); }
     @media (max-width: 768px) {
       .gl-hero { height: 170px; }
       .gl-hero-title { font-size: 1.4rem; }
-      .gl-hero-ceramic { width: 44px; height: 44px; }
       .gl-hero-inner { padding: var(--space-4) var(--space-4); }
     }
     @media (max-width: 480px) {
       .gl-hero { height: 150px; }
       .gl-hero-title { font-size: 1.2rem; }
-      .gl-hero-ceramic { width: 38px; height: 38px; }
       .gl-hero-meta { font-size: 0.68rem; }
     }
 
@@ -497,7 +478,6 @@
 
     <!-- ─── MAIN ───────────────────────────────────────── -->
     <div class="hub-main">
-      <div id="gsiContainer" class="gsi-section gsi-top-right"></div>
       <!-- ─── HERO ────────────────────────────────────── -->
       <section class="gl-hero">
         <img data-image-id="goals-hero" src="" alt="Goals hero" class="gl-hero-bg">
@@ -512,9 +492,7 @@
             </div>
             <div class="gl-hero-sub" id="glHeroSub">Track your aspirations</div>
           </div>
-          <div class="gl-hero-ceramic">
-            <img data-image-id="goals-ceramic" src="" alt="">
-          </div>
+          <div id="gsiContainer" class="gsi-section"></div>
         </div>
       </section>
 

@@ -526,7 +526,6 @@
 
     <!-- Main calendar -->
     <div class="hub-main">
-      <div id="gsiContainer" class="gsi-section gsi-top-right"></div>
       <!-- ─── SCHEDULE HERO BANNER ────────────────────────── -->
       <section style="position:relative;height:180px;overflow:hidden;flex-shrink:0">
         <img data-image-id="schedule-hero" src="" alt=""
@@ -534,10 +533,13 @@
              
 >
         <div style="position:absolute;inset:0;background:linear-gradient(to top, var(--bg-primary) 0%, transparent 60%)"></div>
-        <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding)">
-          <h1 style="font-family:var(--font-serif);font-size:36px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)">Schedule</h1>
-          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
-            <span id="weekLabelHero"></span>
+        <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding);display:flex;align-items:center;gap:var(--gutter)">
+          <div id="gsiContainer" class="gsi-section"></div>
+          <div>
+            <h1 style="font-family:var(--font-serif);font-size:36px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)">Schedule</h1>
+            <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
+              <span id="weekLabelHero"></span>
+            </div>
           </div>
         </div>
       </section>

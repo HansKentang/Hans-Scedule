@@ -1605,7 +1605,6 @@ const DEFAULT_IMAGES = {
   'hub-tulips': 'https://picsum.photos/seed/haven-hub-tulips/600/400',
   'hub-desk-water': '',
   'hub-lamp': '',
-  'hub-ceramic': 'https://picsum.photos/seed/haven-hub-ceramic/400/400',
   'hub-skyline': 'https://picsum.photos/seed/haven-hub-skyline/800/500',
   'hub-bedroom': 'https://picsum.photos/seed/haven-hub-bedroom/600/400',
   'weekly-coffee': 'https://picsum.photos/seed/haven-weekly-coffee/400/400',
@@ -1618,15 +1617,11 @@ const DEFAULT_IMAGES = {
   'schedule-hero': 'https://picsum.photos/seed/haven-schedule-hero/1200/400',
   'schedule-coffee': 'https://picsum.photos/seed/haven-schedule-coffee/400/400',
   'activities-hero': 'https://picsum.photos/seed/haven-activities-hero/1200/500',
-  'activities-desk': 'https://picsum.photos/seed/haven-activities-desk/400/400',
   'tags-hero': 'https://picsum.photos/seed/haven-tags-hero/1200/500',
   'tags-studio': 'https://picsum.photos/seed/haven-tags-studio/400/400',
   'analytics-hero': 'https://picsum.photos/seed/haven-analytics-hero/1200/400',
-  'analytics-data': 'https://picsum.photos/seed/haven-analytics-data/400/400',
   'finance-hero': 'https://picsum.photos/seed/haven-finance-hero/1200/400',
-  'finance-ceramic': 'https://picsum.photos/seed/haven-finance-ceramic/400/400',
   'goals-hero': 'https://picsum.photos/seed/haven-goals-hero/1200/500',
-  'goals-ceramic': 'https://picsum.photos/seed/haven-goals-ceramic/400/400',
   'hub-image-1': 'https://picsum.photos/seed/haven-canvas-1/600/400',
   'hub-image-2': 'https://picsum.photos/seed/haven-canvas-2/600/400',
   'hub-image-3': 'https://picsum.photos/seed/haven-canvas-3/600/400',
@@ -1638,7 +1633,6 @@ const DEFAULT_IMAGES = {
   'hub-image-9': 'https://picsum.photos/seed/haven-canvas-9/600/400',
   'hub-image-10': 'https://picsum.photos/seed/haven-canvas-10/600/400',
   'gallery-hero': 'https://picsum.photos/seed/gallery-hero/1200/500',
-  'gallery-avatar': 'https://picsum.photos/seed/gallery-avatar/400/400',
   'sidebar-schedule': 'https://images.unsplash.com/photo-1562537218-26057ef20502?auto=format&fit=crop&w=440&q=80',
   'sidebar-activities': 'https://images.unsplash.com/photo-1742055700759-e393a5314287?auto=format&fit=crop&w=440&q=80',
   'sidebar-analytics': 'https://images.unsplash.com/photo-1759210358926-4673cc44d35f?auto=format&fit=crop&w=440&q=80',
@@ -1879,17 +1873,17 @@ function resetImage(id) {
 function imageLabel(id) {
   const map = {
     'hub-hero': 'Hub Hero', 'hub-tulips': 'Hub Tulips', 'hub-desk-water': 'Hub Desk Water', 'hub-lamp': 'Hub Lamp',
-    'hub-ceramic': 'Hub Avatar', 'hub-skyline': 'Hub Skyline', 'hub-bedroom': 'Hub Bedroom',
+    'hub-skyline': 'Hub Skyline', 'hub-bedroom': 'Hub Bedroom',
     'weekly-coffee': 'Weekly Coffee', 'weekly-journal': 'Weekly Journal',
     'brain-linen': 'Brain Linen', 'brain-desk-light': 'Brain Desk Light',
     'goals-tulips': 'Goals Tulips', 'goals-book': 'Goals Book', 'goals-studio': 'Goals Studio',
     'schedule-hero': 'Schedule Hero', 'schedule-coffee': 'Schedule Coffee',
-    'activities-hero': 'Activities Hero', 'activities-desk': 'Activities Desk',
+    'activities-hero': 'Activities Hero',
     'tags-hero': 'Tags Hero', 'tags-studio': 'Tags Studio',
-    'analytics-hero': 'Analytics Hero', 'analytics-data': 'Analytics Data',
-    'finance-hero': 'Finance Hero', 'finance-ceramic': 'Finance Avatar',
-    'goals-hero': 'Goals Hero', 'goals-ceramic': 'Goals Avatar',
-    'gallery-hero': 'Gallery Hero', 'gallery-avatar': 'Gallery Avatar',
+    'analytics-hero': 'Analytics Hero',
+    'finance-hero': 'Finance Hero',
+    'goals-hero': 'Goals Hero',
+    'gallery-hero': 'Gallery Hero',
     'sidebar-index': 'Hub Sidebar',
     'sidebar-schedule': 'Schedule Sidebar',
     'sidebar-activities': 'Activities Sidebar',
@@ -2604,7 +2598,7 @@ function renderCardColorsInSettings() {
 const IMAGE_MANAGER_GROUPS = [
   {
     label: 'Hub',
-    ids: ['hub-hero', 'hub-ceramic', 'hub-tulips', 'hub-desk-water', 'hub-lamp', 'hub-skyline', 'hub-bedroom']
+    ids: ['hub-hero', 'hub-tulips', 'hub-desk-water', 'hub-lamp', 'hub-skyline', 'hub-bedroom']
   },
   {
     label: 'Weekly',
@@ -2616,7 +2610,7 @@ const IMAGE_MANAGER_GROUPS = [
   },
   {
     label: 'Activities',
-    ids: ['activities-hero', 'activities-desk']
+    ids: ['activities-hero']
   },
   {
     label: 'Tags',
@@ -2624,15 +2618,15 @@ const IMAGE_MANAGER_GROUPS = [
   },
   {
     label: 'Analytics',
-    ids: ['analytics-hero', 'analytics-data']
+    ids: ['analytics-hero']
   },
   {
     label: 'Goals',
-    ids: ['goals-hero', 'goals-ceramic', 'goals-tulips', 'goals-book', 'goals-studio']
+    ids: ['goals-hero', 'goals-tulips', 'goals-book', 'goals-studio']
   },
   {
     label: 'Finance',
-    ids: ['finance-hero', 'finance-ceramic']
+    ids: ['finance-hero']
   },
   {
     label: 'Brain',
@@ -2645,7 +2639,7 @@ const IMAGE_MANAGER_GROUPS = [
   },
   {
     label: 'Gallery',
-    ids: ['gallery-hero', 'gallery-avatar', 'gallery-schedule', 'gallery-activities', 'gallery-tags', 'gallery-analytics', 'gallery-goals']
+    ids: ['gallery-hero', 'gallery-schedule', 'gallery-activities', 'gallery-tags', 'gallery-analytics', 'gallery-goals']
   }
 ];
 
