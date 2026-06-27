@@ -282,7 +282,7 @@ function init() {
 
   // ─── Sidebar buttons ──────────────────────
   document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
-  document.getElementById('settingsBtnSidebar')?.addEventListener('click', openSettingsDrawer);
+  // settingsBtnSidebar removed
 
   // ─── AI Chat setup ────────────────────────
   dom.aiChatBtn = document.getElementById('aiChatBtnSidebar');

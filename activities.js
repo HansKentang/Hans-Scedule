@@ -845,17 +845,17 @@ function setupPage() {
   dom.aiChatClose = document.getElementById('aiChatClose');
 
   // Help modal
-  dom.helpBtn = document.getElementById('helpBtn');
+  // dom.helpBtn removed
   dom.helpOverlay = document.getElementById('helpOverlay');
   dom.helpModal = document.getElementById('helpModal');
   dom.helpModalClose = document.getElementById('helpModalClose');
-  dom.helpBtn?.addEventListener('click', showHelpModal);
+  // helpBtn listener removed
   dom.helpOverlay?.addEventListener('click', hideHelpModal);
   dom.helpModalClose?.addEventListener('click', hideHelpModal);
   populateShortcuts();
 
   document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
-  document.getElementById('settingsBtnSidebar')?.addEventListener('click', openSettingsDrawer);
+  // settingsBtnSidebar removed
   dom.importFileInput?.addEventListener('change', importData);
   document.getElementById('importDataBtn')?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
 

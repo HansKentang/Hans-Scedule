@@ -658,7 +658,7 @@ function init() {
 
   // Sidebar buttons (shared.js handles bcVisualsBtn via delegated click to avoid double-fire)
   document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
-  document.getElementById('settingsBtnSidebar')?.addEventListener('click', openSettingsDrawer);
+  // settingsBtnSidebar removed
 
   // AI chat setup
   dom.aiChatBtn = document.getElementById('aiChatBtnSidebar');

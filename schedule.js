@@ -50,8 +50,7 @@ dom.tzTooltip      = $('#tzTooltip');
 dom.addIdeaBtn     = $('#addIdeaBtn');
   dom.whiteboardList = $('#whiteboardList');
   dom.themeBtn       = $('#themeBtnSidebar');
-  dom.settingsBtn    = $('#settingsBtnSidebar');
-  dom.helpBtn        = $('#helpBtn');
+  // removed settingsBtnSidebar and helpBtn
   dom.helpOverlay    = $('#helpOverlay');
   dom.helpModal      = $('#helpModal');
   dom.helpModalClose = $('#helpModalClose');
@@ -1662,10 +1661,8 @@ function bindEvents() {
   dom.importDataBtn?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
   dom.importFileInput?.addEventListener('change', importData);
   dom.themeBtn?.addEventListener('click', toggleTheme);
-  dom.settingsBtn?.addEventListener('click', openSettingsDrawer);
   document.getElementById('schSettingsBtn')?.addEventListener('click', openSettingsDrawer);
   // bcVisualsBtn handled via delegation in shared.js
-  dom.helpBtn?.addEventListener('click', showHelpModal);
   dom.helpOverlay?.addEventListener('click', hideHelpModal);
   dom.helpModalClose?.addEventListener('click', hideHelpModal);
 
