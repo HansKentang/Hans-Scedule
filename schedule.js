@@ -1670,7 +1670,7 @@ function bindEvents() {
   dom.helpModalClose?.addEventListener('click', hideHelpModal);
 
   // AI Chat
-  dom.aiChatBtn?.addEventListener('click', showAIChat);
+  dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
   dom.aiChatOverlay?.addEventListener('click', hideAIChat);
   dom.aiChatClose?.addEventListener('click', hideAIChat);
   dom.aiChatSend?.addEventListener('click', sendAIMessage);

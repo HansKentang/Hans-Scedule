@@ -274,6 +274,220 @@ function isGuestMode() {
   return sessionStorage.getItem('haven-guest') === '1';
 }
 
+// ─── Settings Bubble ───────────────────────────
+function openSettingsBubble() {
+  var existing = document.getElementById('settingsBubbleOverlay');
+  if (existing) return;
+
+  var overlay = document.createElement('div');
+  overlay.className = 'settings-bubble-overlay';
+  overlay.id = 'settingsBubbleOverlay';
+
+  var popup = document.createElement('div');
+  popup.className = 'settings-bubble';
+  popup.id = 'settingsBubble';
+
+  var activeId = getActiveUserId();
+  var activeUser = localUsers.find(function(u) { return u.id === activeId; });
+
+  var accHtml = localUsers.map(function(u) {
+    var isActive = u.id === activeId;
+    var initials = getInitials(u.name);
+    var color = u._color || getColorForId(u.id);
+    var avatar = u.picture
+      ? '<img class="settings-bubble-acc-avatar" src="' + escapeHtml(u.picture) + '">'
+      : '<div class="settings-bubble-acc-initials" style="background:' + color + '">' + escapeHtml(initials) + '</div>';
+    return '<div class="settings-bubble-acc-item' + (isActive ? ' active' : '') + '" data-acc-id="' + u.id + '">' +
+      avatar +
+      '<div class="settings-bubble-acc-info">' +
+        '<div class="settings-bubble-acc-name">' + escapeHtml(u.name) + '</div>' +
+        (u.email ? '<div class="settings-bubble-acc-email">' + escapeHtml(u.email) + '</div>' : '') +
+      '</div>' +
+      (!isActive ? '<button class="settings-bubble-acc-remove" data-acc-remove="' + u.id + '">✕</button>' : '') +
+    '</div>';
+  }).join('');
+
+  // Guest mode indicator
+  if (isGuestMode()) {
+    accHtml += '<div class="settings-bubble-acc-item">' +
+      '<div class="settings-bubble-acc-initials" style="background:var(--text-tertiary);opacity:0.5">?</div>' +
+      '<div class="settings-bubble-acc-info"><div class="settings-bubble-acc-name" style="opacity:0.5">Guest</div></div>' +
+    '</div>';
+  }
+
+  var theme = typeof state !== 'undefined' && state.darkMode === false ? 'light' : 'dark';
+  var accentSwatches = '';
+  if (typeof ACCENT_PALETTE !== 'undefined') {
+    ACCENT_PALETTE.forEach(function(c) {
+      var active = (typeof state !== 'undefined' && state.accentColor === c.id) ? ' active' : '';
+      accentSwatches += '<div class="settings-bubble-swatch' + active + '" data-acc-color="' + c.id + '" style="background:' + c.colors.dark + '"></div>';
+    });
+  }
+
+  var tagHtml = '';
+  if (typeof TAG_ORDER !== 'undefined') {
+    TAG_ORDER.forEach(function(t) {
+      if (t === 'deep-work' || t === 'meeting' || t === 'exercise' || t === 'study' || t === 'hobby' || t.indexOf('custom-') === 0) {
+        var tagLabel = t.replace('custom-', '').replace('-', ' ');
+        tagHtml += '<div class="settings-bubble-row"><span class="settings-bubble-label" style="text-transform:capitalize">' + tagLabel + '</span></div>';
+      }
+    });
+  }
+
+  popup.innerHTML =
+    '<div class="settings-bubble-header">' +
+      '<span>Settings</span>' +
+      '<button class="settings-bubble-close" id="settingsBubbleClose"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+    '</div>' +
+    '<div class="settings-bubble-body">' +
+      // Profile & Accounts
+      '<div class="settings-bubble-section">' +
+        '<div class="settings-bubble-section-title">Profile & Accounts</div>' +
+        accHtml +
+        '<button class="settings-bubble-add-btn" id="settingsBubbleAddGoogle"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/></svg>Sign in with Google</button>' +
+        '<button class="settings-bubble-add-btn" id="settingsBubbleAddLocal" style="margin-top:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add local profile</button>' +
+      '</div>' +
+      // Theme & Accent
+      '<div class="settings-bubble-section">' +
+        '<div class="settings-bubble-section-title">Theme & Accent</div>' +
+        '<div class="settings-bubble-row">' +
+          '<span class="settings-bubble-label">Theme</span>' +
+          '<div class="settings-bubble-theme-chips">' +
+            '<button class="settings-bubble-theme-chip' + (theme === 'dark' ? ' active' : '') + '" data-theme="dark">Dark</button>' +
+            '<button class="settings-bubble-theme-chip' + (theme === 'light' ? ' active' : '') + '" data-theme="light">Light</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="settings-bubble-swatches">' + accentSwatches + '</div>' +
+      '</div>' +
+      // AI
+      '<div class="settings-bubble-section">' +
+        '<div class="settings-bubble-section-title">AI</div>' +
+        '<div class="settings-bubble-row">' +
+          '<span class="settings-bubble-label">Provider</span>' +
+          '<select class="settings-bubble-select" id="settingsBubbleProvider"><option value="groq">Groq</option><option value="gemini">Gemini</option></select>' +
+        '</div>' +
+        '<div class="settings-bubble-row">' +
+          '<span class="settings-bubble-label">API Key</span>' +
+          '<div class="settings-bubble-api-row"><input type="password" id="settingsBubbleApiKey" placeholder="Enter key" spellcheck="false"><button class="settings-bubble-btn" id="settingsBubbleApiToggle">Show</button></div>' +
+        '</div>' +
+      '</div>' +
+      // Data
+      '<div class="settings-bubble-section">' +
+        '<div class="settings-bubble-section-title">Data</div>' +
+        '<div class="settings-bubble-row">' +
+          '<button class="settings-bubble-btn" id="settingsBubbleExport">Export</button>' +
+          '<button class="settings-bubble-btn" id="settingsBubbleImport">Import</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(popup);
+
+  function closeBubble() {
+    var o = document.getElementById('settingsBubbleOverlay');
+    var p = document.getElementById('settingsBubble');
+    if (o) o.remove();
+    if (p) p.remove();
+    document.removeEventListener('keydown', escapeHandler);
+  }
+
+  var escapeHandler = function(e) {
+    if (e.key === 'Escape') closeBubble();
+  };
+  document.addEventListener('keydown', escapeHandler);
+
+  overlay.addEventListener('click', closeBubble);
+  document.getElementById('settingsBubbleClose').addEventListener('click', closeBubble);
+
+  // Account switch
+  popup.querySelectorAll('[data-acc-id]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var id = el.dataset.accId;
+      if (id && id !== activeId) { switchAccount(id); closeBubble(); }
+    });
+  });
+
+  // Account remove
+  popup.querySelectorAll('[data-acc-remove]').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var id = el.dataset.accRemove;
+      closeBubble();
+      removeProfile(id);
+    });
+  });
+
+  // Add Google
+  document.getElementById('settingsBubbleAddGoogle').addEventListener('click', function() {
+    closeBubble();
+    firebaseSignIn();
+  });
+
+  // Add local
+  document.getElementById('settingsBubbleAddLocal').addEventListener('click', function() {
+    closeBubble();
+    gsiSignIn();
+  });
+
+  // Theme
+  popup.querySelectorAll('[data-theme]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      if (typeof toggleTheme !== 'undefined') toggleTheme();
+      setTimeout(function() {
+        var chips = popup.querySelectorAll('[data-theme]');
+        var isDark = typeof state !== 'undefined' && (state.darkMode !== false);
+        chips.forEach(function(c) { c.classList.toggle('active', (isDark && c.dataset.theme === 'dark') || (!isDark && c.dataset.theme === 'light')); });
+      }, 100);
+    });
+  });
+
+  // Accent
+  popup.querySelectorAll('[data-acc-color]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      if (typeof state === 'undefined') return;
+      state.accentColor = el.dataset.accColor;
+      if (typeof applyAccentColor !== 'undefined') applyAccentColor();
+      if (typeof saveState !== 'undefined') saveState();
+      popup.querySelectorAll('[data-acc-color]').forEach(function(s) { s.classList.remove('active'); });
+      el.classList.add('active');
+    });
+  });
+
+  // Provider
+  var savedProvider = localStorage.getItem('haven-schedule-provider');
+  if (savedProvider) document.getElementById('settingsBubbleProvider').value = savedProvider;
+  document.getElementById('settingsBubbleProvider').addEventListener('change', function() {
+    localStorage.setItem('haven-schedule-provider', this.value);
+    if (typeof state !== 'undefined') state.aiProvider = this.value;
+  });
+
+  // API key
+  var savedKey = localStorage.getItem('haven-schedule-apikey');
+  if (savedKey) document.getElementById('settingsBubbleApiKey').value = savedKey;
+  document.getElementById('settingsBubbleApiKey').addEventListener('input', function() {
+    localStorage.setItem('haven-schedule-apikey', this.value);
+    if (typeof state !== 'undefined') state.apiKey = this.value;
+  });
+  document.getElementById('settingsBubbleApiToggle').addEventListener('click', function() {
+    var input = document.getElementById('settingsBubbleApiKey');
+    if (input.type === 'password') { input.type = 'text'; this.textContent = 'Hide'; }
+    else { input.type = 'password'; this.textContent = 'Show'; }
+  });
+
+  // Export
+  document.getElementById('settingsBubbleExport').addEventListener('click', function() {
+    if (typeof exportData !== 'undefined') { closeBubble(); exportData(); }
+    else if (typeof window.exportData === 'function') { closeBubble(); window.exportData(); }
+  });
+
+  // Import
+  document.getElementById('settingsBubbleImport').addEventListener('click', function() {
+    if (typeof importData !== 'undefined') { closeBubble(); importData(); }
+    else if (typeof window.importData === 'function') { closeBubble(); window.importData(); }
+  });
+}
+
 window.initGSI = initGSI;
 window.gsiSignIn = gsiSignIn;
 window.gsiSignOut = removeProfile;
@@ -281,3 +495,4 @@ window.switchGSIAccount = switchAccount;
 window.getGSIActiveSub = getActiveUserId;
 window.createLocalProfile = createLocalProfile;
 window.firebaseSignIn = firebaseSignIn;
+window.openSettingsBubble = openSettingsBubble;

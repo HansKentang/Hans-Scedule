@@ -300,7 +300,7 @@ function init() {
   dom.aiChatInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); }
   });
-  dom.aiChatBtn?.addEventListener('click', showAIChat);
+  dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
 
   // ─── Gallery actions ──────────────────────
   document.getElementById('galAddBtn')?.addEventListener('click', handleAddImage);
