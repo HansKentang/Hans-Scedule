@@ -2070,6 +2070,23 @@ html.light .s-schedule-label {
   top: 100%; bottom: auto; left: auto; right: 0;
   margin-top: 8px; margin-bottom: 0;
 }
+/* Hub hero inline profile (replaces ceramic avatar) */
+.hub-hero-gsi .gsi-section,
+#gsiContainer.gsi-section {
+  padding: 0; display: inline-flex; align-items: center;
+}
+.hub-hero-gsi .gsi-avatar-name,
+.hub section:first-child #gsiContainer .gsi-avatar-name { display: none; }
+.hub section:first-child #gsiContainer .gsi-avatar-wrap {
+  padding: 0; border: 2px solid var(--primary); border-radius: 50%;
+}
+.hub section:first-child #gsiContainer .gsi-avatar { width: 36px; height: 36px; border: none; }
+.hub section:first-child #gsiContainer .gsi-avatar-initials { font-size: 0.8rem; }
+.hub section:first-child #gsiContainer .gsi-avatar-dropdown {
+  top: 100%; bottom: auto; left: 50%; right: auto;
+  transform: translateX(-50%); margin-top: 8px;
+}
+
 .hub-sidebar-footer .hub-footer-btns {
   padding: 6px 10px;
   display: flex; gap: 3px;
