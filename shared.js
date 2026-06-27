@@ -2945,16 +2945,15 @@ function applySidebarConfig() {
   });
 
   // Apply footer button order
-  const footer = document.querySelector('.hub-sidebar-footer');
-  if (footer && config.footerOrder && config.footerOrder.length > 0) {
+  const btns = document.querySelector('.hub-footer-btns');
+  if (btns && config.footerOrder && config.footerOrder.length > 0) {
     const btnMap = {};
-    footer.querySelectorAll('button').forEach(btn => {
-      const id = btn.id || btn.className;
-      if (id) btnMap[id] = btn;
+    btns.querySelectorAll(':scope > button').forEach(btn => {
+      if (btn.id) btnMap[btn.id] = btn;
     });
     for (const id of config.footerOrder) {
       const btn = btnMap[id];
-      if (btn) footer.appendChild(btn);
+      if (btn) btns.appendChild(btn);
     }
   }
 
@@ -3023,10 +3022,10 @@ function renderSidebarEditControls() {
   // Setup drag events
   setupSidebarDrag();
 
-  // Add drag handles to footer buttons
-  const footer = document.querySelector('.hub-sidebar-footer');
-  if (footer) {
-    footer.querySelectorAll('button').forEach(btn => {
+  // Add drag handles to footer action buttons only
+  const footerBtns = document.querySelector('.hub-footer-btns');
+  if (footerBtns) {
+    footerBtns.querySelectorAll(':scope > button').forEach(btn => {
       if (btn.querySelector('.sidebar-footer-handle')) return;
       const handle = document.createElement('span');
       handle.className = 'snav-drag-handle sidebar-footer-handle';
@@ -3108,9 +3107,9 @@ function persistSidebarOrder() {
 
 /* ─── Sidebar footer drag reorder ──────────── */
 function setupSidebarFooterDrag() {
-  const footer = document.querySelector('.hub-sidebar-footer');
-  if (!footer) return;
-  const handles = footer.querySelectorAll('.sidebar-footer-handle');
+  const btns = document.querySelector('.hub-footer-btns');
+  if (!btns) return;
+  const handles = btns.querySelectorAll('.sidebar-footer-handle');
   handles.forEach(handle => {
     handle.addEventListener('dragstart', function(e) {
       sidebarDragSrc = this.closest('button');
@@ -3118,29 +3117,29 @@ function setupSidebarFooterDrag() {
     });
     handle.addEventListener('dragend', function() {
       sidebarDragSrc = null;
-      document.querySelectorAll('.snav-drag-over').forEach(el => el.classList.remove('snav-drag-over'));
+      btns.querySelectorAll('.snav-drag-over').forEach(el => el.classList.remove('snav-drag-over'));
     });
   });
-  footer.querySelectorAll('button').forEach(btn => {
+  btns.querySelectorAll(':scope > button').forEach(btn => {
     btn.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
     btn.addEventListener('dragenter', function(e) { e.preventDefault(); if (this !== sidebarDragSrc) this.classList.add('snav-drag-over'); });
     btn.addEventListener('dragleave', function() { this.classList.remove('snav-drag-over'); });
     btn.addEventListener('drop', function(e) {
       e.preventDefault(); this.classList.remove('snav-drag-over');
       if (!sidebarDragSrc || this === sidebarDragSrc) return;
-      footer.insertBefore(sidebarDragSrc, this);
+      btns.insertBefore(sidebarDragSrc, this);
       persistSidebarFooterOrder();
     });
   });
 }
 
 function persistSidebarFooterOrder() {
-  const footer = document.querySelector('.hub-sidebar-footer');
-  if (!footer) return;
+  const btns = document.querySelector('.hub-footer-btns');
+  if (!btns) return;
   const config = loadSidebarConfig();
   config.footerOrder = [];
-  footer.querySelectorAll('button').forEach(btn => {
-    config.footerOrder.push(btn.id || btn.className);
+  btns.querySelectorAll(':scope > button').forEach(btn => {
+    config.footerOrder.push(btn.id);
   });
   saveSidebarConfig(config);
 }

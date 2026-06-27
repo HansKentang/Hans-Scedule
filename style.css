@@ -2198,25 +2198,46 @@ html.sidebar-edit-mode .hub-sidebar-image-remove {
 }
 
 /* ─── SIDEBAR FOOTER DRAG ─────────────────────────── */
-.hub-sidebar-footer button {
+.hub-footer-btns {
+  position: relative;
+}
+.hub-footer-btns > button {
   position: relative;
 }
 .sidebar-footer-handle {
-  position: absolute; left: -2px; top: 50%;
+  position: absolute; left: -4px; top: 50%;
   transform: translateY(-50%);
-  width: 14px; height: 14px; font-size: 0.55rem;
+  width: 16px; height: 16px; font-size: 0.5rem;
   display: flex; align-items: center; justify-content: center;
   cursor: grab; color: var(--text-tertiary);
   opacity: 0; transition: opacity 150ms ease;
+  z-index: 1; border-radius: 3px;
 }
 html.sidebar-edit-mode .sidebar-footer-handle {
-  opacity: 0.3;
+  opacity: 0.35;
 }
 html.sidebar-edit-mode .sidebar-footer-handle:hover {
-  opacity: 0.8;
+  opacity: 1;
+  background: var(--accent-soft);
+  color: var(--text-primary);
 }
-html.sidebar-edit-mode .hub-sidebar-footer button {
-  padding-left: 16px;
+html.sidebar-edit-mode .hub-footer-btns > button {
+  padding-left: 14px;
+}
+/* Footer drop indicator — vertical bar between buttons */
+.hub-footer-btns > button.snav-drag-over::before {
+  content: ''; position: absolute;
+  left: -4px; top: 2px; bottom: 2px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 2px; z-index: 5;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.hub-footer-btns > button.snav-drag-over::after {
+  content: ''; position: absolute;
+  inset: 0; border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  pointer-events: none;
 }
 
 /* ─── SIDEBAR IMAGE LIGHTBOX ──────────────────────── */
