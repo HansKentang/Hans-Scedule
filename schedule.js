@@ -1992,9 +1992,11 @@ function updatePomodoroDisplay() {
     const iconEl2 = document.getElementById('pomodoroPeriodIcon');
     if (iconEl2) iconEl2.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     playPomodoroSound();
-    // Browser notification
-    if ('Notification' in window && Notification.permission === 'granted') {
-      try { new Notification('🎉 Pomodoro Complete!', { body: 'Time for a break!' }); } catch(e) {}
+    // Browser notification with vibration
+    if (typeof _sendNotification === 'function') {
+      _sendNotification('\uD83C\uDF89 Pomodoro Complete!', 'Time for a break!', { tag: 'pomodoro', vibratePattern: [200, 100, 200] });
+    } else if ('Notification' in window && Notification.permission === 'granted') {
+      try { new Notification('\uD83C\uDF89 Pomodoro Complete!', { body: 'Time for a break!' }); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(e) {}
     }
   }
 }
