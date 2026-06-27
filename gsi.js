@@ -276,6 +276,7 @@ function isGuestMode() {
 
 // ─── Settings Panel (Discord-style) ──────────
 var settingsPanelActiveCategory = 'account';
+var _settingsEscHandler = null;
 
 function openSettingsBubble() {
   if (document.getElementById('settingsOverlay')) return;
@@ -304,16 +305,17 @@ function openSettingsBubble() {
   renderSettingsNav();
   switchSettingsCategory(settingsPanelActiveCategory);
 
+  _settingsEscHandler = function(e) { if (e.key === 'Escape') closePanel(); };
+  document.addEventListener('keydown', _settingsEscHandler);
+  overlay.addEventListener('click', closePanel);
+  document.getElementById('settingsCloseBtn').addEventListener('click', closePanel);
+
   function closePanel() {
     var o = document.getElementById('settingsOverlay');
     var p = document.getElementById('settingsPanel');
     if (o) o.remove(); if (p) p.remove();
-    document.removeEventListener('keydown', escHandler);
+    if (_settingsEscHandler) { document.removeEventListener('keydown', _settingsEscHandler); _settingsEscHandler = null; }
   }
-  var escHandler = function(e) { if (e.key === 'Escape') closePanel(); };
-  document.addEventListener('keydown', escHandler);
-  overlay.addEventListener('click', closePanel);
-  document.getElementById('settingsCloseBtn').addEventListener('click', closePanel);
 }
 
 function renderSettingsNav() {
@@ -536,9 +538,8 @@ function closeSettingsPanel() {
   var o = document.getElementById('settingsOverlay');
   var p = document.getElementById('settingsPanel');
   if (o) o.remove(); if (p) p.remove();
-  document.removeEventListener('keydown', escHandler);
+  if (_settingsEscHandler) { document.removeEventListener('keydown', _settingsEscHandler); _settingsEscHandler = null; }
 }
-var escHandler = function(e) { if (e.key === 'Escape') closeSettingsPanel(); };
 
 window.initGSI = initGSI;
 window.gsiSignIn = gsiSignIn;
