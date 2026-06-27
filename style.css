@@ -2052,11 +2052,23 @@ html.light .s-schedule-label {
   position: absolute; top: 10px; right: 14px; z-index: 50;
 }
 .gsi-top-right .gsi-avatar-name { display: none; }
-.gsi-top-right .gsi-avatar-wrap { padding: 0; }
+.gsi-top-right .gsi-avatar-wrap {
+  padding: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  box-shadow: var(--shadow-lg);
+  transition: box-shadow 0.2s;
+}
+.gsi-top-right .gsi-avatar-wrap:hover {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent), var(--shadow-lg);
+}
 .gsi-top-right .gsi-section { padding: 0 !important; }
+.gsi-top-right .gsi-avatar { width: 32px; height: 32px; border-width: 2px; }
+.gsi-top-right .gsi-avatar-initials { font-size: 0.7rem; }
 .gsi-top-right .gsi-avatar-dropdown {
   top: 100%; bottom: auto; left: auto; right: 0;
-  margin-top: 6px; margin-bottom: 0;
+  margin-top: 8px; margin-bottom: 0;
 }
 .hub-sidebar-footer .hub-footer-btns {
   padding: 6px 10px;
