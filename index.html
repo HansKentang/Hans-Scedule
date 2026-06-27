@@ -880,6 +880,7 @@
       var ws = getMonday(now);
       var todayStr = formatDate(now);
       var dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      var targets = loadSleepTargets();
 
       var entries = [];
       var hasAny = false;
@@ -903,41 +904,67 @@
       }
 
       if (!hasAny) {
-        container.innerHTML = '<div style="text-align:center;padding:var(--space-3);font-size:0.72rem;color:var(--text-tertiary)">No sleep data this week</div>';
+        container.innerHTML = '<div style="text-align:center;padding:var(--space-4);font-size:0.72rem;color:var(--text-tertiary)">No sleep data this week</div>';
         return;
       }
 
+      // Compute target range as fraction of the timeline
+      var targetLeft = 0, targetRight = 100;
+      try {
+        var tBt = targets.targetBedtime.split(':').map(Number);
+        var tWt = targets.targetWakeTime.split(':').map(Number);
+        var tBtMins = tBt[0] * 60 + tBt[1];
+        var tWtMins = tWt[0] * 60 + tWt[1];
+        if (tWtMins <= tBtMins) tWtMins += 1440;
+        var rangeStart = 20 * 60;
+        var rangeEnd = 12 * 60 + 1440;
+        var totalRange = rangeEnd - rangeStart;
+        targetLeft = Math.max(0, Math.min(100, ((tBtMins - rangeStart) / totalRange) * 100));
+        targetRight = Math.max(0, Math.min(100, ((tWtMins - rangeStart) / totalRange) * 100));
+      } catch(e) {}
+
       var html = '<div class="ss-grid">';
-      // Timeline axis
-      html += '<div class="ss-axis"><span>8PM</span><span>12AM</span><span>4AM</span><span>8AM</span><span>12PM</span></div>';
+      html += '<div class="ss-axis"><span>8PM</span><span>10PM</span><span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span><span>8AM</span><span>10AM</span><span>12PM</span></div>';
 
       for (var ei = 0; ei < entries.length; ei++) {
         var e = entries[ei];
         var barHtml = '';
+        var infoHtml = '';
         if (e.hasData && e.bedtime && e.wakeTime) {
           var btMins = e.bedtime.split(':').map(Number);
           var wtMins = e.wakeTime.split(':').map(Number);
           var btTotal = btMins[0] * 60 + btMins[1];
           var wtTotal = wtMins[0] * 60 + wtMins[1];
           if (wtTotal <= btTotal) wtTotal += 1440;
-          var rangeStart = 20 * 60; // 8PM = 1200min
-          var rangeEnd = 12 * 60 + 1440; // 12PM next day = 720 + 1440 = 2160
-          var totalRange = rangeEnd - rangeStart; // 960min = 16hrs
+          var rangeStart = 20 * 60;
+          var rangeEnd = 12 * 60 + 1440;
+          var totalRange = rangeEnd - rangeStart;
           var barLeft = ((btTotal - rangeStart) / totalRange) * 100;
           var barWidth = ((wtTotal - btTotal) / totalRange) * 100;
           barLeft = Math.max(0, Math.min(100, barLeft));
-          barWidth = Math.max(1, Math.min(100 - barLeft, barWidth));
+          barWidth = Math.max(2, Math.min(100 - barLeft, barWidth));
 
           var qualityColors = {1:'#ef4444',2:'#f59e0b',3:'#6366f1',4:'#10b981',5:'#059669'};
           var qc = qualityColors[e.quality] || '#6366f1';
-          barHtml = '<div class="ss-bar" style="left:' + barLeft + '%;width:' + barWidth + '%;background:' + qc + '"></div>';
+          var qGrad = {1:'#fca5a5',2:'#fcd34d',3:'#a78bfa',4:'#34d399',5:'#6ee7b7'};
+          var qg = qGrad[e.quality] || '#a78bfa';
+          var starHtml = '';
+          for (var si = 0; si < 5; si++) {
+            starHtml += '<span class="ss-star' + (si < e.quality ? ' ss-star-on' : '') + '">\u2605</span>';
+          }
+          barHtml = '<div class="ss-bar" style="left:' + barLeft + '%;width:' + barWidth + '%;background:linear-gradient(135deg,' + qg + ',' + qc + ')"></div>';
+          barHtml += '<div class="ss-bar-glow" style="left:' + barLeft + '%;width:' + barWidth + '%;background:' + qc + '"></div>';
+          infoHtml = '<div class="ss-info"><span class="ss-dur">' + formatSleepMinutes(e.duration) + '</span><span class="ss-stars">' + starHtml + '</span></div>';
         }
 
         var todayCls = e.isToday ? ' ss-row-today' : '';
         html += '<div class="ss-row' + todayCls + '">';
         html += '<div class="ss-label"><span>' + e.label + '</span><span class="ss-date">' + e.dayNum + '</span></div>';
-        html += '<div class="ss-track">' + barHtml + '</div>';
-        html += '<div class="ss-info">' + (e.hasData ? formatSleepMinutes(e.duration) : '') + '</div>';
+        html += '<div class="ss-track" data-bedtime="' + (e.bedtime || '') + '" data-waketime="' + (e.wakeTime || '') + '">';
+        html += '<div class="ss-target-range" style="left:' + targetLeft + '%;width:' + (targetRight - targetLeft) + '%"></div>';
+        html += barHtml;
+        html += '</div>';
+        html += infoHtml;
         html += '</div>';
       }
       html += '</div>';

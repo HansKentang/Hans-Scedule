@@ -2632,15 +2632,20 @@ function setupHubEditEvents() {
     openImagePicker(wrap.dataset.imgPicker);
   });
 
-  // Gallery card images — clickable in hub edit mode
+  // Gallery card images — always clickable, no edit mode required
   document.addEventListener('click', function(e) {
-    if (!hubEditMode) return;
     var cover = e.target.closest('.hub-gallery-cover');
     if (!cover) return;
     var galImg = cover.querySelector('img[data-image-id]');
     if (!galImg) return;
+    var id = galImg.dataset.imageId;
     if (e.target.closest('a')) e.preventDefault();
-    openImagePicker(galImg.dataset.imageId);
+    window._onImageSaved = function(imgId, url) {
+      if (imgId !== id) return;
+      galImg.src = url;
+      galImg.style.display = url ? 'block' : 'none';
+    };
+    openImagePicker(id);
   });
 }
 
