@@ -174,16 +174,16 @@ function normalizeBentoLayout(layout, parent) {
         norm.h = snap(280);
       }
       delete norm.s;
-      // Migrate old imageAspect/imageAspects to per-item without mutating parent
-      if (parent && parent.imageAspects) {
-        result.forEach(function(n) {
-          if (n.t === 'images' && !n.imageId) n.imageId = 'hub-tulips';
-        });
-      }
     }
     if (norm.hidden === undefined) norm.hidden = false;
     result.push(norm);
   });
+  // Migrate old imageAspect/imageAspects to per-item
+  if (parent && parent.imageAspects) {
+    result.forEach(function(n) {
+      if (n.t === 'images' && !n.imageId) n.imageId = 'hub-tulips';
+    });
+  }
   // Phase 1: position items that have x,y and resolve their collisions
   const placed = result.filter(i => i.x !== undefined && i.y !== undefined);
   const unplaced = result.filter(i => i.x === undefined || i.y === undefined);
@@ -208,8 +208,6 @@ function rectsOverlap(a, b) {
 }
 
 function resolveBubbleCollisions(layout, canvasWidth, canvasHeight, excludeUid) {
-  layout = layout.filter(i => !i.hidden);
-  // Determine canvas bounds
   if (canvasWidth === undefined) {
     var _gc = document.querySelector('.bento-grid');
     var _gr = _gc ? _gc.getBoundingClientRect() : null;
@@ -227,9 +225,10 @@ function resolveBubbleCollisions(layout, canvasWidth, canvasHeight, excludeUid) 
     dirty = false;
     layout.sort((a, b) => a.y - b.y || a.x - b.x);
     for (let i = 0; i < layout.length; i++) {
+      if (layout[i].hidden) continue;
       for (let j = i + 1; j < layout.length; j++) {
+        if (layout[j].hidden) continue;
         if (!rectsOverlap(layout[i], layout[j])) continue;
-        // Try rightward push first
         const pushX = snap(layout[i].x + layout[i].w + 24);
         if (pushX > layout[j].x && pushX - layout[j].x < (layout[i].y + layout[i].h + 24 - layout[j].y || 999)) {
           layout[j].x = pushX;
@@ -245,7 +244,6 @@ function resolveBubbleCollisions(layout, canvasWidth, canvasHeight, excludeUid) 
       }
     }
   }
-  // Final clamp for all items (except excluded)
   layout.forEach(clamp);
   return layout;
 }
@@ -1374,6 +1372,10 @@ let _bubbleDragInitialized = false;
 let _bubbleResizeData = null;
 let _bubbleResizeInitialized = false;
 let _dockDragGlobalWired = false;
+let _dockGhost = null;
+let _dockDragData = null;
+let _dockDropPreview = null;
+let _dockGrid = null;
 let _handleLastClickTime = 0;
 let _dragTooltip = null;
 
@@ -1382,6 +1384,9 @@ function resetBentoInteractions() {
   // otherwise event listeners get duplicated on each edit toggle.
   _bubbleDragData = null;
   _bubbleResizeData = null;
+  if (_dockGhost && _dockGhost.parentNode) _dockGhost.parentNode.removeChild(_dockGhost);
+  if (_dockDropPreview && _dockDropPreview.parentNode) _dockDropPreview.parentNode.removeChild(_dockDropPreview);
+  _dockGhost = null; _dockDropPreview = null; _dockDragData = null;
   // Clean up dragging and selected classes from any stuck bubbles
   document.querySelectorAll('.bento-bubble.dragging').forEach(function(el) { el.style.zIndex = ''; el.classList.remove('dragging'); });
   document.querySelectorAll('.bento-bubble.selected').forEach(function(el) { el.classList.remove('selected'); });
@@ -2113,68 +2118,68 @@ function initBubbleDockDrag(dock) {
   if (!dock) dock = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
   if (!dock || dock._dockDragWired) return;
   dock._dockDragWired = true;
-  var ghost = null, dragData = null, dropPreview = null;
-  var grid = document.querySelector('.bento-grid');
-  
+  _dockGrid = document.querySelector('.bento-grid');
+
   dock.addEventListener('mousedown', function(e) {
     var item = e.target.closest('.bubble-dock-item');
     if (!item || item.classList.contains('placed') || e.button !== 0) return;
     e.preventDefault();
     var type = item.dataset.bubbleDockType;
     var rect = item.getBoundingClientRect();
-    ghost = document.createElement('div');
-    ghost.className = 'bubble-dock-ghost';
     var itemW = 320;
     var itemH = type === 'spotify' ? 420 : type === 'images' ? 240 : 280;
-    ghost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.querySelector('.bdi-label')?.textContent || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';
-    ghost.style.left = (e.clientX - rect.width / 2) + 'px';
-    ghost.style.top = (e.clientY - rect.height / 2) + 'px';
-    document.body.appendChild(ghost);
-    dropPreview = document.createElement('div');
-    dropPreview.className = 'bubble-drop-preview';
-    dropPreview.style.display = 'none';
-    if (grid) grid.appendChild(dropPreview);
-    dragData = { type: type, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, itemWidth: itemW, itemHeight: itemH };
+    _dockGhost = document.createElement('div');
+    _dockGhost.className = 'bubble-dock-ghost';
+    _dockGhost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.querySelector('.bdi-label')?.textContent || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';
+    var offX = e.clientX - rect.left;
+    var offY = e.clientY - rect.top;
+    _dockGhost.style.left = (e.clientX - offX) + 'px';
+    _dockGhost.style.top = (e.clientY - offY) + 'px';
+    document.body.appendChild(_dockGhost);
+    _dockDropPreview = document.createElement('div');
+    _dockDropPreview.className = 'bubble-drop-preview';
+    _dockDropPreview.style.display = 'none';
+    if (_dockGrid) _dockGrid.appendChild(_dockDropPreview);
+    _dockDragData = { type: type, offsetX: offX, offsetY: offY, itemWidth: itemW, itemHeight: itemH };
   });
-  
-  // Global handlers are initialized once via _dockDragGlobalWired guard
+
   if (!_dockDragGlobalWired) {
     _dockDragGlobalWired = true;
     document.addEventListener('mousemove', function(e) {
-      if (!dragData || !ghost || !dropPreview || !grid) return;
-      ghost.style.left = (e.clientX - dragData.offsetX) + 'px';
-      ghost.style.top = (e.clientY - dragData.offsetY) + 'px';
-      var gridRect = grid.getBoundingClientRect();
+      if (!_dockDragData || !_dockGhost || !_dockDropPreview || !_dockGrid) return;
+      _dockGhost.style.left = (e.clientX - _dockDragData.offsetX) + 'px';
+      _dockGhost.style.top = (e.clientY - _dockDragData.offsetY) + 'px';
+      var gridRect = _dockGrid.getBoundingClientRect();
       var isOverGrid = e.clientX >= gridRect.left && e.clientX <= gridRect.right && e.clientY >= gridRect.top && e.clientY <= gridRect.bottom;
       if (isOverGrid) {
-        var relX = e.clientX - gridRect.left - dragData.itemWidth / 2;
-        var relY = e.clientY - gridRect.top - dragData.itemHeight / 2;
-        var snappedX = Math.max(0, Math.min(snap(relX), gridRect.width - dragData.itemWidth));
-        var snappedY = Math.max(0, Math.min(snap(relY), gridRect.height - dragData.itemHeight));
-        dropPreview.style.display = 'block';
-        dropPreview.style.left = snappedX + 'px';
-        dropPreview.style.top = snappedY + 'px';
-        dropPreview.style.width = dragData.itemWidth + 'px';
-        dropPreview.style.height = dragData.itemHeight + 'px';
-        ghost.classList.add('bdg-over-grid');
+        var relX = e.clientX - gridRect.left - _dockDragData.itemWidth / 2;
+        var relY = e.clientY - gridRect.top - _dockDragData.itemHeight / 2;
+        var snappedX = Math.max(0, Math.min(snap(relX), gridRect.width - _dockDragData.itemWidth));
+        var snappedY = Math.max(0, Math.min(snap(relY), gridRect.height - _dockDragData.itemHeight));
+        _dockDropPreview.style.display = 'block';
+        _dockDropPreview.style.left = snappedX + 'px';
+        _dockDropPreview.style.top = snappedY + 'px';
+        _dockDropPreview.style.width = _dockDragData.itemWidth + 'px';
+        _dockDropPreview.style.height = _dockDragData.itemHeight + 'px';
+        _dockGhost.classList.add('bdg-over-grid');
       } else {
-        dropPreview.style.display = 'none';
-        ghost.classList.remove('bdg-over-grid');
+        _dockDropPreview.style.display = 'none';
+        _dockGhost.classList.remove('bdg-over-grid');
       }
     });
-    
+
     document.addEventListener('mouseup', function(e) {
-      if (!dragData || !ghost) return;
+      if (!_dockDragData || !_dockGhost) return;
       var placed = false;
-      if (grid && dropPreview && dropPreview.style.display !== 'none') {
-        var x = parseInt(dropPreview.style.left) || 0;
-        var y = parseInt(dropPreview.style.top) || 0;
-        addBubbleTypes([dragData.type], { x: x, y: y });
+      if (_dockGrid && _dockDropPreview && _dockDropPreview.style.display !== 'none') {
+        var x = parseInt(_dockDropPreview.style.left) || 0;
+        var y = parseInt(_dockDropPreview.style.top) || 0;
+        addBubbleTypes([_dockDragData.type], { x: x, y: y });
         placed = true;
       }
-      if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
-      if (dropPreview && dropPreview.parentNode) dropPreview.parentNode.removeChild(dropPreview);
-      ghost = null; dropPreview = null; dragData = null;
+      if (_dockGhost && _dockGhost.parentNode) _dockGhost.parentNode.removeChild(_dockGhost);
+      if (_dockDropPreview && _dockDropPreview.parentNode) _dockDropPreview.parentNode.removeChild(_dockDropPreview);
+      _dockGhost = null; _dockDropPreview = null; _dockDragData = null;
       if (placed) {
         var grid2 = document.querySelector('.bento-grid');
         if (grid2) renderBubbleDock(grid2);
