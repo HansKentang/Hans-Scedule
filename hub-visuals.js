@@ -2124,7 +2124,9 @@ function initBubbleDockDrag(dock) {
     var rect = item.getBoundingClientRect();
     ghost = document.createElement('div');
     ghost.className = 'bubble-dock-ghost';
-    ghost.innerHTML = '<div class=dg-icon\>' + bubbleTypeIcon(type) + '</div><span class=dg-label\>' + (item.querySelector('.bdi-label')?.textContent || type) + '</span><span class=dg-dim\></span>';
+    var itemW = 320;
+    var itemH = type === 'spotify' ? 420 : type === 'images' ? 240 : 280;
+    ghost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.querySelector('.bdi-label')?.textContent || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';
     ghost.style.left = (e.clientX - rect.width / 2) + 'px';
     ghost.style.top = (e.clientY - rect.height / 2) + 'px';
     document.body.appendChild(ghost);
@@ -2132,7 +2134,7 @@ function initBubbleDockDrag(dock) {
     dropPreview.className = 'bubble-drop-preview';
     dropPreview.style.display = 'none';
     if (grid) grid.appendChild(dropPreview);
-    dragData = { type: type, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, itemWidth: 320, itemHeight: type === 'spotify' ? 420 : type === 'images' ? 240 : 280 };
+    dragData = { type: type, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, itemWidth: itemW, itemHeight: itemH };
   });
   
   // Global handlers are initialized once via _dockDragGlobalWired guard
