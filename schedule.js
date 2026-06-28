@@ -280,7 +280,8 @@ function renderMonthView() {
 
   // Attach click handlers
   dom.grid.querySelectorAll('.month-cell:not(.month-cell-empty)').forEach(cell => {
-    cell.addEventListener('click', () => {
+    cell.addEventListener('click', (e) => {
+      if (isTouchEvent(e)) return;
       const date = cell.dataset.date;
       const mins = 9 * 60;
       instantCreateTask(date, mins);
@@ -905,6 +906,7 @@ function startDragCreate(e, date, startMins) {
     startX: pos.x,
     startY: pos.y,
     ghost: null,
+    isTouch: isTouchEvent(e),
   };
   document.addEventListener('mousemove', onDragCreateMove);
   document.addEventListener('mouseup', onDragCreateEnd);
@@ -979,6 +981,8 @@ function onDragCreateEnd(e) {
   if (dragCreate.ghost) dragCreate.ghost.remove();
 
   if (!dragCreate.moved) {
+    // On mobile/touch, skip instant create to avoid accidental task creation
+    if (dragCreate.isTouch) { dragCreate = null; return; }
     // Click (no drag): delegate to instantCreateTask for smart defaults + consistent behavior
     instantCreateTask(dragCreate.date, dragCreate.startMins);
     dragCreate = null;
