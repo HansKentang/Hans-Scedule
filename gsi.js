@@ -194,6 +194,10 @@ function handleFirebaseUser(fbUser) {
   renderAuthUI();
   // Sync user profile to Firestore for the friend system
   syncProfileToFirestore(user);
+  // Initialize cloud sync for Google-authenticated users
+  if (typeof initCloudSync === 'function') {
+    initCloudSync(user.id);
+  }
   showToast('Signed in as ' + user.name, 'info', 2000);
   if (isLoginPage()) location.href = 'index.html';
   else location.reload();
@@ -223,6 +227,13 @@ function switchAccount(id) {
   renderAuthUI();
   // Sync the switched-to profile to Firestore
   syncProfileToFirestore(user);
+  // Initialize cloud sync for Google-authenticated users
+  var isGoogleUser = id.indexOf('firebase-') === 0;
+  if (isGoogleUser && typeof initCloudSync === 'function') {
+    initCloudSync(id);
+  } else if (typeof stopCloudSync === 'function') {
+    stopCloudSync();
+  }
   showToast('Switched to ' + user.name, 'info', 1500);
   location.reload();
 }
@@ -240,6 +251,13 @@ function removeProfile(id) {
   saveUsers();
   // Remove user profile from Firestore
   removeProfileFromFirestore(id);
+  // Clear cloud sync data
+  if (typeof clearCloudData === 'function') {
+    clearCloudData(id);
+  }
+  if (typeof stopCloudSync === 'function') {
+    stopCloudSync();
+  }
   var active = getActiveUserId();
   if (active === id) {
     if (localUsers.length > 0) {
@@ -288,6 +306,13 @@ function initGSI() {
   if (!activeId && !isGuestMode()) {
     location.href = 'login.html';
     return;
+  }
+
+  // Initialize chat badge for unread message count
+  // Initialize cloud sync after auth confirmation
+  var isGoogleUser = activeId && activeId.indexOf('firebase-') === 0;
+  if (isGoogleUser && typeof initCloudSync === 'function') {
+    initCloudSync(activeId);
   }
 
   // Initialize chat badge for unread message count
