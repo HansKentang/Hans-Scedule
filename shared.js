@@ -6196,29 +6196,6 @@ function spRenderSidebar() {
   spUpdateNav();
 }
 
-function spPostMessage(cmd) {
-  document.querySelectorAll('#spEmbed, #spModalEmbed').forEach(ifr => {
-    if (ifr.src && ifr.src.includes('spotify.com')) {
-      try { ifr.contentWindow.postMessage({command: cmd}, '*'); } catch {}
-    }
-  });
-}
-
-function spTogglePlay() {
-  spIsPlaying = !spIsPlaying;
-  const btn = document.getElementById('spPlayBtn');
-  if (btn) {
-    const playIcon = btn.querySelector('.sp-play-icon');
-    const pauseIcon = btn.querySelector('.sp-pause-icon');
-    if (playIcon) playIcon.style.display = spIsPlaying ? 'none' : '';
-    if (pauseIcon) pauseIcon.style.display = spIsPlaying ? '' : 'none';
-  }
-  spPostMessage('togglePlay');
-}
-
-function spSidePrev() { spSideNav(-1); }
-function spSideNext() { spSideNav(1); }
-
 function spSideNav(dir) {
   if (!spPlaylists.length) return;
   let idx = spPlaylists.findIndex(p => p.id === spActiveId);
@@ -6406,10 +6383,5 @@ function spSetupDragReorder(container) {
 }
 
 function spOnKey(e) {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-  switch (e.key) {
-    case ' ': e.preventDefault(); spTogglePlay(); break;
-    case 'ArrowLeft': e.preventDefault(); spPostMessage('previous'); break;
-    case 'ArrowRight': e.preventDefault(); spPostMessage('next'); break;
   }
 }
