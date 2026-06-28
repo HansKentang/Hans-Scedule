@@ -3166,3 +3166,118 @@ updateSectionHandles = function() {
     document.querySelectorAll('.hub-section-drag-handle').forEach(h => h.classList.add('hub-section-drag-handle-visible'));
   }
 };
+
+// ─── Hub Plus Bubble ──────────────────────────────────────
+(function initHubPlusBubble() {
+  var KEY = 'haven-plus-bubble-hub';
+  var DEFAULTS = [
+    { id: 'add-widget', label: 'Add Widget', icon: '+', color: 'var(--accent)' },
+    { id: 'guide', label: 'Show Guide', icon: '?', color: 'var(--text-primary)' },
+    { id: 'edit', label: 'Toggle Edit', icon: '✎', color: 'var(--text-primary)' },
+    { id: 'today', label: 'Today Overview', icon: '◎', color: 'var(--text-primary)' },
+  ];
+
+  function loadCfg() {
+    try { return JSON.parse(localStorage.getItem(KEY)) || DEFAULTS; }
+    catch { return DEFAULTS; }
+  }
+  function saveCfg(cfg) { localStorage.setItem(KEY, JSON.stringify(cfg)); }
+
+  function renderPopup() {
+    var list = document.getElementById('menuPlusList');
+    if (!list) return;
+    var cfg = loadCfg();
+    list.innerHTML = '';
+    cfg.forEach(function(a) {
+      if (a.visible === false) return;
+      var btn = document.createElement('button');
+      btn.className = 'plus-action-item';
+      btn.innerHTML = '<span style="width:18px;text-align:center;flex-shrink:0;color:' + (a.color || 'var(--text-primary)') + '">' + a.icon + '</span>' + a.label;
+      btn.addEventListener('click', function() { closeHubMenu(); handleAction(a.id); });
+      list.appendChild(btn);
+    });
+  }
+
+  function renderEditMode() {
+    var list = document.getElementById('menuPlusList');
+    if (!list) return;
+    var cfg = loadCfg();
+    list.innerHTML = '';
+    cfg.forEach(function(a, i) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;margin-bottom:2px';
+      row.innerHTML =
+        '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;font-size:0.8rem">' +
+          '<input type="checkbox" data-plus-idx="' + i + '" ' + (a.visible !== false ? 'checked' : '') + ' style="margin:0">' +
+          '<span>' + a.label + '</span>' +
+        '</label>';
+      row.querySelector('input')?.addEventListener('change', function() {
+        var idx = parseInt(this.dataset.plusIdx);
+        var c = loadCfg();
+        c[idx].visible = this.checked;
+        saveCfg(c);
+      });
+      list.appendChild(row);
+    });
+  }
+
+  function handleAction(id) {
+    switch (id) {
+      case 'add-widget':
+        var fabAdd = document.getElementById('hubFabAdd');
+        if (fabAdd) fabAdd.click();
+        break;
+      case 'guide':
+        if (typeof showCanvasGuide === 'function') showCanvasGuide();
+        break;
+      case 'edit':
+        var fabEdit = document.getElementById('hubFabEdit');
+        if (fabEdit) fabEdit.click();
+        break;
+      case 'today':
+        var todaySec = document.querySelector('[data-hub-section="today"]');
+        if (todaySec) todaySec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        break;
+    }
+  }
+
+  var menuPlus = document.getElementById('menuPlus');
+  var menuPlusPopup = document.getElementById('menuPlusPopup');
+  var plusEditing = false;
+  if (menuPlus && menuPlusPopup) {
+    menuPlus.addEventListener('click', function(e) {
+      e.stopPropagation();
+      plusEditing = false;
+      var clbl = document.getElementById('menuPlusCustLabel');
+      if (clbl) clbl.textContent = 'Customize';
+      var cust = document.getElementById('menuPlusCustomize');
+      if (cust) cust.style.opacity = '0.6';
+      renderPopup();
+      menuPlusPopup.classList.toggle('hidden');
+    });
+    document.getElementById('menuPlusCustomize')?.addEventListener('click', function(e) {
+      e.stopPropagation();
+      plusEditing = !plusEditing;
+      var lbl = document.getElementById('menuPlusCustLabel');
+      if (plusEditing) {
+        if (lbl) lbl.textContent = 'Done';
+        this.style.opacity = '1';
+        renderEditMode();
+      } else {
+        if (lbl) lbl.textContent = 'Customize';
+        this.style.opacity = '0.6';
+        renderPopup();
+      }
+    });
+    document.addEventListener('click', function(e) {
+      if (!menuPlus.contains(e.target) && !menuPlusPopup.contains(e.target)) {
+        menuPlusPopup.classList.add('hidden');
+        plusEditing = false;
+        var clbl = document.getElementById('menuPlusCustLabel');
+        if (clbl) clbl.textContent = 'Customize';
+        var cust = document.getElementById('menuPlusCustomize');
+        if (cust) cust.style.opacity = '0.6';
+      }
+    });
+  }
+})();

@@ -1732,66 +1732,131 @@ function bindEvents() {
   });
 
 
-  // Hamburger side panel
-  const hubMenuPanel = document.getElementById('hubMenuPanel');
-  const hubMenuOverlay = document.getElementById('hubMenuOverlay');
-  function closeHubMenu() {
-    hubMenuPanel?.classList.remove('open');
-    hubMenuOverlay?.classList.remove('active');
-  }
-  function openHubMenu() {
-    hubMenuPanel?.classList.remove('hidden');
-    requestAnimationFrame(() => {
-      hubMenuPanel?.classList.add('open');
-      hubMenuOverlay?.classList.add('active');
-    });
-  }
-  document.querySelectorAll('.hub-hamburger, #schHamburger').forEach(btn => {
-    btn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (hubMenuPanel?.classList.contains('open')) { closeHubMenu(); }
-      else { openHubMenu(); }
-    });
-  });
-  hubMenuOverlay?.addEventListener('click', closeHubMenu);
-  document.getElementById('hubMenuClose')?.addEventListener('click', closeHubMenu);
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHubMenu(); });
-  document.getElementById('menuToday')?.addEventListener('click', () => { closeHubMenu(); goToday(); });
-  document.getElementById('menuNewTask')?.addEventListener('click', () => {
+  // Schedule-specific menu handlers
+  document.getElementById('menuToday')?.addEventListener('click', function() { closeHubMenu(); goToday(); });
+  document.getElementById('menuNewTask')?.addEventListener('click', function() {
     closeHubMenu();
-    const now = new Date();
+    var now = new Date();
     openNewTaskModal(formatDate(now), roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES));
   });
-  document.getElementById('menuTheme')?.addEventListener('click', () => { closeHubMenu(); toggleTheme(); });
-  document.getElementById('menuSettings')?.addEventListener('click', () => { closeHubMenu(); openSettingsBubble(); });
-  document.getElementById('menuHelp')?.addEventListener('click', () => { closeHubMenu(); showHelpModal(); });
-  document.getElementById('menuProfile')?.addEventListener('click', () => { closeHubMenu(); openSettingsBubble(); });
 
-  // Populate profile
-  (function populateMenuProfile() {
-    try {
-      var activeId = typeof getActiveUserId === 'function' ? getActiveUserId() : null;
-      var activeUser = activeId && Array.isArray(localUsers) ? localUsers.find(function(u) { return u.id === activeId; }) : null;
-      var nameEl = document.getElementById('menuName');
-      var emailEl = document.getElementById('menuEmail');
-      var avatarEl = document.getElementById('menuAvatar');
-      if (!nameEl) return;
-      if (activeUser) {
-        nameEl.textContent = activeUser.name || 'User';
-        if (emailEl) emailEl.textContent = activeUser.email || '';
-        if (avatarEl) {
-          var initials = typeof getInitials === 'function' ? getInitials(activeUser.name) : (activeUser.name ? activeUser.name[0].toUpperCase() : '?');
-          var color = activeUser._color || (typeof getColorForId === 'function' ? getColorForId(activeUser.id) : 'var(--accent)');
-          if (activeUser.picture) { avatarEl.innerHTML = '<img src="' + activeUser.picture + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'; }
-          else { avatarEl.textContent = initials; avatarEl.style.background = color; }
-        }
+  // ─── Plus Bubble (schedule-specific) ───────────────
+  const PLUS_BUBBLE_KEY = 'haven-plus-bubble-schedule';
+  const PLUS_DEFAULTS = [
+    { id: 'new-task', label: 'New Task', icon: '+', color: 'var(--accent)' },
+    { id: 'today', label: 'Go to Today', icon: '◎', color: 'var(--text-primary)' },
+    { id: 'pomodoro', label: 'Pomodoro', icon: '◉', color: 'var(--text-primary)' },
+    { id: 'focus', label: 'Focus Mode', icon: '⊙', color: 'var(--text-primary)' },
+  ];
+
+  function loadPlusConfig() {
+    try { return JSON.parse(localStorage.getItem(PLUS_BUBBLE_KEY)) || PLUS_DEFAULTS; }
+    catch { return PLUS_DEFAULTS; }
+  }
+
+  function savePlusConfig(cfg) {
+    localStorage.setItem(PLUS_BUBBLE_KEY, JSON.stringify(cfg));
+  }
+
+  function renderPlusPopup() {
+    var list = document.getElementById('menuPlusList');
+    if (!list) return;
+    var cfg = loadPlusConfig();
+    list.innerHTML = '';
+    cfg.forEach(function(a) {
+      if (a.visible === false) return;
+      var btn = document.createElement('button');
+      btn.className = 'plus-action-item';
+      btn.innerHTML = '<span style="width:18px;text-align:center;flex-shrink:0;color:' + (a.color || 'var(--text-primary)') + '">' + a.icon + '</span>' + a.label;
+      btn.addEventListener('click', function() {
+        closeHubMenu();
+        handlePlusAction(a.id);
+      });
+      list.appendChild(btn);
+    });
+  }
+
+  function handlePlusAction(id) {
+    switch (id) {
+      case 'new-task':
+        var now = new Date();
+        openNewTaskModal(formatDate(now), roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES));
+        break;
+      case 'today':
+        var t = document.getElementById('todayBtn');
+        if (t) t.click();
+        break;
+      case 'pomodoro':
+        var p = document.getElementById('pomodoroCard');
+        if (p) { p.classList.remove('hidden'); p.classList.toggle('collapsed'); }
+        break;
+      case 'focus':
+        var f = document.getElementById('accessFocusMode');
+        if (f) f.click();
+        break;
+    }
+  }
+
+  var menuPlus = document.getElementById('menuPlus');
+  var menuPlusPopup = document.getElementById('menuPlusPopup');
+  var plusEditing = false;
+
+  function renderPlusEditMode() {
+    var list = document.getElementById('menuPlusList');
+    if (!list) return;
+    var cfg = loadPlusConfig();
+    list.innerHTML = '';
+    cfg.forEach(function(a, i) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:6px;margin-bottom:2px';
+      row.innerHTML =
+        '<label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex:1;font-size:0.8rem">' +
+          '<input type="checkbox" data-plus-idx="' + i + '" ' + (a.visible !== false ? 'checked' : '') + ' style="margin:0">' +
+          '<span>' + a.label + '</span>' +
+        '</label>';
+      row.querySelector('input')?.addEventListener('change', function() {
+        var idx = parseInt(this.dataset.plusIdx);
+        var c = loadPlusConfig();
+        c[idx].visible = this.checked;
+        savePlusConfig(c);
+      });
+      list.appendChild(row);
+    });
+  }
+
+  if (menuPlus && menuPlusPopup) {
+    menuPlus.addEventListener('click', function(e) {
+      e.stopPropagation();
+      plusEditing = false;
+      renderPlusPopup();
+      menuPlusPopup.classList.toggle('hidden');
+    });
+    document.getElementById('menuPlusCustomize')?.addEventListener('click', function(e) {
+      e.stopPropagation();
+      plusEditing = !plusEditing;
+      var lbl = document.getElementById('menuPlusCustLabel');
+      if (plusEditing) {
+        if (lbl) lbl.textContent = 'Done';
+        this.style.opacity = '1';
+        renderPlusEditMode();
       } else {
-        nameEl.textContent = 'Guest';
-        if (emailEl) emailEl.textContent = '';
-        if (avatarEl) { avatarEl.textContent = '?'; avatarEl.style.background = ''; }
+        if (lbl) lbl.textContent = 'Customize';
+        this.style.opacity = '0.6';
+        renderPlusPopup();
       }
-    } catch (e) {}
-  })();
+    });
+    // Close popup on outside click
+    document.addEventListener('click', function(e) {
+      if (!menuPlus.contains(e.target) && !menuPlusPopup.contains(e.target)) {
+        menuPlusPopup.classList.add('hidden');
+        plusEditing = false;
+        var cust = document.getElementById('menuPlusCustomize');
+        var clbl = document.getElementById('menuPlusCustLabel');
+        if (clbl) clbl.textContent = 'Customize';
+        if (cust) cust.style.opacity = '0.6';
+      }
+    });
+  }
 
   // Mobile sidebar (separate from hamburger popup)
   const schSidebar = document.getElementById('hubSidebar');

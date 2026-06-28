@@ -520,6 +520,7 @@ function renderDataSettings(el) {
 
   document.getElementById('setExportBtn')?.addEventListener('click', function() { closeSettingsPanel(); setTimeout(function() { if (typeof exportData !== 'undefined') exportData(); else if (typeof window.exportData === 'function') window.exportData(); }, 200); });
   document.getElementById('setImportBtn')?.addEventListener('click', function() { closeSettingsPanel(); setTimeout(function() { if (typeof importData !== 'undefined') importData(); else if (typeof window.importData === 'function') window.importData(); }, 200); });
+
 }
 
 function renderAboutSettings(el) {

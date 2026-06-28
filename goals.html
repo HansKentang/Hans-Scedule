@@ -393,6 +393,31 @@
     /* ─── CUSTOM SCROLLBAR ──────────────────────────────── */
     .hub-main::-webkit-scrollbar { width: 4px; }
     .hub-main::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+    .hub-menu-panel { position:fixed; top:0; right:0; width:300px; max-width:85vw; height:100vh; background:var(--bg-primary); border-left:1px solid var(--border-color); z-index:10000; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 200ms cubic-bezier(0.16,1,0.3,1); box-shadow:-4px 0 24px rgba(0,0,0,0.12); }
+    .hub-menu-panel.open { transform:translateX(0); }
+    .hub-menu-panel.hidden { display:flex; }
+    .hub-menu-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; opacity:0; pointer-events:none; transition:opacity 200ms ease; }
+    .hub-menu-overlay.active { opacity:1; pointer-events:auto; }
+    .hub-menu-panel-header { display:flex; align-items:center; justify-content:space-between; padding:var(--space-3) var(--space-3) var(--space-2); border-bottom:1px solid var(--border-subtle); flex-shrink:0; }
+    .hub-menu-panel-title { font-size:1rem; font-weight:700; }
+    .hub-menu-panel-close { background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:4px; border-radius:6px; display:flex; align-items:center; justify-content:center; }
+    .hub-menu-panel-close:hover { background:var(--hover-bg,rgba(128,128,128,0.1)); color:var(--text-primary); }
+    .hub-menu-profile { display:flex; align-items:center; gap:10px; padding:var(--space-3); cursor:pointer; border-bottom:1px solid var(--border-subtle); flex-shrink:0; }
+    .hub-menu-profile:hover { background:var(--hover-bg,rgba(128,128,128,0.05)); }
+    .hub-menu-avatar { width:36px; height:36px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:600; flex-shrink:0; }
+    .hub-menu-user { min-width:0; }
+    .hub-menu-name { font-size:0.82rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hub-menu-email { font-size:0.65rem; color:var(--text-tertiary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hub-menu-panel-section { padding:var(--space-2); display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
+    .hub-menu-panel-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; border:none; background:none; cursor:pointer; font-size:0.82rem; color:var(--text-primary); text-align:left; width:100%; transition:background 0.15s; }
+    .hub-menu-panel-item:hover { background:var(--hover-bg,rgba(128,128,128,0.08)); }
+    .hub-menu-spacer { flex:1; min-height:0; }
+    .hub-menu-footer { border-top:1px solid var(--border-subtle); padding-top:var(--space-2); }
+    .hub-menu-plus-popup { background:var(--surface); border:1px solid var(--border-color); border-radius:10px; padding:6px; margin-top:4px; box-shadow:var(--shadow-lg, 0 8px 30px rgba(0,0,0,0.15)); }
+    .hub-menu-plus-popup.hidden { display:none; }
+    #menuPlusList { display:flex; flex-direction:column; gap:2px; }
+    #menuPlusList .plus-action-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; border:none; background:none; cursor:pointer; font-size:0.8rem; color:var(--text-primary); text-align:left; width:100%; transition:background 0.15s; }
+    #menuPlusList .plus-action-item:hover { background:var(--accent-bg, rgba(128,128,128,0.1)); }
   </style>
 </head>
 <body>
@@ -405,7 +430,31 @@
   <div class="hub-layout">
     <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────── -->
     <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
-
+    <!-- ─── HAMBURGER SIDE PANEL ─────────────────────── -->
+    <div class="hub-menu-overlay" id="hubMenuOverlay"></div>
+    <div class="hub-menu-panel hidden" id="hubMenuPanel">
+      <div class="hub-menu-panel-header">
+        <span class="hub-menu-panel-title">Menu</span>
+        <button class="hub-menu-panel-close" id="hubMenuClose">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="hub-menu-profile" id="menuProfile">
+        <div class="hub-menu-avatar" id="menuAvatar">?</div>
+        <div class="hub-menu-user">
+          <div class="hub-menu-name" id="menuName">User</div>
+          <div class="hub-menu-email" id="menuEmail"></div>
+        </div>
+      </div>
+      <div class="hub-menu-panel-section">
+        <button class="hub-menu-panel-item" id="menuTheme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>Theme</button>
+      </div>
+      <div class="hub-menu-spacer"></div>
+      <div class="hub-menu-footer">
+        <button class="hub-menu-panel-item" id="menuSettings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
+        <button class="hub-menu-panel-item" id="menuHelp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</button>
+      </div>
+    </div>
     <!-- ─── SIDEBAR ───────────────────────────────── -->
     <aside class="hub-sidebar" id="hubSidebar">
       <div class="hub-workspace">

@@ -3907,6 +3907,58 @@ function updateSectionHandles() {
 
 
 
+// ─── Hamburger Side Panel ─────────────────────────────
+function closeHubMenu() {
+  var p = document.getElementById('hubMenuPanel');
+  var o = document.getElementById('hubMenuOverlay');
+  if (p) p.classList.remove('open');
+  if (o) o.classList.remove('active');
+}
+function openHubMenu() {
+  var p = document.getElementById('hubMenuPanel');
+  var o = document.getElementById('hubMenuOverlay');
+  if (p) { p.classList.remove('hidden'); requestAnimationFrame(function() { p.classList.add('open'); }); }
+  if (o) o.classList.add('active');
+}
+(function initHamburgerMenu() {
+  document.getElementById('hubMenuOverlay')?.addEventListener('click', closeHubMenu);
+  document.getElementById('hubMenuClose')?.addEventListener('click', closeHubMenu);
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeHubMenu(); });
+  // Generic action listeners (only attach if element exists)
+  var t = document.getElementById('menuTheme');
+  if (t) t.addEventListener('click', function() { closeHubMenu(); if (typeof toggleTheme === 'function') toggleTheme(); });
+  var s = document.getElementById('menuSettings');
+  if (s) s.addEventListener('click', function() { closeHubMenu(); if (typeof openSettingsBubble === 'function') openSettingsBubble(); });
+  var h = document.getElementById('menuHelp');
+  if (h) h.addEventListener('click', function() { closeHubMenu(); if (typeof showHelpModal === 'function') showHelpModal(); });
+  var p = document.getElementById('menuProfile');
+  if (p) p.addEventListener('click', function() { closeHubMenu(); if (typeof openSettingsBubble === 'function') openSettingsBubble(); });
+  // Populate profile
+  try {
+    var activeId = typeof getActiveUserId === 'function' ? getActiveUserId() : null;
+    var activeUser = activeId && Array.isArray(localUsers) ? localUsers.find(function(u) { return u.id === activeId; }) : null;
+    var nameEl = document.getElementById('menuName');
+    var emailEl = document.getElementById('menuEmail');
+    var avatarEl = document.getElementById('menuAvatar');
+    if (nameEl) {
+      if (activeUser) {
+        nameEl.textContent = activeUser.name || 'User';
+        if (emailEl) emailEl.textContent = activeUser.email || '';
+        if (avatarEl) {
+          var initials = typeof getInitials === 'function' ? getInitials(activeUser.name) : (activeUser.name ? activeUser.name[0].toUpperCase() : '?');
+          var color = activeUser._color || (typeof getColorForId === 'function' ? getColorForId(activeUser.id) : 'var(--accent)');
+          if (activeUser.picture) { avatarEl.innerHTML = '<img src="' + activeUser.picture + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'; }
+          else { avatarEl.textContent = initials; avatarEl.style.background = color; }
+        }
+      } else {
+        nameEl.textContent = 'Guest';
+        if (emailEl) emailEl.textContent = '';
+        if (avatarEl) { avatarEl.textContent = '?'; avatarEl.style.background = ''; }
+      }
+    }
+  } catch (e) {}
+})();
+
 // Delegated click: sidebar buttons + edit mode image picker
 document.addEventListener('click', function(e) {
   const sidebarEditBtn = e.target.closest('#hubSidebarEditBtn');
@@ -3916,9 +3968,15 @@ document.addEventListener('click', function(e) {
   const settingsBtn = e.target.closest('.hamburger-settings-btn');
   if (settingsBtn) { return; }
 
-  // Hamburger no longer opens settings — only sidebar footer does
-  const hamburger = e.target.closest('.hub-hamburger');
-  if (hamburger) { return; }
+  // Hamburger toggle
+  const hamburger = e.target.closest('.hub-hamburger, #schHamburger');
+  if (hamburger) {
+    e.stopPropagation();
+    const panel = document.getElementById('hubMenuPanel');
+    if (panel && panel.classList.contains('open')) { closeHubMenu(); }
+    else { openHubMenu(); }
+    return;
+  }
 
   // Overlay click closes sidebar
   const overlayEl = e.target.closest('.hub-sidebar-overlay');

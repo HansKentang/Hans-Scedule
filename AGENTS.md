@@ -173,7 +173,7 @@ gallery    │ hero → image grid → footer
 |---|------|-------------|
 | 1 | **Sidebar** | Nav links, mini week, Spotify, footer (Theme/Settings/Visuals/Help) |
 | 2 | **Hero** | Background image + "Schedule" title + week label |
-| 3 | **Header** | Hamburger side panel (profile + Pages + Actions + Settings + Help), Today/prev/next, view toggles (Week/Month/Agenda), API badge, task count, holiday toggle |
+| 3 | **Header** | Hamburger side panel (profile + Actions + Settings + Help), Today/prev/next, view toggles (Week/Month/Agenda), API badge, task count, holiday toggle |
 | 4 | **Pill Manager** | Category chips + add button + add-popup |
 | 5 | **Subcategory Bar** | Per-tag subcategory pills (drag/drop, inline edit/delete) |
 | 6 | **Calendar Grid** | Mon–Sun, 7am–9pm, task blocks (drag reschedule, click edit) |
