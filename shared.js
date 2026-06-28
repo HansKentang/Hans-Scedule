@@ -2593,10 +2593,10 @@ function renderAIUsage() {
   const avgPerDay = totalDays > 0 ? Math.round(aiUsage.totalAPICalls / totalDays) : 0;
   dom.settingsAIUsage.innerHTML = `
     <div class="ai-usage-grid">
-      <div class="ai-usage-stat"><span class="val">${aiUsage.chatMessagesSent}</span><span class="lbl">Chats</span></div>
-      <div class="ai-usage-stat"><span class="val">${aiUsage.totalAPICalls}</span><span class="lbl">API Calls</span></div>
-      <div class="ai-usage-stat"><span class="val">${totalDays}</span><span class="lbl">Days Used</span></div>
-      <div class="ai-usage-stat"><span class="val">${avgPerDay}</span><span class="lbl">Avg/Day</span></div>
+      <div class="ai-usage-stat"><span class="ai-usage-value">${aiUsage.chatMessagesSent}</span><span class="ai-usage-label">Chats</span></div>
+      <div class="ai-usage-stat"><span class="ai-usage-value">${aiUsage.totalAPICalls}</span><span class="ai-usage-label">API Calls</span></div>
+      <div class="ai-usage-stat"><span class="ai-usage-value">${totalDays}</span><span class="ai-usage-label">Days Used</span></div>
+      <div class="ai-usage-stat"><span class="ai-usage-value">${avgPerDay}</span><span class="ai-usage-label">Avg/Day</span></div>
     </div>
     <div class="ai-usage-today">
       <strong>Today</strong>
@@ -2890,6 +2890,9 @@ const IMAGE_MANAGER_GROUPS = [
 
 function openSettingsDrawer() {
   dom.settingsApiKey = document.getElementById('drawerApiKey');
+  // Reset to first section
+  var firstNav = document.querySelector('.settings-nav-item');
+  if (firstNav) switchSettingsSection(firstNav.dataset.section);
   dom.settingsProvider = document.getElementById('drawerProvider');
   dom.settingsModel = document.getElementById('drawerModel');
   dom.settingsRoutine = document.getElementById('drawerRoutine');
@@ -2918,6 +2921,13 @@ function openSettingsDrawer() {
     drawer.classList.add('open');
   });
   state.settingsDrawerOpen = true;
+  // Close on Escape (remove old listener first to prevent duplicates)
+  if (drawer._escListener) document.removeEventListener('keydown', drawer._escListener);
+  function _onSettingsKeydown(e) {
+    if (e.key === 'Escape') closeSettingsDrawer();
+  }
+  document.addEventListener('keydown', _onSettingsKeydown);
+  drawer._escListener = _onSettingsKeydown;
 }
 
 function closeSettingsDrawer() {
@@ -2931,6 +2941,57 @@ function closeSettingsDrawer() {
     overlay.classList.add('hidden');
   }, 300);
   state.settingsDrawerOpen = false;
+  // Remove escape listener
+  if (drawer._escListener) {
+    document.removeEventListener('keydown', drawer._escListener);
+    delete drawer._escListener;
+  }
+}
+
+function switchSettingsSection(sectionId) {
+  // Update nav items
+  document.querySelectorAll('.settings-nav-item').forEach(function(item) {
+    item.classList.toggle('active', item.dataset.section === sectionId);
+  });
+  // Update content sections
+  document.querySelectorAll('.settings-content-section').forEach(function(section) {
+    section.classList.toggle('active', section.id === 'settingsSection-' + sectionId);
+  });
+  // Reset search
+  var searchInput = document.getElementById('settingsSearch');
+  if (searchInput) searchInput.value = '';
+  document.querySelectorAll('.settings-content-section').forEach(function(s) { s.style.display = ''; });
+}
+
+function filterSettingsSections(query) {
+  var q = (query || '').toLowerCase().trim();
+  document.querySelectorAll('.settings-nav-item').forEach(function(item) {
+    var label = item.querySelector('span')?.textContent?.toLowerCase() || '';
+    if (!q || label.indexOf(q) !== -1) {
+      item.style.display = '';
+    } else {
+      item.style.display = 'none';
+    }
+  });
+  document.querySelectorAll('.settings-content-section').forEach(function(section) {
+    if (!q) {
+      // Restore CSS-controlled visibility
+      section.style.display = '';
+      return;
+    }
+    var text = section.textContent?.toLowerCase() || '';
+    section.style.display = text.indexOf(q) !== -1 ? '' : 'none';
+  });
+  // Show first visible nav item as active if search active
+  if (q) {
+    var visibleNav = null;
+    document.querySelectorAll('.settings-nav-item').forEach(function(item) {
+      if (!visibleNav && item.style.display !== 'none') visibleNav = item;
+    });
+    if (visibleNav && visibleNav.dataset.section) {
+      switchSettingsSection(visibleNav.dataset.section);
+    }
+  }
 }
 
 function handleSettingsSubmit(e) {
