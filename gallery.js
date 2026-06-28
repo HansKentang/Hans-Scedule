@@ -201,10 +201,79 @@ function renderGallery() {
 let _galDragSrc = null;
 
 function setupGalleryDrag(grid) {
-  // Clean up any old listeners by cloning
-  const items = grid.querySelectorAll('.gal-item[draggable="true"]');
-
-  items.forEach(item => {
+  var _galTouchDrag = null;
+  
+  // Touch-based drag reorder (mobile fallback)
+  var items = grid.querySelectorAll('.gal-item[draggable="true"]');
+  
+  items.forEach(function(item) {
+    item.addEventListener('touchstart', function(e) {
+      if (e.touches.length !== 1) return;
+      _galTouchDrag = {
+        element: this,
+        startIdx: parseInt(this.dataset.idx),
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        lastMoveY: e.touches[0].clientY
+      };
+      this.classList.add('dragging');
+      this.style.opacity = '0.4';
+    }, { passive: true });
+    
+    item.addEventListener('touchmove', function(e) {
+      if (!_galTouchDrag || _galTouchDrag.element !== this) return;
+      if (e.touches.length !== 1) return;
+      e.preventDefault();
+      var touch = e.touches[0];
+      _galTouchDrag.lastMoveY = touch.clientY;
+      
+      // Find which item we're over
+      var targetItem = null;
+      grid.querySelectorAll('.gal-item').forEach(function(el) {
+        if (el === _galTouchDrag.element) return;
+        var r = el.getBoundingClientRect();
+        if (touch.clientY >= r.top && touch.clientY <= r.bottom &&
+            touch.clientX >= r.left && touch.clientX <= r.right) {
+          targetItem = el;
+        }
+      });
+      
+      grid.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+      if (targetItem) targetItem.classList.add('drag-over');
+    }, { passive: false });
+    
+    item.addEventListener('touchend', function(e) {
+      if (!_galTouchDrag || _galTouchDrag.element !== this) return;
+      this.classList.remove('dragging');
+      this.style.opacity = '';
+      grid.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
+      
+      var fromIdx = _galTouchDrag.startIdx;
+      var toIdx = -1;
+      
+      // Find the target by position
+      var touch = e.changedTouches[0];
+      grid.querySelectorAll('.gal-item').forEach(function(el) {
+        if (el === _galTouchDrag.element) return;
+        var r = el.getBoundingClientRect();
+        if (touch.clientY >= r.top && touch.clientY <= r.bottom &&
+            touch.clientX >= r.left && touch.clientX <= r.right) {
+          toIdx = parseInt(el.dataset.idx);
+        }
+      });
+      
+      _galTouchDrag = null;
+      
+      if (isNaN(fromIdx) || toIdx < 0) return;
+      
+      reorderGalleryImages(fromIdx, toIdx);
+      renderGallery();
+      showToast('Gallery reordered', 'info', 1000);
+    }, { passive: true });
+  });
+  
+  // HTML5 drag-and-drop (desktop)
+  items.forEach(function(item) {
     item.addEventListener('dragstart', function(e) {
       _galDragSrc = this;
       this.classList.add('dragging');
@@ -213,7 +282,7 @@ function setupGalleryDrag(grid) {
 
     item.addEventListener('dragend', function(e) {
       this.classList.remove('dragging');
-      grid.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+      grid.querySelectorAll('.drag-over').forEach(function(el) { el.classList.remove('drag-over'); });
       _galDragSrc = null;
     });
 

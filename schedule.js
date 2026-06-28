@@ -551,6 +551,12 @@ function renderTasks() {
         e.stopPropagation();
         startDrag(e, el);
       });
+      el.addEventListener('touchstart', (e) => {
+        if (e.target.closest('[data-toggle-complete]')) return;
+        if (e.target.closest('.task-resize-handle')) return;
+        e.stopPropagation();
+        startDrag(e, el);
+      }, { passive: false });
       el.addEventListener('dblclick', (e) => { e.stopPropagation(); openTaskModal(resolvedId); });
       el.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -568,6 +574,7 @@ function renderTasks() {
   // Attach resize handle event listeners
   $$('.task-resize-handle').forEach(h => {
     h.addEventListener('mousedown', onResizeStart);
+    h.addEventListener('touchstart', onResizeStart, { passive: false });
   });
 
   // Bring hovered card to front so resize handle is accessible over overlapping cards
@@ -666,9 +673,12 @@ const QUICK_ADD_TITLES = {
 
 // ─── UNIFIED DRAG AND DROP ────────────────────────────────
 // One handler for all: task-reschedule, whiteboard→grid, quick-add→grid
+var _lastTouchDragTime = 0;
 function startDrag(e, source) {
-  if (e.button !== 0) return;
-  e.preventDefault();
+  if (e.button !== 0 && !isTouchEvent(e)) return;
+  // Prevent synthetic mousedown from touch event (double-dispatch protection)
+  if (!isTouchEvent(e) && Date.now() - _lastTouchDragTime < 300) return;
+  if (isTouchEvent(e)) { _lastTouchDragTime = Date.now(); e.preventDefault(); }
 
   // Clean up any lingering bounce animations from previous drops
   $$('.calendar-task.task-drop-bounce').forEach(el => el.classList.remove('task-drop-bounce'));
@@ -761,6 +771,8 @@ function startDrag(e, source) {
   document.body.style.cursor = 'grabbing';
   document.addEventListener('mousemove', onDragMove);
   document.addEventListener('mouseup', onDragEnd);
+  document.addEventListener('touchmove', onDragMove, { passive: false });
+  document.addEventListener('touchend', onDragEnd);
 }
 
 function getDragHlColor() {
@@ -832,17 +844,18 @@ function clearConflictPreview() {
 
 function onDragMove(e) {
   if (!gridDrag) return;
+  const pos = getEventPos(e);
   const { ghost, offX, offY } = gridDrag;
   gridDrag.moved = true;
-  ghost.style.left = `${e.clientX - offX}px`;
-  ghost.style.top = `${e.clientY - offY}px`;
+  ghost.style.left = `${pos.x - offX}px`;
+  ghost.style.top = `${pos.y - offY}px`;
 
   // Find which date column the cursor is over by checking X position
   const dayCols = dom.grid.querySelectorAll('.day-column');
   let matchedDate = null;
   for (const col of dayCols) {
     const rect = col.getBoundingClientRect();
-    if (e.clientX >= rect.left && e.clientX < rect.right) {
+    if (getEventPos(e).x >= rect.left && getEventPos(e).x < rect.right) {
       matchedDate = col.dataset.date;
       break;
     }
@@ -860,7 +873,7 @@ function onDragMove(e) {
       return;
     }
     const colRect = refCol.getBoundingClientRect();
-    const yOffset = e.clientY - colRect.top;
+    const yOffset = getEventPos(e).y - colRect.top;
     const actualHourHeight = colRect.height;
     const rawMinutes = (yOffset / actualHourHeight) * 60 + START_HOUR * 60;
     const clamped = Math.max(START_HOUR * 60, Math.min(rawMinutes, (START_HOUR + VISIBLE_HOURS) * 60 - SNAP_MINUTES));
@@ -940,22 +953,26 @@ function guessDragCreateMeta(mins) {
 }
 
 function startDragCreate(e, date, startMins) {
+  var pos = getEventPos(e);
   dragCreate = {
     date,
     startMins,
     currentMins: startMins,
     moved: false,
-    startX: e.clientX,
-    startY: e.clientY,
+    startX: pos.x,
+    startY: pos.y,
     ghost: null,
   };
   document.addEventListener('mousemove', onDragCreateMove);
   document.addEventListener('mouseup', onDragCreateEnd);
+  document.addEventListener('touchmove', onDragCreateMove, { passive: false });
+  document.addEventListener('touchend', onDragCreateEnd);
   e.preventDefault();
 }
 
 function onDragCreateMove(e) {
   if (!dragCreate) return;
+  if (isTouchEvent(e)) { e.preventDefault(); }
   dragCreate.moved = true;
   if (!dragCreate.ghost) {
     const startCol = dom.grid.querySelector(`.day-column[data-date="${dragCreate.date}"]`);
@@ -981,7 +998,7 @@ function onDragCreateMove(e) {
   if (!dragCreate.col) return;
   const { col, actualHH, startMins } = dragCreate;
   const colRect = col.getBoundingClientRect();
-  const yOffset = e.clientY - colRect.top;
+  const yOffset = getEventPos(e).y - colRect.top;
   const rawMins = (yOffset / actualHH) * 60 + START_HOUR * 60;
   const clamped = Math.max(startMins + SNAP_MINUTES, Math.min(rawMins, (START_HOUR + VISIBLE_HOURS) * 60));
   const snapped = roundToNearest(clamped, SNAP_MINUTES);
@@ -1008,6 +1025,8 @@ function onDragCreateMove(e) {
 function onDragCreateEnd(e) {
   document.removeEventListener('mousemove', onDragCreateMove);
   document.removeEventListener('mouseup', onDragCreateEnd);
+  document.removeEventListener('touchmove', onDragCreateMove);
+  document.removeEventListener('touchend', onDragCreateEnd);
   removeDropPreview();
   clearConflictPreview();
   removeDragTooltip();
@@ -1063,6 +1082,17 @@ function attachSlotHandlersWithCreate() {
       const snap = roundToNearest(precise, SNAP_MINUTES);
       startDragCreate(e, date, snap);
     });
+    slot.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.calendar-task')) return;
+      const date = slot.dataset.date;
+      const base = parseInt(slot.dataset.time);
+      const slotRect = slot.getBoundingClientRect();
+      const pos = getEventPos(e);
+      const pct = (pos.y - slotRect.top) / slotRect.height;
+      const precise = base + pct * 60;
+      const snap = roundToNearest(precise, SNAP_MINUTES);
+      startDragCreate(e, date, snap);
+    }, { passive: false });
   });
   // TZ tooltip for time axis
   $$('.time-axis').forEach(el => {
@@ -1093,6 +1123,8 @@ function onDragEnd() {
   if (!gridDrag) return;
   document.removeEventListener('mousemove', onDragMove);
   document.removeEventListener('mouseup', onDragEnd);
+  document.removeEventListener('touchmove', onDragMove);
+  document.removeEventListener('touchend', onDragEnd);
 
   // Capture ghost rect BEFORE cleanup so FLIP can use it
   const oldGhostRect = gridDrag.ghost ? gridDrag.ghost.getBoundingClientRect() : null;
@@ -1289,6 +1321,8 @@ function onResizeStart(e) {
 
   document.addEventListener('mousemove', onResizeMove);
   document.addEventListener('mouseup', onResizeEnd);
+  document.addEventListener('touchmove', onResizeMove, { passive: false });
+  document.addEventListener('touchend', onResizeEnd);
 }
 
 function onResizeMove(e) {
@@ -1297,7 +1331,8 @@ function onResizeMove(e) {
   const { startM, endM, originalEndM, el, col, startTop, hourHeight } = resizeState;
 
   // Calculate new end time from mouse Y position relative to column
-  const yOffset = e.clientY - startTop;
+  const pos = getEventPos(e);
+  const yOffset = pos.y - startTop;
   const rawEndM = (yOffset / hourHeight) * 60 + START_HOUR * 60;
   const clamped = Math.max(startM + SNAP_MINUTES, Math.min(rawEndM, (START_HOUR + VISIBLE_HOURS) * 60));
   const snapped = roundToNearest(clamped, SNAP_MINUTES);
@@ -1326,7 +1361,8 @@ function onResizeMove(e) {
   }
 
   // Show time tooltip
-  showResizeTooltip(e.clientX, e.clientY, startM, snapped);
+  var ep = getEventPos(e);
+  showResizeTooltip(ep.x, ep.y, startM, snapped);
 }
 
 function onResizeEnd(e) {
@@ -1334,6 +1370,8 @@ function onResizeEnd(e) {
 
   document.removeEventListener('mousemove', onResizeMove);
   document.removeEventListener('mouseup', onResizeEnd);
+  document.removeEventListener('touchmove', onResizeMove);
+  document.removeEventListener('touchend', onResizeEnd);
 
   const { taskId, startM, el, startTop, hourHeight } = resizeState;
   el.classList.remove('resizing');
@@ -1341,7 +1379,8 @@ function onResizeEnd(e) {
   if (oldDelta) oldDelta.remove();
 
   // Calculate final end time
-  const yOffset = e.clientY - startTop;
+  const pos = getEventPos(e);
+  const yOffset = pos.y - startTop;
   const rawEndM = (yOffset / hourHeight) * 60 + START_HOUR * 60;
   const snapped = roundToNearest(Math.max(startM + SNAP_MINUTES, Math.min(rawEndM, (START_HOUR + VISIBLE_HOURS) * 60)), SNAP_MINUTES);
   const newEndM = startM + Math.max(snapped - startM, SNAP_MINUTES);
@@ -1488,6 +1527,7 @@ function renderWhiteboard() {
     const delBtn = item.querySelector('.w-delete');
     if (delBtn) delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteTask(taskId); });
     item.addEventListener('mousedown', (e) => { if (e.button !== 0 || e.target.closest('.w-delete')) return; startDrag(e, item); });
+    item.addEventListener('touchstart', (e) => { if (e.target.closest('.w-delete')) return; startDrag(e, item); }, { passive: false });
   });
 }
 
@@ -1831,6 +1871,10 @@ function bindEvents() {
       if (e.button !== 0 || e.target.closest('.w-delete, .w-del')) return;
       startDrag(e, el);
     });
+    el.addEventListener('touchstart', (e) => {
+      if (e.target.closest('.w-delete, .w-del')) return;
+      startDrag(e, el);
+    }, { passive: false });
   });
 
   // Mobile hamburger for schedule page
@@ -2194,6 +2238,10 @@ function showSubcategoryBubble(tag) {
       if (e.button !== 0 || e.target.closest('[data-sc-edit]') || e.target.closest('[data-sc-del]')) return;
       startDrag(e, pill);
     });
+    pill.addEventListener('touchstart', (e) => {
+      if (e.target.closest('[data-sc-edit]') || e.target.closest('[data-sc-del]')) return;
+      startDrag(e, pill);
+    }, { passive: false });
   });
 
   // Close on outside click

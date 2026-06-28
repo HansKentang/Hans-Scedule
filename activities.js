@@ -491,7 +491,75 @@ function setupBoardDragDrop() {
     });
   });
 
-  // Column drop zones
+  // ─── Touch drag-and-drop (mobile fallback) ─────
+  var _actTouchDrag = null;
+  
+  boardInner.querySelectorAll('.tag-col-task').forEach(el => {
+    el.addEventListener('touchstart', function(e) {
+      if (e.touches.length !== 1) return;
+      _actTouchDrag = {
+        element: this,
+        taskId: this.dataset.taskId,
+        startX: e.touches[0].clientX,
+        startY: e.touches[0].clientY,
+        dragOverCol: null
+      };
+      this.classList.add('dragging');
+      this.style.opacity = '0.4';
+    }, { passive: true });
+    
+    el.addEventListener('touchmove', function(e) {
+      if (!_actTouchDrag || _actTouchDrag.element !== this) return;
+      if (e.touches.length !== 1) return;
+      e.preventDefault();
+      
+      // Find which column we're over
+      var touch = e.touches[0];
+      var cols = boardInner.querySelectorAll('.tag-column');
+      var foundCol = null;
+      cols.forEach(function(col) {
+        var r = col.getBoundingClientRect();
+        if (touch.clientX >= r.left && touch.clientX <= r.right &&
+            touch.clientY >= r.top && touch.clientY <= r.bottom) {
+          foundCol = col;
+        }
+      });
+      
+      // Update drag-over state
+      cols.forEach(function(c) { c.classList.remove('drag-over'); });
+      if (foundCol) {
+        foundCol.classList.add('drag-over');
+        _actTouchDrag.dragOverCol = foundCol;
+      } else {
+        _actTouchDrag.dragOverCol = null;
+      }
+    }, { passive: false });
+    
+    el.addEventListener('touchend', function(e) {
+      if (!_actTouchDrag || _actTouchDrag.element !== this) return;
+      this.classList.remove('dragging');
+      this.style.opacity = '';
+      
+      boardInner.querySelectorAll('.tag-column.drag-over').forEach(function(c) { c.classList.remove('drag-over'); });
+      
+      var taskId = _actTouchDrag.taskId;
+      var targetCol = _actTouchDrag.dragOverCol;
+      _actTouchDrag = null;
+      
+      if (!targetCol) return;
+      var newTag = targetCol.dataset.boardTag;
+      if (!newTag) return;
+      
+      var task = getTask(taskId);
+      if (!task || task.tag === newTag) return;
+      
+      updateTask(taskId, { tag: newTag });
+      renderActivities();
+      showToast('Moved to <strong>' + TAG_LABELS[newTag] + '</strong>', 'success', 2000);
+    }, { passive: true });
+  });
+  
+    // Column drop zones
   boardInner.querySelectorAll('.tag-column').forEach(col => {
     col.addEventListener('dragover', (e) => {
       e.preventDefault();

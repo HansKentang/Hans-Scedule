@@ -373,6 +373,7 @@ html.light .glass-card.dark-stat > div:last-child {
   padding: var(--space-3) var(--space-3);
   border-radius: var(--radius-md);
   background: var(--bg-secondary);
+  touch-action: none;
   border: 1px solid var(--border-subtle);
   cursor: grab;
   font-size: 0.82rem;
@@ -810,6 +811,7 @@ html.dark .day-column.today-column {
 .hour-slot {
   height: var(--hour-height); border-bottom: 1px solid var(--border-color);
   position: relative; cursor: pointer;
+  touch-action: none;
   transition: background 140ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 140ms ease;
 }
 .hour-slot:hover {
@@ -846,7 +848,7 @@ html.dark .current-time-line { opacity: 0.5; }
   position: absolute; left: 5px; width: calc(100% - 10px); border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3); cursor: grab; overflow: hidden;
   z-index: var(--z-task);
-  min-height: 28px; user-select: none;
+  min-height: 28px; user-select: none; touch-action: none;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-xs);
@@ -6014,7 +6016,7 @@ html.light .hub-add-popup {
 
 /* ─── Bento Bubbles ──────────────────────────── */
 .bento-grid { position:relative; width:100%; min-height:800px; display:block; }
-.bento-bubble { position:absolute; display:block; border-radius:var(--radius-lg); transition:opacity 0.2s, box-shadow 0.2s, left 0.12s cubic-bezier(0.34,1.56,0.64,1), top 0.12s cubic-bezier(0.34,1.56,0.64,1); }
+.bento-bubble { position:absolute; display:block; border-radius:var(--radius-lg); touch-action:none; transition:opacity 0.2s, box-shadow 0.2s, left 0.12s cubic-bezier(0.34,1.56,0.64,1), top 0.12s cubic-bezier(0.34,1.56,0.64,1); }
 .bento-bubble.dragging { opacity:0.95; z-index:1000; transform:scale(1.02) rotate(-0.5deg); box-shadow:0 20px 60px rgba(0,0,0,0.30), 0 8px 24px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.06); transition:opacity 0.15s ease, box-shadow 0.2s ease, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), left 0s, top 0s; cursor:grabbing; will-change:transform, left, top; -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); border-color:var(--accent); border-radius:var(--radius-lg); pointer-events:none; user-select:none; }
 
 /* ─── BUBBLE DRAG DROP BOUNCE ──────────────────── */

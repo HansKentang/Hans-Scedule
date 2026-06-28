@@ -1402,6 +1402,7 @@ function setupBubbleDragDrop() {
 
   grid.addEventListener('mousedown', function(e) {
     // Drag can only be initiated from the 6-dots handle
+    if (isTouchEvent(e)) return;
     var dragZone = e.target.closest('.bento-bubble-handle');
     if (!dragZone) return;
     e.preventDefault();
@@ -1468,6 +1469,31 @@ function setupBubbleDragDrop() {
     cancelDrag();
   });
 
+  // Touch drag start on handle
+  grid.addEventListener('touchstart', function(e) {
+    var dragZone = e.target.closest('.bento-bubble-handle');
+    if (!dragZone) return;
+    if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-duplicate-bubble], .bento-resize-edge')) return;
+    const bubble = dragZone.closest('.bento-bubble');
+    if (!bubble) return;
+    e.preventDefault();
+    var gr = grid.getBoundingClientRect();
+    var pos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    _bubbleDragData = {
+      bubble,
+      offsetX: pos.x - bubble.getBoundingClientRect().left,
+      offsetY: pos.y - bubble.getBoundingClientRect().top,
+      gridLeft: gr.left,
+      gridTop: gr.top,
+      startMouseX: pos.x,
+      startMouseY: pos.y,
+      originalX: parseInt(bubble.style.left) || 0,
+      originalY: parseInt(bubble.style.top) || 0,
+      active: false,
+      cancelled: false
+    };
+  }, { passive: false });
+
   // Escape cancels drag/resize
   document.addEventListener('keydown', function _escCancel(e) {
     if (e.key === 'Escape' && (_bubbleDragData || _bubbleResizeData)) {
@@ -1477,6 +1503,106 @@ function setupBubbleDragDrop() {
 
   // Window blur cancels drag/resize (mouseup lost when clicking outside browser)
   window.addEventListener('blur', cancelDrag);
+
+  document.addEventListener('touchmove', function(e) {
+    if (!_bubbleDragData || _bubbleDragData.cancelled) return;
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    var t = e.touches[0];
+    // Lazily activate drag on first meaningful movement
+    if (!_bubbleDragData.active) {
+      var dx = t.clientX - _bubbleDragData.startMouseX;
+      var dy = t.clientY - _bubbleDragData.startMouseY;
+      if (dx * dx + dy * dy < 25) return;
+      _bubbleDragData.active = true;
+      _bubbleDragData.dragLayout = JSON.parse(JSON.stringify(hubContent.bentoLayout));
+      _bubbleDragData.bubble.classList.add('dragging');
+      var _originGhost = document.createElement('div');
+      _originGhost.className = 'bento-drag-origin';
+      _originGhost.style.left = (_bubbleDragData.bubble.offsetLeft || 0) + 'px';
+      _originGhost.style.top = (_bubbleDragData.bubble.offsetTop || 0) + 'px';
+      _originGhost.style.width = _bubbleDragData.bubble.offsetWidth + 'px';
+      _originGhost.style.height = _bubbleDragData.bubble.offsetHeight + 'px';
+      _bubbleDragData._originGhost = _originGhost;
+      grid.appendChild(_originGhost);
+      _bubbleDragData.bubble.style.zIndex = '9999';
+      _bubbleDragData.bubble.parentNode.appendChild(_bubbleDragData.bubble);
+    }
+    var gr = grid.getBoundingClientRect();
+    let newX = snap(t.clientX - _bubbleDragData.offsetX - gr.left);
+    let newY = Math.max(0, snap(t.clientY - _bubbleDragData.offsetY - gr.top));
+    _bubbleDragData.bubble.style.left = newX + 'px';
+    _bubbleDragData.bubble.style.top = newY + 'px';
+    if (!_dragTooltip) {
+      _dragTooltip = document.getElementById('bentoDragTooltip') || document.createElement('div');
+      if (!_dragTooltip.id) {
+        _dragTooltip.className = 'bento-drag-tooltip';
+        _dragTooltip.id = 'bentoDragTooltip';
+        document.body.appendChild(_dragTooltip);
+      }
+    }
+    _dragTooltip.textContent = _bubbleDragData.bubble.offsetWidth + ' \u00D7 ' + _bubbleDragData.bubble.offsetHeight;
+    if (_dragTooltip) { if (_dragTooltip._hideTimer) clearTimeout(_dragTooltip._hideTimer); _dragTooltip.style.opacity = '0'; _dragTooltip._hideTimer = setTimeout(function() { if (_dragTooltip) { _dragTooltip.style.display = 'none'; _dragTooltip._hideTimer = null; } }, 150); }
+    _dragTooltip.style.opacity = '1';
+    _dragTooltip.style.display = 'block';
+    _dragTooltip.style.left = (t.clientX + 16) + 'px';
+    _dragTooltip.style.top = (t.clientY - 12) + 'px';
+    const dragLayout = _bubbleDragData.dragLayout;
+    const dragItem = dragLayout.find(i => i.uid === _bubbleDragData.bubble.dataset.bubble);
+    if (dragItem) {
+      dragItem.x = newX;
+      dragItem.y = newY;
+      updateAddBtnPosition();
+    }
+  }, { passive: false });
+
+  // Touch end handler for bubble drag
+  document.addEventListener('touchend', function(e) {
+    if (!_bubbleDragData) return;
+    if (!_bubbleDragData.active || _bubbleDragData.cancelled) {
+      _bubbleDragData = null;
+      return;
+    }
+    var _og = document.querySelector('.bento-drag-origin');
+    if (_og) _og.remove();
+    if (_dragTooltip) { if (_dragTooltip._hideTimer) clearTimeout(_dragTooltip._hideTimer); _dragTooltip.style.opacity = '0'; _dragTooltip._hideTimer = setTimeout(function() { if (_dragTooltip) { _dragTooltip.style.display = 'none'; _dragTooltip._hideTimer = null; } }, 150); }
+    _bubbleDragData.bubble.classList.remove('dragging');
+    _bubbleDragData.bubble.style.zIndex = '';
+    const bubble = _bubbleDragData.bubble;
+    const gridRect = grid.getBoundingClientRect();
+    let x = parseInt(bubble.style.left) || 0;
+    let y = parseInt(bubble.style.top) || 0;
+    x = Math.max(0, Math.min(snap(x), gridRect.width - (bubble.offsetWidth || parseInt(bubble.style.width) || 320)));
+    y = Math.max(0, Math.min(snap(y), Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - (bubble.offsetHeight || parseInt(bubble.style.height) || 240)));
+    bubble.style.left = x + 'px';
+    bubble.style.top = y + 'px';
+    const uid = bubble.dataset.bubble;
+    const dragLayout = _bubbleDragData.dragLayout;
+    const item = dragLayout.find(i => i.uid === uid);
+    if (item) {
+      item.x = Math.max(0, x);
+      item.y = Math.max(0, y);
+      resolveBubbleCollisions(dragLayout);
+      pushUndoState();
+      hubContent.bentoLayout = dragLayout;
+      saveHubContent();
+      bubble.classList.add('drop-bounce');
+      setTimeout(function() { bubble.classList.remove('drop-bounce'); }, 500);
+      if (grid) {
+        dragLayout.forEach(function(it) {
+          var el = grid.querySelector('[data-bubble="' + it.uid + '"]');
+          if (el) { el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; }
+        });
+      }
+    }
+    updateAddBtnPosition();
+    updateUndoButtons();
+    refreshProgressWidget();
+    _bubbleDragData = null;
+    bubble.classList.remove('selected');
+    bubble.setAttribute('data-suppress-click', '1');
+    setTimeout(function() { bubble.removeAttribute('data-suppress-click'); }, 50);
+  }, { passive: false });
 
   document.addEventListener('mousemove', function(e) {
     if (!_bubbleDragData || _bubbleDragData.cancelled) return;
@@ -1608,6 +1734,7 @@ function setupBubbleResize() {
   document.body.appendChild(resizeTip);
 
   grid.addEventListener('mousedown', function(e) {
+    if (isTouchEvent(e)) return;
     const handle = e.target.closest('[data-resize-bubble]');
     if (!handle) return;
     e.preventDefault();
@@ -1637,6 +1764,101 @@ function setupBubbleResize() {
     resizeTip.style.left = (e.clientX + 12) + 'px';
     resizeTip.style.top = (e.clientY - 32) + 'px';
   });
+
+    // Touch move for resize
+  document.addEventListener('touchmove', function(e) {
+    if (!_bubbleResizeData) return;
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    const bubble = _bubbleResizeData.bubble;
+    const gridRect = grid.getBoundingClientRect();
+    const left = parseInt(bubble.style.left) || 0;
+    const top = parseInt(bubble.style.top) || 0;
+    const dx = t.clientX - _bubbleResizeData.startX;
+    const dy = t.clientY - _bubbleResizeData.startY;
+    var axis = _bubbleResizeData.axis;
+    var curW = _bubbleResizeData.bubble.offsetWidth || parseInt(bubble.style.width) || 320;
+    var curH = _bubbleResizeData.bubble.offsetHeight || parseInt(bubble.style.height) || 240;
+    if (axis === 'e' || axis === 'se') {
+      let newW = snap(Math.max(100, _bubbleResizeData.startW + dx));
+      newW = Math.min(newW, gridRect.width - left);
+      _bubbleResizeData.bubble.style.width = newW + 'px';
+    }
+    if (axis === 's' || axis === 'se') {
+      var _snapH = _bubbleResizeData.isSpotify ? snapSpotifyHeight : snap;
+      var _minH = _bubbleResizeData.isSpotify ? 115 : 80;
+      let newH = _snapH(Math.max(_minH, _bubbleResizeData.startH + dy));
+      newH = Math.min(newH, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - top);
+      _bubbleResizeData.bubble.style.height = newH + 'px';
+    }
+    var finalW = parseInt(bubble.style.width) || curW;
+    var finalH = parseInt(bubble.style.height) || curH;
+    var resizeTip = document.querySelector('.bento-resize-tooltip');
+    if (resizeTip) {
+      resizeTip.textContent = Math.round(finalW) + ' \u00D7 ' + Math.round(finalH);
+      resizeTip.style.left = (t.clientX + 12) + 'px';
+      resizeTip.style.top = (t.clientY - 32) + 'px';
+    }
+    var resizeLayout = _bubbleResizeData.resizeLayout;
+    var resizeUid = bubble.dataset.bubble;
+    var resizeItem = resizeLayout.find(function(i) { return i.uid === resizeUid; });
+    if (resizeItem) {
+      if (axis === 'e' || axis === 'se') resizeItem.w = finalW;
+      if (axis === 's' || axis === 'se') resizeItem.h = finalH;
+      updateAddBtnPosition();
+    }
+  }, { passive: false });
+
+  // Touch end for resize
+  document.addEventListener('touchend', function() {
+    if (!_bubbleResizeData) return;
+    var cancelled = _bubbleResizeData.cancelled;
+    _bubbleResizeData.bubble.classList.remove('dragging');
+    _bubbleResizeData.bubble.style.zIndex = '';
+    if (cancelled) { 
+      var tip = document.querySelector('.bento-resize-tooltip');
+      if (tip) tip.style.display = 'none'; 
+      _bubbleResizeData = null; 
+      return; 
+    }
+    const bubble = _bubbleResizeData.bubble;
+    const gridRect = grid.getBoundingClientRect();
+    const left = parseInt(bubble.style.left) || 0;
+    const top = parseInt(bubble.style.top) || 0;
+    var axis = _bubbleResizeData.axis;
+    let w = parseInt(bubble.style.width) || 320;
+    let h = parseInt(bubble.style.height) || 240;
+    w = Math.min(w, gridRect.width - left);
+    h = Math.min(h, Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - top);
+    const uid = bubble.dataset.bubble;
+    const layout = JSON.parse(JSON.stringify(hubContent.bentoLayout));
+    const item = layout.find(i => i.uid === uid);
+    if (item) {
+      if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
+      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? Math.max(115, snapSpotifyHeight(h)) : Math.max(80, snap(h));
+      resolveBubbleCollisions(layout);
+      pushUndoState();
+      hubContent.bentoLayout = layout;
+      saveHubContent();
+      var _grid = document.querySelector('.bento-grid');
+      if (_grid) {
+        layout.forEach(function(it) {
+          var el = _grid.querySelector('[data-bubble="' + it.uid + '"]');
+          if (el) { el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; }
+        });
+      }
+    }
+    updateAddBtnPosition();
+    updateUndoButtons();
+    refreshProgressWidget();
+    var tip = document.querySelector('.bento-resize-tooltip');
+    if (tip) tip.style.display = 'none';
+    _bubbleResizeData = null;
+    bubble.classList.remove('selected');
+    bubble.setAttribute('data-suppress-click', '1');
+    setTimeout(function() { bubble.removeAttribute('data-suppress-click'); }, 50);
+  }, { passive: false });
 
   document.addEventListener('mousemove', function(e) {
     if (!_bubbleResizeData) return;

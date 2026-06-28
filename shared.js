@@ -1997,6 +1997,23 @@ function restoreDirectImageKeys() {
   else console.warn('[img] restoreDirectImageKeys: no haven-image-* keys found');
 }
 
+
+
+// ─── TOUCH UTILITY ─────────────────────────────────────────
+function getEventPos(e) {
+  if (e.changedTouches && e.changedTouches.length > 0) {
+    return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+  }
+  if (e.touches && e.touches.length > 0) {
+    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }
+  return { x: e.clientX, y: e.clientY };
+}
+
+function isTouchEvent(e) {
+  return !!(e && (e.changedTouches || e.touches));
+}
+
 function isCustomImage(key, url) {
   // Returns true if the image differs from its default
   return url && url !== DEFAULT_IMAGES[key];
