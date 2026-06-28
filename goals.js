@@ -676,7 +676,7 @@ function init() {
   dom.aiChatInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); }
   });
-  dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
+  dom.aiChatBtn?.addEventListener('click', openSettingsDrawer);
 
   // Page transition
   const content = document.querySelector('.hub-content');

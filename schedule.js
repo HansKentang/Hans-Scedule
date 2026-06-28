@@ -43,7 +43,6 @@ dom.todayBtn       = $('#todayBtn');
 dom.prevWeek       = $('#prevWeek');
 dom.nextWeek       = $('#nextWeek');
 dom.quickTaskBtn   = $('#quickTaskBtn');
-dom.dailyChart     = $('#dailyChart');
 dom.apiStatus      = $('#apiStatus');
 dom.apiStatusText  = $('#apiStatusText');
 dom.tzTooltip      = $('#tzTooltip');
@@ -116,46 +115,6 @@ function updateTzDisplay() {
   const mins = String(Math.abs(offset) % 60).padStart(2, '0');
   if (dom.localTz) dom.localTz.textContent = `${tz} (UTC${sign}${hours}:${mins})`;
   if (dom.utcTz) dom.utcTz.textContent = `UTC${sign}${hours}:${mins}`;
-}
-
-// ─── DAILY CHART ────────────────────────────────────────────
-function renderChart() {
-  if (!dom.dailyChart) return;
-  const today = formatDate(new Date());
-  const todayTasks = state.tasks.filter(t => t.date === today && !t.completed);
-
-  if (todayTasks.length === 0) {
-    dom.dailyChart.innerHTML = '<div class="chart-empty">No tasks today</div>';
-    return;
-  }
-
-  const tagMinutes = {};
-  for (const tag of TAG_ORDER) tagMinutes[tag] = 0;
-  for (const task of todayTasks) {
-    const start = parseTime(task.startTime);
-    const end = parseTime(task.endTime) || start + 60;
-    const dur = Math.max(end - start, SNAP_MINUTES);
-    if (tagMinutes[task.tag] !== undefined) tagMinutes[task.tag] += dur;
-  }
-
-  const total = Object.values(tagMinutes).reduce((a, b) => a + b, 0);
-  if (total === 0) { dom.dailyChart.innerHTML = '<div class="chart-empty">No tasks today</div>'; return; }
-
-  const formatHrs = (mins) => {
-    const h = Math.floor(mins / 60); const m = mins % 60;
-    if (h === 0) return `${m}m`; if (m === 0) return `${h}h`; return `${h}h ${m}m`;
-  };
-
-  let html = '<div class="chart-bar-group">';
-  for (const tag of TAG_ORDER) {
-    const mins = tagMinutes[tag]; if (mins === 0) continue;
-    const pct = Math.round((mins / total) * 100);
-    html += `<div class="chart-bar-row"><span class="chart-bar-label">${TAG_LABELS[tag].slice(0, 4)}</span>
-      <div class="chart-bar-track"><div class="chart-bar-fill ${tag}" style="width:${pct}%"></div></div>
-      <span class="chart-bar-value">${formatHrs(mins)}</span></div>`;
-  }
-  html += `</div><div class="chart-total">Total <span>${formatHrs(total)}</span></div>`;
-  dom.dailyChart.innerHTML = html;
 }
 
 // ─── CALENDAR RENDERING ────────────────────────────────────
@@ -246,7 +205,6 @@ function renderWeekView() {
   dom.taskCount.textContent = state.tasks.filter(t => !isWhiteboardTask(t)).length;
   renderMiniWeek();
   attachSlotHandlersWithCreate();
-  renderChart();
   renderWhiteboard();
 }
 
@@ -340,7 +298,6 @@ function renderMonthView() {
   });
 
   renderMiniWeek();
-  renderChart();
   renderWhiteboard();
 }
 
@@ -455,7 +412,6 @@ function renderAgendaView() {
   });
 
   renderMiniWeek();
-  renderChart();
   renderWhiteboard();
 }
 

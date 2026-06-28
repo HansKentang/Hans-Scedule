@@ -927,7 +927,7 @@ function setupPage() {
   dom.importFileInput?.addEventListener('change', importData);
   document.getElementById('importDataBtn')?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
 
-  dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
+  dom.aiChatBtn?.addEventListener('click', openSettingsDrawer);
   dom.aiChatOverlay?.addEventListener('click', hideAIChat);
   dom.aiChatClose?.addEventListener('click', hideAIChat);
   dom.aiChatSend?.addEventListener('click', sendAIMessage);
