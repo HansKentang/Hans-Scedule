@@ -3176,11 +3176,18 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   .bento-grid {
     overflow-x: hidden !important;
   }
-  .bento-bubble {
+  .bento-bubble:not(.hub-edit .bento-bubble) {
     left: 12px !important;
     width: calc(100% - 24px) !important;
     min-width: calc(100% - 24px) !important;
     max-width: calc(100% - 24px) !important;
+  }
+  /* In edit mode, allow resizing — don't force full-width */
+  .hub-edit .bento-bubble {
+    left: auto !important;
+    width: auto !important;
+    min-width: 120px !important;
+    max-width: 90vw !important;
   }
   .bento-edit-done-btn {
     bottom: calc(56px + var(--space-4)) !important;
@@ -3191,6 +3198,22 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   /* ─── SCHEDULE HEADER MOBILE ── */
   .sch-header-center { display: none; }
   .sch-header-right .sch-api-badge:not(#taskCountBadge) { display: none; }
+  /* Add compact view toggle in header-left area on mobile */
+  .sch-header-left .view-toggle-btn { display: none; }
+  /* Mobile view toggle as a select/dropdown in header */
+  #mobileViewSelect {
+    display: block !important;
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 0.65rem;
+    font-family: var(--font-family);
+    cursor: pointer;
+    outline: none;
+    margin-left: auto;
+  }
 
   /* ─── UNDO TOAST MOBILE ── */
   .undo-toast {

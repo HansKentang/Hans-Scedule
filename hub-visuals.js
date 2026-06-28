@@ -3154,7 +3154,7 @@ if (document.getElementById('hubAccessHub')) {
       if (ifr && _active) {
         ifr.src = 'https://open.spotify.com/embed/playlist/' + _active.id + '?utm_source=generator';
         if (header) header.textContent = _active.name;
-      } else if (w.querySelector('.spotify-empty') && _active) {
+      } else if (w.classList.contains('spotify-empty') && _active) {
         // Had empty state, now has playlist — re-render to get the iframe
         renderHubBento();
       } else if (ifr && !_active) {
