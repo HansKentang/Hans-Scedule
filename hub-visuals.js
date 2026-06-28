@@ -62,6 +62,79 @@ function updateUndoButtons() {
 }
 
 /* ─── Section drag/drop reordering ─────────── */
+
+// ─── Touch section drag state (mobile alternative to HTML5 DnD) ───
+let _touchSectionDrag = null;
+
+function _onSectionTouchStart(e) {
+  const handle = e.target.closest('.hub-section-drag-handle');
+  if (!handle) return;
+  if (e.touches.length !== 1) return;
+  const wrap = handle.closest('.hub-section-wrap');
+  if (!wrap) return;
+  _touchSectionDrag = {
+    wrap: wrap,
+    startX: e.touches[0].clientX,
+    startY: e.touches[0].clientY,
+    moved: false
+  };
+}
+
+function _onSectionTouchMove(e) {
+  if (!_touchSectionDrag) return;
+  if (e.touches.length !== 1) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const dx = touch.clientX - _touchSectionDrag.startX;
+  const dy = touch.clientY - _touchSectionDrag.startY;
+  if (!_touchSectionDrag.moved && dx * dx + dy * dy < 25) return;
+  _touchSectionDrag.moved = true;
+  
+  // Find which section we're over
+  const wrap = _touchSectionDrag.wrap;
+  const container = wrap.parentElement;
+  if (!container) return;
+  const wraps = container.querySelectorAll('.hub-section-wrap');
+  let targetWrap = null;
+  wraps.forEach(function(w) {
+    if (w === wrap) return;
+    const r = w.getBoundingClientRect();
+    if (touch.clientX >= r.left && touch.clientX <= r.right &&
+        touch.clientY >= r.top && touch.clientY <= r.bottom) {
+      targetWrap = w;
+    }
+  });
+  
+  // Remove previous drag-over
+  wraps.forEach(function(w) { w.classList.remove('hub-section-drag-over'); });
+  if (targetWrap) targetWrap.classList.add('hub-section-drag-over');
+  _touchSectionDrag.targetWrap = targetWrap;
+}
+
+function _onSectionTouchEnd(e) {
+  if (!_touchSectionDrag) return;
+  const wrap = _touchSectionDrag.wrap;
+  const targetWrap = _touchSectionDrag.targetWrap;
+  wrap.classList.remove('hub-section-dragging');
+  document.querySelectorAll('.hub-section-drag-over').forEach(function(el) {
+    el.classList.remove('hub-section-drag-over');
+  });
+  
+  if (_touchSectionDrag.moved && targetWrap && wrap !== targetWrap) {
+    const container = wrap.parentElement;
+    if (container) {
+      container.insertBefore(wrap, targetWrap);
+      const order = [];
+      container.querySelectorAll('.hub-section-wrap').forEach(function(w) {
+        order.push(w.dataset.hubSection);
+      });
+      saveHubLayout(order);
+    }
+  }
+  _touchSectionDrag = null;
+}
+
+
 function initHubLayout() {
   const container = document.querySelector('.hub-layout');
   if (!container) return;
@@ -82,6 +155,8 @@ function initHubLayout() {
   container.querySelectorAll('.hub-section-drag-handle').forEach(handle => {
     handle.addEventListener('dragstart', onDragStart);
     handle.addEventListener('dragend', onDragEnd);
+    handle.addEventListener('touchstart', _onSectionTouchStart, { passive: true });
+    handle.addEventListener('touchend', _onSectionTouchEnd);
   });
 
   container.querySelectorAll('.hub-section-wrap').forEach(wrap => {
@@ -90,6 +165,9 @@ function initHubLayout() {
     wrap.addEventListener('dragleave', onDragLeave);
     wrap.addEventListener('drop', onDrop);
   });
+  
+  // Touchmove on container for section reorder
+  container.addEventListener('touchmove', _onSectionTouchMove, { passive: false });
 
   updateSectionHandles();
 }

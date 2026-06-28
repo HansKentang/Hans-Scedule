@@ -642,12 +642,13 @@ function startDrag(e, source) {
   ghost.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;`;
   document.body.appendChild(ghost);
 
+  const dragPos = getEventPos(e);
   gridDrag = {
     type: 'task',
     source,
     ghost,
-    offX: e.clientX - rect.left,
-    offY: e.clientY - rect.top,
+    offX: dragPos.x - rect.left,
+    offY: dragPos.y - rect.top,
     dropDate: null,
     dropTime: null,
     moved: false,
@@ -685,7 +686,8 @@ function startDrag(e, source) {
     if (task) ghostTag = task.tag;
   } else if (gridDrag.type === 'quickadd' && gridDrag.tag) {
     ghostTag = gridDrag.tag;
-  
+  }
+
   if (ghostTag) {
     const meta = TAG_COLORS[ghostTag] || TAG_COLORS.meeting;
     // Quick-add ghost: white card with plain 'New Task'
@@ -837,7 +839,7 @@ function onDragMove(e) {
 
     // Move conflict badge with cursor
     const badge = document.getElementById('dropConflictBadge');
-    if (badge) { badge.style.left = `${e.clientX + 16}px`; badge.style.top = `${e.clientY + 20}px`; }
+    if (badge) { badge.style.left = `${pos.x + 16}px`; badge.style.top = `${pos.y + 20}px`; }
 
     // Show live time tooltip
     showDragTooltip(e, snap, durMins);
@@ -870,8 +872,9 @@ function showDragTooltip(e, snap, durMins) {
     text += ` · ${dh}h${dm ? String(dm).padStart(2, '0') : ''}`;
   }
   tip.textContent = text;
-  tip.style.left = `${e.clientX + 16}px`;
-  tip.style.top = `${e.clientY - 8}px`;
+  const tipPos = getEventPos(e);
+  tip.style.left = `${tipPos.x + 16}px`;
+  tip.style.top = `${tipPos.y - 8}px`;
 }
 
 function removeDragTooltip() {

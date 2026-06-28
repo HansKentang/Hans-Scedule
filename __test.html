@@ -1,0 +1,1238 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HavÃ«n">
+  <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>HavÃ«n Schedule â€” Schedule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+    <style>
+    /* â”€â”€â”€ SCHEDULE: IMMERSIVE CALENDAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* Mini week overview */
+    .sch-mini-week { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border-color); }
+    .sch-mini-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); margin-bottom: var(--space-2); opacity: 0.6; }
+    .sch-mini-days { display: flex; gap: 4px; }
+    .sch-mini-day {
+      flex: 1; text-align: center; padding: 6px 2px;
+      border-radius: 6px; font-size: 0.7rem; font-weight: 600;
+      color: var(--text-tertiary); cursor: pointer; transition: all var(--t-fast);
+      position: relative;
+    }
+    .sch-mini-day:hover { background: var(--accent-soft); color: var(--text-primary); }
+    .sch-mini-day.today { background: var(--accent); color: var(--text-inverse); font-weight: 700; }
+    .sch-mini-day.has-tasks::after {
+      content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px; border-radius: 50%; background: var(--accent);
+    }
+    .sch-mini-day.today.has-tasks::after { background: var(--text-inverse); }
+
+    /* Calendar header â€” thin breadcrumb style */
+    .sch-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-2) var(--space-5);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-primary); flex-shrink: 0;
+      min-height: 44px;
+    }
+    .sch-header-left { display: flex; align-items: center; gap: var(--space-4); }
+    .sch-header-left h2 { font-size: 0.85rem; font-weight: 600; letter-spacing: -0.01em; }
+    .sch-header-right { display: flex; align-items: center; gap: var(--space-3); }
+    .sch-api-badge {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.65rem; padding: 2px 8px; border-radius: 12px;
+      background: var(--accent-soft); color: var(--text-tertiary);
+    }
+    .sch-api-badge.active { background: color-mix(in srgb, #2a8a4a 12%, transparent); color: #2a8a4a; }
+    .sch-holiday-badge.active { background: color-mix(in srgb, #e06c00 12%, transparent); color: #e06c00; }
+
+    /* Calendar container */
+    #calendarContainer { flex: 1; overflow: auto; position: relative; }
+    #calendarGrid {
+      display: grid;
+      grid-template-columns: var(--time-axis-width) repeat(7, 1fr);
+      position: relative; min-width: fit-content;
+    }
+
+    /* Floating command bar */
+    .sch-cmd-bar {
+      position: absolute; bottom: var(--space-5); right: var(--space-5);
+      z-index: 50;
+    }
+    .sch-cmd-btn {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--accent); color: var(--text-inverse);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow-lg);
+      transition: all var(--t-base);
+    }
+    .sch-cmd-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-xl); }
+    .sch-cmd-btn:active { transform: scale(0.95); }
+
+    /* â”€â”€â”€ PILL MANAGER (compact chip row + dropdown) â”€â”€â”€â”€â”€ */
+    .sch-pill-manager {
+      padding: 2px var(--space-4) 2px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      position: relative;
+      min-height: 28px;
+    }
+    .sch-pm-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px 2px 6px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 0.62rem; font-family: var(--font-family); font-weight: 500;
+      cursor: pointer;
+      transition: all var(--t-fast);
+      white-space: nowrap;
+      user-select: none;
+      line-height: 1.3;
+    }
+    .sch-pm-chip:hover {
+      border-color: var(--chip-accent, var(--border-color));
+      color: var(--text-primary);
+      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 6%, transparent);
+    }
+    .sch-pm-chip.active {
+      border-color: var(--chip-accent, var(--accent));
+      color: var(--chip-accent, var(--accent));
+      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 10%, transparent);
+    }
+    .sch-pm-chip-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--chip-accent, var(--gray-300));
+      flex-shrink: 0;
+    }
+    .sch-pm-chip-count {
+      font-size: 0.5rem;
+      opacity: 0.5;
+      margin-left: 1px;
+    }
+    .sch-pm-chip-del {
+      width: 14px; height: 14px;
+      border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      padding: 0; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; line-height: 1;
+      opacity: 0;
+      transition: all var(--t-fast);
+      margin-left: 1px;
+    }
+    .sch-pm-chip:hover .sch-pm-chip-del { opacity: 0.4; }
+    .sch-pm-chip .sch-pm-chip-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
+    .sch-pm-add-chip {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--t-fast);
+      padding: 0;
+      opacity: 0.4;
+    }
+    .sch-pm-add-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      transform: scale(1.1);
+      opacity: 1;
+    }
+    .sch-pm-add-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    
+    /* â”€â”€â”€ INLINE SUBCATEGORY BAR (below pill manager) â”€â”€ */
+    .sch-sc-bar {
+      padding: 4px var(--space-3);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      display: flex; align-items: center; gap: 4px;
+      flex-wrap: wrap;
+      animation: scBarIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    @keyframes scBarIn {
+      0% { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
+      100% { max-height: 60px; opacity: 1; }
+    }
+    .sch-sc-bar-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px 2px 5px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-primary);
+      color: var(--text-secondary);
+      font-size: 0.62rem; font-family: var(--font-family); font-weight: 500;
+      cursor: grab;
+      transition: all var(--t-fast);
+      user-select: none;
+      line-height: 1.4;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .sch-sc-bar-pill:hover { border-color: var(--sc-accent, var(--border-color)); color: var(--text-primary); }
+    .sch-sc-bar-pill:active { cursor: grabbing; transform: scale(0.97); }
+    .sch-sc-bar-pill.dragging { opacity: 0.5; }
+    .sch-sc-bar-pill .sc-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sc-accent); flex-shrink: 0; }
+    .sch-sc-bar-pill .sc-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+    .sch-sc-bar-pill .sc-bar-edit,
+    .sch-sc-bar-pill .sc-bar-del {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; padding: 0;
+      opacity: 0; flex-shrink: 0;
+      transition: all var(--t-fast);
+    }
+    .sch-sc-bar-pill:hover .sc-bar-edit,
+    .sch-sc-bar-pill:hover .sc-bar-del { opacity: 0.35; }
+    .sch-sc-bar-pill .sc-bar-edit:hover { opacity: 1; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); transform: scale(1.15); }
+    .sch-sc-bar-pill .sc-bar-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); transform: scale(1.15); }
+    .sch-sc-bar-pill .sc-bar-edit svg,
+    .sch-sc-bar-pill .sc-bar-del svg { width: 9px; height: 9px; }
+
+    .sch-sc-bar-add-row {
+      display: inline-flex; align-items: center; gap: 3px;
+      flex-shrink: 0;
+    }
+    .sch-sc-bar-add-input {
+      width: 100px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 0.6rem; font-family: var(--font-family);
+      outline: none;
+      transition: border-color var(--t-fast);
+    }
+    .sch-sc-bar-add-input:focus { border-color: var(--accent); width: 120px; }
+    .sch-sc-bar-add-btn {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: var(--text-inverse);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0;
+      transition: all var(--t-fast);
+      flex-shrink: 0;
+    }
+    .sch-sc-bar-add-btn:hover { opacity: 0.85; }
+    .sch-sc-bar-add-btn svg { width: 8px; height: 8px; stroke-width: 2.5; }
+    .sch-sc-bar-empty {
+      font-size: 0.6rem; color: var(--text-tertiary); opacity: 0.4;
+      font-style: italic;
+    }
+    .tpl-add-input-error { border-color: #e04040 !important; }
+
+    /* â”€â”€â”€ ADD CATEGORY POPUP â”€â”€ */
+    .cat-add-popup {
+      position: fixed; z-index: 60;
+      width: 200px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: var(--shadow-lg);
+      padding: 10px 12px;
+      animation: snavPopupIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .cat-add-input {
+      width: 100%; padding: 6px 10px;
+      border-radius: 8px; border: 1.5px solid var(--border-subtle);
+      background: var(--bg-secondary); color: var(--text-primary);
+      font-size: 0.8rem; font-family: var(--font-family);
+      outline: none; transition: border-color var(--t-fast);
+      box-sizing: border-box; margin-bottom: 10px;
+    }
+    .cat-add-input:focus { border-color: var(--accent); }
+    .cat-add-color-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .cat-add-color-row input[type="color"] {
+      width: 34px; height: 34px; padding: 0; border: none;
+      border-radius: 8px; cursor: pointer;
+      background: none; flex-shrink: 0;
+    }
+    .cat-add-color-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
+    .cat-add-color-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+    .cat-add-color-label {
+      font-size: 0.7rem; color: var(--text-tertiary);
+    }
+    .cat-add-actions {
+      display: flex; gap: 8px;
+    }
+    .cat-add-actions button {
+      flex: 1; padding: 6px 0; border-radius: 8px;
+      border: none; font-size: 0.7rem; font-family: var(--font-family);
+      font-weight: 600; cursor: pointer; transition: all var(--t-fast);
+    }
+    .cat-add-cancel { background: var(--bg-secondary); color: var(--text-tertiary); }
+    .cat-add-cancel:hover { color: var(--text-primary); }
+    .cat-add-save { background: var(--accent); color: var(--text-inverse); }
+    .cat-add-save:hover { opacity: 0.9; }
+
+
+
+    /* â”€â”€â”€ MOBILE HAMBURGER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    .sch-hamburger {
+      display: none; width: 32px; height: 32px; border: none; background: none;
+      color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm);
+      align-items: center; justify-content: center;
+      transition: all var(--t-fast); flex-shrink: 0; padding: 0;
+    }
+    .sch-hamburger:hover { background: var(--accent-soft); color: var(--text-primary); }
+    .sch-hamburger svg { width: 18px; height: 18px; }
+
+    /* â”€â”€â”€ RESPONSIVE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    @media (max-width: 900px) {
+      .hub-sidebar { width: 56px; min-width: 56px; }
+      .hub-snav-item .snav-label,
+      .hub-sidebar-footer .btn span,
+      .sch-mini-week { display: none; }
+      .hub-snav-item { justify-content: center; padding: var(--space-1); }
+      .hub-sidebar-footer .btn { padding: var(--space-1); }
+    }
+    @media (max-width: 640px) {
+      .sch-hamburger { display: flex; }
+      .hub-sidebar {
+        position: fixed; left: 0; top: 0; width: 240px; min-width: 240px;
+        transform: translateX(-100%); transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 10; box-shadow: none;
+      }
+      .hub-sidebar.open {
+        transform: translateX(0);
+        box-shadow: 8px 0 32px rgba(0,0,0,0.15);
+      }
+      .hub-sidebar .hub-workspace-name,
+      .hub-sidebar .hub-snav-item .snav-label,
+      .hub-sidebar .hub-sidebar-section-label,
+      .hub-sidebar .hub-sidebar-footer .btn span { display: block; }
+      .hub-sidebar .hub-snav-item { justify-content: flex-start; padding: var(--space-1) var(--space-2); }
+      .hub-sidebar .hub-sidebar-footer .btn { padding: var(--space-2); }
+      .sch-mini-week { display: block !important; }
+
+      /* Header mobile */
+      .sch-header { padding: var(--space-2) var(--space-3); gap: var(--space-2); min-height: 42px; }
+      .sch-header-left { gap: var(--space-2); }
+      .sch-header-left h2 { font-size: 0.78rem; }
+      #todayBtn { font-size: 0.72rem; padding: 2px var(--space-2); }
+      .nav-arrows .btn { width: 24px; height: 24px; }
+      .sch-header-right { gap: var(--space-1); }
+      .sch-api-badge { font-size: 0.6rem; padding: 1px 6px; }
+
+      /* Pill manager mobile */
+    #pmChips { display: contents; }
+    .sch-pill-manager {
+        padding: 1px var(--space-2) 1px;
+        gap: 2px;
+        min-height: 24px;
+      }
+      .sch-pm-chip {
+        font-size: 0.55rem;
+        padding: 1px 6px 1px 4px;
+      }
+      .sch-sc-bar {
+        padding: 3px var(--space-2);
+        gap: 3px;
+      }
+      .sch-sc-bar-pill {
+        font-size: 0.58rem;
+        padding: 1px 6px 1px 4px;
+      }
+      .sch-sc-bar-pill .sc-name { max-width: 60px; }
+      .sch-sc-bar-pill .sc-bar-edit,
+      .sch-sc-bar-pill .sc-bar-del { opacity: 0.35; }
+      .sch-sc-bar-add-input { width: 80px; }
+      .sch-sc-bar-add-input:focus { width: 100px; }
+
+      /* Calendar grid mobile */
+      #calendarContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+      /* Command palette button */
+      .sch-cmd-bar { bottom: var(--space-3); right: var(--space-3); }
+      .sch-cmd-btn { width: 42px; height: 42px; }
+    }
+  </style>
+// Inject a console.error interceptor before all scripts
+<script>
+window.__errors = [];
+window.__origOnError = window.onerror;
+window.onerror = function(msg, url, line, col, err) {
+  window.__errors.push({msg: msg, url: url, line: line, col: col});
+  if (window.__origOnError) return window.__origOnError(msg, url, line, col, err);
+  return false;
+};
+var origConsoleError = console.error;
+console.error = function() {
+  window.__errors.push({msg: Array.prototype.join.call(arguments, ' ')});
+  return origConsoleError.apply(console, arguments);
+};
+// Collect after 3s
+setTimeout(function() {
+  var el = document.createElement('div');
+  el.id = '__errorDump';
+  el.style.display = 'none';
+  el.textContent = JSON.stringify(window.__errors);
+  document.body.appendChild(el);
+}, 3000);
+</script>
+</head>
+<body>
+  <div class="hub-layout">
+    <!-- â”€â”€â”€ SIDEBAR OVERLAY (mobile) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
+
+    <!-- â”€â”€â”€ SIDEBAR (Hub workspace) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <aside class="hub-sidebar" id="hubSidebar">
+      <div class="hub-workspace">
+        <div class="hub-workspace-icon">H</div>
+        <span class="hub-workspace-name">HavÃ«n</span>
+        <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav">âœŽ</button>
+        <button class="hub-hamburger" aria-label="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <button id="quickTaskBtn" class="btn btn-small" title="Quick task (Q)" style="margin-left:auto">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+
+      <nav class="hub-sidebar-nav">
+        <div class="hub-sidebar-section-label">Pages</div>
+        <div class="hub-snav-stagger">
+          <a href="index.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span class="snav-label">Hub</span>
+          </a>
+          <a href="schedule.html" class="hub-snav-item active">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </span>
+            <span class="snav-label">Schedule</span>
+          </a>
+          <a href="activities.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            </span>
+            <span class="snav-label">Activities</span>
+          </a>
+          <a href="analytics.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </span>
+            <span class="snav-label">Analytics</span>
+          </a>
+          <a href="goals.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </span>
+            <span class="snav-label">Goals</span>
+          </a>
+          <a href="finance.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              </svg>
+            </span>
+            <span class="snav-label">Finance</span>
+          </a>
+          <a href="gallery.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
+        </div>
+      </nav>
+      <div class="hub-sidebar-body">
+      <!-- Mini week overview -->
+      <div class="sch-mini-week">
+        <div class="sch-mini-label">Week</div>
+        <div class="sch-mini-days" id="miniWeekDays"></div>
+      </div>
+
+      <div class="hub-sidebar-images"></div>
+      <!-- â”€â”€â”€ SPOTIFY EMBED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+      <div class="sp-sidebar" id="spSidebar">
+        <div class="sp-header" onclick="spToggleSection()">
+          <button class="sp-toggle-btn" onclick="event.stopPropagation();spToggleSection()" title="Toggle player">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+          </button>
+          <span class="sp-header-text">Spotify</span>
+          <svg class="sp-header-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <button class="sp-gear-btn" onclick="event.stopPropagation();spOpenSettings()" title="Manage playlists">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+        </div>
+        <div class="sp-body">
+        <div class="sp-player">
+          <div class="sp-empty" id="spEmpty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+            <span>No playlist linked</span>
+            <button onclick="spOpenSettings()">Add playlist</button>
+          </div>
+          <div class="sp-embed-wrap" id="spEmbedWrap">
+            <iframe id="spEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+          </div>
+        </div>
+        <div class="sp-controls" id="spControls">
+          <button class="sp-nav-btn" id="spNavPrev" onclick="spSidePrev()" title="Previous playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="sp-controls-label">Playlist</span>
+          <button class="sp-nav-btn" id="spNavNext" onclick="spSideNext()" title="Next playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        </div>
+      </div>
+      </div>
+      <div class="hub-sidebar-footer">
+        <div class="hub-footer-btns">
+          <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
+          <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg><span>Theme</span></button>
+          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode â€” tap any image to change">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            <span>Visuals</span>
+          </button>
+
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main calendar -->
+    <div class="hub-main">
+      <!-- â”€â”€â”€ SCHEDULE HERO BANNER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+      <section style="position:relative;height:180px;overflow:hidden;flex-shrink:0">
+        <img data-image-id="schedule-hero" src="" alt=""
+             style="width:100%;height:100%;object-fit:cover;opacity:0.7"
+             
+>
+        <div style="position:absolute;inset:0;background:linear-gradient(to top, var(--bg-primary) 0%, transparent 60%)"></div>
+        <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding);display:flex;align-items:center;gap:var(--gutter)">
+          <div id="gsiContainer" class="gsi-section"></div>
+          <div>
+            <h1 style="font-family:var(--font-serif);font-size:36px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)">Schedule</h1>
+            <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
+              <span id="weekLabelHero"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <header class="sch-header hub-anim-in hub-anim-in-1">
+        <div class="sch-header-left">
+          <button class="sch-hamburger" id="schHamburger" aria-label="Menu">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <button id="todayBtn" class="btn btn-outline" style="font-size:0.78rem;padding:var(--space-1) var(--space-3)">Today</button>
+          <div class="nav-arrows">
+            <button id="prevWeek" class="btn btn-ghost" style="width:28px;height:28px;padding:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <button id="nextWeek" class="btn btn-ghost" style="width:28px;height:28px;padding:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
+          <h2 id="weekLabel">June 2026</h2>
+        </div>
+        <div class="sch-header-center">
+          <button class="view-toggle-btn active" data-view="week" onclick="switchView('week')" title="Week view">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="month" onclick="switchView('month')" title="Month view">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/></svg>
+          </button>
+          <button class="view-toggle-btn" data-view="agenda" onclick="switchView('agenda')" title="Agenda view">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="sch-header-right">
+          <span class="sch-api-badge" id="apiStatus">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+            <span id="apiStatusText">No key</span>
+          </span>
+          <span class="sch-api-badge" id="taskCountBadge" style="cursor:default">
+            <span id="taskCount">0</span> tasks
+          </span>
+          <span class="sch-api-badge sch-holiday-badge" id="holidayToggle" style="cursor:pointer" onclick="toggleHolidayMode();updateHolidayToggle();showToast(getHolidayMode()?'Holiday mode on':'School mode','info',2000)">
+            <svg id="holidayToggleIcon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+            <span id="holidayToggleText">School</span>
+          </span>
+          <button id="schSettingsBtn" class="btn btn-ghost" title="Customize" style="margin-left:4px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Pill Manager: category chips â†’ subcategory bubble -->
+      <div class="sch-pill-manager hub-anim-in hub-anim-in-2" id="schPillManager">
+        <div id="pmChips"><!-- Populated by JS --></div>
+        <button class="sch-pm-add-chip" id="catAddBtn" title="Add category">
+          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+
+      <!-- Add Category Popup -->
+      <div class="cat-add-popup hidden" id="catAddPopup">
+        <input type="text" class="cat-add-input" id="catAddInput" placeholder="Category name" maxlength="24" autocomplete="off">
+        <div class="cat-add-color-row">
+          <input type="color" id="catColorPicker" value="#8b5cf6">
+          <span class="cat-add-color-label">Pick a colour</span>
+        </div>
+        <div class="cat-add-actions">
+          <button class="cat-add-cancel" id="catAddCancel">Cancel</button>
+          <button class="cat-add-save" id="catAddSave">Add</button>
+        </div>
+      </div>
+
+      <div id="calendarContainer" class="hub-anim-in hub-anim-in-4">
+        <div id="calendarGrid"><!-- Populated by JS --></div>
+        <div id="tzTooltip" style="position:fixed;z-index:100;background:var(--bg-primary);color:var(--text-primary);font-size:0.65rem;font-weight:500;padding:2px 8px;border-radius:6px;border:1px solid var(--border-color);pointer-events:none;display:none;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.08)"></div>
+      </div>
+      <div class="timezone-info" style="display:flex;gap:var(--space-3);padding:4px var(--space-5);font-size:0.6rem;color:var(--text-tertiary);border-bottom:1px solid var(--border-color);background:var(--bg-primary)">
+        <span id="localTz"></span>
+        <span id="utcTz" style="opacity:0.5;font-family:var(--font-mono)"></span>
+      </div>
+
+      <!-- Access Hub (Accessibility menu) -->
+      <div class="access-hub hub-anim-in hub-anim-in-5" id="accessHub">
+        <div class="access-items" id="accessItems">
+          <button class="access-item" id="accessFocusMode" title="Focus Mode">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+            </span>
+            <span class="access-item-label">Focus</span>
+          </button>
+          <button class="access-item" id="accessAIChat" title="Open AI assistant">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+            </span>
+            <span class="access-item-label">AI</span>
+          </button>
+          <button class="access-item" id="accessScreenshot" title="Screenshot week">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </span>
+            <span class="access-item-label">Screenshot</span>
+          </button>
+          <button class="access-item" id="accessCopyWeek" title="Copy this week to next">
+            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </span>
+            <span class="access-item-label">Copy Week</span>
+          </button>
+
+        </div>
+        <button class="access-main" id="accessMain" aria-label="Accessibility menu">
+          <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+
+
+      <!-- Command FAB -->
+      <div class="sch-cmd-bar">
+        <button class="sch-cmd-btn" id="cmdBtn" title="Command palette (Ctrl+K)" onclick="toggleCmdPalette()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        </button>
+      </div>
+
+      <!-- Pomodoro Timer (floating card) -->
+      <div class="pomodoro-card hidden" id="pomodoroCard">
+        <div class="pomodoro-header">
+          <h4>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Focus Timer
+          </h4>
+          <button class="pomodoro-close" id="pomodoroClose" aria-label="Close timer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="pomodoro-ring-wrap">
+          <svg class="pomodoro-ring" viewBox="0 0 100 100" aria-hidden="true">
+            <circle class="pomodoro-ring-bg" cx="50" cy="50" r="45"/>
+            <circle class="pomodoro-ring-fg" id="pomodoroRingFg" cx="50" cy="50" r="45" stroke-dasharray="282.74" stroke-dashoffset="0"/>
+          </svg>
+          <div class="pomodoro-ring-inner">
+            <div class="pomodoro-time" id="pomodoroTime">25:00</div>
+            <div class="pomodoro-period-icon" id="pomodoroPeriodIcon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="pomodoro-task-name" id="pomodoroTaskName">Deep Work Session</div>
+        <div class="pomodoro-presets" id="pomodoroPresets">
+          <button class="pomodoro-preset" data-minutes="5">5</button>
+          <button class="pomodoro-preset" data-minutes="10">10</button>
+          <button class="pomodoro-preset active" data-minutes="25">25</button>
+          <button class="pomodoro-preset" data-minutes="50">50</button>
+        </div>
+        <div class="pomodoro-actions">
+          <button class="btn btn-primary" id="pomodoroStartBtn" style="flex:1;justify-content:center">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Start
+          </button>
+          <button class="btn btn-outline" id="pomodoroResetBtn" style="flex:0;padding:var(--space-1) var(--space-3)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+          </button>
+        </div>
+        <div class="pomodoro-status" id="pomodoroStatus">Ready to focus</div>
+      </div>
+
+    </div>
+
+    <!-- Modals -->
+    <div id="cmdOverlay" class="overlay hidden"></div>
+    <div id="cmdPalette" class="modal cmd-modal hidden" role="dialog" aria-label="Command Palette">
+      <div class="cmd-modal-inner">
+        <div class="cmd-input-wrapper">
+          <svg class="cmd-prefix" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><polyline points="15 10 20 15 15 20"/></svg>
+          <input type="text" id="cmdInput" class="cmd-input" placeholder='Type a command...' autocomplete="off" spellcheck="false">
+          <kbd class="cmd-shortcut">&#8629;</kbd>
+          <button id="cmdPaletteBtn" style="display:none"></button>
+        </div>
+        <div id="cmdResults" class="cmd-results">
+          <div class="cmd-hint"><div class="cmd-hint-grid">
+            <div class="cmd-example"><span class="cmd-example-text">"Team standup tomorrow 9am 30m"</span></div>
+            <div class="cmd-example"><span class="cmd-example-text">"Design review Friday 2pm 1hr"</span></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="taskOverlay" class="overlay hidden"></div>
+    <div id="taskModal" class="modal modal-sm hidden" role="dialog" aria-label="Task Details">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <span class="modal-header-icon" id="taskModalIcon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <h3 id="taskModalTitle">New Task</h3>
+        </div>
+        <div class="modal-header-actions">
+          <span class="modal-task-id" id="taskModalId"></span>
+          <button id="taskModalClose" class="modal-close-btn" aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <form id="taskForm">
+          <!-- Title -->
+          <div class="tf-group tf-title-group">
+            <input type="text" id="taskTitle" class="tf-title-input" placeholder="What are you working on?" autocomplete="off">
+            <div class="tf-title-char" id="taskTitleChar"></div>
+          </div>
+
+          <!-- Tags as pills -->
+          <div class="tf-group">
+            <label class="tf-label">Category</label>
+            <div class="tf-tags" id="taskTagPills">
+              <button type="button" class="tf-tag" data-tag="deep-work" style="--tag-c:var(--tag-deep-work-text);--tag-b:var(--tag-deep-work-bg)">Deep Work</button>
+              <button type="button" class="tf-tag active" data-tag="meeting" style="--tag-c:var(--tag-meeting-text);--tag-b:var(--tag-meeting-bg)">Meeting</button>
+              <button type="button" class="tf-tag" data-tag="exercise" style="--tag-c:var(--tag-exercise-text);--tag-b:var(--tag-exercise-bg)">Exercise</button>
+              <button type="button" class="tf-tag" data-tag="study" style="--tag-c:var(--tag-study-text);--tag-b:var(--tag-study-bg)">Study</button>
+              <button type="button" class="tf-tag" data-tag="hobby" style="--tag-c:var(--tag-hobby-text);--tag-b:var(--tag-hobby-bg)">Hobby</button>
+            </div>
+            <select id="taskTag" class="tf-hidden-select" style="display:none"></select>
+          </div>
+
+          <!-- Date + Time row -->
+          <div class="tf-group">
+            <div class="tf-row tf-row-3">
+              <div class="tf-field">
+                <label class="tf-label">Date</label>
+                <div class="tf-input-wrap">
+                  <svg class="tf-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <input type="date" id="taskDate" class="tf-input">
+                </div>
+              </div>
+              <div class="tf-field">
+                <label class="tf-label">Start</label>
+                <div class="tf-input-wrap">
+                  <svg class="tf-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <input type="time" id="taskStart" class="tf-input" value="09:00">
+                </div>
+              </div>
+              <div class="tf-field">
+                <label class="tf-label">End</label>
+                <div class="tf-input-wrap">
+                  <svg class="tf-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <input type="time" id="taskEnd" class="tf-input" value="10:00">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Priority -->
+          <div class="tf-group">
+            <label class="tf-label">Priority</label>
+            <div class="tf-priority" id="prioritySelectGroup">
+              <button type="button" class="tf-pr" data-priority="1" style="--pr-c:#ef4444">Urgent</button>
+              <button type="button" class="tf-pr" data-priority="2" style="--pr-c:#f59e0b">High</button>
+              <button type="button" class="tf-pr active" data-priority="3" style="--pr-c:#6366f1">Medium</button>
+              <button type="button" class="tf-pr" data-priority="4" style="--pr-c:#6b7280">Low</button>
+            </div>
+          </div>
+
+          <!-- Repeat + Reminder row -->
+          <div class="tf-group">
+            <div class="tf-row tf-row-2">
+              <div class="tf-field">
+                <label class="tf-label">Repeat</label>
+                <div class="tf-input-wrap tf-select-wrap">
+                  <select id="taskRepeat" class="tf-input">
+                    <option value="none">No repeat</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekdays">Weekdays</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+              </div>
+              <div class="tf-field">
+                <label class="tf-label">Reminder</label>
+                <div class="tf-input-wrap tf-select-wrap">
+                  <select id="taskReminder" class="tf-input">
+                    <option value="0">None</option>
+                    <option value="5">5 min before</option>
+                    <option value="15">15 min before</option>
+                    <option value="30">30 min before</option>
+                    <option value="60">1 hour before</option>
+                    <option value="1440">1 day before</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="tf-group">
+            <label class="tf-label">Notes <span class="tf-label-opt">optional</span></label>
+            <textarea id="taskNotes" class="tf-textarea" rows="3" placeholder="Add details, links, or context..."></textarea>
+          </div>
+
+          <!-- Footer actions -->
+          <div class="tf-footer">
+            <button type="button" id="taskDeleteBtn" class="tf-btn tf-btn-danger hidden">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              Delete
+            </button>
+            <div class="tf-footer-right">
+
+              <button type="button" id="taskCancelBtn" class="tf-btn tf-btn-ghost">Cancel</button>
+              <button type="submit" id="taskSaveBtn" class="tf-btn tf-btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+
+    <div id="helpOverlay" class="overlay hidden"></div>
+    <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+      <div class="modal-header">
+        <h3>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Help and Shortcuts
+        </h3>
+        <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/></svg>
+            Keyboard Shortcuts
+          </div>
+          <div class="shortcuts-grid" id="helpShortcutsGrid"></div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Tips and Tricks
+          </div>
+          <div class="help-tips" id="helpTipsGrid">
+            <div class="help-tip">
+              <span class="help-tip-icon">ðŸ’¡</span>
+              <div class="help-tip-text">Type natural language like <em>"Team standup tomorrow at 9am"</em> in the command palette (<kbd>Ctrl+K</kbd>)</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">ðŸ”„</span>
+              <div class="help-tip-text">Drag tasks on the calendar to reschedule â€” other tasks shift to avoid conflicts</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">ðŸ“Ž</span>
+              <div class="help-tip-text">Attach images to AI chat for visual analysis of schedules and screenshots</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon">ðŸŽ¯</span>
+              <div class="help-tip-text">Press <kbd>F</kbd> to toggle Focus Mode â€” hides sidebar and reduces clutter</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Undo Toast -->
+    <div id="undoToast" class="undo-toast hidden">
+      <span id="undoToastMsg">Action undone</span>
+      <button id="undoToastClose" class="btn btn-ghost" style="font-size:0.72rem;padding:2px 6px">âœ•</button>
+    </div>
+
+    <!-- Image Picker -->
+    <div id="imagePickerOverlay" class="image-picker-overlay hidden">
+      <div class="image-picker-card" onclick="event.stopPropagation()">
+        <h3>Customize Image</h3>
+        <img id="imagePickerPreview" class="image-picker-preview" src="" alt="">
+        <div class="image-picker-pastezone" id="imagePickerPasteZone" tabindex="0" contenteditable="true" onpaste="handleImagePickerPaste(event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <div>Paste image (Ctrl+V) or drag &amp; drop</div>
+        </div>
+        <div class="image-picker-file-row">
+          <input type="file" id="imagePickerFileInput" accept="image/*" onchange="handleImagePickerFile(event)" style="display:none">
+          <button class="drawer-btn" onclick="document.getElementById('imagePickerFileInput').click()" style="width:100%;justify-content:center;gap:6px;font-size:0.75rem;margin-bottom:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Choose from gallery
+          </button>
+        </div>
+        <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()">
+        <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
+      <div class="img-fit-row" id="imagePickerFitRow">
+        <span class="img-fit-label">Fit:</span>
+        <div class="img-fit-options" id="imagePickerFitOptions"></div>
+      </div>
+      <div class="image-picker-actions">
+          <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
+          <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
+          <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
+        </div>
+      </div>
+    </div>
+
+<!-- Settings Drawer (Discord-style dual-pane) -->
+    <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
+    <div id="settingsDrawer" class="settings-drawer hidden">
+      <div class="settings-drawer-header">
+        <div class="settings-drawer-header-left">
+          <div class="settings-drawer-header-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+          </div>
+          <h3>Settings</h3>
+        </div>
+        <div class="settings-drawer-header-right">
+          <input type="text" id="settingsSearch" class="settings-drawer-search" placeholder="Search settings..." autocomplete="off" oninput="filterSettingsSections(this.value)">
+          <button id="settingsDrawerClose" class="settings-drawer-close" onclick="closeSettingsDrawer()" aria-label="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="settings-drawer-body">
+        <div class="settings-drawer-sidebar">
+          <div class="settings-nav-section-label">Settings</div>
+          <div class="settings-nav-item active" data-section="ai" onclick="switchSettingsSection('ai')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+            <span>AI Provider</span>
+          </div>
+          <div class="settings-nav-item" data-section="profile" onclick="switchSettingsSection('profile')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Profile</span>
+          </div>
+          <div class="settings-nav-item" data-section="appearance" onclick="switchSettingsSection('appearance')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+            <span>Appearance</span>
+          </div>
+          <div class="settings-nav-item" data-section="access" onclick="switchSettingsSection('access')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span>Access Hub</span>
+          </div>
+          <div class="settings-nav-item" data-section="data" onclick="switchSettingsSection('data')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            <span>Data</span>
+          </div>
+        </div>
+        <div class="settings-drawer-content">
+          <form id="settingsForm" onsubmit="handleSettingsSubmit(event)">
+            <!-- AI Provider Section -->
+            <div class="settings-content-section active" id="settingsSection-ai">
+              <div class="settings-content-header">
+                <h4>AI Provider</h4>
+                <p>Configure your AI assistant's model, provider, and API key</p>
+              </div>
+              <div class="form-group">
+                <label for="drawerProvider">Provider</label>
+                <div class="form-input-wrap">
+                  <select id="drawerProvider" class="form-input" onchange="updateModelOptions();updateSettingsKeyStatus()">
+                    <option value="groq">Groq (Gemma2-9B)</option>
+                    <option value="gemini">Gemini (1.5 Flash)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="drawerModel">Model</label>
+                <div class="form-input-wrap">
+                  <select id="drawerModel" class="form-input"></select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="drawerApiKey">API Key</label>
+                <div class="form-input-wrap">
+                  <input type="password" id="drawerApiKey" class="form-input" placeholder="sk-...">
+                </div>
+                <div class="form-help" id="drawerApiHelp">Get a key at <a href="https://console.groq.com/keys" target="_blank" class="form-link">console.groq.com</a></div>
+              </div>
+              <div id="drawerKeyStatus">
+                <span id="drawerKeyStatusText" class="drawer-status"></span>
+              </div>
+              <div class="settings-card" id="drawerAIUsage"></div>
+            </div>
+
+            <!-- Profile Section -->
+            <div class="settings-content-section" id="settingsSection-profile">
+              <div class="settings-content-header">
+                <h4>ChickBot Profile</h4>
+                <p>Tell ChickBot about yourself for personalized scheduling assistance</p>
+              </div>
+              <div class="settings-card" id="settingsChickBotProfile">
+                <div id="chickbotProfileSettings">
+                  <div class="settings-field-row">
+                    <div class="form-group">
+                      <label for="cb-name-settings">Name</label>
+                      <div class="form-input-wrap">
+                        <input type="text" id="cb-name-settings" class="form-input" placeholder="Your name">
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="cb-pronouns-settings">Pronouns</label>
+                      <div class="form-input-wrap">
+                        <input type="text" id="cb-pronouns-settings" class="form-input" placeholder="e.g. they/them">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="cb-occupation-settings">Occupation</label>
+                    <div class="form-input-wrap">
+                      <input type="text" id="cb-occupation-settings" class="form-input" placeholder="e.g. Student, Designer">
+                    </div>
+                  </div>
+                  <div class="settings-field-row">
+                    <div class="form-group">
+                      <label for="cb-goals-settings">Goals</label>
+                      <div class="form-input-wrap">
+                        <textarea id="cb-goals-settings" class="form-input" rows="3" placeholder="Your top goals..."></textarea>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="cb-routines-settings">Routines</label>
+                      <div class="form-input-wrap">
+                        <textarea id="cb-routines-settings" class="form-input" rows="3" placeholder="Any routines you'd like help scheduling"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="cb-preferences-settings">Preferences</label>
+                    <div class="form-input-wrap">
+                      <textarea id="cb-preferences-settings" class="form-input" rows="2" placeholder="Other preferences"></textarea>
+                    </div>
+                  </div>
+                  <div class="settings-divider"></div>
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label for="drawerRoutine">Daily Schedule</label>
+                    <div class="form-input-wrap">
+                      <textarea id="drawerRoutine" class="form-input" rows="3" placeholder="Describe a typical day (wake time, meals, work/study hours, wind-down)..."></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Appearance Section -->
+            <div class="settings-content-section" id="settingsSection-appearance">
+              <div class="settings-content-header">
+                <h4>Appearance</h4>
+                <p>Customize colors, tag colors, and accent color</p>
+              </div>
+              <div class="settings-card" id="settingsCardColors">
+                <div class="settings-card-header">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.5-4.5-10-10-10z"/></svg>
+                  <span class="settings-card-title">Tag Colors</span>
+                </div>
+                <p class="settings-card-desc">Click any tag to customize its card border color</p>
+              </div>
+              <div class="settings-card" id="settingsAccentColor">
+                <div class="settings-card-header">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                  <span class="settings-card-title">Accent Color</span>
+                </div>
+                <p class="settings-card-desc">Choose an accent colour for buttons, highlights, and active states</p>
+              </div>
+            </div>
+
+            <!-- Access Hub Section -->
+            <div class="settings-content-section" id="settingsSection-access">
+              <div class="settings-content-header">
+                <h4>Access Hub Bubbles</h4>
+                <p>Customize bubble labels, colors, and visibility</p>
+              </div>
+              <div class="settings-card" id="settingsAccessBubbles">
+                <div class="settings-card-header">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  <span class="settings-card-title">Bubbles</span>
+                </div>
+                <p class="settings-card-desc">Customize bubble labels, colors, and visibility</p>
+                <div id="bubbleConfigContainer">
+                  <div style="display:grid;gap:8px;" id="bubbleConfigList"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Data Section -->
+            <div class="settings-content-section" id="settingsSection-data">
+              <div class="settings-content-header">
+                <h4>Data Management</h4>
+                <p>Export, import, or manage your data</p>
+              </div>
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+                  <span class="settings-card-title">Data Actions</span>
+                </div>
+                <div class="drawer-actions-row">
+                  <button type="button" class="drawer-btn" id="exportDataBtn" onclick="exportData()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Export
+                  </button>
+                  <button type="button" class="drawer-btn" id="importDataBtn" onclick="document.getElementById('drawerImportFile').click()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Import
+                  </button>
+                  <button type="button" class="drawer-btn danger" onclick="handleSettingsClear()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                    Clear Key
+                  </button>
+                </div>
+                <input type="file" id="drawerImportFile" accept=".json" style="display:none" onchange="importData(event)">
+              </div>
+              <div class="settings-save-area">
+                <button type="submit" class="drawer-save-btn">Save Changes</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+<!-- AI Chat Modal -->
+      <!-- AI CHAT PANEL (right-side drawer) -->
+  <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
+  <div id="aiChatPanel" class="ai-panel hidden" role="dialog" aria-label="AI Assistant">
+    <div class="ai-panel-header">
+      <div class="ai-panel-header-left">
+        <div class="ai-panel-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/>
+          </svg>
+        </div>
+        <div>
+          <div class="ai-panel-title">ChickBot</div>
+          <div class="ai-panel-subtitle">Your smart schedule buddy</div>
+        </div>
+      </div>
+      <div class="ai-panel-header-actions">
+        <button id="aiChatSettingsBtn" class="ai-panel-icon-btn" title="Settings" onclick="openSettingsDrawer()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+        <button id="aiChatClose" class="ai-panel-icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="ai-panel-body">
+      <div class="ai-messages" id="aiChatMessages"></div>
+    </div>
+    <div class="ai-panel-footer">
+      <div class="ai-input-wrapper" id="aiChatInputWrapper">
+        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your schedule..." autocomplete="off">
+        <button id="aiChatSend" class="ai-send-btn show" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ai-panel-footer-hint">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+        <span>Natural language scheduling</span>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+  </script>
+  <script src="shared.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <script src="gsi.js"></script>
+  <script src="schedule.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
+  <!-- â”€â”€â”€ Spotify Settings Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
+    <div class="sp-modal">
+      <div class="sp-modal-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+        <h2>Playlists</h2>
+        <button class="sp-modal-close" onclick="spCloseSettings()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="sp-modal-body">
+        <div class="sp-add-row">
+          <input id="spAddInput" placeholder="Playlist URL or ID..." onkeydown="if(event.key==='Enter')spAddPlaylist()">
+          <button onclick="spAddPlaylist()">Add</button>
+        </div>
+        <div class="sp-search-row">
+          <input id="spSearchInput" placeholder="Search playlists..." oninput="spRenderList(this.value)">
+        </div>
+        <div class="sp-iframe-wrap">
+          <iframe id="spModalEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+        </div>
+        <div class="sp-list" id="spList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>spInit();</script>
+</body>
+</html>
+
