@@ -1065,6 +1065,67 @@ function expandRecurringTasks(dateStart, dateEnd) {
   }
 })();
 
+
+// ─── MOBILE BOTTOM NAV BAR (Notion-style) ─────────────────
+function initMobileBottomNav() {
+  if (window.innerWidth > 768) return;
+  var existing = document.getElementById('hubMobileBottomNav');
+  if (existing) return;
+
+  var sidebar = document.querySelector('.hub-sidebar-nav');
+  if (!sidebar) return;
+
+  var nav = document.createElement('nav');
+  nav.id = 'hubMobileBottomNav';
+  nav.className = 'hub-mobile-bottom-nav';
+
+  var items = sidebar.querySelectorAll('.hub-snav-item');
+  var currentPage = location.pathname.split('/').pop() || 'index.html';
+
+  items.forEach(function(item) {
+    var href = item.getAttribute('href');
+    if (!href) return;
+    var clone = item.cloneNode(true);
+    clone.classList.remove('active');
+    if (href === currentPage) clone.classList.add('active');
+    // Remove drag handles, hide buttons, etc.
+    clone.querySelectorAll('.snav-drag-handle, .snav-hide-btn').forEach(function(el) { el.remove(); });
+    // Add bottom bar specific class
+    clone.classList.add('hub-mbb-item');
+    nav.appendChild(clone);
+  });
+
+  // Handle resize - remove/add on breakpoint
+  var handler = function() {
+    var nb = document.getElementById('hubMobileBottomNav');
+    if (window.innerWidth <= 768) {
+      if (!nb) initMobileBottomNav();
+    } else {
+      if (nb) nb.remove();
+    }
+  };
+  window.addEventListener('resize', debounce(handler, 300));
+
+  document.body.appendChild(nav);
+}
+
+function debounce(fn, delay) {
+  var timer = null;
+  return function() {
+    var args = arguments;
+    var ctx = this;
+    clearTimeout(timer);
+    timer = setTimeout(function() { fn.apply(ctx, args); }, delay);
+  };
+}
+
+// Init on load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initMobileBottomNav);
+} else {
+  initMobileBottomNav();
+}
+
 // ─── PAGE CALLBACK FALLBACK ───────────────────────────────
 let pageAfterTaskSave = null;
 let pageAfterImport = null;

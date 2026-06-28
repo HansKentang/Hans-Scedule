@@ -2632,8 +2632,9 @@ function setupHubEditEvents() {
     openImagePicker(wrap.dataset.imgPicker);
   });
 
-  // Gallery card images — always clickable, no edit mode required
+  // Gallery card images — clickable in hub edit mode only
   document.addEventListener('click', function(e) {
+    if (!hubEditMode) return;
     var cover = e.target.closest('.hub-gallery-cover');
     if (!cover) return;
     var galImg = cover.querySelector('img[data-image-id]');
