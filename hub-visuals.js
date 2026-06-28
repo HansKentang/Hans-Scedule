@@ -884,7 +884,7 @@ function renderHubBento() {
                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
                 <span>${_spActivePlaylist.name}</span>
               </div>
-              <iframe src="${e(spotUrl)}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" loading="lazy" style="display:block;width:100%;border:none"></iframe>
+              <iframe src="${e(spotUrl)}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" loading="lazy" style="display:block;width:100%;height:calc(100% - 32px);border:none"></iframe>
             </div>
           </div>`;
         } else {
@@ -3136,6 +3136,13 @@ if (document.getElementById('hubAccessHub')) {
       _updateSpotifyBubbles();
     };
   }
+  var _origPlay = window.spPlayPlaylist;
+  if (typeof _origPlay === 'function') {
+    window.spPlayPlaylist = function(id) {
+      _origPlay(id);
+      _updateSpotifyBubbles();
+    };
+  }
   function _updateSpotifyBubbles() {
     var _id = null, _playlists = [];
     try { _id = localStorage.getItem('haven-spotify-active') || null; } catch(e) {}
@@ -3143,9 +3150,10 @@ if (document.getElementById('hubAccessHub')) {
     var _active = _playlists.find(function(p) { return p.id === _id; });
     document.querySelectorAll('.spotify-widget').forEach(function(w) {
       var ifr = w.querySelector('iframe');
+      var header = w.querySelector('.spotify-header span');
       if (ifr && _active) {
         ifr.src = 'https://open.spotify.com/embed/playlist/' + _active.id + '?utm_source=generator';
-        ifr.style.height = 'calc(100% - 32px)';
+        if (header) header.textContent = _active.name;
       } else if (w.querySelector('.spotify-empty') && _active) {
         // Had empty state, now has playlist — re-render to get the iframe
         renderHubBento();
