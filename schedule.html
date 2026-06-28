@@ -957,6 +957,13 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           <div>Paste image (Ctrl+V) or drag &amp; drop</div>
         </div>
+        <div class="image-picker-file-row">
+          <input type="file" id="imagePickerFileInput" accept="image/*" onchange="handleImagePickerFile(event)" style="display:none">
+          <button class="drawer-btn" onclick="document.getElementById('imagePickerFileInput').click()" style="width:100%;justify-content:center;gap:6px;font-size:0.75rem;margin-bottom:6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Choose from gallery
+          </button>
+        </div>
         <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()">
         <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
       <div class="img-fit-row" id="imagePickerFitRow">

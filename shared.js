@@ -2195,6 +2195,35 @@ function resizeImageDataUrl(dataUrl, maxWidth, maxHeight, quality) {
     img.src = dataUrl;
   });
 }
+function handleImagePickerFile(e) {
+  const status = document.getElementById('imagePickerStatus');
+  const preview = document.getElementById('imagePickerPreview');
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    if (status) { status.textContent = 'Not an image file'; status.style.color = '#ef4444'; }
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    if (status) { status.textContent = 'Image too large (max 2MB)'; status.style.color = '#ef4444'; }
+    return;
+  }
+  if (status) { status.textContent = 'Processing image...'; status.style.color = 'var(--text-tertiary)'; }
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    resizeImageDataUrl(ev.target.result, 800, 800, 0.78).then(function(resizedUrl) {
+      if (preview) preview.src = resizedUrl;
+      if (preview) preview.style.display = 'block';
+      if (preview) preview.dataset.pasted = resizedUrl;
+      if (status) { status.textContent = 'Image loaded — click Save to apply'; status.style.color = 'var(--primary)'; }
+      var _urlInput = document.getElementById('imagePickerUrl');
+      if (_urlInput) _urlInput.value = '';
+    });
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
 function handleImagePickerPaste(e) {
   const status = document.getElementById('imagePickerStatus');
   const preview = document.getElementById('imagePickerPreview');
