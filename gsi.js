@@ -488,12 +488,13 @@ function renderAccountSettings(el) {
 }
 
 function renderAppearanceSettings(el) {
-  var isDark = typeof state === 'undefined' || state.darkMode !== false;
+  var prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var isDark = state.darkMode === null ? prefersDark : state.darkMode;
   var accent = typeof state !== 'undefined' && state.accentColor ? state.accentColor : null;
   var swatches = '';
   if (typeof ACCENT_PALETTE !== 'undefined') {
     ACCENT_PALETTE.forEach(function(c) {
-      swatches += '<div class="set-swatch' + (accent === c.id ? ' active' : '') + '" data-acc-color="' + c.id + '" style="background:' + c.colors.dark + '"></div>';
+      swatches += '<div class="set-swatch' + (accent === c.dark ? ' active' : '') + '" data-acc-color="' + c.dark + '" style="background:' + c.dark + '"></div>';
     });
   }
 
