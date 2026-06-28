@@ -56,7 +56,7 @@ dom.addIdeaBtn     = $('#addIdeaBtn');
   dom.helpModalClose = $('#helpModalClose');
   dom.exportDataBtn  = $('#exportDataBtn');
   dom.importDataBtn  = $('#importDataBtn');
-  dom.importFileInput= $('#importFileInput');
+  dom.importFileInput= $('#drawerImportFile');
   dom.aiChatBtn      = $('#aiChatBtnSidebar');
   dom.aiChatPanel    = $('#aiChatPanel');
   dom.aiChatOverlay  = $('#aiChatOverlay');
@@ -176,11 +176,10 @@ function renderMiniWeek() {
   // Click to navigate to that day's week
   mini.querySelectorAll('.sch-mini-day').forEach((el, i) => {
     el.addEventListener('click', () => {
-      const ws = state.currentWeekStart;
-      const target = addDays(ws, i);
-      // Only navigate if clicking a different week
-      if (formatDate(target) !== formatDate(ws)) {
-        state.currentWeekStart = getMonday(target);
+      const target = addDays(state.currentWeekStart, i);
+      const targetWeekStart = getMonday(target);
+      if (formatDate(targetWeekStart) !== formatDate(state.currentWeekStart)) {
+        state.currentWeekStart = targetWeekStart;
         renderCalendar();
       }
     });
@@ -625,8 +624,8 @@ function instantCreateTask(date, timeMins) {
   const hour = Math.floor(snap / 60);
   let tag = 'meeting';
   let title = 'New Task';
-  if (hour < 9) { tag = 'deep-work'; title = 'Deep Work Session'; }
-  else if (hour >= 6 && hour < 8) { tag = 'exercise'; title = 'Morning Workout'; }
+  if (hour >= 6 && hour < 8) { tag = 'exercise'; title = 'Morning Workout'; }
+  else if (hour < 9) { tag = 'deep-work'; title = 'Deep Work Session'; }
   else if (hour >= 12 && hour < 13) { tag = 'hobby'; title = 'Break'; }
   else if (hour >= 17) { tag = 'hobby'; title = 'Personal Time'; }
 
@@ -933,8 +932,8 @@ let dragCreate = null;
 function guessDragCreateMeta(mins) {
   const h = Math.floor(mins / 60);
   let tag = 'meeting', title = 'New Task';
-  if (h < 9) { tag = 'deep-work'; title = 'Deep Work Session'; }
-  else if (h >= 6 && h < 8) { tag = 'exercise'; title = 'Morning Workout'; }
+  if (h >= 6 && h < 8) { tag = 'exercise'; title = 'Morning Workout'; }
+  else if (h < 9) { tag = 'deep-work'; title = 'Deep Work Session'; }
   else if (h >= 12 && h < 13) { tag = 'hobby'; title = 'Break'; }
   else if (h >= 17) { tag = 'hobby'; title = 'Personal Time'; }
   return { tag, title, meta: TAG_COLORS[tag] || TAG_COLORS.meeting };
@@ -1031,8 +1030,8 @@ function onDragCreateEnd(e) {
     const hour = Math.floor(dragCreate.startMins / 60);
     let tag = 'meeting';
     let title = 'New Task';
-    if (hour < 9) { tag = 'deep-work'; title = 'Deep Work Session'; }
-    else if (hour >= 6 && hour < 8) { tag = 'exercise'; title = 'Morning Workout'; }
+    if (hour >= 6 && hour < 8) { tag = 'exercise'; title = 'Morning Workout'; }
+    else if (hour < 9) { tag = 'deep-work'; title = 'Deep Work Session'; }
     else if (hour >= 12 && hour < 13) { tag = 'hobby'; title = 'Break'; }
     else if (hour >= 17) { tag = 'hobby'; title = 'Personal Time'; }
 
@@ -1501,7 +1500,6 @@ function addWhiteboardTask() {
 let quickIdeaTag = 'meeting';
 
 function openQuickIdea() {
-  closeQuickTpl();
   const popup = document.getElementById('quickIdea');
   if (!popup) { addWhiteboardTask(); return; }
   popup.classList.remove('hidden');
@@ -1667,7 +1665,7 @@ function bindEvents() {
   dom.helpModalClose?.addEventListener('click', hideHelpModal);
 
   // AI Chat
-  dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
+  dom.aiChatBtn?.addEventListener('click', openSettingsDrawer);
   dom.aiChatOverlay?.addEventListener('click', hideAIChat);
   dom.aiChatClose?.addEventListener('click', hideAIChat);
   dom.aiChatSend?.addEventListener('click', sendAIMessage);
@@ -1742,7 +1740,8 @@ function bindEvents() {
     catAddPopup.classList.toggle('hidden');
     if (!catAddPopup.classList.contains('hidden')) {
       catAddInput.value = '';
-      updateColorPreview('#8b5cf6');
+      selectedCatColor = '#8b5cf6';
+      catAddColor.value = '#8b5cf6';
       catAddInput.focus();
     }
   });

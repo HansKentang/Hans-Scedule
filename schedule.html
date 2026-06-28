@@ -474,6 +474,16 @@
         <div class="sch-mini-label">Week</div>
         <div class="sch-mini-days" id="miniWeekDays"></div>
       </div>
+      <!-- Whiteboard section -->
+      <div class="sch-sidebar-section">
+        <div class="sch-section-header">
+          <h3>Whiteboard</h3>
+          <button id="addIdeaBtn" class="btn btn-ghost" title="Add idea" style="width:22px;height:22px;padding:0">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
+        <div class="sch-whiteboard-list" id="whiteboardList"></div>
+      </div>
       <div class="hub-sidebar-images"></div>
       <!-- ─── SPOTIFY EMBED ───────────────────────── -->
       <div class="sp-sidebar" id="spSidebar">
@@ -609,6 +619,11 @@
 
       <div id="calendarContainer" class="hub-anim-in hub-anim-in-4">
         <div id="calendarGrid"><!-- Populated by JS --></div>
+        <div id="tzTooltip" style="position:fixed;z-index:100;background:var(--bg-primary);color:var(--text-primary);font-size:0.65rem;font-weight:500;padding:2px 8px;border-radius:6px;border:1px solid var(--border-color);pointer-events:none;display:none;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.08)"></div>
+      </div>
+      <div class="timezone-info" style="display:flex;gap:var(--space-3);padding:4px var(--space-5);font-size:0.6rem;color:var(--text-tertiary);border-bottom:1px solid var(--border-color);background:var(--bg-primary)">
+        <span id="localTz"></span>
+        <span id="utcTz" style="opacity:0.5;font-family:var(--font-mono)"></span>
       </div>
 
       <!-- Access Hub (Accessibility menu) -->
@@ -644,6 +659,19 @@
           <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
+        </button>
+      </div>
+
+      <!-- Daily Chart -->
+      <div class="hub-anim-in hub-anim-in-5" style="padding:var(--space-3) var(--space-5);border-bottom:1px solid var(--border-color)">
+        <div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-tertiary);margin-bottom:var(--space-2)">Today's Breakdown</div>
+        <div id="dailyChart"></div>
+      </div>
+
+      <!-- Command FAB -->
+      <div class="sch-cmd-bar">
+        <button class="sch-cmd-btn" id="cmdBtn" title="Command palette (Ctrl+K)" onclick="toggleCmdPalette()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
         </button>
       </div>
 
@@ -722,6 +750,7 @@
           <svg class="cmd-prefix" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><polyline points="15 10 20 15 15 20"/></svg>
           <input type="text" id="cmdInput" class="cmd-input" placeholder='Type a command...' autocomplete="off" spellcheck="false">
           <kbd class="cmd-shortcut">&#8629;</kbd>
+          <button id="cmdPaletteBtn" style="display:none"></button>
         </div>
         <div id="cmdResults" class="cmd-results">
           <div class="cmd-hint"><div class="cmd-hint-grid">
@@ -1055,11 +1084,11 @@
                 <span class="drawer-section-title">Data</span>
               </div>
               <div class="drawer-actions-row">
-                <button type="button" class="drawer-btn" onclick="exportData()">
+                <button type="button" class="drawer-btn" id="exportDataBtn" onclick="exportData()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                   Export
                 </button>
-                <button type="button" class="drawer-btn" onclick="document.getElementById('drawerImportFile').click()">
+                <button type="button" class="drawer-btn" id="importDataBtn" onclick="document.getElementById('drawerImportFile').click()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   Import
                 </button>
