@@ -10,8 +10,8 @@
  *    - Reload page once to ensure fresh state
  *
  * 2. DURING USE:
- *    - Periodic dirty check (every 3s): compare current localStorage vs snapshot
- *    - If changes detected: debounced (1.5s) push to Firestore
+ *    - Periodic dirty check (every 1s): compare current localStorage vs snapshot
+ *    - If changes detected: push to Firestore immediately
  *    - Push includes a unique session ID to identify our own writes
  *
  * 3. REAL-TIME (Firestore onSnapshot):
@@ -64,12 +64,23 @@ var CLOUD_SYNC_BASE_KEYS = [
   'haven-schedule-hub-layout',
   'haven-hub-visibility',
   'haven-hub-content',
-  'haven-activity-completions',
+  'haven-activities-completions',
   'haven-schedule-routine',
   'haven-schedule-pomodoro',
   'haven-schedule-focus',
   'haven-schedule-chat',
   'haven-schedule-ai-usage',
+  'haven-schedule-finance',
+  'haven-piggybank',
+  'haven-wallet',
+  'haven-sidebar-config',
+  'haven-gallery-layout',
+  'haven-plus-bubble-schedule',
+  'haven-plus-bubble-hub',
+  'haven-spotify-playlists',
+  'haven-spotify-active',
+  'haven-spotify-collapsed',
+  'chickbot_profile',
 ];
 
 // The app stores all user data under a userId prefix (e.g. "firebase-xxx:haven-schedule-tasks").
@@ -217,7 +228,7 @@ function pushToCloud() {
     // Re-enable listener after a short delay to avoid echo
     setTimeout(function() {
       CLOUD_SYNC.paused = false;
-    }, 1000);
+    }, 300);
   });
 }
 
@@ -234,8 +245,8 @@ function startCloudListener() {
     var data = doc.data();
     var updatedBy = data._updatedBy || '';
     if (updatedBy === CLOUD_SYNC.sessionId) return;
-    // If we just pushed (within last 3s), skip to prevent loops
-    if (Date.now() - CLOUD_SYNC.lastPushTime < 3000) return;
+    // If we just pushed (within last 1s), skip to prevent loops
+    if (Date.now() - CLOUD_SYNC.lastPushTime < 1000) return;
 
     var anyChange = false;
     for (var i = 0; i < CLOUD_SYNC_KEYS.length; i++) {
@@ -269,24 +280,24 @@ function startDirtyCheck() {
 
   CLOUD_SYNC.dirtyCheckInterval = setInterval(function() {
     // Only push if enough time has passed since last push (debounce)
-    if (Date.now() - CLOUD_SYNC.lastPushTime < 2000) return;
+    if (Date.now() - CLOUD_SYNC.lastPushTime < 500) return;
 
     for (var i = 0; i < CLOUD_SYNC_KEYS.length; i++) {
       var key = CLOUD_SYNC_KEYS[i];
       try {
         var current = localStorage.getItem(key);
         if (current !== CLOUD_SYNC.lastSnapshot[key]) {
-          // Debounced push: wait 1.5s after last dirty check
+          // Push changes immediately
           if (CLOUD_SYNC.pushTimeout) clearTimeout(CLOUD_SYNC.pushTimeout);
           CLOUD_SYNC.pushTimeout = setTimeout(function() {
             CLOUD_SYNC.pushTimeout = null;
             pushToCloud();
-          }, 1500);
+          }, 0);
           return; // Only need one debounce cycle
         }
       } catch (e) { /* ignore */ }
     }
-  }, 3000);
+  }, 1000);
 }
 
 // ─── REFRESH ──────────────────────────────────────────────────
