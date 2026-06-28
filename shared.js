@@ -1096,20 +1096,22 @@ function initMobileBottomNav() {
   });
 
   // Handle resize - remove/add on breakpoint
-  var handler = function() {
+  if (window._notionNavInit) window.removeEventListener('resize', window._notionNavInit);
+  window._notionNavInit = _notionDebounce(function() {
     var nb = document.getElementById('hubMobileBottomNav');
     if (window.innerWidth <= 768) {
       if (!nb) initMobileBottomNav();
     } else {
       if (nb) nb.remove();
     }
-  };
-  window.addEventListener('resize', debounce(handler, 300));
+  }, 300);
+  window.addEventListener('resize', window._notionNavInit);
 
+  if (nav.children.length === 0) return;
   document.body.appendChild(nav);
 }
 
-function debounce(fn, delay) {
+function _notionDebounce(fn, delay) {
   var timer = null;
   return function() {
     var args = arguments;
