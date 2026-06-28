@@ -197,6 +197,7 @@ html.light { color-scheme: light; }
 body {
   font-family: var(--font-family); font-weight: 400; color: var(--text-primary);
   background: var(--bg-primary); line-height: 1.5; overflow: hidden; height: 100vh;
+  touch-action: manipulation;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -7176,10 +7177,10 @@ html.light .hub-add-popup {
   .hub-section-wrap { margin-bottom: var(--space-4); }
 
   /* Access hub */
-  .access-hub { bottom: var(--space-4); right: var(--space-4); }
+  .access-hub { bottom: calc(env(safe-area-inset-bottom, 8px) + 68px); right: var(--space-4); }
   .access-main { width: 44px; height: 44px; }
-  .access-item { width: 34px; height: 34px; }
-  .access-item-icon { width: 34px; height: 34px; }
+  .access-item { width: 44px; height: 44px; }
+  .access-item-icon { width: 44px; height: 44px; }
 }
 
 @media (max-width: 480px) {
@@ -7190,8 +7191,8 @@ html.light .hub-add-popup {
   .sleep-section .sleep-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .sleep-tab { flex-shrink: 0; }
   .s-metric-val { font-size: 0.78rem; }
-  .access-hub { bottom: var(--space-3); right: var(--space-3); }
-  .access-main { width: 40px; height: 40px; }
+  .access-hub { bottom: calc(env(safe-area-inset-bottom, 8px) + 68px); right: var(--space-3); }
+  .access-main { width: 44px; height: 44px; }
   .access-main svg { width: 18px; height: 18px; }
 }
 
@@ -7442,7 +7443,7 @@ html.light .hub-add-popup {
 }
 
 @media (max-width: 480px) {
-  .hub-mbb-item { padding: 3px 4px !important; min-width: 40px; }
+  .hub-mbb-item { padding: 3px 6px !important; min-width: 44px; }
   .hub-mbb-item .snav-icon { width: 18px !important; height: 18px !important; }
   .hub-mbb-item .snav-icon svg { width: 16px; height: 16px; }
   .hub-mbb-item .snav-label { font-size: 0.45rem !important; }
