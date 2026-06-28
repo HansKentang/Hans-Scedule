@@ -2892,6 +2892,35 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   opacity: 1; visibility: visible; pointer-events: auto;
 }
 
+/* ─── MOBILE HAMBURGER (floating, always visible) ──────── */
+.hub-mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 15;
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: var(--surface-container);
+  color: var(--text-primary);
+  border-radius: 10px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  transition: opacity 200ms ease, transform 200ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.hub-mobile-menu-btn:active { transform: scale(0.92); }
+.hub-mobile-menu-btn.hidden-btn { opacity: 0; pointer-events: none; }
+
+/* ─── TOUCH-SCREEN RESET ────────────────────────── */
+html { touch-action: manipulation; }
+body { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+button, a, input, select, textarea, .clickable { touch-action: manipulation; }
+
 /* ─── BOTTOM NAV (mobile) ──────────────────────────────── */
 .hub-bottom-nav {
   display: none;
@@ -3016,6 +3045,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
     transform: translateX(0);
     box-shadow: 8px 0 32px rgba(0,0,0,0.15);
   }
+  .hub-mobile-menu-btn { display: flex; }
   .hub-sidebar .hub-workspace-name,
   .hub-sidebar .hub-snav-item .snav-label,
   .hub-sidebar .hub-sidebar-section-label,
@@ -7327,73 +7357,6 @@ html.light .hub-add-popup {
 .sp-nav-btn svg { width:10px; height:10px; }
 .sp-controls-label { font-size:0.5rem; color:var(--text-tertiary); font-weight:500; letter-spacing:0.04em; text-transform:uppercase; }
 
-.sp-transport { display:flex; align-items:center; justify-content:center; gap:5px; padding:2px 14px; }
-.sp-transport .sp-btn { width:20px; height:20px; border:none; border-radius:4px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:color 0.12s,background 0.12s; }
-.sp-transport .sp-btn:hover { color:var(--text-primary); background:var(--accent-soft); }
-.sp-transport .sp-btn svg { width:10px; height:10px; }
-.sp-play-btn { width:26px; height:22px; border:none; border-radius:4px; background:var(--surface-container); color:var(--text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.12s,color 0.12s; }
-.sp-play-btn:hover { background:color-mix(in srgb, #1db954 12%, transparent); color:#1db954; }
-.sp-play-btn svg { width:12px; height:12px; }
-
-/* ─── Spotify Settings Modal ─────────────────── */
-.sp-overlay { position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,0.5); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; animation:spFadeIn 0.15s ease; }
-.sp-overlay.hidden { display:none; }
-@keyframes spFadeIn { from{opacity:0} to{opacity:1} }
-.sp-modal { background:var(--bg-card); border:1px solid var(--border-color); border-radius:24px; width:520px; max-width:92vw; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3); animation:spSlideIn 0.2s ease; }
-@keyframes spSlideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-.sp-modal-header { display:flex; align-items:center; gap:10px; padding:16px 20px 12px; }
-.sp-modal-header svg { width:18px; height:18px; color:#1db954; flex-shrink:0; }
-.sp-modal-header h2 { font-size:0.85rem; font-weight:600; color:var(--text-primary); flex:1; margin:0; }
-.sp-modal-close { width:24px; height:24px; border:none; border-radius:5px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.12s,color 0.12s; flex-shrink:0; }
-.sp-modal-close:hover { background:var(--accent-soft); color:var(--text-primary); }
-.sp-modal-close svg { width:14px; height:14px; color:currentColor; }
-.sp-modal-body { padding:0 20px 16px; display:flex; flex-direction:column; gap:10px; }
-.sp-add-row { display:flex; gap:6px; }
-.sp-add-row input { flex:1; padding:7px 10px; border-radius:14px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-family:var(--font-family); font-size:0.72rem; outline:none; min-width:0; }
-.sp-add-row input:focus { border-color:#1db954; }
-.sp-add-row button { padding:7px 14px; border:none; border-radius:14px; background:#1db954; color:#fff; font-size:0.67rem; font-weight:500; cursor:pointer; transition:filter 0.12s; white-space:nowrap; }
-.sp-add-row button:hover { filter:brightness(1.1); }
-.sp-search-row input { width:100%; padding:6px 10px; border-radius:14px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-family:var(--font-family); font-size:0.7rem; outline:none; box-sizing:border-box; }
-.sp-search-row input:focus { border-color:var(--primary); }
-.sp-search-row input::placeholder { color:var(--text-tertiary); }
-.sp-iframe-wrap { border-radius:14px; overflow:hidden; background:#121212; clip-path:inset(0 round 14px); }
-.sp-iframe-wrap iframe { width:100%; height:352px; display:block; border:none; background:#121212; }
-.sp-list { display:flex; flex-direction:column; gap:1px; max-height:180px; overflow-y:auto; }
-.sp-list-item { display:flex; align-items:center; gap:5px; padding:5px 7px; border-radius:5px; cursor:default; transition:background 0.1s; }
-.sp-list-item:hover { background:var(--accent-soft); }
-.sp-list-item.active { background:color-mix(in srgb, #1db954 8%, transparent); }
-.sp-drag-handle { cursor:grab; color:var(--text-tertiary); display:flex; align-items:center; flex-shrink:0; padding:1px; border-radius:3px; transition:color 0.12s; }
-.sp-drag-handle:hover { color:var(--text-primary); }
-.sp-drag-handle svg { width:10px; height:10px; }
-.sp-indicator-dot { width:5px; height:5px; border-radius:50%; background:transparent; flex-shrink:0; }
-.sp-indicator-dot.on { background:#1db954; box-shadow:0 0 4px rgba(29,185,84,0.5); }
-.sp-name { flex:1; font-size:0.68rem; color:var(--text-primary); cursor:pointer; padding:1px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.sp-name:hover { color:#1db954; }
-.sp-rename-input { width:100%; padding:1px 4px; border:1px solid #1db954; border-radius:3px; background:var(--bg-primary); color:var(--text-primary); font-family:var(--font-family); font-size:0.68rem; outline:none; box-sizing:border-box; }
-.sp-list-play-btn { width:22px; height:22px; border:none; border-radius:4px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.12s,color 0.12s,background 0.12s; flex-shrink:0; }
-.sp-list-item:hover .sp-list-play-btn { opacity:1; }
-.sp-list-play-btn:hover { color:#1db954; background:rgba(29,185,84,0.1); }
-.sp-list-del-btn { width:22px; height:22px; border:none; border-radius:4px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.12s,color 0.12s,background 0.12s; flex-shrink:0; }
-.sp-list-item:hover .sp-list-del-btn { opacity:1; }
-.sp-list-del-btn:hover { color:#ef4444; background:rgba(239,68,68,0.1); }
-
-/* ─── MOBILE SIDEBAR ──────────────────────────────────────── */
-@media (max-width: 768px) {
-  .hub-sidebar {
-    position: fixed; left: 0; top: 0; width: 240px; min-width: 240px;
-    transform: translateX(-100%); transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 10; box-shadow: none;
-  }
-  .hub-sidebar.open {
-    transform: translateX(0);
-    box-shadow: 8px 0 32px rgba(0,0,0,0.15);
-  }
-  .hub-sidebar.open .hub-workspace-name,
-  .hub-sidebar.open .hub-snav-item .snav-label,
-  .hub-sidebar.open .hub-sidebar-section-label,
-  .hub-sidebar.open .hub-sidebar-footer .btn span { display: block; }
-  .hub-sidebar.open .hub-snav-item { justify-content: flex-start; padding: var(--space-1) var(--space-2); }
-}
 
 /* ─── PRINT LAYOUT ────────────────────────────────────────── */
 @media print {
@@ -7670,6 +7633,7 @@ html.light .hub-add-popup {
    ════════════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
+  .hub-mobile-menu-btn { display: flex; }
   .hub-sidebar {
     position: fixed !important;
     left: 0 !important;

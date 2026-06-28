@@ -2424,6 +2424,17 @@ function initBubbleDockDrag(dock) {
     var item = e.target.closest('.bubble-dock-item');
     if (!item || item.classList.contains('placed') || e.button !== 0) return;
     e.preventDefault();
+    _startDockDrag(e, item);
+  });
+  dock.addEventListener('touchstart', function(e) {
+    var item = e.target.closest('.bubble-dock-item');
+    if (!item || item.classList.contains('placed') || e.touches.length !== 1) return;
+    e.preventDefault();
+    _startDockDrag(e, item, true);
+  });
+
+  function _startDockDrag(e, item, isTouch) {
+    var pos = isTouch ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
     var type = item.dataset.bubbleDockType;
     var rect = item.getBoundingClientRect();
     var itemW = 320;
@@ -2431,29 +2442,28 @@ function initBubbleDockDrag(dock) {
     _dockGhost = document.createElement('div');
     _dockGhost.className = 'bubble-dock-ghost';
     _dockGhost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.querySelector('.bdi-label')?.textContent || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';
-    var offX = e.clientX - rect.left;
-    var offY = e.clientY - rect.top;
-    _dockGhost.style.left = (e.clientX - offX) + 'px';
-    _dockGhost.style.top = (e.clientY - offY) + 'px';
+    var offX = pos.x - rect.left;
+    var offY = pos.y - rect.top;
+    _dockGhost.style.left = (pos.x - offX) + 'px';
+    _dockGhost.style.top = (pos.y - offY) + 'px';
     document.body.appendChild(_dockGhost);
     _dockDropPreview = document.createElement('div');
     _dockDropPreview.className = 'bubble-drop-preview';
     _dockDropPreview.style.display = 'none';
     if (_dockGrid) _dockGrid.appendChild(_dockDropPreview);
     _dockDragData = { type: type, offsetX: offX, offsetY: offY, itemWidth: itemW, itemHeight: itemH };
-  });
+  }
 
   if (!_dockDragGlobalWired) {
     _dockDragGlobalWired = true;
-    document.addEventListener('mousemove', function(e) {
+    function _dockMove(pos, gridRect) {
       if (!_dockDragData || !_dockGhost || !_dockDropPreview || !_dockGrid) return;
-      _dockGhost.style.left = (e.clientX - _dockDragData.offsetX) + 'px';
-      _dockGhost.style.top = (e.clientY - _dockDragData.offsetY) + 'px';
-      var gridRect = _dockGrid.getBoundingClientRect();
-      var isOverGrid = e.clientX >= gridRect.left && e.clientX <= gridRect.right && e.clientY >= gridRect.top && e.clientY <= gridRect.bottom;
+      _dockGhost.style.left = (pos.x - _dockDragData.offsetX) + 'px';
+      _dockGhost.style.top = (pos.y - _dockDragData.offsetY) + 'px';
+      var isOverGrid = pos.x >= gridRect.left && pos.x <= gridRect.right && pos.y >= gridRect.top && pos.y <= gridRect.bottom;
       if (isOverGrid) {
-        var relX = e.clientX - gridRect.left - _dockDragData.itemWidth / 2;
-        var relY = e.clientY - gridRect.top - _dockDragData.itemHeight / 2;
+        var relX = pos.x - gridRect.left - _dockDragData.itemWidth / 2;
+        var relY = pos.y - gridRect.top - _dockDragData.itemHeight / 2;
         var snappedX = Math.max(0, Math.min(snap(relX), gridRect.width - _dockDragData.itemWidth));
         var snappedY = Math.max(0, Math.min(snap(relY), gridRect.height - _dockDragData.itemHeight));
         _dockDropPreview.style.display = 'block';
@@ -2466,9 +2476,8 @@ function initBubbleDockDrag(dock) {
         _dockDropPreview.style.display = 'none';
         _dockGhost.classList.remove('bdg-over-grid');
       }
-    });
-
-    document.addEventListener('mouseup', function(e) {
+    }
+    function _dockEnd() {
       if (!_dockDragData || !_dockGhost) return;
       var placed = false;
       if (_dockGrid && _dockDropPreview && _dockDropPreview.style.display !== 'none') {
@@ -2484,7 +2493,23 @@ function initBubbleDockDrag(dock) {
         var grid2 = document.querySelector('.bento-grid');
         if (grid2) renderBubbleDock(grid2);
       }
+    }
+
+    document.addEventListener('mousemove', function(e) {
+      var gridRect = _dockGrid ? _dockGrid.getBoundingClientRect() : null;
+      if (!gridRect) return;
+      _dockMove({ x: e.clientX, y: e.clientY }, gridRect);
     });
+    document.addEventListener('touchmove', function(e) {
+      if (!_dockDragData || e.touches.length !== 1) return;
+      e.preventDefault();
+      var gridRect = _dockGrid ? _dockGrid.getBoundingClientRect() : null;
+      if (!gridRect) return;
+      _dockMove({ x: e.touches[0].clientX, y: e.touches[0].clientY }, gridRect);
+    }, { passive: false });
+
+    document.addEventListener('mouseup', _dockEnd);
+    document.addEventListener('touchend', _dockEnd);
   }
 }
 /* ─── HIDE popup ───────────────────────────── */

@@ -506,16 +506,17 @@ function init() {
     document.getElementById('importFileInput')?.click();
   });
 
-  // Mobile hamburger
-  var frHamburger = document.getElementById('hubHamburger');
-  var frSidebar = document.getElementById('hubSidebar');
+  // Mobile sidebar overlay + nav item close (shared handler in shared.js handles toggle)
   var frOverlay = document.getElementById('hubSidebarOverlay');
-  function closeFrSidebar() { frSidebar?.classList.remove('open'); frOverlay?.classList.remove('active'); }
-  frHamburger?.addEventListener('click', function() {
-    var isOpen = frSidebar?.classList.toggle('open');
-    frOverlay?.classList.toggle('active', isOpen);
-  });
+  function closeFrSidebar() { 
+    var s = document.getElementById('hubSidebar');
+    if (s) s.classList.remove('open');
+    frOverlay?.classList.remove('active');
+    var btn = document.getElementById('hubMobileMenuBtn');
+    if (btn) btn.classList.remove('hidden-btn');
+  }
   frOverlay?.addEventListener('click', closeFrSidebar);
+  var frSidebar = document.getElementById('hubSidebar');
   frSidebar?.querySelectorAll('.hub-snav-item').forEach(function(item) {
     item.addEventListener('click', closeFrSidebar);
   });
