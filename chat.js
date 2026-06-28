@@ -12,6 +12,11 @@ let chatState = {
   convUnsubscribe: null,
   msgUnsubscribe: null,
   panelOpen: false,
+  _prevUnreadCounts: {},
+  _isForeground: true,
+  _typingTimer: null,
+  _typingEmitTimer: 0,
+  otherUserTyping: false,
 };
 
 function generateConversationId(uid1, uid2) {
@@ -73,8 +78,22 @@ function subscribeToConversations() {
         convs.push({ id: doc.id, data: data });
       });
 
+      // Before updating, check for new unread messages to fire notifications
+      if (!chatState._isForeground && convs.length > 0) {
+        checkNewUnreadMessages(convs, activeId);
+      }
+
       chatState.conversations = convs;
       renderConversationList();
+
+      // Check typing indicator for active conversation
+      if (chatState.activeConversationId && chatState.activeFriendId) {
+        var activeConv = convs.find(function(c) { return c.id === chatState.activeConversationId; });
+        if (activeConv) {
+          checkUserTyping(activeConv.data, chatState.activeFriendId);
+          renderMessages();
+        }
+      }
 
       // Also update global unread count badge
       updateUnreadBadge();
@@ -274,8 +293,18 @@ function closeChatPanel() {
   }
 
   chatState.panelOpen = false;
-  chatState.activeConversationId = null;
   chatState.messages = [];
+  chatState.otherUserTyping = false;
+
+  // Clear typing indicator when closing (before nulling activeConversationId)
+  clearTyping();
+
+  if (chatState._typingTimer) {
+    clearTimeout(chatState._typingTimer);
+    chatState._typingTimer = null;
+  }
+
+  chatState.activeConversationId = null;
 
   if (chatState.msgUnsubscribe) {
     chatState.msgUnsubscribe();
@@ -351,10 +380,22 @@ function renderMessages() {
   if (!activeId) return;
 
   if (chatState.messages.length === 0) {
-    container.innerHTML = '<div class="chat-empty">' +
+    var emptyHtml = '<div class="chat-empty">' +
       '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>' +
       '<p>No messages yet</p>' +
       '<span>Send a message to start chatting</span></div>';
+
+    // Show typing indicator even in empty state
+    if (chatState.otherUserTyping) {
+      emptyHtml += '<div class="chat-typing-indicator">' +
+        '<span class="chat-typing-dot"></span>' +
+        '<span class="chat-typing-dot"></span>' +
+        '<span class="chat-typing-dot"></span>' +
+        '<span class="chat-typing-label">' + escapeHtml(chatState.activeFriendName) + ' is typing...</span>' +
+      '</div>';
+    }
+
+    container.innerHTML = emptyHtml;
     return;
   }
 
@@ -369,6 +410,16 @@ function renderMessages() {
         '<div class="chat-msg-text">' + escapeHtml(msg.data.text) + '</div>' +
         '<div class="chat-msg-time">' + timeStr + '</div>' +
       '</div>' +
+    '</div>';
+  }
+
+  // Append typing indicator if other user is typing
+  if (chatState.otherUserTyping && chatState.messages.length > 0) {
+    html += '<div class="chat-typing-indicator">' +
+      '<span class="chat-typing-dot"></span>' +
+      '<span class="chat-typing-dot"></span>' +
+      '<span class="chat-typing-dot"></span>' +
+      '<span class="chat-typing-label">' + escapeHtml(chatState.activeFriendName) + ' is typing...</span>' +
     '</div>';
   }
 
@@ -417,6 +468,88 @@ function fetchUserName(userId, callback) {
   });
 }
 
+// ─── TYPING INDICATOR ────────────────────────────────────
+function emitTyping() {
+  var activeId = getActiveUserId();
+  var convId = chatState.activeConversationId;
+  if (!activeId || !convId) return;
+
+  var db = getFirestoreDb();
+  if (!db) return;
+
+  // Throttle writes: at most once every 2 seconds per conversation
+  var now = Date.now();
+  if (now - chatState._typingEmitTimer < 2000) return;
+  chatState._typingEmitTimer = now;
+
+  db.collection('conversations').doc(convId).update({
+    ['typing.' + activeId]: firebase.firestore.FieldValue.serverTimestamp(),
+  }).catch(function() {});
+}
+
+function clearTyping() {
+  var activeId = getActiveUserId();
+  var convId = chatState.activeConversationId;
+  if (!activeId || !convId) return;
+
+  chatState._typingEmitTimer = 0;
+
+  var db = getFirestoreDb();
+  if (!db) return;
+
+  db.collection('conversations').doc(convId).update({
+    ['typing.' + activeId]: firebase.firestore.FieldValue.delete(),
+  }).catch(function() {});
+}
+
+function onChatInput() {
+  var input = document.getElementById('chatMsgInput');
+  if (!input) return;
+
+  // Auto-resize textarea
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+
+  // Emit typing indicator
+  emitTyping();
+
+  // Clear previous debounce timer
+  if (chatState._typingTimer) {
+    clearTimeout(chatState._typingTimer);
+  }
+
+  // After 2 seconds of no input, clear typing indicator
+  chatState._typingTimer = setTimeout(function() {
+    clearTyping();
+    chatState._typingTimer = null;
+  }, 2000);
+}
+
+function checkUserTyping(convData, otherUserId) {
+  if (!convData || !otherUserId) {
+    chatState.otherUserTyping = false;
+    return;
+  }
+
+  var typing = convData.typing;
+  if (!typing || !typing[otherUserId]) {
+    chatState.otherUserTyping = false;
+    return;
+  }
+
+  var ts = typing[otherUserId];
+  // If it's a Firestore Timestamp, convert to Date
+  if (ts && ts.toDate) {
+    var date = ts.toDate();
+    var elapsed = Date.now() - date.getTime();
+    // Consider typing valid for up to 4 seconds
+    chatState.otherUserTyping = elapsed < 4000;
+  } else {
+    // If it's a boolean or other truthy value
+    chatState.otherUserTyping = true;
+  }
+}
+
 // ─── SETUP CHAT PANEL EVENT LISTENERS ─────────────────────
 function setupChatPanel() {
   // Close overlay click
@@ -431,6 +564,12 @@ function setupChatPanel() {
     closeBtn.addEventListener('click', closeChatPanel);
   }
 
+  // Close button 2
+  var closeBtn2 = document.getElementById('chatCloseBtn2');
+  if (closeBtn2) {
+    closeBtn2.addEventListener('click', closeChatPanel);
+  }
+
   // Send message
   var sendBtn = document.getElementById('chatSendBtn');
   var input = document.getElementById('chatMsgInput');
@@ -440,6 +579,12 @@ function setupChatPanel() {
     var text = input.value.trim();
     if (!text) return;
     sendMessage(text);
+    // Clear typing when message is sent
+    clearTyping();
+    if (chatState._typingTimer) {
+      clearTimeout(chatState._typingTimer);
+      chatState._typingTimer = null;
+    }
   }
 
   if (sendBtn) {
@@ -454,11 +599,56 @@ function setupChatPanel() {
       }
     });
 
-    // Auto-resize textarea
-    input.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    // Typing indicator + auto-resize
+    input.addEventListener('input', onChatInput);
+
+    // Clear typing on blur
+    input.addEventListener('blur', function() {
+      if (chatState._typingTimer) {
+        clearTimeout(chatState._typingTimer);
+        chatState._typingTimer = null;
+      }
+      clearTyping();
     });
+  }
+}
+
+// ─── CHECK NEW UNREAD MESSAGES FOR NOTIFICATIONS ─────────
+function checkNewUnreadMessages(convs, activeId) {
+  var permission = typeof Notification !== 'undefined' && Notification.permission;
+  if (permission !== 'granted') return;
+
+  for (var i = 0; i < convs.length; i++) {
+    var conv = convs[i];
+    var currentUnread = getUnreadCount({ id: conv.id, data: conv.data });
+    var prevUnread = chatState._prevUnreadCounts[conv.id] || 0;
+
+    if (currentUnread > prevUnread) {
+      // New messages in this conversation — fetch sender info
+      var lastMsg = conv.data.lastMessage;
+      if (lastMsg && lastMsg.from !== activeId) {
+        fetchUserName(lastMsg.from, function(senderName) {
+          var body = lastMsg.text || 'New message';
+          var truncatedBody = body.length > 100 ? body.slice(0, 97) + '...' : body;
+          _sendNotification(
+            senderName,
+            truncatedBody,
+            {
+              tag: 'chat-' + conv.id,
+              onClick: function() {
+                window.focus();
+                var otherId = conv.data.participants.find(function(p) { return p !== activeId; });
+                if (otherId && typeof openChatPanel === 'function') {
+                  openChatPanel(otherId, senderName);
+                }
+              }
+            }
+          );
+        });
+      }
+    }
+
+    chatState._prevUnreadCounts[conv.id] = currentUnread;
   }
 }
 
@@ -470,6 +660,39 @@ function initChat() {
   initFirestore();
   subscribeToConversations();
   setupChatPanel();
+
+  // Request notification permission for chat alerts
+  if (typeof requestNotifPermission === 'function') {
+    requestNotifPermission();
+  }
+
+  // Track page visibility for background notification logic
+  document.addEventListener('visibilitychange', function() {
+    chatState._isForeground = document.visibilityState === 'visible';
+
+    // When coming back to foreground, update prevUnreadCounts to avoid re-notifying
+    if (chatState._isForeground) {
+      for (var i = 0; i < chatState.conversations.length; i++) {
+        var conv = chatState.conversations[i];
+        chatState._prevUnreadCounts[conv.id] = getUnreadCount({ id: conv.id, data: conv.data });
+      }
+    }
+  });
+
+  // Also track window blur/focus for more accurate foreground detection
+  window.addEventListener('focus', function() {
+    chatState._isForeground = true;
+    for (var i = 0; i < chatState.conversations.length; i++) {
+      var conv = chatState.conversations[i];
+      chatState._prevUnreadCounts[conv.id] = getUnreadCount({ id: conv.id, data: conv.data });
+    }
+  });
+  window.addEventListener('blur', function() {
+    chatState._isForeground = false;
+  });
+
+  // Set initial state
+  chatState._isForeground = document.visibilityState === 'visible' && document.hasFocus();
 }
 
 // Expose globals

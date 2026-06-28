@@ -289,6 +289,11 @@ function initGSI() {
     location.href = 'login.html';
     return;
   }
+
+  // Initialize chat badge for unread message count
+  if (typeof initChatBadge === 'function') {
+    initChatBadge();
+  }
 }
 
 function isLoginPage() {
