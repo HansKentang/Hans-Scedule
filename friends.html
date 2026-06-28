@@ -10,36 +10,36 @@
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icon.svg">
-  <title>Havën Schedule — Gallery</title>
+  <title>Havën Schedule — Friends</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-    <style>
-    /* ─── GALLERY HERO ───────────────────────────────── */
-    .gl-hero {
+  <style>
+    /* ─── FRIENDS PAGE ──────────────────────────────── */
+    .fr-hero {
       position: relative; height: 200px; overflow: hidden; flex-shrink: 0;
     }
-    .gl-hero-bg {
+    .fr-hero-bg {
       width: 100%; height: 100%; object-fit: cover;
       opacity: 0.5;
       transition: opacity 0.6s ease;
     }
-    .gl-hero:hover .gl-hero-bg { opacity: 0.55; }
-    .gl-hero-overlay {
+    .fr-hero:hover .fr-hero-bg { opacity: 0.55; }
+    .fr-hero-overlay {
       position: absolute; inset: 0;
       background: linear-gradient(to top, var(--bg-primary) 0%, transparent 60%),
                   linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 50%);
       pointer-events: none;
     }
-    .gl-hero-inner {
+    .fr-hero-inner {
       position: absolute; inset: 0;
       display: flex; align-items: flex-end; justify-content: space-between;
       padding: var(--space-5) var(--container-padding);
       gap: var(--space-4);
     }
-    .gl-hero-text { min-width: 0; }
-    .gl-hero-title {
+    .fr-hero-text { min-width: 0; }
+    .fr-hero-title {
       font-family: var(--font-serif);
       font-size: 1.75rem; font-weight: 500;
       letter-spacing: -0.02em;
@@ -47,180 +47,244 @@
       line-height: 1.15;
       margin-bottom: var(--space-1);
     }
-    .gl-hero-meta {
+    .fr-hero-meta {
       display: flex; align-items: center; gap: var(--space-2);
       font-size: 0.75rem; color: var(--text-tertiary);
       flex-wrap: wrap;
     }
-    .gl-hero-dot {
+    .fr-hero-dot {
       width: 3px; height: 3px; border-radius: 50%;
       background: var(--text-tertiary); opacity: 0.4;
     }
-    .gl-hero-sub {
+    .fr-hero-sub {
       font-size: 0.68rem; color: var(--text-tertiary);
       margin-top: var(--space-1);
       font-weight: 400;
       opacity: 0.65;
     }
     @media (max-width: 768px) {
-      .gl-hero { height: 170px; }
-      .gl-hero-title { font-size: 1.4rem; }
-      .gl-hero-inner { padding: var(--space-4) var(--space-4); }
+      .fr-hero { height: 170px; }
+      .fr-hero-title { font-size: 1.4rem; }
+      .fr-hero-inner { padding: var(--space-4) var(--space-4); }
     }
 
-    /* ─── GALLERY VISION BOARD ───────────────────────── */
-    .gal-top-actions {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-2);
+    /* ─── FRIEND CODE CARD ──────────────────────────── */
+    .fr-code-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl); padding: var(--space-5);
+      margin-bottom: var(--space-6);
+      transition: all var(--t-base);
     }
-    .gal-top-title {
+    .fr-code-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .fr-code-label {
+      font-size: 0.68rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.07em; color: var(--text-tertiary);
+      margin-bottom: var(--space-2);
+    }
+    .fr-code-row {
+      display: flex; align-items: center; gap: var(--space-3);
+    }
+    .fr-code-value {
+      font-family: var(--font-mono); font-size: 1.1rem; font-weight: 700;
+      color: var(--text-primary); letter-spacing: 0.04em;
+      padding: var(--space-2) var(--space-3);
+      background: var(--bg-secondary); border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      user-select: all;
+      flex: 1;
+    }
+    .fr-copy-btn {
+      display: flex; align-items: center; gap: var(--space-1);
+      padding: var(--space-2) var(--space-4);
+      border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+      background: transparent; color: var(--text-secondary);
+      font-size: 0.78rem; font-weight: 500; cursor: pointer;
+      font-family: var(--font-family);
+      transition: all var(--t-fast);
+      white-space: nowrap;
+    }
+    .fr-copy-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--accent-soft); }
+    .fr-copy-btn.copied { border-color: #10b981; color: #10b981; background: color-mix(in srgb, #10b981 10%, transparent); }
+
+    /* ─── ADD FRIEND SECTION ────────────────────────── */
+    .fr-add-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl); padding: var(--space-5);
+      margin-bottom: var(--space-6);
+      transition: all var(--t-base);
+    }
+    .fr-add-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .fr-add-header {
+      font-size: 1rem; font-weight: 600; color: var(--text-primary);
+      margin-bottom: var(--space-3);
+    }
+    .fr-add-row {
+      display: flex; align-items: center; gap: var(--space-3);
+    }
+    .fr-add-input {
+      flex: 1; padding: var(--space-2) var(--space-3);
+      font-size: 0.85rem; font-family: var(--font-mono);
+      background: var(--bg-secondary); color: var(--text-primary);
+      border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+      outline: none; transition: border-color var(--t-fast);
+    }
+    .fr-add-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent); }
+    .fr-add-input::placeholder { color: var(--text-tertiary); font-family: var(--font-family); }
+    .fr-add-btn {
+      display: flex; align-items: center; gap: var(--space-1);
+      padding: var(--space-2) var(--space-5);
+      border: none; border-radius: var(--radius-lg);
+      background: var(--primary); color: var(--on-primary);
+      font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      font-family: var(--font-family);
+      transition: all var(--t-fast);
+      white-space: nowrap;
+    }
+    .fr-add-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+    .fr-add-btn:active { transform: scale(0.97); }
+    .fr-add-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .fr-add-status {
+      font-size: 0.72rem; color: var(--text-tertiary);
+      margin-top: var(--space-2); min-height: 1.2em;
+    }
+    .fr-add-status.success { color: #10b981; }
+    .fr-add-status.error { color: #ef4444; }
+
+    /* ─── FRIEND LIST ───────────────────────────────── */
+    .fr-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+    .fr-section-title {
       font-family: var(--font-serif); font-size: 1.2rem; font-weight: 500;
       color: var(--text-primary);
     }
-    .gal-top-count {
+    .fr-section-count {
       font-size: 0.68rem; color: var(--text-tertiary);
       font-weight: 500;
     }
-    .gal-actions-row {
-      display: flex; gap: var(--space-2);
-    }
 
-    .gal-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: var(--space-4);
-      margin-bottom: var(--space-6);
+    .fr-tabs {
+      display: flex; gap: var(--space-1);
+      margin-bottom: var(--space-4);
+      padding-bottom: var(--space-2);
+      border-bottom: 1px solid var(--border-subtle);
     }
-    .gal-item {
-      position: relative;
-      aspect-ratio: 4 / 3;
-      border-radius: var(--radius-xl);
-      overflow: hidden;
-      background: var(--surface-container-low);
-      border: 1px solid var(--border-color);
-      cursor: pointer;
-      transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .gal-item:hover {
-      border-color: var(--text-primary);
-      box-shadow: var(--shadow-sm);
-      transform: translateY(-2px);
-    }
-    .gal-item img {
-      width: 100%; height: 100%; object-fit: cover;
-      display: block;
-      transition: transform 0.5s ease;
-    }
-    .gal-item:hover img { transform: scale(1.04); }
-
-    /* Empty / placeholder state */
-    .gal-item-placeholder {
-      border: 2px dashed var(--border-color);
-      background: transparent;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: var(--space-2);
+    .fr-tab {
+      padding: var(--space-1) var(--space-3);
+      border: none; background: transparent;
       color: var(--text-tertiary);
-    }
-    .gal-item-placeholder:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 6%, transparent);
-    }
-    .gal-item-placeholder svg {
-      width: 28px; height: 28px; opacity: 0.4;
-    }
-    .gal-item-placeholder span {
-      font-size: 0.75rem; font-weight: 500;
-    }
-
-    /* Edit overlay (visible on hover in edit mode) */
-    .gal-item-remove {
-      position: absolute; top: 8px; right: 8px;
-      width: 28px; height: 28px; border-radius: 50%;
-      border: none;
-      background: color-mix(in srgb, #000 50%, transparent);
-      color: #fff;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0;
+      font-size: 0.65rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      cursor: pointer; border-radius: var(--radius-md);
       transition: all var(--t-fast);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      font-size: 0.9rem; padding: 0; z-index: 2;
+      font-family: var(--font-family);
     }
-    .gal-item:hover .gal-item-remove,
-    .edit-mode .gal-item .gal-item-remove { opacity: 1; }
-    .gal-item-remove:hover {
-      background: rgba(239, 68, 68, 0.85);
-      transform: scale(1.15);
+    .fr-tab:hover { color: var(--text-primary); background: var(--accent-soft); }
+    .fr-tab.active { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+    .fr-tab-count {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 50%;
+      font-size: 0.55rem; font-weight: 700;
+      background: var(--accent-soft); color: var(--text-tertiary);
+      margin-left: 4px; vertical-align: middle;
     }
+    .fr-tab.active .fr-tab-count { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
 
-    /* Drag handle overlay */
-    .gal-item-drag {
-      position: absolute; top: 8px; left: 8px;
-      width: 28px; height: 28px; border-radius: 50%;
-      background: color-mix(in srgb, #000 50%, transparent);
-      color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0;
+    .fr-list {
+      display: flex; flex-direction: column; gap: var(--space-2);
+    }
+    .fr-item {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
       transition: all var(--t-fast);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      cursor: grab;
-      font-size: 0.8rem; z-index: 2;
+      cursor: default;
+      animation: frItemIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
     }
-    .edit-mode .gal-item .gal-item-drag,
-    .gal-item:hover .gal-item-drag { opacity: 1; }
-    .gal-item-drag:active { cursor: grabbing; }
+    .fr-item:hover { border-color: var(--border-color); }
+    .fr-item:nth-child(1) { animation-delay: 0.03s; }
+    .fr-item:nth-child(2) { animation-delay: 0.06s; }
+    .fr-item:nth-child(3) { animation-delay: 0.09s; }
+    .fr-item:nth-child(4) { animation-delay: 0.12s; }
+    .fr-item:nth-child(5) { animation-delay: 0.15s; }
+    @keyframes frItemIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fr-item-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 700; color: var(--text-inverse);
+      flex-shrink: 0; overflow: hidden;
+    }
+    .fr-item-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .fr-item-info { flex: 1; min-width: 0; }
+    .fr-item-name {
+      font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .fr-item-status {
+      font-size: 0.65rem; color: var(--text-tertiary);
+      display: flex; align-items: center; gap: var(--space-1);
+      margin-top: 1px;
+    }
+    .fr-item-status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      display: inline-block;
+    }
+    .fr-item-status-dot.online { background: #10b981; }
+    .fr-item-status-dot.offline { background: var(--text-tertiary); opacity: 0.4; }
 
-    /* Empty state */
-    .gal-empty {
+    .fr-item-actions {
+      display: flex; gap: var(--space-1); flex-shrink: 0;
+    }
+    .fr-item-action-btn {
+      width: 30px; height: 30px; border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle); background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--t-fast); padding: 0;
+    }
+    .fr-item-action-btn:hover { border-color: var(--border-color); color: var(--text-primary); background: var(--accent-soft); }
+    .fr-item-action-btn.accept { color: #10b981; border-color: color-mix(in srgb, #10b981 30%, transparent); }
+    .fr-item-action-btn.accept:hover { background: color-mix(in srgb, #10b981 10%, transparent); border-color: #10b981; }
+    .fr-item-action-btn.decline { color: #ef4444; border-color: color-mix(in srgb, #ef4444 30%, transparent); }
+    .fr-item-action-btn.decline:hover { background: color-mix(in srgb, #ef4444 10%, transparent); border-color: #ef4444; }
+
+    /* ─── EMPTY STATE ───────────────────────────────── */
+    .fr-empty {
       text-align: center; padding: var(--space-10) var(--space-4);
       color: var(--text-tertiary);
     }
-    .gal-empty svg { width: 48px; height: 48px; margin-bottom: var(--space-3); opacity: 0.15; }
-    .gal-empty p { font-size: 0.9rem; font-weight: 500; margin-bottom: var(--space-2); }
-    .gal-empty .sub { font-size: 0.75rem; opacity: 0.6; }
-    .gal-empty .btn {
-      margin-top: var(--space-3);
+    .fr-empty svg { width: 48px; height: 48px; margin-bottom: var(--space-3); opacity: 0.15; }
+    .fr-empty p { font-size: 0.9rem; font-weight: 500; margin-bottom: var(--space-2); }
+    .fr-empty .sub { font-size: 0.75rem; opacity: 0.6; }
+
+    /* ─── PENDING BADGE ──────────────────────────────── */
+    .fr-pending-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 0.55rem; font-weight: 600; padding: 2px 8px;
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, #f59e0b 12%, transparent);
+      color: #f59e0b;
     }
 
-    /* Stagger animations */
-    .gal-item { animation: galItemIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-    .gal-item:nth-child(1) { animation-delay: 0.03s; }
-    .gal-item:nth-child(2) { animation-delay: 0.06s; }
-    .gal-item:nth-child(3) { animation-delay: 0.09s; }
-    .gal-item:nth-child(4) { animation-delay: 0.12s; }
-    .gal-item:nth-child(5) { animation-delay: 0.15s; }
-    .gal-item:nth-child(6) { animation-delay: 0.18s; }
-    .gal-item:nth-child(7) { animation-delay: 0.21s; }
-    .gal-item:nth-child(8) { animation-delay: 0.24s; }
-    .gal-item:nth-child(9) { animation-delay: 0.27s; }
-    .gal-item:nth-child(10) { animation-delay: 0.30s; }
-    @keyframes galItemIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    /* ─── CHAT BUTTON ───────────────────────────────── */
+    .fr-item-action-btn.chat { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+    .fr-item-action-btn.chat:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: var(--accent); color: var(--accent); }
 
-    /* Dragging state */
-    .gal-item.dragging {
-      opacity: 0.5;
-      transform: scale(0.95);
-      transition: all 150ms ease !important;
-    }
-    .gal-item.drag-over {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px var(--primary);
-    }
-
+    /* ─── RESPONSIVE ─────────────────────────────────── */
     @media (max-width: 640px) {
-      .gal-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
-      .gal-hero-title { font-size: 1.3rem; }
+      .fr-code-row { flex-direction: column; align-items: stretch; }
+      .fr-copy-btn { justify-content: center; }
+      .fr-add-row { flex-direction: column; align-items: stretch; }
+      .fr-add-btn { justify-content: center; }
+      .fr-item { flex-wrap: wrap; }
+      .fr-item-actions { margin-left: auto; }
     }
-    @media (max-width: 400px) {
-      .gal-grid { grid-template-columns: 1fr; }
-    }
+
     .hub-menu-panel { position:fixed; top:0; right:0; width:300px; max-width:85vw; height:100vh; background:var(--bg-primary); border-left:1px solid var(--border-color); z-index:10000; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 200ms cubic-bezier(0.16,1,0.3,1); box-shadow:-4px 0 24px rgba(0,0,0,0.12); }
     .hub-menu-panel.open { transform:translateX(0); }
     .hub-menu-panel.hidden { display:flex; }
@@ -241,11 +305,6 @@
     .hub-menu-panel-item:hover { background:var(--hover-bg,rgba(128,128,128,0.08)); }
     .hub-menu-spacer { flex:1; min-height:0; }
     .hub-menu-footer { border-top:1px solid var(--border-subtle); padding-top:var(--space-2); }
-    .hub-menu-plus-popup { background:var(--surface); border:1px solid var(--border-color); border-radius:10px; padding:6px; margin-top:4px; box-shadow:var(--shadow-lg, 0 8px 30px rgba(0,0,0,0.15)); }
-    .hub-menu-plus-popup.hidden { display:none; }
-    #menuPlusList { display:flex; flex-direction:column; gap:2px; }
-    #menuPlusList .plus-action-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; border:none; background:none; cursor:pointer; font-size:0.8rem; color:var(--text-primary); text-align:left; width:100%; transition:background 0.15s; }
-    #menuPlusList .plus-action-item:hover { background:var(--accent-bg, rgba(128,128,128,0.1)); }
   </style>
 </head>
 <body>
@@ -256,7 +315,7 @@
   </div>
 
   <div class="hub-layout">
-    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────── -->
+    <!-- ─── SIDEBAR OVERLAY (mobile) ─────────────────── -->
     <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
     <!-- ─── HAMBURGER SIDE PANEL ─────────────────────── -->
     <div class="hub-menu-overlay" id="hubMenuOverlay"></div>
@@ -283,7 +342,7 @@
         <button class="hub-menu-panel-item" id="menuHelp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</button>
       </div>
     </div>
-    <!-- ─── SIDEBAR ───────────────────────────────── -->
+    <!-- ─── SIDEBAR ─────────────────────────────────── -->
     <aside class="hub-sidebar" id="hubSidebar">
       <div class="hub-workspace">
         <div class="hub-workspace-icon">H</div>
@@ -302,8 +361,8 @@
           <a href="analytics.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="snav-label">Analytics</span></a>
           <a href="goals.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span class="snav-label">Goals</span></a>
           <a href="finance.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="snav-label">Finance</span></a>
-          <a href="gallery.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
-          <a href="friends.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="snav-label">Friends</span></a>
+          <a href="gallery.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
+          <a href="friends.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="snav-label">Friends</span></a>
         </div>
       </nav>
       <div class="hub-sidebar-body">
@@ -348,26 +407,25 @@
           <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><span>Theme</span></button>
           <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
           <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Visuals</span></button>
-
         </div>
       </div>
     </aside>
 
     <!-- ─── MAIN ───────────────────────────────────────── -->
     <div class="hub-main">
-      <!-- ─── HERO ────────────────────────────────────── -->
-      <section class="gl-hero">
-        <img data-image-id="gallery-hero" src="" alt="Gallery hero" class="gl-hero-bg">
-        <div class="gl-hero-overlay"></div>
-        <div class="gl-hero-inner">
-          <div class="gl-hero-text">
-            <h1 class="gl-hero-title">Gallery</h1>
-            <div class="gl-hero-meta">
-              <span id="galPageMeta">Vision Board</span>
-              <span class="gl-hero-dot"></span>
-              <span id="galImageCount">0 images</span>
+      <!-- ─── HERO ───────────────────────────────────── -->
+      <section class="fr-hero">
+        <img data-image-id="friends-hero" src="" alt="Friends hero" class="fr-hero-bg">
+        <div class="fr-hero-overlay"></div>
+        <div class="fr-hero-inner">
+          <div class="fr-hero-text">
+            <h1 class="fr-hero-title">Friends</h1>
+            <div class="fr-hero-meta">
+              <span id="frPageMeta">Connect with others</span>
+              <span class="fr-hero-dot"></span>
+              <span id="frFriendCount">0 friends</span>
             </div>
-            <div class="gl-hero-sub" id="galHeroSub">Your designs &amp; posters</div>
+            <div class="fr-hero-sub" id="frHeroSub">Share progress and stay motivated together</div>
           </div>
           <div id="gsiContainer" class="gsi-section"></div>
         </div>
@@ -375,27 +433,53 @@
 
       <div class="hub-content hub-page-transition">
 
-        <!-- ─── GALLERY GRID ───────────────────────── -->
+        <!-- ─── FRIEND CODE CARD ─────────────────────── -->
         <div class="hub-anim-in hub-anim-in-2" style="margin-bottom:var(--space-6)">
-          <div class="gal-top-actions hub-anim-in hub-anim-in-3">
-            <div>
-              <div class="gal-top-title">Vision Board</div>
-              <span class="gal-top-count" id="galCount">0 images</span>
-            </div>
-            <div class="gal-actions-row">
-              <button class="btn btn-ghost" id="galResetBtn" title="Reset all gallery images" style="display:none">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-                Reset
-              </button>
-              <button class="btn btn-outline" id="galAddBtn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add Image
+          <div class="fr-code-card">
+            <div class="fr-code-label">Your Friend Code</div>
+            <div class="fr-code-row">
+              <span class="fr-code-value" id="frCodeDisplay">—</span>
+              <button class="fr-copy-btn" id="frCopyBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Copy
               </button>
             </div>
           </div>
 
-          <!-- Gallery Grid -->
-          <div class="gal-grid hub-anim-in hub-anim-in-4" id="galGrid"></div>
+          <!-- ─── ADD FRIEND CARD ───────────────────── -->
+          <div class="fr-add-card">
+            <div class="fr-add-header">Add a Friend</div>
+            <div class="fr-add-row">
+              <input type="text" id="frAddInput" class="fr-add-input" placeholder="Enter friend code (e.g. haven-abc1234)" autocomplete="off" spellcheck="false">
+              <button class="fr-add-btn" id="frAddBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Friend
+              </button>
+            </div>
+            <div class="fr-add-status" id="frAddStatus"></div>
+          </div>
+        </div>
+
+        <!-- ─── FRIEND LIST ─────────────────────────── -->
+        <div class="hub-anim-in hub-anim-in-3" style="margin-bottom:var(--space-6)">
+          <div class="fr-section-header">
+            <div class="fr-section-title">Connections</div>
+            <span class="fr-section-count" id="frTotalCount">0 connections</span>
+          </div>
+
+          <div class="fr-tabs" id="frTabs">
+            <button class="fr-tab active" data-tab="all">All <span class="fr-tab-count" id="frTabAllCount">0</span></button>
+            <button class="fr-tab" data-tab="pending">Pending <span class="fr-tab-count" id="frTabPendingCount">0</span></button>
+            <button class="fr-tab" data-tab="accepted">Accepted <span class="fr-tab-count" id="frTabAcceptedCount">0</span></button>
+          </div>
+
+          <div class="fr-list" id="frList">
+            <div class="fr-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+              <p>No friends yet</p>
+              <div class="sub">Share your friend code or enter a friend's code to connect</div>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -576,13 +660,237 @@
       <div class="help-section">
         <div class="help-section-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Tips and Tricks</div>
         <div class="help-tips">
-          <div class="help-tip"><span class="help-tip-icon">🖼️</span><div class="help-tip-text">Click any image to customize it — paste an image or URL</div></div>
-          <div class="help-tip"><span class="help-tip-icon">📎</span><div class="help-tip-text">Toggle Edit Mode (Visuals) to see the reset option on custom images</div></div>
-          <div class="help-tip"><span class="help-tip-icon">📋</span><div class="help-tip-text">Use "Add Image" to add new vision board slots</div></div>
+          <div class="help-tip"><span class="help-tip-icon">🔗</span><div class="help-tip-text">Share your friend code with others to connect and see each other's progress</div></div>
+          <div class="help-tip"><span class="help-tip-icon">🔍</span><div class="help-tip-text">Search for friends by their unique friend code — it's in the format <em>haven-xxxxxxx</em></div></div>
+          <div class="help-tip"><span class="help-tip-icon">🖼️</span><div class="help-tip-text">Toggle Edit Mode (Visuals) to customize images throughout the app</div></div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- ─── FRIEND CHAT PANEL ────────────────────── -->
+  <div id="chatOverlay" class="chat-panel-overlay hidden"></div>
+  <div id="chatPanel" class="chat-panel hidden" role="dialog" aria-label="Friend Chat">
+    <div class="chat-panel-header">
+      <div class="chat-panel-header-left">
+        <div class="chat-panel-back" id="chatCloseBtn" title="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        </div>
+        <div class="chat-panel-avatar" id="chatPanelAvatar">?</div>
+        <div>
+          <div class="chat-panel-title" id="chatFriendName">Friend</div>
+          <div class="chat-panel-subtitle">Chat</div>
+        </div>
+      </div>
+      <div class="chat-panel-header-actions">
+        <button class="chat-panel-close-btn" id="chatCloseBtn2" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="chat-panel-body">
+      <div class="chat-messages" id="chatMessages">
+        <div class="chat-empty">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <p>No messages yet</p>
+          <span>Send a message to start chatting</span>
+        </div>
+      </div>
+    </div>
+    <div class="chat-panel-footer">
+      <div class="chat-input-wrapper">
+        <textarea id="chatMsgInput" class="chat-input" placeholder="Type a message..." rows="1" autocomplete="off"></textarea>
+        <button id="chatSendBtn" class="chat-send-btn" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* ─── CHAT PANEL ──────────────────────────────────── */
+    .chat-panel-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(0,0,0,0.4);
+      opacity: 0; pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+    .chat-panel-overlay.active {
+      opacity: 1; pointer-events: auto;
+    }
+    .chat-panel {
+      position: fixed;
+      bottom: 0; right: 0;
+      z-index: 51;
+      width: 380px; max-width: 100vw;
+      height: 520px; max-height: 80dvh;
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: 16px 16px 0 0;
+      box-shadow: -4px 0 40px rgba(0,0,0,0.25);
+      display: flex; flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .chat-panel.open {
+      transform: translateY(0);
+    }
+    .chat-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+    .chat-panel-header-left {
+      display: flex; align-items: center; gap: var(--space-2);
+      min-width: 0;
+    }
+    .chat-panel-back {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--t-fast); flex-shrink: 0;
+    }
+    .chat-panel-back:hover {
+      background: var(--accent-soft); color: var(--text-primary);
+    }
+    .chat-panel-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent-soft);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent); flex-shrink: 0;
+      font-size: 0.7rem; font-weight: 700;
+    }
+    .chat-panel-title {
+      font-size: 0.78rem; font-weight: 600; color: var(--text-primary);
+      line-height: 1.2;
+    }
+    .chat-panel-subtitle {
+      font-size: 0.62rem; color: var(--text-tertiary);
+    }
+    .chat-panel-header-actions {
+      display: flex; gap: var(--space-1); flex-shrink: 0;
+    }
+    .chat-panel-close-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none; background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--t-fast);
+    }
+    .chat-panel-close-btn:hover {
+      background: var(--accent-soft); color: var(--text-primary);
+    }
+    .chat-panel-body {
+      flex: 1; overflow-y: auto;
+      padding: var(--space-3) var(--space-4);
+    }
+    .chat-messages {
+      display: flex; flex-direction: column;
+      gap: var(--space-3); min-height: 100%;
+    }
+    .chat-empty {
+      text-align: center; padding: var(--space-8) var(--space-2);
+      color: var(--text-tertiary); font-size: 0.78rem;
+      line-height: 1.6;
+    }
+    .chat-empty svg {
+      width: 40px; height: 40px; margin-bottom: var(--space-3);
+      opacity: 0.15;
+    }
+    .chat-empty p {
+      font-size: 0.9rem; font-weight: 600; color: var(--text-tertiary);
+      margin-bottom: var(--space-1);
+    }
+    .chat-empty span {
+      font-size: 0.72rem; opacity: 0.6;
+    }
+    .chat-msg {
+      display: flex;
+      animation: chatMsgIn 250ms cubic-bezier(0.16, 1, 0.3, 1);
+      max-width: 85%;
+    }
+    @keyframes chatMsgIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .chat-msg-mine {
+      align-self: flex-end;
+    }
+    .chat-msg-mine .chat-msg-bubble {
+      background: var(--accent);
+      color: var(--text-inverse);
+      border-radius: 14px 14px 4px 14px;
+    }
+    .chat-msg-theirs {
+      align-self: flex-start;
+    }
+    .chat-msg-theirs .chat-msg-bubble {
+      background: var(--surface-container-high);
+      border-radius: 14px 14px 14px 4px;
+      border: 1px solid var(--border-subtle);
+    }
+    .chat-msg-bubble {
+      padding: 8px 14px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .chat-msg-text {
+      color: inherit;
+    }
+    .chat-msg-mine .chat-msg-text {
+      color: inherit;
+    }
+    .chat-msg-time {
+      font-size: 0.58rem;
+      opacity: 0.6;
+      margin-top: 4px;
+      text-align: right;
+    }
+    .chat-panel-footer {
+      border-top: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+    .chat-input-wrapper {
+      padding: var(--space-2) var(--space-4) var(--space-3);
+      display: flex; gap: var(--space-2); align-items: flex-end;
+    }
+    .chat-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      font-size: 0.82rem; font-family: var(--font-family);
+      background: var(--surface-container-low);
+      color: var(--text-primary);
+      outline: none; resize: none;
+      transition: border-color var(--t-base), box-shadow var(--t-base);
+      line-height: 1.4;
+      max-height: 120px;
+    }
+    .chat-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
+    }
+    .chat-input::placeholder {
+      color: var(--text-tertiary);
+    }
+    .chat-send-btn {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: none; background: var(--accent); color: var(--text-inverse);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all var(--t-fast);
+      flex-shrink: 0;
+    }
+    .chat-send-btn:hover {
+      opacity: 0.85; transform: scale(1.05);
+    }
+    .chat-send-btn:active {
+      transform: scale(0.92);
+    }
+  </style>
 
   <!-- ─── AI CHAT PANEL ────────────────────────── -->
   <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
@@ -603,7 +911,7 @@
     <div class="ai-panel-body"><div class="ai-messages" id="aiChatMessages"></div></div>
     <div class="ai-panel-footer">
       <div class="ai-input-wrapper" id="aiChatInputWrapper">
-        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your gallery..." autocomplete="off">
+        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your friends..." autocomplete="off">
         <button id="aiChatSend" class="ai-send-btn show" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
       </div>
       <div class="ai-panel-footer-hint"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg><span>Natural language scheduling</span></div>
@@ -621,7 +929,8 @@
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
   <script src="firestore.js"></script>
   <script src="gsi.js"></script>
-  <script src="gallery.js"></script>
+  <script src="friends.js"></script>
+  <script src="chat.js"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
 
   <!-- ─── Spotify Settings Modal ──────────────── -->

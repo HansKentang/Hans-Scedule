@@ -1871,6 +1871,7 @@ const DEFAULT_IMAGES = {
   'hub-image-8': 'https://picsum.photos/seed/haven-canvas-8/600/400',
   'hub-image-9': 'https://picsum.photos/seed/haven-canvas-9/600/400',
   'hub-image-10': 'https://picsum.photos/seed/haven-canvas-10/600/400',
+  'friends-hero': 'https://picsum.photos/seed/haven-friends-hero/1200/500',
   'gallery-hero': 'https://picsum.photos/seed/gallery-hero/1200/500',
   'sidebar-schedule': 'https://images.unsplash.com/photo-1562537218-26057ef20502?auto=format&fit=crop&w=440&q=80',
   'sidebar-activities': 'https://images.unsplash.com/photo-1742055700759-e393a5314287?auto=format&fit=crop&w=440&q=80',

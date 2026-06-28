@@ -138,6 +138,19 @@ function guestSignOut() {
   location.href = 'login.html';
 }
 
+// ─── Firebase Firestore sync ───────────────────────────
+function syncProfileToFirestore(user) {
+  if (typeof syncUserToFirestore === 'function') {
+    syncUserToFirestore(user).catch(function() {});
+  }
+}
+
+function removeProfileFromFirestore(id) {
+  if (typeof removeUserFromFirestore === 'function') {
+    removeUserFromFirestore(id).catch(function() {});
+  }
+}
+
 // ─── Firebase Google Sign-In ──────────────────────────
 var FIREBASE_CONFIG = {
   apiKey: "AIzaSyDhGJuLw9TW7i6GUQkhVQwOSRkX4nAoS8g",
@@ -179,6 +192,8 @@ function handleFirebaseUser(fbUser) {
   if (typeof state !== 'undefined') state.currentUserId = user.id;
   migrateExistingData(user.id);
   renderAuthUI();
+  // Sync user profile to Firestore for the friend system
+  syncProfileToFirestore(user);
   showToast('Signed in as ' + user.name, 'info', 2000);
   if (isLoginPage()) location.href = 'index.html';
   else location.reload();
@@ -194,6 +209,8 @@ function createLocalProfile(name) {
   setActiveUserId(user.id);
   if (typeof state !== 'undefined') state.currentUserId = user.id;
   renderAuthUI();
+  // Sync local profile to Firestore for the friend system
+  syncProfileToFirestore(user);
   if (isLoginPage()) location.href = 'index.html';
   else location.reload();
 }
@@ -204,6 +221,8 @@ function switchAccount(id) {
   setActiveUserId(id);
   if (typeof state !== 'undefined') state.currentUserId = id;
   renderAuthUI();
+  // Sync the switched-to profile to Firestore
+  syncProfileToFirestore(user);
   showToast('Switched to ' + user.name, 'info', 1500);
   location.reload();
 }
@@ -219,6 +238,8 @@ function removeProfile(id) {
   }
   localUsers = localUsers.filter(function(u) { return u.id !== id; });
   saveUsers();
+  // Remove user profile from Firestore
+  removeProfileFromFirestore(id);
   var active = getActiveUserId();
   if (active === id) {
     if (localUsers.length > 0) {
@@ -246,6 +267,10 @@ function migrateExistingData(id) {
 }
 
 function initGSI() {
+  // Initialize Firestore for the friend system
+  if (typeof initFirestore === 'function') {
+    initFirestore();
+  }
   loadUsers();
   var activeId = getActiveUserId();
   if (typeof state !== 'undefined') {
