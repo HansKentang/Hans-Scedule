@@ -1619,10 +1619,27 @@ function goNext() {
 
 // ─── AUTO-SCROLL ──────────────────────────────────────────
 function scrollToCurrentTime() {
+  // Restore saved scroll position, or scroll to current time
+  if (state.savedScrollPosition && dom.container) {
+    dom.container.scrollTop = state.savedScrollPosition;
+    return;
+  }
   const now = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
   const scrollTarget = ((mins - START_HOUR * 60) / 60) * HOUR_HEIGHT - 100;
   if (scrollTarget > 0 && dom.container) dom.container.scrollTop = scrollTarget;
+}
+
+// Save scroll position with debounce
+let _scrollSaveTimer = null;
+function saveScrollPosition() {
+  if (_scrollSaveTimer) clearTimeout(_scrollSaveTimer);
+  _scrollSaveTimer = setTimeout(function() {
+    if (dom.container) {
+      state.savedScrollPosition = dom.container.scrollTop;
+      saveState();
+    }
+  }, 300);
 }
 
 // ─── KEYBOARD SHORTCUTS ────────────────────────────────────
@@ -2351,6 +2368,10 @@ function renderSchTemplates() {
   updateHolidayToggle();
   updateTzDisplay();
   scrollToCurrentTime();
+  // Save scroll position on user scroll
+  if (dom.container) {
+    dom.container.addEventListener('scroll', saveScrollPosition, { passive: true });
+  }
   scheduleReminderCheck();
   requestNotifPermission();
 
