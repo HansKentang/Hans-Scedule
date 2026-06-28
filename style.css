@@ -3196,19 +3196,12 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   }
 
   /* ─── SCHEDULE HEADER MOBILE ── */
-  .sch-header-center { display: none; }
+  .sch-header-center { display: flex !important; width: 100%; order: 3; justify-content: flex-start; gap: 2px; margin-top: 2px; }
   .sch-header-right .sch-api-badge:not(#taskCountBadge) { display: none; }
   /* Add compact view toggle in header-left area on mobile */
-  .sch-header-left .view-toggle-btn { display: none; }
+  /* View toggles visible on mobile in header-center */
   /* Mobile view toggle as a select/dropdown in header */
-  #mobileViewSelect {
-    display: block !important;
-    padding: 2px 6px;
-    border-radius: 6px;
-    border: 1px solid var(--border-subtle);
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
-    font-size: 0.65rem;
+.sch-header-center .view-toggle-btn { width: 26px; height: 26px; }.65rem;
     font-family: var(--font-family);
     cursor: pointer;
     outline: none;
