@@ -3030,6 +3030,248 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   .hub-gallery { grid-template-columns: 1fr; gap: var(--space-3); }
   .hub-properties { grid-template-columns: repeat(2, 1fr); }
   .hub-page-meta { font-size: 0.75rem; gap: var(--space-2); }
+
+  /* ─── HUB HERO MOBILE ── */
+  .hub-main > section:first-child { height: 140px !important; }
+  .hub-main > section:first-child h1 { font-size: 18px !important; }
+  .hub-main > section:first-child .glass-card { padding: 2px 8px !important; }
+  .hub-main > section:first-child .glass-card .stat-value { font-size: 1.1rem !important; }
+  .hub-main > section:first-child > div:last-child { padding: 0 var(--space-3) !important; }
+  .hub-main > section:first-child > div:last-child > div { gap: var(--space-2) !important; }
+
+  /* ─── SCHEDULE HERO MOBILE ── */
+  .hub-main > section:first-child h1[style*="font-size:36px"] { font-size: 24px !important; }
+
+  /* ─── ACCESS HUB MOBILE (avoid bottom nav overlap) ── */
+  .access-hub { bottom: calc(var(--space-5) + 60px) !important; right: var(--space-3) !important; }
+  .access-main { width: 44px; height: 44px; }
+  .access-item { width: 36px; height: 36px; }
+  .access-item-icon { width: 36px; height: 36px; }
+
+  /* ─── COMMAND FAB MOBILE ── */
+  .sch-cmd-bar { bottom: calc(var(--space-3) + 60px) !important; right: var(--space-3) !important; }
+  .sch-cmd-btn { width: 40px; height: 40px; }
+
+  /* ─── POMODORO CARD MOBILE ── */
+  .pomodoro-card {
+    right: var(--space-3) !important;
+    bottom: calc(80px + var(--space-3)) !important;
+    width: 200px !important;
+    padding: var(--space-3) !important;
+  }
+  .pomodoro-ring { width: 80px; height: 80px; }
+  .pomodoro-presets { gap: 2px; }
+  .pomodoro-preset { padding: 2px 8px; font-size: 0.6rem; }
+  .pomodoro-actions .btn { padding: var(--space-1) var(--space-2); font-size: 0.65rem; }
+
+  /* ─── TASK MODAL FULL-SCREEN MOBILE ── */
+  #taskModal {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+  #taskModal .modal-body { padding: var(--space-3); }
+  #taskModal .tf-row-3 { grid-template-columns: 1fr !important; }
+  #taskModal .tf-row-2 { grid-template-columns: 1fr !important; }
+
+  /* ─── SETTINGS DRAWER FULL-SCREEN MOBILE ── */
+  #settingsDrawer {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 90dvh !important;
+    max-height: 90dvh !important;
+    border-radius: 16px 16px 0 0 !important;
+    transform: translateY(100%) !important;
+  }
+  #settingsDrawer.open { transform: translateY(0) !important; }
+  .settings-drawer-body { flex-direction: column !important; }
+  .settings-drawer-sidebar {
+    width: 100% !important;
+    min-width: 100% !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    padding: var(--space-2) !important;
+    gap: 4px !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-subtle);
+    -webkit-overflow-scrolling: touch;
+  }
+  .settings-drawer-sidebar .settings-nav-section-label { display: none; }
+  .settings-drawer-sidebar .settings-nav-item {
+    white-space: nowrap;
+    padding: var(--space-1) var(--space-3);
+    font-size: 0.72rem;
+    flex-shrink: 0;
+  }
+  .settings-drawer-content { padding: var(--space-3); }
+  .settings-drawer-header { flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3); }
+  .settings-drawer-header h3 { font-size: 0.9rem; }
+  .settings-drawer-search { width: 100%; }
+  .settings-field-row { grid-template-columns: 1fr !important; }
+  .settings-content-section { padding: 0; }
+
+  /* ─── AI CHAT PANEL FULL-WIDTH MOBILE ── */
+  .ai-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 70dvh !important;
+    max-height: 70dvh !important;
+    border-radius: 16px 16px 0 0 !important;
+    padding-bottom: calc(100px + 56px) !important;
+  }
+
+  /* ─── IMAGE PICKER MOBILE ── */
+  .image-picker-card {
+    width: 92vw !important;
+    max-height: 80dvh !important;
+    padding: var(--space-4) !important;
+    margin: 0 var(--space-2);
+  }
+  .image-picker-card h3 { font-size: 0.95rem; }
+  .image-picker-preview { max-height: 30vh !important; }
+  .image-picker-actions button { font-size: 0.72rem; padding: var(--space-2); }
+
+  /* ─── HELP MODAL MOBILE ── */
+  #helpModal {
+    width: 92vw !important;
+    max-width: 92vw !important;
+    top: 5dvh !important;
+    max-height: 85dvh !important;
+  }
+
+  /* ─── CMD MODAL MOBILE ── */
+  .cmd-modal {
+    top: 10dvh !important;
+    width: 92vw !important;
+    margin: 0 auto;
+  }
+
+  /* ─── SLEEP SECTION MOBILE ── */
+  .sleep-overview-top { flex-direction: column; align-items: center; }
+  .sleep-score-ring { width: 56px; height: 56px; }
+  .s-last-card { width: 100%; }
+  .s-metrics { grid-template-columns: 1fr !important; }
+  .sleep-targets-row { grid-template-columns: 1fr !important; }
+  .sleep-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 2px; }
+  .sleep-tab { font-size: 0.58rem; padding: var(--space-1) var(--space-2); white-space: nowrap; }
+  .sleep-history-item { flex-wrap: wrap; gap: 2px; }
+  .sleep-history-date { font-size: 0.6rem; min-width: 36px; }
+  .sleep-history-dur { font-size: 0.65rem; }
+  .sleep-history-detail { font-size: 0.6rem; flex-wrap: wrap; }
+  .sleep-insight-card { padding: var(--space-2) var(--space-3); }
+  .sleep-insight-text { font-size: 0.68rem; }
+
+  /* ─── BENTO CANVAS MOBILE ── */
+  .bento-grid {
+    overflow-x: hidden !important;
+  }
+  .bento-bubble {
+    left: 12px !important;
+    width: calc(100% - 24px) !important;
+    min-width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+  }
+  .bento-edit-done-btn {
+    bottom: calc(56px + var(--space-4)) !important;
+    right: 50% !important;
+    transform: translateX(50%) !important;
+  }
+
+  /* ─── SCHEDULE HEADER MOBILE ── */
+  .sch-header-center { display: none; }
+  .sch-header-right .sch-api-badge:not(#taskCountBadge) { display: none; }
+
+  /* ─── UNDO TOAST MOBILE ── */
+  .undo-toast {
+    bottom: calc(56px + var(--space-3)) !important;
+    left: var(--space-3) !important;
+    right: var(--space-3) !important;
+    width: auto !important;
+  }
+
+  /* ─── GALLERY CARDS MOBILE ── */
+  .hub-gallery {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-3) !important;
+    padding: 0 var(--space-3) !important;
+  }
+  .hub-gallery-card { margin: 0; }
+
+  /* ─── SLEEP LOG MODAL MOBILE ── */
+  .sleep-log-modal {
+    width: 92vw !important;
+    max-height: 80dvh !important;
+    padding: var(--space-4) !important;
+    top: 5dvh !important;
+  }
+  .sleep-log-modal .form-row { flex-direction: column !important; }
+  .sleep-log-modal .form-group { width: 100% !important; }
+
+  /* ─── SPOTIFY MODAL MOBILE ── */
+  .sp-modal {
+    width: 92vw !important;
+    max-height: 80dvh !important;
+    margin: 10dvh auto 0 !important;
+  }
+
+  /* ─── MENU PANEL MOBILE ── */
+  .hub-menu-panel { width: 85vw !important; }
+
+  /* ─── AI OVERLAY + SCHEDULE OVERLAYS MOBILE ── */
+  #cmdOverlay, #taskOverlay, #helpOverlay { z-index: 998; }
+
+  /* ─── SCHEDULE MINI WEEK MOBILE ── */
+  .sch-mini-week { padding: var(--space-1) var(--space-2); }
+  .sch-mini-label { font-size: 0.5rem; }
+  .sch-mini-day { font-size: 0.6rem; padding: 4px 1px; }
+
+  /* ─── TIMEZONE BAR MOBILE ── */
+  .timezone-info { padding: 2px var(--space-3); font-size: 0.5rem; }
+
+  /* ─── BOTTOM NAV SAFE AREA ── */
+  .hub-bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-bottom: constant(safe-area-inset-bottom, 0);
+  }
+  .hub-bottom-nav-inner { height: 52px; }
+
+  /* ─── AGENDA VIEW MOBILE ── */
+  .agenda-day { padding: var(--space-2) var(--space-3); }
+  .agenda-day-header { flex-direction: column; gap: 2px; align-items: flex-start; }
+  .agenda-day-label { font-size: 0.78rem; }
+  .agenda-task { flex-wrap: wrap; gap: var(--space-1); padding: var(--space-2); }
+  .agenda-task-time { min-width: auto; }
+  .agenda-task-title { font-size: 0.78rem; }
+  .agenda-delete { width: 24px; height: 24px; }
+
+  /* ─── MONTH VIEW MOBILE ── */
+  .month-cell { min-height: 60px !important; padding: 2px !important; }
+  .month-day-num { font-size: 0.65rem !important; }
+  .month-task { font-size: 0.55rem !important; padding: 0 2px !important; }
+  .month-task-more { font-size: 0.5rem !important; }
+
+  /* ─── BENTO EDIT TOOLBAR MOBILE ── */
+  .bento-bar-btn { font-size: 0.6rem; padding: 2px 6px; gap: 2px; }
+  .bento-bar-btn svg { width: 12px; height: 12px; }
+  .bento-bar-btn span { font-size: 0.55rem; }
+
+  /* ─── CATEGORY ADD POPUP MOBILE ── */
+  .cat-add-popup { width: 180px !important; }
+
+  /* ─── HUB SECTION WRAP MOBILE ── */
+  .hub-section-header { padding: var(--space-1) var(--space-2); }
+  .hub-section-label { font-size: 0.65rem; }
 }
 
 /* ─── CHAT UNREAD BADGE (sidebar nav) ───────────────── */

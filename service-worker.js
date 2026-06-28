@@ -1,5 +1,5 @@
 /* Havën Schedule — Service Worker v2.0 */
-const CACHE = 'haven-schedule-v3';
+const CACHE = 'haven-schedule-v4';
 const URLS = [
   '/',
   '/index.html',
@@ -9,6 +9,9 @@ const URLS = [
   '/analytics.html',
   '/finance.html',
   '/gallery.html',
+  '/goals.html',
+  '/friends.html',
+  '/login.html',
   '/style.css',
   '/shared.js',
   '/schedule.js',
@@ -18,13 +21,17 @@ const URLS = [
   '/finance.js',
   '/hub-visuals.js',
   '/gallery.js',
+  '/goals.js',
+  '/friends.js',
+  '/firestore.js',
+  '/gsi.js',
+  '/cloud-sync.js',
+  '/chat.js',
+  '/chat-badge.js',
   '/icon.svg',
   '/icon-192.png',
   '/icon-512.png',
-  '/manifest.json',
-  '/login.html',
-  '/goals.html',
-  '/goals.js'
+  '/manifest.json'
 ];
 
 self.addEventListener('install', (e) => {
