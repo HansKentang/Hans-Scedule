@@ -77,10 +77,6 @@ function renderAuthUI() {
     dropdown.querySelectorAll('[data-gsi-switch]').forEach(function(el) {
       el.addEventListener('click', function() { switchAccount(el.dataset.gsiSwitch); });
     });
-    container.querySelector('#gsiAddGoogleBtn').addEventListener('click', function(e) {
-      e.stopPropagation(); dropdown.classList.remove('open');
-      firebaseSignIn();
-    });
     container.querySelector('#gsiAddAccountBtn').addEventListener('click', function(e) {
       e.stopPropagation(); dropdown.classList.remove('open');
       gsiSignIn();
