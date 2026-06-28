@@ -17,21 +17,6 @@
   <link rel="stylesheet" href="style.css">
     <style>
     /* ─── SCHEDULE: IMMERSIVE CALENDAR ───────────────────── */
-    /* Sidebar — built-in Hub layout from style.css */
-    /* (sch-whiteboard-item stays for whiteboard-specific styles) */
-    .sch-whiteboard-item {
-      display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-2) var(--space-3); border-radius: 5px;
-      background: var(--bg-secondary); border: 1px solid var(--border-subtle);
-      cursor: grab; font-size: 0.78rem; font-weight: 500; transition: all var(--t-fast);
-      user-select: none;
-    }
-    .sch-whiteboard-item:hover { border-color: var(--border-color); }
-    .sch-whiteboard-item .w-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
-    .sch-whiteboard-item .w-del { opacity: 0; width: 16px; height: 16px; border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 2px; transition: all var(--t-fast); }
-    .sch-whiteboard-item:hover .w-del { opacity: 0.5; }
-    .sch-whiteboard-item .w-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
-
     /* Mini week overview */
     .sch-mini-week { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border-color); }
     .sch-mini-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); margin-bottom: var(--space-2); opacity: 0.6; }
@@ -50,17 +35,6 @@
     }
     .sch-mini-day.today.has-tasks::after { background: var(--text-inverse); }
 
-    /* Whiteboard in sidebar */
-    .sch-sidebar-section {
-      padding: var(--space-2) var(--space-4);
-      border-bottom: 1px solid var(--border-color);
-    }
-    .sch-sidebar-section:last-of-type { border-bottom: none; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-    .sch-section-header {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2);
-    }
-    .sch-section-header h3 { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); opacity: 0.6; }
-    .sch-whiteboard-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-2); padding: 0 0 var(--space-1) 0; }
     /* Calendar header — thin breadcrumb style */
     .sch-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -335,10 +309,8 @@
       .hub-sidebar { width: 56px; min-width: 56px; }
       .hub-snav-item .snav-label,
       .hub-sidebar-footer .btn span,
-      .sch-mini-week, .sch-sidebar-section .sch-section-header h3,
-      .sch-whiteboard-list .sch-whiteboard-item .w-title { display: none; }
+      .sch-mini-week { display: none; }
       .hub-snav-item { justify-content: center; padding: var(--space-1); }
-      .sch-whiteboard-item { justify-content: center; padding: var(--space-2); }
       .hub-sidebar-footer .btn { padding: var(--space-1); }
     }
     @media (max-width: 640px) {
@@ -358,9 +330,7 @@
       .hub-sidebar .hub-sidebar-footer .btn span { display: block; }
       .hub-sidebar .hub-snav-item { justify-content: flex-start; padding: var(--space-1) var(--space-2); }
       .hub-sidebar .hub-sidebar-footer .btn { padding: var(--space-2); }
-      .sch-mini-week, .sch-sidebar-section .sch-section-header h3,
-      .sch-whiteboard-list .sch-whiteboard-item .w-title { display: block !important; }
-      .sch-whiteboard-item { justify-content: flex-start !important; padding: var(--space-2) var(--space-3) !important; }
+      .sch-mini-week { display: block !important; }
 
       /* Header mobile */
       .sch-header { padding: var(--space-2) var(--space-3); gap: var(--space-2); min-height: 42px; }
@@ -474,16 +444,7 @@
         <div class="sch-mini-label">Week</div>
         <div class="sch-mini-days" id="miniWeekDays"></div>
       </div>
-      <!-- Whiteboard section -->
-      <div class="sch-sidebar-section">
-        <div class="sch-section-header">
-          <h3>Whiteboard</h3>
-          <button id="addIdeaBtn" class="btn btn-ghost" title="Add idea" style="width:22px;height:22px;padding:0">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
-        </div>
-        <div class="sch-whiteboard-list" id="whiteboardList"></div>
-      </div>
+
       <div class="hub-sidebar-images"></div>
       <!-- ─── SPOTIFY EMBED ───────────────────────── -->
       <div class="sp-sidebar" id="spSidebar">
@@ -588,9 +549,9 @@
             <svg id="holidayToggleIcon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
             <span id="holidayToggleText">School</span>
           </span>
-          <button id="schSettingsBtn" class="btn btn-ghost" title="Settings" style="margin-left:4px">
+          <button id="schSettingsBtn" class="btn btn-ghost" title="Customize" style="margin-left:4px">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+              <line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/>
             </svg>
           </button>
         </div>
@@ -668,29 +629,6 @@
         <button class="sch-cmd-btn" id="cmdBtn" title="Command palette (Ctrl+K)" onclick="toggleCmdPalette()">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
         </button>
-      </div>
-
-      <!-- Add Subcategory Bubble (rendered by JS) -->
-
-      <!-- Quick Idea Popup -->
-      <div class="quick-idea hidden" id="quickIdea">
-        <div class="quick-idea-header">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          <span>New Idea</span>
-          <button class="quick-idea-close" id="quickIdeaClose" aria-label="Close">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <div class="quick-idea-body">
-          <input type="text" id="quickIdeaInput" class="form-input" placeholder="What's on your mind?" autocomplete="off">
-          <div class="quick-idea-tags" id="quickIdeaTags">
-            <button class="quick-idea-tag" data-tag="deep-work" style="--tag-bg:var(--tag-deep-work-text)">deep-work</button>
-            <button class="quick-idea-tag" data-tag="meeting" style="--tag-bg:var(--tag-meeting-text)">meeting</button>
-            <button class="quick-idea-tag" data-tag="exercise" style="--tag-bg:var(--tag-exercise-text)">exercise</button>
-            <button class="quick-idea-tag" data-tag="study" style="--tag-bg:var(--tag-study-text)">study</button>
-            <button class="quick-idea-tag" data-tag="hobby" style="--tag-bg:var(--tag-hobby-text)">hobby</button>
-          </div>
-        </div>
       </div>
 
       <!-- Pomodoro Timer (floating card) -->

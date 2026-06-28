@@ -46,8 +46,6 @@ dom.quickTaskBtn   = $('#quickTaskBtn');
 dom.apiStatus      = $('#apiStatus');
 dom.apiStatusText  = $('#apiStatusText');
 dom.tzTooltip      = $('#tzTooltip');
-dom.addIdeaBtn     = $('#addIdeaBtn');
-  dom.whiteboardList = $('#whiteboardList');
   dom.themeBtn       = $('#themeBtnSidebar');
   // removed settingsBtnSidebar and helpBtn
   dom.helpOverlay    = $('#helpOverlay');
@@ -65,15 +63,15 @@ dom.addIdeaBtn     = $('#addIdeaBtn');
   dom.aiChatSend     = $('#aiChatSend');
   dom.aiChatClose    = $('#aiChatClose');
 
-// Unified drag state — handles task-reschedule, whiteboard→grid, quick-add→grid
+// Unified drag state — handles task-reschedule, quick-add→grid
 let gridDrag = null;
 
 // Resize state — handles task card bottom-edge resize
 let resizeState = null;
 
 // ─── PAGE CALLBACKS (called from shared.js) ─────────────────
-pageAfterTaskSave = () => { renderCalendar(); renderWhiteboard(); };
-pageAfterImport = () => { renderCalendar(); renderWhiteboard(); };
+pageAfterTaskSave = () => { renderCalendar(); };
+pageAfterImport = () => { renderCalendar(); };
 
 // ─── API STATUS ────────────────────────────────────────────
 function updateApiStatus() {
@@ -205,7 +203,6 @@ function renderWeekView() {
   dom.taskCount.textContent = state.tasks.filter(t => !isWhiteboardTask(t)).length;
   renderMiniWeek();
   attachSlotHandlersWithCreate();
-  renderWhiteboard();
 }
 
 // ─── MONTH VIEW ────────────────────────────────────────────
@@ -298,7 +295,6 @@ function renderMonthView() {
   });
 
   renderMiniWeek();
-  renderWhiteboard();
 }
 
 // ─── AGENDA VIEW ───────────────────────────────────────────
@@ -412,7 +408,6 @@ function renderAgendaView() {
   });
 
   renderMiniWeek();
-  renderWhiteboard();
 }
 
 function renderTasks() {
@@ -682,16 +677,6 @@ function startDrag(e, source) {
     ghost.innerHTML = gridDrag.title || QUICK_ADD_TITLES[scPill.dataset.tag] || 'New Task';
   }
 
-  // If dragging a whiteboard item
-  const wbItem = source.closest('.whiteboard-item, .sch-whiteboard-item');
-  if (wbItem && wbItem.dataset.taskId) {
-    gridDrag.type = 'whiteboard';
-    gridDrag.taskId = wbItem.dataset.taskId;
-    const task = getTask(wbItem.dataset.taskId);
-    if (task) {
-      gridDrag.duration = getDurationMinutes(task);
-    }
-  }
 
   // Apply tag-based styling to ghost
   let ghostTag = null;
@@ -700,10 +685,7 @@ function startDrag(e, source) {
     if (task) ghostTag = task.tag;
   } else if (gridDrag.type === 'quickadd' && gridDrag.tag) {
     ghostTag = gridDrag.tag;
-  } else if (gridDrag.type === 'whiteboard') {
-    const task = getTask(gridDrag.taskId);
-    if (task) ghostTag = task.tag;
-  }
+  
   if (ghostTag) {
     const meta = TAG_COLORS[ghostTag] || TAG_COLORS.meeting;
     // Quick-add ghost: white card with plain 'New Task'
@@ -715,7 +697,7 @@ function startDrag(e, source) {
     } else {
       ghost.style.border = `2px solid ${meta.text}`;
       ghost.style.boxShadow = `0 4px 20px color-mix(in srgb, ${meta.text} 25%, transparent)`;
-      // For non-task ghosts (quick-add, whiteboard), also set background/color
+      // For non-task ghosts (quick-add), also set background/color
       if (gridDrag.type !== 'reschedule') {
         ghost.style.background = meta.bg;
         ghost.style.color = meta.text;
@@ -736,7 +718,7 @@ function startDrag(e, source) {
 function getDragHlColor() {
   if (gridDrag) {
     if (gridDrag.type === 'quickadd' && gridDrag.tag) return (TAG_COLORS[gridDrag.tag] || TAG_COLORS.meeting).text;
-    if (gridDrag.type === 'reschedule' || gridDrag.type === 'whiteboard') {
+    if (gridDrag.type === 'reschedule') {
       const task = getTask(gridDrag.taskId);
       if (task) return (TAG_COLORS[task.tag] || TAG_COLORS.meeting).text;
     }
@@ -1118,7 +1100,7 @@ function onDragEnd() {
   pushUndo(); // snapshot BEFORE changes
 
   const excludeId = gridDrag.taskId || null;
-  let bounceTaskId = gridDrag.type === 'reschedule' || gridDrag.type === 'whiteboard' ? gridDrag.taskId : null;
+  let bounceTaskId = gridDrag.type === 'reschedule' ? gridDrag.taskId : null;
   repelConflicts(gridDrag.dropDate, gridDrag.dropTime, dropEndMins, excludeId);
 
   if (gridDrag.type === 'reschedule') {
@@ -1140,13 +1122,6 @@ function onDragEnd() {
       tag: gridDrag.tag,
     });
     bounceTaskId = newTask.id;
-  } else if (gridDrag.type === 'whiteboard') {
-    const task = getTask(gridDrag.taskId);
-    if (task) {
-      task.date = gridDrag.dropDate;
-      task.startTime = toTimeStr(gridDrag.dropTime);
-      task.endTime = toTimeStr(gridDrag.dropTime + (gridDrag.duration || 60));
-    }
   }
 
   saveState();
@@ -1459,74 +1434,7 @@ function confirmCmdTask(taskData) {
   pageAfterTaskSave();
 }
 
-// ─── WHITEBOARD ────────────────────────────────────────────
-function renderWhiteboard() {
-  if (!dom.whiteboardList) return;
-  const wbTasks = state.tasks.filter(isWhiteboardTask);
-  if (wbTasks.length === 0) {
-    dom.whiteboardList.innerHTML = '<div class="whiteboard-empty">Drag ideas here or add unassigned tasks</div>';
-    return;
-  }
-  let html = '';
-  for (const task of wbTasks) {
-    const meta = getTagMeta(task.tag);
-    html += `<div class="whiteboard-item" data-task-id="${task.id}">
-      <span class="w-title">${escapeHtml(task.title)}</span>
-      <span class="w-tag" style="background:color-mix(in srgb, ${meta.text} 15%, transparent);color:${meta.text}">${task.tag}</span>
-      <button class="w-delete" data-task-id="${task.id}" title="Delete">
-        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>`;
-  }
-  dom.whiteboardList.innerHTML = html;
-  dom.whiteboardList.querySelectorAll('.whiteboard-item').forEach(item => {
-    const taskId = item.dataset.taskId;
-    item.addEventListener('click', (e) => { if (e.target.closest('.w-delete')) return; openTaskModal(taskId); });
-    const delBtn = item.querySelector('.w-delete');
-    if (delBtn) delBtn.addEventListener('click', (e) => { e.stopPropagation(); deleteTask(taskId); });
-    item.addEventListener('mousedown', (e) => { if (e.button !== 0 || e.target.closest('.w-delete')) return; startDrag(e, item); });
-    item.addEventListener('touchstart', (e) => { if (e.target.closest('.w-delete')) return; startDrag(e, item); }, { passive: false });
-  });
-}
 
-function addWhiteboardTask() {
-  const task = createTask({ title: 'New Idea', date: '', startTime: '09:00', endTime: '10:00', tag: 'meeting', notes: '' });
-  openTaskModal(task.id);
-}
-
-// ─── QUICK IDEA INLINE FORM ───────────────────────────────
-let quickIdeaTag = 'meeting';
-
-function openQuickIdea() {
-  const popup = document.getElementById('quickIdea');
-  if (!popup) { addWhiteboardTask(); return; }
-  popup.classList.remove('hidden');
-  const input = document.getElementById('quickIdeaInput');
-  if (input) { input.value = ''; input.focus(); }
-  quickIdeaTag = 'meeting';
-  document.querySelectorAll('.quick-idea-tag').forEach(b => b.classList.remove('active'));
-  document.querySelector('.quick-idea-tag[data-tag="meeting"]')?.classList.add('active');
-}
-
-function closeQuickIdea() {
-  document.getElementById('quickIdea')?.classList.add('hidden');
-}
-
-function submitQuickIdea() {
-  const input = document.getElementById('quickIdeaInput');
-  if (!input || !input.value.trim()) return;
-  const task = createTask({
-    title: input.value.trim(),
-    date: '',
-    startTime: '09:00',
-    endTime: '10:00',
-    tag: quickIdeaTag,
-    notes: '',
-  });
-  closeQuickIdea();
-  openTaskModal(task.id);
-  input.value = '';
-}
 
 // ─── WEEK NAVIGATION ───────────────────────────────────────
 function goToday() {
@@ -1607,9 +1515,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'q' && !e.metaKey && !e.ctrlKey && !state.cmdPaletteOpen && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) {
     const now = new Date(); openNewTaskModal(formatDate(now), roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES));
   }
-  if ((e.ctrlKey && e.key === ' ') && !state.cmdPaletteOpen && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen) {
-    e.preventDefault(); addWhiteboardTask();
-  }
   // Undo (Ctrl+Z)
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !state.cmdPaletteOpen && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) {
     e.preventDefault();
@@ -1680,7 +1585,7 @@ function bindEvents() {
   dom.importDataBtn?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
   dom.importFileInput?.addEventListener('change', importData);
   dom.themeBtn?.addEventListener('click', toggleTheme);
-  document.getElementById('schSettingsBtn')?.addEventListener('click', openSettingsDrawer);
+  document.getElementById('schSettingsBtn')?.addEventListener('click', openSettingsBubble);
   // bcVisualsBtn handled via delegation in shared.js
   dom.helpOverlay?.addEventListener('click', hideHelpModal);
   dom.helpModalClose?.addEventListener('click', hideHelpModal);
@@ -1691,7 +1596,6 @@ function bindEvents() {
   dom.aiChatClose?.addEventListener('click', hideAIChat);
   dom.aiChatSend?.addEventListener('click', sendAIMessage);
   dom.aiChatInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); } });
-  dom.addIdeaBtn?.addEventListener('click', addWhiteboardTask);
 
   // Access Hub
   document.getElementById('accessMain')?.addEventListener('click', toggleAccessHub);
@@ -1712,28 +1616,7 @@ function bindEvents() {
   // Init pomodoro
   initPomodoro();
 
-  // Close on Escape
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { closeQuickIdea(); }
-  });
-
   // Quick idea bindings
-  document.getElementById('quickIdeaClose')?.addEventListener('click', closeQuickIdea);
-  document.getElementById('quickIdeaInput')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      submitQuickIdea();
-    }
-    if (e.key === 'Escape') closeQuickIdea();
-  });
-  document.querySelectorAll('.quick-idea-tag').forEach(b => {
-    b.addEventListener('click', () => {
-      document.querySelectorAll('.quick-idea-tag').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      quickIdeaTag = b.dataset.tag;
-    });
-  });
-
   // Init priority select + task modal tag pills
   initPrioritySelect();
 
@@ -1846,17 +1729,6 @@ function bindEvents() {
     }
   });
 
-  // Whiteboard drag — unified via startDrag (subcategory pills are handled in showSubcategoryBubble)
-  document.querySelectorAll('.whiteboard-item, .sch-whiteboard-item').forEach(el => {
-    el.addEventListener('mousedown', (e) => {
-      if (e.button !== 0 || e.target.closest('.w-delete, .w-del')) return;
-      startDrag(e, el);
-    });
-    el.addEventListener('touchstart', (e) => {
-      if (e.target.closest('.w-delete, .w-del')) return;
-      startDrag(e, el);
-    }, { passive: false });
-  });
 
   // Mobile hamburger for schedule page
   const schHamburger = document.getElementById('schHamburger');
