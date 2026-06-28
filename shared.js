@@ -1247,6 +1247,8 @@ let state = {
   userProfile: null,
   editMode: false,
   accessBubbles: {},
+  currentView: 'week',
+  currentMonthDate: null,
   currentUserId: null,
   localUsers: [],
 };
@@ -1790,7 +1792,10 @@ function saveState() {
       accessBubbles: state.accessBubbles,
       accentColor: state.accentColor,
       accentCustomColors: state.accentCustomColors,
-      accentRemovedPresets: state.accentRemovedPresets
+      accentRemovedPresets: state.accentRemovedPresets,
+      currentView: state.currentView || 'week',
+      currentWeekStart: state.currentWeekStart ? formatDate(state.currentWeekStart) : null,
+      currentMonthDate: state.currentMonthDate ? formatDate(state.currentMonthDate) : null
     }));
   } catch (e) { console.warn('[img] saveState failed:', e); }
 }
@@ -1809,6 +1814,9 @@ function loadState() {
       state.accentColor = s.accentColor || null;
       state.accentCustomColors = s.accentCustomColors || [];
       state.accentRemovedPresets = s.accentRemovedPresets || [];
+      state.currentView = (s.currentView && ['week','month','agenda'].includes(s.currentView)) ? s.currentView : 'week';
+      if (s.currentWeekStart) state.currentWeekStart = new Date(s.currentWeekStart + 'T00:00:00');
+      if (s.currentMonthDate) state.currentMonthDate = new Date(s.currentMonthDate + 'T00:00:00');
       // Images are restored via haven-image-* keys directly
     }
     const key = localStorage.getItem(API_KEY_STORAGE);

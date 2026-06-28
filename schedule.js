@@ -101,8 +101,10 @@ function updateHolidayToggle() {
 // ─── VIEW SWITCH ──────────────────────────────────────────
 function switchView(view) {
   currentView = view;
+  state.currentView = view;
   $$('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
   renderCalendar();
+  saveState();
 }
 
 // ─── TZ DISPLAY ────────────────────────────────────────────
@@ -1574,11 +1576,13 @@ function submitQuickIdea() {
 function goToday() {
   if (currentView === 'month') {
     currentMonthDate = new Date();
+    state.currentMonthDate = new Date(currentMonthDate);
     renderCalendar();
   } else {
     state.currentWeekStart = getMonday(new Date());
     renderCalendar();
   }
+  saveState();
   // Smooth scroll to today's column with flash indicator
   requestAnimationFrame(() => {
     const todayStr = formatDate(new Date());
@@ -1593,20 +1597,24 @@ function goToday() {
 function goPrev() {
   if (currentView === 'month') {
     currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
+    state.currentMonthDate = new Date(currentMonthDate);
     renderCalendar();
   } else {
     state.currentWeekStart = addDays(state.currentWeekStart, -7);
     renderCalendar();
   }
+  saveState();
 }
 function goNext() {
   if (currentView === 'month') {
     currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
+    state.currentMonthDate = new Date(currentMonthDate);
     renderCalendar();
   } else {
     state.currentWeekStart = addDays(state.currentWeekStart, 7);
     renderCalendar();
   }
+  saveState();
 }
 
 // ─── AUTO-SCROLL ──────────────────────────────────────────
@@ -2329,6 +2337,14 @@ function renderSchTemplates() {
   if (!state.currentWeekStart) {
     state.currentWeekStart = getMonday(new Date());
   }
+  // Restore saved view and month date
+  if (state.currentView && ['week','month','agenda'].includes(state.currentView)) {
+    currentView = state.currentView;
+  }
+  if (state.currentMonthDate) {
+    currentMonthDate = new Date(state.currentMonthDate);
+  }
+  $$('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === currentView));
   renderCalendar();
   bindEvents();
   updateApiStatus();
