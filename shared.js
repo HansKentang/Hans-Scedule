@@ -1128,6 +1128,98 @@ if (document.readyState === 'loading') {
   initMobileBottomNav();
 }
 
+
+// ─── MOBILE SIDEBAR SWIPE (edge-swipe to open, swipe-left to close) ─
+function initSidebarSwipe() {
+  if (window.innerWidth > 768) return;
+
+  var touchStartX = 0, touchStartY = 0;
+  var touchCurrentX = 0;
+  var isSwiping = false;
+  var sidebarEl = document.querySelector('.hub-sidebar');
+  var overlayEl = document.querySelector('.hub-sidebar-overlay');
+  if (!sidebarEl) return;
+
+  var SWIPE_THRESHOLD = 60;
+  var EDGE_THRESHOLD = 35;
+
+  document.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    var t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchCurrentX = t.clientX;
+    isSwiping = false;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (e.touches.length !== 1) { isSwiping = false; return; }
+    var t = e.touches[0];
+    touchCurrentX = t.clientX;
+    var dx = t.clientX - touchStartX;
+    var dy = t.clientY - touchStartY;
+
+    // Only horizontal swipes (ignore vertical scrolling)
+    if (Math.abs(dx) < Math.abs(dy) * 1.5 && Math.abs(dy) > 10) {
+      isSwiping = false;
+      return;
+    }
+    if (Math.abs(dx) < 10) return;
+    isSwiping = true;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (window.innerWidth > 768) return;
+    if (!isSwiping) return;
+    isSwiping = false;
+
+    var dx = touchCurrentX - touchStartX;
+    var sidebarOpen = sidebarEl.classList.contains('open');
+    // Only edge swipe from left (Notion-style)
+    if (dx > SWIPE_THRESHOLD && touchStartX < EDGE_THRESHOLD && !sidebarOpen) {
+      sidebarEl.classList.add('open');
+      if (overlayEl) overlayEl.classList.add('active');
+      return;
+    }
+    // Swipe left when sidebar is open
+    if (dx < -SWIPE_THRESHOLD && sidebarOpen) {
+      sidebarEl.classList.remove('open');
+      if (overlayEl) overlayEl.classList.remove('active');
+    }
+
+    // Swipe right from left edge → open sidebar
+    if (dx > SWIPE_THRESHOLD && touchStartX < EDGE_THRESHOLD && !sidebarOpen) {
+      sidebarEl.classList.add('open');
+      if (overlayEl) overlayEl.classList.add('active');
+      return;
+    }
+
+    // Swipe left when sidebar is open → close sidebar
+    if (dx < -SWIPE_THRESHOLD && sidebarOpen) {
+      sidebarEl.classList.remove('open');
+      if (overlayEl) overlayEl.classList.remove('active');
+      return;
+    }
+
+    // Swipe right from anywhere (not just edge) when sidebar is closed
+    // — only if it's a clear intentional swipe (larger threshold)
+    if (dx > SWIPE_THRESHOLD * 1.5 && !sidebarOpen) {
+      sidebarEl.classList.add('open');
+      if (overlayEl) overlayEl.classList.add('active');
+    }
+  }, { passive: true });
+}
+
+// Init swipe on load (after bottom nav)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(initSidebarSwipe, 100);
+  });
+} else {
+  setTimeout(initSidebarSwipe, 100);
+}
+
+
 // ─── PAGE CALLBACK FALLBACK ───────────────────────────────
 let pageAfterTaskSave = null;
 let pageAfterImport = null;
