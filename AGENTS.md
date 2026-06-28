@@ -128,7 +128,7 @@ gallery    │ hero → image grid → footer
 │                         │ └───────────────────────┘ │
 │                         │                           │
 │ Modals: AI Chat │ Sleep Log │ Image Picker │        │
-│         Settings Drawer │ Spotify Settings          │
+│         Settings Bubble │ Spotify Settings          │
 └────────────────────────────────────────────────────┘
 ```
 
@@ -142,37 +142,49 @@ gallery    │ hero → image grid → footer
 ┌────────────────────────────────────────────────────┐
 │ Sidebar                  │ Main                     │
 │ ┌────────────────────┐  │ ┌───────────────────────┐ │
-│ │ H  Havën     +    │  │ │ Hero (180px)           │ │
-│ │────────────────────│  │ │ img │ "Schedule"     │ │
+│ │ H  Havën     +    │  │ │ Hero                  │ │
+│ │────────────────────│  │ │ img → "Schedule"      │ │
 │ │ ○ Hub              │  │ ├───────────────────────┤ │
-│ │ ● Schedule         │  │ │ Header (#sch-header)   │ │
-│ │ ○ Activities       │  │ │ ┌─┬─┬─┬─┬─┬─┬─┬─┬─┐ │ │
-│ │ ○ Analytics        │  │ │ ☰│Today│◀│Jun│▶│ │ │ │
-│ │ ○ Goals            │  │ │ │ Wk/Mo/Ag │⚙│   │ │ │
-│ │ ○ Finance          │  │ │ │ Holiday badge       │ │
-│ │ ○ Gallery          │  │ │ └─┴─┴─┴─┴─┴─┴─┴─┴─┘ │ │
-│ │────────────────────│  │ ├───────────────────────┤ │
-│ │ Mini Week          │  │ │ Pills (#pmChips)      │ │
-│ │  M  T  W  T  F  S │  │ │ [deep-work] [meeting]  │ │
-│ │────────────────────│  │ │ [exercise] [study] +  │ │
-│ │ [Spotify]          │  │ ├───────────────────────┤ │
-│ │────────────────────│  │ │ Calendar Grid          │ │
-│ │ Theme│AI│Visuals│  │  │ │ (7am-9pm, Mon-Sun)    │ │
-│ │ Settings│Help     │  │ │ hour rows, task blocks  │ │
-│ └────────────────────┘  │ ├───────────────────────┤ │
-│                         │ │ FAB (#accessHub)       │ │
-│                         │ │ [Focus] [AI] [SS] [CW]│ │
+│ │ ● Schedule         │  │ │ Header                │ │
+│ │ ○ Activities       │  │ │ ☰→SidePanel│Today│◀Jun▶│ │
+│ │ ○ Analytics        │  │ │ Wk│Mo│Ag   │badges   │ │
+│ │ ○ Goals            │  │ ├───────────────────────┤ │
+│ │ ○ Finance          │  │ │ Pills + subcategory   │ │
+│ │ ○ Gallery          │  │ ├───────────────────────┤ │
+│ │────────────────────│  │ │ Calendar Grid 7am-9pm │ │
+│ │ Mini Week          │  │ ├───────────────────────┤ │
+│ │────────────────────│  │ │ Timezone info bar     │ │
+│ │ Spotify player     │  │ ├───────────────────────┤ │
+│ │────────────────────│  │ │ Access Hub (FAB)      │ │
+│ │ Theme│Settings     │  │ │ Focus│AI│SS│CopyWeek │ │
+│ │ Visuals│Help       │  │ ├───────────────────────┤ │
+│ └────────────────────┘  │ │ Command FAB (Ctrl+K)  │ │
 │                         │ ├───────────────────────┤ │
-│                         │ │ Pomodoro Timer         │ │
-│                         │ │ ring │ 5/10/25/50 min │ │
+│                         │ │ Pomodoro Timer (float) │ │
 │                         │ └───────────────────────┘ │
-│ Modals: Command Palette │ Task Modal │ Help │       │
-│         Settings │ AI Chat │ Image Picker           │
-│         Spotify Settings                             │
+│ Modals: Cmd Palette │ Task │ Help │ Settings Bubble │
+│         AI Chat │ Image Picker │ Spotify │Undo Toast│
 └────────────────────────────────────────────────────┘
 ```
 
-**Key IDs:** `#todayBtn`, `#prevWeek`, `#nextWeek`, `#weekLabel`, `#holidayToggle`, `#schSettingsBtn`, `#pmChips`, `#catAddBtn`, `#calendarGrid`, `#accessHub`, `#accessFocusMode`, `#accessAIChat`, `#accessScreenshot`, `#accessCopyWeek`, `#taskModal`, `#cmdPalette`, `#pomodoroCard`
+**Parts**
+
+| # | Part | Description |
+|---|------|-------------|
+| 1 | **Sidebar** | Nav links, mini week, Spotify, footer (Theme/Settings/Visuals/Help) |
+| 2 | **Hero** | Background image + "Schedule" title + week label |
+| 3 | **Header** | Hamburger side panel (profile + Pages + Actions + Settings + Help), Today/prev/next, view toggles (Week/Month/Agenda), API badge, task count, holiday toggle |
+| 4 | **Pill Manager** | Category chips + add button + add-popup |
+| 5 | **Subcategory Bar** | Per-tag subcategory pills (drag/drop, inline edit/delete) |
+| 6 | **Calendar Grid** | Mon–Sun, 7am–9pm, task blocks (drag reschedule, click edit) |
+| 7 | **Timezone Info** | Local + UTC offset display |
+| 8 | **Access Hub** | Floating FAB with Focus, AI, Screenshot, Copy Week bubbles |
+| 9 | **Command FAB** | Ctrl+K command palette trigger |
+| 10 | **Pomodoro Timer** | Floating card: ring, time, presets (5/10/25/50), start/reset |
+| 11 | **Modals** | Command Palette, Task Modal, Help, Settings Bubble, AI Chat Panel, Image Picker, Spotify Settings |
+| 12 | **Undo Toast** | Brief undo notification |
+
+**Key IDs:** `#schHamburger`, `#hubMenuPanel`, `#hubMenuOverlay`, `#menuProfile`, `#menuToday`, `#menuNewTask`, `#menuTheme`, `#menuSettings`, `#menuHelp`, `#todayBtn`, `#prevWeek`, `#nextWeek`, `#weekLabel`, `#holidayToggle`, `#pmChips`, `#catAddBtn`, `#calendarGrid`, `#tzTooltip`, `#localTz`, `#utcTz`, `#accessHub`, `#accessFocusMode`, `#accessAIChat`, `#accessScreenshot`, `#accessCopyWeek`, `#cmdBtn`, `#pomodoroCard`, `#taskModal`, `#cmdPalette`, `#helpModal`, `#aiChatPanel`, `#imagePickerOverlay`, `#spOverlay`, `#undoToast`
 
 ---
 

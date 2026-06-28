@@ -3914,11 +3914,11 @@ document.addEventListener('click', function(e) {
   const visualsBtn = e.target.closest('#bcVisualsBtn');
   if (visualsBtn) { toggleEditMode(); return; }
   const settingsBtn = e.target.closest('.hamburger-settings-btn');
-  if (settingsBtn) { openSettingsDrawer(); return; }
+  if (settingsBtn) { return; }
 
-  // Hamburger opens settings drawer
+  // Hamburger no longer opens settings — only sidebar footer does
   const hamburger = e.target.closest('.hub-hamburger');
-  if (hamburger) { openSettingsDrawer(); return; }
+  if (hamburger) { return; }
 
   // Overlay click closes sidebar
   const overlayEl = e.target.closest('.hub-sidebar-overlay');

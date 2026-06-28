@@ -161,11 +161,11 @@ function setupPage() {
   document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
   // settingsBtnSidebar removed
   document.getElementById('bcThemeBtn')?.addEventListener('click', toggleTheme);
-  document.getElementById('bcSettingsBtn')?.addEventListener('click', openSettingsDrawer);
+  
   dom.importFileInput?.addEventListener('change', importData);
   document.getElementById('importDataBtn')?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
 
-  dom.aiChatBtn?.addEventListener('click', openSettingsDrawer);
+  dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
   document.getElementById('bcAiChatBtn')?.addEventListener('click', showAIChat);
   dom.aiChatOverlay?.addEventListener('click', hideAIChat);
   dom.aiChatClose?.addEventListener('click', hideAIChat);

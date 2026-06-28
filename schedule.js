@@ -1588,13 +1588,12 @@ function bindEvents() {
   dom.importDataBtn?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
   dom.importFileInput?.addEventListener('change', importData);
   dom.themeBtn?.addEventListener('click', toggleTheme);
-  document.getElementById('schSettingsBtn')?.addEventListener('click', openSettingsBubble);
   // bcVisualsBtn handled via delegation in shared.js
   dom.helpOverlay?.addEventListener('click', hideHelpModal);
   dom.helpModalClose?.addEventListener('click', hideHelpModal);
 
   // AI Chat
-  dom.aiChatBtn?.addEventListener('click', openSettingsDrawer);
+  dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
   dom.aiChatOverlay?.addEventListener('click', hideAIChat);
   dom.aiChatClose?.addEventListener('click', hideAIChat);
   dom.aiChatSend?.addEventListener('click', sendAIMessage);
@@ -1733,28 +1732,66 @@ function bindEvents() {
   });
 
 
-  // Hamburger menu popup
-  const schMenuPopup = document.getElementById('schMenuPopup');
-  const schHamburger = document.getElementById('schHamburger');
-  function closeMenuPopup() { schMenuPopup?.classList.add('hidden'); }
-  schHamburger?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    schMenuPopup?.classList.toggle('hidden');
+  // Hamburger side panel
+  const hubMenuPanel = document.getElementById('hubMenuPanel');
+  const hubMenuOverlay = document.getElementById('hubMenuOverlay');
+  function closeHubMenu() {
+    hubMenuPanel?.classList.remove('open');
+    hubMenuOverlay?.classList.remove('active');
+  }
+  function openHubMenu() {
+    hubMenuPanel?.classList.remove('hidden');
+    requestAnimationFrame(() => {
+      hubMenuPanel?.classList.add('open');
+      hubMenuOverlay?.classList.add('active');
+    });
+  }
+  document.querySelectorAll('.hub-hamburger, #schHamburger').forEach(btn => {
+    btn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (hubMenuPanel?.classList.contains('open')) { closeHubMenu(); }
+      else { openHubMenu(); }
+    });
   });
-  document.addEventListener('click', (e) => {
-    if (schMenuPopup && !schMenuPopup.classList.contains('hidden') && !schMenuPopup.contains(e.target) && e.target !== schHamburger && !schHamburger?.contains(e.target)) {
-      closeMenuPopup();
-    }
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenuPopup(); });
-  document.getElementById('schMenuToday')?.addEventListener('click', () => { closeMenuPopup(); goToday(); });
-  document.getElementById('schMenuNewTask')?.addEventListener('click', () => {
-    closeMenuPopup();
+  hubMenuOverlay?.addEventListener('click', closeHubMenu);
+  document.getElementById('hubMenuClose')?.addEventListener('click', closeHubMenu);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeHubMenu(); });
+  document.getElementById('menuToday')?.addEventListener('click', () => { closeHubMenu(); goToday(); });
+  document.getElementById('menuNewTask')?.addEventListener('click', () => {
+    closeHubMenu();
     const now = new Date();
     openNewTaskModal(formatDate(now), roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES));
   });
-  document.getElementById('schMenuSettings')?.addEventListener('click', () => { closeMenuPopup(); openSettingsBubble(); });
-  document.getElementById('schMenuTheme')?.addEventListener('click', () => { closeMenuPopup(); toggleTheme(); });
+  document.getElementById('menuTheme')?.addEventListener('click', () => { closeHubMenu(); toggleTheme(); });
+  document.getElementById('menuSettings')?.addEventListener('click', () => { closeHubMenu(); openSettingsBubble(); });
+  document.getElementById('menuHelp')?.addEventListener('click', () => { closeHubMenu(); showHelpModal(); });
+  document.getElementById('menuProfile')?.addEventListener('click', () => { closeHubMenu(); openSettingsBubble(); });
+
+  // Populate profile
+  (function populateMenuProfile() {
+    try {
+      var activeId = typeof getActiveUserId === 'function' ? getActiveUserId() : null;
+      var activeUser = activeId && Array.isArray(localUsers) ? localUsers.find(function(u) { return u.id === activeId; }) : null;
+      var nameEl = document.getElementById('menuName');
+      var emailEl = document.getElementById('menuEmail');
+      var avatarEl = document.getElementById('menuAvatar');
+      if (!nameEl) return;
+      if (activeUser) {
+        nameEl.textContent = activeUser.name || 'User';
+        if (emailEl) emailEl.textContent = activeUser.email || '';
+        if (avatarEl) {
+          var initials = typeof getInitials === 'function' ? getInitials(activeUser.name) : (activeUser.name ? activeUser.name[0].toUpperCase() : '?');
+          var color = activeUser._color || (typeof getColorForId === 'function' ? getColorForId(activeUser.id) : 'var(--accent)');
+          if (activeUser.picture) { avatarEl.innerHTML = '<img src="' + activeUser.picture + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">'; }
+          else { avatarEl.textContent = initials; avatarEl.style.background = color; }
+        }
+      } else {
+        nameEl.textContent = 'Guest';
+        if (emailEl) emailEl.textContent = '';
+        if (avatarEl) { avatarEl.textContent = '?'; avatarEl.style.background = ''; }
+      }
+    } catch (e) {}
+  })();
 
   // Mobile sidebar (separate from hamburger popup)
   const schSidebar = document.getElementById('hubSidebar');
