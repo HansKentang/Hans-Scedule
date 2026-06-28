@@ -25,8 +25,9 @@
  *    - The onSnapshot listener applies whatever is in Firestore
  *
  * 5. IMAGES:
- *    - Not synced (too large for Firestore documents)
- *    - Stored in IndexedDB per-device
+ *    - Synced as data URLs (resized to 800px max, ~50-200KB each)
+ *    - Only custom images (different from defaults) are synced, not URL defaults
+ *    - Stored in localStorage per-key under haven-image-{id} + IndexedDB
  */
 
 var CLOUD_SYNC = {
@@ -47,7 +48,7 @@ var CLOUD_SYNC = {
 };
 
 // All localStorage keys synced to/from Firestore.
-// Images excluded — too large for Firestore documents.
+// Custom images (differing from defaults) are added dynamically at init time.
 // Base keys (without user prefix). Used to build the actual localStorage
 // and Firestore keys for the current logged-in user.
 var CLOUD_SYNC_BASE_KEYS = [
@@ -81,20 +82,73 @@ var CLOUD_SYNC_BASE_KEYS = [
   'haven-spotify-active',
   'haven-spotify-collapsed',
   'chickbot_profile',
+  // AI settings (API key, model, provider) — synced so you don't reconfigure per device
+  'haven-schedule-apikey',
+  'haven-schedule-model',
+  'haven-schedule-provider',
 ];
 
 // The app stores all user data under a userId prefix (e.g. "firebase-xxx:haven-schedule-tasks").
 // This helper returns the actual localStorage key for the current user.
-function _syncKey(baseKey) {
-  var uid = CLOUD_SYNC.userId;
-  return uid ? uid + ':' + baseKey : baseKey;
-}
-
-// Pre-computed sync keys for the current user. Rebuilt when userId changes.
+// Pre-computed sync keys for the current user (base keys without userId prefix).
+// The localStorage override in shared.js adds the userId prefix automatically.
+// For Firestore field access, the prefix is added inline with CLOUD_SYNC.userId.
 var CLOUD_SYNC_KEYS = [];
 
 function rebuildSyncKeys() {
-  CLOUD_SYNC_KEYS = CLOUD_SYNC_BASE_KEYS.map(function(k) { return _syncKey(k); });
+  CLOUD_SYNC_KEYS = CLOUD_SYNC_BASE_KEYS.slice();
+}
+
+// ─── CUSTOM IMAGE KEYS ─────────────────────────────────────────
+// Scans state.images for any images that differ from their defaults
+// and adds their localStorage keys (haven-image-{id}) to the sync list.
+// Only data URLs or custom URLs get synced — default picsum/unsplash URLs are skipped.
+function addCustomImageKeys() {
+  var added = 0;
+  try {
+    if (typeof DEFAULT_IMAGES !== 'undefined' && typeof state !== 'undefined' && state && state.images) {
+      for (var key in DEFAULT_IMAGES) {
+        if (DEFAULT_IMAGES.hasOwnProperty(key)) {
+          var imgVal = state.images[key];
+          var defaultVal = DEFAULT_IMAGES[key];
+          // Only sync if the image has been customized (differs from default)
+          if (imgVal && imgVal !== defaultVal) {
+            var imgSyncKey = 'haven-image-' + key;
+            if (CLOUD_SYNC_BASE_KEYS.indexOf(imgSyncKey) === -1) {
+              CLOUD_SYNC_BASE_KEYS.push(imgSyncKey);
+              added++;
+            }
+          }
+        }
+      }
+    }
+    // Also scan for any image keys that may not be in DEFAULT_IMAGES (e.g. dynamically added)
+    if (typeof __origLS !== 'undefined') {
+      for (var i = 0; i < __origLS.length; i++) {
+        var lsk = __origLS.key(i);
+        if (!lsk) continue;
+        // Match keys like "firebase-xxx:haven-image-something" or "haven-image-something"
+        var match = lsk.match(/(?:^|:)(haven-image-.+)$/);
+        if (match) {
+          var baseKey = match[1];
+          if (CLOUD_SYNC_BASE_KEYS.indexOf(baseKey) === -1) {
+            var val = __origLS.getItem(lsk);
+            // Only add if the value is a data URL (custom upload/paste, not a default URL)
+            if (val && val.indexOf('data:') === 0) {
+              CLOUD_SYNC_BASE_KEYS.push(baseKey);
+              added++;
+            }
+          }
+        }
+      }
+    }
+    if (added > 0) {
+      rebuildSyncKeys();
+    }
+  } catch (e) {
+    console.warn('[sync] addCustomImageKeys error:', e);
+  }
+  return added;
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
@@ -121,6 +175,9 @@ function initCloudSync(userId) {
 
     // Rebuild the prefixed sync keys for this user
     rebuildSyncKeys();
+
+    // Add any custom image keys to the sync list
+    addCustomImageKeys();
 
     // Snapshot the current localStorage so we can detect changes
     takeCloudSnapshot();
@@ -206,7 +263,7 @@ function pushToCloud() {
     try {
       var val = localStorage.getItem(key);
       if (val !== null) {
-        batch[key] = val;
+        batch[CLOUD_SYNC.userId + ':' + key] = val;
       }
     } catch (e) { /* ignore */ }
   }
