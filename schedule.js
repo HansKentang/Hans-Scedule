@@ -897,6 +897,7 @@ function guessDragCreateMeta(mins) {
 }
 
 function startDragCreate(e, date, startMins) {
+  if (dragCreate) return;
   var pos = getEventPos(e);
   dragCreate = {
     date,
