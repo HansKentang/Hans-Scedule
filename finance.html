@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -6,14 +6,14 @@
   <meta name="theme-color" content="#0a0a0b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Havën">
+  <meta name="apple-mobile-web-app-title" content="HavÃ«n">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
     <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <title>Havën Schedule — Finance</title>
+  <title>HavÃ«n Schedule â€” Finance</title>
   <style>
     :root {
       --fin-income: #22c55e;
@@ -114,7 +114,7 @@
     .fin-hero-decor { position: absolute; right: 10px; top: 10px; width: 120px; height: 120px; opacity: 0.12; pointer-events: none; }
     .fin-hero-decor svg { width: 100%; height: 100%; }
 
-    /* ─── PIGGY BANK & WALLET ─────────────────────────── */
+    /* â”€â”€â”€ PIGGY BANK & WALLET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .fin-savings-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); }
     @media (max-width: 700px) { .fin-savings-row { grid-template-columns: 1fr; } }
 
@@ -160,7 +160,7 @@
     .fin-wallet-btn.sub:hover { border-color: var(--text-primary); color: var(--text-primary); }
     .fin-piggy-btn:active, .fin-wallet-btn:active { transform: scale(0.95); }
 
-    /* ─── SAVINGS LINE CHARTS ──────────────────────────── */
+    /* â”€â”€â”€ SAVINGS LINE CHARTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .fin-savings-charts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); }
     @media (max-width: 700px) { .fin-savings-charts { grid-template-columns: 1fr; } }
     .fin-savings-chart-card {
@@ -184,7 +184,7 @@
     }
     .fin-savings-chart-tooltip .tt-date { font-size: 0.6rem; color: var(--text-tertiary); }
 
-    /* ─── ADVANCED CHARTS ──────────────────────────────── */
+    /* â”€â”€â”€ ADVANCED CHARTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .fin-adv-section { margin-bottom: var(--space-6); }
     .fin-adv-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -207,7 +207,7 @@
     .fin-adv-tab.active svg { opacity: 1; }
     #finAdvBody { min-height: 280px; position: relative; }
 
-    /* ─── TREEMAP ────────────────────────────────────────── */
+    /* â”€â”€â”€ TREEMAP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .fin-treemap-svg { width: 100%; height: 320px; }
     .fin-treemap-rect { transition: opacity 200ms ease, transform 200ms ease; cursor: pointer; }
     .fin-treemap-rect:hover { opacity: 0.85; transform: scale(1.02); }
@@ -222,7 +222,7 @@
     .fin-treemap-tooltip .tt-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
     .fin-treemap-tooltip .tt-pct { color: var(--text-tertiary); font-size: 0.65rem; }
 
-    /* ─── MONTH-OVER-MONTH ───────────────────────────────── */
+    /* â”€â”€â”€ MONTH-OVER-MONTH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .fin-mom-wrap { padding: var(--space-2) 0; }
     .fin-mom-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -265,7 +265,7 @@
     .fin-mom-delta.up { color: var(--fin-expense); }
     .fin-mom-delta.down { color: var(--fin-income); }
 
-    /* ─── CALENDAR HEATMAP ───────────────────────────────── */
+    /* â”€â”€â”€ CALENDAR HEATMAP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .fin-heat-wrap { padding: var(--space-2) 0; }
     .fin-heat-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -311,7 +311,7 @@
       display: none; color: var(--text-primary);
     }
 
-    /* ─── WATERFALL CHART ────────────────────────────────── */
+    /* â”€â”€â”€ WATERFALL CHART â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .fin-waterfall-wrap { padding: var(--space-2) 0; }
     .fin-wf-chart {
       display: flex; align-items: flex-end; gap: 8px;
@@ -359,7 +359,7 @@
       padding-left: 6px; white-space: nowrap;
     }
 
-    /* ─── TOP MERCHANTS ──────────────────────────────────── */
+    /* â”€â”€â”€ TOP MERCHANTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     .fin-merch-wrap { padding: var(--space-2) 0; }
     .fin-merch-header {
       display: flex; align-items: center; justify-content: space-between;
@@ -438,9 +438,9 @@
     <aside class="hub-sidebar" id="hubSidebar">
       <div class="hub-workspace">
         <div class="hub-workspace-icon">H</div>
-        <span class="hub-workspace-name">Havën</span>
-        <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav">✎</button>
-        <button class="hub-hamburger" id="hubHamburger" aria-label="Settings">
+        <span class="hub-workspace-name">HavÃ«n</span>
+        <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav">âœŽ</button>
+        <button class="hub-hamburger" id="hubHamburger" aria-label="Menu">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
       </div>
@@ -458,7 +458,7 @@
       </nav>
       <div class="hub-sidebar-body">
       <div class="hub-sidebar-images"></div>
-      <!-- ─── SPOTIFY EMBED ───────────────────────── -->
+      <!-- â”€â”€â”€ SPOTIFY EMBED â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
       <div class="sp-sidebar" id="spSidebar">
         <div class="sp-header" onclick="spToggleSection()">
           <button class="sp-toggle-btn" onclick="event.stopPropagation();spToggleSection()" title="Toggle player">
@@ -498,13 +498,13 @@
         <div class="hub-footer-btns">
           <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><span>Theme</span></button>
           <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
-          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Visuals</span></button>
+          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode â€” tap any image to change"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Visuals</span></button>
 
         </div>
       </div>
     </aside>
     <div class="hub-main">
-      <!-- ─── FINANCE HERO BANNER ────────────────────────── -->
+      <!-- â”€â”€â”€ FINANCE HERO BANNER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
       <section style="position:relative;height:180px;overflow:hidden;flex-shrink:0">
         <img data-image-id="finance-hero" src="" alt=""
              style="width:100%;height:100%;object-fit:cover;opacity:0.7">
@@ -526,20 +526,20 @@
         <div class="fin-kpi-row hub-anim-in hub-anim-in-2">
           <div class="fin-kpi income">
             <div class="fin-kpi-label">Income</div>
-            <div class="fin-kpi-value" id="finIncome">—</div>
+            <div class="fin-kpi-value" id="finIncome">â€”</div>
           </div>
           <div class="fin-kpi expense">
             <div class="fin-kpi-label">Expenses</div>
-            <div class="fin-kpi-value" id="finExpenses">—</div>
+            <div class="fin-kpi-value" id="finExpenses">â€”</div>
           </div>
         </div>
 
-        <!-- ─── PIGGY BANK & WALLET ───────────────────── -->
+        <!-- â”€â”€â”€ PIGGY BANK & WALLET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
         <div class="fin-savings-row hub-anim-in hub-anim-in-4">
 
           <div class="fin-piggy-card">
             <div class="fin-piggy-header">
-              <span style="font-size:2rem;line-height:1">🐷</span>
+              <span style="font-size:2rem;line-height:1">ðŸ·</span>
               <div>
                 <div class="fin-piggy-label">Piggy Bank</div>
                 <div class="fin-piggy-balance" id="piggyBalance">Rp 0</div>
@@ -548,13 +548,13 @@
             <div class="fin-piggy-actions">
               <input type="number" id="piggyInput" class="fin-piggy-input" placeholder="Amount" step="1000" min="0">
               <button class="fin-piggy-btn add" id="piggyAddBtn">+ Save</button>
-              <button class="fin-piggy-btn sub" id="piggySubBtn">− Spend</button>
+              <button class="fin-piggy-btn sub" id="piggySubBtn">âˆ’ Spend</button>
             </div>
           </div>
 
           <div class="fin-wallet-card">
             <div class="fin-wallet-header">
-              <span style="font-size:2rem;line-height:1">👛</span>
+              <span style="font-size:2rem;line-height:1">ðŸ‘›</span>
               <div>
                 <div class="fin-wallet-label">Wallet</div>
                 <div class="fin-wallet-balance" id="walletBalance">Rp 0</div>
@@ -563,20 +563,20 @@
             <div class="fin-wallet-actions">
               <input type="number" id="walletInput" class="fin-wallet-input" placeholder="Amount" step="1000" min="0">
               <button class="fin-wallet-btn add" id="walletAddBtn">+ Add</button>
-              <button class="fin-wallet-btn sub" id="walletSubBtn">− Spend</button>
+              <button class="fin-wallet-btn sub" id="walletSubBtn">âˆ’ Spend</button>
             </div>
           </div>
 
         </div>
 
-        <!-- ─── SAVINGS LINE CHARTS ───────────────────── -->
+        <!-- â”€â”€â”€ SAVINGS LINE CHARTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
         <div class="fin-savings-charts hub-anim-in hub-anim-in-5">
           <div class="fin-savings-chart-card">
-            <div class="fin-savings-chart-title">🐷 Piggy Bank Trend (30D)</div>
+            <div class="fin-savings-chart-title">ðŸ· Piggy Bank Trend (30D)</div>
             <div class="fin-savings-chart-body" id="piggyChart"></div>
           </div>
           <div class="fin-savings-chart-card">
-            <div class="fin-savings-chart-title">👛 Wallet Trend (30D)</div>
+            <div class="fin-savings-chart-title">ðŸ‘› Wallet Trend (30D)</div>
             <div class="fin-savings-chart-body" id="walletChart"></div>
           </div>
         </div>
@@ -675,7 +675,7 @@
           </div>
         </div>
 
-        <!-- ─── ADVANCED CHARTS ───────────────────────────── -->
+        <!-- â”€â”€â”€ ADVANCED CHARTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
         <div class="fin-adv-section hub-anim-in hub-anim-in-9">
           <div class="fin-adv-header">
             <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary)">Spending Intelligence</span>
@@ -728,7 +728,7 @@
     function saveFin(list) { try { localStorage.setItem(FIN_STORAGE, JSON.stringify(list)); } catch (e) { /* ignore */ } }
     function fmtMoney(n) {
       const num = Number(n);
-      if (!Number.isFinite(num)) return '—';
+      if (!Number.isFinite(num)) return 'â€”';
       return 'Rp ' + Math.round(num).toLocaleString('id-ID');
     }
     function fmtShort(n) {
@@ -743,7 +743,7 @@
     function dayKey(d) { return new Date(d).toISOString().slice(0,10); }
     function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
 
-    // ─── FINANCE DATA ────────────────────────────────────────
+    // â”€â”€â”€ FINANCE DATA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     function rangeBounds(range) {
       const now = new Date();
@@ -791,7 +791,7 @@
       };
     }
 
-    // ─── RENDER FUNCTIONS ────────────────────────────────────
+    // â”€â”€â”€ RENDER FUNCTIONS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     function renderCards() {
       const s = getSummary();
@@ -975,7 +975,7 @@
 
     function renderAll() { renderCards(); renderCount(); renderTable(); renderCharts(); renderAdvView(); }
 
-    // ─── INIT ────────────────────────────────────────────────
+    // â”€â”€â”€ INIT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     function init() {
       loadState();
@@ -1026,7 +1026,7 @@
       initSavings();
     }
 
-    // ─── PIGGY BANK & WALLET ────────────────────────────────
+    // â”€â”€â”€ PIGGY BANK & WALLET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const PIGGY_KEY = 'haven-piggybank';
     const WALLET_KEY = 'haven-wallet';
 
@@ -1158,7 +1158,7 @@
       input.value = '';
     }
 
-    // ─── SAVINGS LINE CHART RENDERERS ──────────────────────
+    // â”€â”€â”€ SAVINGS LINE CHART RENDERERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     let _chartTooltipId = 0;
 
     // Compute nice round tick values for chart Y-axes
@@ -1503,19 +1503,19 @@
         </div>
         <div class="help-tips">
           <div class="help-tip">
-            <span class="help-tip-icon">💡</span>
+            <span class="help-tip-icon">ðŸ’¡</span>
             <div class="help-tip-text">Type natural language in the command palette (Ctrl+K) to schedule tasks</div>
           </div>
           <div class="help-tip">
-            <span class="help-tip-icon">🔄</span>
+            <span class="help-tip-icon">ðŸ”„</span>
             <div class="help-tip-text">Drag tasks to reschedule - other tasks automatically shift to avoid conflicts</div>
           </div>
           <div class="help-tip">
-            <span class="help-tip-icon">📎</span>
+            <span class="help-tip-icon">ðŸ“Ž</span>
             <div class="help-tip-text">Attach images to AI chat for visual analysis of schedules and screenshots</div>
           </div>
           <div class="help-tip">
-            <span class="help-tip-icon">🎯</span>
+            <span class="help-tip-icon">ðŸŽ¯</span>
             <div class="help-tip-text">Press F to toggle Focus Mode - hides sidebar and reduces visual clutter</div>
           </div>
         </div>
@@ -1571,7 +1571,7 @@
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
     }
   </script>
-  <!-- ─── Spotify Settings Modal ──────────────── -->
+  <!-- â”€â”€â”€ Spotify Settings Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
     <div class="sp-modal">
       <div class="sp-modal-header">

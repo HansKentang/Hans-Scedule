@@ -1733,15 +1733,33 @@ function bindEvents() {
   });
 
 
-  // Mobile hamburger for schedule page
+  // Hamburger menu popup
+  const schMenuPopup = document.getElementById('schMenuPopup');
   const schHamburger = document.getElementById('schHamburger');
+  function closeMenuPopup() { schMenuPopup?.classList.add('hidden'); }
+  schHamburger?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    schMenuPopup?.classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    if (schMenuPopup && !schMenuPopup.classList.contains('hidden') && !schMenuPopup.contains(e.target) && e.target !== schHamburger && !schHamburger?.contains(e.target)) {
+      closeMenuPopup();
+    }
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenuPopup(); });
+  document.getElementById('schMenuToday')?.addEventListener('click', () => { closeMenuPopup(); goToday(); });
+  document.getElementById('schMenuNewTask')?.addEventListener('click', () => {
+    closeMenuPopup();
+    const now = new Date();
+    openNewTaskModal(formatDate(now), roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES));
+  });
+  document.getElementById('schMenuSettings')?.addEventListener('click', () => { closeMenuPopup(); openSettingsBubble(); });
+  document.getElementById('schMenuTheme')?.addEventListener('click', () => { closeMenuPopup(); toggleTheme(); });
+
+  // Mobile sidebar (separate from hamburger popup)
   const schSidebar = document.getElementById('hubSidebar');
   const schSidebarOverlay = document.getElementById('hubSidebarOverlay');
   function closeSchSidebar() { schSidebar?.classList.remove('open'); schSidebarOverlay?.classList.remove('active'); }
-  schHamburger?.addEventListener('click', () => {
-    const isOpen = schSidebar?.classList.toggle('open');
-    schSidebarOverlay?.classList.toggle('active', isOpen);
-  });
   schSidebarOverlay?.addEventListener('click', closeSchSidebar);
   schSidebar?.querySelectorAll('.hub-snav-item').forEach(item => {
     item.addEventListener('click', closeSchSidebar);
