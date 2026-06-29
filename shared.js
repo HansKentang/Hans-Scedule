@@ -1562,6 +1562,7 @@ const LANG = {
     'gal.title':'Gallery','gal.add':'+ Add Image','gal.reset':'Reset','gal.noImages':'No images yet','gal.vision':'Vision Board','gal.custom':'Custom designs',
     'fr.title':'Friends','fr.add':'Add Friend','fr.code':'Friend Code','fr.copy':'Copy','fr.paste':'Paste','fr.pending':'Pending','fr.accepted':'Accepted','fr.empty':'No connections yet','fr.search':'Search','fr.send':'Send','fr.message':'Message','fr.share':'Share Code','fr.connect':'Connect','fr.enterCode':'Enter friend code','fr.yourCode':'Your Code','fr.connections':'Connections',
     'common.monday':'Monday','common.sunday':'Sunday','common.save':'Save','common.cancel':'Cancel','common.delete':'Delete','common.show':'Show','common.hide':'Hide','common.enterKey':'Enter key','common.quickActions':'Quick Actions','common.customize':'Customize','common.help':'Help','common.settings':'Settings','common.menu':'Menu','common.pages':'Pages','common.add':'Add','common.edit':'Edit','common.close':'Close','common.search':'Search','common.noData':'No data','appearance.title':'Appearance',
+    'common.done':'Done','common.stop':'Stop','common.send':'Send','common.name':'Name','common.note':'Note','common.url':'URL','common.today':'Today','common.all':'All','hub.editMode':'Edit Mode','hub.duplicate':'Duplicate','hub.bringForward':'Bring Forward','hub.doneEditing':'Done Editing','hub.hideBubbles':'Hide Bubbles','hub.sizeSmall':'Small (160x100)','hub.weatherError':'Could not load weather','hub.geoUnavail':'Geolocation unavailable','common.completed':'completed','an.learning':'learning','pomo.ready':'Ready to focus','pomo.paused':'Paused','pomo.focusSession':'Focus Session','sch.noTasks':'No tasks this week','chat.noKey':'Configure an API key in Settings to chat...','an.surplus':'Surplus over 14 days','an.avgAcross':'Average across','acts.deleted':'Task deleted','gl.noRelated':'No related tasks','gl.allDone':'All goals achieved!','gal.designs':'Your designs & posters','gal.removed':'Image removed from gallery','gal.noReset':'No custom images to reset','fr.ownCode':'That\'s your own friend code!','fr.adding':'Adding...','fr.noServer':'Could not connect to server. Try again later.','fr.noUser':'No user found with that friend code','fr.requestSent':'Friend request already sent. Waiting for them to accept.','fr.sentTo':'Friend request sent to','fr.removeFriend':'Remove this friend connection?','fr.needSignIn':'You need to be signed in to add friends','fr.alreadyFriends':'You are already friends with','sch.addToCal':'Add to Calendar','about.version':'Version 1.0.0','account.deletedAll':'All data deleted','account.nameReq':'Name is required','toast.synced':'Synced from cloud','toast.undoOk':'Undo successful','toast.noFirebase':'Firebase SDK not loaded. Refresh the page.','toast.signInFail':'Sign-in failed','toast.switched':'Switched to','toast.initCloud':'Initializing cloud storage...','toast.noGoogle':'No Google-authenticated profile found','toast.syncing':'Syncing...','toast.focusOn':'Focus mode activated','toast.ssSaved':'Screenshot saved!','toast.noTasksWeek':'No uncompleted tasks this week','toast.copied':'Copied','pomo.willPush':'Will push','img.enterBoth':'Enter both a label and URL','img.storageFull':'Could not save: localStorage might be full','toast.editOn':'Edit Mode ON','img.storageFull2':'Could not save image: storage full','img.paste':'Paste an image (Ctrl+V) or type a URL','img.notImage':'Not an image file','img.processing':'Processing image...','img.loaded':'Image loaded - click Save to apply','img.urlLoaded':'URL loaded - click Save to apply','fin.addTransactions':'Add transactions to unlock spending intelligence.','fin.noExpenses':'No expenses to visualize.','fin.noFlow':'Add transactions to see your cash flow waterfall.','fin.noMerchants':'Add notes to your expenses to track merchants.','chat.signIn':'Sign in to chat','common.remove':'Remove','common.task':'task','sch.toNextWeek':'to next week','hub.idea':'Idea',
     'lang.en':'English','lang.id':'Bahasa Indonesia','lang.zh':'\u4e2d\u6587',
   },
   id: {
@@ -1592,6 +1593,7 @@ const LANG = {
     'gal.title':'Galeri','gal.add':'+ Tambah Gambar','gal.reset':'Reset','gal.noImages':'Belum ada gambar','gal.vision':'Papan Visi','gal.custom':'Desain kustom',
     'fr.title':'Teman','fr.add':'Tambah Teman','fr.code':'Kode Teman','fr.copy':'Salin','fr.paste':'Tempel','fr.pending':'Menunggu','fr.accepted':'Diterima','fr.empty':'Belum ada koneksi','fr.search':'Cari','fr.send':'Kirim','fr.message':'Pesan','fr.share':'Bagikan Kode','fr.connect':'Hubungkan','fr.enterCode':'Masukkan kode teman','fr.yourCode':'Kode Anda','fr.connections':'Koneksi',
     'common.monday':'Senin','common.sunday':'Minggu','common.save':'Simpan','common.cancel':'Batal','common.delete':'Hapus','common.show':'Tampilkan','common.hide':'Sembunyikan','common.enterKey':'Masukkan kunci','common.quickActions':'Aksi Cepat','common.customize':'Sesuaikan','common.help':'Bantuan','common.settings':'Pengaturan','common.menu':'Menu','common.pages':'Halaman','common.add':'Tambah','common.edit':'Edit','common.close':'Tutup','common.search':'Cari','common.noData':'Tidak ada data','appearance.title':'Tampilan',
+    'common.done':'Selesai','common.stop':'Berhenti','common.send':'Kirim','common.name':'Nama','common.note':'Catatan','common.url':'URL','common.today':'Hari Ini','common.all':'Semua','hub.editMode':'Mode Edit','hub.duplicate':'Duplikat','hub.bringForward':'Bawa ke Depan','hub.doneEditing':'Selesai Edit','hub.hideBubbles':'Sembunyikan Gelembung','hub.sizeSmall':'Kecil (160x100)','hub.weatherError':'Gagal memuat cuaca','hub.geoUnavail':'Geolokasi tidak tersedia','common.completed':'selesai','an.learning':'pembelajaran','pomo.ready':'Siap fokus','pomo.paused':'Dijeda','pomo.focusSession':'Sesi Fokus','sch.noTasks':'Tidak ada tugas minggu ini','chat.noKey':'Konfigurasi kunci API di Pengaturan untuk mengobrol...','an.surplus':'Surplus selama 14 hari','an.avgAcross':'Rata-rata','acts.deleted':'Tugas dihapus','gl.noRelated':'Tidak ada tugas terkait','gl.allDone':'Semua tujuan tercapai!','gal.designs':'Desain & poster Anda','gal.removed':'Gambar dihapus dari galeri','gal.noReset':'Tidak ada gambar kustom untuk direset','fr.ownCode':'Itu kode teman Anda sendiri!','fr.adding':'Menambah...','fr.noServer':'Tidak dapat terhubung ke server. Coba lagi nanti.','fr.noUser':'Tidak ada pengguna dengan kode teman itu','fr.requestSent':'Permintaan pertemanan sudah dikirim. Menunggu diterima.','fr.sentTo':'Permintaan pertemanan dikirim ke','fr.removeFriend':'Hapus koneksi teman ini?','sch.addToCal':'Tambah ke Kalender','about.version':'Versi 1.0.0','account.deletedAll':'Semua data dihapus','account.nameReq':'Nama wajib diisi','toast.synced':'Sinkron dari cloud','toast.undoOk':'Urungkan berhasil','toast.noFirebase':'Firebase SDK tidak dimuat. Muat ulang halaman.','toast.signInFail':'Gagal masuk','toast.switched':'Beralih ke','toast.initCloud':'Menginisialisasi penyimpanan cloud...','toast.noGoogle':'Tidak ada profil terautentikasi Google ditemukan','toast.syncing':'Menyinkronkan...','toast.focusOn':'Mode fokus diaktifkan','toast.ssSaved':'Screenshot tersimpan!','toast.noTasksWeek':'Tidak ada tugas belum selesai minggu ini','toast.copied':'Disalin','pomo.willPush':'Akan mendorong','img.paste':'Tempel gambar (Ctrl+V) atau ketik URL','img.notImage':'Bukan file gambar','img.processing':'Memproses gambar...','img.loaded':'Gambar dimuat - klik Simpan untuk terapkan','img.urlLoaded':'URL dimuat - klik Simpan untuk terapkan','fin.addTransactions':'Tambah transaksi untuk membuka intelijen belanja.','fin.noExpenses':'Tidak ada pengeluaran untuk divisualisasikan.','fin.noFlow':'Tambah transaksi untuk melihat aliran kas Anda.','fin.noMerchants':'Tambah catatan ke pengeluaran untuk melacak merchant.','chat.signIn':'Masuk untuk mengobrol','common.remove':'Hapus','common.task':'tugas','sch.toNextWeek':'ke minggu depan','hub.idea':'Ide','fr.needSignIn':'Anda harus masuk untuk menambah teman','fr.alreadyFriends':'Anda sudah berteman dengan','img.enterBoth':'Masukkan label dan URL','img.storageFull':'Gagal menyimpan: localStorage mungkin penuh','toast.editOn':'Mode Edit AKTIF','img.storageFull2':'Gagal menyimpan gambar: penyimpanan penuh',
     'lang.en':'English','lang.id':'Bahasa Indonesia','lang.zh':'\u4e2d\u6587',
   },
   zh: {
@@ -1622,6 +1624,7 @@ const LANG = {
     'gal.title':'\u753b\u5eca','gal.add':'+ \u6dfb\u52a0\u56fe\u7247','gal.reset':'\u91cd\u7f6e','gal.noImages':'\u6682\u65e0\u56fe\u7247','gal.vision':'\u613f\u666f\u677f','gal.custom':'\u81ea\u5b9a\u4e49\u8bbe\u8ba1',
     'fr.title':'\u670b\u53cb','fr.add':'\u6dfb\u52a0\u670b\u53cb','fr.code':'\u670b\u53cb\u7801','fr.copy':'\u590d\u5236','fr.paste':'\u7c98\u8d34','fr.pending':'\u5f85\u63a5\u53d7','fr.accepted':'\u5df2\u63a5\u53d7','fr.empty':'\u6682\u65e0\u8054\u7cfb','fr.search':'\u641c\u7d22','fr.send':'\u53d1\u9001','fr.message':'\u6d88\u606f','fr.share':'\u5206\u4eab\u7801','fr.connect':'\u8fde\u63a5','fr.enterCode':'\u8f93\u5165\u670b\u53cb\u7801','fr.yourCode':'\u4f60\u7684\u7801','fr.connections':'\u8054\u7cfb',
     'common.monday':'\u661f\u671f\u4e00','common.sunday':'\u661f\u671f\u65e5','common.save':'\u4fdd\u5b58','common.cancel':'\u53d6\u6d88','common.delete':'\u5220\u9664','common.show':'\u663e\u793a','common.hide':'\u9690\u85cf','common.enterKey':'\u8f93\u5165\u5bc6\u94a5','common.quickActions':'\u5feb\u901f\u64cd\u4f5c','common.customize':'\u81ea\u5b9a\u4e49','common.help':'\u5e2e\u52a9','common.settings':'\u8bbe\u7f6e','common.menu':'\u83dc\u5355','common.pages':'\u9875\u9762','common.add':'\u6dfb\u52a0','common.edit':'\u7f16\u8f91','common.close':'\u5173\u95ed','common.search':'\u641c\u7d22','common.noData':'\u6682\u65e0\u6570\u636e','appearance.title':'\u5916\u89c2',
+    'common.done':'完成','common.stop':'停止','common.send':'发送','common.name':'姓名','common.note':'备注','common.url':'网址','common.today':'今天','common.all':'全部','hub.editMode':'编辑模式','hub.duplicate':'复制','hub.bringForward':'前移一层','hub.doneEditing':'完成编辑','hub.hideBubbles':'隐藏气泡','hub.sizeSmall':'小 (160x100)','hub.weatherError':'无法加载天气','hub.geoUnavail':'地理位置不可用','common.completed':'已完成','an.learning':'学习','pomo.ready':'准备专注','pomo.paused':'已暂停','pomo.focusSession':'专注会话','sch.noTasks':'本周没有任务','chat.noKey':'在设置中配置 API 密钥即可聊天...','an.surplus':'14天盈余','an.avgAcross':'平均','acts.deleted':'任务已删除','gl.noRelated':'没有相关任务','gl.allDone':'所有目标已达成！','gal.designs':'你的设计 & 海报','gal.removed':'图片已从画廊删除','gal.noReset':'没有自定义图片可重置','fr.ownCode':'那是你自己的好友码！','fr.adding':'添加中...','fr.noServer':'无法连接到服务器。请稍后再试。','fr.noUser':'未找到该好友码对应的用户','fr.requestSent':'好友请求已发送。等待对方接受。','fr.sentTo':'好友请求已发送至','fr.removeFriend':'删除此好友连接？','sch.addToCal':'添加到日历','about.version':'版本 1.0.0','account.deletedAll':'所有数据已删除','account.nameReq':'姓名为必填项','toast.synced':'已从云端同步','toast.undoOk':'撤销成功','toast.noFirebase':'Firebase SDK 未加载。请刷新页面。','toast.signInFail':'登录失败','toast.switched':'已切换至','toast.initCloud':'正在初始化云存储...','toast.noGoogle':'未找到 Google 认证的个人资料','toast.syncing':'同步中...','toast.focusOn':'专注模式已激活','toast.ssSaved':'截图已保存！','toast.noTasksWeek':'本周没有未完成的任务','toast.copied':'已复制','pomo.willPush':'推送中','img.paste':'粘贴图片 (Ctrl+V) 或输入网址','img.notImage':'不是图片文件','img.processing':'处理图片中...','img.loaded':'图片已加载 - 点击保存应用','img.urlLoaded':'网址已加载 - 点击保存应用','fin.addTransactions':'添加交易以解锁消费智能分析。','fin.noExpenses':'没有可可视化的支出。','fin.noFlow':'添加交易以查看现金流瀑布图。','fin.noMerchants':'添加备注到支出来跟踪商户。','chat.signIn':'登录以聊天','common.remove':'删除','common.task':'任务','sch.toNextWeek':'到下周','hub.idea':'灵感','fr.needSignIn':'需要登录才能添加好友','fr.alreadyFriends':'你们已经是好友了','img.enterBoth':'请输入标签和网址','img.storageFull':'无法保存：localStorage 可能已满','toast.editOn':'编辑模式已开启','img.storageFull2':'无法保存图片：存储已满',
     'lang.en':'English','lang.id':'Bahasa Indonesia','lang.zh':'\u4e2d\u6587',
   },
 };
@@ -1751,7 +1754,234 @@ function applyLanguage(lang) {
   if (typeof settingsPanelActiveCategory !== 'undefined' && settingsPanelActiveCategory && typeof switchSettingsCategory === 'function') {
     switchSettingsCategory(settingsPanelActiveCategory);
   }
+  // Auto-translate remaining text nodes
+  translateTextNodes();
 }
+
+// ─── AUTO-TRANSLATE SYSTEM ────────────────────────────
+// Maps English text patterns to i18n keys for auto-translation
+var _ENG_TXT = {
+  // Common
+  'Done':'common.done','Start':'common.start','Pause':'common.pause','Resume':'common.resume',
+  'Stop':'common.stop','Close':'common.close','Save':'common.save','Cancel':'common.cancel',
+  'Delete':'common.delete','Add':'common.add','Edit':'common.edit','Search':'common.search',
+  'Send':'common.send','Share':'common.share','Copy':'common.copy','Paste':'common.paste',
+  'Name':'common.name','Email':'common.email','Date':'common.date','Time':'common.time',
+  'Note':'common.note','Type':'common.type','Status':'common.status','Link':'common.link',
+  'URL':'common.url','Image':'common.image','Images':'common.images','Label':'common.label',
+  'Settings':'common.settings','Theme':'appearance.title','Help':'common.help',
+  'Today':'common.today','Week':'common.week','Month':'common.month','Year':'common.year',
+  'All':'common.all','None':'common.none',
+  // Hub
+  'Good morning':'hub.greeting','Good afternoon':'hub.greetingPM','Good evening':'hub.greetingPM',
+  'Edit Mode':'hub.editMode','ON':'common.on','OFF':'common.off',
+  'Edit':'hub.edit','Add':'hub.add','Guide':'hub.guide',
+  'Goals & Priorities':'hub.sectionGoals','Sleep':'hub.sectionSleep','Views':'hub.sectionViews',
+  'TODAY':'hub.today','WEEK':'hub.week',
+  'Export':'hub.export','Import':'hub.import','Focus':'hub.focus',
+  'Duplicate':'hub.duplicate','Remove':'hub.remove','Reset Size':'hub.resetSize',
+  'Bring Forward':'hub.bringForward','Send Backward':'hub.sendBackward',
+  'Done Editing':'hub.doneEditing','Customize':'common.customize',
+  'Hide Bubbles':'hub.hideBubbles',
+  'Small (160x100)':'hub.sizeSmall','Medium (240x160)':'hub.sizeMedium','Large (340x240)':'hub.sizeLarge',
+  'Could not load weather':'hub.weatherError','Location access needed':'hub.geoNeeded',
+  'Geolocation unavailable':'hub.geoUnavail',
+  // Chart common
+  'completed':'common.completed','scheduled':'common.scheduled','focus time':'an.focusTime',
+  'learning':'an.learning','All Time':'an.allTime',
+  'No data':'common.noData','No sleep data':'sleep.noData',
+  // Schedule
+  'No key':'sch.apiNoKey','School':'sch.school','Holiday':'sch.holiday','tasks':'sch.tasks',
+  'Ready to focus':'pomo.ready','Focusing...':'pomo.focusing','Break time':'pomo.break',
+  'Paused':'pomo.paused','Session complete!':'pomo.complete',
+  'Focus Session':'pomo.focusSession',
+  'No tasks this week':'sch.noTasks','No subcategories':'sch.noSubcats',
+  'Category name':'sch.catName','Pick a colour':'sch.pickColor','Add category':'sch.addCategory',
+  'Copy Week':'sch.copyWeek','Screenshot':'sch.ss',
+  // Sleep
+  '+ Log Sleep':'sleep.log','Overview':'sleep.overview','History':'sleep.history',
+  'Insights':'sleep.insights','Targets':'sleep.targets','Score':'sleep.score',
+  'last night':'sleep.lastNight','7-Day Avg':'sleep.avg7','Avg Quality':'sleep.avgQuality',
+  'Consistency':'sleep.consistency','This Week\'s Sleep':'sleep.thisWeek',
+  'No data yet':'sleep.noData','No sleep logs yet. Log your first night!':'sleep.noLogs',
+  'Target Bedtime':'sleep.targetBedtime','Target Wake Time':'sleep.targetWake',
+  'Target Duration':'sleep.targetDuration','Save Targets':'sleep.saveTargets',
+  'Bedtime Routine':'sleep.routine','Save Routine':'sleep.saveRoutine',
+  'Log 3+ nights':'sleep.qualityLabel',
+  // Spotify
+  'Spotify':'spotify.title','Playlist':'spotify.playlist',
+  'No playlist linked':'spotify.noPlaylist','Add playlist':'spotify.addPlaylist',
+  // AI / Chat
+  'ChickBot':'chat.title','Your smart schedule buddy':'chat.subtitle',
+  'Ask about your schedule...':'chat.placeholder','Natural language scheduling':'chat.natural',
+  'Configure an API key in Settings to chat...':'chat.noKey',
+  // Analytics
+  'Tasks':'an.tasks','Time':'an.time','Deep Work':'an.deep','Study':'an.study',
+  'Completion':'an.completion','Streak':'an.streak','Daily Breakdown':'an.daily',
+  'Distribution':'an.distribution','Weekly Trend':'an.trend','Duration':'an.duration',
+  'Quality':'an.quality','Day-by-Day':'an.table','Active':'an.active',
+  'This Week':'an.weekly','This Month':'an.thisMonth',
+  'Past 7 days':'an.past7','Current':'an.current','Best':'an.best','days':'an.days','night':'an.night',
+  'Surplus over 14 days':'an.surplus','Deficit over 14 days':'an.deficit','Balanced':'an.balanced',
+  'Average across':'an.avgAcross','Log 3+ nights to calculate':'an.logMore',
+  // Activities
+  'Board':'acts.board','Timeline':'acts.timeline',
+  'Activity Log':'acts.log','No tasks yet':'acts.noTasks','Complete a task to see it here':'acts.empty',
+  'Task deleted':'acts.deleted','Completion undone':'acts.undone','tasks across all categories':'acts.across',
+  // Goals
+  'No goals yet':'gl.noGoals','Add your first goal to start tracking':'gl.addFirst',
+  'No related tasks':'gl.noRelated','Define what matters':'gl.define',
+  'All goals achieved!':'gl.allDone','active':'gl.active','completed':'gl.completed',
+  'overall progress':'gl.progress','Track your aspirations':'gl.track',
+  'Vision Board':'gl.vision','Monthly Manifesto':'gl.manifesto','Related Tasks':'gl.related',
+  // Gallery
+  'Vision Board':'gal.vision','Start your collection':'gal.start',
+  'Your designs & posters':'gal.designs','Add your first image':'gal.addFirst',
+  'Image removed from gallery':'gal.removed','Gallery reordered':'gal.reordered',
+  'No custom images to reset':'gal.noReset','image':'gal.image','images':'gal.images',
+  // Friends
+  'Please enter a friend code':'fr.enterCode',
+  'You need to be signed in to add friends':'fr.needSignIn',
+  'That\'s your own friend code!':'fr.ownCode',
+  'Adding...':'fr.adding','Looking up friend code...':'fr.looking',
+  'Could not connect to server. Try again later.':'fr.noServer',
+  'No user found with that friend code':'fr.noUser',
+  'You are already friends with':'fr.alreadyFriends',
+  'Friend request already sent. Waiting for them to accept.':'fr.requestSent',
+  'Friend request sent to':'fr.sentTo','connections':'fr.connections','friends':'fr.friends',
+  'Remove this friend connection?':'fr.removeFriend',
+  'Pending':'fr.pending','Accepted':'fr.accepted',
+  // Finance
+  'Income':'fin.income','Expense':'fin.expense','Piggy Bank':'fin.piggy','Wallet':'fin.wallet',
+  'Amount':'fin.amount','Category':'fin.category','Date':'fin.date','Note':'fin.note',
+  'Search':'fin.search','Export CSV':'fin.exportCSV',
+  'Spending Intelligence':'fin.intelligence',
+  // Pages
+  'Hub':'nav.hub','Schedule':'nav.schedule','Activities':'nav.activities',
+  'Analytics':'nav.analytics','Goals':'nav.goals','Finance':'nav.finance',
+  'Gallery':'nav.gallery','Friends':'nav.friends',
+  'Pages':'common.pages','Actions':'common.actions','Menu':'common.menu','Quick Actions':'common.quickActions',
+  // Schedule menu
+  'New Task':'menu.newTask','Theme':'menu.theme',
+  // Sidebar
+  'Theme':'sidebar.theme','Settings':'sidebar.settings','Visuals':'sidebar.visuals',
+  // Buttons
+  'Add to Calendar':'sch.addToCal',
+  // Settings
+  'My Account':'account.title','Appearance':'appearance.title','AI & API':'ai.title',
+  'Data':'data.title','About':'about.title','Access Hub':'settings.access',
+  'PREFERENCES':'account.preferences','Language':'account.language','Timezone':'account.timezone',
+  'Week starts on':'account.weekStart','Time format':'account.timeFormat',
+  'DATA & PRIVACY':'account.dataPrivacy',
+  'Sign in with Google':'account.google','Add local profile':'account.local','Sign Out':'account.signOut',
+  'Export Data':'data.export','Import Data':'data.import',
+  'Version 1.0.0':'about.version','GitHub':'about.github',
+  'All data deleted':'account.deletedAll','Profile updated':'account.updated',
+  'Name is required':'account.nameReq','Data exported':'account.dataExported',
+  // Toast / status
+  'Synced from cloud':'toast.synced','Cloud write failed':'toast.writeFailed',
+  'Undo successful':'toast.undoOk','Settings saved':'toast.saved','API key cleared':'toast.keyCleared',
+  'Firebase SDK not loaded. Refresh the page.':'toast.noFirebase',
+  'Sign-in failed':'toast.signInFail','Signed in as':'toast.signedIn',
+  'Switched to':'toast.switched','Profile removed':'toast.profileRemoved',
+  'Initializing cloud storage...':'toast.initCloud',
+  'No Google-authenticated profile found':'toast.noGoogle',
+  'Syncing...':'toast.syncing','All data synced!':'toast.synced',
+  // Focus mode
+  'Focus mode activated':'toast.focusOn','Focus mode deactivated':'toast.focusOff',
+  'Screenshot saved!':'toast.ssSaved','No week loaded':'toast.noWeek',
+  'No uncompleted tasks this week':'toast.noTasksWeek',
+  'Copied':'toast.copied',
+  // Pomodoro
+  'Will push':'pomo.willPush',
+  // Image picker
+  'Paste an image (Ctrl+V) or type a URL':'img.paste',
+  'Not an image file':'img.notImage','Image too large (max 2MB)':'img.tooLarge',
+  'Processing image...':'img.processing',
+  'Image loaded - click Save to apply':'img.loaded',
+  'URL loaded - click Save to apply':'img.urlLoaded','Saved!':'img.saved',
+  'Enter both a label and URL':'img.enterBoth',
+  'Could not save: localStorage might be full':'img.storageFull',
+  'Edit Mode ON':'toast.editOn','Edit Mode OFF':'toast.editOff',
+  'Could not save image: storage full':'img.storageFull2',
+  // Fin toasts
+  'Add transactions to unlock spending intelligence.':'fin.addTransactions',
+  'No expenses to visualize.':'fin.noExpenses',
+  'Add transactions to see your cash flow waterfall.':'fin.noFlow',
+  'Add notes to your expenses to track merchants.':'fin.noMerchants',
+  // Chat
+  'Sign in to chat':'chat.signIn','No conversations yet':'chat.noConvos',
+  // Confirm dialogs
+  'Remove':'common.remove',
+  // Copy Week
+  'task':'common.task','task(s)':'common.tasks',
+  'to next week':'sch.toNextWeek',
+  // Access Hub
+  'Focus':'hub.focus','AI':'sch.ai','Screenshot':'sch.ss','Templates':'sch.templates',
+  'Idea':'hub.idea',
+};
+
+// Auto-translate a string by looking up its i18n key
+function tStr(text) {
+  if (!text || typeof text !== 'string') return text;
+  var trimmed = text.trim();
+  // Check exact match
+  if (_ENG_TXT[trimmed]) return t(_ENG_TXT[trimmed]);
+  // Check with a leading number: "5 tasks" -> translate "tasks"
+  var numMatch = trimmed.match(/^(\d+)\s+(.+)/);
+  if (numMatch) {
+    var num = numMatch[1];
+    var rest = numMatch[2];
+    if (_ENG_TXT[rest]) return num + ' ' + t(_ENG_TXT[rest]);
+  }
+  // Check with trailing number: "tasks across all categories" -> full match already handled above
+  // Check possessive: "Friend request sent to Name" -> translate "Friend request sent to"
+  for (var key in _ENG_TXT) {
+    if (trimmed.indexOf(key) === 0) {
+      var after = trimmed.slice(key.length);
+      return t(_ENG_TXT[key]) + after;
+    }
+  }
+  return text;
+}
+
+// Walk DOM text nodes and auto-translate known text
+function translateTextNodes(root) {
+  if (!root) root = document.body;
+  if (!root) return;
+  var walker = document.createTreeWalker(root, 4, null, false); // NodeFilter.SHOW_TEXT
+  var node;
+  var nodes = [];
+  while (node = walker.nextNode()) nodes.push(node);
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    if (!n.parentNode) continue;
+    var el = n.parentNode;
+    if (el.nodeType === 1) {
+      var tag = el.tagName;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'SVG' || tag === 'PATH' ||
+          tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'OPTION') continue;
+      if (el.closest && (el.closest('svg') || el.closest('style') || el.closest('script'))) continue;
+      if (el.hasAttribute && el.hasAttribute('data-i18n')) continue;
+    }
+    var txt = n.nodeValue;
+    if (!txt || !txt.trim()) continue;
+    // Skip if contains only numbers or symbols
+    if (/^[\d\s\.,\-:;!?%°#@$€£¥₩\/()\[\]{}'"]+$/.test(txt.trim())) continue;
+    var translated = tStr(txt);
+    if (translated !== txt) {
+      n.nodeValue = translated;
+    }
+  }
+}
+
+// ─── WRAP NATIVE DIALOGS ──────────────────────────────
+var _origConfirm = window.confirm;
+var _origPrompt = window.prompt;
+var _origAlert = window.alert;
+window.confirm = function(msg) { return _origConfirm(tStr(msg)); };
+window.prompt = function(msg, def) { return _origPrompt(tStr(msg), def); };
+window.alert = function(msg) { _origAlert(tStr(msg)); };
 
 var DEFAULT_ACCESS_BUBBLES = {
   'focus-timer': { visible: true, label: 'Focus', color: '#fff' },
@@ -5382,7 +5612,7 @@ function showToast(message, type, duration) {
     animation: slideUp 200ms cubic-bezier(0.16, 1, 0.3, 1);
     max-width: 360px;
   `;
-  toast.innerHTML = message;
+  toast.innerHTML = tStr(message);
   document.body.appendChild(toast);
 
   setTimeout(() => {
