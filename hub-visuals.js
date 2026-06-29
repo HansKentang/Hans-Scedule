@@ -23,7 +23,8 @@ const HUB_VIS_KEY = 'haven-hub-visibility';
 const HUB_CONTENT_KEY = 'haven-hub-content';
 
 const MAX_CANVAS_HEIGHT = 10000;
-let hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true';
+let hubEditMode = false;
+try { hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true'; } catch (e) { /* ignore */ }
 let _bentoUidCounter = 0;
 let _clockInterval = null;
 let _timerIntervals = {};
