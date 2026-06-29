@@ -596,6 +596,31 @@ function renderAppearanceSettings(el) {
 function renderAISettings(el) {
   var savedProvider = localStorage.getItem('haven-schedule-provider') || 'groq';
   var savedKey = localStorage.getItem('haven-schedule-apikey') || '';
+  var profile = typeof getChickBotProfile === 'function' ? (getChickBotProfile() || {}) : {};
+  var routine = typeof loadRoutine === 'function' ? loadRoutine() : '';
+
+  // Build memory list
+  var up = typeof state !== 'undefined' && state.userProfile ? state.userProfile : { conversationMemory: {} };
+  var memObj = up.conversationMemory || {};
+  var memKeys = Object.keys(memObj);
+  var memHtml = memKeys.length === 0
+    ? '<div class="set-empty">No memories yet. Chat with ChickBot to build your profile.</div>'
+    : memKeys.map(function(k) {
+        var m = memObj[k];
+        return '<div class="set-mem-item" data-mem-key="' + escapeHtml(k) + '">' +
+          '<div class="set-mem-body"><div class="set-mem-fact">' + escapeHtml(m.fact || '') + '</div>' +
+          '<div class="set-mem-meta">' + escapeHtml(m.date || '') + (m.source ? ' \u00B7 ' + escapeHtml(m.source) : '') + '</div></div>' +
+          '<button class="set-mem-del" data-mem-del="' + escapeHtml(k) + '">\u2715</button></div>';
+      }).join('');
+
+  // Stats
+  var tasksTracked = up.totalTasksCreated || 0;
+  var sessions = up.totalSessions || 0;
+  var keywords = up.titleKeywords ? Object.keys(up.titleKeywords).length : 0;
+  var memoryCount = memKeys.length;
+  var ps = up.planStats || {};
+  var planRate = ps.total > 0 ? Math.round((ps.accepted / ps.total) * 100) + '%' : '\u2014';
+  var extra = localStorage.getItem('haven-ai-extra-instructions') || '';
 
   el.innerHTML =
     '<h3>AI & API</h3>' +
@@ -608,6 +633,40 @@ function renderAISettings(el) {
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">API Key</div><div class="set-row-desc">Your API key for the selected provider</div></div>' +
         '<div class="set-row-control"><div class="set-api-row"><input class="set-input" type="password" id="setApiKey" placeholder="Enter key" spellcheck="false"><button class="set-btn" id="setApiToggle">Show</button></div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="set-divider"></div>' +
+    '<div class="set-group set-group-collapse">' +
+      '<div class="set-row-label set-acc-header" onclick="var n=this.nextElementSibling;n.classList.toggle(\'collapsed\');this.classList.toggle(\'collapsed\')">AI PROFILE & LEARNING <span class="set-acc-toggle">\u203A</span></div>' +
+      '<div class="set-acc-body">' +
+        '<div class="set-subsection-label">ABOUT YOU</div>' +
+        '<div class="set-ai-grid">' +
+          '<div class="set-ai-field"><label class="set-ai-label">Name</label><input class="set-input set-input-full" id="ai-name" value="' + escapeHtml(profile.name || '') + '" placeholder="Your name"></div>' +
+          '<div class="set-ai-field"><label class="set-ai-label">Pronouns</label><input class="set-input set-input-full" id="ai-pronouns" value="' + escapeHtml(profile.pronouns || '') + '" placeholder="e.g. they/them"></div>' +
+        '</div>' +
+        '<div class="set-ai-field"><label class="set-ai-label">Occupation</label><input class="set-input set-input-full" id="ai-occupation" value="' + escapeHtml(profile.occupation || '') + '" placeholder="e.g. Student, Designer"></div>' +
+        '<div class="set-ai-grid">' +
+          '<div class="set-ai-field"><label class="set-ai-label">Goals</label><textarea class="set-input set-input-full set-textarea" id="ai-goals" rows="2" placeholder="Your top goals...">' + escapeHtml(profile.goals || '') + '</textarea></div>' +
+          '<div class="set-ai-field"><label class="set-ai-label">Routines</label><textarea class="set-input set-input-full set-textarea" id="ai-routines" rows="2" placeholder="Any routines...">' + escapeHtml(profile.routines || '') + '</textarea></div>' +
+        '</div>' +
+        '<div class="set-ai-field"><label class="set-ai-label">Preferences</label><textarea class="set-input set-input-full set-textarea" id="ai-preferences" rows="2" placeholder="Other preferences">' + escapeHtml(profile.preferences || '') + '</textarea></div>' +
+        '<div class="set-ai-field"><label class="set-ai-label">Daily Schedule</label><textarea class="set-input set-input-full set-textarea" id="ai-routine" rows="2" placeholder="Describe a typical day...">' + escapeHtml(routine) + '</textarea></div>' +
+        '<button class="set-btn set-btn-primary set-ai-save" id="aiProfileSave">Save Profile</button>' +
+        '<div class="set-subsection-label" style="margin-top:10px">WHAT I\u2019VE LEARNED</div>' +
+        '<div class="set-mem-list" id="aiMemList">' + memHtml + '</div>' +
+        '<div style="display:flex;gap:4px;margin-top:4px"><button class="set-btn" id="aiMemAdd">+ Add Memory</button></div>' +
+        '<div class="set-subsection-label" style="margin-top:10px">LEARNING DATA</div>' +
+        '<div class="set-ai-stats">' +
+          '<div class="set-ai-stat"><span class="set-ai-stat-val">' + tasksTracked + '</span> tasks</div>' +
+          '<div class="set-ai-stat"><span class="set-ai-stat-val">' + sessions + '</span> sessions</div>' +
+          '<div class="set-ai-stat"><span class="set-ai-stat-val">' + keywords + '</span> keywords</div>' +
+          '<div class="set-ai-stat"><span class="set-ai-stat-val">' + memoryCount + '</span> memories</div>' +
+          '<div class="set-ai-stat"><span class="set-ai-stat-val">' + planRate + '</span> plan acc.</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:4px;margin-top:6px"><button class="set-btn" id="aiMemClear">Clear Memories</button><button class="set-btn" id="aiResetLearning">Reset Learning</button></div>' +
+        '<div class="set-subsection-label" style="margin-top:10px">EXTRA INSTRUCTIONS</div>' +
+        '<textarea class="set-input set-input-full set-textarea" id="aiExtraInstructions" rows="2" placeholder="Extra instructions for the AI (optional)...">' + escapeHtml(extra) + '</textarea>' +
+        '<button class="set-btn set-ai-save" id="aiExtraSave" style="margin-top:4px">Save Instructions</button>' +
       '</div>' +
     '</div>';
 
@@ -626,6 +685,89 @@ function renderAISettings(el) {
     var input = document.getElementById('setApiKey');
     if (input.type === 'password') { input.type = 'text'; this.textContent = 'Hide'; }
     else { input.type = 'password'; this.textContent = 'Show'; }
+  });
+
+  document.getElementById('aiProfileSave').addEventListener('click', function() {
+    if (typeof saveChickBotProfile !== 'function') return;
+    saveChickBotProfile({
+      name: document.getElementById('ai-name')?.value?.trim() || '',
+      pronouns: document.getElementById('ai-pronouns')?.value?.trim() || '',
+      occupation: document.getElementById('ai-occupation')?.value?.trim() || '',
+      goals: document.getElementById('ai-goals')?.value?.trim() || '',
+      routines: document.getElementById('ai-routines')?.value?.trim() || '',
+      preferences: document.getElementById('ai-preferences')?.value?.trim() || ''
+    });
+    var r = document.getElementById('ai-routine')?.value?.trim() || '';
+    if (r && typeof saveRoutine === 'function') saveRoutine(r);
+    if (typeof showToast === 'function') showToast('Profile saved');
+  });
+
+  // Memory list event delegation
+  var memList = document.getElementById('aiMemList');
+  if (memList) {
+    memList.addEventListener('click', function(e) {
+      var btn = e.target.closest('[data-mem-del]');
+      if (!btn) return;
+      var key = btn.dataset.memDel;
+      if (!key || !state.userProfile?.conversationMemory) return;
+      delete state.userProfile.conversationMemory[key];
+      if (typeof saveUserProfile === 'function') saveUserProfile();
+      var item = btn.closest('.set-mem-item');
+      if (item) item.remove();
+      if (!Object.keys(state.userProfile.conversationMemory).length) {
+        memList.innerHTML = '<div class="set-empty">No memories yet. Chat with ChickBot to build your profile.</div>';
+      }
+    });
+  }
+
+  // Reusable memory re-render helper
+  function rerenderMemories() {
+    var list = document.getElementById('aiMemList');
+    if (!list) return;
+    var obj = state.userProfile?.conversationMemory || {};
+    var keys = Object.keys(obj);
+    if (keys.length === 0) {
+      list.innerHTML = '<div class="set-empty">No memories yet. Chat with ChickBot to build your profile.</div>';
+    } else {
+      list.innerHTML = keys.map(function(k) {
+        var m = obj[k];
+        return '<div class="set-mem-item" data-mem-key="' + escapeHtml(k) + '">' +
+          '<div class="set-mem-body"><div class="set-mem-fact">' + escapeHtml(m.fact || '') + '</div>' +
+          '<div class="set-mem-meta">' + escapeHtml(m.date || '') + (m.source ? ' \u00B7 ' + escapeHtml(m.source) : '') + '</div></div>' +
+          '<button class="set-mem-del" data-mem-del="' + escapeHtml(k) + '">\u2715</button></div>';
+      }).join('');
+    }
+  }
+
+  document.getElementById('aiMemAdd')?.addEventListener('click', function() {
+    var key = prompt('Give this memory a short label (e.g. "coffee-time"):');
+    if (!key) return;
+    var fact = prompt('What should I remember about you?');
+    if (!fact) return;
+    if (typeof storeMemory === 'function') storeMemory(key.trim(), fact.trim(), 'user');
+    rerenderMemories();
+  });
+
+  document.getElementById('aiMemClear')?.addEventListener('click', function() {
+    if (!state.userProfile) return;
+    if (!confirm('Clear all AI memories?')) return;
+    state.userProfile.conversationMemory = {};
+    if (typeof saveUserProfile === 'function') saveUserProfile();
+    rerenderMemories();
+  });
+
+  document.getElementById('aiResetLearning')?.addEventListener('click', function() {
+    if (!confirm('Reset all learning data (tasks, keywords, memories)? This cannot be undone.')) return;
+    if (typeof createDefaultProfile !== 'function') return;
+    state.userProfile = createDefaultProfile();
+    if (typeof saveUserProfile === 'function') saveUserProfile();
+    if (typeof showToast === 'function') showToast('Learning data reset');
+  });
+
+  document.getElementById('aiExtraSave')?.addEventListener('click', function() {
+    var val = document.getElementById('aiExtraInstructions')?.value?.trim() || '';
+    try { localStorage.setItem('haven-ai-extra-instructions', val); } catch (e) { /* ignore */ }
+    if (typeof showToast === 'function') showToast('Instructions saved');
   });
 }
 

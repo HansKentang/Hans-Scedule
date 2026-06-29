@@ -2553,6 +2553,9 @@ Default duration: 1 hour. Default time: 9 AM. "tomorrow" = next day. Day names =
 
 IMPORTANT: Choose a time slot that does NOT conflict with existing tasks shown above. If the user's requested time is taken, shift to the nearest free slot.
 
+USER'S EXTRA INSTRUCTIONS:
+${(() => { try { return localStorage.getItem('haven-ai-extra-instructions') || ''; } catch (e) { return ''; } })()}
+
 Return ONLY valid JSON. No markdown, no code fences, no extra text.`;
   return fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${state.apiModel}:generateContent?key=${state.apiKey}`, {
     method: 'POST',
@@ -3004,7 +3007,6 @@ function openSettingsDrawer() {
   if (firstNav) switchSettingsSection(firstNav.dataset.section);
   dom.settingsProvider = document.getElementById('drawerProvider');
   dom.settingsModel = document.getElementById('drawerModel');
-  dom.settingsRoutine = document.getElementById('drawerRoutine');
   dom.settingsKeyStatus = document.getElementById('drawerKeyStatus');
   dom.settingsKeyStatusText = document.getElementById('drawerKeyStatusText');
   dom.settingsClearBtn = document.getElementById('drawerClearBtn');
@@ -3014,7 +3016,6 @@ function openSettingsDrawer() {
   if (!drawer || !overlay) return;
   if (dom.settingsApiKey) dom.settingsApiKey.value = state.apiKey || '';
   if (dom.settingsProvider) dom.settingsProvider.value = state.apiProvider || 'groq';
-  if (dom.settingsRoutine) dom.settingsRoutine.value = loadRoutine();
   try { updateModelOptions(); } catch (e) { console.warn('drawer: updateModelOptions', e); }
   try { updateSettingsKeyStatus(); } catch (e) { console.warn('drawer: updateSettingsKeyStatus', e); }
   try { loadAIUsage(); } catch (e) { console.warn('drawer: loadAIUsage', e); }
@@ -3022,7 +3023,6 @@ function openSettingsDrawer() {
   try { renderAccentPickerInSettings(); } catch (e) { console.warn('drawer: renderAccentPickerInSettings', e); }
   try { renderCardColorsInSettings(); } catch (e) { console.warn('drawer: renderCardColorsInSettings', e); }
   try { renderBubbleConfigInSettings(); } catch (e) { console.warn('drawer: renderBubbleConfigInSettings', e); }
-  try { renderChickBotProfileInSettings(); } catch (e) { console.warn('drawer: renderChickBotProfileInSettings', e); }
   overlay.classList.remove('hidden');
   drawer.classList.remove('hidden');
   requestAnimationFrame(() => {
@@ -3108,26 +3108,12 @@ function handleSettingsSubmit(e) {
   const key = dom.settingsApiKey?.value?.trim() || '';
   const provider = dom.settingsProvider?.value || 'groq';
   const model = dom.settingsModel?.value || PROVIDER_MODELS[provider]?.[0]?.value || '';
-  const routine = dom.settingsRoutine?.value?.trim() || '';
   state.apiKey = key;
   state.apiProvider = provider;
   state.apiModel = model;
   try { localStorage.setItem(API_KEY_STORAGE, key); } catch (e) { /* ignore */ }
   saveApiProvider(provider);
   try { localStorage.setItem('haven-schedule-model', model); } catch (e) { /* ignore */ }
-  saveRoutine(routine);
-  // Save ChickBot profile from settings
-  const cbName = document.getElementById('cb-name-settings')?.value?.trim();
-  if (cbName) {
-    saveChickBotProfile({
-      name: cbName,
-      pronouns: document.getElementById('cb-pronouns-settings')?.value?.trim() || '',
-      occupation: document.getElementById('cb-occupation-settings')?.value?.trim() || '',
-      goals: document.getElementById('cb-goals-settings')?.value?.trim() || '',
-      routines: document.getElementById('cb-routines-settings')?.value?.trim() || '',
-      preferences: document.getElementById('cb-preferences-settings')?.value?.trim() || ''
-    });
-  }
   updateSettingsKeyStatus();
   // Save bubble config from settings form
   const bubbleConfig = {};
@@ -4384,6 +4370,9 @@ ${(() => {
 Tag rules: "deep work"/"focus"/"heads down" = deep-work. "gym"/"workout"/"run"/"cardio"/"exercise" = exercise. "math"/"english"/"class"/"chemistry"/"physics"/"mandarin"/"study" = study. "design"/"movie"/"build"/"app"/"hobby" = hobby. Default tag = "meeting".
 Default duration: 1 hour. Default time: 9 AM. "tomorrow" = next day. Day names = next occurrence. "morning" ≈ 9am, "afternoon" ≈ 2pm, "evening" ≈ 7pm.
 
+USER'S EXTRA INSTRUCTIONS:
+${(() => { try { return localStorage.getItem('haven-ai-extra-instructions') || ''; } catch (e) { return ''; } })()}
+
 Return ONLY valid JSON. No markdown, no code fences, no extra text.`;
   return fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -5371,32 +5360,6 @@ function processOnboardingStep(userText, typingEl) {
   return true;
 }
 
-function renderChickBotProfileInSettings() {
-  const profile = getChickBotProfile();
-  const nameEl = document.getElementById('cb-name-settings');
-  const pronounsEl = document.getElementById('cb-pronouns-settings');
-  const occupationEl = document.getElementById('cb-occupation-settings');
-  const goalsEl = document.getElementById('cb-goals-settings');
-  const routinesEl = document.getElementById('cb-routines-settings');
-  const preferencesEl = document.getElementById('cb-preferences-settings');
-  if (!nameEl) return;
-  if (profile) {
-    nameEl.value = profile.name || '';
-    pronounsEl.value = profile.pronouns || '';
-    occupationEl.value = profile.occupation || '';
-    goalsEl.value = profile.goals || '';
-    routinesEl.value = profile.routines || '';
-    preferencesEl.value = profile.preferences || '';
-  } else {
-    nameEl.value = '';
-    pronounsEl.value = '';
-    occupationEl.value = '';
-    goalsEl.value = '';
-    routinesEl.value = '';
-    preferencesEl.value = '';
-  }
-}
-
 function callAIAgent(userText) {
   const today = formatDate(new Date());
   const weekStart = getMonday(new Date());
@@ -5601,7 +5564,10 @@ EXAMPLES:
 - "Delete everything on Friday" → use { type: "clearDate", data: { date: "2026-06-12" } }
 - "Remove all completed tasks" → use "clearCompletedTasks"
 - "Delete all my gym tasks" → use { type: "deleteTasksByTag", data: { tag: "exercise" } }
-- "Delete any task about laundry" → use { type: "deleteTasksByQuery", data: { query: "laundry" } }
+ - "Delete any task about laundry" → use { type: "deleteTasksByQuery", data: { query: "laundry" } }
+
+USER'S EXTRA INSTRUCTIONS FOR YOU:
+${(() => { try { return localStorage.getItem('haven-ai-extra-instructions') || ''; } catch (e) { return ''; } })()}
 
 IMPORTANT: Return ONLY valid JSON. No markdown fences, no extra text.`;
 

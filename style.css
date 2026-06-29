@@ -6807,6 +6807,27 @@ html.light .hub-section-header:hover {
 .set-acc-body { display:grid; grid-template-columns:repeat(3,1fr); gap:3px 5px; }
 .set-acc-body.collapsed { display:none !important; }
 
+/* AI Profile & Learning */
+.set-subsection-label { font-size:0.55rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-tertiary); opacity:0.45; grid-column:1/-1; margin-top:6px; }
+.set-ai-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; grid-column:1/-1; }
+.set-ai-field { grid-column:1/-1; }
+.set-ai-grid .set-ai-field { grid-column:auto; }
+.set-ai-label { display:block; font-size:0.6rem; color:var(--text-tertiary); margin-bottom:1px; }
+.set-input-full { width:100%; box-sizing:border-box; }
+.set-textarea { resize:vertical; min-height:36px; font-family:inherit; }
+.set-ai-save { grid-column:1/-1; margin-top:4px; }
+.set-mem-list { grid-column:1/-1; display:flex; flex-direction:column; gap:2px; }
+.set-mem-item { display:flex; align-items:flex-start; gap:4px; padding:4px 6px; border-radius:4px; background:var(--bg-primary); }
+.set-mem-body { flex:1; min-width:0; }
+.set-mem-fact { font-size:0.7rem; color:var(--text-primary); line-height:1.3; }
+.set-mem-meta { font-size:0.55rem; color:var(--text-tertiary); margin-top:1px; }
+.set-mem-del { width:18px; height:18px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:none; border-radius:3px; background:transparent; color:var(--text-tertiary); cursor:pointer; font-size:0.6rem; padding:0; margin-top:1px; }
+.set-mem-del:hover { background:color-mix(in srgb, var(--danger,#ef4444) 12%, transparent); color:var(--danger,#ef4444); }
+.set-ai-stats { display:flex; flex-wrap:wrap; gap:3px 6px; grid-column:1/-1; }
+.set-ai-stat { font-size:0.6rem; color:var(--text-tertiary); background:var(--bg-primary); padding:2px 6px; border-radius:4px; white-space:nowrap; }
+.set-ai-stat-val { font-weight:600; color:var(--text-primary); margin-right:2px; }
+.set-empty { font-size:0.65rem; color:var(--text-tertiary); padding:6px 0; }
+
 /* Link button (add account) */
 .set-link-btn {
   display: flex; align-items: center; gap: 6px;
