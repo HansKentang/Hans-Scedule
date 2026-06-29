@@ -4,8 +4,14 @@
 
 | Command | Description | Example |
 |---------|-------------|---------|
+| `help` | Show this list of available commands | `help` |
 | `layout [page]` | Show structured page diagram with sections, controls, and modals | `layout analytics` |
 | `layout all` | Show all 7 pages at a glance (hub, schedule, activities, analytics, goals, finance, gallery) | `layout all` |
+| `layout bubbles` | Show all bubble types (access hub, plus, bento, chat, AI, subcategory) | `layout bubbles` |
+| `layout widgets` | Show all 15 bento canvas widgets (clock, spotify, weather, habits, todos, etc.) | `layout widgets` |
+| `layout panels` | Show all panels/drawers (hub menu, AI chat, friend chat) | `layout panels` |
+| `layout modals` | Show all modals/overlays (task, help, cmd palette, sleep, image picker, spotify, guide) | `layout modals` |
+| `layout floating` | Show floating components (pomodoro card, bottom nav, sidebar, toast) | `layout floating` |
 
 ## Code Conventions
 

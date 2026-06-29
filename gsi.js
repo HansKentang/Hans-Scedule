@@ -495,7 +495,7 @@ function renderAppearanceSettings(el) {
 
   el.innerHTML =
     '<h3>Appearance</h3>' +
-    '<div class="set-desc">Customize the theme and accent color</div>' +
+    '<div class="set-desc">Customize the theme, accent color, and visuals</div>' +
     '<div class="set-group">' +
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">Dark Mode</div><div class="set-row-desc">Switch between dark and light theme</div></div>' +
@@ -505,6 +505,12 @@ function renderAppearanceSettings(el) {
     '<div class="set-group">' +
       '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">ACCENT COLOR</div>' +
       '<div class="set-swatches">' + swatches + '</div>' +
+    '</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Edit Mode</div><div class="set-row-desc">Tap any image to customize throughout the app</div></div>' +
+        '<button class="set-toggle' + (typeof state !== 'undefined' && state.editMode ? ' on' : '') + '" id="setVisualsToggle"></button>' +
+      '</div>' +
     '</div>';
 
   document.getElementById('setThemeToggle')?.addEventListener('click', function() {
@@ -521,6 +527,11 @@ function renderAppearanceSettings(el) {
       el.querySelectorAll('[data-acc-color]').forEach(function(s) { s.classList.remove('active'); });
       el2.classList.add('active');
     });
+  });
+
+  document.getElementById('setVisualsToggle')?.addEventListener('click', function() {
+    if (typeof toggleEditMode !== 'undefined') toggleEditMode();
+    this.classList.toggle('on');
   });
 }
 

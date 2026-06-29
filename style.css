@@ -3272,7 +3272,7 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
   }
 
   /* ─── MENU PANEL MOBILE ── */
-  .hub-menu-panel { width: 85vw !important; }
+  .hub-menu-panel { width: min(320px, 85vw) !important; }
 
   /* ─── AI OVERLAY + SCHEDULE OVERLAYS MOBILE ── */
   #cmdOverlay, #taskOverlay, #helpOverlay { z-index: 998; }
@@ -7854,7 +7854,7 @@ html.light .hub-add-popup {
   .settings-nav-item span { display: none !important; }
   .settings-nav-item.active span { display: inline !important; }
 
-  .hub-menu-panel { width: calc(100vw - 24px) !important; max-width: calc(100vw - 24px) !important; }
+  .hub-menu-panel { width: min(320px, calc(100vw - 24px)) !important; max-width: min(320px, calc(100vw - 24px)) !important; }
 
   .access-hub { gap: 6px; }
   .access-item { width: 40px; height: 40px; }
