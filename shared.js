@@ -1452,6 +1452,7 @@ function _startCloudPoll() {
       if (!doc.exists) return;
       var data = doc.data();
       var anyChange = false;
+      var changedKeys = [];
       CLOUD_STORE._suppressWrite = true;
       for (var key in data) {
         if (key.indexOf('_') === 0) continue;
@@ -1462,13 +1463,15 @@ function _startCloudPoll() {
           try {
             __origLS.setItem(key, data[key]);
             anyChange = true;
+            changedKeys.push(baseKey);
           } catch (e) {}
         }
       }
       CLOUD_STORE._suppressWrite = false;
       if (anyChange) {
-        console.log('[cloud] poll detected changes from cloud');
+        console.log('[cloud] poll detected changes from cloud: ' + changedKeys.join(', '));
         if (typeof showToast === 'function') showToast('Synced from cloud', 'info', 2000);
+        try { window.dispatchEvent(new CustomEvent('cloud-sync-changed', { detail: { changedKeys: changedKeys } })); } catch (e) {}
       }
       if (typeof updateSyncStatusDot === 'function') updateSyncStatusDot();
     }).catch(function() {});

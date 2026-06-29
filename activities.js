@@ -973,6 +973,14 @@ function init() {
   setupPage();
   document.getElementById('exportBtn')?.addEventListener('click', exportData);
   document.getElementById('importBtn')?.addEventListener('click', () => { document.getElementById('importFileInput')?.click(); });
+
+  window.addEventListener('cloud-sync-changed', function(ev) {
+    var keys = ev.detail.changedKeys || [];
+    if (keys.indexOf('haven-activities-completions') >= 0 || keys.indexOf('haven-activity-completions') >= 0) {
+      loadCompletionLog();
+      renderActivities();
+    }
+  });
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
