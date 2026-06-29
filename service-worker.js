@@ -25,7 +25,6 @@ const URLS = [
   '/friends.js',
   '/firestore.js',
   '/gsi.js',
-  '/cloud-sync.js',
   '/chat.js',
   '/chat-badge.js',
   '/icon.svg',
