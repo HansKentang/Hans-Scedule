@@ -228,6 +228,9 @@ function takeCloudSnapshot() {
 // Reads the Firestore userdata document and writes any
 // cloud values into localStorage. Then reloads the page.
 function pullFromCloud() {
+  // Re-scan for custom image keys before pulling
+  addCustomImageKeys();
+
   return CLOUD_SYNC.docRef.get().then(function(doc) {
     if (!doc.exists) return false;
 
@@ -277,6 +280,9 @@ function pullFromCloud() {
 function pushToCloud() {
   if (CLOUD_SYNC.isPushing || !CLOUD_SYNC.docRef) return Promise.resolve();
   CLOUD_SYNC.isPushing = true;
+
+  // Re-scan for custom image keys (images may have been added after init)
+  addCustomImageKeys();
 
   var batch = {};
   for (var i = 0; i < CLOUD_SYNC_KEYS.length; i++) {

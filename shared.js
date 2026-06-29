@@ -1331,6 +1331,8 @@ var __origLS = {};
   __origLS.getItem = localStorage.getItem.bind(localStorage);
   __origLS.setItem = localStorage.setItem.bind(localStorage);
   __origLS.removeItem = localStorage.removeItem.bind(localStorage);
+  __origLS.key = localStorage.key.bind(localStorage);
+  Object.defineProperty(__origLS, 'length', { get: function() { return localStorage.length; }, enumerable: true, configurable: true });
   function _p(key) {
     var pre = getStoragePrefix();
     if (!pre || (typeof key === 'string' && key.indexOf('haven-gsi-') === 0)) return key;
