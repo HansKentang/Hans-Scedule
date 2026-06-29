@@ -1370,9 +1370,16 @@ var CLOUD_STORE = {
 };
 
 function initCloudStorage(userId) {
-  if (!userId || userId.indexOf('firebase-') !== 0) return;
-  if (CLOUD_STORE.initialized) return;
+  if (!userId || userId.indexOf('firebase-') !== 0) {
+    console.log('[cloud] skipped: userId=' + userId + ' (not a Firebase user)');
+    return;
+  }
+  if (CLOUD_STORE.initialized) {
+    console.log('[cloud] already initialized for ' + userId);
+    return;
+  }
   CLOUD_STORE.userId = userId;
+  console.log('[cloud] initializing for ' + userId);
 
   try {
     if (typeof initFirestore === 'function') initFirestore();
@@ -1387,6 +1394,7 @@ function initCloudStorage(userId) {
       CLOUD_STORE._suppressWrite = true;
       if (doc.exists) {
         var data = doc.data();
+        console.log('[cloud] loaded', Object.keys(data).length, 'keys from cloud');
         for (var key in data) {
           if (key.indexOf('_') === 0) continue;
           var colonIdx = key.indexOf(':');
@@ -1397,7 +1405,7 @@ function initCloudStorage(userId) {
           } catch (e) {}
         }
       } else {
-        // First sync: push all existing local data to cloud
+        console.log('[cloud] first sync — pushing local data to cloud');
         var firstBatch = {};
         var prefix = userId + ':';
         for (var i = 0; i < __origLS.length; i++) {
@@ -1423,6 +1431,7 @@ function initCloudStorage(userId) {
       }
       CLOUD_STORE._suppressWrite = false;
       CLOUD_STORE.initialized = true;
+      console.log('[cloud] initialized — poll started');
       _startCloudPoll();
     }).catch(function(err) {
       CLOUD_STORE._suppressWrite = false;
@@ -1457,8 +1466,9 @@ function _startCloudPoll() {
         }
       }
       CLOUD_STORE._suppressWrite = false;
-      if (anyChange && typeof showToast === 'function') {
-        showToast('Synced from cloud', 'info', 2000);
+      if (anyChange) {
+        console.log('[cloud] poll detected changes from cloud');
+        if (typeof showToast === 'function') showToast('Synced from cloud', 'info', 2000);
       }
       if (typeof updateSyncStatusDot === 'function') updateSyncStatusDot();
     }).catch(function() {});
