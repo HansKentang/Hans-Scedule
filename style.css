@@ -6797,7 +6797,7 @@ html.light .hub-section-header:hover {
 .set-swatch:hover { transform: scale(1.15); }
 .set-swatch.active { border-color: var(--text-primary); transform: scale(1.15); }
 .set-swatch-group { }
-.set-swatch-group-label { font-size:0.5rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-tertiary); opacity:0.35; margin-bottom:1px; padding-left:1px; }
+.set-swatch-group-label { font-size:0.5rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-tertiary); opacity:0.55; margin-bottom:1px; padding-left:1px; }
 .set-acc-header { cursor:pointer; user-select:none; display:flex; align-items:center; gap:5px; }
 .set-acc-header:hover { opacity:0.8; }
 .set-acc-badge { display:inline-block; width:7px; height:7px; border-radius:50%; flex-shrink:0; }

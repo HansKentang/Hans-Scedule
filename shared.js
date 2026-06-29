@@ -454,6 +454,7 @@ const ACCENT_PALETTE = [
 
 const ACCENT_GROUPS = [
   { id: 'pink', label: 'Pinks' },
+  { id: 'red', label: 'Reds' },
   { id: 'peach', label: 'Peaches' },
   { id: 'yellow', label: 'Yellows' },
   { id: 'green', label: 'Greens' },
