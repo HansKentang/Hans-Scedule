@@ -436,9 +436,9 @@ function renderAccountSettings(el) {
   var activeUser = localUsers.find(function(u) { return u.id === activeId; });
   var guest = isGuestMode();
   var tz = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : '—';
-  var savedLang = localStorage.getItem('haven-language') || 'en';
-  var savedWeekStart = localStorage.getItem('haven-week-start') || 'monday';
-  var savedTimeFormat = localStorage.getItem('haven-time-format') || '12h';
+  var savedLang = 'en'; try { savedLang = localStorage.getItem('haven-language') || 'en'; } catch(e) {}
+  var savedWeekStart = 'monday'; try { savedWeekStart = localStorage.getItem('haven-week-start') || 'monday'; } catch(e) {}
+  var savedTimeFormat = '12h'; try { savedTimeFormat = localStorage.getItem('haven-time-format') || '12h'; } catch(e) {}
 
   // Avatar + profile fields
   var avatarHtml = '';
@@ -611,7 +611,7 @@ function renderAccountSettings(el) {
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
       if (k && k.startsWith('haven-')) {
-        try { data[k] = JSON.parse(localStorage.getItem(k)); } catch (e) { data[k] = localStorage.getItem(k); }
+        try { data[k] = JSON.parse(localStorage.getItem(k)); } catch (e) { try { data[k] = localStorage.getItem(k); } catch(e2) { data[k] = null; } }
       }
     }
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -721,8 +721,8 @@ function renderAppearanceSettings(el) {
 }
 
 function renderAISettings(el) {
-  var savedProvider = localStorage.getItem('haven-schedule-provider') || 'groq';
-  var savedKey = localStorage.getItem('haven-schedule-apikey') || '';
+  var savedProvider = 'groq'; try { savedProvider = localStorage.getItem('haven-schedule-provider') || 'groq'; } catch(e) {}
+  var savedKey = ''; try { savedKey = localStorage.getItem('haven-schedule-apikey') || ''; } catch(e) {}
   var profile = typeof getChickBotProfile === 'function' ? (getChickBotProfile() || {}) : {};
   var routine = typeof loadRoutine === 'function' ? loadRoutine() : '';
 
@@ -747,7 +747,7 @@ function renderAISettings(el) {
   var memoryCount = memKeys.length;
   var ps = up.planStats || {};
   var planRate = ps.total > 0 ? Math.round((ps.accepted / ps.total) * 100) + '%' : '\u2014';
-  var extra = localStorage.getItem('haven-ai-extra-instructions') || '';
+  var extra = ''; try { extra = localStorage.getItem('haven-ai-extra-instructions') || ''; } catch(e) {}
 
   el.innerHTML =
     '<h3>AI & API</h3>' +
