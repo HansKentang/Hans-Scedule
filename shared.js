@@ -2374,13 +2374,14 @@ function darkenColor(hex, amount) {
 function applyAccentColor() {
   const hex = state.accentColor;
   const el = document.documentElement;
-  if (!hex) { el.style.removeProperty('--user-primary'); return; }
-  const isDark = el.classList.contains('dark');
+  if (!hex) { el.style.removeProperty('--user-primary'); el.style.removeProperty('--accent-soft'); return; }
   const palette = ACCENT_PALETTE.find(p => p.dark === hex);
   if (palette) {
-    el.style.setProperty('--user-primary', isDark ? palette.dark : palette.light);
+    el.style.setProperty('--user-primary', palette.dark);
+    el.style.setProperty('--accent-soft', palette.light);
   } else {
-    el.style.setProperty('--user-primary', isDark ? hex : darkenColor(hex, 0.5));
+    el.style.setProperty('--user-primary', hex);
+    el.style.setProperty('--accent-soft', lightenColor(hex, 0.5));
   }
 }
 
