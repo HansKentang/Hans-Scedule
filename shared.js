@@ -6384,4 +6384,3 @@ function spSetupDragReorder(container) {
 
 function spOnKey(e) {
   }
-}
