@@ -7056,3 +7056,29 @@ function spSetupDragReorder(container) {
 
 function spOnKey(e) {
   }
+
+// ─── CLOUD SYNC UI RE-RENDERER ─────────────────────────
+window.addEventListener('cloud-sync-changed', function(ev) {
+  var keys = ev.detail.changedKeys || [];
+
+  if (keys.indexOf('haven-schedule-settings') >= 0) {
+    try {
+      var settings = JSON.parse(localStorage.getItem('haven-schedule-settings'));
+      if (settings) {
+        state.accentColor = settings.accentColor || null;
+        state.darkMode = settings.darkMode !== undefined ? settings.darkMode : null;
+        state.accentCustomColors = settings.accentCustomColors || [];
+        state.accentRemovedPresets = settings.accentRemovedPresets || [];
+        if (typeof applyTheme === 'function') applyTheme();
+      }
+    } catch (e) {}
+  }
+
+  if (keys.indexOf('haven-language') >= 0) {
+    if (typeof applyLanguage === 'function') applyLanguage();
+  }
+
+  if (keys.indexOf('haven-week-start') >= 0 || keys.indexOf('haven-time-format') >= 0) {
+    if (typeof renderCalendar === 'function') renderCalendar();
+  }
+});
