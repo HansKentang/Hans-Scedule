@@ -421,17 +421,6 @@ const HUB_DEFAULTS = {
 
 let hubContent = loadHubContent();
 
-window.addEventListener('cloud-sync-changed', function(ev) {
-  var keys = ev.detail.changedKeys || [];
-  var affected = keys.indexOf('haven-hub-content') >= 0 || keys.indexOf('haven-schedule-hub-layout') >= 0 || keys.indexOf('haven-hub-visibility') >= 0;
-  if (!affected) return;
-  var oldLayout = JSON.stringify((hubContent || {}).bentoLayout);
-  hubContent = loadHubContent();
-  var newLayout = JSON.stringify((hubContent || {}).bentoLayout);
-  if (oldLayout !== newLayout && typeof renderHubBento === 'function') {
-    renderHubBento();
-  }
-});
 
 function loadHubContent() {
   const defaults = HUB_DEFAULTS;

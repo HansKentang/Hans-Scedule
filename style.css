@@ -2122,16 +2122,6 @@ html.light .s-schedule-label {
 .hub-sidebar-footer .btn svg { flex-shrink: 0; }
 .hub-sidebar-footer .btn span { overflow: hidden; text-overflow: ellipsis; }
 .hub-sidebar-footer .btn:hover { background: var(--accent-soft); }
-.hub-sidebar-footer .sync-dot {
-  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
-  background: var(--text-tertiary); flex-shrink: 0;
-  transition: background 0.3s; cursor: help;
-  align-self: center; margin-left: auto;
-}
-.hub-sidebar-footer .sync-dot.online { background: var(--success,#22c55e); box-shadow: 0 0 4px var(--success,#22c55e); }
-.hub-sidebar-footer .sync-dot.error { background: var(--danger,#ef4444); box-shadow: 0 0 4px var(--danger,#ef4444); animation: sync-dot-pulse 1.5s infinite; }
-.hub-sidebar-footer .sync-dot.file { background: var(--warning,#f59e0b); }
-@keyframes sync-dot-pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
 /* ─── SIDEBAR IMAGES SECTION (drawer front) ─── */
 .hub-sidebar-images {

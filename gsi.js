@@ -196,10 +196,6 @@ function handleFirebaseUser(fbUser) {
   renderAuthUI();
   // Sync user profile to Firestore for the friend system
   syncProfileToFirestore(user);
-  // Initialize cloud sync for Google-authenticated users
-  if (typeof initCloudSync === 'function') {
-    initCloudSync(user.id);
-  }
   showToast('Signed in as ' + user.name, 'info', 2000);
   if (isLoginPage()) location.href = 'index.html';
   else location.reload();
@@ -231,13 +227,6 @@ function switchAccount(id) {
   renderAuthUI();
   // Sync the switched-to profile to Firestore
   syncProfileToFirestore(user);
-  // Initialize cloud sync for Google-authenticated users
-  var isGoogleUser = id.indexOf('firebase-') === 0;
-  if (isGoogleUser && typeof initCloudSync === 'function') {
-    initCloudSync(id);
-  } else if (typeof stopCloudSync === 'function') {
-    stopCloudSync();
-  }
   showToast('Switched to ' + user.name, 'info', 1500);
   location.reload();
 }
@@ -255,13 +244,6 @@ function removeProfile(id) {
   saveUsers();
   // Remove user profile from Firestore
   removeProfileFromFirestore(id);
-  // Clear cloud sync data
-  if (typeof clearCloudData === 'function') {
-    clearCloudData(id);
-  }
-  if (typeof stopCloudSync === 'function') {
-    stopCloudSync();
-  }
   var active = getActiveUserId();
   if (active === id) {
     if (localUsers.length > 0) {
@@ -313,12 +295,6 @@ function initGSI() {
   }
 
   // Initialize chat badge for unread message count
-  // Initialize cloud sync after auth confirmation
-  var isGoogleUser = activeId && activeId.indexOf('firebase-') === 0;
-  if (isGoogleUser && typeof initCloudSync === 'function') {
-    initCloudSync(activeId);
-  }
-
   // Initialize chat badge for unread message count
   if (typeof initChatBadge === 'function') {
     initChatBadge();
@@ -528,57 +504,6 @@ function renderAccountSettings(el) {
     listHtml += '<div class="set-acc-item"><div class="set-acc-initials" style="background:var(--text-tertiary);opacity:0.5">?</div><div class="set-acc-info"><div class="set-acc-name" style="opacity:0.5">Guest</div></div></div>';
   }
 
-  // Build sync status HTML
-  var syncStatus = typeof getCloudSyncStatus === 'function' ? getCloudSyncStatus() : null;
-  var syncHtml = '';
-  if (syncStatus) {
-    if (syncStatus.mode === 'local') {
-      syncHtml =
-        '<div class="set-row">' +
-          '<div class="set-row-left">' +
-            '<div class="set-row-label" style="color:var(--text-tertiary)">Cloud Sync</div>' +
-            '<div class="set-row-desc">Sign in with Google to sync data across devices</div>' +
-          '</div>' +
-        '</div>';
-    } else if (syncStatus.mode === 'cloud') {
-      var ago = syncStatus.lastSyncAgo || 'never';
-      var color = syncStatus.connected ? 'var(--success,#22c55e)' : 'var(--text-tertiary)';
-      var statusText = syncStatus.connected ? 'Online' : 'Disconnected';
-      var warningNote = '';
-      if (syncStatus.warning === 'file-protocol') {
-        warningNote = '<div class="set-row-desc" style="color:var(--warning,#f59e0b);margin-top:2px">Note: file:// protocol may limit real-time sync. Use http:// for best results.</div>';
-      }
-      syncHtml =
-        '<div class="set-row">' +
-          '<div class="set-row-left">' +
-            '<div class="set-row-label" style="color:' + color + '">Cloud Sync <span style="font-size:0.65rem;font-weight:400;opacity:0.7">\u00b7 ' + statusText + '</span></div>' +
-            '<div class="set-row-desc">Last synced: ' + ago + '</div>' +
-            warningNote +
-          '</div>' +
-          '<button class="set-btn" id="syncNowBtn" style="font-size:0.65rem;padding:3px 8px">Sync Now</button>' +
-        '</div>';
-    } else {
-      syncHtml =
-        '<div class="set-row">' +
-          '<div class="set-row-left">' +
-            '<div class="set-row-label" style="color:var(--text-tertiary)">Cloud Sync</div>' +
-            '<div class="set-row-desc">Sign in to sync data across devices</div>' +
-          '</div>' +
-        '</div>';
-    }
-    if (syncStatus.lastError && syncStatus.lastErrorTime) {
-      var errAgo = Math.floor((Date.now() - syncStatus.lastErrorTime) / 1000);
-      if (errAgo < 300) { // Only show errors newer than 5 minutes
-        syncHtml +=
-          '<div class="set-row">' +
-            '<div class="set-row-left">' +
-              '<div class="set-row-label" style="color:var(--danger,#ef4444);font-size:0.68rem">Sync Error</div>' +
-              '<div class="set-row-desc">' + escapeHtml(syncStatus.lastError) + '</div>' +
-            '</div>' +
-          '</div>';
-      }
-    }
-  }
 
   el.innerHTML =
     '<h3>My Account</h3>' +
@@ -607,7 +532,6 @@ function renderAccountSettings(el) {
         '<div class="set-row-left"><div class="set-row-label">Time format</div></div>' +
         '<div class="set-row-control"><select class="set-select" id="accTimeFormat"><option value="12h">12h</option><option value="24h">24h</option></select></div>' +
       '</div>' +
-      syncHtml +
     '</div>' +
     '<div class="set-divider"></div>' +
     // Data & Privacy
@@ -637,7 +561,6 @@ function renderAccountSettings(el) {
     '<div class="set-logout">' +
       '<button class="set-btn set-btn-danger" id="setSignOut">Sign Out</button>' +
     '</div>';
-
   // Set saved values
   document.getElementById('accLang').value = savedLang;
   document.getElementById('accWeekStart').value = savedWeekStart;
@@ -732,10 +655,6 @@ function renderAccountSettings(el) {
       closeSettingsPanel();
       removeProfile(btn.dataset.accRemove);
     });
-  });
-  // Sync Now button
-  document.getElementById('syncNowBtn')?.addEventListener('click', function() {
-    if (typeof triggerSyncNow === 'function') triggerSyncNow();
   });
   document.getElementById('setAddGoogle')?.addEventListener('click', function() { closeSettingsPanel(); firebaseSignIn(); });
   document.getElementById('setAddLocal')?.addEventListener('click', function() { closeSettingsPanel(); gsiSignIn(); });

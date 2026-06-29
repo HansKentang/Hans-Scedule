@@ -2331,19 +2331,6 @@ function renderSchTemplates() {
   scheduleReminderCheck();
   requestNotifPermission();
 
-  window.addEventListener('cloud-sync-changed', function(ev) {
-    var keys = ev.detail.changedKeys || [];
-    if (keys.indexOf('haven-schedule-tasks') >= 0 || keys.indexOf('haven-schedule-categories') >= 0) {
-      if (keys.indexOf('haven-schedule-tasks') >= 0) {
-        try { state.tasks = JSON.parse(localStorage.getItem('haven-schedule-tasks')); } catch (e) {}
-      }
-      if (keys.indexOf('haven-schedule-categories') >= 0) {
-        try { state.categories = JSON.parse(localStorage.getItem('haven-schedule-categories')); } catch (e) {}
-      }
-      renderCalendar();
-      renderSchTemplates && renderSchTemplates();
-    }
-  });
 
   /* ─── Screenshot week (enhanced) ────────────── */
   window.captureWeekScreenshot = function() {
