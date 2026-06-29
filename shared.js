@@ -1335,7 +1335,11 @@ var __origLS = {};
   Object.defineProperty(__origLS, 'length', { get: function() { return localStorage.length; }, enumerable: true, configurable: true });
   function _p(key) {
     var pre = getStoragePrefix();
-    if (!pre || (typeof key === 'string' && key.indexOf('haven-gsi-') === 0)) return key;
+    if (!pre) return key;
+    if (typeof key === 'string') {
+      if (key.indexOf('haven-gsi-') === 0) return key;
+      if (key.indexOf('firestore_') === 0 || key.indexOf('firebase_') === 0) return key;
+    }
     return pre + key;
   }
   localStorage.getItem = function(key) { return __origLS.getItem(_p(key)); };
@@ -1464,7 +1468,7 @@ function _startCloudPoll() {
 function _queueCloudWrite(key, value) {
   if (!CLOUD_STORE.userId || !CLOUD_STORE.initialized) return;
   // Skip keys that should remain device-local
-  if (key.indexOf('haven-gsi-') === 0 || key.indexOf('haven-device-') === 0 || key === 'haven-language' || key === 'haven-week-start' || key === 'haven-time-format') return;
+  if (key.indexOf('haven-gsi-') === 0 || key.indexOf('haven-device-') === 0 || key.indexOf('firestore_') === 0 || key.indexOf('firebase_') === 0) return;
   var colonIdx = key.indexOf(':');
   var baseKey = colonIdx >= 0 ? key.slice(colonIdx + 1) : key;
   CLOUD_STORE.writeQueue[baseKey] = value;
