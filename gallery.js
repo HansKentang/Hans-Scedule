@@ -30,7 +30,7 @@ function loadGalleryLayout() {
 
 function saveGalleryLayout(layout) {
   try {
-    localStorage.setItem(GALLERY_LAYOUT_KEY, JSON.stringify(layout));
+    safeSetItem(GALLERY_LAYOUT_KEY, JSON.stringify(layout));
   } catch (e) { /* ignore */ }
 }
 

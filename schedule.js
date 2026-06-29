@@ -1760,7 +1760,7 @@ function bindEvents() {
   }
 
   function savePlusConfig(cfg) {
-    localStorage.setItem(PLUS_BUBBLE_KEY, JSON.stringify(cfg));
+    safeSetItem(PLUS_BUBBLE_KEY, JSON.stringify(cfg));
   }
 
   function renderPlusPopup() {

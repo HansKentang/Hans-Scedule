@@ -40,7 +40,7 @@ function loadCompletionLog() {
 
 function saveCompletionLog() {
   try {
-    localStorage.setItem(COMPLETION_LOG_KEY, JSON.stringify(completionLog));
+    safeSetItem(COMPLETION_LOG_KEY, JSON.stringify(completionLog));
   } catch (e) { /* ignore */ }
 }
 

@@ -120,7 +120,7 @@ function loadGoals() {
 
 function saveGoals() {
   try {
-    localStorage.setItem(GOALS_STORAGE, JSON.stringify(goalsData));
+    safeSetItem(GOALS_STORAGE, JSON.stringify(goalsData));
   } catch (e) { /* ignore */ }
 }
 
