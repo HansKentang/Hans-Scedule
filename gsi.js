@@ -458,15 +458,31 @@ function renderAccountSettings(el) {
   var activeId = getActiveUserId();
   var activeUser = localUsers.find(function(u) { return u.id === activeId; });
   var guest = isGuestMode();
+  var tz = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : '—';
+  var savedLang = localStorage.getItem('haven-language') || 'en';
+  var savedWeekStart = localStorage.getItem('haven-week-start') || 'monday';
+  var savedTimeFormat = localStorage.getItem('haven-time-format') || '12h';
 
+  // Avatar + profile fields
   var avatarHtml = '';
   if (guest) {
-    avatarHtml = '<div class="set-avatar-initials" style="background:var(--text-tertiary);opacity:0.5">?</div><div class="set-avatar-info"><div class="set-avatar-name" style="opacity:0.5">Guest</div></div>';
+    avatarHtml = '<div class="set-avatar-initials" style="background:var(--text-tertiary);opacity:0.5">?</div>' +
+      '<div class="set-avatar-info" style="flex:1">' +
+      '<div class="set-acc-name" style="opacity:0.5;margin-bottom:4px">Guest</div>' +
+      '</div>';
   } else if (activeUser) {
     var initials = getInitials(activeUser.name);
     var color = activeUser._color || getColorForId(activeUser.id);
-    var img = activeUser.picture ? '<img class="set-avatar" src="' + escapeHtml(activeUser.picture) + '">' : '<div class="set-avatar-initials" style="background:' + color + '">' + escapeHtml(initials) + '</div>';
-    avatarHtml = img + '<div class="set-avatar-info"><div class="set-avatar-name">' + escapeHtml(activeUser.name) + '</div>' + (activeUser.email ? '<div class="set-avatar-email">' + escapeHtml(activeUser.email) + '</div>' : '') + '</div>';
+    var img = activeUser.picture ? '<img class="set-avatar set-avatar-clickable" id="accAvatarImg" src="' + escapeHtml(activeUser.picture) + '">' : '<div class="set-avatar-initials set-avatar-clickable" id="accAvatarImg" style="background:' + color + '">' + escapeHtml(initials) + '</div>';
+    var deviceLabel = typeof getDeviceLabel === 'function' ? getDeviceLabel() : '';
+    var connectedHtml = deviceLabel ? '<div class="set-acc-connected">This account is connected to <span class="set-acc-connected-device">' + escapeHtml(deviceLabel) + '</span></div>' : '';
+    avatarHtml = img +
+      '<div class="set-avatar-info" style="flex:1">' +
+      '<input class="set-input set-input-full" id="accName" value="' + escapeHtml(activeUser.name || '') + '" placeholder="Name" style="margin-bottom:3px">' +
+      '<input class="set-input set-input-full" id="accEmail" value="' + escapeHtml(activeUser.email || '') + '" placeholder="Email (optional)">' +
+      connectedHtml +
+      '</div>' +
+      '<button class="set-btn" id="accProfileSave" style="align-self:flex-start">Save</button>';
   } else {
     avatarHtml = '<div style="font-size:0.78rem;color:var(--text-tertiary);padding:6px 0">No profile selected</div>';
   }
@@ -490,7 +506,7 @@ function renderAccountSettings(el) {
     return '<div class="set-acc-item' + (isActive ? ' active' : '') + '" data-acc-id="' + u.id + '">' +
       av +
       '<div class="set-acc-info"><div class="set-acc-name">' + escapeHtml(u.name) + '</div>' + (u.email ? '<div class="set-acc-email">' + escapeHtml(u.email) + '</div>' : '') + devicesHtml + '</div>' +
-      (!isActive ? '<button class="set-acc-remove" data-acc-remove="' + u.id + '">✕</button>' : '') +
+      (!isActive ? '<button class="set-acc-remove" data-acc-remove="' + u.id + '">\u2715</button>' : '') +
     '</div>';
   }).join('');
 
@@ -500,22 +516,138 @@ function renderAccountSettings(el) {
 
   el.innerHTML =
     '<h3>My Account</h3>' +
+    // Editable profile
     '<div class="set-group">' +
       '<div class="set-avatar-row">' + avatarHtml + '</div>' +
     '</div>' +
     '<div class="set-divider"></div>' +
+    // Preferences
     '<div class="set-group">' +
-      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">SWITCH ACCOUNT</div>' +
+      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:4px">PREFERENCES</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Language</div><div class="set-row-desc">UI language</div></div>' +
+        '<div class="set-row-control"><select class="set-select" id="accLang"><option value="en">English</option><option value="ja">Japanese</option><option value="zh">Chinese</option><option value="ko">Korean</option><option value="es">Spanish</option><option value="fr">French</option><option value="de">German</option><option value="pt">Portuguese</option></select></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Timezone</div><div class="set-row-desc">Detected from browser</div></div>' +
+        '<div class="set-row-control"><div class="set-readonly">' + escapeHtml(tz) + '</div></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Week starts on</div></div>' +
+        '<div class="set-row-control"><select class="set-select" id="accWeekStart"><option value="monday">Monday</option><option value="sunday">Sunday</option></select></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Time format</div></div>' +
+        '<div class="set-row-control"><select class="set-select" id="accTimeFormat"><option value="12h">12h</option><option value="24h">24h</option></select></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="set-divider"></div>' +
+    // Data & Privacy
+    '<div class="set-group">' +
+      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:4px">DATA & PRIVACY</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Export</div><div class="set-row-desc">Download all your data as JSON</div></div>' +
+        '<button class="set-btn" id="accExport">Export</button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label" style="color:var(--danger,#ef4444)">Delete all data</div><div class="set-row-desc">Permanently remove everything</div></div>' +
+        '<button class="set-btn" id="accDeleteAll" style="color:var(--danger,#ef4444);border-color:color-mix(in srgb, var(--danger,#ef4444) 40%, transparent)">Delete</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="set-divider"></div>' +
+    // Switch Account
+    '<div class="set-group">' +
+      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">SWITCH ACCOUNT' +
+      (localUsers.length > 0 ? ' <span class="set-acc-device-count">' + localUsers.length + '</span>' : '') +
+      '</div>' +
       listHtml +
       '<button class="set-link-btn" id="setAddGoogle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/></svg>Sign in with Google</button>' +
       '<button class="set-link-btn" id="setAddLocal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add local profile</button>' +
     '</div>' +
     '<div class="set-divider"></div>' +
+    // Sign out
     '<div class="set-logout">' +
       '<button class="set-btn set-btn-danger" id="setSignOut">Sign Out</button>' +
     '</div>';
 
-  // Event listeners
+  // Set saved values
+  document.getElementById('accLang').value = savedLang;
+  document.getElementById('accWeekStart').value = savedWeekStart;
+  document.getElementById('accTimeFormat').value = savedTimeFormat;
+
+  // Profile save
+  document.getElementById('accProfileSave')?.addEventListener('click', function() {
+    if (!activeUser) return;
+    var name = document.getElementById('accName')?.value?.trim();
+    if (!name) { if (typeof showToast === 'function') showToast('Name is required', 'error'); return; }
+    var email = document.getElementById('accEmail')?.value?.trim() || '';
+    activeUser.name = name;
+    activeUser.email = email;
+    saveUsers();
+    if (typeof showToast === 'function') showToast('Profile updated');
+  });
+
+  // Avatar change
+  document.getElementById('accAvatarImg')?.addEventListener('click', function() {
+    var url = prompt('Enter image URL for your avatar:');
+    if (!url || !activeUser) return;
+    activeUser.picture = url.trim();
+    saveUsers();
+    // Re-render
+    renderAccountSettings(el);
+  });
+
+  // Preferences save on change
+  document.getElementById('accLang')?.addEventListener('change', function() {
+    localStorage.setItem('haven-language', this.value);
+  });
+  document.getElementById('accWeekStart')?.addEventListener('change', function() {
+    localStorage.setItem('haven-week-start', this.value);
+  });
+  document.getElementById('accTimeFormat')?.addEventListener('change', function() {
+    localStorage.setItem('haven-time-format', this.value);
+  });
+
+  // Export
+  document.getElementById('accExport')?.addEventListener('click', function() {
+    if (typeof exportAllData === 'function') { exportAllData(); return; }
+    // Fallback: collect all storage keys
+    var data = {};
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.startsWith('haven-')) {
+        try { data[k] = JSON.parse(localStorage.getItem(k)); } catch (e) { data[k] = localStorage.getItem(k); }
+      }
+    }
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'haven-data-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    if (typeof showToast === 'function') showToast('Data exported');
+  });
+
+  // Delete all data
+  document.getElementById('accDeleteAll')?.addEventListener('click', function() {
+    if (!confirm('This will permanently delete ALL your data (tasks, habits, goals, finance, gallery, settings).\n\nThis cannot be undone. Are you sure?')) return;
+    if (!confirm('Really delete everything? Type "yes" to confirm.') && false) return;
+    if (!confirm('Final confirmation: delete all data?')) return;
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.startsWith('haven-')) keys.push(k);
+    }
+    keys.forEach(function(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } });
+    // Also clear state
+    if (typeof state !== 'undefined') {
+      if (typeof loadState === 'function') loadState();
+    }
+    if (typeof showToast === 'function') showToast('All data deleted');
+    setTimeout(function() { location.reload(); }, 1000);
+  });
+
+  // Account switching / remove
   el.querySelectorAll('[data-acc-id]').forEach(function(item) {
     item.addEventListener('click', function() {
       var id = item.dataset.accId;

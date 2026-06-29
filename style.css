@@ -6745,6 +6745,14 @@ html.light .hub-section-header:hover {
   font-size: 0.55rem; transition: background 0.1s, color 0.1s; flex-shrink: 0;
 }
 .set-acc-remove:hover { background: color-mix(in srgb, var(--danger,#ef4444) 10%, transparent); color: var(--danger,#ef4444); }
+.set-avatar-clickable { cursor:pointer; transition:opacity 0.15s; }
+.set-avatar-clickable:hover { opacity:0.7; }
+.set-avatar-row { gap:8px; }
+.set-avatar-info input { font-size:0.72rem; }
+.set-readonly { font-size:0.72rem; color:var(--text-tertiary); padding:5px 0; }
+.set-acc-connected { font-size:0.6rem; color:var(--text-tertiary); margin-top:3px; }
+.set-acc-connected-device { color:var(--text-primary); font-weight:500; }
+.set-acc-device-count { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--accent-soft); color:var(--primary); font-size:0.55rem; font-weight:600; vertical-align:middle; margin-left:4px; }
 
 /* Toggle switch */
 .set-toggle {
