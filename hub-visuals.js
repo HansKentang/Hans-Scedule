@@ -459,7 +459,7 @@ function saveHubContent() {
   var _hadImages = hubContent._images;
   delete hubContent._images;
   try {
-    localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(hubContent));
+    safeSetItem(HUB_CONTENT_KEY, JSON.stringify(hubContent));
     console.warn('[img] saveHubContent: SAVED, bentoLayout length:', (hubContent.bentoLayout || []).length);
   } catch(e) { console.warn('[img] saveHubContent failed:', e); }
   if (_hadImages !== undefined) hubContent._images = _hadImages;
@@ -474,7 +474,7 @@ function loadHubVisibility() {
 }
 
 function saveHubVisibility(vis) {
-  try { localStorage.setItem(HUB_VIS_KEY, JSON.stringify(vis)); } catch {}
+  try { safeSetItem(HUB_VIS_KEY, JSON.stringify(vis)); } catch {}
 }
 
 /* ─── Edit mode ────────────────────────────── */

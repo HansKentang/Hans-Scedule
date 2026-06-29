@@ -146,6 +146,7 @@ function renderMiniWeek() {
 }
 
 function renderCalendar() {
+  renderSchFilters();
   if (currentView === 'month') return renderMonthView();
   if (currentView === 'agenda') return renderAgendaView();
   renderWeekView();
@@ -489,25 +490,29 @@ function renderTasks() {
       el.style.cssText = `top:${top}px;height:${height}px;left:5px;width:calc(100% - 10px)${zIdx}`;
       el.dataset.restoreZ = restoreZ;
       const checked = task.completed ? ' checked' : '';
-      el.innerHTML = `          <div class="task-title">
-          <span class="task-check${checked}" data-toggle-complete="${task.id}"></span>
-          ${escapeHtml(task.title)}
+      const timeStr = formatTimeRange(task.startTime, task.endTime);
+      const pCls = task.priority && task.priority < 3 ? ` priority-${task.priority}` : '';
+      el.innerHTML = `<div class="task-body${pCls}">
+          <div class="task-row">
+            <span class="task-check${checked}" data-toggle-complete="${task.id}"></span>
+            <span class="task-title" data-task-id="${task.id}">${escapeHtml(task.title)}</span>
+          </div>
+          <div class="task-time">${timeStr}</div>
         </div>
-        <div class="task-time">${formatTimeRange(task.startTime, task.endTime)}</div>
-        <span class="task-tag-badge">${task.tag}</span>
-        ${task.priority && task.priority < 3 ? `<span class="priority-badge p${task.priority}">${PRIORITY_SHORT[task.priority]}</span>` : ''}
         <div class="task-resize-handle" data-task-id="${task.id}" title="Drag to resize"></div>`;
 
       const resolvedId = resolveTaskId(task.id);
       el.addEventListener('mousedown', (e) => {
         if (e.target.closest('[data-toggle-complete]')) return;
         if (e.target.closest('.task-resize-handle')) return;
+        if (e.target.closest('.task-title') && !e.target.closest('.task-title.is-editing')) { e.stopPropagation(); startDrag(e, el); return; }
         e.stopPropagation();
         startDrag(e, el);
       });
       el.addEventListener('touchstart', (e) => {
         if (e.target.closest('[data-toggle-complete]')) return;
         if (e.target.closest('.task-resize-handle')) return;
+        if (e.target.closest('.task-title') && !e.target.closest('.task-title.is-editing')) { e.stopPropagation(); startDrag(e, el); return; }
         e.stopPropagation();
         startDrag(e, el);
       }, { passive: false });
@@ -522,6 +527,40 @@ function renderTasks() {
         }
       });
       col.appendChild(el);
+
+      // Inline title editing: click title text to edit
+      (function(taskId, titleEl) {
+        titleEl.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          if (titleEl.classList.contains('is-editing')) return;
+          titleEl.classList.add('is-editing');
+          var orig = titleEl.textContent;
+          var input = document.createElement('input');
+          input.type = 'text';
+          input.value = orig;
+          input.className = 'task-title-input';
+          input.style.width = Math.max(40, titleEl.offsetWidth - 10) + 'px';
+          titleEl.textContent = '';
+          titleEl.appendChild(input);
+          input.focus();
+          input.select();
+          function done() {
+            var val = input.value.trim();
+            if (val && val !== orig) {
+              var tid2 = resolveTaskId(taskId);
+              var t = getTask(tid2);
+              if (t) updateTask(tid2, { title: val });
+            }
+            titleEl.classList.remove('is-editing');
+            titleEl.textContent = val || orig;
+          }
+          input.addEventListener('blur', done);
+          input.addEventListener('keydown', function(ke) {
+            if (ke.key === 'Enter') { input.blur(); }
+            if (ke.key === 'Escape') { input.value = orig; input.blur(); }
+          });
+        });
+      })(task.id, el.querySelector('.task-title'));
     }
   }
 
@@ -546,6 +585,43 @@ function renderTasks() {
 
   // Show empty state if no tasks visible
   showGridEmptyState(filtered.length);
+}
+
+// ─── QUICK FILTERS BAR ────────────────────────────────────
+function renderSchFilters() {
+  var bar = document.getElementById('schFiltersInner');
+  var clear = document.getElementById('schFilterClear');
+  if (!bar) return;
+  var tags = TAG_ORDER;
+  var html = '';
+  var activeCount = 0;
+  for (var i = 0; i < tags.length; i++) {
+    var tag = tags[i];
+    var label = TAG_LABELS[tag] || tag;
+    var cls = 'sch-filter-chip';
+    if (state.selectedTag === tag) { cls += ' active'; activeCount++; }
+    var color = (TAG_COLORS[tag] || {}).text || 'var(--gray-400)';
+    var count = state.tasks.filter(function(t) { return t.tag === tag && !t.completed && !isWhiteboardTask(t); }).length;
+    html += '<div class="' + cls + '" data-filter-tag="' + tag + '" style="--chip-accent:' + color + '">' +
+      '<span class="sch-filter-dot"></span>' +
+      '<span>' + escapeHtml(label) + '</span>' +
+      (count > 0 ? '<span class="sch-filter-count">' + count + '</span>' : '') +
+      '</div>';
+  }
+  bar.innerHTML = html;
+  bar.querySelectorAll('.sch-filter-chip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      var tag = this.dataset.filterTag;
+      if (state.selectedTag === tag) state.selectedTag = null;
+      else state.selectedTag = tag;
+      renderSchFilters();
+      renderCalendar();
+    });
+  });
+  if (clear) {
+    clear.classList.toggle('hidden', !state.selectedTag);
+    clear.onclick = function() { state.selectedTag = null; renderSchFilters(); renderCalendar(); };
+  }
 }
 
 function showGridEmptyState(count) {
