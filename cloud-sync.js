@@ -159,15 +159,11 @@ function initCloudSync(userId) {
   // Local profiles (prefixed "u") are device-specific and can't sync.
   if (userId.indexOf('firebase-') !== 0) return;
 
-  // Warn if running from file:// protocol — Firestore won't work
+  // Warn if running from file:// protocol — Firestore persistence won't work
+  // but basic read/write/listen should still function.
   if (window.location.protocol === 'file:') {
-    console.warn('[sync] Cannot sync from file:// protocol. Use a local web server (http://) for cloud sync.');
-    CLOUD_SYNC_STATUS.lastError = 'Cloud sync requires a web server (http://). Open via http://localhost or deploy online.';
-    CLOUD_SYNC_STATUS.lastErrorTime = Date.now();
-    if (typeof showToast === 'function') {
-      showToast('Cloud sync unavailable: open via http:// instead of file://', 'warning', 5000);
-    }
-    return;
+    console.warn('[sync] Running from file:// — Firestore persistence disabled (basic cloud sync should still work).');
+    CLOUD_SYNC_STATUS.lastError = null;
   }
 
   CLOUD_SYNC.userId = userId;
@@ -359,6 +355,11 @@ function startCloudListener() {
     console.warn('[sync] listener error:', err);
     CLOUD_SYNC_STATUS.lastError = err.message || String(err);
     CLOUD_SYNC_STATUS.lastErrorTime = Date.now();
+    // Re-subscribe after a delay on error
+    CLOUD_SYNC.unsubscribe = null;
+    setTimeout(function() {
+      if (CLOUD_SYNC.initialized) startCloudListener();
+    }, 5000);
   });
 }
 
@@ -493,10 +494,7 @@ function getCloudSyncStatus() {
   CLOUD_SYNC_STATUS.guest = guest;
 
   // Determine mode
-  if (window.location.protocol === 'file:') {
-    CLOUD_SYNC_STATUS.mode = 'file-protocol';
-    CLOUD_SYNC_STATUS.connected = false;
-  } else if (guest) {
+  if (guest) {
     CLOUD_SYNC_STATUS.mode = 'off';
     CLOUD_SYNC_STATUS.connected = false;
   } else if (isLocal) {
@@ -517,7 +515,7 @@ function getCloudSyncStatus() {
 
   // Check for warnings
   CLOUD_SYNC_STATUS.warning = null;
-  if (window.location.protocol === 'file:') {
+  if (window.location.protocol === 'file:' && isFirebase) {
     CLOUD_SYNC_STATUS.warning = 'file-protocol';
   } else if (isLocal) {
     CLOUD_SYNC_STATUS.warning = 'local-profile';
@@ -539,10 +537,6 @@ function _formatAgo(ts) {
 // ─── MANUAL SYNC ──────────────────────────────────────────────
 // Called by the "Sync Now" button in settings.
 function triggerSyncNow() {
-  if (window.location.protocol === 'file:') {
-    if (typeof showToast === 'function') showToast('Cloud sync requires a web server (http://)', 'error', 4000);
-    return;
-  }
   if (!CLOUD_SYNC.initialized) {
     // Try initializing
     var activeId = typeof getActiveUserId === 'function' ? getActiveUserId() : null;
@@ -583,13 +577,14 @@ function updateSyncStatusDot() {
   } else if (st.mode === 'cloud' && !st.connected) {
     dot.classList.add('error');
     dot.title = 'Cloud sync: disconnected';
-  } else if (st.mode === 'file-protocol') {
-    dot.classList.add('file');
-    dot.title = 'Cloud sync unavailable: open via http://';
   } else if (st.mode === 'local') {
     dot.title = 'Local profile \u2014 sign in with Google to sync';
   } else {
     dot.title = 'Sync: ' + st.mode;
+  }
+  if (st.warning === 'file-protocol') {
+    dot.classList.add('file');
+    if (!st.connected) dot.title += ' (file:// protocol)';
   }
   if (st.lastError && st.lastErrorTime && Date.now() - st.lastErrorTime < 300000) {
     dot.classList.add('error');
