@@ -88,8 +88,6 @@ var CLOUD_SYNC_BASE_KEYS = [
   'haven-schedule-provider',
 ];
 
-// The app stores all user data under a userId prefix (e.g. "firebase-xxx:haven-schedule-tasks").
-// This helper returns the actual localStorage key for the current user.
 // Pre-computed sync keys for the current user (base keys without userId prefix).
 // The localStorage override in shared.js adds the userId prefix automatically.
 // For Firestore field access, the prefix is added inline with CLOUD_SYNC.userId.
@@ -224,7 +222,8 @@ function pullFromCloud() {
 
     for (var i = 0; i < CLOUD_SYNC_KEYS.length; i++) {
       var key = CLOUD_SYNC_KEYS[i];
-      var cloudVal = data[key];
+      var firestoreKey = CLOUD_SYNC.userId + ':' + key;
+      var cloudVal = data[firestoreKey];
       // Skip keys that don't exist in the cloud doc yet
       if (cloudVal === undefined || cloudVal === null) continue;
 
@@ -308,7 +307,8 @@ function startCloudListener() {
     var anyChange = false;
     for (var i = 0; i < CLOUD_SYNC_KEYS.length; i++) {
       var key = CLOUD_SYNC_KEYS[i];
-      var cloudVal = data[key];
+      var firestoreKey = CLOUD_SYNC.userId + ':' + key;
+      var cloudVal = data[firestoreKey];
       if (cloudVal === undefined || cloudVal === null) continue;
 
       try {
