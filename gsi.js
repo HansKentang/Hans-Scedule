@@ -528,6 +528,62 @@ function renderAccountSettings(el) {
     listHtml += '<div class="set-acc-item"><div class="set-acc-initials" style="background:var(--text-tertiary);opacity:0.5">?</div><div class="set-acc-info"><div class="set-acc-name" style="opacity:0.5">Guest</div></div></div>';
   }
 
+  // Build sync status HTML
+  var syncStatus = typeof getCloudSyncStatus === 'function' ? getCloudSyncStatus() : null;
+  var syncHtml = '';
+  if (syncStatus) {
+    if (syncStatus.mode === 'file-protocol') {
+      syncHtml =
+        '<div class="set-row">' +
+          '<div class="set-row-left">' +
+            '<div class="set-row-label" style="color:var(--warning,#f59e0b)">Cloud Sync</div>' +
+            '<div class="set-row-desc">Not available \u2014 open via http://localhost instead of file://</div>' +
+          '</div>' +
+          '<button class="set-btn" id="syncHowToBtn" style="border-color:var(--warning,#f59e0b);color:var(--warning,#f59e0b);font-size:0.65rem;padding:3px 8px">Guide</button>' +
+        '</div>';
+    } else if (syncStatus.mode === 'local') {
+      syncHtml =
+        '<div class="set-row">' +
+          '<div class="set-row-left">' +
+            '<div class="set-row-label" style="color:var(--text-tertiary)">Cloud Sync</div>' +
+            '<div class="set-row-desc">Sign in with Google to sync data across devices</div>' +
+          '</div>' +
+        '</div>';
+    } else if (syncStatus.mode === 'cloud') {
+      var ago = syncStatus.lastSyncAgo || 'never';
+      var color = syncStatus.connected ? 'var(--success,#22c55e)' : 'var(--text-tertiary)';
+      var statusText = syncStatus.connected ? 'Online' : 'Disconnected';
+      syncHtml =
+        '<div class="set-row">' +
+          '<div class="set-row-left">' +
+            '<div class="set-row-label" style="color:' + color + '">Cloud Sync <span style="font-size:0.65rem;font-weight:400;opacity:0.7">\u00b7 ' + statusText + '</span></div>' +
+            '<div class="set-row-desc">Last synced: ' + ago + '</div>' +
+          '</div>' +
+          '<button class="set-btn" id="syncNowBtn" style="font-size:0.65rem;padding:3px 8px">Sync Now</button>' +
+        '</div>';
+    } else {
+      syncHtml =
+        '<div class="set-row">' +
+          '<div class="set-row-left">' +
+            '<div class="set-row-label" style="color:var(--text-tertiary)">Cloud Sync</div>' +
+            '<div class="set-row-desc">Sign in to sync data across devices</div>' +
+          '</div>' +
+        '</div>';
+    }
+    if (syncStatus.lastError && syncStatus.lastErrorTime) {
+      var errAgo = Math.floor((Date.now() - syncStatus.lastErrorTime) / 1000);
+      if (errAgo < 300) { // Only show errors newer than 5 minutes
+        syncHtml +=
+          '<div class="set-row">' +
+            '<div class="set-row-left">' +
+              '<div class="set-row-label" style="color:var(--danger,#ef4444);font-size:0.68rem">Sync Error</div>' +
+              '<div class="set-row-desc">' + escapeHtml(syncStatus.lastError) + '</div>' +
+            '</div>' +
+          '</div>';
+      }
+    }
+  }
+
   el.innerHTML =
     '<h3>My Account</h3>' +
     // Editable profile
@@ -555,6 +611,7 @@ function renderAccountSettings(el) {
         '<div class="set-row-left"><div class="set-row-label">Time format</div></div>' +
         '<div class="set-row-control"><select class="set-select" id="accTimeFormat"><option value="12h">12h</option><option value="24h">24h</option></select></div>' +
       '</div>' +
+      syncHtml +
     '</div>' +
     '<div class="set-divider"></div>' +
     // Data & Privacy
@@ -679,6 +736,14 @@ function renderAccountSettings(el) {
       closeSettingsPanel();
       removeProfile(btn.dataset.accRemove);
     });
+  });
+  // Sync Now button
+  document.getElementById('syncNowBtn')?.addEventListener('click', function() {
+    if (typeof triggerSyncNow === 'function') triggerSyncNow();
+  });
+  // Sync Guide button (file:// protocol)
+  document.getElementById('syncHowToBtn')?.addEventListener('click', function() {
+    if (typeof showToast === 'function') showToast('Install VS Code Live Server extension or run: npx serve .', 'info', 5000);
   });
   document.getElementById('setAddGoogle')?.addEventListener('click', function() { closeSettingsPanel(); firebaseSignIn(); });
   document.getElementById('setAddLocal')?.addEventListener('click', function() { closeSettingsPanel(); gsiSignIn(); });

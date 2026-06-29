@@ -5106,11 +5106,19 @@ function showToast(message, type, duration) {
 
   const toast = document.createElement('div');
   toast.className = 'ai-toast';
+
+  var borderColor = 'var(--border-color)';
+  var bgColor = 'var(--bg-card)';
+  if (type === 'error') { borderColor = 'var(--danger,#ef4444)'; bgColor = 'color-mix(in srgb, var(--danger,#ef4444) 10%, var(--bg-card))'; }
+  else if (type === 'success') { borderColor = 'var(--success,#22c55e)'; bgColor = 'color-mix(in srgb, var(--success,#22c55e) 10%, var(--bg-card))'; }
+  else if (type === 'warning') { borderColor = 'var(--warning,#f59e0b)'; bgColor = 'color-mix(in srgb, var(--warning,#f59e0b) 10%, var(--bg-card))'; }
+  else if (type === 'info') { borderColor = 'var(--accent)'; bgColor = 'color-mix(in srgb, var(--accent) 10%, var(--bg-card))'; }
+
   toast.style.cssText = `
     position: fixed; bottom: 100px; right: 28px; z-index: 9999;
     padding: 10px 18px; border-radius: 10px;
     font-size: 0.82rem; font-family: var(--font-family); font-weight: 500;
-    background: var(--bg-card); border: 1px solid var(--border-color);
+    background: ${bgColor}; border: 1px solid ${borderColor};
     color: var(--text-primary);
     box-shadow: 0 8px 30px rgba(0,0,0,0.15);
     display: flex; align-items: center; gap: 8px;

@@ -41,6 +41,7 @@ var CLOUD_SYNC = {
   isPushing: false,
   lastSnapshot: {},
   lastPushTime: 0,
+  lastPullTime: 0,
   // Pause the onSnapshot listener during our own push to prevent echo loops
   paused: false,
   // Track whether this session already did the initial pull
@@ -158,6 +159,17 @@ function initCloudSync(userId) {
   // Local profiles (prefixed "u") are device-specific and can't sync.
   if (userId.indexOf('firebase-') !== 0) return;
 
+  // Warn if running from file:// protocol — Firestore won't work
+  if (window.location.protocol === 'file:') {
+    console.warn('[sync] Cannot sync from file:// protocol. Use a local web server (http://) for cloud sync.');
+    CLOUD_SYNC_STATUS.lastError = 'Cloud sync requires a web server (http://). Open via http://localhost or deploy online.';
+    CLOUD_SYNC_STATUS.lastErrorTime = Date.now();
+    if (typeof showToast === 'function') {
+      showToast('Cloud sync unavailable: open via http:// instead of file://', 'warning', 5000);
+    }
+    return;
+  }
+
   CLOUD_SYNC.userId = userId;
 
   try {
@@ -188,10 +200,12 @@ function initCloudSync(userId) {
       startCloudListener();
       // Phase 3: start periodic dirty check to push local changes
       startDirtyCheck();
+      _updateSyncStatus();
     }).catch(function() {
       // Even if initial pull fails, start listener + dirty check
       startCloudListener();
       startDirtyCheck();
+      _updateSyncStatus();
     });
   } catch (e) {
     console.warn('[sync] init failed:', e);
@@ -237,6 +251,9 @@ function pullFromCloud() {
       }
     }
 
+    CLOUD_SYNC.lastPullTime = Date.now();
+    _updateSyncStatus();
+
     if (anyChange) {
       // Update snapshot to reflect newly applied cloud data
       takeCloudSnapshot();
@@ -246,6 +263,11 @@ function pullFromCloud() {
 
     CLOUD_SYNC.initialPullDone = true;
     return true;
+  }).catch(function(err) {
+    console.warn('[sync] pull failed:', err);
+    CLOUD_SYNC_STATUS.lastError = err.message || String(err);
+    CLOUD_SYNC_STATUS.lastErrorTime = Date.now();
+    if (typeof showToast === 'function') showToast('Sync pull failed: ' + (err.message || 'unknown error'), 'error', 4000);
   });
 }
 
@@ -275,10 +297,13 @@ function pushToCloud() {
 
   return CLOUD_SYNC.docRef.set(batch, { merge: true }).then(function() {
     CLOUD_SYNC.lastPushTime = Date.now();
-    // Update snapshot after successful push
+    _updateSyncStatus();
     takeCloudSnapshot();
   }).catch(function(err) {
     console.warn('[sync] push failed:', err);
+    CLOUD_SYNC_STATUS.lastError = err.message || String(err);
+    CLOUD_SYNC_STATUS.lastErrorTime = Date.now();
+    if (typeof showToast === 'function') showToast('Sync push failed: ' + (err.message || 'unknown error'), 'error', 4000);
   }).then(function() {
     CLOUD_SYNC.isPushing = false;
     // Re-enable listener after a short delay to avoid echo
@@ -326,6 +351,8 @@ function startCloudListener() {
     }
   }, function(err) {
     console.warn('[sync] listener error:', err);
+    CLOUD_SYNC_STATUS.lastError = err.message || String(err);
+    CLOUD_SYNC_STATUS.lastErrorTime = Date.now();
   });
 }
 
@@ -416,3 +443,158 @@ function clearCloudData(userId) {
 window.initCloudSync = initCloudSync;
 window.stopCloudSync = stopCloudSync;
 window.clearCloudData = clearCloudData;
+
+// ─── SYNC STATUS ──────────────────────────────────────────────
+// Global status tracking: call getCloudSyncStatus() anytime.
+// Used by Settings > Account to render sync status UI.
+
+var CLOUD_SYNC_STATUS = {
+  mode: 'off',        // 'cloud' | 'local' | 'file-protocol' | 'off'
+  connected: false,
+  lastSyncTime: null,
+  lastSyncAgo: null,
+  lastError: null,
+  lastErrorTime: null,
+  protocol: window.location.protocol,
+  hasGoogleUser: false,
+  hasActiveUser: false,
+  isGoogleUser: false,
+  pushCount: 0,
+  pullCount: 0,
+};
+
+// Call after every push/pull to update status
+function _updateSyncStatus() {
+  var ls = CLOUD_SYNC.lastPushTime || CLOUD_SYNC.lastPullTime;
+  CLOUD_SYNC_STATUS.lastSyncTime = ls || null;
+  CLOUD_SYNC_STATUS.lastSyncAgo = ls ? Date.now() - ls : null;
+  CLOUD_SYNC_STATUS.connected = CLOUD_SYNC.initialized;
+  CLOUD_SYNC_STATUS.mode = CLOUD_SYNC.initialized ? 'cloud' : 'off';
+  if (typeof updateSyncStatusDot === 'function') updateSyncStatusDot();
+}
+
+function getCloudSyncStatus() {
+  var activeId = null;
+  try { activeId = typeof getActiveUserId === 'function' ? getActiveUserId() : localStorage.getItem('haven-gsi-active'); } catch (e) {}
+  var isFirebase = activeId && activeId.indexOf('firebase-') === 0;
+  var isLocal = activeId && activeId.indexOf('u') === 0;
+  var guest = false;
+  try { guest = sessionStorage.getItem('haven-guest') === '1'; } catch (e) {}
+
+  CLOUD_SYNC_STATUS.protocol = window.location.protocol;
+  CLOUD_SYNC_STATUS.hasActiveUser = !!activeId;
+  CLOUD_SYNC_STATUS.isGoogleUser = !!isFirebase;
+  CLOUD_SYNC_STATUS.guest = guest;
+
+  // Determine mode
+  if (window.location.protocol === 'file:') {
+    CLOUD_SYNC_STATUS.mode = 'file-protocol';
+    CLOUD_SYNC_STATUS.connected = false;
+  } else if (guest) {
+    CLOUD_SYNC_STATUS.mode = 'off';
+    CLOUD_SYNC_STATUS.connected = false;
+  } else if (isLocal) {
+    CLOUD_SYNC_STATUS.mode = 'local';
+    CLOUD_SYNC_STATUS.connected = false;
+  } else if (isFirebase) {
+    CLOUD_SYNC_STATUS.mode = 'cloud';
+    CLOUD_SYNC_STATUS.connected = CLOUD_SYNC.initialized;
+  } else {
+    CLOUD_SYNC_STATUS.mode = 'off';
+    CLOUD_SYNC_STATUS.connected = false;
+  }
+
+  // Build a label for display
+  var ago = CLOUD_SYNC_STATUS.lastSyncTime ? _formatAgo(CLOUD_SYNC_STATUS.lastSyncTime) : null;
+  CLOUD_SYNC_STATUS.lastSyncAgo = ago;
+  CLOUD_SYNC_STATUS.code = activeId;
+
+  // Check for warnings
+  CLOUD_SYNC_STATUS.warning = null;
+  if (window.location.protocol === 'file:') {
+    CLOUD_SYNC_STATUS.warning = 'file-protocol';
+  } else if (isLocal) {
+    CLOUD_SYNC_STATUS.warning = 'local-profile';
+  }
+
+  return CLOUD_SYNC_STATUS;
+}
+
+function _formatAgo(ts) {
+  if (!ts) return null;
+  var diff = Date.now() - ts;
+  if (diff < 5000) return 'just now';
+  if (diff < 60000) return Math.floor(diff / 1000) + 's ago';
+  if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+  return Math.floor(diff / 86400000) + 'd ago';
+}
+
+// ─── MANUAL SYNC ──────────────────────────────────────────────
+// Called by the "Sync Now" button in settings.
+function triggerSyncNow() {
+  if (window.location.protocol === 'file:') {
+    if (typeof showToast === 'function') showToast('Cloud sync requires a web server (http://)', 'error', 4000);
+    return;
+  }
+  if (!CLOUD_SYNC.initialized) {
+    // Try initializing
+    var activeId = typeof getActiveUserId === 'function' ? getActiveUserId() : null;
+    if (activeId && activeId.indexOf('firebase-') === 0) {
+      initCloudSync(activeId);
+      if (typeof showToast === 'function') showToast('Initializing cloud sync...', 'info', 2000);
+    } else {
+      if (typeof showToast === 'function') showToast('No Google-authenticated profile found', 'error', 3000);
+    }
+    return;
+  }
+  // Force a push
+  if (typeof showToast === 'function') showToast('Syncing...', 'info', 1500);
+  takeCloudSnapshot();
+  pushToCloud().then(function() {
+    CLOUD_SYNC.lastPullTime = Date.now();
+    _updateSyncStatus();
+    if (typeof showToast === 'function') showToast('Synced!', 'success', 2000);
+  }).catch(function() {
+    if (typeof showToast === 'function') showToast('Sync failed. Check console for details.', 'error', 3000);
+  });
+}
+
+window.getCloudSyncStatus = getCloudSyncStatus;
+window.triggerSyncNow = triggerSyncNow;
+
+// ─── SYNC STATUS DOT ──────────────────────────────────────────
+// Updates the #syncStatusDot in the sidebar footer.
+function updateSyncStatusDot() {
+  var dot = document.getElementById('syncStatusDot');
+  if (!dot) return;
+  var st = typeof getCloudSyncStatus === 'function' ? getCloudSyncStatus() : null;
+  if (!st) { dot.className = 'sync-dot'; dot.title = 'Sync: unknown'; return; }
+  dot.className = 'sync-dot';
+  if (st.mode === 'cloud' && st.connected) {
+    dot.classList.add('online');
+    dot.title = 'Cloud sync: online \u2014 Last: ' + (st.lastSyncAgo || 'never');
+  } else if (st.mode === 'cloud' && !st.connected) {
+    dot.classList.add('error');
+    dot.title = 'Cloud sync: disconnected';
+  } else if (st.mode === 'file-protocol') {
+    dot.classList.add('file');
+    dot.title = 'Cloud sync unavailable: open via http://';
+  } else if (st.mode === 'local') {
+    dot.title = 'Local profile \u2014 sign in with Google to sync';
+  } else {
+    dot.title = 'Sync: ' + st.mode;
+  }
+  if (st.lastError && st.lastErrorTime && Date.now() - st.lastErrorTime < 300000) {
+    dot.classList.add('error');
+    dot.title += ' \u2014 Last error: ' + st.lastError;
+  }
+}
+
+// Update the dot on page load and periodically
+document.addEventListener('DOMContentLoaded', function() {
+  updateSyncStatusDot();
+  setInterval(updateSyncStatusDot, 10000);
+});
+
+window.updateSyncStatusDot = updateSyncStatusDot;
