@@ -1346,8 +1346,13 @@ var __origLS = {};
   localStorage.setItem = function(key, val) {
     var pKey = _p(key);
     __origLS.setItem(pKey, val);
-    if (typeof CLOUD_STORE !== 'undefined' && !CLOUD_STORE._suppressWrite) {
-      _queueCloudWrite(pKey, val);
+    if (typeof CLOUD_STORE !== 'undefined') {
+      if (CLOUD_STORE._writeLock > 0) {
+        // During initialization/poll, stash writes so they're not lost
+        CLOUD_STORE._deferredQueue[pKey] = val;
+      } else {
+        _queueCloudWrite(pKey, val);
+      }
     }
   };
   localStorage.removeItem = function(key) { return __origLS.removeItem(_p(key)); };
@@ -1366,7 +1371,17 @@ var CLOUD_STORE = {
   writeQueue: {},
   lastFetch: {},
   initialized: false,
-  _suppressWrite: false,
+  _writeLock: 0,
+  _deferredQueue: {},
+  _retryCount: 0,
+  _retryTimeout: null,
+  _syncHealth: {
+    lastSuccessfulWrite: null,
+    totalWrites: 0,
+    failedWrites: 0,
+    lastError: null,
+    lastErrorTime: null,
+  },
 };
 
 function initCloudStorage(userId) {
@@ -1391,7 +1406,7 @@ function initCloudStorage(userId) {
     CLOUD_STORE.db = db;
 
     db.collection('userdata').doc(userId).get().then(function(doc) {
-      CLOUD_STORE._suppressWrite = true;
+      CLOUD_STORE._writeLock++;
       if (doc.exists) {
         var data = doc.data();
         console.log('[cloud] loaded', Object.keys(data).length, 'keys from cloud');
@@ -1429,12 +1444,13 @@ function initCloudStorage(userId) {
           });
         }
       }
-      CLOUD_STORE._suppressWrite = false;
+      CLOUD_STORE._writeLock--;
       CLOUD_STORE.initialized = true;
+      _flushDeferredWrites();
       console.log('[cloud] initialized — poll started');
       _startCloudPoll();
     }).catch(function(err) {
-      CLOUD_STORE._suppressWrite = false;
+      CLOUD_STORE._writeLock = 0;
       console.warn('[cloud] init fetch failed:', err);
       CLOUD_STORE.initialized = true;
       _startCloudPoll();
@@ -1448,12 +1464,16 @@ function _startCloudPoll() {
   if (CLOUD_STORE.pollInterval) clearInterval(CLOUD_STORE.pollInterval);
   CLOUD_STORE.pollInterval = setInterval(function() {
     if (!CLOUD_STORE.db || !CLOUD_STORE.userId) return;
+    CLOUD_STORE._writeLock++;
     CLOUD_STORE.db.collection('userdata').doc(CLOUD_STORE.userId).get().then(function(doc) {
-      if (!doc.exists) return;
+      if (!doc.exists) {
+        CLOUD_STORE._writeLock--;
+        _flushDeferredWrites();
+        return;
+      }
       var data = doc.data();
       var anyChange = false;
       var changedKeys = [];
-      CLOUD_STORE._suppressWrite = true;
       for (var key in data) {
         if (key.indexOf('_') === 0) continue;
         var colonIdx = key.indexOf(':');
@@ -1467,14 +1487,18 @@ function _startCloudPoll() {
           } catch (e) {}
         }
       }
-      CLOUD_STORE._suppressWrite = false;
+      CLOUD_STORE._writeLock--;
+      _flushDeferredWrites();
       if (anyChange) {
         console.log('[cloud] poll detected changes from cloud: ' + changedKeys.join(', '));
-        if (typeof showToast === 'function') showToast('Synced from cloud', 'info', 2000);
         try { window.dispatchEvent(new CustomEvent('cloud-sync-changed', { detail: { changedKeys: changedKeys } })); } catch (e) {}
       }
       if (typeof updateSyncStatusDot === 'function') updateSyncStatusDot();
-    }).catch(function() {});
+    }).catch(function(err) {
+      CLOUD_STORE._writeLock--;
+      _flushDeferredWrites();
+      console.warn('[cloud] poll error:', err);
+    });
   }, 3000);
 }
 
@@ -1492,19 +1516,60 @@ function _queueCloudWrite(key, value) {
 function _flushCloudWrites() {
   CLOUD_STORE.writeTimeout = null;
   if (!CLOUD_STORE.db || !CLOUD_STORE.userId || Object.keys(CLOUD_STORE.writeQueue).length === 0) return;
+  
+  // Take a snapshot of the current queue and preserve it for potential retry
+  var savedQueue = CLOUD_STORE.writeQueue;
   var batch = {};
   var uid = CLOUD_STORE.userId;
-  for (var bk in CLOUD_STORE.writeQueue) {
-    batch[uid + ':' + bk] = CLOUD_STORE.writeQueue[bk];
-    CLOUD_STORE.lastFetch[bk] = CLOUD_STORE.writeQueue[bk];
+  for (var bk in savedQueue) {
+    batch[uid + ':' + bk] = savedQueue[bk];
+    CLOUD_STORE.lastFetch[bk] = savedQueue[bk];
   }
   batch._updatedBy = uid;
   batch._updatedAt = Date.now();
   CLOUD_STORE.writeQueue = {};
-  CLOUD_STORE.db.collection('userdata').doc(uid).set(batch, { merge: true }).catch(function(err) {
+  
+  CLOUD_STORE.db.collection('userdata').doc(uid).set(batch, { merge: true }).then(function() {
+    // Success — reset retry count and update health
+    CLOUD_STORE._retryCount = 0;
+    if (CLOUD_STORE._retryTimeout) {
+      clearTimeout(CLOUD_STORE._retryTimeout);
+      CLOUD_STORE._retryTimeout = null;
+    }
+    CLOUD_STORE._syncHealth.lastSuccessfulWrite = Date.now();
+    CLOUD_STORE._syncHealth.totalWrites++;
+    if (typeof updateSyncStatusDot === 'function') updateSyncStatusDot();
+  }).catch(function(err) {
     console.warn('[cloud] write failed:', err);
-    if (typeof showToast === 'function') showToast('Cloud write failed', 'error', 3000);
+    CLOUD_STORE._syncHealth.failedWrites++;
+    CLOUD_STORE._syncHealth.lastError = err.message || String(err);
+    CLOUD_STORE._syncHealth.lastErrorTime = Date.now();
+    
+    // Retry with exponential backoff, up to 3 attempts
+    if (CLOUD_STORE._retryCount < 3) {
+      CLOUD_STORE._retryCount++;
+      // Merge saved queue with any new writes that arrived (new writes take precedence)
+      CLOUD_STORE.writeQueue = Object.assign({}, savedQueue, CLOUD_STORE.writeQueue);
+      var delay = Math.pow(2, CLOUD_STORE._retryCount) * 1000;
+      console.log('[cloud] will retry in ' + delay + 'ms (attempt ' + CLOUD_STORE._retryCount + '/3)');
+      if (CLOUD_STORE._retryTimeout) clearTimeout(CLOUD_STORE._retryTimeout);
+      CLOUD_STORE._retryTimeout = setTimeout(_flushCloudWrites, delay);
+    } else {
+      console.warn('[cloud] giving up after 3 retries');
+      CLOUD_STORE._retryCount = 0;
+      if (typeof showToast === 'function') showToast('Cloud sync failed — data saved locally', 'error', 4000);
+    }
+    if (typeof updateSyncStatusDot === 'function') updateSyncStatusDot();
   });
+}
+
+function _flushDeferredWrites() {
+  if (CLOUD_STORE._writeLock > 0) return;
+  var dq = CLOUD_STORE._deferredQueue;
+  CLOUD_STORE._deferredQueue = {};
+  for (var key in dq) {
+    _queueCloudWrite(key, dq[key]);
+  }
 }
 
 function stopCloudStorage() {
@@ -1516,11 +1581,17 @@ function stopCloudStorage() {
     clearTimeout(CLOUD_STORE.writeTimeout);
     CLOUD_STORE.writeTimeout = null;
   }
+  if (CLOUD_STORE._retryTimeout) {
+    clearTimeout(CLOUD_STORE._retryTimeout);
+    CLOUD_STORE._retryTimeout = null;
+  }
   CLOUD_STORE.userId = null;
   CLOUD_STORE.initialized = false;
+  CLOUD_STORE._writeLock = 0;
   CLOUD_STORE.writeQueue = {};
+  CLOUD_STORE._deferredQueue = {};
   CLOUD_STORE.lastFetch = {};
-  CLOUD_STORE._suppressWrite = false;
+  CLOUD_STORE._retryCount = 0;
 }
 
 window.initCloudStorage = initCloudStorage;

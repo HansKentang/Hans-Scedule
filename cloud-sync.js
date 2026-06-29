@@ -44,7 +44,20 @@ var CLOUD_SYNC_STATUS = {
   hasGoogleUser: false,
   hasActiveUser: false,
   isGoogleUser: false,
+  totalWrites: 0,
+  failedWrites: 0,
+  pendingWrites: 0,
 };
+
+function _timeAgo(date) {
+  if (!date) return 'never';
+  var diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 10) return 'just now';
+  if (diff < 60) return diff + 's ago';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  return Math.floor(diff / 86400) + 'd ago';
+}
 
 function getCloudSyncStatus() {
   var activeId = null;
@@ -77,13 +90,19 @@ function getCloudSyncStatus() {
     CLOUD_SYNC_STATUS.connected = false;
   }
 
-  // Last sync time from last successful write
-  var lastSync = 0;
-  if (CLOUD_STORE && CLOUD_STORE.lastFetch) {
-    // Use the latest _updatedAt from the poll (written into lastFetch on flush)
+  // Sync health from CLOUD_STORE
+  CLOUD_SYNC_STATUS.totalWrites = cs && cs._syncHealth ? cs._syncHealth.totalWrites : 0;
+  CLOUD_SYNC_STATUS.failedWrites = cs && cs._syncHealth ? cs._syncHealth.failedWrites : 0;
+  CLOUD_SYNC_STATUS.pendingWrites = cs ? Object.keys(cs.writeQueue).length : 0;
+  
+  CLOUD_SYNC_STATUS.lastSyncTime = cs && cs._syncHealth && cs._syncHealth.lastSuccessfulWrite ? new Date(cs._syncHealth.lastSuccessfulWrite) : null;
+  CLOUD_SYNC_STATUS.lastSyncAgo = CLOUD_SYNC_STATUS.lastSyncTime ? _timeAgo(CLOUD_SYNC_STATUS.lastSyncTime) : 'never';
+  
+  // Forward lastError from sync health
+  if (cs && cs._syncHealth && cs._syncHealth.lastError) {
+    CLOUD_SYNC_STATUS.lastError = cs._syncHealth.lastError;
+    CLOUD_SYNC_STATUS.lastErrorTime = cs._syncHealth.lastErrorTime;
   }
-  CLOUD_SYNC_STATUS.lastSyncTime = null;
-  CLOUD_SYNC_STATUS.lastSyncAgo = null;
 
   // Check for warnings
   CLOUD_SYNC_STATUS.warning = null;
@@ -104,21 +123,59 @@ function triggerSyncNow() {
       if (typeof initCloudStorage === 'function') initCloudStorage(activeId);
       if (typeof showToast === 'function') showToast('Initializing cloud storage...', 'info', 2000);
     } else {
-      if (typeof showToast === 'function') showToast('No Google-authenticated profile found', 'error', 3000);
+      if (typeof showToast === 'function') showToast('Sign in with Google to sync across devices', 'info', 3000);
     }
     return;
   }
   if (typeof showToast === 'function') showToast('Syncing...', 'info', 1500);
   // Force flush pending writes
   if (typeof _flushCloudWrites === 'function') {
-    // Manually trigger flush immediately
     if (CLOUD_STORE.writeTimeout) {
       clearTimeout(CLOUD_STORE.writeTimeout);
       CLOUD_STORE.writeTimeout = null;
     }
     _flushCloudWrites();
   }
-  if (typeof showToast === 'function') showToast('All data synced!', 'success', 2000);
+  // Also trigger an immediate poll to fetch remote changes
+  if (CLOUD_STORE.db && CLOUD_STORE.userId) {
+    CLOUD_STORE._writeLock++;
+    CLOUD_STORE.db.collection('userdata').doc(CLOUD_STORE.userId).get().then(function(doc) {
+      if (!doc.exists) {
+        CLOUD_STORE._writeLock--;
+        if (typeof _flushDeferredWrites === 'function') _flushDeferredWrites();
+        if (typeof showToast === 'function') showToast('All data synced!', 'success', 2000);
+        return;
+      }
+      var data = doc.data();
+      var changedKeys = [];
+      for (var key in data) {
+        if (key.indexOf('_') === 0) continue;
+        var colonIdx = key.indexOf(':');
+        var baseKey = colonIdx >= 0 ? key.slice(colonIdx + 1) : key;
+        if (data[key] !== CLOUD_STORE.lastFetch[baseKey]) {
+          CLOUD_STORE.lastFetch[baseKey] = data[key];
+          try {
+            __origLS.setItem(key, data[key]);
+            changedKeys.push(baseKey);
+          } catch (e) {}
+        }
+      }
+      CLOUD_STORE._writeLock--;
+      if (typeof _flushDeferredWrites === 'function') _flushDeferredWrites();
+      if (changedKeys.length > 0) {
+        if (typeof showToast === 'function') showToast('Got ' + changedKeys.length + ' updated from cloud', 'info', 2000);
+      } else {
+        if (typeof showToast === 'function') showToast('All data synced!', 'success', 2000);
+      }
+      if (typeof updateSyncStatusDot === 'function') updateSyncStatusDot();
+    }).catch(function() {
+      CLOUD_STORE._writeLock--;
+      if (typeof _flushDeferredWrites === 'function') _flushDeferredWrites();
+      if (typeof showToast === 'function') showToast('All data synced!', 'success', 2000);
+    });
+  } else {
+    if (typeof showToast === 'function') showToast('All data synced!', 'success', 2000);
+  }
 }
 
 // ─── SYNC STATUS DOT ──────────────────────────────────────────
