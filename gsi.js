@@ -532,16 +532,7 @@ function renderAccountSettings(el) {
   var syncStatus = typeof getCloudSyncStatus === 'function' ? getCloudSyncStatus() : null;
   var syncHtml = '';
   if (syncStatus) {
-    if (syncStatus.mode === 'file-protocol') {
-      syncHtml =
-        '<div class="set-row">' +
-          '<div class="set-row-left">' +
-            '<div class="set-row-label" style="color:var(--warning,#f59e0b)">Cloud Sync</div>' +
-            '<div class="set-row-desc">Not available \u2014 open via http://localhost instead of file://</div>' +
-          '</div>' +
-          '<button class="set-btn" id="syncHowToBtn" style="border-color:var(--warning,#f59e0b);color:var(--warning,#f59e0b);font-size:0.65rem;padding:3px 8px">Guide</button>' +
-        '</div>';
-    } else if (syncStatus.mode === 'local') {
+    if (syncStatus.mode === 'local') {
       syncHtml =
         '<div class="set-row">' +
           '<div class="set-row-left">' +
@@ -553,11 +544,16 @@ function renderAccountSettings(el) {
       var ago = syncStatus.lastSyncAgo || 'never';
       var color = syncStatus.connected ? 'var(--success,#22c55e)' : 'var(--text-tertiary)';
       var statusText = syncStatus.connected ? 'Online' : 'Disconnected';
+      var warningNote = '';
+      if (syncStatus.warning === 'file-protocol') {
+        warningNote = '<div class="set-row-desc" style="color:var(--warning,#f59e0b);margin-top:2px">Note: file:// protocol may limit real-time sync. Use http:// for best results.</div>';
+      }
       syncHtml =
         '<div class="set-row">' +
           '<div class="set-row-left">' +
             '<div class="set-row-label" style="color:' + color + '">Cloud Sync <span style="font-size:0.65rem;font-weight:400;opacity:0.7">\u00b7 ' + statusText + '</span></div>' +
             '<div class="set-row-desc">Last synced: ' + ago + '</div>' +
+            warningNote +
           '</div>' +
           '<button class="set-btn" id="syncNowBtn" style="font-size:0.65rem;padding:3px 8px">Sync Now</button>' +
         '</div>';
@@ -740,10 +736,6 @@ function renderAccountSettings(el) {
   // Sync Now button
   document.getElementById('syncNowBtn')?.addEventListener('click', function() {
     if (typeof triggerSyncNow === 'function') triggerSyncNow();
-  });
-  // Sync Guide button (file:// protocol)
-  document.getElementById('syncHowToBtn')?.addEventListener('click', function() {
-    if (typeof showToast === 'function') showToast('Install VS Code Live Server extension or run: npx serve .', 'info', 5000);
   });
   document.getElementById('setAddGoogle')?.addEventListener('click', function() { closeSettingsPanel(); firebaseSignIn(); });
   document.getElementById('setAddLocal')?.addEventListener('click', function() { closeSettingsPanel(); gsiSignIn(); });
