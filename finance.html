@@ -502,7 +502,7 @@
           <a href="activities.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span><span class="snav-label">Activities</span></a>
           <a href="analytics.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="snav-label">Analytics</span></a>
           <a href="goals.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span class="snav-label">Goals</span></a>
-          <a href="finance.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="snav-label">Finance</span></a>
+          <a href="finance.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="snav-label" data-i18n="nav.finance">Finance</span></a>
                   <a href="gallery.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
                   <a href="friends.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="snav-label">Friends</span><span id="chatUnreadBadge" class="chat-nav-badge" style="display:none">0</span></a>
         </div>
@@ -563,7 +563,7 @@
         <div class="fin-hero-decor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
         <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding);display:flex;align-items:center;justify-content:space-between">
           <div>
-            <h1 style="font-family:var(--font-serif);font-size:32px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)">Finance</h1>
+            <h1 style="font-family:var(--font-serif);font-size:32px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)" data-i18n="nav.finance">Finance</h1>
             <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
               <span id="finHeroTitle">Your money, clearer.</span>
             </div>
@@ -576,7 +576,7 @@
 
         <div class="fin-kpi-row hub-anim-in hub-anim-in-2">
           <div class="fin-kpi income">
-            <div class="fin-kpi-label">Income</div>
+            <div class="fin-kpi-label" data-i18n="fin.income">Income</div>
             <div class="fin-kpi-value" id="finIncome">â€”</div>
           </div>
           <div class="fin-kpi expense">
@@ -592,7 +592,7 @@
             <div class="fin-piggy-header">
               <span style="font-size:2rem;line-height:1;display:flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><path d="M19 12h1a2 2 0 012 2v2a2 2 0 01-2 2h-1"/><path d="M5 12H4a2 2 0 00-2 2v2a2 2 0 002 2h1"/><path d="M12 7h1a4 4 0 014 4v5H7v-5a4 4 0 014-4h1z"/><path d="M10 12h4"/><circle cx="9" cy="9" r="1"/><circle cx="15" cy="9" r="1"/><path d="M7 18v2"/><path d="M17 18v2"/></svg></span>
               <div>
-                <div class="fin-piggy-label">Piggy Bank</div>
+                <div class="fin-piggy-label" data-i18n="fin.piggy">Piggy Bank</div>
                 <div class="fin-piggy-balance" id="piggyBalance">Rp 0</div>
               </div>
             </div>
@@ -607,7 +607,7 @@
             <div class="fin-wallet-header">
               <span style="font-size:2rem;line-height:1;display:flex;align-items:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg></span>
               <div>
-                <div class="fin-wallet-label">Wallet</div>
+                <div class="fin-wallet-label" data-i18n="fin.wallet">Wallet</div>
                 <div class="fin-wallet-balance" id="walletBalance">Rp 0</div>
               </div>
             </div>
@@ -636,10 +636,10 @@
         <div class="fin-toolbar hub-anim-in hub-anim-in-6">
           <div class="fin-toolbar-left">
             <div class="fin-tabs">
-              <button class="fin-tab" data-range="7d">7D</button>
-              <button class="fin-tab active" data-range="30d">30D</button>
-              <button class="fin-tab" data-range="month">Month</button>
-              <button class="fin-tab" data-range="all">All</button>
+              <button class="fin-tab" data-range="7d" data-i18n="fin.period7d">7D</button>
+              <button class="fin-tab active" data-range="30d" data-i18n="fin.period30d">30D</button>
+              <button class="fin-tab" data-range="month" data-i18n="fin.periodMonth">Month</button>
+              <button class="fin-tab" data-range="all" data-i18n="fin.periodAll">All</button>
             </div>
             <span class="fin-count" id="finCount"></span>
           </div>
@@ -654,11 +654,11 @@
           <div>
             <div class="fin-table-wrap">
               <div class="fin-table-head">
-                <div>Date</div>
-                <div>Category</div>
-                <div>Type</div>
-                <div>Amount</div>
-                <div>Note</div>
+                <div data-i18n="fin.date">Date</div>
+                <div data-i18n="fin.category">Category</div>
+                <div data-i18n="fin.type">Type</div>
+                <div data-i18n="fin.amount">Amount</div>
+                <div data-i18n="fin.note">Note</div>
                 <div></div>
               </div>
               <div class="fin-table" id="finTable">
@@ -670,18 +670,18 @@
             <h2>Add transaction</h2>
             <div class="fin-form-stack">
               <div class="form-group">
-                <label>Type</label>
+                <label data-i18n="fin.type">Type</label>
                 <div class="fin-toggle">
-                  <button id="finTypeExpense" class="active">Expense</button>
-                  <button id="finTypeIncome">Income</button>
+                  <button id="finTypeExpense" class="active" data-i18n="fin.expense">Expense</button>
+                  <button id="finTypeIncome" data-i18n="fin.income">Income</button>
                 </div>
               </div>
               <div class="form-group">
-                <label>Amount</label>
+                <label data-i18n="fin.amount">Amount</label>
                 <input type="number" id="finAmount" placeholder="0.00" step="0.01">
               </div>
               <div class="form-group">
-                <label>Category</label>
+                <label data-i18n="fin.category">Category</label>
                 <select id="finCategory">
                   <option>Food</option>
                   <option>Transport</option>
@@ -695,11 +695,11 @@
                 </select>
               </div>
               <div class="form-group">
-                <label>Date</label>
+                <label data-i18n="fin.date">Date</label>
                 <input type="date" id="finDate">
               </div>
               <div class="form-group">
-                <label>Note</label>
+                <label data-i18n="fin.note">Note</label>
                 <input type="text" id="finNote" placeholder="optional">
               </div>
               <button class="fin-btn" id="finAddBtn">Add transaction</button>
@@ -729,7 +729,7 @@
         <!-- â”€â”€â”€ ADVANCED CHARTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
         <div class="fin-adv-section hub-anim-in hub-anim-in-9">
           <div class="fin-adv-header">
-            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary)">Spending Intelligence</span>
+            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary)" data-i18n="fin.intelligence">Spending Intelligence</span>
             <div class="fin-adv-tabs" id="finAdvTabs">
               <button class="fin-adv-tab active" data-view="treemap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="15"/><rect x="3" y="14" width="7" height="4"/></svg>
@@ -1630,7 +1630,7 @@
       </a>
       <a href="finance.html" class="hub-bottom-nav-item active" data-nav="finance">
         <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
-        <span class="bnav-label">Finance</span>
+        <span class="bnav-label" data-i18n="nav.finance">Finance</span>
       </a>
       <a href="friends.html" class="hub-bottom-nav-item" data-nav="friends">
         <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>

@@ -1547,8 +1547,21 @@ const LANG = {
     'ai.clearMem':'Clear Memories','ai.resetLearn':'Reset Learning','ai.extra':'EXTRA INSTRUCTIONS','ai.extraPlaceholder':'Extra instructions for the AI (optional)...','ai.saveInstructions':'Save Instructions','ai.noMemories':'No memories yet. Chat with ChickBot to build your profile.',
     'data.title':'Data','data.desc':'Export your data or import from a backup','data.export':'Export Data','data.import':'Import Data',
     'about.title':'About','about.desc':'Hav\u00ebn Schedule \u2014 your personal smart scheduler',
-    'nav.hub':'Hub','nav.schedule':'Schedule','nav.activities':'Activities','nav.analytics':'Analytics','nav.goals':'Goals','nav.finance':'Finance','nav.gallery':'Gallery',
-    'common.monday':'Monday','common.sunday':'Sunday','common.save':'Save','common.cancel':'Cancel','common.delete':'Delete','common.show':'Show','common.hide':'Hide','common.enterKey':'Enter key','common.quickActions':'Quick Actions','common.customize':'Customize','common.help':'Help','common.settings':'Settings','common.menu':'Menu','common.pages':'Pages','appearance.title':'Appearance',
+    'nav.hub':'Hub','nav.schedule':'Schedule','nav.activities':'Activities','nav.analytics':'Analytics','nav.goals':'Goals','nav.finance':'Finance','nav.gallery':'Gallery','nav.friends':'Friends',
+    'hub.greeting':'Good morning','hub.today':'TODAY','hub.week':'WEEK','hub.edit':'Edit','hub.add':'Add','hub.guide':'Guide','hub.sectionGoals':'Goals & Priorities','hub.sectionSleep':'Sleep','hub.sectionViews':'Views','hub.viewSchedule':'Schedule','hub.viewActivities':'Activities','hub.viewTags':'Tags Board','hub.viewAnalytics':'Analytics','hub.viewGoals':'Goals','hub.galleryTasks':'this week','hub.galleryTotal':'total','hub.galleryCategories':'categories','hub.galleryGoals':'goals','hub.galleryOpen':'Open','hub.galleryView':'View','hub.footer':'Hav\u00ebn Schedule v1.0','hub.export':'Export','hub.import':'Import','hub.focus':'Focus',
+    'sleep.log':'+ Log Sleep','sleep.overview':'Overview','sleep.history':'History','sleep.insights':'Insights','sleep.targets':'Targets','sleep.score':'Score','sleep.lastNight':'last night','sleep.avg7':'7-Day Avg','sleep.avgQuality':'Avg Quality','sleep.consistency':'Consistency','sleep.thisWeek':'This Week\u0027s Sleep','sleep.noData':'No data yet','sleep.noLogs':'No sleep logs yet. Log your first night!','sleep.targetBedtime':'Target Bedtime','sleep.targetWake':'Target Wake Time','sleep.targetDuration':'Target Duration','sleep.saveTargets':'Save Targets','sleep.routine':'Bedtime Routine','sleep.routineItem1':'Screen off 30min before','sleep.routineItem2':'Read / unwind','sleep.routineItem3':'Meditate / breathe','sleep.routineItem4':'Journal / reflect','sleep.routineItem5':'No caffeine after 5pm','sleep.routineItem6':'Drink water','sleep.routineItem7':'Darken the room','sleep.routineItem8':'Light stretch','sleep.saveRoutine':'Save Routine','sleep.qualityLabel':'Log 3+ nights',
+    'spotify.title':'Spotify','spotify.noPlaylist':'No playlist linked','spotify.addPlaylist':'Add playlist','spotify.playlist':'Playlist','spotify.toggle':'Toggle player','spotify.prev':'Previous playlist','spotify.next':'Next playlist','spotify.settings':'Manage playlists',
+    'sidebar.theme':'Theme','sidebar.settings':'Settings','sidebar.visuals':'Visuals','sidebar.editNav':'Edit sidebar nav',
+    'chat.title':'ChickBot','chat.subtitle':'Your smart schedule buddy','chat.placeholder':'Ask about your schedule...','chat.natural':'Natural language scheduling','chat.settings':'Settings','chat.close':'Close', 'chat.send':'Send',
+    'sch.title':'Schedule','sch.today':'Today','sch.tasks':'tasks','sch.holiday':'Holiday','sch.school':'School','sch.apiNoKey':'No key','sch.apiActive':'Active','sch.viewWeek':'Week view','sch.viewMonth':'Month view','sch.viewAgenda':'Agenda view','sch.week':'Week','sch.addCategory':'Add category','sch.catName':'Category name','sch.pickColor':'Pick a colour','sch.cancel':'Cancel','sch.add':'Add','sch.focus':'Focus','sch.ai':'AI','sch.ss':'Screenshot','sch.copyWeek':'Copy Week','sch.cmdPalette':'Command palette',
+    'menu.pages':'Pages','menu.actions':'Actions','menu.today':'Today','menu.newTask':'New Task','menu.theme':'Theme',
+    'acts.title':'Activities','acts.board':'Board','acts.timeline':'Timeline','acts.week':'This Week','acts.total':'total','acts.avgDay':'avg/day','acts.log':'Activity Log','acts.addCat':'+ Category','acts.noTasks':'No tasks yet','acts.completed':'Completed',
+    'an.title':'Analytics','an.all':'All','an.tasks':'Tasks','an.time':'Time','an.deep':'Deep Work','an.study':'Study','an.completion':'Completion','an.streak':'Streak','an.daily':'Daily','an.weekly':'Weekly','an.pie':'Pie','an.bar':'Bar','an.trend':'Trend','an.sleep':'Sleep','an.duration':'Duration','an.quality':'Quality','an.table':'Day-by-Day','an.current':'Current','an.best':'Best','an.days':'days','an.day':'Day','an.total':'Total','an.completed':'Completed','an.logged':'Logged','an.nights':'nights','an.night':'Night','an.active':'Active','an.past7':'Past 7 days','an.thisMonth':'This Month','an.breakdown':'Breakdown','an.distribution':'Distribution',
+    'gl.title':'Goals','gl.addGoal':'Add Goal','gl.editGoal':'Edit Goal','gl.deleteGoal':'Delete Goal','gl.vision':'Vision Board','gl.manifesto':'Monthly Manifesto','gl.related':'Related Tasks','gl.noGoals':'No goals yet','gl.progress':'Progress','gl.subtasks':'Sub-tasks','gl.due':'Due','gl.target':'Target',
+    'fin.title':'Finance','fin.income':'Income','fin.expense':'Expense','fin.piggy':'Piggy Bank','fin.wallet':'Wallet','fin.add':'Add','fin.subtract':'Subtract','fin.save':'Save','fin.amount':'Amount','fin.category':'Category','fin.date':'Date','fin.note':'Note','fin.type':'Type','fin.search':'Search','fin.exportCSV':'Export CSV','fin.noTransactions':'No transactions yet','fin.period7d':'7D','fin.period30d':'30D','fin.periodMonth':'Month','fin.periodAll':'All','fin.intelligence':'Spending Intelligence','fin.treemap':'Treemap','fin.mom':'MoM','fin.heatmap':'Heatmap','fin.flow':'Flow','fin.merchants':'Merchants',
+    'gal.title':'Gallery','gal.add':'+ Add Image','gal.reset':'Reset','gal.noImages':'No images yet','gal.vision':'Vision Board','gal.custom':'Custom designs',
+    'fr.title':'Friends','fr.add':'Add Friend','fr.code':'Friend Code','fr.copy':'Copy','fr.paste':'Paste','fr.pending':'Pending','fr.accepted':'Accepted','fr.empty':'No connections yet','fr.search':'Search','fr.send':'Send','fr.message':'Message','fr.share':'Share Code','fr.connect':'Connect','fr.enterCode':'Enter friend code','fr.yourCode':'Your Code','fr.connections':'Connections',
+    'common.monday':'Monday','common.sunday':'Sunday','common.save':'Save','common.cancel':'Cancel','common.delete':'Delete','common.show':'Show','common.hide':'Hide','common.enterKey':'Enter key','common.quickActions':'Quick Actions','common.customize':'Customize','common.help':'Help','common.settings':'Settings','common.menu':'Menu','common.pages':'Pages','common.add':'Add','common.edit':'Edit','common.close':'Close','common.search':'Search','common.noData':'No data','appearance.title':'Appearance',
     'lang.en':'English','lang.id':'Bahasa Indonesia','lang.zh':'\u4e2d\u6587',
   },
   id: {
@@ -1564,8 +1577,21 @@ const LANG = {
     'ai.clearMem':'Hapus Memori','ai.resetLearn':'Reset Pembelajaran','ai.extra':'INSTRUKSI TAMBAHAN','ai.extraPlaceholder':'Instruksi tambahan untuk AI (opsional)...','ai.saveInstructions':'Simpan Instruksi','ai.noMemories':'Belum ada memori. Ngobrol dengan ChickBot untuk membangun profil Anda.',
     'data.title':'Data','data.desc':'Ekspor data Anda atau impor dari cadangan','data.export':'Ekspor Data','data.import':'Impor Data',
     'about.title':'Tentang','about.desc':'Hav\u00ebn Schedule \u2014 penjadwal pintar pribadi Anda',
-    'nav.hub':'Beranda','nav.schedule':'Jadwal','nav.activities':'Aktivitas','nav.analytics':'Analitik','nav.goals':'Tujuan','nav.finance':'Keuangan','nav.gallery':'Galeri',
-    'common.monday':'Senin','common.sunday':'Minggu','common.save':'Simpan','common.cancel':'Batal','common.delete':'Hapus','common.show':'Tampilkan','common.hide':'Sembunyikan','common.enterKey':'Masukkan kunci','common.quickActions':'Aksi Cepat','common.customize':'Sesuaikan','common.help':'Bantuan','common.settings':'Pengaturan','common.menu':'Menu','common.pages':'Halaman','appearance.title':'Tampilan',
+    'nav.hub':'Beranda','nav.schedule':'Jadwal','nav.activities':'Aktivitas','nav.analytics':'Analitik','nav.goals':'Tujuan','nav.finance':'Keuangan','nav.gallery':'Galeri','nav.friends':'Teman',
+    'hub.greeting':'Selamat pagi','hub.today':'HARI INI','hub.week':'MINGGU INI','hub.edit':'Edit','hub.add':'Tambah','hub.guide':'Panduan','hub.sectionGoals':'Tujuan & Prioritas','hub.sectionSleep':'Tidur','hub.sectionViews':'Tampilan','hub.viewSchedule':'Jadwal','hub.viewActivities':'Aktivitas','hub.viewTags':'Papan Tag','hub.viewAnalytics':'Analitik','hub.viewGoals':'Tujuan','hub.galleryTasks':'minggu ini','hub.galleryTotal':'total','hub.galleryCategories':'kategori','hub.galleryGoals':'tujuan','hub.galleryOpen':'Buka','hub.galleryView':'Lihat','hub.footer':'Hav\u00ebn Schedule v1.0','hub.export':'Ekspor','hub.import':'Impor','hub.focus':'Fokus',
+    'sleep.log':'+ Catat Tidur','sleep.overview':'Ringkasan','sleep.history':'Riwayat','sleep.insights':'Wawasan','sleep.targets':'Target','sleep.score':'Skor','sleep.lastNight':'tadi malam','sleep.avg7':'Rata-rata 7 Hari','sleep.avgQuality':'Rata Kualitas','sleep.consistency':'Konsistensi','sleep.thisWeek':'Tidur Minggu Ini','sleep.noData':'Belum ada data','sleep.noLogs':'Belum ada catatan tidur. Catat malam pertama Anda!','sleep.targetBedtime':'Target Tidur','sleep.targetWake':'Target Bangun','sleep.targetDuration':'Target Durasi','sleep.saveTargets':'Simpan Target','sleep.routine':'Rutinitas Tidur','sleep.routineItem1':'Matikan layar 30 menit sebelum','sleep.routineItem2':'Baca / rileks','sleep.routineItem3':'Meditasi / tarik napas','sleep.routineItem4':'Jurnal / refleksi','sleep.routineItem5':'Tidak ada kafein setelah jam 5 sore','sleep.routineItem6':'Minum air','sleep.routineItem7':'Gelapkan ruangan','sleep.routineItem8':'Peregangan ringan','sleep.saveRoutine':'Simpan Rutinitas','sleep.qualityLabel':'Catat 3+ malam',
+    'spotify.title':'Spotify','spotify.noPlaylist':'Tidak ada playlist','spotify.addPlaylist':'Tambah playlist','spotify.playlist':'Playlist','spotify.toggle':'Buka/tutup pemutar','spotify.prev':'Playlist sebelumnya','spotify.next':'Playlist berikutnya','spotify.settings':'Kelola playlist',
+    'sidebar.theme':'Tema','sidebar.settings':'Pengaturan','sidebar.visuals':'Visual','sidebar.editNav':'Edit navigasi sidebar',
+    'chat.title':'ChickBot','chat.subtitle':'Teman jadwal pintar Anda','chat.placeholder':'Tanya tentang jadwal Anda...','chat.natural':'Penjadwalan bahasa alami','chat.settings':'Pengaturan','chat.close':'Tutup','chat.send':'Kirim',
+    'sch.title':'Jadwal','sch.today':'Hari Ini','sch.tasks':'tugas','sch.holiday':'Libur','sch.school':'Sekolah','sch.apiNoKey':'Tidak ada kunci','sch.apiActive':'Aktif','sch.viewWeek':'Tampilan minggu','sch.viewMonth':'Tampilan bulan','sch.viewAgenda':'Tampilan agenda','sch.week':'Minggu','sch.addCategory':'Tambah kategori','sch.catName':'Nama kategori','sch.pickColor':'Pilih warna','sch.cancel':'Batal','sch.add':'Tambah','sch.focus':'Fokus','sch.ai':'AI','sch.ss':'Screenshot','sch.copyWeek':'Salin Minggu','sch.cmdPalette':'Palet perintah',
+    'menu.pages':'Halaman','menu.actions':'Aksi','menu.today':'Hari Ini','menu.newTask':'Tugas Baru','menu.theme':'Tema',
+    'acts.title':'Aktivitas','acts.board':'Papan','acts.timeline':'Garis Waktu','acts.week':'Minggu Ini','acts.total':'total','acts.avgDay':'rata/hari','acts.log':'Log Aktivitas','acts.addCat':'+ Kategori','acts.noTasks':'Belum ada tugas','acts.completed':'Selesai',
+    'an.title':'Analitik','an.all':'Semua','an.tasks':'Tugas','an.time':'Waktu','an.deep':'Deep Work','an.study':'Belajar','an.completion':'Penyelesaian','an.streak':'Rantai','an.daily':'Harian','an.weekly':'Mingguan','an.pie':'Lingkaran','an.bar':'Batang','an.trend':'Tren','an.sleep':'Tidur','an.duration':'Durasi','an.quality':'Kualitas','an.table':'Hari per Hari','an.current':'Saat Ini','an.best':'Terbaik','an.days':'hari','an.day':'Hari','an.total':'Total','an.completed':'Selesai','an.logged':'Tercatat','an.nights':'malam','an.night':'Malam','an.active':'Aktif','an.past7':'7 hari terakhir','an.thisMonth':'Bulan Ini','an.breakdown':'Rincian','an.distribution':'Distribusi',
+    'gl.title':'Tujuan','gl.addGoal':'Tambah Tujuan','gl.editGoal':'Edit Tujuan','gl.deleteGoal':'Hapus Tujuan','gl.vision':'Papan Visi','gl.manifesto':'Manifesto Bulanan','gl.related':'Tugas Terkait','gl.noGoals':'Belum ada tujuan','gl.progress':'Kemajuan','gl.subtasks':'Sub-tugas','gl.due':'Jatuh tempo','gl.target':'Target',
+    'fin.title':'Keuangan','fin.income':'Pemasukan','fin.expense':'Pengeluaran','fin.piggy':'Celengan','fin.wallet':'Dompet','fin.add':'Tambah','fin.subtract':'Kurangi','fin.save':'Simpan','fin.amount':'Jumlah','fin.category':'Kategori','fin.date':'Tanggal','fin.note':'Catatan','fin.type':'Tipe','fin.search':'Cari','fin.exportCSV':'Ekspor CSV','fin.noTransactions':'Belum ada transaksi','fin.period7d':'7H','fin.period30d':'30H','fin.periodMonth':'Bulan','fin.periodAll':'Semua','fin.intelligence':'Intelijen Pengeluaran','fin.treemap':'Treemap','fin.mom':'MoM','fin.heatmap':'Peta Panas','fin.flow':'Arus','fin.merchants':'Merchant',
+    'gal.title':'Galeri','gal.add':'+ Tambah Gambar','gal.reset':'Reset','gal.noImages':'Belum ada gambar','gal.vision':'Papan Visi','gal.custom':'Desain kustom',
+    'fr.title':'Teman','fr.add':'Tambah Teman','fr.code':'Kode Teman','fr.copy':'Salin','fr.paste':'Tempel','fr.pending':'Menunggu','fr.accepted':'Diterima','fr.empty':'Belum ada koneksi','fr.search':'Cari','fr.send':'Kirim','fr.message':'Pesan','fr.share':'Bagikan Kode','fr.connect':'Hubungkan','fr.enterCode':'Masukkan kode teman','fr.yourCode':'Kode Anda','fr.connections':'Koneksi',
+    'common.monday':'Senin','common.sunday':'Minggu','common.save':'Simpan','common.cancel':'Batal','common.delete':'Hapus','common.show':'Tampilkan','common.hide':'Sembunyikan','common.enterKey':'Masukkan kunci','common.quickActions':'Aksi Cepat','common.customize':'Sesuaikan','common.help':'Bantuan','common.settings':'Pengaturan','common.menu':'Menu','common.pages':'Halaman','common.add':'Tambah','common.edit':'Edit','common.close':'Tutup','common.search':'Cari','common.noData':'Tidak ada data','appearance.title':'Tampilan',
     'lang.en':'English','lang.id':'Bahasa Indonesia','lang.zh':'\u4e2d\u6587',
   },
   zh: {
@@ -1581,8 +1607,21 @@ const LANG = {
     'ai.clearMem':'\u6e05\u9664\u8bb0\u5fc6','ai.resetLearn':'\u91cd\u7f6e\u5b66\u4e60','ai.extra':'\u989d\u5916\u6307\u4ee4','ai.extraPlaceholder':'\u7ed9 AI \u7684\u989d\u5916\u6307\u4ee4\uff08\u53ef\u9009\uff09...','ai.saveInstructions':'\u4fdd\u5b58\u6307\u4ee4','ai.noMemories':'\u6682\u65e0\u8bb0\u5fc6\u3002\u4e0e ChickBot \u804a\u5929\u6765\u5efa\u7acb\u4f60\u7684\u8d44\u6599\u3002',
     'data.title':'\u6570\u636e','data.desc':'\u5bfc\u51fa\u6570\u636e\u6216\u4ece\u5907\u4efd\u5bfc\u5165','data.export':'\u5bfc\u51fa\u6570\u636e','data.import':'\u5bfc\u5165\u6570\u636e',
     'about.title':'\u5173\u4e8e','about.desc':'Hav\u00ebn Schedule \u2014 \u4f60\u7684\u4e2a\u4eba\u667a\u80fd\u65e5\u7a0b\u7ba1\u7406',
-    'nav.hub':'\u9996\u9875','nav.schedule':'\u65e5\u7a0b','nav.activities':'\u6d3b\u52a8','nav.analytics':'\u5206\u6790','nav.goals':'\u76ee\u6807','nav.finance':'\u8d22\u52a1','nav.gallery':'\u753b\u5eca',
-    'common.monday':'\u661f\u671f\u4e00','common.sunday':'\u661f\u671f\u65e5','common.save':'\u4fdd\u5b58','common.cancel':'\u53d6\u6d88','common.delete':'\u5220\u9664','common.show':'\u663e\u793a','common.hide':'\u9690\u85cf','common.enterKey':'\u8f93\u5165\u5bc6\u94a5','common.quickActions':'\u5feb\u901f\u64cd\u4f5c','common.customize':'\u81ea\u5b9a\u4e49','common.help':'\u5e2e\u52a9','common.settings':'\u8bbe\u7f6e','common.menu':'\u83dc\u5355','common.pages':'\u9875\u9762','appearance.title':'\u5916\u89c2',
+    'nav.hub':'\u9996\u9875','nav.schedule':'\u65e5\u7a0b','nav.activities':'\u6d3b\u52a8','nav.analytics':'\u5206\u6790','nav.goals':'\u76ee\u6807','nav.finance':'\u8d22\u52a1','nav.gallery':'\u753b\u5eca','nav.friends':'\u670b\u53cb',
+    'hub.greeting':'\u65e9\u4e0a\u597d','hub.today':'\u4eca\u5929','hub.week':'\u672c\u5468','hub.edit':'\u7f16\u8f91','hub.add':'\u6dfb\u52a0','hub.guide':'\u6307\u5357','hub.sectionGoals':'\u76ee\u6807\u4e0e\u4f18\u5148\u7ea7','hub.sectionSleep':'\u7761\u7720','hub.sectionViews':'\u89c6\u56fe','hub.viewSchedule':'\u65e5\u7a0b','hub.viewActivities':'\u6d3b\u52a8','hub.viewTags':'\u6807\u7b7e\u677f','hub.viewAnalytics':'\u5206\u6790','hub.viewGoals':'\u76ee\u6807','hub.galleryTasks':'\u672c\u5468','hub.galleryTotal':'\u603b\u8ba1','hub.galleryCategories':'\u5206\u7c7b','hub.galleryGoals':'\u76ee\u6807','hub.galleryOpen':'\u6253\u5f00','hub.galleryView':'\u67e5\u770b','hub.footer':'Hav\u00ebn Schedule v1.0','hub.export':'\u5bfc\u51fa','hub.import':'\u5bfc\u5165','hub.focus':'\u4e13\u6ce8',
+    'sleep.log':'+ \u8bb0\u5f55\u7761\u7720','sleep.overview':'\u6982\u89c8','sleep.history':'\u5386\u53f2','sleep.insights':'\u6d1e\u5bdf','sleep.targets':'\u76ee\u6807','sleep.score':'\u5f97\u5206','sleep.lastNight':'\u6628\u665a','sleep.avg7':'7\u5929\u5e73\u5747','sleep.avgQuality':'\u5e73\u5747\u8d28\u91cf','sleep.consistency':'\u8fde\u7eed\u6027','sleep.thisWeek':'\u672c\u5468\u7761\u7720','sleep.noData':'\u6682\u65e0\u6570\u636e','sleep.noLogs':'\u8fd8\u6ca1\u6709\u7761\u7720\u8bb0\u5f55\u3002\u8bb0\u5f55\u4f60\u7684\u7b2c\u4e00\u4e2a\u591c\u665a\uff01','sleep.targetBedtime':'\u76ee\u6807\u7761\u7720\u65f6\u95f4','sleep.targetWake':'\u76ee\u6807\u9192\u6765\u65f6\u95f4','sleep.targetDuration':'\u76ee\u6807\u7761\u7720\u65f6\u957f','sleep.saveTargets':'\u4fdd\u5b58\u76ee\u6807','sleep.routine':'\u7761\u524d\u60ef\u4f8b','sleep.routineItem1':'\u5e8a\u524d30\u5206\u949f\u5173\u5c4f','sleep.routineItem2':'\u9605\u8bfb / \u653e\u677e','sleep.routineItem3':'\u51a5\u60f3 / \u547c\u5438','sleep.routineItem4':'\u5199\u65e5\u8bb0 / \u53cd\u601d','sleep.routineItem5':'\u4e0b\u53485\u70b9\u540e\u4e0d\u559d\u5496\u5561','sleep.routineItem6':'\u996e\u6c34','sleep.routineItem7':'\u63a9\u906e\u706f\u5149','sleep.routineItem8':'\u8f7b\u5fae\u62c9\u4f38','sleep.saveRoutine':'\u4fdd\u5b58\u60ef\u4f8b','sleep.qualityLabel':'\u8bb0\u5f553+\u4e2a\u591c\u665a',
+    'spotify.title':'Spotify','spotify.noPlaylist':'\u6ca1\u6709\u64ad\u653e\u5217\u8868','spotify.addPlaylist':'\u6dfb\u52a0\u64ad\u653e\u5217\u8868','spotify.playlist':'\u64ad\u653e\u5217\u8868','spotify.toggle':'\u5207\u6362\u64ad\u653e\u5668','spotify.prev':'\u4e0a\u4e00\u4e2a\u64ad\u653e\u5217\u8868','spotify.next':'\u4e0b\u4e00\u4e2a\u64ad\u653e\u5217\u8868','spotify.settings':'\u7ba1\u7406\u64ad\u653e\u5217\u8868',
+    'sidebar.theme':'\u4e3b\u9898','sidebar.settings':'\u8bbe\u7f6e','sidebar.visuals':'\u89c6\u89c9','sidebar.editNav':'\u7f16\u8f91\u4fa7\u680f\u5bfc\u822a',
+    'chat.title':'ChickBot','chat.subtitle':'\u4f60\u7684\u667a\u80fd\u65e5\u7a0b\u4f19\u4f34','chat.placeholder':'\u54a8\u8be2\u4f60\u7684\u65e5\u7a0b...','chat.natural':'\u81ea\u7136\u8bed\u8a00\u7f16\u6392\u65e5\u7a0b','chat.settings':'\u8bbe\u7f6e','chat.close':'\u5173\u95ed','chat.send':'\u53d1\u9001',
+    'sch.title':'\u65e5\u7a0b','sch.today':'\u4eca\u5929','sch.tasks':'\u4efb\u52a1','sch.holiday':'\u5047\u671f','sch.school':'\u5b66\u6821','sch.apiNoKey':'\u672a\u8bbe\u7f6e\u5bc6\u94a5','sch.apiActive':'\u5df2\u6fc0\u6d3b','sch.viewWeek':'\u5468\u89c6\u56fe','sch.viewMonth':'\u6708\u89c6\u56fe','sch.viewAgenda':'\u8bae\u7a0b\u89c6\u56fe','sch.week':'\u5468','sch.addCategory':'\u6dfb\u52a0\u5206\u7c7b','sch.catName':'\u5206\u7c7b\u540d\u79f0','sch.pickColor':'\u9009\u62e9\u989c\u8272','sch.cancel':'\u53d6\u6d88','sch.add':'\u6dfb\u52a0','sch.focus':'\u4e13\u6ce8','sch.ai':'AI','sch.ss':'\u622a\u56fe','sch.copyWeek':'\u590d\u5236\u672c\u5468','sch.cmdPalette':'\u547d\u4ee4\u9762\u677f',
+    'menu.pages':'\u9875\u9762','menu.actions':'\u64cd\u4f5c','menu.today':'\u4eca\u5929','menu.newTask':'\u65b0\u4efb\u52a1','menu.theme':'\u4e3b\u9898',
+    'acts.title':'\u6d3b\u52a8','acts.board':'\u770b\u677f','acts.timeline':'\u65f6\u95f4\u7ebf','acts.week':'\u672c\u5468','acts.total':'\u603b\u8ba1','acts.avgDay':'\u5e73\u5747/\u5929','acts.log':'\u6d3b\u52a8\u65e5\u5fd7','acts.addCat':'+ \u5206\u7c7b','acts.noTasks':'\u6682\u65e0\u4efb\u52a1','acts.completed':'\u5df2\u5b8c\u6210',
+    'an.title':'\u5206\u6790','an.all':'\u5168\u90e8','an.tasks':'\u4efb\u52a1','an.time':'\u65f6\u95f4','an.deep':'\u6df1\u5ea6\u5de5\u4f5c','an.study':'\u5b66\u4e60','an.completion':'\u5b8c\u6210\u7387','an.streak':'\u8fde\u7eed\u8bb0\u5f55','an.daily':'\u6bcf\u65e5','an.weekly':'\u6bcf\u5468','an.pie':'\u997c\u56fe','an.bar':'\u6761\u5f62\u56fe','an.trend':'\u8d8b\u52bf','an.sleep':'\u7761\u7720','an.duration':'\u65f6\u957f','an.quality':'\u8d28\u91cf','an.table':'\u9010\u65e5\u8868','an.current':'\u5f53\u524d','an.best':'\u6700\u4f73','an.days':'\u5929','an.day':'\u5929','an.total':'\u603b\u8ba1','an.completed':'\u5df2\u5b8c\u6210','an.logged':'\u5df2\u8bb0\u5f55','an.nights':'\u665a','an.night':'\u591c\u665a','an.active':'\u6d3b\u8dc3','an.past7':'\u8fc7\u53bb7\u5929','an.thisMonth':'\u672c\u6708','an.breakdown':'\u5206\u89e3','an.distribution':'\u5206\u5e03',
+    'gl.title':'\u76ee\u6807','gl.addGoal':'\u6dfb\u52a0\u76ee\u6807','gl.editGoal':'\u7f16\u8f91\u76ee\u6807','gl.deleteGoal':'\u5220\u9664\u76ee\u6807','gl.vision':'\u613f\u666f\u677f','gl.manifesto':'\u6708\u5ea6\u5ba3\u8a00','gl.related':'\u76f8\u5173\u4efb\u52a1','gl.noGoals':'\u6682\u65e0\u76ee\u6807','gl.progress':'\u8fdb\u5c55','gl.subtasks':'\u5b50\u4efb\u52a1','gl.due':'\u622a\u6b62','gl.target':'\u76ee\u6807',
+    'fin.title':'\u8d22\u52a1','fin.income':'\u6536\u5165','fin.expense':'\u652f\u51fa','fin.piggy':'\u5b58\u94b1\u7f50','fin.wallet':'\u94b1\u5305','fin.add':'\u6dfb\u52a0','fin.subtract':'\u51cf\u5c11','fin.save':'\u4fdd\u5b58','fin.amount':'\u91d1\u989d','fin.category':'\u5206\u7c7b','fin.date':'\u65e5\u671f','fin.note':'\u5907\u6ce8','fin.type':'\u7c7b\u578b','fin.search':'\u641c\u7d22','fin.exportCSV':'\u5bfc\u51fa CSV','fin.noTransactions':'\u6682\u65e0\u4ea4\u6613','fin.period7d':'7\u5929','fin.period30d':'30\u5929','fin.periodMonth':'\u6708','fin.periodAll':'\u5168\u90e8','fin.intelligence':'\u6d88\u8d39\u667a\u80fd','fin.treemap':'\u6811\u56fe','fin.mom':'\u73af\u6bd4','fin.heatmap':'\u70ed\u529b\u56fe','fin.flow':'\u6d41\u5411','fin.merchants':'\u5546\u6237',
+    'gal.title':'\u753b\u5eca','gal.add':'+ \u6dfb\u52a0\u56fe\u7247','gal.reset':'\u91cd\u7f6e','gal.noImages':'\u6682\u65e0\u56fe\u7247','gal.vision':'\u613f\u666f\u677f','gal.custom':'\u81ea\u5b9a\u4e49\u8bbe\u8ba1',
+    'fr.title':'\u670b\u53cb','fr.add':'\u6dfb\u52a0\u670b\u53cb','fr.code':'\u670b\u53cb\u7801','fr.copy':'\u590d\u5236','fr.paste':'\u7c98\u8d34','fr.pending':'\u5f85\u63a5\u53d7','fr.accepted':'\u5df2\u63a5\u53d7','fr.empty':'\u6682\u65e0\u8054\u7cfb','fr.search':'\u641c\u7d22','fr.send':'\u53d1\u9001','fr.message':'\u6d88\u606f','fr.share':'\u5206\u4eab\u7801','fr.connect':'\u8fde\u63a5','fr.enterCode':'\u8f93\u5165\u670b\u53cb\u7801','fr.yourCode':'\u4f60\u7684\u7801','fr.connections':'\u8054\u7cfb',
+    'common.monday':'\u661f\u671f\u4e00','common.sunday':'\u661f\u671f\u65e5','common.save':'\u4fdd\u5b58','common.cancel':'\u53d6\u6d88','common.delete':'\u5220\u9664','common.show':'\u663e\u793a','common.hide':'\u9690\u85cf','common.enterKey':'\u8f93\u5165\u5bc6\u94a5','common.quickActions':'\u5feb\u901f\u64cd\u4f5c','common.customize':'\u81ea\u5b9a\u4e49','common.help':'\u5e2e\u52a9','common.settings':'\u8bbe\u7f6e','common.menu':'\u83dc\u5355','common.pages':'\u9875\u9762','common.add':'\u6dfb\u52a0','common.edit':'\u7f16\u8f91','common.close':'\u5173\u95ed','common.search':'\u641c\u7d22','common.noData':'\u6682\u65e0\u6570\u636e','appearance.title':'\u5916\u89c2',
     'lang.en':'English','lang.id':'Bahasa Indonesia','lang.zh':'\u4e2d\u6587',
   },
 };
@@ -1613,6 +1652,8 @@ function applyLanguage(lang) {
     var text = t(key);
     if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
       el.placeholder = text;
+    } else if (el.tagName === 'LABEL' || el.tagName === 'BUTTON') {
+      el.textContent = text;
     } else {
       el.textContent = text;
     }
@@ -1626,9 +1667,17 @@ function applyLanguage(lang) {
     var key = map[href];
     if (key) el.textContent = t(key);
   });
+  // Translate sidebar footer buttons
+  var footerBtnMap = {};
+  footerBtnMap['Theme'] = 'sidebar.theme'; footerBtnMap['Settings'] = 'sidebar.settings'; footerBtnMap['Visuals'] = 'sidebar.visuals';
+  document.querySelectorAll('.hub-footer-btns .btn span').forEach(function(el) {
+    var txt = (el.textContent || '').trim();
+    var key = footerBtnMap[txt];
+    if (key) el.textContent = t(key);
+  });
   // Translate theme/settings/help buttons in menu panel
   document.querySelectorAll('.hub-menu-panel-item').forEach(function(el) {
-    var txt = el.textContent.trim();
+    var txt = (el.textContent || '').trim();
     var map = { 'Theme':'appearance.title','Settings':'common.settings','Help':'common.help' };
     var key = map[txt];
     if (key) {
@@ -1656,6 +1705,45 @@ function applyLanguage(lang) {
   });
   var drawerLabel = document.querySelector('.settings-nav-section-label');
   if (drawerLabel) drawerLabel.textContent = t('common.settings');
+  // Translate spotify sidebar elements
+  var spHeader = document.querySelector('.sp-header-text');
+  if (spHeader) spHeader.textContent = t('spotify.title');
+  var spLabel = document.querySelector('.sp-controls-label');
+  if (spLabel) spLabel.textContent = t('spotify.playlist');
+  // Translate hub hero greeting
+  var hubGreeting = document.getElementById('hubGreeting');
+  if (hubGreeting) hubGreeting.textContent = t('hub.greeting');
+  // Translate TODAY/WEEK stat labels
+  var todayLabel = document.querySelector('.glass-card.dark-stat:first-child div:last-child');
+  if (todayLabel) todayLabel.textContent = t('hub.today');
+  var weekLabel = document.querySelectorAll('.glass-card.dark-stat')[1];
+  if (weekLabel) {
+    var weekDiv = weekLabel.querySelector('div:last-child');
+    if (weekDiv) weekDiv.textContent = t('hub.week');
+  }
+  // Translate sch-menu-popup labels
+  document.querySelectorAll('.sch-menu-label').forEach(function(el) {
+    var txt = (el.textContent || '').trim();
+    var map = { 'Pages':'menu.pages', 'Actions':'menu.actions' };
+    if (map[txt]) el.textContent = t(map[txt]);
+  });
+  document.querySelectorAll('.sch-menu-item').forEach(function(el) {
+    var txt = (el.textContent || '').trim();
+    var map = { 'Hub':'nav.hub','Schedule':'nav.schedule','Activities':'nav.activities','Analytics':'nav.analytics','Goals':'nav.goals','Finance':'nav.finance','Gallery':'nav.gallery','Today':'menu.today','New Task':'menu.newTask','Theme':'menu.theme' };
+    if (map[txt]) {
+      var textNode = el.childNodes[el.childNodes.length - 1];
+      if (textNode) textNode.textContent = t(map[txt]);
+    }
+  });
+  // Translate AI chat panel
+  var chatTitle = document.querySelector('.ai-panel-title');
+  if (chatTitle) chatTitle.textContent = t('chat.title');
+  var chatSub = document.querySelector('.ai-panel-subtitle');
+  if (chatSub) chatSub.textContent = t('chat.subtitle');
+  var chatInput = document.getElementById('aiChatInput');
+  if (chatInput) chatInput.placeholder = t('chat.placeholder');
+  var chatHint = document.querySelector('.ai-panel-footer-hint span');
+  if (chatHint) chatHint.textContent = t('chat.natural');
   // Re-render open settings bubble nav + content
   if (typeof renderSettingsNav === 'function' && document.getElementById('settingsNav')) {
     renderSettingsNav();

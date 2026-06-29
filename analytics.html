@@ -426,7 +426,7 @@
                 <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
               </svg>
             </span>
-            <span class="snav-label">Analytics</span>
+            <span class="snav-label" data-i18n="nav.analytics">Analytics</span>
           </a>
           <a href="goals.html" class="hub-snav-item">
             <span class="snav-icon">
@@ -519,7 +519,7 @@
           <div style="position:absolute;inset:0;background:linear-gradient(to top, var(--bg-primary) 0%, transparent 60%)"></div>
           <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding);display:flex;align-items:center;justify-content:space-between">
             <div>
-              <h1 style="font-family:var(--font-serif);font-size:32px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)">Analytics</h1>
+              <h1 style="font-family:var(--font-serif);font-size:32px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)" data-i18n="nav.analytics">Analytics</h1>
               <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
                 <span id="analyticsHeroSub">Track your progress</span>
               </div>
@@ -533,9 +533,9 @@
         <!-- Period Filter -->
         <div class="an-filter-bar hub-anim-in hub-anim-in-2">
           <div class="an-period-pills" id="analyticsPeriodPills">
-            <button class="an-period-pill active" data-period="week">Week</button>
-            <button class="an-period-pill" data-period="month">Month</button>
-            <button class="an-period-pill" data-period="all">All</button>
+            <button class="an-period-pill active" data-period="week" data-i18n="an.weekly">Week</button>
+            <button class="an-period-pill" data-period="month" data-i18n="an.thisMonth">Month</button>
+            <button class="an-period-pill" data-period="all" data-i18n="an.all">All</button>
           </div>
         </div>
 
@@ -543,7 +543,7 @@
         <div class="an-kpi-row hub-anim-in hub-anim-in-3">
           <div class="an-kpi">
             <div class="an-kpi-header">
-              <span class="an-kpi-label">Tasks</span>
+              <span class="an-kpi-label" data-i18n="an.tasks">Tasks</span>
               <div class="an-kpi-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
               </div>
@@ -563,7 +563,7 @@
           </div>
           <div class="an-kpi">
             <div class="an-kpi-header">
-              <span class="an-kpi-label">Deep Work</span>
+              <span class="an-kpi-label" data-i18n="an.deep">Deep Work</span>
               <div class="an-kpi-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
               </div>
@@ -573,7 +573,7 @@
           </div>
           <div class="an-kpi">
             <div class="an-kpi-header">
-              <span class="an-kpi-label">Study</span>
+              <span class="an-kpi-label" data-i18n="an.study">Study</span>
               <div class="an-kpi-icon">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
               </div>
@@ -592,7 +592,7 @@
                 <div class="an-comp-ring" id="compRing">
                   <span id="compRingPct">0%</span>
                 </div>
-                <span id="completionPeriod">This Week</span>
+                <span id="completionPeriod" data-i18n="an.weekly">This Week</span>
               </div>
             </div>
             <div class="an-completion-bar"><div class="an-completion-fill" id="completionFill" style="width:0%"></div></div>
@@ -608,7 +608,7 @@
             </div>
             <div class="an-streak-days" id="streakDays"></div>
             <div class="an-streak-summary">
-              <div class="an-streak-stat"><span class="val" id="streakCurrent">0</span><span class="lbl">This Week</span></div>
+              <div class="an-streak-stat"><span class="val" id="streakCurrent">0</span><span class="lbl" data-i18n="an.weekly">This Week</span></div>
               <div class="an-streak-stat"><span class="val" id="streakBest">0</span><span class="lbl">Best Streak</span></div>
               <div class="an-streak-stat"><span class="val" id="streakActive">0</span><span class="lbl">Days Active</span></div>
             </div>
@@ -623,7 +623,7 @@
             <div class="an-chart-legend" id="pieLegend"></div>
           </div>
           <div class="an-chart-card">
-            <div class="an-chart-header"><h3>Daily Breakdown</h3><span>Past 7 days</span></div>
+            <div class="an-chart-header"><h3 data-i18n="an.daily">Daily Breakdown</h3><span>Past 7 days</span></div>
             <canvas id="barChart" width="400" height="220"></canvas>
             <div class="an-chart-legend" id="barLegend"></div>
           </div>
@@ -632,7 +632,7 @@
         <!-- Weekly Trend (full-width) -->
         <div class="an-full-chart hub-anim-in hub-anim-in-6">
           <div class="an-chart-card">
-            <div class="an-chart-header"><h3>Weekly Trend</h3><span>Last 14 days</span></div>
+            <div class="an-chart-header"><h3 data-i18n="an.trend">Weekly Trend</h3><span>Last 14 days</span></div>
             <canvas id="trendChart" width="800" height="180"></canvas>
           </div>
         </div>
@@ -659,7 +659,7 @@
             <div style="margin-top:var(--space-3)">
               <div class="an-completion-bar"><div class="an-completion-fill" id="sleepQualityFill" style="width:0%"></div></div>
               <div class="an-completion-stats">
-                <div class="an-completion-stat"><span class="val" id="sleepQualityScore">0</span><span class="lbl">Quality</span></div>
+                <div class="an-completion-stat"><span class="val" id="sleepQualityScore">0</span><span class="lbl" data-i18n="an.quality">Quality</span></div>
                 <div class="an-completion-stat"><span class="val" id="sleepLogCount">0</span><span class="lbl">Nights Logged</span></div>
                 <div class="an-completion-stat"><span class="val" id="sleepBestNight">—</span><span class="lbl">Best Night</span></div>
               </div>
@@ -679,9 +679,9 @@
 
         <!-- Table -->
         <div class="an-table-card hub-anim-in hub-anim-in-7">
-          <div class="an-table-header"><h3>Day by Day</h3><span id="detailPeriodLabel">This Week</span></div>
+          <div class="an-table-header"><h3>Day by Day</h3><span id="detailPeriodLabel" data-i18n="an.weekly">This Week</span></div>
           <table class="an-table">
-            <thead><tr><th>Date</th><th class="num">Tasks</th><th class="num">Total</th><th class="num">Deep Work</th><th class="num">Study</th><th class="num">Other</th></tr></thead>
+            <thead><tr><th>Date</th><th class="num" data-i18n="an.tasks">Tasks</th><th class="num">Total</th><th class="num" data-i18n="an.deep">Deep Work</th><th class="num" data-i18n="an.study">Study</th><th class="num">Other</th></tr></thead>
             <tbody id="analyticsTableBody"></tbody>
           </table>
       </div>

@@ -302,7 +302,7 @@
           <a href="analytics.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="snav-label">Analytics</span></a>
           <a href="goals.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span class="snav-label">Goals</span></a>
           <a href="finance.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="snav-label">Finance</span></a>
-          <a href="gallery.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
+          <a href="gallery.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label" data-i18n="nav.gallery">Gallery</span></a>
           <a href="friends.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span><span class="snav-label">Friends</span><span id="chatUnreadBadge" class="chat-nav-badge" style="display:none">0</span></a>
         </div>
       </nav>
@@ -362,9 +362,9 @@
         <div class="gl-hero-overlay"></div>
         <div class="gl-hero-inner">
           <div class="gl-hero-text">
-            <h1 class="gl-hero-title">Gallery</h1>
+            <h1 class="gl-hero-title" data-i18n="nav.gallery">Gallery</h1>
             <div class="gl-hero-meta">
-              <span id="galPageMeta">Vision Board</span>
+              <span id="galPageMeta" data-i18n="gal.vision">Vision Board</span>
               <span class="gl-hero-dot"></span>
               <span id="galImageCount">0 images</span>
             </div>
@@ -380,7 +380,7 @@
         <div class="hub-anim-in hub-anim-in-2" style="margin-bottom:var(--space-6)">
           <div class="gal-top-actions hub-anim-in hub-anim-in-3">
             <div>
-              <div class="gal-top-title">Vision Board</div>
+              <div class="gal-top-title" data-i18n="gal.vision">Vision Board</div>
               <span class="gal-top-count" id="galCount">0 images</span>
             </div>
             <div class="gal-actions-row">
@@ -437,7 +437,7 @@
       </div>
       <div class="image-picker-actions">
         <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
-        <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
+        <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1" data-i18n="gal.reset">Reset</button>
         <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
       </div>
     </div>

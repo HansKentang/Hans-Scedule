@@ -570,7 +570,7 @@
             <span class="snav-icon">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </span>
-            <span class="snav-label">Schedule</span>
+            <span class="snav-label" data-i18n="nav.schedule">Schedule</span>
           </a>
           <a href="activities.html" class="hub-snav-item">
             <span class="snav-icon">
@@ -605,7 +605,7 @@
       <div class="hub-sidebar-body">
       <!-- Mini week overview -->
       <div class="sch-mini-week">
-        <div class="sch-mini-label">Week</div>
+        <div class="sch-mini-label" data-i18n="sch.week">Week</div>
         <div class="sch-mini-days" id="miniWeekDays"></div>
       </div>
 
@@ -671,7 +671,7 @@
         <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding);display:flex;align-items:center;gap:var(--gutter)">
           <div id="gsiContainer" class="gsi-section"></div>
           <div>
-            <h1 style="font-family:var(--font-serif);font-size:36px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)">Schedule</h1>
+            <h1 style="font-family:var(--font-serif);font-size:36px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)" data-i18n="nav.schedule">Schedule</h1>
             <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
               <span id="weekLabelHero"></span>
             </div>
@@ -702,7 +702,7 @@
               <button class="sch-menu-item" id="schMenuTheme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>Theme</button>
             </div>
           </div>
-          <button id="todayBtn" class="btn btn-outline" style="font-size:0.78rem;padding:var(--space-1) var(--space-3)">Today</button>
+          <button id="todayBtn" class="btn btn-outline" style="font-size:0.78rem;padding:var(--space-1) var(--space-3)" data-i18n="sch.today">Today</button>
           <div class="nav-arrows">
             <button id="prevWeek" class="btn btn-ghost" style="width:28px;height:28px;padding:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
             <button id="nextWeek" class="btn btn-ghost" style="width:28px;height:28px;padding:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></button>
@@ -723,14 +723,14 @@
         <div class="sch-header-right">
           <span class="sch-api-badge" id="apiStatus">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
-            <span id="apiStatusText">No key</span>
+            <span id="apiStatusText" data-i18n="sch.apiNoKey">No key</span>
           </span>
           <span class="sch-api-badge" id="taskCountBadge" style="cursor:default">
             <span id="taskCount">0</span> tasks
           </span>
           <span class="sch-api-badge sch-holiday-badge" id="holidayToggle" style="cursor:pointer" onclick="toggleHolidayMode();updateHolidayToggle();showToast(getHolidayMode()?'Holiday mode on':'School mode','info',2000)">
             <svg id="holidayToggleIcon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-            <span id="holidayToggleText">School</span>
+            <span id="holidayToggleText" data-i18n="sch.school">School</span>
           </span>
         </div>
       </header>
@@ -748,11 +748,11 @@
         <input type="text" class="cat-add-input" id="catAddInput" placeholder="Category name" maxlength="24" autocomplete="off">
         <div class="cat-add-color-row">
           <input type="color" id="catColorPicker" value="#8b5cf6">
-          <span class="cat-add-color-label">Pick a colour</span>
+          <span class="cat-add-color-label" data-i18n="sch.pickColor">Pick a colour</span>
         </div>
         <div class="cat-add-actions">
-          <button class="cat-add-cancel" id="catAddCancel">Cancel</button>
-          <button class="cat-add-save" id="catAddSave">Add</button>
+          <button class="cat-add-cancel" id="catAddCancel" data-i18n="sch.cancel">Cancel</button>
+          <button class="cat-add-save" id="catAddSave" data-i18n="sch.add">Add</button>
         </div>
       </div>
 
@@ -772,25 +772,25 @@
             <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
             </span>
-            <span class="access-item-label">Focus</span>
+            <span class="access-item-label" data-i18n="sch.focus">Focus</span>
           </button>
           <button class="access-item" id="accessAIChat" title="Open AI assistant">
             <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
             </span>
-            <span class="access-item-label">AI</span>
+            <span class="access-item-label" data-i18n="sch.ai">AI</span>
           </button>
           <button class="access-item" id="accessScreenshot" title="Screenshot week">
             <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </span>
-            <span class="access-item-label">Screenshot</span>
+            <span class="access-item-label" data-i18n="sch.ss">Screenshot</span>
           </button>
           <button class="access-item" id="accessCopyWeek" title="Copy this week to next">
             <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
             </span>
-            <span class="access-item-label">Copy Week</span>
+            <span class="access-item-label" data-i18n="sch.copyWeek">Copy Week</span>
           </button>
 
         </div>
@@ -992,7 +992,7 @@
             </button>
             <div class="tf-footer-right">
 
-              <button type="button" id="taskCancelBtn" class="tf-btn tf-btn-ghost">Cancel</button>
+              <button type="button" id="taskCancelBtn" class="tf-btn tf-btn-ghost" data-i18n="sch.cancel">Cancel</button>
               <button type="submit" id="taskSaveBtn" class="tf-btn tf-btn-primary">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                 Save
@@ -1082,7 +1082,7 @@
         <div class="img-fit-options" id="imagePickerFitOptions"></div>
       </div>
       <div class="image-picker-actions">
-          <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
+          <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1" data-i18n="sch.cancel">Cancel</button>
           <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
           <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
         </div>
@@ -1319,7 +1319,7 @@
       <div class="sp-modal-body">
         <div class="sp-add-row">
           <input id="spAddInput" placeholder="Playlist URL or ID..." onkeydown="if(event.key==='Enter')spAddPlaylist()">
-          <button onclick="spAddPlaylist()">Add</button>
+          <button onclick="spAddPlaylist()" data-i18n="sch.add">Add</button>
         </div>
         <div class="sp-search-row">
           <input id="spSearchInput" placeholder="Search playlists..." oninput="spRenderList(this.value)">
@@ -1343,7 +1343,7 @@
       </a>
       <a href="schedule.html" class="hub-bottom-nav-item active" data-nav="schedule">
         <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-        <span class="bnav-label">Schedule</span>
+        <span class="bnav-label" data-i18n="nav.schedule">Schedule</span>
       </a>
       <a href="activities.html" class="hub-bottom-nav-item" data-nav="activities">
         <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
