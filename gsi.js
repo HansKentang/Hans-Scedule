@@ -187,6 +187,7 @@ function handleFirebaseUser(fbUser) {
     picture: fbUser.photoURL || '',
     _color: getColorForId('firebase-' + uid)
   };
+  recordDeviceAccess(user);
   localUsers.push(user);
   saveUsers();
   setActiveUserId(user.id);
@@ -209,6 +210,7 @@ function createLocalProfile(name) {
   if (!name || !name.trim()) return;
   name = name.trim();
   var user = { id: generateId(), name: name, _color: getColorForId(generateId()) };
+  recordDeviceAccess(user);
   localUsers.push(user);
   saveUsers();
   setActiveUserId(user.id);
@@ -223,6 +225,7 @@ function createLocalProfile(name) {
 function switchAccount(id) {
   var user = localUsers.find(function(u) { return u.id === id; });
   if (!user) return;
+  recordDeviceAccess(user);
   setActiveUserId(id);
   if (typeof state !== 'undefined') state.currentUserId = id;
   renderAuthUI();
@@ -330,6 +333,45 @@ function isGuestMode() {
   return sessionStorage.getItem('haven-guest') === '1';
 }
 
+// ─── Device helpers ─────────────────────────
+var _deviceId = null;
+var _deviceLabel = null;
+function getDeviceId() {
+  if (_deviceId) return _deviceId;
+  var d = null;
+  try { d = localStorage.getItem('haven-device-id'); } catch (e) {}
+  if (!d) { d = 'dev' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); try { localStorage.setItem('haven-device-id', d); } catch (e) { sessionStorage.setItem('haven-device-id', d); } }
+  _deviceId = d;
+  return d;
+}
+function getDeviceLabel() {
+  if (_deviceLabel) return _deviceLabel;
+  var stored = null;
+  try { stored = localStorage.getItem('haven-device-label'); } catch (e) {}
+  if (!stored) { try { stored = sessionStorage.getItem('haven-device-label'); } catch (e) {} }
+  if (stored) { _deviceLabel = stored; return stored; }
+  var ua = navigator.userAgent;
+  var label = 'Unknown Device';
+  if (/Windows/.test(ua)) label = 'Windows PC';
+  else if (/iPad/.test(ua)) label = 'iPad';
+  else if (/iPhone/.test(ua)) label = 'iPhone';
+  else if (/Android/.test(ua)) label = 'Android';
+  else if (/Mac/.test(ua)) label = 'Mac';
+  else if (/Linux/.test(ua)) label = 'Linux';
+  label += ' — ' + window.screen.width + '\u00D7' + window.screen.height;
+  try { localStorage.setItem('haven-device-label', label); } catch (e) { try { sessionStorage.setItem('haven-device-label', label); } catch (e2) {} }
+  _deviceLabel = label;
+  return label;
+}
+function recordDeviceAccess(user) {
+  if (!user) return;
+  var id = getDeviceId();
+  var label = getDeviceLabel();
+  user._devices = user._devices || {};
+  user._devices[id] = { label: label, lastUsed: new Date().toISOString() };
+  saveUsers();
+}
+
 // ─── Settings Panel (Discord-style) ──────────
 var settingsPanelActiveCategory = 'account';
 var _settingsEscHandler = null;
@@ -430,14 +472,24 @@ function renderAccountSettings(el) {
   }
 
   // Account list
+  var currentDeviceId = getDeviceId();
   var listHtml = localUsers.map(function(u) {
     var isActive = u.id === activeId;
     var init = getInitials(u.name);
     var col = u._color || getColorForId(u.id);
     var av = u.picture ? '<img class="set-acc-avatar" src="' + escapeHtml(u.picture) + '">' : '<div class="set-acc-initials" style="background:' + col + '">' + escapeHtml(init) + '</div>';
+    var devicesHtml = '';
+    if (u._devices) {
+      var labels = Object.keys(u._devices).map(function(did) {
+        var d = u._devices[did];
+        var prefix = did === currentDeviceId ? 'This device — ' : '';
+        return prefix + escapeHtml(d.label);
+      });
+      if (labels.length) devicesHtml = '<div class="set-acc-devices">' + labels.join('<br>') + '</div>';
+    }
     return '<div class="set-acc-item' + (isActive ? ' active' : '') + '" data-acc-id="' + u.id + '">' +
       av +
-      '<div class="set-acc-info"><div class="set-acc-name">' + escapeHtml(u.name) + '</div>' + (u.email ? '<div class="set-acc-email">' + escapeHtml(u.email) + '</div>' : '') + '</div>' +
+      '<div class="set-acc-info"><div class="set-acc-name">' + escapeHtml(u.name) + '</div>' + (u.email ? '<div class="set-acc-email">' + escapeHtml(u.email) + '</div>' : '') + devicesHtml + '</div>' +
       (!isActive ? '<button class="set-acc-remove" data-acc-remove="' + u.id + '">✕</button>' : '') +
     '</div>';
   }).join('');
