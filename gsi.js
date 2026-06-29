@@ -557,6 +557,7 @@ function renderAppearanceSettings(el) {
     '<div class="set-group">' +
       '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">ACCENT COLOR</div>' +
       '<div class="set-swatches">' + swatches + '</div>' +
+      '<div class="set-custom-color-row"><input type="color" id="setCustomColor" class="set-color-picker" value="' + (accent || '#6b8f71') + '"><label for="setCustomColor" class="set-color-label">Custom color</label></div>' +
     '</div>' +
     '<div class="set-group">' +
       '<div class="set-row">' +
@@ -578,7 +579,17 @@ function renderAppearanceSettings(el) {
       if (typeof saveState !== 'undefined') saveState();
       el.querySelectorAll('[data-acc-color]').forEach(function(s) { s.classList.remove('active'); });
       el2.classList.add('active');
+      var cp = document.getElementById('setCustomColor');
+      if (cp) cp.value = el2.dataset.accColor;
     });
+  });
+
+  document.getElementById('setCustomColor')?.addEventListener('input', function() {
+    if (typeof state === 'undefined') return;
+    state.accentColor = this.value;
+    if (typeof applyAccentColor !== 'undefined') applyAccentColor();
+    if (typeof saveState !== 'undefined') saveState();
+    el.querySelectorAll('[data-acc-color]').forEach(function(s) { s.classList.remove('active'); });
   });
 
   document.getElementById('setVisualsToggle')?.addEventListener('click', function() {
