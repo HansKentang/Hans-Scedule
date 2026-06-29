@@ -352,7 +352,7 @@ function openSettingsBubble() {
     '</div>' +
     '<div class="settings-body">' +
       '<nav class="settings-nav" id="settingsNav"></nav>' +
-      '<div class="settings-content" id="settingsContent"></div>' +
+      '<div class="settings-content" id="settingsBubbleContent"></div>' +
     '</div>';
 
   document.body.appendChild(overlay);
@@ -400,7 +400,7 @@ function renderSettingsNav() {
 }
 
 function switchSettingsCategory(cat) {
-  var content = document.getElementById('settingsContent');
+  var content = document.getElementById('settingsBubbleContent');
   if (!content) return;
   settingsPanelActiveCategory = cat;
   switch (cat) {
