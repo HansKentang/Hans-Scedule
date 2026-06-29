@@ -425,6 +425,19 @@ const ACCENT_PALETTE = [
   { name: 'Lavender', dark: '#c8b8e8', light: '#6a5a90' },
   { name: 'Plum', dark: '#d0b8e8', light: '#6e4a90' },
   { name: 'Blush', dark: '#e8c0d0', light: '#905a6e' },
+  { name: 'Coral', dark: '#e8a8a0', light: '#a04840' },
+  { name: 'Apricot', dark: '#e8c8a0', light: '#906040' },
+  { name: 'Butter', dark: '#e8e0a0', light: '#908040' },
+  { name: 'Lime', dark: '#c8e0a0', light: '#608040' },
+  { name: 'Pine', dark: '#90b8a0', light: '#386050' },
+  { name: 'Ocean', dark: '#90c8d0', light: '#387080' },
+  { name: 'Indigo', dark: '#a0a8e0', light: '#404890' },
+  { name: 'Violet', dark: '#c0a8e0', light: '#604890' },
+  { name: 'Mauve', dark: '#d8b8d0', light: '#785878' },
+  { name: 'Taupe', dark: '#c8b8b0', light: '#786860' },
+  { name: 'Slate', dark: '#a8b8c0', light: '#486070' },
+  { name: 'Charcoal', dark: '#9aa8b0', light: '#485868' },
+  { name: 'Cream', dark: '#e8e0d8', light: '#908070' },
 ];
 
 // ─── SUBCATEGORIES (editable, localStorage-backed) ──────────
