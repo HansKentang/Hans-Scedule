@@ -1341,7 +1341,162 @@ var __origLS = {};
   localStorage.removeItem = function(key) { return __origLS.removeItem(_p(key)); };
 })();
 
-const DEFAULT_BUBBLES = {
+// Safe localStorage write with auto-cleanup on quota exceeded
+function safeSetItem(key, val) {
+  try { localStorage.setItem(key, val); return true; } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      // Try freeing space by removing old direct image keys
+      try {
+        var freed = 0;
+        for (var i = localStorage.length - 1; i >= 0; i--) {
+          var k = localStorage.key(i);
+          if (k && k.indexOf('haven-image-') === 0) {
+            localStorage.removeItem(k);
+            freed++;
+            if (freed >= 10) break; // free up to 10 images per write
+          }
+        }
+        if (freed > 0) { localStorage.setItem(key, val); return true; }
+      } catch (e2) { /* ignore */ }
+    }
+    return false;
+  }
+}
+
+// ─── I18N — Minimal translation system ─────────────────
+const LANG = {
+  en: {
+    'settings.account':'My Account','settings.appearance':'Appearance','settings.ai':'AI & API','settings.data':'Data','settings.about':'About','settings.access':'Access Hub',
+    'appearance.title':'Appearance','appearance.desc':'Customize the theme, accent color, and visuals','appearance.dark':'Dark Mode','appearance.darkDesc':'Switch between dark and light theme','appearance.accent':'ACCENT COLOR','appearance.edit':'Edit Mode','appearance.editDesc':'Tap any image to customize throughout the app',
+    'account.title':'My Account','account.preferences':'PREFERENCES','account.language':'Language','account.langDesc':'UI language','account.timezone':'Timezone','account.tzDesc':'Detected from browser','account.weekStart':'Week starts on','account.timeFormat':'Time format',
+    'account.dataPrivacy':'DATA & PRIVACY','account.export':'Export','account.exportDesc':'Download all your data as JSON','account.delete':'Delete all data','account.deleteDesc':'Permanently remove everything',
+    'account.switch':'SWITCH ACCOUNT','account.google':'Sign in with Google','account.local':'Add local profile','account.signOut':'Sign Out',
+    'account.connected':'Connected to','account.save':'Save','account.name':'Name','account.email':'Email','account.noProfile':'No profile selected','account.device':'This device',
+    'ai.title':'AI & API','ai.desc':'Configure the AI assistant provider and API key','ai.provider':'Provider','ai.providerDesc':'Select which AI service to use','ai.apiKey':'API Key','ai.apiKeyDesc':'Your API key for the selected provider',
+    'ai.profile':'AI PROFILE & LEARNING','ai.aboutYou':'ABOUT YOU','ai.pronouns':'Pronouns','ai.occupation':'Occupation','ai.goals':'Goals','ai.routines':'Routines','ai.preferences':'Preferences','ai.schedule':'Daily Schedule','ai.saveProfile':'Save Profile',
+    'ai.learned':"WHAT I'VE LEARNED",'ai.addMemory':'+ Add Memory','ai.learningData':'LEARNING DATA','ai.tasks':'tasks','ai.sessions':'sessions','ai.keywords':'keywords','ai.memories':'memories','ai.planAcc':'plan acc.',
+    'ai.clearMem':'Clear Memories','ai.resetLearn':'Reset Learning','ai.extra':'EXTRA INSTRUCTIONS','ai.extraPlaceholder':'Extra instructions for the AI (optional)...','ai.saveInstructions':'Save Instructions','ai.noMemories':'No memories yet. Chat with ChickBot to build your profile.',
+    'data.title':'Data','data.desc':'Export your data or import from a backup','data.export':'Export Data','data.import':'Import Data',
+    'about.title':'About','about.desc':'Hav\u00ebn Schedule \u2014 your personal smart scheduler',
+    'nav.hub':'Hub','nav.schedule':'Schedule','nav.activities':'Activities','nav.analytics':'Analytics','nav.goals':'Goals','nav.finance':'Finance','nav.gallery':'Gallery',
+    'common.monday':'Monday','common.sunday':'Sunday','common.save':'Save','common.cancel':'Cancel','common.delete':'Delete','common.show':'Show','common.hide':'Hide','common.enterKey':'Enter key','common.quickActions':'Quick Actions','common.customize':'Customize','common.help':'Help','common.settings':'Settings','common.menu':'Menu','common.pages':'Pages','appearance.title':'Appearance',
+    'lang.en':'English','lang.id':'Bahasa Indonesia','lang.zh':'\u4e2d\u6587',
+  },
+  id: {
+    'settings.account':'Akun Saya','settings.appearance':'Tampilan','settings.ai':'AI & API','settings.data':'Data','settings.about':'Tentang','settings.access':'Access Hub',
+    'appearance.title':'Tampilan','appearance.desc':'Sesuaikan tema, warna aksen, dan visual','appearance.dark':'Mode Gelap','appearance.darkDesc':'Beralih antara tema gelap dan terang','appearance.accent':'WARNA AKSEN','appearance.edit':'Mode Edit','appearance.editDesc':'Ketuk gambar untuk menyesuaikan di seluruh aplikasi',
+    'account.title':'Akun Saya','account.preferences':'PREFERENSI','account.language':'Bahasa','account.langDesc':'Bahasa antarmuka','account.timezone':'Zona Waktu','account.tzDesc':'Terdeteksi dari browser','account.weekStart':'Mulai minggu pada','account.timeFormat':'Format waktu',
+    'account.dataPrivacy':'DATA & PRIVASI','account.export':'Ekspor','account.exportDesc':'Unduh semua data sebagai JSON','account.delete':'Hapus semua data','account.deleteDesc':'Hapus permanen semua data',
+    'account.switch':'GANTI AKUN','account.google':'Masuk dengan Google','account.local':'Tambah profil lokal','account.signOut':'Keluar',
+    'account.connected':'Terhubung ke','account.save':'Simpan','account.name':'Nama','account.email':'Email','account.noProfile':'Tidak ada profil dipilih','account.device':'Perangkat ini',
+    'ai.title':'AI & API','ai.desc':'Konfigurasi penyedia AI dan kunci API','ai.provider':'Penyedia','ai.providerDesc':'Pilih layanan AI yang digunakan','ai.apiKey':'Kunci API','ai.apiKeyDesc':'Kunci API untuk penyedia yang dipilih',
+    'ai.profile':'PROFIL & PEMBELAJARAN AI','ai.aboutYou':'TENTANG ANDA','ai.pronouns':'Kata ganti','ai.occupation':'Pekerjaan','ai.goals':'Tujuan','ai.routines':'Rutinitas','ai.preferences':'Preferensi','ai.schedule':'Jadwal Harian','ai.saveProfile':'Simpan Profil',
+    'ai.learned':'YANG SAYA PELAJARI','ai.addMemory':'+ Tambah Memori','ai.learningData':'DATA PEMBELAJARAN','ai.tasks':'tugas','ai.sessions':'sesi','ai.keywords':'kata kunci','ai.memories':'memori','ai.planAcc':'akurasi renc.',
+    'ai.clearMem':'Hapus Memori','ai.resetLearn':'Reset Pembelajaran','ai.extra':'INSTRUKSI TAMBAHAN','ai.extraPlaceholder':'Instruksi tambahan untuk AI (opsional)...','ai.saveInstructions':'Simpan Instruksi','ai.noMemories':'Belum ada memori. Ngobrol dengan ChickBot untuk membangun profil Anda.',
+    'data.title':'Data','data.desc':'Ekspor data Anda atau impor dari cadangan','data.export':'Ekspor Data','data.import':'Impor Data',
+    'about.title':'Tentang','about.desc':'Hav\u00ebn Schedule \u2014 penjadwal pintar pribadi Anda',
+    'nav.hub':'Beranda','nav.schedule':'Jadwal','nav.activities':'Aktivitas','nav.analytics':'Analitik','nav.goals':'Tujuan','nav.finance':'Keuangan','nav.gallery':'Galeri',
+    'common.monday':'Senin','common.sunday':'Minggu','common.save':'Simpan','common.cancel':'Batal','common.delete':'Hapus','common.show':'Tampilkan','common.hide':'Sembunyikan','common.enterKey':'Masukkan kunci','common.quickActions':'Aksi Cepat','common.customize':'Sesuaikan','common.help':'Bantuan','common.settings':'Pengaturan','common.menu':'Menu','common.pages':'Halaman','appearance.title':'Tampilan',
+    'lang.en':'English','lang.id':'Bahasa Indonesia','lang.zh':'\u4e2d\u6587',
+  },
+  zh: {
+    'settings.account':'\u6211\u7684\u8d26\u6237','settings.appearance':'\u5916\u89c2','settings.ai':'AI & API','settings.data':'\u6570\u636e','settings.about':'\u5173\u4e8e','settings.access':'Access Hub',
+    'appearance.title':'\u5916\u89c2','appearance.desc':'\u81ea\u5b9a\u4e49\u4e3b\u9898\u3001\u5f3a\u8c03\u8272\u548c\u89c6\u89c9\u6548\u679c','appearance.dark':'\u6df1\u8272\u6a21\u5f0f','appearance.darkDesc':'\u5207\u6362\u6df1\u8272\u548c\u6d45\u8272\u4e3b\u9898','appearance.accent':'\u5f3a\u8c03\u8272','appearance.edit':'\u7f16\u8f91\u6a21\u5f0f','appearance.editDesc':'\u70b9\u51fb\u4efb\u610f\u56fe\u7247\u53ef\u5728\u6574\u4e2a\u5e94\u7528\u4e2d\u81ea\u5b9a\u4e49',
+    'account.title':'\u6211\u7684\u8d26\u6237','account.preferences':'\u504f\u597d\u8bbe\u7f6e','account.language':'\u8bed\u8a00','account.langDesc':'\u754c\u9762\u8bed\u8a00','account.timezone':'\u65f6\u533a','account.tzDesc':'\u4ece\u6d4f\u89c8\u5668\u68c0\u6d4b','account.weekStart':'\u4e00\u5468\u5f00\u59cb\u4e8e','account.timeFormat':'\u65f6\u95f4\u683c\u5f0f',
+    'account.dataPrivacy':'\u6570\u636e\u548c\u9690\u79c1','account.export':'\u5bfc\u51fa','account.exportDesc':'\u4e0b\u8f7d\u6240\u6709\u6570\u636e\u4e3a JSON','account.delete':'\u5220\u9664\u6240\u6709\u6570\u636e','account.deleteDesc':'\u6c38\u4e45\u5220\u9664\u6240\u6709\u5185\u5bb9',
+    'account.switch':'\u5207\u6362\u8d26\u6237','account.google':'\u4f7f\u7528 Google \u767b\u5f55','account.local':'\u6dfb\u52a0\u672c\u5730\u8d26\u6237','account.signOut':'\u9000\u51fa\u767b\u5f55',
+    'account.connected':'\u8fde\u63a5\u5230','account.save':'\u4fdd\u5b58','account.name':'\u59d3\u540d','account.email':'\u90ae\u7bb1','account.noProfile':'\u672a\u9009\u62e9\u4e2a\u4eba\u8d44\u6599','account.device':'\u6b64\u8bbe\u5907',
+    'ai.title':'AI & API','ai.desc':'\u914d\u7f6e AI \u52a9\u624b\u63d0\u4f9b\u5546\u548c API \u5bc6\u94a5','ai.provider':'\u63d0\u4f9b\u5546','ai.providerDesc':'\u9009\u62e9\u4f7f\u7528\u7684 AI \u670d\u52a1','ai.apiKey':'API \u5bc6\u94a5','ai.apiKeyDesc':'\u6240\u9009\u63d0\u4f9b\u5546\u7684 API \u5bc6\u94a5',
+    'ai.profile':'AI \u8d44\u6599\u548c\u5b66\u4e60','ai.aboutYou':'\u5173\u4e8e\u4f60','ai.pronouns':'\u4ee3\u8bcd','ai.occupation':'\u804c\u4e1a','ai.goals':'\u76ee\u6807','ai.routines':'\u65e5\u5e38','ai.preferences':'\u504f\u597d','ai.schedule':'\u6bcf\u65e5\u65e5\u7a0b','ai.saveProfile':'\u4fdd\u5b58\u8d44\u6599',
+    'ai.learned':'\u6211\u4e86\u89e3\u5230\u7684','ai.addMemory':'+ \u6dfb\u52a0\u8bb0\u5fc6','ai.learningData':'\u5b66\u4e60\u6570\u636e','ai.tasks':'\u4efb\u52a1','ai.sessions':'\u4f1a\u8bdd','ai.keywords':'\u5173\u952e\u8bcd','ai.memories':'\u8bb0\u5fc6','ai.planAcc':'\u8ba1\u5212\u51c6\u786e\u7387',
+    'ai.clearMem':'\u6e05\u9664\u8bb0\u5fc6','ai.resetLearn':'\u91cd\u7f6e\u5b66\u4e60','ai.extra':'\u989d\u5916\u6307\u4ee4','ai.extraPlaceholder':'\u7ed9 AI \u7684\u989d\u5916\u6307\u4ee4\uff08\u53ef\u9009\uff09...','ai.saveInstructions':'\u4fdd\u5b58\u6307\u4ee4','ai.noMemories':'\u6682\u65e0\u8bb0\u5fc6\u3002\u4e0e ChickBot \u804a\u5929\u6765\u5efa\u7acb\u4f60\u7684\u8d44\u6599\u3002',
+    'data.title':'\u6570\u636e','data.desc':'\u5bfc\u51fa\u6570\u636e\u6216\u4ece\u5907\u4efd\u5bfc\u5165','data.export':'\u5bfc\u51fa\u6570\u636e','data.import':'\u5bfc\u5165\u6570\u636e',
+    'about.title':'\u5173\u4e8e','about.desc':'Hav\u00ebn Schedule \u2014 \u4f60\u7684\u4e2a\u4eba\u667a\u80fd\u65e5\u7a0b\u7ba1\u7406',
+    'nav.hub':'\u9996\u9875','nav.schedule':'\u65e5\u7a0b','nav.activities':'\u6d3b\u52a8','nav.analytics':'\u5206\u6790','nav.goals':'\u76ee\u6807','nav.finance':'\u8d22\u52a1','nav.gallery':'\u753b\u5eca',
+    'common.monday':'\u661f\u671f\u4e00','common.sunday':'\u661f\u671f\u65e5','common.save':'\u4fdd\u5b58','common.cancel':'\u53d6\u6d88','common.delete':'\u5220\u9664','common.show':'\u663e\u793a','common.hide':'\u9690\u85cf','common.enterKey':'\u8f93\u5165\u5bc6\u94a5','common.quickActions':'\u5feb\u901f\u64cd\u4f5c','common.customize':'\u81ea\u5b9a\u4e49','common.help':'\u5e2e\u52a9','common.settings':'\u8bbe\u7f6e','common.menu':'\u83dc\u5355','common.pages':'\u9875\u9762','appearance.title':'\u5916\u89c2',
+    'lang.en':'English','lang.id':'Bahasa Indonesia','lang.zh':'\u4e2d\u6587',
+  },
+};
+
+var _currentLang = 'en';
+
+function getLang() {
+  var saved = 'en';
+  try { saved = localStorage.getItem('haven-language') || 'en'; } catch (e) {}
+  if (!LANG[saved]) saved = 'en';
+  return saved;
+}
+
+function t(key) {
+  var lang = getLang();
+  var dict = LANG[lang] || LANG.en;
+  return dict[key] || LANG.en[key] || key;
+}
+
+function applyLanguage(lang) {
+  if (!lang) lang = getLang();
+  if (!LANG[lang]) lang = 'en';
+  _currentLang = lang;
+  try { localStorage.setItem('haven-language', lang); } catch (e) {}
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : lang === 'id' ? 'id' : 'en';
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.dataset.i18n;
+    var text = t(key);
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      el.placeholder = text;
+    } else {
+      el.textContent = text;
+    }
+  });
+  // Translate sidebar nav labels by href
+  document.querySelectorAll('.hub-snav-item .snav-label').forEach(function(el) {
+    var a = el.closest('a');
+    if (!a) return;
+    var href = a.getAttribute('href');
+    var map = { 'index.html':'nav.hub','schedule.html':'nav.schedule','activities.html':'nav.activities','analytics.html':'nav.analytics','goals.html':'nav.goals','finance.html':'nav.finance','gallery.html':'nav.gallery' };
+    var key = map[href];
+    if (key) el.textContent = t(key);
+  });
+  // Translate theme/settings/help buttons in menu panel
+  document.querySelectorAll('.hub-menu-panel-item').forEach(function(el) {
+    var txt = el.textContent.trim();
+    var map = { 'Theme':'appearance.title','Settings':'common.settings','Help':'common.help' };
+    var key = map[txt];
+    if (key) {
+      var textNode = el.childNodes[el.childNodes.length - 1];
+      if (textNode) textNode.textContent = t(key);
+    }
+  });
+  // Translate hamburger menu "Quick Actions", "Customize"
+  var qa = document.getElementById('menuPlus');
+  if (qa) { var qaSpan = qa.querySelector('span'); if (qaSpan) qaSpan.textContent = t('common.quickActions'); }
+  var cust = document.getElementById('menuPlusCustLabel');
+  if (cust) cust.textContent = t('common.customize');
+  // Translate Menu panel title and Pages section label
+  var mTitle = document.querySelector('.hub-menu-panel-title');
+  if (mTitle) mTitle.textContent = t('common.menu');
+  var ppLabel = document.querySelector('.hub-sidebar-section-label');
+  if (ppLabel) ppLabel.textContent = t('common.pages');
+  // Translate old settings drawer nav items
+  document.querySelectorAll('.settings-nav-item').forEach(function(el) {
+    var section = el.dataset.section;
+    var map = { 'ai':'ai.title','profile':'account.title','appearance':'appearance.title','access':'settings.access','data':'data.title' };
+    var key = map[section];
+    var span = el.querySelector('span');
+    if (key && span) span.textContent = t(key);
+  });
+  var drawerLabel = document.querySelector('.settings-nav-section-label');
+  if (drawerLabel) drawerLabel.textContent = t('common.settings');
+  // Re-render open settings bubble nav + content
+  if (typeof renderSettingsNav === 'function' && document.getElementById('settingsNav')) {
+    renderSettingsNav();
+  }
+  if (typeof settingsPanelActiveCategory !== 'undefined' && settingsPanelActiveCategory && typeof switchSettingsCategory === 'function') {
+    switchSettingsCategory(settingsPanelActiveCategory);
+  }
+}
+
+var DEFAULT_ACCESS_BUBBLES = {
   'focus-timer': { visible: true, label: 'Focus', color: '#fff' },
   'templates': { visible: true, label: 'Templates', color: '#fff' },
   'focus-mode': { visible: true, label: 'Focus', color: '#fff' },
@@ -5869,6 +6024,7 @@ const _origLoadState = loadState;
 loadState = function() {
   _origLoadState();
   if (document.querySelector('.access-item')) applyAccessHubConfig();
+  if (typeof applyLanguage === 'function') applyLanguage();
 };
 
 window.applyAccessHubConfig = applyAccessHubConfig;

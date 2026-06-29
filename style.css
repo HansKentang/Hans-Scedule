@@ -6750,7 +6750,7 @@ html.light .hub-section-header:hover {
 .set-avatar-row { gap:8px; }
 .set-avatar-info input { font-size:0.72rem; }
 .set-readonly { font-size:0.72rem; color:var(--text-tertiary); padding:5px 0; }
-.set-acc-connected { font-size:0.6rem; color:var(--text-tertiary); margin-top:3px; }
+.set-acc-connected { font-size:0.65rem; color:var(--text-tertiary); margin-top:4px; display:flex; align-items:center; gap:3px; }
 .set-acc-connected-device { color:var(--text-primary); font-weight:500; }
 .set-acc-device-count { display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px; border-radius:8px; background:var(--accent-soft); color:var(--primary); font-size:0.55rem; font-weight:600; vertical-align:middle; margin-left:4px; }
 

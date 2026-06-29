@@ -359,7 +359,8 @@ function getDeviceLabel() {
   else if (/Mac/.test(ua)) label = 'Mac';
   else if (/Linux/.test(ua)) label = 'Linux';
   label += ' — ' + window.screen.width + '\u00D7' + window.screen.height;
-  try { localStorage.setItem('haven-device-label', label); } catch (e) { try { sessionStorage.setItem('haven-device-label', label); } catch (e2) {} }
+  if (typeof safeSetItem === 'function') safeSetItem('haven-device-label', label);
+  else { try { localStorage.setItem('haven-device-label', label); } catch (e) { try { sessionStorage.setItem('haven-device-label', label); } catch (e2) {} } }
   _deviceLabel = label;
   return label;
 }
@@ -420,11 +421,11 @@ function renderSettingsNav() {
   var nav = document.getElementById('settingsNav');
   if (!nav) return;
   var cats = [
-    { id: 'account', label: 'My Account', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
-    { id: 'appearance', label: 'Appearance', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>' },
-    { id: 'ai', label: 'AI & API', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4c0 2-2 3-2 3h-4s-2-1-2-3a4 4 0 014-4z"/><path d="M8 15h8v2a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2z"/><line x1="12" y1="19" x2="12" y2="22"/></svg>' },
-    { id: 'data', label: 'Data', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' },
-    { id: 'about', label: 'About', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' }
+    { id: 'account', label: t('settings.account'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
+    { id: 'appearance', label: t('settings.appearance'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>' },
+    { id: 'ai', label: t('settings.ai'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4c0 2-2 3-2 3h-4s-2-1-2-3a4 4 0 014-4z"/><path d="M8 15h8v2a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2z"/><line x1="12" y1="19" x2="12" y2="22"/></svg>' },
+    { id: 'data', label: t('settings.data'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' },
+    { id: 'about', label: t('settings.about'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' }
   ];
   nav.innerHTML = cats.map(function(c) {
     return '<div class="settings-nav-item' + (c.id === settingsPanelActiveCategory ? ' active' : '') + '" data-cat="' + c.id + '">' + c.icon + '<span>' + c.label + '</span></div>';
@@ -465,6 +466,7 @@ function renderAccountSettings(el) {
 
   // Avatar + profile fields
   var avatarHtml = '';
+  var connectedHtml = '';
   if (guest) {
     avatarHtml = '<div class="set-avatar-initials" style="background:var(--text-tertiary);opacity:0.5">?</div>' +
       '<div class="set-avatar-info" style="flex:1">' +
@@ -474,15 +476,27 @@ function renderAccountSettings(el) {
     var initials = getInitials(activeUser.name);
     var color = activeUser._color || getColorForId(activeUser.id);
     var img = activeUser.picture ? '<img class="set-avatar set-avatar-clickable" id="accAvatarImg" src="' + escapeHtml(activeUser.picture) + '">' : '<div class="set-avatar-initials set-avatar-clickable" id="accAvatarImg" style="background:' + color + '">' + escapeHtml(initials) + '</div>';
-    var deviceLabel = typeof getDeviceLabel === 'function' ? getDeviceLabel() : '';
-    var connectedHtml = deviceLabel ? '<div class="set-acc-connected">This account is connected to <span class="set-acc-connected-device">' + escapeHtml(deviceLabel) + '</span></div>' : '';
+    // Build device label inline
+    var deviceText = '';
+    try {
+      var ua = navigator.userAgent;
+      var dLabel = 'Unknown Device';
+      if (/Windows/.test(ua)) dLabel = 'Windows PC';
+      else if (/iPad/.test(ua)) dLabel = 'iPad';
+      else if (/iPhone/.test(ua)) dLabel = 'iPhone';
+      else if (/Android/.test(ua)) dLabel = 'Android';
+      else if (/Mac/.test(ua)) dLabel = 'Mac';
+      else if (/Linux/.test(ua)) dLabel = 'Linux';
+      dLabel += ' \u2014 ' + (window.screen ? window.screen.width + 'x' + window.screen.height : '');
+      deviceText = dLabel;
+    } catch (e) { deviceText = 'Unknown Device'; }
     avatarHtml = img +
       '<div class="set-avatar-info" style="flex:1">' +
       '<input class="set-input set-input-full" id="accName" value="' + escapeHtml(activeUser.name || '') + '" placeholder="Name" style="margin-bottom:3px">' +
       '<input class="set-input set-input-full" id="accEmail" value="' + escapeHtml(activeUser.email || '') + '" placeholder="Email (optional)">' +
-      connectedHtml +
       '</div>' +
       '<button class="set-btn" id="accProfileSave" style="align-self:flex-start">Save</button>';
+    var connectedHtml = '<div class="set-acc-connected"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Connected to <span class="set-acc-connected-device">' + escapeHtml(deviceText) + '</span></div>';
   } else {
     avatarHtml = '<div style="font-size:0.78rem;color:var(--text-tertiary);padding:6px 0">No profile selected</div>';
   }
@@ -519,6 +533,7 @@ function renderAccountSettings(el) {
     // Editable profile
     '<div class="set-group">' +
       '<div class="set-avatar-row">' + avatarHtml + '</div>' +
+      (connectedHtml || '') +
     '</div>' +
     '<div class="set-divider"></div>' +
     // Preferences
@@ -526,7 +541,7 @@ function renderAccountSettings(el) {
       '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:4px">PREFERENCES</div>' +
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">Language</div><div class="set-row-desc">UI language</div></div>' +
-        '<div class="set-row-control"><select class="set-select" id="accLang"><option value="en">English</option><option value="ja">Japanese</option><option value="zh">Chinese</option><option value="ko">Korean</option><option value="es">Spanish</option><option value="fr">French</option><option value="de">German</option><option value="pt">Portuguese</option></select></div>' +
+        '<div class="set-row-control"><select class="set-select" id="accLang"><option value="en">' + t('lang.en') + '</option><option value="id">' + t('lang.id') + '</option><option value="zh">' + t('lang.zh') + '</option></select></div>' +
       '</div>' +
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">Timezone</div><div class="set-row-desc">Detected from browser</div></div>' +
@@ -599,13 +614,17 @@ function renderAccountSettings(el) {
 
   // Preferences save on change
   document.getElementById('accLang')?.addEventListener('change', function() {
-    localStorage.setItem('haven-language', this.value);
+    if (typeof safeSetItem === 'function') safeSetItem('haven-language', this.value);
+    else try { localStorage.setItem('haven-language', this.value); } catch (e) {}
+    if (typeof applyLanguage === 'function') applyLanguage(this.value);
   });
   document.getElementById('accWeekStart')?.addEventListener('change', function() {
-    localStorage.setItem('haven-week-start', this.value);
+    if (typeof safeSetItem === 'function') safeSetItem('haven-week-start', this.value);
+    else try { localStorage.setItem('haven-week-start', this.value); } catch (e) {}
   });
   document.getElementById('accTimeFormat')?.addEventListener('change', function() {
-    localStorage.setItem('haven-time-format', this.value);
+    if (typeof safeSetItem === 'function') safeSetItem('haven-time-format', this.value);
+    else try { localStorage.setItem('haven-time-format', this.value); } catch (e) {}
   });
 
   // Export
