@@ -1339,9 +1339,176 @@ var __origLS = {};
     return pre + key;
   }
   localStorage.getItem = function(key) { return __origLS.getItem(_p(key)); };
-  localStorage.setItem = function(key, val) { return __origLS.setItem(_p(key), val); };
+  localStorage.setItem = function(key, val) {
+    var pKey = _p(key);
+    __origLS.setItem(pKey, val);
+    if (typeof CLOUD_STORE !== 'undefined' && !CLOUD_STORE._suppressWrite) {
+      _queueCloudWrite(pKey, val);
+    }
+  };
   localStorage.removeItem = function(key) { return __origLS.removeItem(_p(key)); };
 })();
+
+// ─── CLOUD STORAGE — Firestore-backed cloud storage ─────────────
+// Every localStorage write is mirrored to Firestore (debounced 1s).
+// A periodic poll (every 3s) fetches remote changes and applies them.
+// This replaces the old cloud-sync engine entirely.
+
+var CLOUD_STORE = {
+  userId: null,
+  db: null,
+  pollInterval: null,
+  writeTimeout: null,
+  writeQueue: {},
+  lastFetch: {},
+  initialized: false,
+  _suppressWrite: false,
+};
+
+function initCloudStorage(userId) {
+  if (!userId || userId.indexOf('firebase-') !== 0) return;
+  if (CLOUD_STORE.initialized) return;
+  CLOUD_STORE.userId = userId;
+
+  try {
+    if (typeof initFirestore === 'function') initFirestore();
+    var db = typeof getFirestoreDb === 'function' ? getFirestoreDb() : null;
+    if (!db) {
+      setTimeout(function() { initCloudStorage(userId); }, 1000);
+      return;
+    }
+    CLOUD_STORE.db = db;
+
+    db.collection('userdata').doc(userId).get().then(function(doc) {
+      CLOUD_STORE._suppressWrite = true;
+      if (doc.exists) {
+        var data = doc.data();
+        for (var key in data) {
+          if (key.indexOf('_') === 0) continue;
+          var colonIdx = key.indexOf(':');
+          var baseKey = colonIdx >= 0 ? key.slice(colonIdx + 1) : key;
+          try {
+            __origLS.setItem(key, data[key]);
+            CLOUD_STORE.lastFetch[baseKey] = data[key];
+          } catch (e) {}
+        }
+      } else {
+        // First sync: push all existing local data to cloud
+        var firstBatch = {};
+        var prefix = userId + ':';
+        for (var i = 0; i < __origLS.length; i++) {
+          try {
+            var k = __origLS.key(i);
+            if (k && k.indexOf(prefix + 'haven-') === 0) {
+              var v = __origLS.getItem(k);
+              if (v !== null) {
+                firstBatch[k] = v;
+                var colonIdx = k.indexOf(':');
+                var baseKey = colonIdx >= 0 ? k.slice(colonIdx + 1) : k;
+                CLOUD_STORE.lastFetch[baseKey] = v;
+              }
+            }
+          } catch (e) {}
+        }
+        var keys = Object.keys(firstBatch);
+        if (keys.length > 0) {
+          db.collection('userdata').doc(userId).set(firstBatch, { merge: true }).catch(function(e) {
+            console.warn('[cloud] first sync failed:', e);
+          });
+        }
+      }
+      CLOUD_STORE._suppressWrite = false;
+      CLOUD_STORE.initialized = true;
+      _startCloudPoll();
+    }).catch(function(err) {
+      CLOUD_STORE._suppressWrite = false;
+      console.warn('[cloud] init fetch failed:', err);
+      CLOUD_STORE.initialized = true;
+      _startCloudPoll();
+    });
+  } catch (e) {
+    console.warn('[cloud] init failed:', e);
+  }
+}
+
+function _startCloudPoll() {
+  if (CLOUD_STORE.pollInterval) clearInterval(CLOUD_STORE.pollInterval);
+  CLOUD_STORE.pollInterval = setInterval(function() {
+    if (!CLOUD_STORE.db || !CLOUD_STORE.userId) return;
+    CLOUD_STORE.db.collection('userdata').doc(CLOUD_STORE.userId).get().then(function(doc) {
+      if (!doc.exists) return;
+      var data = doc.data();
+      var anyChange = false;
+      CLOUD_STORE._suppressWrite = true;
+      for (var key in data) {
+        if (key.indexOf('_') === 0) continue;
+        var colonIdx = key.indexOf(':');
+        var baseKey = colonIdx >= 0 ? key.slice(colonIdx + 1) : key;
+        if (data[key] !== CLOUD_STORE.lastFetch[baseKey]) {
+          CLOUD_STORE.lastFetch[baseKey] = data[key];
+          try {
+            __origLS.setItem(key, data[key]);
+            anyChange = true;
+          } catch (e) {}
+        }
+      }
+      CLOUD_STORE._suppressWrite = false;
+      if (anyChange && typeof showToast === 'function') {
+        showToast('Synced from cloud', 'info', 2000);
+      }
+      if (typeof updateSyncStatusDot === 'function') updateSyncStatusDot();
+    }).catch(function() {});
+  }, 3000);
+}
+
+function _queueCloudWrite(key, value) {
+  if (!CLOUD_STORE.userId || !CLOUD_STORE.initialized) return;
+  // Skip keys that should remain device-local
+  if (key.indexOf('haven-gsi-') === 0 || key.indexOf('haven-device-') === 0 || key === 'haven-language' || key === 'haven-week-start' || key === 'haven-time-format') return;
+  var colonIdx = key.indexOf(':');
+  var baseKey = colonIdx >= 0 ? key.slice(colonIdx + 1) : key;
+  CLOUD_STORE.writeQueue[baseKey] = value;
+  if (CLOUD_STORE.writeTimeout) clearTimeout(CLOUD_STORE.writeTimeout);
+  CLOUD_STORE.writeTimeout = setTimeout(_flushCloudWrites, 1000);
+}
+
+function _flushCloudWrites() {
+  CLOUD_STORE.writeTimeout = null;
+  if (!CLOUD_STORE.db || !CLOUD_STORE.userId || Object.keys(CLOUD_STORE.writeQueue).length === 0) return;
+  var batch = {};
+  var uid = CLOUD_STORE.userId;
+  for (var bk in CLOUD_STORE.writeQueue) {
+    batch[uid + ':' + bk] = CLOUD_STORE.writeQueue[bk];
+    CLOUD_STORE.lastFetch[bk] = CLOUD_STORE.writeQueue[bk];
+  }
+  batch._updatedBy = uid;
+  batch._updatedAt = Date.now();
+  CLOUD_STORE.writeQueue = {};
+  CLOUD_STORE.db.collection('userdata').doc(uid).set(batch, { merge: true }).catch(function(err) {
+    console.warn('[cloud] write failed:', err);
+    if (typeof showToast === 'function') showToast('Cloud write failed', 'error', 3000);
+  });
+}
+
+function stopCloudStorage() {
+  if (CLOUD_STORE.pollInterval) {
+    clearInterval(CLOUD_STORE.pollInterval);
+    CLOUD_STORE.pollInterval = null;
+  }
+  if (CLOUD_STORE.writeTimeout) {
+    clearTimeout(CLOUD_STORE.writeTimeout);
+    CLOUD_STORE.writeTimeout = null;
+  }
+  CLOUD_STORE.userId = null;
+  CLOUD_STORE.initialized = false;
+  CLOUD_STORE.writeQueue = {};
+  CLOUD_STORE.lastFetch = {};
+  CLOUD_STORE._suppressWrite = false;
+}
+
+window.initCloudStorage = initCloudStorage;
+window.stopCloudStorage = stopCloudStorage;
+window._flushCloudWrites = _flushCloudWrites;
 
 // Safe localStorage write with auto-cleanup on quota exceeded
 function safeSetItem(key, val) {
