@@ -538,10 +538,16 @@ function renderAppearanceSettings(el) {
   var prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
   var isDark = state.darkMode === null ? prefersDark : state.darkMode;
   var accent = typeof state !== 'undefined' && state.accentColor ? state.accentColor : null;
-  var swatches = '';
-  if (typeof ACCENT_PALETTE !== 'undefined') {
-    ACCENT_PALETTE.forEach(function(c) {
-      swatches += '<div class="set-swatch' + (accent === c.dark ? ' active' : '') + '" data-acc-color="' + c.dark + '" style="background:' + c.dark + '"></div>';
+  var swatchesHtml = '';
+  if (typeof ACCENT_PALETTE !== 'undefined' && typeof ACCENT_GROUPS !== 'undefined') {
+    ACCENT_GROUPS.forEach(function(g) {
+      var groupColors = ACCENT_PALETTE.filter(function(c) { return c.group === g.id; });
+      if (!groupColors.length) return;
+      swatchesHtml += '<div class="set-swatch-group"><div class="set-swatch-group-label">' + g.label + '</div><div class="set-swatches">';
+      groupColors.forEach(function(c) {
+        swatchesHtml += '<div class="set-swatch' + (accent === c.dark ? ' active' : '') + '" data-acc-color="' + c.dark + '" style="background:' + c.dark + '" title="' + c.name + '"></div>';
+      });
+      swatchesHtml += '</div></div>';
     });
   }
 
@@ -554,9 +560,9 @@ function renderAppearanceSettings(el) {
         '<button class="set-toggle' + (isDark ? ' on' : '') + '" id="setThemeToggle"></button>' +
       '</div>' +
     '</div>' +
-    '<div class="set-group">' +
-      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">ACCENT COLOR</div>' +
-      '<div class="set-swatches">' + swatches + '</div>' +
+    '<div class="set-group set-group-collapse">' +
+      '<div class="set-row-label set-acc-header" onclick="var n=this.nextElementSibling;n.classList.toggle(\'collapsed\');this.classList.toggle(\'collapsed\')">ACCENT COLOR <span class="set-acc-badge" style="background:' + (accent || '#888') + '"></span> <span class="set-acc-toggle">›</span></div>' +
+      '<div class="set-acc-body">' + swatchesHtml + '</div>' +
     '</div>' +
     '<div class="set-group">' +
       '<div class="set-row">' +
