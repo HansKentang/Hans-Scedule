@@ -7727,7 +7727,7 @@ html.light .hub-add-popup {
   }
 
   .hub-layout { padding-bottom: 60px; }
-  .hub-main { height: 100dvh; }
+  .hub-main { height: auto; min-height: 0; }
   .hub-content { padding-bottom: 8px; }
 
   .hub-main > section:first-child {
