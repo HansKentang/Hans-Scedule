@@ -7319,6 +7319,37 @@ html.light .hub-add-popup {
 .img-empty-placeholder span { opacity:0.6; }
 .img-empty-placeholder:hover span { opacity:1; }
 
+/* ─── Visuals Button Pulse (when uncustomized images exist) ─── */
+#bcVisualsBtn.has-empty-images svg {
+  animation: visualsPulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  color: var(--accent);
+}
+#bcVisualsBtn.has-empty-images span {
+  color: var(--accent);
+}
+#bcVisualsBtn.has-empty-images {
+  position: relative;
+}
+#bcVisualsBtn.has-empty-images::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 6px;
+  border: 1.5px solid var(--accent);
+  opacity: 0.4;
+  animation: visualsRing 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  pointer-events: none;
+}
+@keyframes visualsPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+@keyframes visualsRing {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.08); }
+}
+
+
 .hub-sidebar-image-empty { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; background:var(--bg-secondary); color:var(--text-tertiary); font-size:0.62rem; font-weight:500; cursor:pointer; min-height:60px; border:1px dashed var(--border-subtle); border-radius:var(--radius-sm); box-sizing:border-box; transition:all var(--t-fast); }
 .hub-sidebar-image-empty:hover { color:var(--text-primary); background:color-mix(in srgb, var(--accent) 8%, var(--bg-primary)); border-color:var(--accent); }
 .hub-sidebar-image-empty svg { display:block; }

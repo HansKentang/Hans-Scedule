@@ -2520,6 +2520,14 @@ function loadImages() {
 }
 
 // --- APPLY IMAGES TO DOM ---
+
+// ─── UPDATE VISUALS BUTTON PULSE ──────────────────────────
+function updateVisualsPulse() {
+  var _btn = document.getElementById('bcVisualsBtn');
+  if (!_btn) return;
+  var _hasEmpty = document.querySelector('.img-empty-placeholder') !== null;
+  _btn.classList.toggle('has-empty-images', _hasEmpty);
+}
 function applyImages() {
   var _isLanding = location.pathname.split('/').pop() === 'landing.html';
   document.querySelectorAll("img[data-image-id]").forEach(function(el) {
@@ -2562,6 +2570,7 @@ function applyImages() {
       }
     }
   });
+  try { updateVisualsPulse(); } catch(e) {}
 }
 
 function restoreDirectImageKeys() {
@@ -2651,6 +2660,7 @@ function setImage(id, url) {
       }
     }
   });
+  try { updateVisualsPulse(); } catch(e) {}
 
   // If this is a sidebar image, also update sidebar config (mirrors resetImage sync)
   if (id && id.indexOf('sidebar-') === 0) {
@@ -3703,6 +3713,10 @@ function ensureEditModeIndicator() {
 function toggleEditMode() {
   state.editMode = !state.editMode;
   document.documentElement.classList.toggle('edit-mode', state.editMode);
+  if (state.editMode) {
+    var _btn = document.getElementById('bcVisualsBtn');
+    if (_btn) _btn.classList.remove('has-empty-images');
+  }
   
   // Toggle floating indicator
   const indicator = ensureEditModeIndicator();
@@ -4535,7 +4549,7 @@ document.addEventListener('click', function(e) {
   const sidebarEditBtn = e.target.closest('#hubSidebarEditBtn');
   if (sidebarEditBtn) { toggleSidebarEditMode(); return; }
   const visualsBtn = e.target.closest('#bcVisualsBtn');
-  if (visualsBtn) { toggleEditMode(); return; }
+  if (visualsBtn) { visualsBtn.classList.remove('has-empty-images'); toggleEditMode(); return; }
   const settingsBtn = e.target.closest('.hamburger-settings-btn');
   if (settingsBtn) { return; }
 
