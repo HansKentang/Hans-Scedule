@@ -2363,20 +2363,7 @@ function _pomoClearTickIfIdle() {
 }
 
 /* ─── ADD popup (hide-popup style) ──────────── */
-function showHubAddPopup(e) {
-  // Exit edit mode if active, then toggle the dock
-  if (hubEditMode) toggleHubEdit(false);
-  var g = document.querySelector('.bento-grid');
-  if (g) {
-    var dockEl = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
-    if (dockEl) {
-      dockEl.remove();
-    } else {
-      renderBubbleDock(g);
-    }
-    return;
-  }
-}
+
 
 
 
@@ -2664,7 +2651,7 @@ function setupHubEditEvents() {
   if (_hubEditEventsWired) return;
   _hubEditEventsWired = true;
   document.getElementById('hubEditToggle')?.addEventListener('click', toggleHubEdit);
-  document.getElementById('hubAddToggle')?.addEventListener('click', showHubAddPopup);
+
 
   // Hub FAB speed-dial
   const _fabMain = document.getElementById('hubAccessMain');

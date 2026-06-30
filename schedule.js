@@ -833,10 +833,7 @@ function removeDropPreview() {
 // ─── CONFLICT PREVIEW ─────────────────────────────────────
 function previewConflicts(date, startM, endM, excludeId) {
   $$('.calendar-task.task-conflict').forEach(el => el.classList.remove('task-conflict'));
-  const badge = document.getElementById('dropConflictBadge');
-  if (badge) badge.remove();
 
-  let count = 0;
   for (const task of state.tasks) {
     if (task.id === excludeId || isWhiteboardTask(task) || task.completed) continue;
     if (task.date !== date) continue;
@@ -844,22 +841,12 @@ function previewConflicts(date, startM, endM, excludeId) {
     const tEnd = parseTime(task.endTime) || tStart + 60;
     if (tEnd <= startM || tStart >= endM) continue;
     const el = document.querySelector(`.calendar-task[data-task-id="${task.id}"]`);
-    if (el) { el.classList.add('task-conflict'); count++; }
-  }
-
-  if (count > 0) {
-    const b = document.createElement('div');
-    b.id = 'dropConflictBadge';
-    b.className = 'drop-conflict-badge';
-    b.textContent = `Will push ${count} task${count > 1 ? 's' : ''}`;
-    document.body.appendChild(b);
+    if (el) el.classList.add('task-conflict');
   }
 }
 
 function clearConflictPreview() {
   $$('.calendar-task.task-conflict').forEach(el => el.classList.remove('task-conflict'));
-  const badge = document.getElementById('dropConflictBadge');
-  if (badge) badge.remove();
 }
 
 function onDragMove(e) {
