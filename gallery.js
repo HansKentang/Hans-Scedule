@@ -142,8 +142,7 @@ function renderGallery() {
     const url = getImage(id);
     const hasImg = !!url;
 
-    if (!hasImg && isEdit) {
-      // Show placeholder in edit mode
+    if (!hasImg) {
       html += `
         <div class="gal-item gal-item-placeholder" data-gallery-id="${id}" data-idx="${i}" draggable="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">

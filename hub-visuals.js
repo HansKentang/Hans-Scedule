@@ -645,8 +645,8 @@ function renderHubBento() {
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:var(--gutter);border:1px solid var(--border-color);background:var(--surface-container)">
           ${editUI}
           <div class="bento-img-wrap" style="width:100%;height:100%" data-img-picker="${imgId}">
-            <img data-image-id="${imgId}" src="${e(imgUrl || 'https://picsum.photos/seed/haven-fallback/600/400')}" alt="" style="width:100%;height:100%;object-fit:${imgFit};display:block">
-            <div class="bento-img-placeholder" style="display:none">
+            <img data-image-id="${imgId}" src="${e(imgUrl || '')}" alt="" style="width:100%;height:100%;object-fit:${imgFit};display:${hasImg ? 'block' : 'none'}">
+            <div class="bento-img-placeholder" style="display:${hasImg ? 'none' : 'flex'}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               <span>Click to add photo</span>
             </div>
@@ -1094,7 +1094,8 @@ function renderHubBento() {
 
   document.querySelectorAll('img[data-image-id]').forEach(el => {
     if (el.dataset.imageId && el.dataset.imageId.indexOf('sidebar-') === 0) return;
-    el.src = getImage(el.dataset.imageId) || 'https://picsum.photos/seed/haven-fallback/600/400';
+    var _url = getImage(el.dataset.imageId);
+    if (_url) { el.src = _url; el.style.display = 'block'; }
   });
 
 

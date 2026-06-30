@@ -2383,52 +2383,52 @@ function loadState() {
 
 // ─── CUSTOM IMAGES ─────────────────────────────────────────
 const DEFAULT_IMAGES = {
-  'hub-hero': 'https://picsum.photos/seed/haven-hub-hero/1200/600',
-  'hub-tulips': 'https://picsum.photos/seed/haven-hub-tulips/600/400',
+  'hub-hero': '',
+  'hub-tulips': '',
   'hub-desk-water': '',
   'hub-lamp': '',
-  'hub-skyline': 'https://picsum.photos/seed/haven-hub-skyline/800/500',
-  'hub-bedroom': 'https://picsum.photos/seed/haven-hub-bedroom/600/400',
-  'weekly-coffee': 'https://picsum.photos/seed/haven-weekly-coffee/400/400',
-  'weekly-journal': 'https://picsum.photos/seed/haven-weekly-journal/400/400',
-  'brain-linen': 'https://picsum.photos/seed/haven-brain-linen/600/400',
-  'brain-desk-light': 'https://picsum.photos/seed/haven-brain-desk/600/400',
-  'goals-tulips': 'https://picsum.photos/seed/haven-goals-tulips/400/400',
-  'goals-book': 'https://picsum.photos/seed/haven-goals-book/600/400',
-  'goals-studio': 'https://picsum.photos/seed/haven-goals-studio/400/400',
-  'schedule-hero': 'https://picsum.photos/seed/haven-schedule-hero/1200/400',
-  'schedule-coffee': 'https://picsum.photos/seed/haven-schedule-coffee/400/400',
-  'activities-hero': 'https://picsum.photos/seed/haven-activities-hero/1200/500',
-  'tags-hero': 'https://picsum.photos/seed/haven-tags-hero/1200/500',
-  'tags-studio': 'https://picsum.photos/seed/haven-tags-studio/400/400',
-  'analytics-hero': 'https://picsum.photos/seed/haven-analytics-hero/1200/400',
-  'finance-hero': 'https://picsum.photos/seed/haven-finance-hero/1200/400',
-  'goals-hero': 'https://picsum.photos/seed/haven-goals-hero/1200/500',
-  'hub-image-1': 'https://picsum.photos/seed/haven-canvas-1/600/400',
-  'hub-image-2': 'https://picsum.photos/seed/haven-canvas-2/600/400',
-  'hub-image-3': 'https://picsum.photos/seed/haven-canvas-3/600/400',
-  'hub-image-4': 'https://picsum.photos/seed/haven-canvas-4/600/400',
-  'hub-image-5': 'https://picsum.photos/seed/haven-canvas-5/600/400',
-  'hub-image-6': 'https://picsum.photos/seed/haven-canvas-6/600/400',
-  'hub-image-7': 'https://picsum.photos/seed/haven-canvas-7/600/400',
-  'hub-image-8': 'https://picsum.photos/seed/haven-canvas-8/600/400',
-  'hub-image-9': 'https://picsum.photos/seed/haven-canvas-9/600/400',
-  'hub-image-10': 'https://picsum.photos/seed/haven-canvas-10/600/400',
-  'friends-hero': 'https://picsum.photos/seed/haven-friends-hero/1200/500',
-  'gallery-hero': 'https://picsum.photos/seed/gallery-hero/1200/500',
-  'sidebar-schedule': 'https://images.unsplash.com/photo-1562537218-26057ef20502?auto=format&fit=crop&w=440&q=80',
-  'sidebar-activities': 'https://images.unsplash.com/photo-1742055700759-e393a5314287?auto=format&fit=crop&w=440&q=80',
-  'sidebar-analytics': 'https://images.unsplash.com/photo-1759210358926-4673cc44d35f?auto=format&fit=crop&w=440&q=80',
-  'sidebar-goals': 'https://images.unsplash.com/photo-1731176497854-f9ea4dd52eb6?auto=format&fit=crop&w=440&q=80',
-  'sidebar-finance': 'https://images.unsplash.com/photo-1533038590840-1cde6e668a91?auto=format&fit=crop&w=440&q=80',
-  'sidebar-tags': 'https://images.unsplash.com/photo-1768527049008-85f2cc0166be?auto=format&fit=crop&w=440&q=80',
-  'sidebar-index': 'https://images.unsplash.com/photo-1752503650851-cbc3f8b00679?auto=format&fit=crop&w=440&q=80',
-  'sidebar-gallery': 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?auto=format&fit=crop&w=440&q=80',
-  'gallery-schedule': 'https://picsum.photos/seed/haven-gallery-schedule/600/200',
-  'gallery-activities': 'https://picsum.photos/seed/haven-gallery-activities/600/200',
-  'gallery-tags': 'https://picsum.photos/seed/haven-gallery-tags/600/200',
-  'gallery-analytics': 'https://picsum.photos/seed/haven-gallery-analytics/600/200',
-  'gallery-goals': 'https://picsum.photos/seed/haven-gallery-goals/600/200'
+  'hub-skyline': '',
+  'hub-bedroom': '',
+  'weekly-coffee': '',
+  'weekly-journal': '',
+  'brain-linen': '',
+  'brain-desk-light': '',
+  'goals-tulips': '',
+  'goals-book': '',
+  'goals-studio': '',
+  'schedule-hero': '',
+  'schedule-coffee': '',
+  'activities-hero': '',
+  'tags-hero': '',
+  'tags-studio': '',
+  'analytics-hero': '',
+  'finance-hero': '',
+  'goals-hero': '',
+  'hub-image-1': '',
+  'hub-image-2': '',
+  'hub-image-3': '',
+  'hub-image-4': '',
+  'hub-image-5': '',
+  'hub-image-6': '',
+  'hub-image-7': '',
+  'hub-image-8': '',
+  'hub-image-9': '',
+  'hub-image-10': '',
+  'friends-hero': '',
+  'gallery-hero': '',
+  'sidebar-schedule': '',
+  'sidebar-activities': '',
+  'sidebar-analytics': '',
+  'sidebar-goals': '',
+  'sidebar-finance': '',
+  'sidebar-tags': '',
+  'sidebar-index': '',
+  'sidebar-gallery': '',
+  'gallery-schedule': '',
+  'gallery-activities': '',
+  'gallery-tags': '',
+  'gallery-analytics': '',
+  'gallery-goals': ''
 };
 
 // ─── INDEXEDDB FOR IMAGES (unlimited storage) ──────────────
@@ -2524,8 +2524,34 @@ function applyImages() {
   document.querySelectorAll("img[data-image-id]").forEach(function(el) {
     var _id = el.dataset.imageId;
     if (_id) {
-      el.src = getImage(_id) || "";
-      el.style.display = el.src ? "block" : "none";
+      var url = getImage(_id);
+      if (url) {
+        el.src = url;
+        el.style.display = "block";
+        el.removeAttribute("data-empty-img");
+        var wrap = el.closest(".bento-img-wrap");
+        if (wrap) {
+          var placeholder = wrap.querySelector(".bento-img-placeholder");
+          if (placeholder) placeholder.style.display = "none";
+        }
+      } else {
+        el.src = "";
+        el.style.display = "none";
+        el.setAttribute("data-empty-img", "");
+        var wrap = el.closest(".bento-img-wrap");
+        if (!wrap) {
+          var parent = el.parentElement;
+          if (parent && !parent.querySelector(".img-empty-placeholder")) {
+            var ph = document.createElement("div");
+            ph.className = "img-empty-placeholder";
+            ph.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Add image</span>';
+            parent.insertBefore(ph, el);
+          }
+        } else {
+          var placeholder = wrap.querySelector(".bento-img-placeholder");
+          if (placeholder) placeholder.style.display = "flex";
+        }
+      }
     }
   });
 }
@@ -4074,7 +4100,7 @@ function renderSidebarImages() {
       if (img.hidden) item.classList.add('hub-sidebar-image-hidden');
       item.dataset.imageId = img.id;
       const label = img.label || img.id;
-      item.innerHTML = (url ? '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' : '<div class="hub-sidebar-image-empty">No image</div>') +
+      item.innerHTML = (url ? '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' : '<div class="hub-sidebar-image-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;opacity:0.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Add image</span></div>') +
         '<span class="hub-sidebar-image-label">' + label + '</span>';
       // Click: in Visuals edit mode → image picker, else → lightbox
       item.addEventListener('click', function() {
