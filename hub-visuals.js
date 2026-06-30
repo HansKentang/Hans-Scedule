@@ -503,8 +503,8 @@ function toggleHubEdit(on) {
   hubEditMode = on !== undefined ? on : !hubEditMode;
   localStorage.setItem(HUB_EDIT_KEY, hubEditMode);
   if (!hubEditMode) saveHubContent();
-  // If entering edit mode, close the add-bubble dock (they are mutually exclusive)
-  if (hubEditMode) {
+  // Clean up dock when exiting edit mode (renderHubBento handles showing it)
+  if (!hubEditMode) {
     var d = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
     if (d) d.remove();
   }
@@ -1099,8 +1099,12 @@ function renderHubBento() {
 
   // Bottom padding for fixed Done button in edit mode
   grid.style.paddingBottom = isEdit ? '64px' : '';
-  // Clean up dock when not in edit mode
-  if (!isEdit) {
+  // Show dock in edit mode, clean up otherwise
+  if (isEdit) {
+    if (!document.querySelector('.bento-bubble-dock[data-bubble-dock]')) {
+      renderBubbleDock(grid);
+    }
+  } else {
     var d = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
     if (d) d.remove();
   }
@@ -2668,7 +2672,6 @@ function setupHubEditEvents() {
     _fabMain.dataset._fabWired = '1';
     _fabMain.addEventListener('click', toggleHubAccess);
     document.getElementById('hubFabEdit')?.addEventListener('click', function() { toggleHubAccess(); showHubEditToggle(); });
-    document.getElementById('hubFabAdd')?.addEventListener('click', function() { toggleHubAccess(); showHubAddPopup(); });
     document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
   }
   document.addEventListener('click', function(e) {
@@ -3119,7 +3122,6 @@ if (document.getElementById('hubAccessHub')) {
         }
       });
       document.getElementById('hubFabEdit')?.addEventListener('click', function() { try { toggleHubAccess(); showHubEditToggle(); } catch(e) { console.error('Edit error:', e); } });
-      document.getElementById('hubFabAdd')?.addEventListener('click', function() { toggleHubAccess(); showHubAddPopup(); });
       document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
     }
   };

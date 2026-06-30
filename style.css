@@ -912,6 +912,11 @@ html.dark .current-time-line { opacity: 0.5; }
   cursor: auto;
   background: transparent;
 }
+.calendar-task:has(.task-title.is-editing) {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
 .task-title-input {
   border: none; background: color-mix(in srgb, var(--task-accent) 12%, var(--bg-secondary));
   color: var(--text-primary);
@@ -920,6 +925,8 @@ html.dark .current-time-line { opacity: 0.5; }
   outline: 1px solid var(--task-accent);
   line-height: 1.4;
   width: 100%;
+  -webkit-font-smoothing: antialiased;
+  backface-visibility: hidden;
 }
 .calendar-task .task-check {
   display: inline-flex; align-items: center; justify-content: center;
@@ -5297,25 +5304,21 @@ html.dark .template-pill:hover {
 /* ─── TASK MODAL ──────────────────────────────────────────── */
 .overlay {
   position: fixed; inset: 0; z-index: calc(var(--z-modal) - 1);
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.45);
   opacity: 0; visibility: hidden;
   transition: opacity 250ms ease, visibility 250ms ease;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
 }
 .overlay.active { opacity: 1; visibility: visible; }
 
 .modal {
-  position: fixed; top: 50%; left: 50%; z-index: var(--z-modal);
-  transform: translate(-50%, -50%) scale(0.96);
+  position: relative; z-index: var(--z-modal);
   opacity: 0; visibility: hidden;
-  transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 250ms ease, visibility 250ms ease;
+  transition: opacity 250ms ease, visibility 250ms ease;
   max-height: 90vh; overflow-y: auto;
   outline: none;
 }
 .modal.active {
-  transform: translate(-50%, -50%) scale(1);
   opacity: 1; visibility: visible;
 }
 .modal-sm { width: 480px; max-width: calc(100vw - 32px); }

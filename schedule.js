@@ -469,27 +469,29 @@ function renderTasks() {
     // Sort by start time, then longer duration first
     taskEntries.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
 
-    // Stack overlapping cards full-width, increasing z-index per overlap group
-    // Each overlapping chain gets a unique group z-index so overlapping cards sit on top of each other
-    const zStack = [];
+    // Side-by-side column layout: overlapping cards get their own column
+    // so they appear next to each other instead of stacked on top
+    const columns = [];
     for (let i = 0; i < taskEntries.length; i++) {
-      let group = i;
+      const occupied = new Set();
       for (let j = 0; j < i; j++) {
         if (taskEntries[j].start < taskEntries[i].end && taskEntries[i].start < taskEntries[j].end) {
-          group = Math.min(group, zStack[j]);
+          occupied.add(columns[j]);
         }
       }
-      zStack[i] = group;
+      let col = 0;
+      while (occupied.has(col)) col++;
+      columns[i] = col;
     }
+    const maxCol = columns.length ? Math.max(...columns) + 1 : 1;
 
     for (let i = 0; i < taskEntries.length; i++) {
       const { task, start: startM, end: endM } = taskEntries[i];
       const dur = Math.max(endM - startM, SNAP_MINUTES);
       const top = ((startM - START_HOUR * 60) / 60) * actualHH;
       const height = (dur / 60) * actualHH;
-      // z-index: base of 5 + group + position in sort (last on top)
-      const zIdx = `;z-index:${5 + zStack[i]}`;
-      const restoreZ = 5 + zStack[i];
+      const zIdx = `;z-index:${5 + i}`;
+      const restoreZ = 5 + i;
 
       const meta = TAG_COLORS[task.tag] || TAG_COLORS.meeting;
       const cls = ['calendar-task', `tag-${task.tag}`];
@@ -500,7 +502,10 @@ function renderTasks() {
       const el = document.createElement('div');
       el.className = cls.join(' ');
       el.dataset.taskId = task.id;
-      el.style.cssText = `top:${top}px;height:${height}px;left:5px;width:calc(100% - 10px)${zIdx}`;
+      const colW = `(100% - 10px) / ${maxCol}`;
+      const cardLeft = `calc(5px + ${columns[i]} * ${colW})`;
+      const cardWidth = `calc(${colW})`;
+      el.style.cssText = `top:${top}px;height:${height}px;left:${cardLeft};width:${cardWidth}${zIdx}`;
       el.dataset.restoreZ = restoreZ;
       const checked = task.completed ? ' checked' : '';
       const pCls = task.priority && task.priority < 3 ? ` priority-${task.priority}` : '';
@@ -1169,9 +1174,9 @@ function onDragEnd() {
     oldRects[el.dataset.taskId] = { left: r.left, top: r.top, width: r.width, height: r.height };
   });
 
-  const dropEndMins = gridDrag.type === 'quickadd'
-    ? gridDrag.dropTime + 60
-    : gridDrag.dropTime + (gridDrag.dragEndM - gridDrag.dragStartM || gridDrag.duration || 60);
+  const endBoundary = (START_HOUR + VISIBLE_HOURS) * 60;
+  const dur = gridDrag.type === 'quickadd' ? 60 : (gridDrag.dragEndM - gridDrag.dragStartM || gridDrag.duration || 60);
+  const dropEndMins = Math.min(gridDrag.dropTime + dur, endBoundary);
 
   // Apply all state changes without triggering re-render mid-way
   const savedCallback = pageAfterTaskSave;
@@ -1184,9 +1189,8 @@ function onDragEnd() {
   repelConflicts(gridDrag.dropDate, gridDrag.dropTime, dropEndMins, excludeId);
 
   if (gridDrag.type === 'reschedule') {
-    const dur = gridDrag.dragEndM - gridDrag.dragStartM;
     const start = toTimeStr(gridDrag.dropTime);
-    const end = toTimeStr(gridDrag.dropTime + dur);
+    const end = toTimeStr(dropEndMins);
     const task = getTask(gridDrag.taskId);
     if (task && (gridDrag.dropDate !== gridDrag.startDate || start !== gridDrag.startTime)) {
       task.date = gridDrag.dropDate;
@@ -1198,7 +1202,7 @@ function onDragEnd() {
       title: gridDrag.title || QUICK_ADD_TITLES[gridDrag.tag] || 'New Task',
       date: gridDrag.dropDate,
       startTime: toTimeStr(gridDrag.dropTime),
-      endTime: toTimeStr(gridDrag.dropTime + 60),
+      endTime: toTimeStr(dropEndMins),
       tag: gridDrag.tag,
     });
     bounceTaskId = newTask.id;
@@ -1280,8 +1284,8 @@ function repelConflicts(date, startMins, endMins, excludeId, depth) {
     if (tEnd <= startMins || tStart >= endMins) continue;
 
     const duration = tEnd - tStart;
-    const newStart = Math.min(endMins, endBoundary - duration);
-    const newEnd = Math.min(newStart + duration, endBoundary);
+    const newStart = endMins;
+    const newEnd = Math.min(endMins + duration, endBoundary);
 
     if (Math.abs(newStart - tStart) >= 1) {
       task.startTime = toTimeStr(newStart);
@@ -1629,6 +1633,7 @@ function bindEvents() {
   dom.cmdOverlay?.addEventListener('click', hideCmdPalette);
   dom.cmdInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); processCommand(dom.cmdInput.value); } });
   dom.taskOverlay?.addEventListener('click', hideTaskModal);
+  dom.taskModal?.addEventListener('click', (e) => e.stopPropagation());
   dom.taskModalClose?.addEventListener('click', hideTaskModal);
   dom.taskCancelBtn?.addEventListener('click', hideTaskModal);
   dom.taskForm?.addEventListener('submit', handleTaskFormSubmit);
