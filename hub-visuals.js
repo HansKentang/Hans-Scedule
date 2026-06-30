@@ -18,6 +18,7 @@ function snapSpotifyHeight(v) {
 
 /* ─── Storage keys ─────────────────────────── */
 const HUB_LAYOUT_KEY = 'haven-schedule-hub-layout';
+const HUB_BENTO_KEY = 'haven-hub-bento';
 const HUB_EDIT_KEY = 'haven-hub-edit';
 const HUB_VIS_KEY = 'haven-hub-visibility';
 const HUB_CONTENT_KEY = 'haven-hub-content';
@@ -429,7 +430,12 @@ function loadHubContent() {
     const raw = localStorage.getItem(HUB_CONTENT_KEY);
     if (raw) {
       const hc = JSON.parse(raw);
-      hc.bentoLayout = normalizeBentoLayout(hc.bentoLayout, hc).filter(i => i.t !== 'text');
+      var _bentoLayout = hc.bentoLayout;
+      try {
+        var _bl = localStorage.getItem(HUB_BENTO_KEY);
+        if (_bl) { _bentoLayout = JSON.parse(_bl); }
+      } catch(e) {}
+      hc.bentoLayout = normalizeBentoLayout(_bentoLayout, hc).filter(i => i.t !== 'text');
       if (!hc.bentoLayout || !hc.bentoLayout.length) hc.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
       if (!hc.gallery) hc.gallery = defaults.gallery.map(g => ({...g}));
       if (!hc.goals) hc.goals = [...defaults.goals];
@@ -461,6 +467,9 @@ function saveHubContent() {
   delete hubContent._images;
   try {
     var ok = safeSetItem(HUB_CONTENT_KEY, JSON.stringify(hubContent));
+    if (hubContent.bentoLayout) {
+      try { localStorage.setItem(HUB_BENTO_KEY, JSON.stringify(hubContent.bentoLayout)); } catch(e) {}
+    }
     if (!ok) console.warn('[img] saveHubContent: SAVE FAILED (quota)');
     else console.warn('[img] saveHubContent: SAVED, bentoLayout length:', (hubContent.bentoLayout || []).length);
   } catch(e) { console.warn('[img] saveHubContent failed:', e); }

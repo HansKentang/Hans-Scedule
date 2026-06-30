@@ -202,7 +202,7 @@ function renderWeekView() {
   }
   dom.taskCount.textContent = state.tasks.filter(t => !isWhiteboardTask(t)).length;
   renderMiniWeek();
-  attachSlotHandlersWithCreate();
+  attachTimeAxisTooltips();
 }
 
 // ─── MONTH VIEW ────────────────────────────────────────────
@@ -278,14 +278,8 @@ function renderMonthView() {
 
   dom.grid.innerHTML = html;
 
-  // Attach click handlers
+  // Attach click handlers (dblclick navigates to week view)
   dom.grid.querySelectorAll('.month-cell:not(.month-cell-empty)').forEach(cell => {
-    cell.addEventListener('click', (e) => {
-      if (isTouchEvent(e)) return;
-      const date = cell.dataset.date;
-      const mins = 9 * 60;
-      instantCreateTask(date, mins);
-    });
     cell.addEventListener('dblclick', () => {
       const date = cell.dataset.date;
       const d = new Date(date + 'T12:00:00');
@@ -633,7 +627,7 @@ function showGridEmptyState(count) {
   if (!firstCol) return;
   const el = document.createElement('div');
   el.className = 'grid-empty-state';
-  el.innerHTML = '<span>No tasks this week</span><small>Click any slot or use <kbd>Ctrl+K</kbd> to add one</small>';
+  el.innerHTML = '<span>No tasks this week</span><small>Press <kbd>Ctrl+K</kbd> or use the + button to add one</small>';
   firstCol.appendChild(el);
 }
 
@@ -653,46 +647,6 @@ function renderCurrentTime() {
 }
 
 
-
-// Instant create — click any empty slot to create a 1-hour task right away
-function instantCreateTask(date, timeMins) {
-  pushUndo();
-  const snap = roundToNearest(timeMins, SNAP_MINUTES);
-  // Smart tag guess based on time of day
-  const hour = Math.floor(snap / 60);
-  let tag = 'meeting';
-  let title = 'New Task';
-  if (hour >= 6 && hour < 8) { tag = 'exercise'; title = 'Morning Workout'; }
-  else if (hour < 9) { tag = 'deep-work'; title = 'Deep Work Session'; }
-  else if (hour >= 12 && hour < 13) { tag = 'hobby'; title = 'Break'; }
-  else if (hour >= 17) { tag = 'hobby'; title = 'Personal Time'; }
-
-  // Use learning engine for smarter defaults if available
-  const preferredTag = getPreferredTag();
-  if (preferredTag && hour >= 9 && hour < 17 && hour !== 12) {
-    // Use the user's most common tag for this time range
-    const preferredTime = getPreferredTime(preferredTag);
-    if (preferredTime) {
-      const prefH = parseInt(preferredTime.split(':')[0]);
-      if (Math.abs(prefH - hour) <= 1) {
-        tag = preferredTag;
-        const preferredTitle = getPreferredTitle(tag);
-        if (preferredTitle) title = preferredTitle;
-      }
-    }
-  }
-
-  const task = createTask({
-    title,
-    date,
-    startTime: toTimeStr(snap),
-    endTime: toTimeStr(snap + 60),
-    tag,
-  });
-  pageAfterTaskSave();
-  flashTaskOnGrid(task.id);
-  showToast(`Created <strong>${escapeHtml(title)}</strong> — <span style="cursor:pointer;text-decoration:underline" onclick="openTaskModal('${task.id}')">edit</span>`, 'success', 3000);
-}
 
 const QUICK_ADD_TITLES = {
   'deep-work': 'Deep Work Session',
@@ -945,190 +899,6 @@ function showDragTooltip(e, snap, durMins) {
 function removeDragTooltip() {
   const tip = document.getElementById('dragTimeTooltip');
   if (tip) tip.remove();
-}
-
-// ─── DRAG TO CREATE ──────────────────────────────────────
-let dragCreate = null;
-
-function guessDragCreateMeta(mins) {
-  const h = Math.floor(mins / 60);
-  let tag = 'meeting', title = 'New Task';
-  if (h >= 6 && h < 8) { tag = 'exercise'; title = 'Morning Workout'; }
-  else if (h < 9) { tag = 'deep-work'; title = 'Deep Work Session'; }
-  else if (h >= 12 && h < 13) { tag = 'hobby'; title = 'Break'; }
-  else if (h >= 17) { tag = 'hobby'; title = 'Personal Time'; }
-  return { tag, title, meta: TAG_COLORS[tag] || TAG_COLORS.meeting };
-}
-
-function startDragCreate(e, date, startMins) {
-  if (dragCreate) return;
-  var pos = getEventPos(e);
-  dragCreate = {
-    date,
-    startMins,
-    currentMins: startMins,
-    moved: false,
-    startX: pos.x,
-    startY: pos.y,
-    ghost: null,
-    isTouch: isTouchEvent(e),
-  };
-  document.addEventListener('mousemove', onDragCreateMove);
-  document.addEventListener('mouseup', onDragCreateEnd);
-  document.addEventListener('touchmove', onDragCreateMove, { passive: false });
-  document.addEventListener('touchend', onDragCreateEnd);
-  e.preventDefault();
-}
-
-function onDragCreateMove(e) {
-  if (!dragCreate) return;
-  if (isTouchEvent(e)) { e.preventDefault(); }
-  dragCreate.moved = true;
-  if (!dragCreate.ghost) {
-    const startCol = dom.grid.querySelector(`.day-column[data-date="${dragCreate.date}"]`);
-    if (startCol) {
-      const actualHH = startCol.getBoundingClientRect().height;
-      const top = ((dragCreate.startMins - START_HOUR * 60) / 60) * actualHH;
-      const ghost = document.createElement('div');
-      ghost.className = 'grid-drag-ghost drag-create-ghost';
-      const { tag, title, meta } = guessDragCreateMeta(dragCreate.startMins);
-      const h = Math.floor(dragCreate.startMins / 60);
-      const m = dragCreate.startMins % 60;
-      const ampm = h < 12 ? 'AM' : 'PM';
-      const h12 = h % 12 || 12;
-      ghost.innerHTML = `<span style="opacity:0.55">${h12}:${String(m).padStart(2, '0')} ${ampm}</span> ${title}`;
-      ghost.style.cssText = `top:${top}px;left:5px;width:calc(100% - 10px);height:${actualHH * 0.25}px;background:${meta.bg};color:${meta.text};border-left-color:${meta.text}`;
-      startCol.appendChild(ghost);
-      dragCreate.ghost = ghost;
-      dragCreate.col = startCol;
-      dragCreate.actualHH = actualHH;
-    }
-  }
-
-  if (!dragCreate.col) return;
-  const { col, actualHH, startMins } = dragCreate;
-  const colRect = col.getBoundingClientRect();
-  const yOffset = getEventPos(e).y - colRect.top;
-  const rawMins = (yOffset / actualHH) * 60 + START_HOUR * 60;
-  const clamped = Math.max(startMins + SNAP_MINUTES, Math.min(rawMins, (START_HOUR + VISIBLE_HOURS) * 60));
-  const snapped = roundToNearest(clamped, SNAP_MINUTES);
-  dragCreate.currentMins = snapped;
-
-  const dur = snapped - startMins;
-  const top = ((startMins - START_HOUR * 60) / 60) * actualHH;
-  const height = (dur / 60) * actualHH;
-  dragCreate.ghost.style.top = `${top}px`;
-  dragCreate.ghost.style.height = `${Math.max(height, actualHH * 0.25)}px`;
-
-  // Single card-like preview at the drop position
-  if (dur >= SNAP_MINUTES) {
-    const { meta } = guessDragCreateMeta(startMins);
-    showDropPreview(col, startMins, snapped, meta.text);
-  } else {
-    removeDropPreview();
-  }
-
-  showDragTooltip(e, snapped, dur);
-  document.body.style.cursor = 'ns-resize';
-}
-
-function onDragCreateEnd(e) {
-  document.removeEventListener('mousemove', onDragCreateMove);
-  document.removeEventListener('mouseup', onDragCreateEnd);
-  document.removeEventListener('touchmove', onDragCreateMove);
-  document.removeEventListener('touchend', onDragCreateEnd);
-  removeDropPreview();
-  clearConflictPreview();
-  removeDragTooltip();
-  document.body.style.cursor = '';
-
-  if (!dragCreate) return;
-  if (dragCreate.ghost) dragCreate.ghost.remove();
-
-  if (!dragCreate.moved) {
-    // On mobile/touch, skip instant create to avoid accidental task creation
-    if (dragCreate.isTouch) { dragCreate = null; return; }
-    // Click (no drag): delegate to instantCreateTask for smart defaults + consistent behavior
-    instantCreateTask(dragCreate.date, dragCreate.startMins);
-    dragCreate = null;
-    return;
-  }
-
-  // Drag: create task with dragged duration
-  const dur = dragCreate.currentMins - dragCreate.startMins;
-  if (dur >= SNAP_MINUTES) {
-    pushUndo();
-    const hour = Math.floor(dragCreate.startMins / 60);
-    let tag = 'meeting';
-    let title = 'New Task';
-    if (hour >= 6 && hour < 8) { tag = 'exercise'; title = 'Morning Workout'; }
-    else if (hour < 9) { tag = 'deep-work'; title = 'Deep Work Session'; }
-    else if (hour >= 12 && hour < 13) { tag = 'hobby'; title = 'Break'; }
-    else if (hour >= 17) { tag = 'hobby'; title = 'Personal Time'; }
-
-    const task = createTask({
-      title,
-      date: dragCreate.date,
-      startTime: toTimeStr(dragCreate.startMins),
-      endTime: toTimeStr(dragCreate.currentMins),
-      tag,
-    });
-    pageAfterTaskSave();
-    flashTaskOnGrid(task.id);
-    showToast(`Created <strong>${escapeHtml(title)}</strong> — <span style="cursor:pointer;text-decoration:underline" onclick="openTaskModal('${task.id}')">edit</span>`, 'success', 3000);
-  }
-  dragCreate = null;
-}
-
-// Unified slot handler: click-to-create + drag-to-create + TZ tooltip
-function attachSlotHandlersWithCreate() {
-  $$('.hour-slot').forEach(slot => {
-    slot.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      if (e.target.closest('.calendar-task')) return;
-      const date = slot.dataset.date;
-      const base = parseInt(slot.dataset.time);
-      const slotRect = slot.getBoundingClientRect();
-      const pct = (e.clientY - slotRect.top) / slotRect.height;
-      const precise = base + pct * 60;
-      const snap = roundToNearest(precise, SNAP_MINUTES);
-      startDragCreate(e, date, snap);
-    });
-    slot.addEventListener('touchstart', (e) => {
-      if (e.target.closest('.calendar-task')) return;
-      const date = slot.dataset.date;
-      const base = parseInt(slot.dataset.time);
-      const slotRect = slot.getBoundingClientRect();
-      const pos = getEventPos(e);
-      const pct = (pos.y - slotRect.top) / slotRect.height;
-      const precise = base + pct * 60;
-      const snap = roundToNearest(precise, SNAP_MINUTES);
-      startDragCreate(e, date, snap);
-    }, { passive: false });
-  });
-  // TZ tooltip for time axis
-  $$('.time-axis').forEach(el => {
-    el.addEventListener('mouseenter', (e) => {
-      if (!dom.tzTooltip) return;
-      const hour = parseInt(el.dataset.hour);
-      const off = -new Date().getTimezoneOffset();
-      const utcH = ((hour * 60 - off) / 60 + 24) % 24;
-      const utcHf = Math.floor(utcH);
-      const utcM = Math.round((utcH % 1) * 60);
-      const la = hour < 12 ? 'AM' : 'PM';
-      const ua = utcHf < 12 ? 'AM' : 'PM';
-      const h12 = hour % 12 || 12;
-      const u12 = utcHf % 12 || 12;
-      dom.tzTooltip.innerHTML = `<span class="tz-tooltip-main">${h12}${la} Local</span><span class="tz-tooltip-sub">${u12}:${String(utcM).padStart(2, '0')}${ua} UTC</span>`;
-      dom.tzTooltip.classList.remove('hidden');
-      dom.tzTooltip.style.left = `${e.clientX + 12}px`;
-      dom.tzTooltip.style.top = `${e.clientY - 10}px`;
-    });
-    el.addEventListener('mousemove', (e) => {
-      if (dom.tzTooltip) { dom.tzTooltip.style.left = `${e.clientX + 12}px`; dom.tzTooltip.style.top = `${e.clientY - 10}px`; }
-    });
-    el.addEventListener('mouseleave', () => { if (dom.tzTooltip) dom.tzTooltip.classList.add('hidden'); });
-  });
 }
 
 function onDragEnd() {
@@ -2394,6 +2164,7 @@ function renderSchTemplates() {
   }
   scheduleReminderCheck();
   requestNotifPermission();
+  window.addEventListener('beforeunload', function() { saveState(); });
 
 
   /* ─── Screenshot week (enhanced) ────────────── */
