@@ -2328,16 +2328,8 @@ function formatDuration(mins) {
 // ─── LOCAL STORAGE ──────────────────────────────────────────
 function saveState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
-    // Persist each custom image to its own localStorage key (single source of truth)
-    var _customImgs = {};
-    if (state.images) {
-      for (var _ck of Object.keys(state.images)) { if (isCustomImage(_ck, state.images[_ck])) _customImgs[_ck] = state.images[_ck]; }
-    }
-    for (var _ck2 of Object.keys(_customImgs)) {
-      try { localStorage.setItem('haven-image-' + _ck2, _customImgs[_ck2]); } catch(e) { /* skip */ }
-    }
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+    safeSetItem(STORAGE_KEY, JSON.stringify(state.tasks));
+    safeSetItem(SETTINGS_KEY, JSON.stringify({
       showWeekends: state.showWeekends,
       showCompleted: state.showCompleted,
       darkMode: state.darkMode,

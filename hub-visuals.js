@@ -460,8 +460,9 @@ function saveHubContent() {
   var _hadImages = hubContent._images;
   delete hubContent._images;
   try {
-    safeSetItem(HUB_CONTENT_KEY, JSON.stringify(hubContent));
-    console.warn('[img] saveHubContent: SAVED, bentoLayout length:', (hubContent.bentoLayout || []).length);
+    var ok = safeSetItem(HUB_CONTENT_KEY, JSON.stringify(hubContent));
+    if (!ok) console.warn('[img] saveHubContent: SAVE FAILED (quota)');
+    else console.warn('[img] saveHubContent: SAVED, bentoLayout length:', (hubContent.bentoLayout || []).length);
   } catch(e) { console.warn('[img] saveHubContent failed:', e); }
   if (_hadImages !== undefined) hubContent._images = _hadImages;
 }
@@ -2506,55 +2507,6 @@ function initBubbleDockDrag(dock) {
   }
 }
 /* ─── HIDE popup ───────────────────────────── */
-function showHubHidePopup() {
-  const existing = document.querySelector('.hub-hide-popup');
-  if (existing) { existing.remove(); document.querySelector('.hub-popup-overlay')?.remove(); return; }
-
-  const overlay = document.createElement('div');
-  overlay.className = 'hub-popup-overlay';
-  overlay.addEventListener('click', () => { overlay.remove(); popup.remove(); });
-  document.body.appendChild(overlay);
-
-  const layout = JSON.parse(JSON.stringify(normalizeBentoLayout(hubContent.bentoLayout, hubContent)));
-  const popup = document.createElement('div');
-  popup.className = 'hub-edit-popup hub-hide-popup';
-
-  const labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
-
-  popup.innerHTML = `
-    <div class="hide-title">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-      Hide Bubbles
-    </div>
-    <div class="hide-list">
-      ${layout.map(item => `
-        <label class="hide-row" data-btype="${item.t}">
-          <span class="hide-icon">${bubbleTypeIcon(item.t)}</span>
-          <span class="hide-label">${labels[item.t] || item.t}</span>
-          <span class="hide-toggle ${item.hidden ? 'off' : 'on'}"><span class="hide-knob"></span></span>
-        </label>
-      `).join('')}
-    </div>
-    <div class="hub-edit-popup-actions"><button class="cancel" id="hubHideCancel">Done</button></div>
-  `;
-  document.body.appendChild(popup);
-
-  popup.querySelectorAll('.hide-row').forEach(row => {
-    row.addEventListener('click', () => {
-      const type = row.dataset.btype;
-      const item = layout.find(i => i.t === type);
-      if (!item) return;
-      pushUndoState();
-      item.hidden = !item.hidden;
-      row.querySelector('.hide-toggle').className = 'hide-toggle ' + (item.hidden ? 'off' : 'on');
-      hubContent.bentoLayout = layout;
-      saveHubContent();
-      renderHubBento();
-    });
-  });
-  document.getElementById('hubHideCancel')?.addEventListener('click', () => { popup.remove(); overlay.remove(); });
-}
-
 /* ─── Gallery ──────────────────────────────── */
 function renderHubGallery() {
   const nav = document.querySelector('.hub-gallery');
