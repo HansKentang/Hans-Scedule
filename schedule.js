@@ -411,6 +411,20 @@ function renderAgendaView() {
   renderMiniWeek();
 }
 
+function formatShortTime(t) {
+  var p = t.split(':').map(Number);
+  var h = p[0], m = p[1];
+  var ampm = h < 12 ? 'a' : 'p';
+  var h12 = h % 12 || 12;
+  return m === 0 ? h12 + ampm : h12 + ':' + (m < 10 ? '0' : '') + m + ampm;
+}
+function formatCompactTime(start, end) {
+  if (!start) return '';
+  if (!end) return formatShortTime(start);
+  var s = formatShortTime(start);
+  var e = formatShortTime(end);
+  return s === e ? s : s + '\u2013' + e;
+}
 function renderTasks() {
   $$('.calendar-task').forEach(el => el.remove());
   $$('.current-time-line').forEach(el => el.remove());
@@ -489,15 +503,30 @@ function renderTasks() {
       el.style.cssText = `top:${top}px;height:${height}px;left:5px;width:calc(100% - 10px)${zIdx}`;
       el.dataset.restoreZ = restoreZ;
       const checked = task.completed ? ' checked' : '';
-      const timeStr = formatTimeRange(task.startTime, task.endTime);
       const pCls = task.priority && task.priority < 3 ? ` priority-${task.priority}` : '';
+      var shortTime = '';
+      if (task.startTime) {
+        shortTime = formatCompactTime(task.startTime, task.endTime);
+      }
+      var tagLabelText = TAG_LABELS[task.tag] || task.tag;
+      var durText = '';
+      if (task.startTime && task.endTime) {
+        var sh = Number(task.startTime.split(':')[0]), sm = Number(task.startTime.split(':')[1]);
+        var eh = Number(task.endTime.split(':')[0]), em = Number(task.endTime.split(':')[1]);
+        var d = (eh * 60 + em) - (sh * 60 + sm);
+        if (d > 0) durText = d >= 60 ? (Math.floor(d / 60) + 'h' + (d % 60 ? ' ' + d % 60 + 'm' : '')) : d + 'm';
+      }
       el.innerHTML = `<div class="task-body${pCls}">
           <div class="task-row">
             <span class="task-check${checked}" data-toggle-complete="${task.id}"></span>
             <span class="task-dot"></span>
             <span class="task-title" data-task-id="${task.id}">${escapeHtml(task.title)}</span>
+            <span class="task-time">${shortTime}</span>
           </div>
-          <div class="task-time">${timeStr}</div>
+          <div class="task-meta">
+            <span class="task-tag-chip" style="--chip-accent:${(TAG_COLORS[task.tag] || TAG_COLORS.meeting).text}">${escapeHtml(tagLabelText)}</span>
+            <span class="task-duration">${durText}</span>
+          </div>
         </div>
         <div class="task-resize-handle" data-task-id="${task.id}" title="Drag to resize"></div>`;
 
@@ -516,7 +545,10 @@ function renderTasks() {
         e.stopPropagation();
         startDrag(e, el);
       }, { passive: false });
-      el.addEventListener('dblclick', (e) => { e.stopPropagation(); openTaskModal(resolvedId); });
+      el.addEventListener('dblclick', (e) => {
+        if (e.target.closest('.task-title')) return;
+        e.stopPropagation(); openTaskModal(resolvedId);
+      });
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         const check = e.target.closest('[data-toggle-complete]');
@@ -528,9 +560,9 @@ function renderTasks() {
       });
       col.appendChild(el);
 
-      // Inline title editing: click title text to edit
+      // Inline title editing: double-click title to edit
       (function(taskId, titleEl) {
-        titleEl.addEventListener('click', function(ev) {
+        titleEl.addEventListener('dblclick', function(ev) {
           ev.stopPropagation();
           if (titleEl.classList.contains('is-editing')) return;
           titleEl.classList.add('is-editing');
