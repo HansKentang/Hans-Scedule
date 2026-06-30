@@ -7435,7 +7435,7 @@ html.light .hub-add-popup {
 /* ─── SPOTIFY SETTINGS OVERLAY ──────────────── */
 .sp-overlay { position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
 .sp-overlay.hidden { display:none; }
-.sp-modal { background:var(--bg-primary); border:1px solid var(--border-color); border-radius:16px; width:min(500px,92vw); max-height:85vh; display:flex; flex-direction:column; box-shadow:0 16px 48px rgba(0,0,0,0.25); }
+.sp-modal { background:var(--bg-primary); border:1px solid var(--border-color); border-radius:16px; width:min(380px,92vw); max-height:85vh; display:flex; flex-direction:column; box-shadow:0 16px 48px rgba(0,0,0,0.25); }
 .sp-modal-header { display:flex; align-items:center; gap:8px; padding:16px 18px 12px; border-bottom:1px solid var(--border-subtle); flex-shrink:0; }
 .sp-modal-header h2 { font-size:0.9rem; font-weight:600; flex:1; margin:0; color:var(--text-primary); }
 .sp-modal-close { width:26px; height:26px; border:none; border-radius:6px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }

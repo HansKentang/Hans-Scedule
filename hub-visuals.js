@@ -421,7 +421,7 @@ const HUB_DEFAULTS = {
   bentoLayout: [{t:'goals',x:24,y:24},{t:'images',x:24,y:264},{t:'priorities',x:364,y:24},{t:'quote',x:364,y:264},{t:'todos',x:24,y:504}]
 };
 
-let hubContent = loadHubContent();
+let hubContent = null;
 
 
 function loadHubContent() {
@@ -463,6 +463,7 @@ function loadHubContent() {
 }
 
 function saveHubContent() {
+  if (!hubContent) return;
   var _hadImages = hubContent._images;
   delete hubContent._images;
   try {
