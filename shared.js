@@ -4104,12 +4104,10 @@ function renderSidebarImages() {
       const label = img.label || img.id;
       item.innerHTML = (url ? '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' : '<div class="hub-sidebar-image-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;opacity:0.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visuals to add images</span></div>') +
         '<span class="hub-sidebar-image-label">' + label + '</span>';
-      // Click: in Visuals edit mode → image picker, else → lightbox
+      // Click: in Visuals edit mode → image picker
       item.addEventListener('click', function() {
         if (state.editMode) {
           openImagePicker(sidebarId);
-        } else if (url) {
-          openImageLightbox(url, label);
         }
       });
       container.appendChild(item);
