@@ -394,9 +394,6 @@
       #calendarContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
       /* Filters bar mobile */
-      .sch-filters-bar { padding: 2px var(--space-2); min-height: 22px; }
-      .sch-filter-chip { font-size: 0.55rem; padding: 1px 6px; }
-
       /* Command palette button */
       .sch-cmd-bar { bottom: var(--space-3); right: var(--space-3); }
       .sch-cmd-btn { width: 44px; height: 44px; }
@@ -761,13 +758,6 @@
       </div>
 
       <!-- Quick Filters Bar -->
-      <div class="sch-filters-bar hub-anim-in hub-anim-in-3" id="schFiltersBar">
-        <div class="sch-filters-inner" id="schFiltersInner"></div>
-        <button class="sch-filter-clear hidden" id="schFilterClear" title="Clear filters">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-
       <div id="calendarContainer" class="hub-anim-in hub-anim-in-4">
         <div id="calendarGrid"><!-- Populated by JS --></div>
         <div id="tzTooltip" style="position:fixed;z-index:100;background:var(--bg-primary);color:var(--text-primary);font-size:0.65rem;font-weight:500;padding:2px 8px;border-radius:6px;border:1px solid var(--border-color);pointer-events:none;display:none;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.08)"></div>

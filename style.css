@@ -846,112 +846,53 @@ html.dark .current-time-line { opacity: 0.5; }
 
 /* ─── TASKS ────────────────────────────────────────────────── */
 /* ─── SCHEDULE: QUICK FILTERS BAR ─────────────── */
-.sch-filters-bar {
-  display: flex; align-items: center;
-  padding: 3px var(--space-4);
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-primary);
-  flex-shrink: 0;
-  gap: 4px;
-  min-height: 26px;
-}
-.sch-filters-inner {
-  display: flex; align-items: center; gap: 3px;
-  flex: 1;
-  overflow-x: auto;
-}
-.sch-filter-chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 1px 8px 1px 6px;
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: transparent;
-  color: var(--text-tertiary);
-  font-size: 0.6rem; font-family: var(--font-family); font-weight: 500;
-  cursor: pointer;
-  transition: all var(--t-fast);
-  white-space: nowrap;
-  line-height: 1.4;
-}
-.sch-filter-chip:hover {
-  border-color: var(--chip-accent, var(--border-color));
-  color: var(--text-primary);
-  background: color-mix(in srgb, var(--chip-accent, var(--accent)) 6%, transparent);
-}
-.sch-filter-chip.active {
-  border-color: var(--chip-accent, var(--accent));
-  color: var(--chip-accent, var(--accent));
-  background: color-mix(in srgb, var(--chip-accent, var(--accent)) 10%, transparent);
-}
-.sch-filter-chip .sch-filter-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--chip-accent, var(--gray-300));
-  flex-shrink: 0;
-}
-.sch-filter-chip .sch-filter-count {
-  font-size: 0.5rem;
-  opacity: 0.5;
-  margin-left: 1px;
-}
-.sch-filter-clear {
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  border: 1px solid var(--border-subtle);
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 0;
-  flex-shrink: 0;
-  transition: all var(--t-fast);
-  opacity: 0.4;
-}
-.sch-filter-clear:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  opacity: 1;
-}
-
-/* ─── CALENDAR TASK CARDS — Minimal Dot ───────────── */
+/* ─── CALENDAR TASK CARDS — Playful Bubble ──────────── */
 .calendar-task {
-  position: absolute; left: 5px; width: calc(100% - 10px); border-radius: 6px;
-  padding: 3px 6px; cursor: grab; overflow: hidden;
+  position: absolute; left: 4px; width: calc(100% - 8px); border-radius: 16px;
+  padding: 5px 10px; cursor: grab; overflow: visible;
   z-index: var(--z-task);
-  min-height: 22px; user-select: none; touch-action: none;
-  background: var(--bg-card);
-  border: 1px solid transparent;
-  box-shadow: none;
-  --task-accent: var(--gray-400);
-  animation: taskAppear 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 250ms ease,
+  min-height: 28px; user-select: none; touch-action: none;
+  background: color-mix(in srgb, var(--task-accent) 28%, var(--bg-card));
+  border: 1px solid color-mix(in srgb, var(--task-accent) 20%, transparent);
+  box-shadow: 0 3px 14px color-mix(in srgb, var(--task-accent) 10%, transparent),
+              inset 0 1px 0 color-mix(in srgb, white 60%, transparent);
+  --task-accent: var(--gray-500);
+  --task-accent-bg: var(--gray-100);
+  animation: bubbleAppear 550ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 350ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity 300ms ease,
               z-index 0s;
 }
 .calendar-task:hover {
-  box-shadow: 0 2px 12px rgba(10,10,11,0.06), 0 0 0 1px color-mix(in srgb, var(--task-accent) 20%, transparent);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 10px 32px color-mix(in srgb, var(--task-accent) 22%, transparent),
+              inset 0 1px 0 color-mix(in srgb, white 70%, transparent);
   z-index: 6;
-  background: color-mix(in srgb, var(--task-accent) 3%, var(--bg-card));
+  background: color-mix(in srgb, var(--task-accent) 38%, var(--bg-card));
+  border-color: color-mix(in srgb, var(--task-accent) 30%, transparent);
 }
 .calendar-task:active {
   cursor: grabbing;
-  transform: scale(0.98);
+  transform: scale(0.92);
   transition-duration: 80ms;
 }
 .calendar-task .task-body {
   flex: 1; display: flex; flex-direction: column;
   gap: 0; min-width: 0;
+  position: relative; z-index: 1;
 }
 .calendar-task .task-row {
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center; gap: 6px;
   min-width: 0;
 }
 .calendar-task .task-dot {
-  width: 6px; height: 6px; border-radius: 50%;
+  width: 8px; height: 8px; border-radius: 50%;
   background: var(--task-accent);
   flex-shrink: 0;
   margin-top: 0;
-  transition: opacity 200ms ease;
+  opacity: 0.7;
+  box-shadow: 0 0 4px color-mix(in srgb, var(--task-accent) 30%, transparent);
 }
 .calendar-task .task-title {
   font-size: 0.78rem; font-weight: 500;
@@ -961,72 +902,71 @@ html.dark .current-time-line { opacity: 0.5; }
   flex: 1; min-width: 0;
   cursor: text;
   padding: 0 2px;
-  border-radius: 3px;
+  border-radius: 4px;
   transition: background 150ms ease;
 }
 .calendar-task .task-title:hover {
-  background: color-mix(in srgb, var(--task-accent) 6%, transparent);
+  background: color-mix(in srgb, var(--task-accent) 10%, transparent);
 }
 .calendar-task .task-title.is-editing {
   cursor: auto;
   background: transparent;
 }
 .task-title-input {
-  border: none; background: color-mix(in srgb, var(--task-accent) 8%, var(--bg-secondary));
+  border: none; background: color-mix(in srgb, var(--task-accent) 12%, var(--bg-secondary));
   color: var(--text-primary);
   font-size: 0.78rem; font-family: var(--font-family); font-weight: 500;
-  padding: 0 4px; border-radius: 3px;
+  padding: 0 4px; border-radius: 4px;
   outline: 1px solid var(--task-accent);
   line-height: 1.4;
   width: 100%;
 }
 .calendar-task .task-check {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 12px; height: 12px; border-radius: 50%;
-  border: 1.5px solid var(--task-accent); flex-shrink: 0;
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2.5px solid var(--task-accent); flex-shrink: 0;
   cursor: pointer;
-  position: relative; transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  opacity: 0.25;
+  position: relative; transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  opacity: 0.35;
   margin-top: 1px;
 }
-.calendar-task:hover .task-check { opacity: 0.6; }
+.calendar-task:hover .task-check { opacity: 0.8; }
 .calendar-task .task-check:hover {
-  opacity: 1; transform: scale(1.2);
-  border-color: var(--task-accent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--task-accent) 20%, transparent);
+  opacity: 1; transform: scale(1.3);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--task-accent) 20%, transparent);
 }
 .calendar-task .task-check.checked {
   background: var(--task-accent);
   border-color: var(--task-accent);
-  opacity: 0.8;
-  animation: checkPop 400ms var(--curve);
+  opacity: 0.95;
+  animation: checkBubble 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .calendar-task .task-check.checked::after {
-  content: ''; position: absolute; width: 5px; height: 2.5px;
-  border-left: 1.5px solid var(--bg-primary);
-  border-bottom: 1.5px solid var(--bg-primary);
+  content: ''; position: absolute; width: 5.5px; height: 3px;
+  border-left: 2px solid var(--bg-primary);
+  border-bottom: 2px solid var(--bg-primary);
   transform: rotate(-45deg); top: 2.5px; left: 1.5px;
 }
 .calendar-task.completed {
   opacity: 0.5;
 }
 .calendar-task.completed .task-dot {
-  opacity: 0.3;
+  opacity: 0.25;
 }
 .calendar-task.completed .task-title {
   text-decoration: line-through;
   color: var(--text-tertiary);
 }
 .calendar-task.completed .task-check {
-  opacity: 0.3;
+  opacity: 0.25;
 }
 .calendar-task.completed .task-time {
-  opacity: 0.4;
+  opacity: 0.35;
 }
 .calendar-task .task-time {
   font-size: 0.6rem; font-weight: 400;
   color: var(--text-tertiary);
-  padding-left: 20px;
+  padding-left: 24px;
   margin-top: -1px;
   line-height: 1.2;
 }
@@ -1039,12 +979,12 @@ html.dark .current-time-line { opacity: 0.5; }
 .calendar-task.tag-deep-work { --task-accent: var(--tag-deep-work-text); }
 
 /* Small tasks (<60min): time hidden, compact layout */
-.calendar-task.task-sm { padding: 2px 5px; }
-.calendar-task.task-sm .task-dot { width: 5px; height: 5px; }
+.calendar-task.task-sm { padding: 3px 8px; min-height: 22px; border-radius: 14px; }
+.calendar-task.task-sm .task-dot { width: 6px; height: 6px; }
 .calendar-task.task-sm .task-title { font-size: 0.72rem; }
 .calendar-task.task-sm .task-time { display: none; }
-.calendar-task.task-sm .task-check { width: 10px; height: 10px; margin-top: 0; }
-.calendar-task.task-sm .task-check.checked::after { width: 4px; height: 2px; top: 2px; left: 1.5px; }
+.calendar-task.task-sm .task-check { width: 11px; height: 11px; margin-top: 0; border-width: 2px; }
+.calendar-task.task-sm .task-check.checked::after { width: 4.5px; height: 2.5px; top: 2px; left: 1.5px; }
 
 /* ─── RESIZING STATE ────────────────────────────────────── */
 .calendar-task.resizing {
@@ -1058,6 +998,13 @@ html.dark .current-time-line { opacity: 0.5; }
   opacity: 0;
 }
 
+@keyframes checkBubble {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.35); }
+  55% { transform: scale(0.9); }
+  80% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
 @keyframes checkPop {
   0% { transform: scale(1); }
   40% { transform: scale(1.2); }
@@ -1065,17 +1012,18 @@ html.dark .current-time-line { opacity: 0.5; }
   100% { transform: scale(1); }
 }
 
-@keyframes taskAppear {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes bubbleAppear {
+  0% { opacity: 0; transform: scale(0.85) translateY(8px); }
+  60% { transform: scale(1.04) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 
 
 /* ─── DARK MODE CARD ENHANCEMENTS ────────────────────────── */
 html.dark .calendar-task:hover {
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px color-mix(in srgb, var(--task-accent) 30%, transparent);
-  border-color: color-mix(in srgb, var(--task-accent) 60%, transparent);
+  box-shadow: 0 10px 36px rgba(0,0,0,0.6), 0 0 0 1px color-mix(in srgb, var(--task-accent) 35%, transparent);
+  border-color: color-mix(in srgb, var(--task-accent) 45%, transparent);
 }
 html.dark .calendar-task .task-check { border-color: var(--task-accent); }
 html.dark .calendar-task .task-check.checked { border-color: var(--task-accent); }
@@ -5065,7 +5013,7 @@ html.dark .toast-info { background: var(--gray-100); color: var(--black); }
 html.focus-mode .hub-sidebar,
 html.focus-mode .hub-breadcrumb,
 html.focus-mode .hub-minifooter,
-html.focus-mode .sch-filters-bar,
+html.focus-mode .sch-filter-bar,
 html.focus-mode .sch-quickadd,
 html.focus-mode .sch-cmd-bar,
 html.focus-mode .sch-header .sch-header-right .sch-api-badge,
@@ -7449,7 +7397,7 @@ html.light .hub-add-popup {
 /* ─── PRINT LAYOUT ────────────────────────────────────────── */
 @media print {
   body { overflow: visible !important; height: auto !important; }
-  .sch-sidebar, .sch-header, .sch-filters-bar,
+  .sch-sidebar, .sch-header,
   .sch-cmd-bar, .overlay, .modal, .sidebar, #sidebar,
   .tz-tooltip, .drag-time-tooltip, .toast-container,
   .undo-toast, .ai-panel, .sch-sidebar, .btn, .grid-empty-state { display: none !important; }

@@ -146,7 +146,6 @@ function renderMiniWeek() {
 }
 
 function renderCalendar() {
-  renderSchFilters();
   if (currentView === 'month') return renderMonthView();
   if (currentView === 'agenda') return renderAgendaView();
   renderWeekView();
@@ -588,42 +587,6 @@ function renderTasks() {
   showGridEmptyState(filtered.length);
 }
 
-// ─── QUICK FILTERS BAR ────────────────────────────────────
-function renderSchFilters() {
-  var bar = document.getElementById('schFiltersInner');
-  var clear = document.getElementById('schFilterClear');
-  if (!bar) return;
-  var tags = TAG_ORDER;
-  var html = '';
-  var activeCount = 0;
-  for (var i = 0; i < tags.length; i++) {
-    var tag = tags[i];
-    var label = TAG_LABELS[tag] || tag;
-    var cls = 'sch-filter-chip';
-    if (state.selectedTag === tag) { cls += ' active'; activeCount++; }
-    var color = (TAG_COLORS[tag] || {}).text || 'var(--gray-400)';
-    var count = state.tasks.filter(function(t) { return t.tag === tag && !t.completed && !isWhiteboardTask(t); }).length;
-    html += '<div class="' + cls + '" data-filter-tag="' + tag + '" style="--chip-accent:' + color + '">' +
-      '<span class="sch-filter-dot"></span>' +
-      '<span>' + escapeHtml(label) + '</span>' +
-      (count > 0 ? '<span class="sch-filter-count">' + count + '</span>' : '') +
-      '</div>';
-  }
-  bar.innerHTML = html;
-  bar.querySelectorAll('.sch-filter-chip').forEach(function(chip) {
-    chip.addEventListener('click', function() {
-      var tag = this.dataset.filterTag;
-      if (state.selectedTag === tag) state.selectedTag = null;
-      else state.selectedTag = tag;
-      renderSchFilters();
-      renderCalendar();
-    });
-  });
-  if (clear) {
-    clear.classList.toggle('hidden', !state.selectedTag);
-    clear.onclick = function() { state.selectedTag = null; renderSchFilters(); renderCalendar(); };
-  }
-}
 
 function showGridEmptyState(count) {
   const existing = dom.grid.querySelector('.grid-empty-state');
