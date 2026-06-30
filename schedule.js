@@ -495,6 +495,7 @@ function renderTasks() {
       el.innerHTML = `<div class="task-body${pCls}">
           <div class="task-row">
             <span class="task-check${checked}" data-toggle-complete="${task.id}"></span>
+            <span class="task-dot"></span>
             <span class="task-title" data-task-id="${task.id}">${escapeHtml(task.title)}</span>
           </div>
           <div class="task-time">${timeStr}</div>
@@ -505,14 +506,14 @@ function renderTasks() {
       el.addEventListener('mousedown', (e) => {
         if (e.target.closest('[data-toggle-complete]')) return;
         if (e.target.closest('.task-resize-handle')) return;
-        if (e.target.closest('.task-title') && !e.target.closest('.task-title.is-editing')) { e.stopPropagation(); startDrag(e, el); return; }
+        if (e.target.closest('.task-title')) return;
         e.stopPropagation();
         startDrag(e, el);
       });
       el.addEventListener('touchstart', (e) => {
         if (e.target.closest('[data-toggle-complete]')) return;
         if (e.target.closest('.task-resize-handle')) return;
-        if (e.target.closest('.task-title') && !e.target.closest('.task-title.is-editing')) { e.stopPropagation(); startDrag(e, el); return; }
+        if (e.target.closest('.task-title')) return;
         e.stopPropagation();
         startDrag(e, el);
       }, { passive: false });
