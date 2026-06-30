@@ -697,6 +697,7 @@
       dom.aiChatClose = document.getElementById('aiChatClose');
 
       document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
+      document.getElementById('focusToggleBtn')?.addEventListener('click', toggleFocusMode);
       dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
 
       document.getElementById('bcThemeBtn')?.addEventListener('click', toggleTheme);
@@ -1399,7 +1400,7 @@
       <div class="sp-modal-body">
         <div class="sp-add-row">
           <input id="spAddInput" placeholder="Playlist URL or ID..." onkeydown="if(event.key==='Enter')spAddPlaylist()">
-          <button onclick="spAddPlaylist()" data-i18n="hub.add">Add</button>
+          <button onclick="spAddPlaylist()">Add</button>
         </div>
         <div class="sp-search-row">
           <input id="spSearchInput" placeholder="Search playlists..." oninput="spRenderList(this.value)">

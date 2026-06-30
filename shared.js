@@ -6704,7 +6704,7 @@ function spRenderSidebar() {
   if (active) {
     empty.style.display = 'none';
     wrap.style.display = 'block';
-    embed.src = active.embedUrl;
+    embed.src = active.embedUrl || 'https://open.spotify.com/embed/playlist/' + active.id + '?utm_source=generator';
     if (controls) controls.style.display = 'flex';
   } else {
     empty.style.display = 'flex';
@@ -6714,8 +6714,14 @@ function spRenderSidebar() {
   spUpdateNav();
 }
 
-function spSidePrev() { spSideNav(-1); }
-function spSideNext() { spSideNav(1); }
+function spSidePrev() { 
+  if (typeof window.spSideNav === 'function') window.spSideNav(-1);
+  else spSideNav(-1);
+}
+function spSideNext() { 
+  if (typeof window.spSideNav === 'function') window.spSideNav(1);
+  else spSideNav(1);
+}
 function spSideNav(dir) {
   if (!spPlaylists.length) return;
   let idx = spPlaylists.findIndex(p => p.id === spActiveId);
@@ -6736,7 +6742,7 @@ function spSideNav(dir) {
   spUpdateNav();
   const modalEmbed = document.getElementById('spModalEmbed');
   const playlist = spPlaylists.find(p => p.id === spActiveId);
-  if (modalEmbed && playlist) modalEmbed.src = playlist.embedUrl;
+  if (modalEmbed && playlist) modalEmbed.src = playlist.embedUrl || 'https://open.spotify.com/embed/playlist/' + playlist.id + '?utm_source=generator';
 }
 
 function spUpdateNav() {
@@ -6760,7 +6766,7 @@ function spOpenSettings() {
   spRenderList();
   const modalEmbed = document.getElementById('spModalEmbed');
   const active = spPlaylists.find(p => p.id === spActiveId);
-  if (modalEmbed && active) modalEmbed.src = active.embedUrl;
+  if (modalEmbed && active) modalEmbed.src = active.embedUrl || 'https://open.spotify.com/embed/playlist/' + active.id + '?utm_source=generator';
 }
 
 function spCloseSettings() {
@@ -6812,7 +6818,7 @@ function spPlayPlaylist(id) {
   }
   const modalEmbed = document.getElementById('spModalEmbed');
   const playlist = spPlaylists.find(p => p.id === id);
-  if (modalEmbed && playlist) modalEmbed.src = playlist.embedUrl;
+  if (modalEmbed && playlist) modalEmbed.src = playlist.embedUrl || 'https://open.spotify.com/embed/playlist/' + playlist.id + '?utm_source=generator';
   spRenderSidebar();
   spRenderList();
   spUpdateNav();
@@ -6907,5 +6913,5 @@ function spOnKey(e) {
     var overlay = document.getElementById('spOverlay');
     if (overlay && !overlay.classList.contains('hidden')) spCloseSettings();
   }
-  }
+}
 
