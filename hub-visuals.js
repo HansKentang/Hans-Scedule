@@ -635,7 +635,7 @@ function renderHubBento() {
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>Goals</span></div>
-          <div class="w-list" id="hubGoalsList">
+          <div class="w-list">
             ${hubContent.goals.map((g, i) =>
               `<div class="w-item" data-idx="${i}">
                 <span class="w-item-num">${i+1}</span>
@@ -657,7 +657,7 @@ function renderHubBento() {
             <img data-image-id="${imgId}" src="${e(imgUrl || '')}" alt="" style="width:100%;height:100%;object-fit:${imgFit};display:${hasImg ? 'block' : 'none'}">
             <div class="bento-img-placeholder" style="display:${hasImg ? 'none' : 'flex'}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              <span>Click to add photo</span>
+              <span>Use Visuals to add image</span>
             </div>
           </div>
         </div>`;
@@ -666,7 +666,7 @@ function renderHubBento() {
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Priorities</span></div>
-          <div class="w-list" id="hubPrioritiesList">
+          <div class="w-list">
             ${hubContent.priorities.map((p, i) =>
               `<div class="w-item w-item-card" data-idx="${i}">
                 <span class="w-pri-dot" style="background:${priColors[i % priColors.length]}"></span>
@@ -693,7 +693,7 @@ function renderHubBento() {
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>To Do's</span></div>
-          <div class="w-list" id="hubTodoList">
+          <div class="w-list">
             ${hubContent.todos.map((t, i) =>
               `<div class="w-item" data-idx="${i}">
                 ${isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : ''}
@@ -713,7 +713,7 @@ function renderHubBento() {
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Habits</span></div>
-          <div class="w-habit-grid" id="hubHabitsList">
+          <div class="w-habit-grid">
             ${hubContent.habits.map((h, i) => {
               const checked = habitDone[i] ? ' w-habit-checked' : '';
               return `<div class="w-habit-chip" data-idx="${i}">
@@ -737,7 +737,7 @@ function renderHubBento() {
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg><span>Links</span></div>
-          <div class="w-list" id="hubLinksList">
+          <div class="w-list">
             ${hubContent.links.map((l, i) =>
               `<div class="w-link-card" data-idx="${i}">
                 <div class="w-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
@@ -896,7 +896,7 @@ function renderHubBento() {
                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
                 <span>${_spActivePlaylist.name}</span>
               </div>
-              <iframe src="${e(spotUrl)}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" loading="lazy" style="display:block;width:100%;height:calc(100% - 32px);border:none"></iframe>
+              <iframe src="${e(spotUrl)}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" loading="lazy" style="display:block;width:100%;border:none"></iframe>
             </div>
           </div>`;
         } else {

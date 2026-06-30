@@ -2535,6 +2535,12 @@ function applyImages() {
           var placeholder = wrap.querySelector(".bento-img-placeholder");
           if (placeholder) placeholder.style.display = "none";
         }
+        // Remove any .img-empty-placeholder sibling when image is set
+        var _parent = el.parentElement;
+        if (_parent) {
+          var _emptyPh = _parent.querySelector(".img-empty-placeholder");
+          if (_emptyPh) _emptyPh.remove();
+        }
       } else {
         el.src = "";
         el.style.display = "none";
@@ -2636,6 +2642,13 @@ function setImage(id, url) {
     if (wrap) {
       var placeholder = wrap.querySelector('.bento-img-placeholder');
       if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
+    }
+    if (url) {
+      var _parent = el.parentElement;
+      if (_parent) {
+        var _emptyPh = _parent.querySelector('.img-empty-placeholder');
+        if (_emptyPh) _emptyPh.remove();
+      }
     }
   });
 
