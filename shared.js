@@ -560,7 +560,7 @@ function addCustomCategory(label, color) {
   TAG_LABELS[id] = label;
   TAG_COLORS[id] = { text: color, bg: lightenColor(color, 0.85) };
   cardColors[id] = { light: color, dark: lightenColor(color, 0.45) };
-  applyCardColors();
+  saveCardColors(cardColors);
   injectCustomTagStyles();
   const subs = loadSubcategories();
   subs[id] = [];
@@ -586,7 +586,7 @@ function removeCustomCategory(id) {
   saveSubcategories(subs);
   state.tasks = state.tasks.filter(t => t.tag !== id);
   saveTasks();
-  applyCardColors();
+  saveCardColors(cardColors);
   injectCustomTagStyles();
 }
 
@@ -640,7 +640,7 @@ function updateCustomCategory(id, name, color) {
   TAG_LABELS[id] = name;
   TAG_COLORS[id] = { text: color, bg: lightenColor(color, 0.85) };
   cardColors[id] = { light: color, dark: lightenColor(color, 0.45) };
-  applyCardColors();
+  saveCardColors(cardColors);
   injectCustomTagStyles();
 }
 
