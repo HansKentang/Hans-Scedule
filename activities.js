@@ -478,7 +478,7 @@ function saveNewCategory() {
     return;
   }
   const hex = colorEl.value;
-  addCustomTag(name, hex);
+  addCustomCategory(name, hex);
   document.getElementById('addCatPopup')?.remove();
   renderActivities();
   showToast(`Category "<strong>${escapeHtml(name)}</strong>" created`, 'success', 2000);
