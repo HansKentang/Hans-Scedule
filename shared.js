@@ -2521,7 +2521,7 @@ function loadImages() {
 
 // --- APPLY IMAGES TO DOM ---
 function applyImages() {
-  var _isLanding = (location.pathname.split('/').pop() || 'index.html') === 'index.html';
+  var _isLanding = location.pathname.split('/').pop() === 'landing.html';
   document.querySelectorAll("img[data-image-id]").forEach(function(el) {
     var _id = el.dataset.imageId;
     if (_id) {

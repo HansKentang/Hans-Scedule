@@ -753,19 +753,17 @@ html.dark .theme-icon-dark { display: block; }
 }
 
 .day-header {
-  position: sticky; top: 0; z-index: 5;
+  position: sticky; top: 0; z-index: 35;
   padding: var(--space-3) var(--space-2); text-align: center;
   border-bottom: 1px solid var(--border-color);
   border-left: 1px solid var(--border-subtle);
   min-height: 48px; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 3px;
-  background: color-mix(in srgb, var(--bg-primary) 60%, transparent);
-  -webkit-backdrop-filter: blur(20px) saturate(1.5);
-  backdrop-filter: blur(20px) saturate(1.5);
+  background: var(--bg-primary);
   box-shadow: 0 1px 0 var(--border-subtle);
 }
 .day-header.time-axis-header { 
-  border-left: none; background: var(--bg-secondary); z-index: 6; 
+  border-left: none; background: var(--bg-secondary); z-index: 36; 
   position: sticky; left: 0; 
 }
 .day-name { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
