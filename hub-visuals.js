@@ -240,8 +240,8 @@ function normalizeBentoLayout(layout, parent) {
     const norm = typeof item === 'string' ? {t: item} : {...item};
     if (!norm.uid) norm.uid = _nextUid();
     if (norm.w === undefined || norm.h === undefined) {
-      const sizeMap = {s:220, m:320, l:420, xl:540, full:600};
-      norm.w = snap(sizeMap[norm.s] || 320);
+      const sizeMap = {s:220, m:280, l:420, xl:540, full:600};
+      norm.w = snap(sizeMap[norm.s] || 280);
       if (norm.t === 'images') {
         const imgLookup = norm.imageId || 'hub-tulips';
         const oldAspect = parent?.imageAspects?.[imgLookup] || parent?.imageAspect || 'landscape';
@@ -456,10 +456,13 @@ function loadHubContent() {
       if (!hc.habitData) hc.habitData = {};
       if (hc.notes === undefined) hc.notes = '';
       if (!hc.links) hc.links = defaults.links.map(l => ({...l}));
+      console.log('[img] loadHubContent: loaded', (hc.bentoLayout||[]).length, 'bento items,', Object.keys(hc._images||{}).length, 'images');
       return hc;
     }
   } catch(e) { console.warn('[img] loadHubContent: error:', e); }
-  return JSON.parse(JSON.stringify(HUB_DEFAULTS));
+  var _fallback = JSON.parse(JSON.stringify(HUB_DEFAULTS));
+  console.log('[img] loadHubContent: using defaults, items:', _fallback.bentoLayout.length);
+  return _fallback;
 }
 
 function saveHubContent() {
@@ -471,10 +474,15 @@ function saveHubContent() {
       try { localStorage.setItem(HUB_BENTO_KEY, JSON.stringify(hubContent.bentoLayout)); } catch(e) {}
     }
     if (!ok) console.warn('[img] saveHubContent: SAVE FAILED (quota)');
-    else console.warn('[img] saveHubContent: SAVED, bentoLayout length:', (hubContent.bentoLayout || []).length);
+    else console.log('[img] saveHubContent: saved, bentoLayout length:', (hubContent.bentoLayout || []).length);
   } catch(e) { console.warn('[img] saveHubContent failed:', e); }
   if (_hadImages !== undefined) hubContent._images = _hadImages;
 }
+
+// Save hub content when navigating away
+window.addEventListener('beforeunload', function() {
+  if (hubContent) saveHubContent();
+});
 
 function loadHubVisibility() {
   try {
@@ -1057,8 +1065,8 @@ function renderHubBento() {
             var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
             var item = layout.find(function(i) { return i.uid === uid; });
             if (item) {
-              item.w = snap(320);
-              item.h = item.t === 'spotify' ? snap(420) : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+              item.w = snap(280);
+              item.h = item.t === 'spotify' ? snap(420) : item.t === 'images' ? snap(280 / 1.333) : snap(280);
               item.x = snap(24);
               item.y = snap(24);
               resolveBubbleCollisions(layout);
@@ -1667,7 +1675,7 @@ function setupBubbleDragDrop() {
     const gridRect = grid.getBoundingClientRect();
     let x = parseInt(bubble.style.left) || 0;
     let y = parseInt(bubble.style.top) || 0;
-    x = Math.max(0, Math.min(snap(x), gridRect.width - (bubble.offsetWidth || parseInt(bubble.style.width) || 320)));
+    x = Math.max(0, Math.min(snap(x), gridRect.width - (bubble.offsetWidth || parseInt(bubble.style.width) || 280)));
     y = Math.max(0, Math.min(snap(y), Math.min(gridRect.height, MAX_CANVAS_HEIGHT) - (bubble.offsetHeight || parseInt(bubble.style.height) || 240)));
     bubble.style.left = x + 'px';
     bubble.style.top = y + 'px';
@@ -2191,8 +2199,8 @@ function addBubbleTypes(types, dropPos) {
     } else {
       if (layout.find(i => i.t === t)) return;
     }
-    item.w = snap(320);
-    item.h = item.t === 'spotify' ? snap(420) : item.t === 'images' ? snap(320 / 1.333) : snap(280);
+    item.w = snap(280);
+    item.h = item.t === 'spotify' ? snap(420) : item.t === 'images' ? snap(280 / 1.333) : snap(280);
     // If a drop position is provided, use it; otherwise find a gap
     if (dropPos && typeof dropPos.x === 'number' && typeof dropPos.y === 'number') {
       item.x = snap(dropPos.x);
@@ -2441,8 +2449,8 @@ function initBubbleDockDrag(dock) {
     var pos = isTouch ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
     var type = item.dataset.bubbleDockType;
     var rect = item.getBoundingClientRect();
-    var itemW = 320;
-    var itemH = type === 'spotify' ? 420 : type === 'images' ? 240 : 280;
+    var itemW = 280;
+    var itemH = type === 'spotify' ? 420 : type === 'images' ? 210 : 280;
     _dockGhost = document.createElement('div');
     _dockGhost.className = 'bubble-dock-ghost';
     _dockGhost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.querySelector('.bdi-label')?.textContent || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';

@@ -2576,8 +2576,8 @@ function restoreDirectImageKeys() {
       if (_val) { state.images[_imgId] = _val; _found++; }
     }
   }
-  if (_found) console.warn('[img] restoreDirectImageKeys found', _found, 'keys');
-  else console.warn('[img] restoreDirectImageKeys: no haven-image-* keys found');
+  if (_found) console.log('[img] restoreDirectImageKeys found', _found, 'keys');
+  else console.log('[img] restoreDirectImageKeys: no haven-image-* keys found');
 }
 
 
@@ -3636,7 +3636,10 @@ function handleSettingsSubmit(e) {
   state.accessBubbles = bubbleConfig;
   // Persist custom images to individual haven-image-* keys (single source of truth)
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles, accentColor: state.accentColor, accentCustomColors: state.accentCustomColors, accentRemovedPresets: state.accentRemovedPresets }));
+    var _existingSettings = {};
+    try { _existingSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); } catch(e) {}
+    Object.assign(_existingSettings, { showWeekends: state.showWeekends, showCompleted: state.showCompleted, darkMode: state.darkMode, accessBubbles: state.accessBubbles, accentColor: state.accentColor, accentCustomColors: state.accentCustomColors, accentRemovedPresets: state.accentRemovedPresets });
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(_existingSettings));
   } catch (e) {}
   if (state.images) {
     for (var _sk of Object.keys(state.images)) {
