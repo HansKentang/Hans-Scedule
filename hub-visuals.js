@@ -456,13 +456,10 @@ function loadHubContent() {
       if (!hc.habitData) hc.habitData = {};
       if (hc.notes === undefined) hc.notes = '';
       if (!hc.links) hc.links = defaults.links.map(l => ({...l}));
-      console.log('[img] loadHubContent: loaded', (hc.bentoLayout||[]).length, 'bento items,', Object.keys(hc._images||{}).length, 'images');
       return hc;
     }
   } catch(e) { console.warn('[img] loadHubContent: error:', e); }
-  var _fallback = JSON.parse(JSON.stringify(HUB_DEFAULTS));
-  console.log('[img] loadHubContent: using defaults, items:', _fallback.bentoLayout.length);
-  return _fallback;
+  return JSON.parse(JSON.stringify(HUB_DEFAULTS));
 }
 
 function saveHubContent() {
@@ -474,15 +471,9 @@ function saveHubContent() {
       try { localStorage.setItem(HUB_BENTO_KEY, JSON.stringify(hubContent.bentoLayout)); } catch(e) {}
     }
     if (!ok) console.warn('[img] saveHubContent: SAVE FAILED (quota)');
-    else console.log('[img] saveHubContent: saved, bentoLayout length:', (hubContent.bentoLayout || []).length);
   } catch(e) { console.warn('[img] saveHubContent failed:', e); }
   if (_hadImages !== undefined) hubContent._images = _hadImages;
 }
-
-// Save hub content when navigating away
-window.addEventListener('beforeunload', function() {
-  if (hubContent) saveHubContent();
-});
 
 function loadHubVisibility() {
   try {
@@ -3079,6 +3070,7 @@ if (document.getElementById('hubAccessHub')) {
         }
       });
       document.getElementById('hubFabEdit')?.addEventListener('click', function() { try { toggleHubAccess(); showHubEditToggle(); } catch(e) { console.error('Edit error:', e); } });
+      document.getElementById('hubFabAdd')?.addEventListener('click', function() { toggleHubAccess(); toggleHubEdit(); });
       document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
     }
   };

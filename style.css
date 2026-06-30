@@ -4475,6 +4475,7 @@ html.light .hub-db-header .hub-db-count strong {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .spotify-widget iframe {
   border: none;

@@ -771,7 +771,7 @@ function renderAnalytics() {
 
 // ─── SETUP ────────────────────────────────────────────
 function setupPage() {
-  dom.importFileInput = document.getElementById('importFileInput');
+  dom.importFileInput = document.getElementById('drawerImportFile');
   dom.aiChatBtn = document.getElementById('aiChatBtnSidebar');
   dom.aiChatPanel = document.getElementById('aiChatPanel');
   dom.aiChatOverlay = document.getElementById('aiChatOverlay');

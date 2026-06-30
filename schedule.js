@@ -901,6 +901,31 @@ function removeDragTooltip() {
   if (tip) tip.remove();
 }
 
+function attachTimeAxisTooltips() {
+  $$('.time-axis').forEach(el => {
+    el.addEventListener('mouseenter', (e) => {
+      if (!dom.tzTooltip) return;
+      const hour = parseInt(el.dataset.hour);
+      const off = -new Date().getTimezoneOffset();
+      const utcH = ((hour * 60 - off) / 60 + 24) % 24;
+      const utcHf = Math.floor(utcH);
+      const utcM = Math.round((utcH % 1) * 60);
+      const la = hour < 12 ? 'AM' : 'PM';
+      const ua = utcHf < 12 ? 'AM' : 'PM';
+      const h12 = hour % 12 || 12;
+      const u12 = utcHf % 12 || 12;
+      dom.tzTooltip.innerHTML = `<span class="tz-tooltip-main">${h12}${la} Local</span><span class="tz-tooltip-sub">${u12}:${String(utcM).padStart(2, '0')}${ua} UTC</span>`;
+      dom.tzTooltip.classList.remove('hidden');
+      dom.tzTooltip.style.left = `${e.clientX + 12}px`;
+      dom.tzTooltip.style.top = `${e.clientY - 10}px`;
+    });
+    el.addEventListener('mousemove', (e) => {
+      if (dom.tzTooltip) { dom.tzTooltip.style.left = `${e.clientX + 12}px`; dom.tzTooltip.style.top = `${e.clientY - 10}px`; }
+    });
+    el.addEventListener('mouseleave', () => { if (dom.tzTooltip) dom.tzTooltip.classList.add('hidden'); });
+  });
+}
+
 function onDragEnd() {
   if (!gridDrag) return;
   document.removeEventListener('mousemove', onDragMove);
@@ -1385,7 +1410,7 @@ function bindEvents() {
   dom.todayBtn?.addEventListener('click', goToday);
   dom.prevWeek?.addEventListener('click', goPrev);
   dom.nextWeek?.addEventListener('click', goNext);
-  dom.cmdBtn?.addEventListener('click', showCmdPalette);
+  // Command FAB is wired via onclick in HTML (toggleCmdPalette)
   dom.cmdPaletteBtn?.addEventListener('click', showCmdPalette);
   dom.cmdOverlay?.addEventListener('click', hideCmdPalette);
   dom.cmdInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); processCommand(dom.cmdInput.value); } });
@@ -1931,7 +1956,7 @@ function initPomodoro() {
       updatePomodoroDisplay();
       if (pomodoroInterval) clearInterval(pomodoroInterval);
       pomodoroInterval = setInterval(updatePomodoroDisplay, 1000);
-      document.getElementById('accessMain').classList.add('running');
+      document.getElementById('accessMain')?.classList.add('running');
       document.getElementById('pomodoroStartBtn').innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Pause`;
     }
     if (pomodoroState.elapsedSeconds > 0 && !pomodoroState.isRunning) updatePomodoroDisplay();

@@ -2576,8 +2576,6 @@ function restoreDirectImageKeys() {
       if (_val) { state.images[_imgId] = _val; _found++; }
     }
   }
-  if (_found) console.log('[img] restoreDirectImageKeys found', _found, 'keys');
-  else console.log('[img] restoreDirectImageKeys: no haven-image-* keys found');
 }
 
 
@@ -6386,6 +6384,13 @@ loadState = function() {
 };
 
 window.applyAccessHubConfig = applyAccessHubConfig;
+
+var DEFAULT_BUBBLES = {
+  focusMode: { label: 'Focus', color: '#fff' },
+  aiChat: { label: 'AI', color: '#fff' },
+  screenshot: { label: 'Screenshot', color: '#fff' },
+  copyWeek: { label: 'Copy Week', color: '#fff' }
+};
 
 function renderBubbleConfigInSettings() {
   const container = document.getElementById('bubbleConfigList');
