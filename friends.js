@@ -493,9 +493,7 @@ function setupPage() {
 function init() {
   loadState();
   applyTheme();
-  document.querySelectorAll('img[data-image-id]').forEach(function(el) {
-    el.src = getImage(el.dataset.imageId) || '';
-  });
+  applyImages();
 
   renderFriendCode();
   subscribeToFriends();

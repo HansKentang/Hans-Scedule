@@ -144,14 +144,49 @@
       width: 5px; height: 5px; border-radius: 50%;
       background: #10b981; display: inline-block;
     }
+    /* ─── HEADLINE REVEAL ─── */
     .hero h1 {
       font-family: var(--font-serif); font-size: clamp(2.4rem, 5vw, 3.6rem);
       font-weight: 500; line-height: 1.15; letter-spacing: -0.03em;
       margin-bottom: 20px; color: var(--text);
-      animation: fadeSlideUp 0.6s ease both 0.2s;
+      min-height: 1.2em;
+    }
+    .hero h1 .char {
+      display: inline-block;
+      opacity: 0;
+      animation: charReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes charReveal {
+      0% { opacity: 0; transform: translateY(12px) scale(0.97); filter: blur(4px); }
+      60% { opacity: 1; transform: translateY(-2px) scale(1.02); filter: blur(0); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    .hero h1 .char-space {
+      display: inline;
+    }
+
+    .type-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 0.85em;
+      background: var(--accent);
+      margin-left: 2px;
+      vertical-align: baseline;
+      opacity: 0;
+      animation: cursorBlink 0.9s ease-in-out infinite, cursorAppear 0s 2s forwards;
+    }
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+    @keyframes cursorAppear {
+      to { opacity: 1; }
     }
     .hero h1 em {
       font-style: italic; color: var(--accent);
+    }
+    .hero h1 em .char {
+      color: var(--accent);
     }
     .hero p {
       font-size: 1.05rem; color: var(--text-tertiary);
@@ -824,6 +859,51 @@
       resize();
       createParticles();
       draw();
+    })();
+  </script>
+
+  <!-- ─── HEADLINE CHARACTER REVEAL ─── -->
+  <script>
+    (function() {
+      var h1 = document.querySelector('.hero h1');
+      if (!h1) return;
+
+      var idx = 0;
+
+      function processNode(parent) {
+        var children = Array.from(parent.childNodes);
+        children.forEach(function(child) {
+          if (child.nodeType === 3) { // text node
+            var text = child.textContent;
+            var frag = document.createDocumentFragment();
+            for (var i = 0; i < text.length; i++) {
+              var ch = text[i];
+              var span = document.createElement('span');
+              if (ch === ' ') {
+                span.className = 'char char-space';
+                span.textContent = ' ';
+                span.style.animationDelay = (idx * 0.028) + 's';
+              } else {
+                span.className = 'char';
+                span.textContent = ch;
+                span.style.animationDelay = (idx * 0.028) + 's';
+                idx++;
+              }
+              frag.appendChild(span);
+            }
+            parent.replaceChild(frag, child);
+          } else if (child.nodeType === 1 && child.tagName !== 'BR') {
+            processNode(child);
+          }
+        });
+      }
+
+      processNode(h1);
+
+      // Append cursor
+      var cursor = document.createElement('span');
+      cursor.className = 'type-cursor';
+      h1.appendChild(cursor);
     })();
   </script>
 

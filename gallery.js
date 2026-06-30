@@ -7,14 +7,30 @@ const GALLERY_LAYOUT_KEY = 'haven-gallery-layout';
 const GALLERY_HERO_PREFIX = 'gallery-image-';
 
 // ─── DEFAULTS ──────────────────────────────────────────────
-const GALLERY_DEFAULT_IMAGES = [
-  'https://picsum.photos/seed/gallery-vision-1/600/400',
-  'https://picsum.photos/seed/gallery-vision-2/600/400',
-  'https://picsum.photos/seed/gallery-vision-3/600/400',
-  'https://picsum.photos/seed/gallery-vision-4/600/400',
-  'https://picsum.photos/seed/gallery-vision-5/600/400',
-  'https://picsum.photos/seed/gallery-vision-6/600/400',
-];
+const GALLERY_DEFAULT_IMAGES = [];
+
+// ─── CLEANUP OLD PICSUM DEFAULTS ──────────────────────────
+function cleanupOldPicsumDefaults() {
+  // Remove any old picsum.photos URLs stored for gallery images
+  for (var key in state.images) {
+    if (key.indexOf('gallery-image-') === 0 && state.images[key] && state.images[key].indexOf('https://picsum.photos/') === 0) {
+      delete state.images[key];
+      try { localStorage.removeItem('haven-image-' + key); } catch (e) {}
+    }
+  }
+  // Also clean up any standalone localStorage keys
+  try {
+    for (var i = localStorage.length - 1; i >= 0; i--) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('haven-image-gallery-image-') === 0) {
+        var val = localStorage.getItem(k);
+        if (val && val.indexOf('https://picsum.photos/') === 0) {
+          localStorage.removeItem(k);
+        }
+      }
+    }
+  } catch (e) {}
+}
 
 // ─── LAYOUT CRUD ─────────────────────────────────────────
 function loadGalleryLayout() {
@@ -38,15 +54,11 @@ function getGalleryImages() {
   // Returns array of image IDs in order
   const saved = loadGalleryLayout();
   if (saved) return saved;
-  // First visit: create default layout with 6 images
+  // First visit: create empty layout with 6 placeholder slots
   const defaults = [];
-  for (let i = 0; i < GALLERY_DEFAULT_IMAGES.length; i++) {
+  for (let i = 0; i < 6; i++) {
     const id = GALLERY_HERO_PREFIX + (i + 1);
-    // Ensure default image is set in state.images
     if (!state.images) loadImages();
-    if (state.images && !state.images[id]) {
-      state.images[id] = GALLERY_DEFAULT_IMAGES[i];
-    }
     defaults.push(id);
   }
   saveGalleryLayout(defaults);
@@ -62,11 +74,7 @@ function addGalleryImage() {
     if (!isNaN(m) && m > maxNum) maxNum = m;
   }
   const newId = GALLERY_HERO_PREFIX + (maxNum + 1);
-  // Set a default image
-  if (state.images) {
-    state.images[newId] = 'https://picsum.photos/seed/gallery-' + newId + '/600/400';
-    try { localStorage.setItem('haven-image-' + newId, state.images[newId]); } catch (e) { /* ignore */ }
-  }
+  // Leave new slot empty (user adds their own image via the picker)
   layout.push(newId);
   saveGalleryLayout(layout);
   return newId;
@@ -342,6 +350,9 @@ function handleResetAll() {
 function init() {
   loadState();
   applyTheme();
+
+  // Clean up old picsum.photos defaults for existing users
+  cleanupOldPicsumDefaults();
 
   // Load hero images
   document.querySelectorAll('img[data-image-id]').forEach(el => {

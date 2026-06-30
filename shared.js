@@ -2521,6 +2521,7 @@ function loadImages() {
 
 // --- APPLY IMAGES TO DOM ---
 function applyImages() {
+  var _isLanding = (location.pathname.split('/').pop() || 'index.html') === 'index.html';
   document.querySelectorAll("img[data-image-id]").forEach(function(el) {
     var _id = el.dataset.imageId;
     if (_id) {
@@ -2540,16 +2541,17 @@ function applyImages() {
         el.setAttribute("data-empty-img", "");
         var wrap = el.closest(".bento-img-wrap");
         if (!wrap) {
+          if (_isLanding) return;
           var parent = el.parentElement;
           if (parent && !parent.querySelector(".img-empty-placeholder")) {
             var ph = document.createElement("div");
             ph.className = "img-empty-placeholder";
-            ph.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Add image</span>';
+            ph.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visuals to add images</span>';
             parent.insertBefore(ph, el);
           }
         } else {
           var placeholder = wrap.querySelector(".bento-img-placeholder");
-          if (placeholder) placeholder.style.display = "flex";
+          if (placeholder) placeholder.style.display = _isLanding ? "none" : "flex";
         }
       }
     }
@@ -4100,7 +4102,7 @@ function renderSidebarImages() {
       if (img.hidden) item.classList.add('hub-sidebar-image-hidden');
       item.dataset.imageId = img.id;
       const label = img.label || img.id;
-      item.innerHTML = (url ? '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' : '<div class="hub-sidebar-image-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;opacity:0.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Add image</span></div>') +
+      item.innerHTML = (url ? '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' : '<div class="hub-sidebar-image-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;opacity:0.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visuals to add images</span></div>') +
         '<span class="hub-sidebar-image-label">' + label + '</span>';
       // Click: in Visuals edit mode → image picker, else → lightbox
       item.addEventListener('click', function() {
