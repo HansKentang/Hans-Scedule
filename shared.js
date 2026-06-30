@@ -6711,6 +6711,8 @@ function spRenderSidebar() {
   spUpdateNav();
 }
 
+function spSidePrev() { spSideNav(-1); }
+function spSideNext() { spSideNav(1); }
 function spSideNav(dir) {
   if (!spPlaylists.length) return;
   let idx = spPlaylists.findIndex(p => p.id === spActiveId);
@@ -6898,5 +6900,9 @@ function spSetupDragReorder(container) {
 }
 
 function spOnKey(e) {
+  if (e.key === 'Escape') {
+    var overlay = document.getElementById('spOverlay');
+    if (overlay && !overlay.classList.contains('hidden')) spCloseSettings();
+  }
   }
 
