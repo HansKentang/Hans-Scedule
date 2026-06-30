@@ -550,9 +550,18 @@ function addCustomCategory(label, color) {
   const id = 'cat-' + uid();
   cats.push({ id, label, color });
   saveCustomCategories(cats);
+  // Mirror to custom tags for activities compatibility
+  const customTags = loadCustomTags();
+  if (!customTags.find(ct => ct.id === id)) {
+    customTags.push({ id, name: label, color });
+    saveCustomTags(customTags);
+  }
   TAG_ORDER.push(id);
   TAG_LABELS[id] = label;
   TAG_COLORS[id] = { text: color, bg: lightenColor(color, 0.85) };
+  cardColors[id] = { light: color, dark: lightenColor(color, 0.45) };
+  applyCardColors();
+  injectCustomTagStyles();
   const subs = loadSubcategories();
   subs[id] = [];
   saveSubcategories(subs);
@@ -563,15 +572,22 @@ function removeCustomCategory(id) {
   let cats = loadCustomCategories();
   cats = cats.filter(c => c.id !== id);
   saveCustomCategories(cats);
+  // Mirror removal from custom tags
+  let customTags = loadCustomTags();
+  customTags = customTags.filter(ct => ct.id !== id);
+  saveCustomTags(customTags);
   const idx = TAG_ORDER.indexOf(id);
   if (idx !== -1) TAG_ORDER.splice(idx, 1);
   delete TAG_LABELS[id];
   delete TAG_COLORS[id];
+  delete cardColors[id];
   const subs = loadSubcategories();
   delete subs[id];
   saveSubcategories(subs);
   state.tasks = state.tasks.filter(t => t.tag !== id);
   saveTasks();
+  applyCardColors();
+  injectCustomTagStyles();
 }
 
 function initCustomCategories() {
@@ -582,7 +598,144 @@ function initCustomCategories() {
       TAG_LABELS[cat.id] = cat.label;
       TAG_COLORS[cat.id] = { text: cat.color, bg: lightenColor(cat.color, 0.85) };
     }
+    if (!cardColors[cat.id]) {
+      cardColors[cat.id] = { light: cat.color, dark: lightenColor(cat.color, 0.45) };
+    }
   }
+  // Also pick up any tags only stored in custom tags (for backward compat)
+  const customTags = loadCustomTags();
+  for (const ct of customTags) {
+    if (TAG_ORDER.includes(ct.id)) continue;
+    if (custom.find(c => c.id === ct.id)) continue;
+    TAG_ORDER.push(ct.id);
+    TAG_LABELS[ct.id] = ct.name;
+    TAG_COLORS[ct.id] = { text: ct.color, bg: lightenColor(ct.color, 0.85) };
+    if (!cardColors[ct.id]) {
+      cardColors[ct.id] = { light: ct.color, dark: lightenColor(ct.color, 0.45) };
+    }
+  }
+}
+
+// ─── UPDATE / EDIT CUSTOM CATEGORY ──────────────────────
+function updateCustomCategory(id, name, color) {
+  // Update in categories storage
+  let cats = loadCustomCategories();
+  const cat = cats.find(c => c.id === id);
+  if (cat) {
+    cat.label = name;
+    cat.color = color;
+    saveCustomCategories(cats);
+  }
+  // Mirror to custom tags
+  let customTags = loadCustomTags();
+  const ct = customTags.find(t => t.id === id);
+  if (ct) {
+    ct.name = name;
+    ct.color = color;
+  } else {
+    customTags.push({ id, name, color });
+  }
+  saveCustomTags(customTags);
+  // Update in-memory maps
+  TAG_LABELS[id] = name;
+  TAG_COLORS[id] = { text: color, bg: lightenColor(color, 0.85) };
+  cardColors[id] = { light: color, dark: lightenColor(color, 0.45) };
+  applyCardColors();
+  injectCustomTagStyles();
+}
+
+// ─── CATEGORY EDIT POPUP ────────────────────────────────
+function openCategoryEditPopup(anchorEl, tagId) {
+  const existing = document.getElementById('catEditPopup');
+  if (existing) existing.remove();
+
+  const curCat = loadCustomCategories().find(c => c.id === tagId) || loadCustomTags().find(t => t.id === tagId);
+  if (!curCat) return;
+
+  const popup = document.createElement('div');
+  popup.id = 'catEditPopup';
+  popup.className = 'cat-edit-popup';
+  popup.innerHTML = `
+    <div class="cat-edit-popup-header">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span>Edit Category</span>
+    </div>
+    <div class="cat-edit-popup-body">
+      <div class="tf-group">
+        <label class="tf-label">Name</label>
+        <input type="text" id="catEditName" class="form-input" value="${escapeHtml(curCat.label || curCat.name)}" autocomplete="off" maxlength="30">
+      </div>
+      <div class="tf-group">
+        <label class="tf-label">Color</label>
+        <div class="cat-edit-color-row">
+          <input type="color" id="catEditColor" value="${curCat.color || '#6366f1'}">
+        </div>
+      </div>
+      <div class="cat-edit-actions">
+        <button class="tf-btn tf-btn-ghost" id="catEditCancel">Cancel</button>
+        <button class="tf-btn tf-btn-primary" id="catEditSave">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Save
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(popup);
+
+  requestAnimationFrame(() => {
+    const rect = anchorEl.getBoundingClientRect();
+    const pw = 240, ph = popup.offsetHeight || 280;
+    let left = rect.right - pw;
+    let top = rect.bottom + 4;
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    if (left < 8) left = 8;
+    if (top + ph > window.innerHeight - 8) top = rect.top - ph - 4;
+    if (top < 8) top = 8;
+    popup.style.left = left + 'px';
+    popup.style.top = top + 'px';
+    document.getElementById('catEditName')?.focus();
+    document.getElementById('catEditName')?.select();
+  });
+
+  function saveEdit() {
+    const nameEl = document.getElementById('catEditName');
+    const colorEl = document.getElementById('catEditColor');
+    if (!nameEl || !colorEl) return;
+    const newName = nameEl.value.trim();
+    if (!newName) {
+      nameEl.focus();
+      nameEl.classList.add('tpl-add-input-error');
+      setTimeout(() => nameEl.classList.remove('tpl-add-input-error'), 2000);
+      return;
+    }
+    updateCustomCategory(tagId, newName, colorEl.value);
+    popup.remove();
+    // Trigger re-render on both pages
+    if (typeof renderSchTemplates === 'function') renderSchTemplates();
+    if (typeof renderActivities === 'function') renderActivities();
+    else if (typeof renderTags === 'function') renderTags();
+    if (typeof renderCalendar === 'function') renderCalendar();
+    showToast(`Category updated to "<strong>${escapeHtml(newName)}</strong>"`, 'success', 2000);
+  }
+
+  document.getElementById('catEditCancel')?.addEventListener('click', () => popup.remove());
+  document.getElementById('catEditSave')?.addEventListener('click', saveEdit);
+  popup.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { popup.remove(); }
+    if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+  });
+
+  // Close on outside click
+  setTimeout(() => {
+    function closeOnOutside(e) {
+      if (!popup.contains(e.target) && !anchorEl.contains(e.target)) {
+        popup.remove();
+        document.removeEventListener('click', closeOnOutside);
+      }
+    }
+    document.addEventListener('click', closeOnOutside);
+  }, 0);
 }
 
 // ─── PRIORITY ────────────────────────────────────────────────

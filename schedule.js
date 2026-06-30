@@ -2116,6 +2116,9 @@ function renderSchTemplates() {
       <span class="sch-pm-chip-dot" style="background:${accent}"></span>
       ${TAG_LABELS[tag]}
       ${subs.length > 0 ? `<span class="sch-pm-chip-count">${subs.length}</span>` : ''}
+      ${!isBuiltin ? `<button class="sch-pm-chip-edit" data-edit-tag="${tag}" title="Edit category">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>` : ''}
       ${!isBuiltin ? `<button class="sch-pm-chip-del" data-del-tag="${tag}" title="Delete category">✕</button>` : ''}
     </button>`;
   }
@@ -2153,6 +2156,16 @@ function renderSchTemplates() {
         renderCalendar();
         showToast(`"${label}" deleted`, 'info', 2000);
       }
+    });
+  });
+
+  // Edit button on custom category chips
+  container.querySelectorAll('.sch-pm-chip-edit').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const tag = btn.dataset.editTag;
+      if (!tag) return;
+      openCategoryEditPopup(btn, tag);
     });
   });
 
