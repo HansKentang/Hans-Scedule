@@ -669,6 +669,7 @@ function openCategoryEditPopup(anchorEl, tagId) {
         <label class="tf-label">Color</label>
         <div class="cat-edit-color-row">
           <input type="color" id="catEditColor" value="${curCat.color || '#6366f1'}">
+          <span style="font-size:0.65rem;color:var(--text-tertiary);opacity:0.6">Pick a color</span>
         </div>
       </div>
       <div class="cat-edit-actions">
@@ -687,10 +688,10 @@ function openCategoryEditPopup(anchorEl, tagId) {
     const rect = anchorEl.getBoundingClientRect();
     const pw = 240, ph = popup.offsetHeight || 280;
     let left = rect.right - pw;
-    let top = rect.bottom + 4;
+    let top = rect.top;
     if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
     if (left < 8) left = 8;
-    if (top + ph > window.innerHeight - 8) top = rect.top - ph - 4;
+    if (top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
     if (top < 8) top = 8;
     popup.style.left = left + 'px';
     popup.style.top = top + 'px';
@@ -711,7 +712,6 @@ function openCategoryEditPopup(anchorEl, tagId) {
     }
     updateCustomCategory(tagId, newName, colorEl.value);
     popup.remove();
-    // Trigger re-render on both pages
     if (typeof renderSchTemplates === 'function') renderSchTemplates();
     if (typeof renderActivities === 'function') renderActivities();
     else if (typeof renderTags === 'function') renderTags();
@@ -726,7 +726,6 @@ function openCategoryEditPopup(anchorEl, tagId) {
     if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
   });
 
-  // Close on outside click
   setTimeout(() => {
     function closeOnOutside(e) {
       if (!popup.contains(e.target) && !anchorEl.contains(e.target)) {
@@ -874,7 +873,7 @@ function addCustomTag(name, hexColor) {
   TAG_LABELS[id] = name;
   TAG_COLORS[id] = { bg: `var(--tag-${id}-bg)`, text: `var(--tag-${id}-text)` };
   cardColors[id] = { light: hexColor, dark: lightenColor(hexColor, 0.45) };
-  applyCardColors();
+  saveCardColors(cardColors);
   injectCustomTagStyles();
   return id;
 }
@@ -888,11 +887,11 @@ function removeCustomTag(id) {
   delete TAG_LABELS[id];
   delete TAG_COLORS[id];
   delete cardColors[id];
+  saveCardColors(cardColors);
   for (const task of state.tasks) {
     if (task.tag === id) task.tag = 'meeting';
   }
   saveState();
-  applyCardColors();
   injectCustomTagStyles();
 }
 

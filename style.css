@@ -8020,87 +8020,107 @@ html.light .hub-add-popup {
 }
 
 
-/* ─── CATEGORY EDIT POPUP ───────────────────────────── */
+/* ─── CATEGORY EDIT POPUP ──────────────────────── */
 .cat-edit-popup {
-  position: fixed;
-  z-index: 9999;
-  background: var(--surface-container-high);
+  position: fixed; z-index: 9999;
+  width: 240px;
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 16px 20px;
-  width: 240px;
   box-shadow: var(--shadow-lg);
-  animation: catEditPopupIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes catEditPopupIn {
-  from { opacity: 0; transform: translateY(8px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  animation: snavPopupIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 .cat-edit-popup-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 12px;
-  padding-bottom: 8px;
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
 }
-.cat-edit-popup-header svg {
-  flex-shrink: 0;
-  opacity: 0.6;
+.cat-edit-popup-header svg { flex-shrink: 0; opacity: 0.5; }
+.cat-edit-popup-header span { flex: 1; font-size: 0.78rem; font-weight: 600; }
+.cat-edit-popup-body {
+  padding: var(--space-3);
+  display: flex; flex-direction: column; gap: var(--space-3);
 }
-.cat-edit-popup-body .tf-group {
-  margin-bottom: 10px;
-}
-.cat-edit-popup-body .tf-label {
-  display: block;
-  font-size: 0.6rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-tertiary);
-  margin-bottom: 4px;
-}
-.cat-edit-popup-body .form-input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 0.82rem;
-  font-family: var(--font-family);
-  outline: none;
-  transition: border-color var(--t-fast);
-  box-sizing: border-box;
-}
-.cat-edit-popup-body .form-input:focus {
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
-}
+.cat-edit-popup-body .tf-group { margin: 0; }
+.cat-edit-popup-body .tf-label { font-size: 0.62rem; margin-bottom: 3px; }
+.cat-edit-popup-body .form-input { font-size: 0.8rem; padding: 5px 8px; width: 100%; box-sizing: border-box; }
 .cat-edit-color-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: flex; align-items: center; gap: var(--space-2);
 }
 .cat-edit-color-row input[type="color"] {
-  width: 32px;
-  height: 32px;
-  border: 2px solid var(--border-subtle);
-  border-radius: 8px;
-  cursor: pointer;
-  padding: 0;
-  background: transparent;
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--border-color);
+  cursor: pointer; padding: 0; background: none;
 }
+.cat-edit-color-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.cat-edit-color-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
 .cat-edit-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-subtle);
+  display: flex; gap: var(--space-2);
+}
+.cat-edit-actions button { flex: 1; justify-content: center; font-size: 0.75rem; }
+
+/* ─── Schedule pill edit button ────────────────── */
+.sch-pm-chip-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+  opacity: 0;
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+.sch-pm-chip:hover .sch-pm-chip-edit {
+  opacity: 0.6;
+}
+.sch-pm-chip-edit:hover {
+  opacity: 1 !important;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.sch-pm-chip-edit svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* ─── Activities column edit button ────────────────── */
+.tag-col-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+  opacity: 0;
+  transition: all var(--t-fast);
+  flex-shrink: 0;
+  margin: 0 1px;
+}
+.tag-column-header:hover .tag-col-edit {
+  opacity: 0.5;
+}
+.tag-col-edit:hover {
+  opacity: 1 !important;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.tag-col-edit svg {
+  width: 10px;
+  height: 10px;
 }
 
 /* ─── Schedule pill edit button ─────────────────────── */
