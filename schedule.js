@@ -431,6 +431,7 @@ function renderTasks() {
 
   const filtered = expanded.filter(t => {
     if (isWhiteboardTask(t)) return false;
+    if (!state.showCompleted && t.completed) return false;
     if (state.selectedTag && t.tag !== state.selectedTag) return false;
     return true;
   });
@@ -851,14 +852,8 @@ function onDragMove(e) {
     const spanEnd = Math.min(spanStart + durMins, (START_HOUR + VISIBLE_HOURS) * 60);
 
     // Single card-like preview at the drop position (replaces old overlay + line)
-    showDropPreview(refCol, spanStart, spanEnd, getDragHlColor());
-
-    // Highlight tasks that would be pushed down
     previewConflicts(matchedDate, spanStart, spanEnd, gridDrag.taskId || null);
 
-    // Move conflict badge with cursor
-    const badge = document.getElementById('dropConflictBadge');
-    if (badge) { badge.style.left = `${pos.x + 16}px`; badge.style.top = `${pos.y + 20}px`; }
 
     // Show live time tooltip
     showDragTooltip(e, snap, durMins);
@@ -1356,7 +1351,8 @@ function scrollToCurrentTime() {
   }
   const now = new Date();
   const mins = now.getHours() * 60 + now.getMinutes();
-  const scrollTarget = ((mins - START_HOUR * 60) / 60) * HOUR_HEIGHT - 100;
+  const actualHH = dom.grid ? (dom.grid.querySelector('.day-column') ? dom.grid.querySelector('.day-column').getBoundingClientRect().height : HOUR_HEIGHT) : HOUR_HEIGHT;
+  const scrollTarget = ((mins - START_HOUR * 60) / 60) * actualHH - 100;
   if (scrollTarget > 0 && dom.container) dom.container.scrollTop = scrollTarget;
 }
 
@@ -1967,6 +1963,7 @@ function initPomodoro() {
 function renderSubcategoryBarPill(subcatName, tag, col) {
   return `<span class="sch-sc-bar-pill" data-tag="${tag}" data-sc-name="${escapeHtml(subcatName)}" style="--sc-accent:${col.text}" draggable="true">
     <span class="sc-dot"></span>
+    <span class="sc-drag-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="6" r="1.5"/><circle cx="14" cy="6" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="14" cy="12" r="1.5"/><circle cx="10" cy="18" r="1.5"/><circle cx="14" cy="18" r="1.5"/></svg></span>
     <span class="sc-name">${escapeHtml(subcatName)}</span>
     <button class="sc-bar-edit" data-sc-edit="${escapeHtml(subcatName)}" title="Rename">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -1991,6 +1988,7 @@ function showSubcategoryBubble(tag) {
   const bar = document.createElement('div');
   bar.className = 'sch-sc-bar';
   bar.id = 'schScBar';
+  bar.style.setProperty('--sc-accent', col.text);
 
   if (subs.length === 0) {
     bar.innerHTML = `<span class="sch-sc-bar-empty">No subcategories</span>`;
@@ -2417,8 +2415,9 @@ function renderSchTemplates() {
     ctx.fillStyle = textSecondary;
     for (var hh = 0; hh < totalHours; hh++) {
       var hour = startH + hh;
-      var disp = hour === 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-      var ampm = hour < 12 ? 'AM' : 'PM';
+      var h24 = hour % 24;
+      var disp = h24 === 0 ? 12 : (h24 > 12 ? h24 - 12 : h24);
+      var ampm = h24 < 12 ? 'AM' : 'PM';
       ctx.fillText(disp + ' ' + ampm, ox + TIME_W - 8, oy + topH + hh * ROW_H + ROW_H / 2);
     }
 

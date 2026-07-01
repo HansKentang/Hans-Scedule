@@ -930,6 +930,9 @@
 
     function cancelEdit() {
       editingId = null;
+      currentType = 'expense';
+      document.getElementById('finTypeExpense')?.classList.add('active');
+      document.getElementById('finTypeIncome')?.classList.remove('active');
       document.getElementById('finAmount').value = '';
       document.getElementById('finNote').value = '';
       document.getElementById('finDate').value = new Date().toISOString().slice(0,10);
@@ -984,7 +987,7 @@
     function renderBarChart() {
       const wrap = document.getElementById('finChart');
       if (!wrap) return;
-      const items = loadFin();
+      const items = filterByRange(loadFin(), currentRange);
       if (!items.length) {
         wrap.innerHTML = '<div class="fin-empty" style="position:static;height:100%"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>Add transactions to see the trend.</p></div>';
         return;
@@ -1016,7 +1019,7 @@
     function renderCategoryBars() {
       const wrap = document.getElementById('finCategoryBars');
       if (!wrap) return;
-      const items = loadFin().filter(x => x.type === 'expense');
+      const items = filterByRange(loadFin(), currentRange).filter(x => x.type === 'expense');
       const totals = {};
       items.forEach(x => { const k = x.category || 'Other'; totals[k] = (totals[k] || 0) + Number(x.amount || 0); });
       const entries = Object.entries(totals).sort((a,b) => b[1] - a[1]);

@@ -640,7 +640,16 @@ function init() {
 
   // Load images
   document.querySelectorAll('img[data-image-id]').forEach(el => {
-    el.src = getImage(el.dataset.imageId) || '';
+    const url = getImage(el.dataset.imageId) || '';
+    el.src = url;
+    if (url) {
+      el.style.display = 'block';
+      const wrap = el.closest('.gl-vision-img-wrap');
+      if (wrap) {
+        const ph = wrap.querySelector('.gl-vision-img-placeholder');
+        if (ph) ph.style.display = 'none';
+      }
+    }
   });
 
   // Manifesto save on blur
@@ -706,7 +715,7 @@ document.addEventListener('click', function(e) {
 
 // Import/export handlers
 document.getElementById('exportBtn')?.addEventListener('click', exportData);
-document.getElementById('importBtn')?.addEventListener('click', () => document.getElementById('importFileInput')?.click());
+document.getElementById('importBtn')?.addEventListener('click', () => document.getElementById('drawerImportFile')?.click());
 
 // Focus mode
 document.getElementById('focusToggleBtn')?.addEventListener('click', toggleFocusMode);

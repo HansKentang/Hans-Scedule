@@ -502,7 +502,7 @@ function init() {
   document.getElementById('focusToggleBtn')?.addEventListener('click', toggleFocusMode);
   document.getElementById('exportBtn')?.addEventListener('click', exportData);
   document.getElementById('importBtn')?.addEventListener('click', function() {
-    document.getElementById('importFileInput')?.click();
+    document.getElementById('drawerImportFile')?.click();
   });
 
   // Mobile sidebar overlay + nav item close (shared handler in shared.js handles toggle)

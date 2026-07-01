@@ -26,7 +26,7 @@ function initAdvancedCharts() {
 function renderAdvView() {
   const body = document.getElementById('finAdvBody');
   if (!body) return;
-  const items = loadFin();
+  const items = typeof filterByRange === 'function' ? filterByRange(loadFin(), currentRange) : loadFin();
   if (!items || !items.length) {
     body.innerHTML = `<div class="fin-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>Add transactions to unlock spending intelligence.</p><span class="sub">Your charts will appear here as you build your history.</span></div>`;
     return;
@@ -372,7 +372,9 @@ function renderTopMerchants(body, items) {
 
   const maxTotal = sorted[0].total;
   const topN = sorted.slice(0, 20);
-  const icons = ['🛒','🍕','⛽','🏪','💊','🎬','🛵','📱','🏠','👕','📚','☕','🚗','✈️','🎮','💻','🏋️','🎵','🌿','📦'];
+  const icons = ['shopping','food','fuel','store','pharmacy','film','delivery','electronics','home','clothing','books','coffee','car','travel','gaming','computer','fitness','music','nature','package'].map(function(n) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/></svg>';
+  });
 
   body.innerHTML = `
     <div class="fin-merch-wrap">

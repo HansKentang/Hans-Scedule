@@ -793,13 +793,10 @@ function setupPage() {
 
   document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
   // settingsBtnSidebar removed
-  document.getElementById('bcThemeBtn')?.addEventListener('click', toggleTheme);
-  
   dom.importFileInput?.addEventListener('change', importData);
   document.getElementById('importDataBtn')?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
 
   dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
-  document.getElementById('bcAiChatBtn')?.addEventListener('click', showAIChat);
   dom.aiChatOverlay?.addEventListener('click', hideAIChat);
   dom.aiChatClose?.addEventListener('click', hideAIChat);
   dom.aiChatSend?.addEventListener('click', sendAIMessage);
@@ -829,21 +826,8 @@ function init() {
 
   setupPage();
   document.getElementById('exportBtn')?.addEventListener('click', exportData);
-  document.getElementById('importBtn')?.addEventListener('click', () => { document.getElementById('importFileInput')?.click(); });
+  document.getElementById('importBtn')?.addEventListener('click', () => { document.getElementById('drawerImportFile')?.click(); });
 
-  // Mobile hamburger sidebar toggle
-  const anHamburger = document.getElementById('anHamburger');
-  const anSidebar = document.getElementById('anSidebar');
-  const anOverlay = document.getElementById('anSidebarOverlay');
-  function closeAnSidebar() { anSidebar?.classList.remove('open'); anOverlay?.classList.remove('active'); }
-  anHamburger?.addEventListener('click', () => {
-    const isOpen = anSidebar?.classList.toggle('open');
-    anOverlay?.classList.toggle('active', isOpen);
-  });
-  anOverlay?.addEventListener('click', closeAnSidebar);
-  anSidebar?.querySelectorAll('.hub-snav-item').forEach(item => {
-    item.addEventListener('click', closeAnSidebar);
-  });
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

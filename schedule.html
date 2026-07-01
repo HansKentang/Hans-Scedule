@@ -79,155 +79,184 @@
     .sch-cmd-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-xl); }
     .sch-cmd-btn:active { transform: scale(0.95); }
 
-    /* ─── PILL MANAGER (compact chip row + dropdown) ───── */
+    /* ─── PILL MANAGER (colorful chip row + dropdown) ──── */
     .sch-pill-manager {
-      padding: 2px var(--space-4) 2px;
+      padding: 4px var(--space-4);
       border-bottom: 1px solid var(--border-color);
       background: var(--bg-primary);
       flex-shrink: 0;
       display: flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
       position: relative;
-      min-height: 28px;
+      min-height: 32px;
     }
     .sch-pm-chip {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 2px 8px 2px 6px;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px 3px 7px;
       border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      background: transparent;
-      color: var(--text-tertiary);
-      font-size: 0.62rem; font-family: var(--font-family); font-weight: 500;
+      border: 1.5px solid color-mix(in srgb, var(--chip-accent, var(--border-color)) 25%, transparent);
+      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 6%, transparent);
+      color: var(--chip-accent, var(--text-tertiary));
+      font-size: 0.64rem; font-family: var(--font-family); font-weight: 550;
       cursor: pointer;
-      transition: all var(--t-fast);
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
       white-space: nowrap;
       user-select: none;
-      line-height: 1.3;
+      line-height: 1.4;
+      position: relative;
     }
     .sch-pm-chip:hover {
-      border-color: var(--chip-accent, var(--border-color));
-      color: var(--text-primary);
-      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 6%, transparent);
+      border-color: var(--chip-accent, var(--accent));
+      color: var(--chip-accent, var(--accent));
+      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 12%, transparent);
+      transform: translateY(-1px) scale(1.04);
+      box-shadow: 0 3px 10px color-mix(in srgb, var(--chip-accent, var(--accent)) 20%, transparent);
     }
     .sch-pm-chip.active {
       border-color: var(--chip-accent, var(--accent));
       color: var(--chip-accent, var(--accent));
-      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 10%, transparent);
+      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 14%, transparent);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--chip-accent, var(--accent)) 15%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--chip-accent, var(--accent)) 20%, transparent);
     }
+    .sch-pm-chip:active { transform: scale(0.95); }
     .sch-pm-chip-dot {
-      width: 5px; height: 5px; border-radius: 50%;
+      width: 6px; height: 6px; border-radius: 50%;
       background: var(--chip-accent, var(--gray-300));
       flex-shrink: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .sch-pm-chip.active .sch-pm-chip-dot {
+      box-shadow: 0 0 6px var(--chip-accent, var(--accent));
     }
     .sch-pm-chip-count {
       font-size: 0.5rem;
-      opacity: 0.5;
-      margin-left: 1px;
+      opacity: 0.55;
+      margin-left: 2px;
+      background: color-mix(in srgb, var(--chip-accent, var(--text-tertiary)) 10%, transparent);
+      padding: 0 4px;
+      border-radius: 4px;
     }
     .sch-pm-chip-del {
-      width: 14px; height: 14px;
+      width: 16px; height: 16px;
       border: none; background: transparent;
       color: var(--text-tertiary); cursor: pointer;
       padding: 0; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
-      font-size: 0.6rem; line-height: 1;
+      font-size: 0.55rem; line-height: 1;
       opacity: 0;
-      transition: all var(--t-fast);
-      margin-left: 1px;
+      transition: all 0.15s ease;
+      margin-left: 2px;
+      flex-shrink: 0;
     }
-    .sch-pm-chip:hover .sch-pm-chip-del { opacity: 0.4; }
-    .sch-pm-chip .sch-pm-chip-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); }
+    .sch-pm-chip:hover .sch-pm-chip-del { opacity: 0.5; }
+    .sch-pm-chip .sch-pm-chip-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 12%, transparent); transform: scale(1.2); }
     .sch-pm-add-chip {
-      width: 18px; height: 18px;
+      width: 22px; height: 22px;
       border-radius: 50%;
-      border: 1px solid var(--border-subtle);
+      border: 1.5px dashed var(--border-color);
       background: transparent;
       color: var(--text-tertiary);
       cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      transition: all var(--t-fast);
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
       padding: 0;
-      opacity: 0.4;
+      opacity: 0.5;
     }
     .sch-pm-add-chip:hover {
       border-color: var(--accent);
       color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 8%, transparent);
-      transform: scale(1.1);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      transform: scale(1.15) rotate(90deg);
       opacity: 1;
+      border-style: solid;
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 20%, transparent);
     }
     .sch-pm-add-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     
     /* ─── INLINE SUBCATEGORY BAR (below pill manager) ── */
     .sch-sc-bar {
-      padding: 4px var(--space-3);
+      padding: 5px var(--space-3);
       border-bottom: 1px solid var(--border-color);
+      border-left: 3px solid var(--sc-accent, var(--accent));
       background: var(--bg-secondary);
-      display: flex; align-items: center; gap: 4px;
+      display: flex; align-items: center; gap: 5px;
       flex-wrap: wrap;
-      animation: scBarIn 150ms cubic-bezier(0.16, 1, 0.3, 1);
+      animation: scBarIn 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
       overflow: hidden;
     }
     @keyframes scBarIn {
       0% { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
-      100% { max-height: 60px; opacity: 1; }
+      100% { max-height: 80px; opacity: 1; }
     }
     .sch-sc-bar-pill {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 2px 8px 2px 5px;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px 3px 6px;
       border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      background: var(--bg-primary);
+      border: 1.5px solid color-mix(in srgb, var(--sc-accent, var(--border-color)) 25%, transparent);
+      background: color-mix(in srgb, var(--sc-accent, var(--accent)) 6%, transparent);
       color: var(--text-secondary);
       font-size: 0.62rem; font-family: var(--font-family); font-weight: 500;
       cursor: grab;
-      transition: all var(--t-fast);
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
       user-select: none;
       line-height: 1.4;
       white-space: nowrap;
       flex-shrink: 0;
+      position: relative;
     }
-    .sch-sc-bar-pill:hover { border-color: var(--sc-accent, var(--border-color)); color: var(--text-primary); }
-    .sch-sc-bar-pill:active { cursor: grabbing; transform: scale(0.97); }
+    .sch-sc-bar-pill:hover {
+      border-color: var(--sc-accent, var(--accent));
+      color: var(--sc-accent, var(--text-primary));
+      background: color-mix(in srgb, var(--sc-accent, var(--accent)) 10%, transparent);
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px color-mix(in srgb, var(--sc-accent, var(--accent)) 15%, transparent);
+    }
+    .sch-sc-bar-pill:active { cursor: grabbing; transform: scale(0.95); }
     .sch-sc-bar-pill.dragging { opacity: 0.5; }
     .sch-sc-bar-pill .sc-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sc-accent); flex-shrink: 0; }
+    .sch-sc-bar-pill .sc-drag-hint { display: none; }
+    @media (hover: hover) {
+      .sch-sc-bar-pill .sc-drag-hint { display: inline-flex; opacity: 0; transition: opacity 0.15s; }
+      .sch-sc-bar-pill:hover .sc-drag-hint { opacity: 0.3; }
+    }
+    .sch-sc-bar-pill .sc-drag-hint svg { width: 10px; height: 10px; flex-shrink: 0; }
     .sch-sc-bar-pill .sc-name { max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
     .sch-sc-bar-pill .sc-bar-edit,
     .sch-sc-bar-pill .sc-bar-del {
-      width: 14px; height: 14px; border-radius: 50%;
+      width: 16px; height: 16px; border-radius: 50%;
       border: none; background: transparent;
       color: var(--text-tertiary); cursor: pointer;
       display: flex; align-items: center; justify-content: center; padding: 0;
       opacity: 0; flex-shrink: 0;
-      transition: all var(--t-fast);
+      transition: all 0.15s ease;
     }
     .sch-sc-bar-pill:hover .sc-bar-edit,
-    .sch-sc-bar-pill:hover .sc-bar-del { opacity: 0.35; }
-    .sch-sc-bar-pill .sc-bar-edit:hover { opacity: 1; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); transform: scale(1.15); }
-    .sch-sc-bar-pill .sc-bar-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 10%, transparent); transform: scale(1.15); }
+    .sch-sc-bar-pill:hover .sc-bar-del { opacity: 0.4; }
+    .sch-sc-bar-pill .sc-bar-edit:hover { opacity: 1; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); transform: scale(1.2); }
+    .sch-sc-bar-pill .sc-bar-del:hover { opacity: 1; color: #e04040; background: color-mix(in srgb, #e04040 12%, transparent); transform: scale(1.2); }
     .sch-sc-bar-pill .sc-bar-edit svg,
-    .sch-sc-bar-pill .sc-bar-del svg { width: 9px; height: 9px; }
+    .sch-sc-bar-pill .sc-bar-del svg { width: 10px; height: 10px; }
 
     .sch-sc-bar-add-row {
-      display: inline-flex; align-items: center; gap: 3px;
+      display: inline-flex; align-items: center; gap: 4px;
       flex-shrink: 0;
     }
     .sch-sc-bar-add-input {
-      width: 100px;
-      padding: 2px 8px;
+      width: 90px;
+      padding: 3px 10px;
       border-radius: 999px;
-      border: 1px solid var(--border-subtle);
-      background: transparent;
+      border: 1.5px solid var(--border-subtle);
+      background: color-mix(in srgb, var(--accent) 4%, var(--bg-primary));
       color: var(--text-primary);
       font-size: 0.6rem; font-family: var(--font-family);
       outline: none;
-      transition: border-color var(--t-fast);
+      transition: all 0.15s ease;
     }
-    .sch-sc-bar-add-input:focus { border-color: var(--accent); width: 120px; }
+    .sch-sc-bar-add-input:focus { border-color: var(--accent); width: 110px; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent); }
     .sch-sc-bar-add-btn {
-      width: 16px; height: 16px;
+      width: 20px; height: 20px;
       border-radius: 50%;
       border: none;
       background: var(--accent);
@@ -235,11 +264,11 @@
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       padding: 0;
-      transition: all var(--t-fast);
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
       flex-shrink: 0;
     }
-    .sch-sc-bar-add-btn:hover { opacity: 0.85; }
-    .sch-sc-bar-add-btn svg { width: 8px; height: 8px; stroke-width: 2.5; }
+    .sch-sc-bar-add-btn:hover { opacity: 0.9; transform: scale(1.15); box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 30%, transparent); }
+    .sch-sc-bar-add-btn svg { width: 9px; height: 9px; stroke-width: 2.5; }
     .sch-sc-bar-empty {
       font-size: 0.6rem; color: var(--text-tertiary); opacity: 0.4;
       font-style: italic;
@@ -249,32 +278,34 @@
     /* ─── ADD CATEGORY POPUP ── */
     .cat-add-popup {
       position: fixed; z-index: 60;
-      width: 200px;
+      width: 220px;
       background: var(--bg-primary);
       border: 1px solid var(--border-color);
-      border-radius: 10px;
-      box-shadow: var(--shadow-lg);
-      padding: 10px 12px;
-      animation: snavPopupIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+      border-radius: 14px;
+      box-shadow: 0 8px 32px color-mix(in srgb, var(--accent) 15%, rgba(0,0,0,0.15));
+      padding: 14px 16px;
+      animation: snavPopupIn 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .cat-add-input {
-      width: 100%; padding: 6px 10px;
-      border-radius: 8px; border: 1.5px solid var(--border-subtle);
+      width: 100%; padding: 8px 12px;
+      border-radius: 10px; border: 1.5px solid var(--border-subtle);
       background: var(--bg-secondary); color: var(--text-primary);
       font-size: 0.8rem; font-family: var(--font-family);
-      outline: none; transition: border-color var(--t-fast);
-      box-sizing: border-box; margin-bottom: 10px;
+      outline: none; transition: all 0.15s ease;
+      box-sizing: border-box; margin-bottom: 12px;
     }
-    .cat-add-input:focus { border-color: var(--accent); }
+    .cat-add-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
     .cat-add-color-row {
       display: flex; align-items: center; gap: 10px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
     .cat-add-color-row input[type="color"] {
-      width: 34px; height: 34px; padding: 0; border: none;
-      border-radius: 8px; cursor: pointer;
+      width: 38px; height: 38px; padding: 0; border: 2px solid var(--border-subtle);
+      border-radius: 10px; cursor: pointer;
       background: none; flex-shrink: 0;
+      transition: border-color 0.15s;
     }
+    .cat-add-color-row input[type="color"]:hover { border-color: var(--accent); }
     .cat-add-color-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
     .cat-add-color-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
     .cat-add-color-label {
@@ -284,14 +315,14 @@
       display: flex; gap: 8px;
     }
     .cat-add-actions button {
-      flex: 1; padding: 6px 0; border-radius: 8px;
+      flex: 1; padding: 7px 0; border-radius: 10px;
       border: none; font-size: 0.7rem; font-family: var(--font-family);
-      font-weight: 600; cursor: pointer; transition: all var(--t-fast);
+      font-weight: 600; cursor: pointer; transition: all 0.15s ease;
     }
     .cat-add-cancel { background: var(--bg-secondary); color: var(--text-tertiary); }
-    .cat-add-cancel:hover { color: var(--text-primary); }
-    .cat-add-save { background: var(--accent); color: var(--text-inverse); }
-    .cat-add-save:hover { opacity: 0.9; }
+    .cat-add-cancel:hover { color: var(--text-primary); background: color-mix(in srgb, var(--accent) 6%, var(--bg-secondary)); }
+    .cat-add-save { background: var(--accent); color: var(--text-inverse); box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 25%, transparent); }
+    .cat-add-save:hover { opacity: 0.9; transform: translateY(-1px); }
 
 
 
@@ -369,27 +400,38 @@
       /* Pill manager mobile */
     #pmChips { display: contents; }
     .sch-pill-manager {
-        padding: 1px var(--space-2) 1px;
-        gap: 2px;
-        min-height: 24px;
-      }
-      .sch-pm-chip {
-        font-size: 0.55rem;
-        padding: 1px 6px 1px 4px;
-      }
-      .sch-sc-bar {
         padding: 3px var(--space-2);
         gap: 3px;
+        min-height: 28px;
+      }
+      .sch-pm-chip {
+        font-size: 0.58rem;
+        padding: 4px 10px 4px 7px;
+        gap: 4px;
+      }
+      .sch-pm-chip-dot { width: 7px; height: 7px; }
+      .sch-pm-chip-del { width: 20px; height: 20px; opacity: 0.4; font-size: 0.6rem; }
+      .sch-pm-chip-edit { width: 20px; height: 20px; opacity: 0.4; }
+      .sch-pm-chip-edit svg { width: 12px; height: 12px; }
+      .sch-pm-add-chip { width: 26px; height: 26px; }
+      .sch-sc-bar {
+        padding: 5px var(--space-2);
+        gap: 4px;
       }
       .sch-sc-bar-pill {
-        font-size: 0.58rem;
-        padding: 1px 6px 1px 4px;
+        font-size: 0.6rem;
+        padding: 4px 10px 4px 7px;
+        gap: 4px;
       }
-      .sch-sc-bar-pill .sc-name { max-width: 60px; }
+      .sch-sc-bar-pill .sc-name { max-width: 70px; }
       .sch-sc-bar-pill .sc-bar-edit,
-      .sch-sc-bar-pill .sc-bar-del { opacity: 0.35; }
-      .sch-sc-bar-add-input { width: 80px; }
-      .sch-sc-bar-add-input:focus { width: 100px; }
+      .sch-sc-bar-pill .sc-bar-del { opacity: 0.4; width: 22px; height: 22px; }
+      .sch-sc-bar-pill .sc-bar-edit svg,
+      .sch-sc-bar-pill .sc-bar-del svg { width: 12px; height: 12px; }
+      .sch-sc-bar-pill .sc-drag-hint { display: none; }
+      .sch-sc-bar-add-input { width: 80px; padding: 4px 10px; }
+      .sch-sc-bar-add-input:focus { width: 120px; }
+      .sch-sc-bar-add-btn { width: 24px; height: 24px; }
 
       /* Calendar grid mobile */
       #calendarContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }

@@ -621,7 +621,7 @@ function renderTimeline() {
 
   const firstStr = weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const lastStr = addDays(weekStart, 6).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  html = `<div class="act-tl-weeklabel">${firstStr} – ${lastStr}</div>`;
+  let html = `<div class="act-tl-weeklabel">${firstStr} – ${lastStr}</div>`;
 
   for (const day of days) {
     const ds = formatDate(day);
@@ -938,7 +938,7 @@ function setupPage() {
   document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
   // settingsBtnSidebar removed
   dom.importFileInput?.addEventListener('change', importData);
-  document.getElementById('importDataBtn')?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
+  document.getElementById('importBtn')?.addEventListener('click', () => { if (dom.importFileInput) { dom.importFileInput.value = ''; dom.importFileInput.click(); } });
 
   dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
   dom.aiChatOverlay?.addEventListener('click', hideAIChat);

@@ -652,32 +652,35 @@ function openCategoryEditPopup(anchorEl, tagId) {
   const curCat = loadCustomCategories().find(c => c.id === tagId) || loadCustomTags().find(t => t.id === tagId);
   if (!curCat) return;
 
+  const accent = curCat.color || '#6366f1';
+
   const popup = document.createElement('div');
   popup.id = 'catEditPopup';
   popup.className = 'cat-edit-popup';
+  popup.style.setProperty('--edit-accent', accent);
   popup.innerHTML = `
     <div class="cat-edit-popup-header">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span class="cat-edit-dot" style="background:${accent}"></span>
       <span>Edit Category</span>
     </div>
     <div class="cat-edit-popup-body">
-      <div class="tf-group">
-        <label class="tf-label">Name</label>
-        <input type="text" id="catEditName" class="form-input" value="${escapeHtml(curCat.label || curCat.name)}" autocomplete="off" maxlength="30">
+      <div class="cat-edit-field">
+        <input type="text" id="catEditName" value="${escapeHtml(curCat.label || curCat.name)}" autocomplete="off" maxlength="30" spellcheck="false">
       </div>
-      <div class="tf-group">
-        <label class="tf-label">Color</label>
-        <div class="cat-edit-color-row">
-          <input type="color" id="catEditColor" value="${curCat.color || '#6366f1'}">
-          <span style="font-size:0.65rem;color:var(--text-tertiary);opacity:0.6">Pick a color</span>
+      <div class="cat-edit-field">
+        <div class="cat-edit-swatches">
+          ${['#6366f1','#f59e0b','#ef4444','#22c55e','#06b6d4','#ec4899','#f97316','#8b5cf6','#14b8a6','#84cc16'].map(c =>
+            `<button class="cat-edit-swatch${c === accent ? ' active' : ''}" style="background:${c}" data-color="${c}"></button>`
+          ).join('')}
+          <div class="cat-edit-custom-color">
+            <input type="color" id="catEditColor" value="${accent}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
         </div>
       </div>
       <div class="cat-edit-actions">
-        <button class="tf-btn tf-btn-ghost" id="catEditCancel">Cancel</button>
-        <button class="tf-btn tf-btn-primary" id="catEditSave">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-          Save
-        </button>
+        <button id="catEditCancel">Cancel</button>
+        <button id="catEditSave">Save</button>
       </div>
     </div>
   `;
@@ -686,17 +689,27 @@ function openCategoryEditPopup(anchorEl, tagId) {
 
   requestAnimationFrame(() => {
     const rect = anchorEl.getBoundingClientRect();
-    const pw = 240, ph = popup.offsetHeight || 280;
-    let left = rect.right - pw;
-    let top = rect.top;
-    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-    if (left < 8) left = 8;
-    if (top + ph > window.innerHeight - 8) top = window.innerHeight - ph - 8;
-    if (top < 8) top = 8;
+    const pw = 220, ph = popup.offsetHeight || 260;
+    let left = rect.right - pw + 16;
+    let top = rect.top - 10;
+    if (left + pw > window.innerWidth - 12) left = window.innerWidth - pw - 12;
+    if (left < 12) left = 12;
+    if (top + ph > window.innerHeight - 12) top = window.innerHeight - ph - 12;
+    if (top < 12) top = 12;
     popup.style.left = left + 'px';
     popup.style.top = top + 'px';
+    popup.classList.add('cat-edit-visible');
     document.getElementById('catEditName')?.focus();
     document.getElementById('catEditName')?.select();
+  });
+
+  // Swatch picker
+  popup.querySelectorAll('.cat-edit-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      popup.querySelectorAll('.cat-edit-swatch').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('catEditColor').value = btn.dataset.color;
+    });
   });
 
   function saveEdit() {
@@ -706,8 +719,8 @@ function openCategoryEditPopup(anchorEl, tagId) {
     const newName = nameEl.value.trim();
     if (!newName) {
       nameEl.focus();
-      nameEl.classList.add('tpl-add-input-error');
-      setTimeout(() => nameEl.classList.remove('tpl-add-input-error'), 2000);
+      nameEl.style.borderColor = '#e04040';
+      setTimeout(() => nameEl.style.borderColor = '', 1500);
       return;
     }
     updateCustomCategory(tagId, newName, colorEl.value);
@@ -1497,7 +1510,22 @@ var __origLS = {};
   localStorage.getItem = function(key) { return __origLS.getItem(_p(key)); };
   localStorage.setItem = function(key, val) {
     var pKey = _p(key);
-    __origLS.setItem(pKey, val);
+    try { __origLS.setItem(pKey, val); } catch (e) {
+      if (e.name === 'QuotaExceededError' || e.code === 22) {
+        try {
+          var freed = 0;
+          for (var i = localStorage.length - 1; i >= 0; i--) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf('haven-image-') === 0) {
+              localStorage.removeItem(k);
+              freed++;
+              if (freed >= 10) break;
+            }
+          }
+          if (freed > 0) __origLS.setItem(pKey, val);
+        } catch (e2) { /* ignore */ }
+      }
+    }
   };
   localStorage.removeItem = function(key) { return __origLS.removeItem(_p(key)); };
 })();
@@ -3693,13 +3721,13 @@ function openSettingsDrawer() {
   if (!drawer || !overlay) return;
   if (dom.settingsApiKey) dom.settingsApiKey.value = state.apiKey || '';
   if (dom.settingsProvider) dom.settingsProvider.value = state.apiProvider || 'groq';
-  try { updateModelOptions(); } catch (e) { console.warn('drawer: updateModelOptions', e); }
-  try { updateSettingsKeyStatus(); } catch (e) { console.warn('drawer: updateSettingsKeyStatus', e); }
-  try { loadAIUsage(); } catch (e) { console.warn('drawer: loadAIUsage', e); }
-  try { renderAIUsage(); } catch (e) { console.warn('drawer: renderAIUsage', e); }
-  try { renderAccentPickerInSettings(); } catch (e) { console.warn('drawer: renderAccentPickerInSettings', e); }
-  try { renderCardColorsInSettings(); } catch (e) { console.warn('drawer: renderCardColorsInSettings', e); }
-  try { renderBubbleConfigInSettings(); } catch (e) { console.warn('drawer: renderBubbleConfigInSettings', e); }
+  try { updateModelOptions(); } catch (e) {}
+  try { updateSettingsKeyStatus(); } catch (e) {}
+  try { loadAIUsage(); } catch (e) {}
+  try { renderAIUsage(); } catch (e) {}
+  try { renderAccentPickerInSettings(); } catch (e) {}
+  try { renderCardColorsInSettings(); } catch (e) {}
+  try { renderBubbleConfigInSettings(); } catch (e) {}
   overlay.classList.remove('hidden');
   drawer.classList.remove('hidden');
   requestAnimationFrame(() => {
