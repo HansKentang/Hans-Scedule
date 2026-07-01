@@ -40,6 +40,15 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Skip Firestore / Firebase connections — they use WebSocket/long-polling
+  // and must not be cached or intercepted by the service worker.
+  var url = e.request.url;
+  if (url.indexOf('firestore.googleapis.com') !== -1 ||
+      url.indexOf('firebase.googleapis.com') !== -1 ||
+      url.indexOf('googleapis.com/identitytoolkit') !== -1 ||
+      url.indexOf('googleapis.com/securetoken') !== -1) {
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then((hit) => hit || fetch(e.request))
   );

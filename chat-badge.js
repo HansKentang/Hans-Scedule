@@ -79,6 +79,14 @@ function initChatBadge() {
   setTimeout(function() {
     subscribeToConversations();
   }, 100);
+
+  // Clean up Firestore listener on page unload to prevent "message channel closed" errors
+  window.addEventListener('beforeunload', function() {
+    if (_badgeConvUnsub) {
+      _badgeConvUnsub();
+      _badgeConvUnsub = null;
+    }
+  });
 }
 
 // Expose for chat.js to reuse if needed
