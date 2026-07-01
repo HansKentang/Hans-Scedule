@@ -275,54 +275,86 @@
     }
     .tpl-add-input-error { border-color: #e04040 !important; }
 
-    /* ─── ADD CATEGORY POPUP ── */
+    /* ─── ADD CATEGORY BUBBLE ── */
     .cat-add-popup {
       position: fixed; z-index: 60;
-      width: 220px;
+      width: 224px;
       background: var(--bg-primary);
       border: 1px solid var(--border-color);
-      border-radius: 14px;
-      box-shadow: 0 8px 32px color-mix(in srgb, var(--accent) 15%, rgba(0,0,0,0.15));
-      padding: 14px 16px;
-      animation: snavPopupIn 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      border-radius: 16px;
+      box-shadow: 0 12px 36px color-mix(in srgb, var(--accent) 12%, rgba(0,0,0,0.08)), 0 4px 12px rgba(0,0,0,0.04);
+      overflow: hidden;
+      opacity: 0;
+      transform: scale(0.9) translateY(8px);
+      transition: opacity 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .cat-add-popup:not(.hidden) {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    .cat-add-popup::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 16px 16px 0 0;
+    }
+    .cat-add-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 14px 10px;
+      background: color-mix(in srgb, var(--accent) 4%, var(--bg-primary));
+    }
+    .cat-add-header svg { flex-shrink: 0; color: var(--accent); }
+    .cat-add-header span { flex: 1; font-size: 0.72rem; font-weight: 600; color: var(--text-primary); letter-spacing: 0.01em; }
+    .cat-add-body {
+      padding: 10px 14px 14px;
+      display: flex; flex-direction: column; gap: 10px;
     }
     .cat-add-input {
-      width: 100%; padding: 8px 12px;
+      width: 100%; padding: 9px 12px; box-sizing: border-box;
       border-radius: 10px; border: 1.5px solid var(--border-subtle);
       background: var(--bg-secondary); color: var(--text-primary);
-      font-size: 0.8rem; font-family: var(--font-family);
-      outline: none; transition: all 0.15s ease;
-      box-sizing: border-box; margin-bottom: 12px;
+      font-size: 0.82rem; font-family: var(--font-family);
+      outline: none; transition: all 0.15s;
     }
-    .cat-add-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
-    .cat-add-color-row {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 14px;
+    .cat-add-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); background: var(--bg-primary); }
+    .cat-add-input::placeholder { color: var(--text-tertiary); opacity: 0.5; }
+    .cat-add-swatches {
+      display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
     }
-    .cat-add-color-row input[type="color"] {
-      width: 38px; height: 38px; padding: 0; border: 2px solid var(--border-subtle);
-      border-radius: 10px; cursor: pointer;
-      background: none; flex-shrink: 0;
-      transition: border-color 0.15s;
+    .cat-add-swatch {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid transparent; cursor: pointer; padding: 0;
+      transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink: 0;
     }
-    .cat-add-color-row input[type="color"]:hover { border-color: var(--accent); }
-    .cat-add-color-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
-    .cat-add-color-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
-    .cat-add-color-label {
-      font-size: 0.7rem; color: var(--text-tertiary);
+    .cat-add-swatch:hover { transform: scale(1.25); border-color: var(--border-color); }
+    .cat-add-swatch.active { border-color: var(--text-primary); transform: scale(1.2); box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px currentColor; }
+    .cat-add-custom-color {
+      position: relative; width: 24px; height: 24px; flex-shrink: 0;
     }
+    .cat-add-custom-color input[type="color"] {
+      width: 24px; height: 24px; padding: 0; border: 2px solid var(--border-subtle);
+      border-radius: 50%; cursor: pointer; opacity: 0; position: absolute; inset: 0; z-index: 1;
+    }
+    .cat-add-custom-color svg {
+      width: 24px; height: 24px; color: var(--text-tertiary);
+      position: absolute; inset: 0; pointer-events: none;
+      transition: color 0.15s;
+    }
+    .cat-add-custom-color input[type="color"]:hover + svg { color: var(--text-primary); }
     .cat-add-actions {
-      display: flex; gap: 8px;
+      display: flex; gap: 6px; margin-top: 4px;
     }
     .cat-add-actions button {
-      flex: 1; padding: 7px 0; border-radius: 10px;
-      border: none; font-size: 0.7rem; font-family: var(--font-family);
-      font-weight: 600; cursor: pointer; transition: all 0.15s ease;
+      flex: 1; padding: 8px 0; border-radius: 10px;
+      border: none; font-size: 0.72rem; font-family: var(--font-family);
+      font-weight: 600; cursor: pointer; transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .cat-add-cancel { background: var(--bg-secondary); color: var(--text-tertiary); }
-    .cat-add-cancel:hover { color: var(--text-primary); background: color-mix(in srgb, var(--accent) 6%, var(--bg-secondary)); }
-    .cat-add-save { background: var(--accent); color: var(--text-inverse); box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 25%, transparent); }
-    .cat-add-save:hover { opacity: 0.9; transform: translateY(-1px); }
+    .cat-add-cancel:hover { color: var(--text-primary); background: color-mix(in srgb, var(--accent) 8%, var(--bg-secondary)); }
+    .cat-add-save { background: var(--accent); color: var(--text-inverse); box-shadow: 0 3px 8px color-mix(in srgb, var(--accent) 30%, transparent); }
+    .cat-add-save:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent); }
 
 
 
@@ -787,16 +819,34 @@
         </button>
       </div>
 
-      <!-- Add Category Popup -->
+      <!-- Add Category Bubble -->
       <div class="cat-add-popup hidden" id="catAddPopup">
-        <input type="text" class="cat-add-input" id="catAddInput" placeholder="Category name" maxlength="24" autocomplete="off">
-        <div class="cat-add-color-row">
-          <input type="color" id="catColorPicker" value="#8b5cf6">
-          <span class="cat-add-color-label" data-i18n="sch.pickColor">Pick a colour</span>
+        <div class="cat-add-header">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Add Category</span>
         </div>
-        <div class="cat-add-actions">
-          <button class="cat-add-cancel" id="catAddCancel" data-i18n="sch.cancel">Cancel</button>
-          <button class="cat-add-save" id="catAddSave" data-i18n="sch.add">Add</button>
+        <div class="cat-add-body">
+          <input type="text" class="cat-add-input" id="catAddInput" placeholder="e.g. Design, Health..." maxlength="24" autocomplete="off" spellcheck="false">
+          <div class="cat-add-swatches" id="catAddSwatches">
+            <button class="cat-add-swatch active" style="background:#6366f1" data-color="#6366f1"></button>
+            <button class="cat-add-swatch" style="background:#f59e0b" data-color="#f59e0b"></button>
+            <button class="cat-add-swatch" style="background:#ef4444" data-color="#ef4444"></button>
+            <button class="cat-add-swatch" style="background:#22c55e" data-color="#22c55e"></button>
+            <button class="cat-add-swatch" style="background:#06b6d4" data-color="#06b6d4"></button>
+            <button class="cat-add-swatch" style="background:#ec4899" data-color="#ec4899"></button>
+            <button class="cat-add-swatch" style="background:#f97316" data-color="#f97316"></button>
+            <button class="cat-add-swatch" style="background:#8b5cf6" data-color="#8b5cf6"></button>
+            <button class="cat-add-swatch" style="background:#14b8a6" data-color="#14b8a6"></button>
+            <button class="cat-add-swatch" style="background:#84cc16" data-color="#84cc16"></button>
+            <div class="cat-add-custom-color">
+              <input type="color" id="catColorPicker" value="#6366f1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+          <div class="cat-add-actions">
+            <button class="cat-add-cancel" id="catAddCancel">Cancel</button>
+            <button class="cat-add-save" id="catAddSave">Add</button>
+          </div>
         </div>
       </div>
 
