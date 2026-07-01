@@ -190,10 +190,10 @@ function renderTags() {
         <span class="tag-column-dot"></span>
         <span class="tag-column-name">${TAG_LABELS[tag]}</span>
         <span class="tag-column-count">${d.count}</span>
-        ${!isBuiltin ? `<button class="tag-col-edit" data-edit-cat="${tag}" title="Edit category">
+        ${!isBuiltin ? `<button class="tag-col-edit" data-edit-cat="${tag}" data-label="Edit">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>` : ''}
-        ${!isBuiltin ? `<button class="tag-col-del" data-del-cat="${tag}" title="Delete category"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
+        ${!isBuiltin ? `<button class="tag-col-del" data-del-cat="${tag}" data-label="Delete"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
         <button class="btn btn-ghost tag-color-btn" data-tag="${tag}" title="Change card color" style="margin-left:auto;padding:2px;line-height:0">
           <span class="tag-color-swatch" style="display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px solid var(--border-color)"></span>
         </button>
@@ -348,7 +348,7 @@ function renderTags() {
       const tag = btn.dataset.delCat;
       if (!tag || BUILTIN_TAGS.includes(tag)) return;
       const label = TAG_LABELS[tag] || tag;
-      if (confirm(`Delete category "${label}"? All tasks with this category will also be deleted.`)) {
+      if (confirm(`Delete category "${label}"? All tasks with this category will also be removed.`)) {
         removeCustomCategory(tag);
         renderActivities();
         showToast(`"${label}" deleted`, 'info', 2000);
@@ -363,6 +363,46 @@ function renderTags() {
       const tag = btn.dataset.editCat;
       if (!tag || BUILTIN_TAGS.includes(tag)) return;
       openCategoryEditPopup(btn, tag);
+    });
+  });
+
+  // Double-click category name to rename inline
+  boardInner.querySelectorAll('.tag-column-name').forEach(el => {
+    const col = el.closest('.tag-column');
+    const tag = col?.dataset.boardTag;
+    if (!tag) return;
+    el.title = 'Double-click to rename';
+    el.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      const oldName = el.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'tag-column-name-input';
+      input.value = oldName;
+      input.maxLength = 24;
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+      el.replaceWith(input);
+      input.focus();
+      input.select();
+      const finish = () => {
+        const newName = input.value.trim();
+        if (newName && newName !== oldName) {
+          if (!BUILTIN_TAGS.includes(tag)) {
+            updateCustomCategory(tag, newName, (TAG_COLORS[tag] || TAG_COLORS.meeting).text);
+          } else {
+            renameTag(tag, newName);
+          }
+          renderActivities();
+        } else {
+          renderActivities();
+        }
+      };
+      input.addEventListener('blur', finish);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = oldName; input.blur(); }
+      });
     });
   });
 
@@ -949,6 +989,47 @@ function setupPage() {
   // Week navigation
   document.getElementById('actWeekPrev')?.addEventListener('click', () => { weekOffset--; renderActivities(); });
   document.getElementById('actWeekNext')?.addEventListener('click', () => { weekOffset++; renderActivities(); });
+
+  // Access Hub (FAB)
+  document.getElementById('accessMain')?.addEventListener('click', toggleAccessHub);
+  document.getElementById('actAccessExport')?.addEventListener('click', () => {
+    toggleAccessHub();
+    exportData();
+  });
+  document.getElementById('actAccessAIChat')?.addEventListener('click', () => {
+    toggleAccessHub();
+    if (typeof showAIChat === 'function') showAIChat();
+  });
+  document.getElementById('actAccessReset')?.addEventListener('click', () => {
+    toggleAccessHub();
+    weekOffset = 0;
+    renderActivities();
+  });
+  document.addEventListener('click', (e) => {
+    const hub = document.getElementById('accessHub');
+    if (hub && !hub.contains(e.target)) {
+      document.getElementById('accessItems')?.classList.remove('open');
+      document.getElementById('accessMain')?.classList.remove('open');
+    }
+  });
+
+  // Access Hub (FAB)
+  document.getElementById('accessMain')?.addEventListener('click', toggleAccessHub);
+  document.getElementById('actAccessExport')?.addEventListener('click', () => {
+    toggleAccessHub();
+    exportData();
+  });
+  document.getElementById('actAccessAIChat')?.addEventListener('click', () => {
+    toggleAccessHub();
+    if (typeof showAIChat === 'function') showAIChat();
+  });
+  document.addEventListener('click', (e) => {
+    const hub = document.getElementById('accessHub');
+    if (hub && !hub.contains(e.target)) {
+      document.getElementById('accessItems')?.classList.remove('open');
+      document.getElementById('accessMain')?.classList.remove('open');
+    }
+  });
 
   // View toggle
   document.querySelectorAll('.act-view-btn').forEach(btn => {

@@ -8113,152 +8113,81 @@ html.light .hub-add-popup {
 }
 .cat-edit-actions button:last-child:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 4px 12px color-mix(in srgb, var(--edit-accent, var(--accent)) 35%, transparent); }
 
-/* ─── Schedule pill edit button ────────────────── */
-.sch-pm-chip-edit {
+/* ─── Category pill action buttons (edit/delete) ── */
+.sch-pm-chip-edit, .sch-pm-chip-del,
+.tag-col-edit, .tag-col-del {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border: none;
-  background: color-mix(in srgb, var(--chip-accent, var(--text-tertiary)) 6%, transparent);
-  color: var(--chip-accent, var(--text-tertiary));
   cursor: pointer;
-  border-radius: 50%;
+  border-radius: 6px;
   padding: 0;
-  opacity: 0.3;
-  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
   flex-shrink: 0;
-  margin-left: 3px;
+  margin: 0 1px;
   position: relative;
-}
-.sch-pm-chip-edit::after {
-  content: 'Edit';
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%) scale(0.8);
-  background: var(--bg-primary);
+  background: transparent;
   color: var(--text-tertiary);
-  font-size: 0.5rem;
-  font-weight: 500;
-  padding: 1px 5px;
-  border-radius: 4px;
-  border: 1px solid var(--border-subtle);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.12s;
 }
-.sch-pm-chip-edit:hover::after {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
+/* Always faintly visible so users know it's there */
+.sch-pm-chip-edit, .tag-col-edit { opacity: 0.2; }
+.sch-pm-chip-del, .tag-col-del { opacity: 0.12; }
+.sch-pm-chip:hover .sch-pm-chip-edit, .sch-pm-chip:hover .sch-pm-chip-del,
+.tag-column-header:hover .tag-col-edit, .tag-column-header:hover .tag-col-del {
+  opacity: 0.45;
 }
-.sch-pm-chip:hover .sch-pm-chip-edit {
-  opacity: 0.7;
-}
-.sch-pm-chip-edit:hover {
+/* Stronger on button hover */
+.sch-pm-chip-edit:hover, .sch-pm-chip-del:hover,
+.tag-col-edit:hover, .tag-col-del:hover {
   opacity: 1 !important;
+  transform: scale(1.12);
+}
+/* Edit-specific hover */
+.sch-pm-chip-edit:hover, .tag-col-edit:hover {
   color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  transform: scale(1.15);
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 20%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 18%, transparent);
 }
-.sch-pm-chip-edit svg {
-  width: 11px;
-  height: 11px;
-}
-
-/* ─── Activities column edit button ────────────────── */
-.tag-col-edit {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border-radius: 50%;
-  padding: 0;
-  opacity: 0.3;
-  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
-  flex-shrink: 0;
-  margin: 0 2px;
-  position: relative;
-}
-.tag-col-edit::after {
-  content: 'Edit';
-  position: absolute;
-  bottom: calc(100% + 4px);
-  left: 50%;
-  transform: translateX(-50%) scale(0.8);
-  background: var(--bg-primary);
-  color: var(--text-tertiary);
-  font-size: 0.5rem;
-  font-weight: 500;
-  padding: 1px 5px;
-  border-radius: 4px;
-  border: 1px solid var(--border-subtle);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.12s;
-}
-.tag-col-edit:hover::after {
-  opacity: 1;
-  transform: translateX(-50%) scale(1);
-}
-.tag-column-header:hover .tag-col-edit {
-  opacity: 0.6;
-}
-.tag-col-edit:hover {
-  opacity: 1 !important;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  transform: scale(1.15);
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 20%, transparent);
-}
-.tag-col-edit svg {
-  width: 11px;
-  height: 11px;
-}
-
-/* ─── Delete category buttons ────────────────── */
-.sch-pm-chip-del,
-.tag-col-del {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  border: none;
-  background: color-mix(in srgb, #e04040 6%, transparent);
-  color: color-mix(in srgb, #e04040 70%, var(--text-tertiary));
-  cursor: pointer;
-  border-radius: 50%;
-  padding: 0;
-  opacity: 0;
-  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
-  flex-shrink: 0;
-  margin: 0 2px;
-}
-.sch-pm-chip:hover .sch-pm-chip-del,
-.tag-column-header:hover .tag-col-del {
-  opacity: 0.3;
-}
-.sch-pm-chip-del:hover,
-.tag-col-del:hover {
-  opacity: 1 !important;
+/* Delete-specific hover */
+.sch-pm-chip-del:hover, .tag-col-del:hover {
   color: #e04040;
-  background: color-mix(in srgb, #e04040 14%, transparent);
-  transform: scale(1.15);
-  box-shadow: 0 2px 6px color-mix(in srgb, #e04040 20%, transparent);
+  background: color-mix(in srgb, #e04040 10%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, #e04040 18%, transparent);
 }
-.sch-pm-chip-del svg,
-.tag-col-del svg {
-  width: 9px;
-  height: 9px;
+
+/* ─── Tooltip (shared via attr) ── */
+.sch-pm-chip-edit::after, .sch-pm-chip-del::after,
+.tag-col-edit::after, .tag-col-del::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.85);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.48rem;
+  font-weight: 500;
+  padding: 2px 6px 1px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.1s;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
+.sch-pm-chip-edit:hover::after, .sch-pm-chip-del:hover::after,
+.tag-col-edit:hover::after, .tag-col-del:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* ─── Icon sizes ── */
+.sch-pm-chip-edit svg, .tag-col-edit svg { width: 10px; height: 10px; }
+.sch-pm-chip-del svg, .tag-col-del svg { width: 9px; height: 9px; }
 

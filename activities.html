@@ -32,6 +32,14 @@
     }
     .tag-column-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
     .tag-column-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tag-column-name-input {
+      flex: 1; min-width: 0;
+      padding: 1px 4px; margin: -1px 0;
+      border-radius: 4px; border: 1.5px solid var(--ctc, var(--accent));
+      background: var(--bg-primary); color: var(--text-primary);
+      font-size: 0.72rem; font-family: var(--font-family); font-weight: 600;
+      outline: none;
+    }
     .tag-column-count {
       font-size: 0.6rem; color: var(--text-tertiary); font-weight: 500;
       background: var(--bg-primary); padding: 1px 5px; border-radius: var(--radius-full);
@@ -836,6 +844,35 @@
             <div class="act-log-empty">Complete a task to see it here</div>
           </div>
         </div>
+
+    <!-- Access Hub (FAB) -->
+    <div class="access-hub hub-anim-in hub-anim-in-5" id="accessHub">
+      <div class="access-items" id="accessItems">
+        <button class="access-item" id="actAccessExport" data-action="export" title="Export data">
+          <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </span>
+          <span class="access-item-label">Export</span>
+        </button>
+        <button class="access-item" id="actAccessAIChat" data-action="aiChat" title="AI assistant">
+          <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+          </span>
+          <span class="access-item-label">AI Chat</span>
+        </button>
+        <button class="access-item" id="actAccessReset" data-action="resetWeek" title="Reset to current week">
+          <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+          </span>
+          <span class="access-item-label">Reset Week</span>
+        </button>
+      </div>
+      <button class="access-main" id="accessMain" aria-label="Access menu">
+        <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+    </div>
 
     <!-- Minimal footer -->
     <footer class="hub-minifooter hub-anim-in hub-anim-in-5">

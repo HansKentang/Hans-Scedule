@@ -587,6 +587,15 @@ function removeCustomCategory(id) {
   state.tasks = state.tasks.filter(t => t.tag !== id);
   saveTasks();
   saveCardColors(cardColors);
+  // Clean up activity completions referencing the deleted tag
+  try {
+    const logKey = 'haven-activities-completions';
+    const raw = localStorage.getItem(logKey);
+    if (raw) {
+      const entries = JSON.parse(raw).filter(e => e.tag !== id);
+      localStorage.setItem(logKey, JSON.stringify(entries));
+    }
+  } catch (e) {}
   injectCustomTagStyles();
 }
 
@@ -851,6 +860,28 @@ const DEFAULT_TAG_COLORS = {
 };
 
 let cardColors = {};
+
+// ─── RENAMED LABELS (built-in + custom tag label overrides) ──
+const RENAMED_LABELS_KEY = 'haven-renamed-labels';
+
+function loadRenamedLabels() {
+  try { return JSON.parse(localStorage.getItem(RENAMED_LABELS_KEY)) || {}; } catch (e) { return {}; }
+}
+function saveRenamedLabels(map) {
+  try { localStorage.setItem(RENAMED_LABELS_KEY, JSON.stringify(map)); } catch (e) {}
+}
+function applyRenamedLabels() {
+  const map = loadRenamedLabels();
+  for (const id of Object.keys(map)) {
+    if (TAG_LABELS[id] !== undefined) TAG_LABELS[id] = map[id];
+  }
+}
+function renameTag(id, name) {
+  TAG_LABELS[id] = name;
+  const map = loadRenamedLabels();
+  map[id] = name;
+  saveRenamedLabels(map);
+}
 
 // ─── CUSTOM TAGS ─────────────────────────────────────────────
 const CUSTOM_TAGS_KEY = 'haven-custom-tags';
@@ -2553,6 +2584,7 @@ function loadState() {
     if (provider) state.apiProvider = provider;
     initCustomTags();
     initCustomCategories();
+    applyRenamedLabels();
     loadCardColors();
     loadUserProfile();
     loadImages();
@@ -6493,6 +6525,18 @@ function fitTextAll(selector, maxSize, minSize) {
 
 window.fitTextAll = fitTextAll;
 window.fitText = fitText;
+
+// ─── ACCESS HUB: open/close arced bubble menu ──
+function toggleAccessHub() {
+  const items = document.getElementById('accessItems');
+  const btn = document.getElementById('accessMain');
+  if (items && btn) {
+    const opening = !items.classList.contains('open');
+    if (opening) positionAccessItems();
+    items.classList.toggle('open');
+    btn.classList.toggle('open');
+  }
+}
 
 // ─── ACCESS HUB: position items in an auto‑adjusting arc ──
 function positionAccessItems() {

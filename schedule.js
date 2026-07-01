@@ -1555,17 +1555,18 @@ function bindEvents() {
     if (!tag || BUILTIN_TAGS.includes(tag)) return;
     e.preventDefault();
     const label = TAG_LABELS[tag] || tag;
-    if (confirm(`Delete category "${label}"? All subcategories will be removed.`)) {
+    if (confirm(`Delete category "${label}"? All tasks with this category will also be removed.`)) {
       removeCustomCategory(tag);
       if (state._openPmTag === tag) {
-        state._openPmTag = TAG_ORDER[0];
+        state._openPmTag = TAG_ORDER[0] || null;
       }
-      showSubcategoryBubble(state._openPmTag);
       renderSchTemplates();
-      showToast(`Category "${label}" deleted`, 'info', 2000);
+      if (state._openPmTag) showSubcategoryBubble(state._openPmTag);
+      renderCalendar();
+      showToast(`"${label}" deleted`, 'info', 2000);
     }
   });
-
+  
   // ─── Long-press delete on mobile ──
   let longPressTimer = null;
   document.getElementById('pmChips')?.addEventListener('touchstart', (e) => {
@@ -1575,14 +1576,15 @@ function bindEvents() {
     if (!tag || BUILTIN_TAGS.includes(tag)) return;
     longPressTimer = setTimeout(() => {
       const label = TAG_LABELS[tag] || tag;
-      if (confirm(`Delete category "${label}"? All subcategories will be removed.`)) {
+      if (confirm(`Delete category "${label}"? All tasks with this category will also be removed.`)) {
         removeCustomCategory(tag);
         if (state._openPmTag === tag) {
-          state._openPmTag = TAG_ORDER[0];
+          state._openPmTag = TAG_ORDER[0] || null;
         }
-        showSubcategoryBubble(state._openPmTag);
         renderSchTemplates();
-        showToast(`Category "${label}" deleted`, 'info', 2000);
+        if (state._openPmTag) showSubcategoryBubble(state._openPmTag);
+        renderCalendar();
+        showToast(`"${label}" deleted`, 'info', 2000);
       }
     }, 600);
   });
@@ -1749,18 +1751,6 @@ function bindEvents() {
 
 
 // ─── ACCESS HUB TOGGLE ──────────────────────────────────
-function toggleAccessHub() {
-  const items = document.getElementById('accessItems');
-  const btn = document.getElementById('accessMain');
-  if (items && btn) {
-    const opening = !items.classList.contains('open');
-    if (opening) positionAccessItems();
-    items.classList.toggle('open');
-    btn.classList.toggle('open');
-  }
-}
-
-
 // ─── POMODORO TIMER ────────────────────────────────────────
 let pomodoroInterval = null;
 
@@ -2121,23 +2111,22 @@ function renderSchTemplates() {
     const accent = col.text;
     const isOpen = state._openPmTag === tag;
     const isBuiltin = BUILTIN_TAGS.includes(tag);
-    html += `<button class="sch-pm-chip${isOpen ? ' active' : ''}" data-pm-tag="${tag}"
-      style="--chip-accent:${accent}">
+    html += `<div class="sch-pm-chip${isOpen ? ' active' : ''}" data-pm-tag="${tag}"
+      style="--chip-accent:${accent}" role="button" tabindex="0">
       <span class="sch-pm-chip-dot" style="background:${accent}"></span>
-      ${TAG_LABELS[tag]}
+      <span class="sch-pm-chip-label">${TAG_LABELS[tag]}</span>
       ${subs.length > 0 ? `<span class="sch-pm-chip-count">${subs.length}</span>` : ''}
-      ${!isBuiltin ? `<button class="sch-pm-chip-edit" data-edit-tag="${tag}" title="Edit category">
+      ${!isBuiltin ? `<button class="sch-pm-chip-edit" data-edit-tag="${tag}" data-label="Edit">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>` : ''}
-      ${!isBuiltin ? `<button class="sch-pm-chip-del" data-del-tag="${tag}" title="Delete category"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
-    </button>`;
+      ${!isBuiltin ? `<button class="sch-pm-chip-del" data-del-tag="${tag}" data-label="Delete"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
+    </div>`;
   }
   container.innerHTML = html;
 
   // Chip click — toggle drawer
   container.querySelectorAll('.sch-pm-chip').forEach(chip => {
-    chip.addEventListener('click', (e) => {
-      e.stopPropagation();
+    function activateChip() {
       const tag = chip.dataset.pmTag;
       if (state._openPmTag === tag) {
         closeSubcategoryBubble();
@@ -2146,6 +2135,55 @@ function renderSchTemplates() {
         renderSchTemplates();
         showSubcategoryBubble(tag);
       }
+    }
+    chip.addEventListener('click', (e) => {
+      if (chip.dataset._renaming === '1' || e.target.closest('.sch-pm-chip-edit,.sch-pm-chip-del')) return;
+      activateChip();
+    });
+    chip.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateChip(); }
+    });
+  });
+
+  // Double-click category label to rename inline
+  container.querySelectorAll('.sch-pm-chip-label').forEach(label => {
+    const chip = label.closest('.sch-pm-chip');
+    const tag = chip?.dataset.pmTag;
+    if (!tag) return;
+    label.title = 'Double-click to rename';
+    label.addEventListener('dblclick', (e) => {
+      e.stopPropagation();
+      chip.dataset._renaming = '1';
+      const oldName = label.textContent;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'sch-chip-rename-input';
+      input.value = oldName;
+      input.maxLength = 24;
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+      label.replaceWith(input);
+      input.focus();
+      input.select();
+      const finish = () => {
+        delete chip.dataset._renaming;
+        const newName = input.value.trim();
+        if (newName && newName !== oldName) {
+          if (!BUILTIN_TAGS.includes(tag)) {
+            updateCustomCategory(tag, newName, (TAG_COLORS[tag] || TAG_COLORS.meeting).text);
+          } else {
+            renameTag(tag, newName);
+          }
+          renderSchTemplates();
+        } else {
+          renderSchTemplates();
+        }
+      };
+      input.addEventListener('blur', finish);
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+        if (ev.key === 'Escape') { input.value = oldName; input.blur(); }
+      });
     });
   });
 
@@ -2156,7 +2194,7 @@ function renderSchTemplates() {
       const tag = btn.dataset.delTag;
       if (!tag) return;
       const label = TAG_LABELS[tag] || tag;
-      if (confirm(`Delete category "${label}"? All tasks with this category will also be permanently removed.`)) {
+      if (confirm(`Delete category "${label}"? All tasks with this category will also be removed.`)) {
         removeCustomCategory(tag);
         if (state._openPmTag === tag) {
           state._openPmTag = TAG_ORDER[0] || null;
