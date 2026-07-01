@@ -437,8 +437,7 @@ function loadHubContent() {
       } catch(e) {}
       hc.bentoLayout = normalizeBentoLayout(_bentoLayout, hc).filter(i => i.t !== 'text');
       if (!hc.bentoLayout || !hc.bentoLayout.length) hc.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
-      if (!hc.gallery) hc.gallery = defaults.gallery.map(g => ({...g}));
-      if (!hc.goals) hc.goals = [...defaults.goals];
+if (!hc.goals) hc.goals = [...defaults.goals];
       if (!hc.priorities) hc.priorities = [...defaults.priorities];
       if (!hc.quote) hc.quote = getQuoteOfTheWeek();
       else {
@@ -568,7 +567,6 @@ function applyHubEditMode() {
     updateUndoButtons();
   }
   renderHubBento();
-  renderHubGallery();
   applyHubVisibility();
 }
 
@@ -2517,57 +2515,7 @@ function initBubbleDockDrag(dock) {
   }
 }
 /* ─── HIDE popup ───────────────────────────── */
-/* ─── Gallery ──────────────────────────────── */
-function renderHubGallery() {
-  const nav = document.querySelector('.hub-gallery');
-  if (!nav) return;
-  const icons = {
-    calendar: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-    checklist: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
-    tag: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
-    chart: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>'
-  };
-  const isEdit = hubEditMode;
-  const allGalleryTasks = typeof loadTasks === 'function' ? loadTasks() : [];
-  const now = new Date();
-  const ws = new Date(now);
-  ws.setDate(ws.getDate() - ((ws.getDay() + 6) % 7));
-  ws.setHours(0,0,0,0);
-  const we = new Date(ws);
-  we.setDate(we.getDate() + 7);
-  const galleryWeekTasks = allGalleryTasks.filter(t => {
-    const d = new Date(t.date + 'T12:00:00');
-    return d >= ws && d < we;
-  });
-  nav.innerHTML = hubContent.gallery.map((c, i) => {
-    let countHtml = '';
-    if (c.href === 'schedule.html') {
-      countHtml = `<span class="hub-gallery-count" id="hubWeekTasks">${galleryWeekTasks.length} this week</span>`;
-    } else if (c.href === 'activities.html') {
-      countHtml = `<span class="hub-gallery-count" id="hubTotalTasks">${allGalleryTasks.length} total</span>`;
-    }
-    return `<a href="${escapeHtml(c.href)}" class="hub-gallery-card" data-idx="${i}">
-      <div class="hub-gallery-cover" style="background:${c.bg}">
-        <div class="hub-gallery-cover-bg" style="background:linear-gradient(135deg, ${c.color}, transparent)"></div>
-        ${icons[c.icon] || icons.calendar}
-      </div>
-      <div class="hub-gallery-body">
-        <div class="hub-gallery-title">${escapeHtml(c.label)}</div>
-        <p class="hub-gallery-desc">${escapeHtml(c.desc)}</p>
-        <div class="hub-gallery-meta">
-          ${countHtml}
-          <span class="hub-gallery-link">Open <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
-        </div>
-      </div>
-      ${isEdit ? `<div class="hub-edit-badge" data-edit-gallery="${i}" title="Edit card">\u270E</div>` : ''}
-    </a>`;
-  }).join('');
-  if (isEdit) {
-    nav.insertAdjacentHTML('beforeend', `<div style="display:flex;align-items:center;justify-content:center;min-height:100px"><button class="hub-add-btn" data-add="gallery">+ Add card</button></div>`);
-  }
-}
-
-let _galleryPopupOpen = false;
+/* ─── Gallery ──────────────────────────────── */let _galleryPopupOpen = false;
 
 function showGalleryPopup(idx, anchor) {
   if (_galleryPopupOpen) { document.querySelector('.hub-edit-popup')?.remove(); _galleryPopupOpen = false; return; }
@@ -2601,7 +2549,6 @@ function showGalleryPopup(idx, anchor) {
       bg: card.bg
     };
     saveHubContent();
-    renderHubGallery();
     popup.remove();
     _galleryPopupOpen = false;
   });
@@ -2765,7 +2712,6 @@ function setupHubEditEvents() {
     if (!addBtn || !hubEditMode) return;
     hubContent.gallery.push({ label: 'New View', desc: 'Description', href: '#', icon: 'chart', color: 'var(--text-secondary)', bg: 'var(--surface-container)' });
     saveHubContent();
-    renderHubGallery();
   });
 
   // Snap-presets submenu on right-click of bubble handle/button area in edit mode
@@ -3036,7 +2982,6 @@ function initHubEditMode() {
   });
   setupHubEditEvents();
   renderHubGreeting();
-  renderHubGallery();
   applyHubEditMode();
 
   // (No longer syncing hubEditMode from state.editMode — they are independent)

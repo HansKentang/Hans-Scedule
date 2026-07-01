@@ -3064,7 +3064,6 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
 /* ─── RESPONSIVE ─────────────────────────────────────── */
 @media (max-width: 900px) {
   .hub-minifooter { padding: var(--space-2) var(--space-4); }
-  .hub-gallery { grid-template-columns: 1fr; }
   .hub-sidebar { width: 56px; min-width: 56px; }
   .hub-snav-item .snav-label,
   .hub-sidebar-footer .btn span { display: none; }
@@ -3096,7 +3095,6 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
   .hub-page-header { margin-bottom: var(--space-4); }
   .hub-page-icon { width: 44px; height: 44px; font-size: 1.1rem; }
   .hub-page-title { font-size: 1.3rem; }
-  .hub-gallery { grid-template-columns: 1fr; gap: var(--space-3); }
   .hub-properties { grid-template-columns: repeat(2, 1fr); }
   .hub-page-meta { font-size: 0.75rem; gap: var(--space-2); }
 
@@ -3286,7 +3284,6 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
   }
 
   /* ─── GALLERY CARDS MOBILE ── */
-  .hub-gallery {
     grid-template-columns: 1fr !important;
     gap: var(--space-3) !important;
     padding: 0 var(--space-3) !important;
