@@ -21,6 +21,14 @@ function setActiveUserId(id) {
   else localStorage.removeItem(AUTH_ACTIVE_KEY);
 }
 
+// Initialize currentUserId synchronously BEFORE any page scripts call loadState()
+// so that the localStorage key prefix (used by shared.js's IIFE wrapper) is correct
+loadUsers();
+var _activeId = getActiveUserId();
+if (typeof state !== 'undefined') {
+  state.currentUserId = _activeId || null;
+}
+
 function generateId() {
   return 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
