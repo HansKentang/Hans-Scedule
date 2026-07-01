@@ -585,7 +585,7 @@ function removeCustomCategory(id) {
   delete subs[id];
   saveSubcategories(subs);
   state.tasks = state.tasks.filter(t => t.tag !== id);
-  saveTasks();
+  saveState();
   saveCardColors(cardColors);
   // Clean up activity completions referencing the deleted tag
   try {
