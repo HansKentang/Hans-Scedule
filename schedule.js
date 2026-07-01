@@ -1547,50 +1547,6 @@ function bindEvents() {
     }
   });
 
-  // ─── Right-click delete category chip ──
-  document.getElementById('pmChips')?.addEventListener('contextmenu', (e) => {
-    const chip = e.target.closest('.sch-pm-chip');
-    if (!chip) return;
-    const tag = chip.dataset.pmTag;
-    if (!tag || BUILTIN_TAGS.includes(tag)) return;
-    e.preventDefault();
-    const label = TAG_LABELS[tag] || tag;
-    if (confirm(`Delete category "${label}"? All tasks with this category will also be removed.`)) {
-      removeCustomCategory(tag);
-      if (state._openPmTag === tag) {
-        state._openPmTag = TAG_ORDER[0] || null;
-      }
-      renderSchTemplates();
-      if (state._openPmTag) showSubcategoryBubble(state._openPmTag);
-      renderCalendar();
-      showToast(`"${label}" deleted`, 'info', 2000);
-    }
-  });
-  
-  // ─── Long-press delete on mobile ──
-  let longPressTimer = null;
-  document.getElementById('pmChips')?.addEventListener('touchstart', (e) => {
-    const chip = e.target.closest('.sch-pm-chip');
-    if (!chip) return;
-    const tag = chip.dataset.pmTag;
-    if (!tag || BUILTIN_TAGS.includes(tag)) return;
-    longPressTimer = setTimeout(() => {
-      const label = TAG_LABELS[tag] || tag;
-      if (confirm(`Delete category "${label}"? All tasks with this category will also be removed.`)) {
-        removeCustomCategory(tag);
-        if (state._openPmTag === tag) {
-          state._openPmTag = TAG_ORDER[0] || null;
-        }
-        renderSchTemplates();
-        if (state._openPmTag) showSubcategoryBubble(state._openPmTag);
-        renderCalendar();
-        showToast(`"${label}" deleted`, 'info', 2000);
-      }
-    }, 600);
-  });
-  document.getElementById('pmChips')?.addEventListener('touchmove', () => { clearTimeout(longPressTimer); });
-  document.getElementById('pmChips')?.addEventListener('touchend', () => { clearTimeout(longPressTimer); });
-
   // Load focus mode
   loadFocusMode();
 
@@ -1963,7 +1919,7 @@ function initPomodoro() {
 
 // ─── SUBCATEGORY BUBBLE ─────────────────────────────────────
 function renderSubcategoryBarPill(subcatName, tag, col) {
-  return `<span class="sch-sc-bar-pill" data-tag="${tag}" data-sc-name="${escapeHtml(subcatName)}" style="--sc-accent:${col.text}" draggable="true">
+  return `<span class="sch-sc-bar-pill" data-tag="${tag}" data-sc-name="${escapeHtml(subcatName)}" style="--sc-accent:${col.text}">
     <span class="sc-dot"></span>
     <span class="sc-drag-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="6" r="1.5"/><circle cx="14" cy="6" r="1.5"/><circle cx="10" cy="12" r="1.5"/><circle cx="14" cy="12" r="1.5"/><circle cx="10" cy="18" r="1.5"/><circle cx="14" cy="18" r="1.5"/></svg></span>
     <span class="sc-name">${escapeHtml(subcatName)}</span>
@@ -2116,10 +2072,6 @@ function renderSchTemplates() {
       <span class="sch-pm-chip-dot" style="background:${accent}"></span>
       <span class="sch-pm-chip-label">${TAG_LABELS[tag]}</span>
       ${subs.length > 0 ? `<span class="sch-pm-chip-count">${subs.length}</span>` : ''}
-      ${!isBuiltin ? `<button class="sch-pm-chip-edit" data-edit-tag="${tag}" data-label="Edit">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-        </button>` : ''}
-      ${!isBuiltin ? `<button class="sch-pm-chip-del" data-del-tag="${tag}" data-label="Delete"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
     </div>`;
   }
   container.innerHTML = html;
@@ -2137,7 +2089,7 @@ function renderSchTemplates() {
       }
     }
     chip.addEventListener('click', (e) => {
-      if (chip.dataset._renaming === '1' || e.target.closest('.sch-pm-chip-edit,.sch-pm-chip-del')) return;
+      if (chip.dataset._renaming === '1') return;
       activateChip();
     });
     chip.addEventListener('keydown', (e) => {
@@ -2187,35 +2139,7 @@ function renderSchTemplates() {
     });
   });
 
-  // Delete button on custom category chips
-  container.querySelectorAll('.sch-pm-chip-del').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const tag = btn.dataset.delTag;
-      if (!tag) return;
-      const label = TAG_LABELS[tag] || tag;
-      if (confirm(`Delete category "${label}"? All tasks with this category will also be removed.`)) {
-        removeCustomCategory(tag);
-        if (state._openPmTag === tag) {
-          state._openPmTag = TAG_ORDER[0] || null;
-        }
-        renderSchTemplates();
-        if (state._openPmTag) showSubcategoryBubble(state._openPmTag);
-        renderCalendar();
-        showToast(`"${label}" deleted`, 'info', 2000);
-      }
-    });
-  });
 
-  // Edit button on custom category chips
-  container.querySelectorAll('.sch-pm-chip-edit').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const tag = btn.dataset.editTag;
-      if (!tag) return;
-      openCategoryEditPopup(btn, tag);
-    });
-  });
 
 }
 

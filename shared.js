@@ -954,7 +954,8 @@ function injectCustomTagStyles() {
 .act-tl-tag[data-tag="${id}"] { background: var(--tag-${id}-bg); color: var(--tag-${id}-text); }
 .act-log-item[data-tag="${id}"] .act-log-item-dot { background: var(--tag-${id}-text); }
 .act-chart-bar-segment[data-tag="${id}"] { background: var(--tag-${id}-text); }
-.act-chart-legend-dot[data-tag="${id}"] { background: var(--tag-${id}-text); }`;
+.act-chart-legend-dot[data-tag="${id}"] { background: var(--tag-${id}-text); }
+.calendar-task.tag-${id} { --task-accent: var(--tag-${id}-text); }`;
   }
   const style = document.createElement('style');
   style.id = 'custom-tag-styles';
@@ -1001,12 +1002,13 @@ function resetCardColors() {
 
 function applyCardColors() {
   const root = document.documentElement;
+  const isLight = root.classList.contains('light');
   for (const tag of TAG_ORDER) {
     const c = cardColors[tag] || DEFAULT_TAG_COLORS[tag];
     if (!c) continue;
-    // Use same color in both light and dark mode
+    // Use same text color in both modes; adjust bg opacity for light mode visibility
     root.style.setProperty(`--tag-${tag}-text`, c.light);
-    root.style.setProperty(`--tag-${tag}-bg`, lightenColor(c.light, 0.88));
+    root.style.setProperty(`--tag-${tag}-bg`, lightenColor(c.light, isLight ? 0.70 : 0.88));
   }
 }
 
@@ -3174,6 +3176,7 @@ function toggleTheme() {
   if (state.darkMode === null) state.darkMode = !prefersDark;
   else state.darkMode = !currentIsDark;
   applyTheme();
+  applyCardColors();
   saveState();
 }
 
