@@ -4953,8 +4953,7 @@ function buildTaskSummary() {
     const times = ts.map(t => t.startTime + '–' + t.endTime + ' ' + t.title + ' (' + (TAG_LABELS[t.tag] || t.tag) + ')').join(', ');
     lines.push('  ' + d + ': ' + times);
   }
-  return lines.join('
-');
+  return lines.join('\n');
 }
 
 function findFreeSlot(dateStr, durationMinutes) {
@@ -6017,8 +6016,7 @@ document.addEventListener('keydown', (e) => {
   }
 
   if (e.key === 'Escape') {
-
-    else if (state.aiChatOpen) hideAIChat();
+    if (state.aiChatOpen) hideAIChat();
     else if (state.taskModalOpen) hideTaskModal();
     else if (state.helpModalOpen) hideHelpModal();
   }
