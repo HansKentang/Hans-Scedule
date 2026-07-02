@@ -22,6 +22,7 @@ const HUB_BENTO_KEY = 'haven-hub-bento';
 const HUB_EDIT_KEY = 'haven-hub-edit';
 const HUB_VIS_KEY = 'haven-hub-visibility';
 const HUB_CONTENT_KEY = 'haven-hub-content';
+const TIMER_STATE_KEY = 'hub-timer-state';
 
 const MAX_CANVAS_HEIGHT = 10000;
 let hubEditMode = false;
@@ -605,6 +606,7 @@ function renderHubGreeting() {
 function renderHubBento() {
   // Ensure images are loaded before rendering bubbles (only on first render)
   if (typeof state !== 'undefined' && !state.images && typeof loadImages === 'function') loadImages();
+  _loadTimerStates();
   const grid = document.querySelector('.bento-grid');
   if (!grid) return;
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
@@ -1130,6 +1132,11 @@ function renderHubBento() {
         renderHubBento();
         return;
       }
+      var weatherRefreshBtn = e.target.closest('[data-weather-refresh]');
+      if (weatherRefreshBtn) {
+        refreshWeather();
+        return;
+      }
       var presetBtn = e.target.closest('[data-timer-preset]');
       if (presetBtn) {
         var puid = presetBtn.dataset.timerUid;
@@ -1137,6 +1144,7 @@ function renderHubBento() {
         var ps = _timerState(puid);
         ps.elapsed = parseInt(presetBtn.dataset.timerPreset);
         _renderTimer(puid);
+        _saveTimerStates();
         return;
       }
       var toggleBtn = e.target.closest('[data-timer-action="toggle"]');
@@ -1153,6 +1161,7 @@ function renderHubBento() {
           s.startTs = Date.now();
           s.running = true;
           if (!_timerIntervals._tick) {
+            var _tickSaveCounter = 0;
             _timerIntervals._tick = setInterval(function() {
               Object.keys(_timerIntervals).forEach(function(k) {
                 if (k === '_tick') return;
@@ -1163,10 +1172,12 @@ function renderHubBento() {
                   _renderTimer(k);
                 }
               });
+              if (++_tickSaveCounter % 25 === 0) _saveTimerStates();
             }, 200);
           }
         }
         _renderTimer(uid);
+        _saveTimerStates();
         return;
       }
       var resetBtn = e.target.closest('[data-timer-action="reset"]');
@@ -1175,6 +1186,7 @@ function renderHubBento() {
         var s2 = _timerIntervals[uid2];
         if (s2) { s2.elapsed = 0; s2.running = false; s2.startTs = null; }
         _renderTimer(uid2);
+        _saveTimerStates();
         return;
       }
       var pomoToggle = e.target.closest('[data-pomo-action="toggle"]');
@@ -1208,6 +1220,7 @@ function renderHubBento() {
                   ps2.running = false;
                   ps2.startTs = null;
                   ps2.remaining = 0;
+                  _playPomoAlert();
                   _advancePomoPhase(k);
                 }
                 _renderPomo(k);
@@ -2086,7 +2099,28 @@ function updateWeatherWidget(widget, data) {
   };
   var cond = codes[data.code] || 'Clear';
   var icon = icons[cond] || icons['Clear'];
-  widget.innerHTML = '<div class="weather-main">' + icon + '<span class="weather-temp">' + Math.round(data.temp) + '&deg;</span></div><div class="weather-cond">' + cond + '</div>';
+  var windHtml = data.wind ? '<span class="weather-wind">' + Math.round(data.wind) + ' km/h</span>' : '';
+  widget.innerHTML = '<div class="weather-main">' + icon + '<span class="weather-temp">' + Math.round(data.temp) + '&deg;</span></div><div class="weather-cond">' + cond + windHtml + '<button class="weather-refresh" data-weather-refresh title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button></div>';
+}
+
+function refreshWeather() {
+  _weatherFetched = false;
+  _weatherLastData = null;
+  try {
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('hub-weather-') === 0) keys.push(k);
+    }
+    keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
+  } catch(e) {}
+  var grid = document.querySelector('.bento-grid');
+  if (grid) {
+    grid.querySelectorAll('.weather-widget').forEach(function(w) {
+      w.innerHTML = '<div class="weather-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Fetching weather...</span></div>';
+    });
+    _fetchWeather(grid);
+  }
 }
 
 /* ─── Progress chart data generator ─────────── */
@@ -2288,11 +2322,27 @@ function _pomoState(uid) {
     if (s.remaining <= 0) {
       s.running = false;
       s.startTs = null;
+      _playPomoAlert();
       _advancePomoPhase(uid);
       _renderPomo(uid);
     }
   }
   return s;
+}
+function _playPomoAlert() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
 }
 function _advancePomoPhase(uid) {
   var s = _pomodoroState[uid];
@@ -2314,8 +2364,10 @@ function _advancePomoPhase(uid) {
   s.startTs = null;
 }
 function _fmtTime(seconds) {
-  var m = Math.floor(seconds / 60);
+  var h = Math.floor(seconds / 3600);
+  var m = Math.floor((seconds % 3600) / 60);
   var sec = seconds % 60;
+  if (h > 0) return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
   return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
 }
 function _renderPomo(uid) {
@@ -2348,6 +2400,26 @@ function _renderTimer(uid) {
     btn.textContent = s.running ? 'Pause' : 'Start';
     btn.classList.toggle('timer-btn-active', s.running);
   }
+}
+
+function _saveTimerStates() {
+  try {
+    var data = {};
+    for (var k in _timerIntervals) {
+      if (k === '_tick') continue;
+      data[k] = { elapsed: _timerIntervals[k].elapsed, running: _timerIntervals[k].running, startTs: _timerIntervals[k].startTs };
+    }
+    localStorage.setItem(TIMER_STATE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function _loadTimerStates() {
+  try {
+    var data = JSON.parse(localStorage.getItem(TIMER_STATE_KEY));
+    if (data) {
+      for (var k in data) _timerIntervals[k] = data[k];
+    }
+  } catch(e) {}
 }
 
 function _timerClearTickIfIdle() {
@@ -2937,36 +3009,6 @@ function toggleHubAccess() {
     items.classList.toggle('open');
     btn.classList.toggle('open');
   }
-}
-
-/* ─── Edit mode toggle pill ─────────────────── */
-function toggleHubEdit() {
-  toggleHubEdit();
-  // Show the toggle pill reflecting current state
-  const existing = document.getElementById('hubEditTogglePill');
-  if (existing) { existing.remove(); return; }
-  const pill = document.createElement('div');
-  pill.id = 'hubEditTogglePill';
-  pill.innerHTML = `
-    <span class="hep-label">Edit Mode</span>
-    <button class="hep-switch">${hubEditMode ? 'ON' : 'OFF'}</button>
-    <button class="hep-close">&times;</button>
-  `;
-  pill.className = 'hub-edit-pill';
-  pill.querySelector('.hep-switch').addEventListener('click', function() {
-    toggleHubEdit();
-    this.textContent = hubEditMode ? 'ON' : 'OFF';
-  });
-  pill.querySelector('.hep-close').addEventListener('click', function() { pill.remove(); });
-  document.body.appendChild(pill);
-  setTimeout(function() {
-    document.addEventListener('click', function _dismiss(e) {
-      if (!pill.contains(e.target) && document.getElementById('hubEditTogglePill')) {
-        pill.remove();
-        document.removeEventListener('click', _dismiss);
-      }
-    });
-  }, 0);
 }
 function initHubEditMode() {
   // Ensure canvas is always visible
