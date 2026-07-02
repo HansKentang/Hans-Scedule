@@ -1153,7 +1153,7 @@ function renderHubBento() {
         var s = _timerIntervals[uid];
         if (!s) return;
         if (s.running) {
-          s.elapsed = s.elapsed + (Date.now() - s.startTs);
+          s.elapsed = s.elapsed + (Date.now() - s.startTs) / 1000;
           s.startTs = null;
           s.running = false;
           _timerClearTickIfIdle();
@@ -1167,7 +1167,7 @@ function renderHubBento() {
                 if (k === '_tick') return;
                 var ts = _timerIntervals[k];
                 if (ts.running && ts.startTs) {
-                  ts.elapsed = ts.elapsed + (Date.now() - ts.startTs);
+                  ts.elapsed = ts.elapsed + (Date.now() - ts.startTs) / 1000;
                   ts.startTs = Date.now();
                   _renderTimer(k);
                 }
@@ -1280,51 +1280,7 @@ function renderHubBento() {
   }
 
   // ─── Weather fetcher (runs at most once) ──────
-  const weatherWidgets = grid.querySelectorAll('.weather-widget[data-weather-uid]');
-  if (weatherWidgets.length > 0) {
-    // Apply cached data immediately if available
-    if (_weatherLastData) {
-      weatherWidgets.forEach(function(w) { updateWeatherWidget(w, _weatherLastData); });
-    } else if (!_weatherFetched && typeof navigator !== 'undefined' && navigator.geolocation) {
-      _weatherFetched = true;
-      navigator.geolocation.getCurrentPosition(function(pos) {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        const cacheKey = 'hub-weather-' + Math.round(lat * 10) + '-' + Math.round(lon * 10);
-        var cached = null;
-        try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) {}
-        if (cached && Date.now() - cached.ts < 600000) {
-          _weatherLastData = cached.data;
-          weatherWidgets.forEach(function(w) { updateWeatherWidget(w, cached.data); });
-          return;
-        }
-        var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&timezone=auto';
-        fetch(url).then(function(r) { return r.json(); }).then(function(data) {
-          if (!data || !data.current_weather) return;
-          var wd = {
-            temp: data.current_weather.temperature,
-            code: data.current_weather.weathercode,
-            wind: data.current_weather.windspeed
-          };
-          _weatherLastData = wd;
-          try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: wd})); } catch(e) {}
-          weatherWidgets.forEach(function(w) { updateWeatherWidget(w, wd); });
-        }).catch(function() {
-          weatherWidgets.forEach(function(w) {
-            w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Could not load weather</span></div>';
-          });
-        });
-      }, function() {
-        weatherWidgets.forEach(function(w) {
-          w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Location access needed</span></div>';
-        });
-      }, {timeout: 8000, enableHighAccuracy: false});
-    } else if (weatherWidgets.length > 0) {
-      weatherWidgets.forEach(function(w) {
-        w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Geolocation unavailable</span></div>';
-      });
-    }
-  }
+  _fetchWeather(grid);
 
   // ─── Progress auto-refresh ─────────────────────
   if (grid.querySelector('.prog-chart')) {
@@ -2103,6 +2059,52 @@ function updateWeatherWidget(widget, data) {
   widget.innerHTML = '<div class="weather-main">' + icon + '<span class="weather-temp">' + Math.round(data.temp) + '&deg;</span></div><div class="weather-cond">' + cond + windHtml + '<button class="weather-refresh" data-weather-refresh title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button></div>';
 }
 
+function _fetchWeather(grid) {
+  var weatherWidgets = grid.querySelectorAll('.weather-widget[data-weather-uid]');
+  if (weatherWidgets.length === 0) return;
+  if (_weatherLastData) {
+    weatherWidgets.forEach(function(w) { updateWeatherWidget(w, _weatherLastData); });
+  } else if (!_weatherFetched && typeof navigator !== 'undefined' && navigator.geolocation) {
+    _weatherFetched = true;
+    navigator.geolocation.getCurrentPosition(function(pos) {
+      var lat = pos.coords.latitude;
+      var lon = pos.coords.longitude;
+      var cacheKey = 'hub-weather-' + Math.round(lat * 10) + '-' + Math.round(lon * 10);
+      var cached = null;
+      try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) {}
+      if (cached && Date.now() - cached.ts < 600000) {
+        _weatherLastData = cached.data;
+        weatherWidgets.forEach(function(w) { updateWeatherWidget(w, cached.data); });
+        return;
+      }
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&timezone=auto';
+      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+        if (!data || !data.current_weather) return;
+        var wd = {
+          temp: data.current_weather.temperature,
+          code: data.current_weather.weathercode,
+          wind: data.current_weather.windspeed
+        };
+        _weatherLastData = wd;
+        try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: wd})); } catch(e) {}
+        weatherWidgets.forEach(function(w) { updateWeatherWidget(w, wd); });
+      }).catch(function() {
+        weatherWidgets.forEach(function(w) {
+          w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Could not load weather</span></div>';
+        });
+      });
+    }, function() {
+      weatherWidgets.forEach(function(w) {
+        w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Location access needed</span></div>';
+      });
+    }, {timeout: 8000, enableHighAccuracy: false});
+  } else {
+    weatherWidgets.forEach(function(w) {
+      w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Geolocation unavailable</span></div>';
+    });
+  }
+}
+
 function refreshWeather() {
   _weatherFetched = false;
   _weatherLastData = null;
@@ -2305,29 +2307,11 @@ function findBentoGap(layout, bubbleW, bubbleH, gridWidth) {
 /* ─── Timer / Pomodoro helpers ────────────────── */
 function _timerState(uid) {
   if (!_timerIntervals[uid]) _timerIntervals[uid] = { elapsed: 0, running: false, startTs: null };
-  var s = _timerIntervals[uid];
-  if (s.running && s.startTs) {
-    s.elapsed = s.elapsed + (Date.now() - s.startTs);
-    s.startTs = Date.now();
-  }
-  return s;
+  return _timerIntervals[uid];
 }
 function _pomoState(uid) {
   if (!_pomodoroState[uid]) _pomodoroState[uid] = { phase:'focus', remaining:1500, total:1500, running:false, startTs:null, cycle:0 };
-  var s = _pomodoroState[uid];
-  if (s.running && s.startTs) {
-    var delta = Math.floor((Date.now() - s.startTs) / 1000);
-    s.remaining = Math.max(0, s.remaining - delta);
-    s.startTs = Date.now();
-    if (s.remaining <= 0) {
-      s.running = false;
-      s.startTs = null;
-      _playPomoAlert();
-      _advancePomoPhase(uid);
-      _renderPomo(uid);
-    }
-  }
-  return s;
+  return _pomodoroState[uid];
 }
 function _playPomoAlert() {
   try {
@@ -2417,7 +2401,13 @@ function _loadTimerStates() {
   try {
     var data = JSON.parse(localStorage.getItem(TIMER_STATE_KEY));
     if (data) {
-      for (var k in data) _timerIntervals[k] = data[k];
+      for (var k in data) {
+        _timerIntervals[k] = data[k];
+        if (_timerIntervals[k].running && _timerIntervals[k].startTs) {
+          _timerIntervals[k].elapsed += (Date.now() - _timerIntervals[k].startTs) / 1000;
+          _timerIntervals[k].startTs = Date.now();
+        }
+      }
     }
   } catch(e) {}
 }

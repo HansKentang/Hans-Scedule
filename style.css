@@ -4274,6 +4274,9 @@ html.light .hub-db-header .hub-db-count strong {
   text-align: center;
 }
 .weather-error svg { color: var(--text-tertiary); opacity: 0.5; }
+.weather-wind { font-size:0.6rem; color:var(--text-tertiary); display:block; margin-top:1px; }
+.weather-refresh { background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:2px; display:inline-flex; align-items:center; justify-content:center; opacity:0.4; transition:opacity 0.15s; vertical-align:middle; margin-left:4px; }
+.weather-refresh:hover { opacity:1; color:var(--accent); }
 
 /* ─── Calendar Widget ─────────────────────────────────── */
 .cal-widget {
