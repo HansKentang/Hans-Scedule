@@ -452,11 +452,15 @@ function renderTasks() {
     if (!col) continue;
 
     // Build task entries with parsed times for overlap detection
-    const taskEntries = dateTasks.map(t => ({
-      task: t,
-      start: parseTime(t.startTime),
-      end: parseTime(t.endTime) || parseTime(t.startTime) + 60,
-    }));
+    // Skip tasks without a valid startTime to prevent broken card layout
+    const taskEntries = dateTasks
+      .filter(t => t.startTime)
+      .map(t => ({
+        task: t,
+        start: parseTime(t.startTime),
+        end: parseTime(t.endTime) || parseTime(t.startTime) + 60,
+      }))
+      .filter(e => !isNaN(e.start));
     // Sort by start time, then longer duration first
     taskEntries.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
 

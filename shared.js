@@ -2458,7 +2458,7 @@ function formatDate(date) {
 }
 
 function parseTime(str) {
-  if (!str) return 0;
+  if (!str) return NaN;
   const [h, m] = str.split(':').map(Number);
   return h * 60 + m;
 }
