@@ -6429,6 +6429,28 @@ select.form-input {
   border-radius: 4px;
 }
 
+/* Image hover — Visuals button glow hint */
+.img-hover #bcVisualsBtn,
+.img-hover #schVisualsBtn {
+  color: var(--primary) !important;
+  background: color-mix(in srgb, var(--primary) 15%, transparent) !important;
+  animation: imgHoverPulse 1.2s ease-in-out infinite;
+}
+.img-hover #bcVisualsBtn svg,
+.img-hover #schVisualsBtn svg {
+  stroke: var(--primary);
+  fill: var(--primary);
+  opacity: 0.8;
+}
+.img-hover #bcVisualsBtn:hover,
+.img-hover #schVisualsBtn:hover {
+  background: color-mix(in srgb, var(--primary) 25%, transparent) !important;
+}
+@keyframes imgHoverPulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 30%, transparent); }
+  50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--primary) 0%, transparent); }
+}
+
 /* Edit Mode — toggle button active state */
 .edit-mode #bcVisualsBtn,
 .edit-mode #schVisualsBtn {
