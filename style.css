@@ -6451,23 +6451,6 @@ select.form-input {
   50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--primary) 0%, transparent); }
 }
 
-/* Edit Mode — toggle button active state */
-.edit-mode #bcVisualsBtn,
-.edit-mode #schVisualsBtn {
-  color: var(--primary) !important;
-  background: color-mix(in srgb, var(--primary) 15%, transparent) !important;
-}
-.edit-mode #bcVisualsBtn svg,
-.edit-mode #schVisualsBtn svg {
-  stroke: var(--primary);
-  fill: var(--primary);
-  opacity: 0.8;
-}
-.edit-mode #bcVisualsBtn:hover,
-.edit-mode #schVisualsBtn:hover {
-  background: color-mix(in srgb, var(--primary) 25%, transparent) !important;
-}
-
 /* Edit Mode — Floating Indicator */
 #editModeIndicator {
   position: fixed;
