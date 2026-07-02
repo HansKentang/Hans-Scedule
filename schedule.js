@@ -437,6 +437,7 @@ function renderTasks() {
   // Group tasks by date for overlap detection
   const tasksByDate = {};
   for (const task of filtered) {
+    if (!task.date) continue;
     const td = new Date(task.date + 'T' + task.startTime);
     if (td < ws || td >= we) continue;
     if (!state.showWeekends && isWeekend(td)) continue;
@@ -787,6 +788,7 @@ function previewConflicts(date, startM, endM, excludeId) {
   for (const task of state.tasks) {
     if (task.id === excludeId || isWhiteboardTask(task) || task.completed) continue;
     if (task.date !== date) continue;
+    if (!task.startTime) continue;
     const tStart = parseTime(task.startTime);
     const tEnd = parseTime(task.endTime) || tStart + 60;
     if (tEnd <= startM || tStart >= endM) continue;
@@ -848,7 +850,9 @@ function onDragMove(e) {
 
     // Single card-like preview at the drop position (replaces old overlay + line)
     previewConflicts(matchedDate, spanStart, spanEnd, gridDrag.taskId || null);
-
+    const dragTask = gridDrag.taskId ? getTask(gridDrag.taskId) : null;
+    const hlColor = dragTask ? (TAG_COLORS[dragTask.tag] || TAG_COLORS.meeting).text : 'var(--accent)';
+    showDropPreview(refCol, spanStart, spanEnd, hlColor);
 
     // Show live time tooltip
     showDragTooltip(e, snap, durMins);
@@ -1053,6 +1057,7 @@ function repelConflicts(date, startMins, endMins, excludeId, depth) {
 
     const tStart = parseTime(task.startTime);
     const tEnd = parseTime(task.endTime) || tStart + 60;
+    if (isNaN(tStart) || isNaN(tEnd)) continue;
     if (tEnd <= startMins || tStart >= endMins) continue;
 
     const duration = tEnd - tStart;

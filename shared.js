@@ -820,6 +820,7 @@ function toggleFocusMode() {
   try {
     localStorage.setItem(FOCUS_MODE_KEY, JSON.stringify(focusModeActive));
   } catch (e) { /* ignore */ }
+  if (typeof renderWeekView === 'function') renderWeekView();
 }
 
 function loadFocusMode() {
@@ -1255,13 +1256,15 @@ function expandRecurringTasks(dateStart, dateEnd) {
     }
   }
   // Dedup: use original task id (strip repeat suffix) + date as key
+  // Manual tasks (non-repeating) always take priority over generated repeat instances
   const seen = new Set();
   const merged = [];
-  for (const t of expanded) {
+  const manualFirst = expanded.filter(t => !t._repeatInstance);
+  const repeatInstances = expanded.filter(t => t._repeatInstance);
+  for (const t of [...manualFirst, ...repeatInstances]) {
     const origId = t._repeatInstance ? t.id.split('_')[0] : t.id;
     const key = origId + '|' + t.date;
     if (!seen.has(key)) { seen.add(key); merged.push(t); }
-    // else: original takes precedence over duplicate repeat instance
   }
   return merged;
 }
@@ -2455,6 +2458,7 @@ function formatDate(date) {
 }
 
 function parseTime(str) {
+  if (!str) return 0;
   const [h, m] = str.split(':').map(Number);
   return h * 60 + m;
 }
@@ -3183,6 +3187,9 @@ function toggleTheme() {
 // ─── TASK CRUD ─────────────────────────────────────────────
 function createTask(data) {
   pushUndo();
+  if (data.startTime && data.endTime && parseTime(data.startTime) >= parseTime(data.endTime)) {
+    const tmp = data.startTime; data.startTime = data.endTime; data.endTime = tmp;
+  }
   const task = {
     id: uid(),
     title: data.title || 'Untitled',
@@ -4938,6 +4945,9 @@ function handleTaskFormSubmit(e) {
     data.reminder = parseInt(dom.taskReminder.value) || 0;
   }
   if (!data.title) { dom.taskTitle.focus(); return; }
+  if (data.startTime && data.endTime && parseTime(data.startTime) >= parseTime(data.endTime)) {
+    showToast('End time must be after start time', 'error', 2500); return;
+  }
   if (state.editingTask) updateTask(state.editingTask, data);
   else { pushUndo(); createTask(data); }
   hideTaskModal();
