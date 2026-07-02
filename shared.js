@@ -1498,7 +1498,7 @@ let state = {
   showWeekends: true,
   showCompleted: true,
   searchQuery: '',
-  cmdPaletteOpen: false,
+
   taskModalOpen: false,
   helpModalOpen: false,
   aiChatOpen: false,
@@ -1608,7 +1608,7 @@ const LANG = {
     'spotify.title':'Spotify','spotify.noPlaylist':'No playlist linked','spotify.addPlaylist':'Add playlist','spotify.playlist':'Playlist','spotify.toggle':'Toggle player','spotify.prev':'Previous playlist','spotify.next':'Next playlist','spotify.settings':'Manage playlists',
     'sidebar.theme':'Theme','sidebar.settings':'Settings','sidebar.visuals':'Visuals','sidebar.editNav':'Edit sidebar nav',
     'chat.title':'ChickBot','chat.subtitle':'Your smart schedule buddy','chat.placeholder':'Ask about your schedule...','chat.natural':'Natural language scheduling','chat.settings':'Settings','chat.close':'Close', 'chat.send':'Send',
-    'sch.title':'Schedule','sch.today':'Today','sch.tasks':'tasks','sch.holiday':'Holiday','sch.school':'School','sch.apiNoKey':'No key','sch.apiActive':'Active','sch.viewWeek':'Week view','sch.viewMonth':'Month view','sch.viewAgenda':'Agenda view','sch.week':'Week','sch.addCategory':'Add category','sch.catName':'Category name','sch.pickColor':'Pick a colour','sch.cancel':'Cancel','sch.add':'Add','sch.focus':'Focus','sch.ai':'AI','sch.ss':'Screenshot','sch.copyWeek':'Copy Week','sch.cmdPalette':'Command palette',
+    'sch.title':'Schedule','sch.today':'Today','sch.tasks':'tasks','sch.holiday':'Holiday','sch.school':'School','sch.apiNoKey':'No key','sch.apiActive':'Active','sch.viewWeek':'Week view','sch.viewMonth':'Month view','sch.viewAgenda':'Agenda view','sch.week':'Week','sch.addCategory':'Add category','sch.catName':'Category name','sch.pickColor':'Pick a colour','sch.cancel':'Cancel','sch.add':'Add','sch.focus':'Focus','sch.ai':'AI','sch.ss':'Screenshot','sch.copyWeek':'Copy Week',
     'menu.pages':'Pages','menu.actions':'Actions','menu.today':'Today','menu.newTask':'New Task','menu.theme':'Theme',
     'acts.title':'Activities','acts.board':'Board','acts.timeline':'Timeline','acts.week':'This Week','acts.total':'total','acts.avgDay':'avg/day','acts.log':'Activity Log','acts.addCat':'+ Category','acts.noTasks':'No tasks yet','acts.completed':'Completed',
     'an.title':'Analytics','an.all':'All','an.tasks':'Tasks','an.time':'Time','an.deep':'Deep Work','an.study':'Study','an.completion':'Completion','an.streak':'Streak','an.daily':'Daily','an.weekly':'Weekly','an.pie':'Pie','an.bar':'Bar','an.trend':'Trend','an.sleep':'Sleep','an.duration':'Duration','an.quality':'Quality','an.table':'Day-by-Day','an.current':'Current','an.best':'Best','an.days':'days','an.day':'Day','an.total':'Total','an.completed':'Completed','an.logged':'Logged','an.nights':'nights','an.night':'Night','an.active':'Active','an.past7':'Past 7 days','an.thisMonth':'This Month','an.breakdown':'Breakdown','an.distribution':'Distribution',
@@ -1639,7 +1639,7 @@ const LANG = {
     'spotify.title':'Spotify','spotify.noPlaylist':'Tidak ada playlist','spotify.addPlaylist':'Tambah playlist','spotify.playlist':'Playlist','spotify.toggle':'Buka/tutup pemutar','spotify.prev':'Playlist sebelumnya','spotify.next':'Playlist berikutnya','spotify.settings':'Kelola playlist',
     'sidebar.theme':'Tema','sidebar.settings':'Pengaturan','sidebar.visuals':'Visual','sidebar.editNav':'Edit navigasi sidebar',
     'chat.title':'ChickBot','chat.subtitle':'Teman jadwal pintar Anda','chat.placeholder':'Tanya tentang jadwal Anda...','chat.natural':'Penjadwalan bahasa alami','chat.settings':'Pengaturan','chat.close':'Tutup','chat.send':'Kirim',
-    'sch.title':'Jadwal','sch.today':'Hari Ini','sch.tasks':'tugas','sch.holiday':'Libur','sch.school':'Sekolah','sch.apiNoKey':'Tidak ada kunci','sch.apiActive':'Aktif','sch.viewWeek':'Tampilan minggu','sch.viewMonth':'Tampilan bulan','sch.viewAgenda':'Tampilan agenda','sch.week':'Minggu','sch.addCategory':'Tambah kategori','sch.catName':'Nama kategori','sch.pickColor':'Pilih warna','sch.cancel':'Batal','sch.add':'Tambah','sch.focus':'Fokus','sch.ai':'AI','sch.ss':'Screenshot','sch.copyWeek':'Salin Minggu','sch.cmdPalette':'Palet perintah',
+    'sch.title':'Jadwal','sch.today':'Hari Ini','sch.tasks':'tugas','sch.holiday':'Libur','sch.school':'Sekolah','sch.apiNoKey':'Tidak ada kunci','sch.apiActive':'Aktif','sch.viewWeek':'Tampilan minggu','sch.viewMonth':'Tampilan bulan','sch.viewAgenda':'Tampilan agenda','sch.week':'Minggu','sch.addCategory':'Tambah kategori','sch.catName':'Nama kategori','sch.pickColor':'Pilih warna','sch.cancel':'Batal','sch.add':'Tambah','sch.focus':'Fokus','sch.ai':'AI','sch.ss':'Screenshot','sch.copyWeek':'Salin Minggu',
     'menu.pages':'Halaman','menu.actions':'Aksi','menu.today':'Hari Ini','menu.newTask':'Tugas Baru','menu.theme':'Tema',
     'acts.title':'Aktivitas','acts.board':'Papan','acts.timeline':'Garis Waktu','acts.week':'Minggu Ini','acts.total':'total','acts.avgDay':'rata/hari','acts.log':'Log Aktivitas','acts.addCat':'+ Kategori','acts.noTasks':'Belum ada tugas','acts.completed':'Selesai',
     'an.title':'Analitik','an.all':'Semua','an.tasks':'Tugas','an.time':'Waktu','an.deep':'Deep Work','an.study':'Belajar','an.completion':'Penyelesaian','an.streak':'Rantai','an.daily':'Harian','an.weekly':'Mingguan','an.pie':'Lingkaran','an.bar':'Batang','an.trend':'Tren','an.sleep':'Tidur','an.duration':'Durasi','an.quality':'Kualitas','an.table':'Hari per Hari','an.current':'Saat Ini','an.best':'Terbaik','an.days':'hari','an.day':'Hari','an.total':'Total','an.completed':'Selesai','an.logged':'Tercatat','an.nights':'malam','an.night':'Malam','an.active':'Aktif','an.past7':'7 hari terakhir','an.thisMonth':'Bulan Ini','an.breakdown':'Rincian','an.distribution':'Distribusi',
@@ -1670,7 +1670,7 @@ const LANG = {
     'spotify.title':'Spotify','spotify.noPlaylist':'\u6ca1\u6709\u64ad\u653e\u5217\u8868','spotify.addPlaylist':'\u6dfb\u52a0\u64ad\u653e\u5217\u8868','spotify.playlist':'\u64ad\u653e\u5217\u8868','spotify.toggle':'\u5207\u6362\u64ad\u653e\u5668','spotify.prev':'\u4e0a\u4e00\u4e2a\u64ad\u653e\u5217\u8868','spotify.next':'\u4e0b\u4e00\u4e2a\u64ad\u653e\u5217\u8868','spotify.settings':'\u7ba1\u7406\u64ad\u653e\u5217\u8868',
     'sidebar.theme':'\u4e3b\u9898','sidebar.settings':'\u8bbe\u7f6e','sidebar.visuals':'\u89c6\u89c9','sidebar.editNav':'\u7f16\u8f91\u4fa7\u680f\u5bfc\u822a',
     'chat.title':'ChickBot','chat.subtitle':'\u4f60\u7684\u667a\u80fd\u65e5\u7a0b\u4f19\u4f34','chat.placeholder':'\u54a8\u8be2\u4f60\u7684\u65e5\u7a0b...','chat.natural':'\u81ea\u7136\u8bed\u8a00\u7f16\u6392\u65e5\u7a0b','chat.settings':'\u8bbe\u7f6e','chat.close':'\u5173\u95ed','chat.send':'\u53d1\u9001',
-    'sch.title':'\u65e5\u7a0b','sch.today':'\u4eca\u5929','sch.tasks':'\u4efb\u52a1','sch.holiday':'\u5047\u671f','sch.school':'\u5b66\u6821','sch.apiNoKey':'\u672a\u8bbe\u7f6e\u5bc6\u94a5','sch.apiActive':'\u5df2\u6fc0\u6d3b','sch.viewWeek':'\u5468\u89c6\u56fe','sch.viewMonth':'\u6708\u89c6\u56fe','sch.viewAgenda':'\u8bae\u7a0b\u89c6\u56fe','sch.week':'\u5468','sch.addCategory':'\u6dfb\u52a0\u5206\u7c7b','sch.catName':'\u5206\u7c7b\u540d\u79f0','sch.pickColor':'\u9009\u62e9\u989c\u8272','sch.cancel':'\u53d6\u6d88','sch.add':'\u6dfb\u52a0','sch.focus':'\u4e13\u6ce8','sch.ai':'AI','sch.ss':'\u622a\u56fe','sch.copyWeek':'\u590d\u5236\u672c\u5468','sch.cmdPalette':'\u547d\u4ee4\u9762\u677f',
+    'sch.title':'\u65e5\u7a0b','sch.today':'\u4eca\u5929','sch.tasks':'\u4efb\u52a1','sch.holiday':'\u5047\u671f','sch.school':'\u5b66\u6821','sch.apiNoKey':'\u672a\u8bbe\u7f6e\u5bc6\u94a5','sch.apiActive':'\u5df2\u6fc0\u6d3b','sch.viewWeek':'\u5468\u89c6\u56fe','sch.viewMonth':'\u6708\u89c6\u56fe','sch.viewAgenda':'\u8bae\u7a0b\u89c6\u56fe','sch.week':'\u5468','sch.addCategory':'\u6dfb\u52a0\u5206\u7c7b','sch.catName':'\u5206\u7c7b\u540d\u79f0','sch.pickColor':'\u9009\u62e9\u989c\u8272','sch.cancel':'\u53d6\u6d88','sch.add':'\u6dfb\u52a0','sch.focus':'\u4e13\u6ce8','sch.ai':'AI','sch.ss':'\u622a\u56fe','sch.copyWeek':'\u590d\u5236\u672c\u5468',
     'menu.pages':'\u9875\u9762','menu.actions':'\u64cd\u4f5c','menu.today':'\u4eca\u5929','menu.newTask':'\u65b0\u4efb\u52a1','menu.theme':'\u4e3b\u9898',
     'acts.title':'\u6d3b\u52a8','acts.board':'\u770b\u677f','acts.timeline':'\u65f6\u95f4\u7ebf','acts.week':'\u672c\u5468','acts.total':'\u603b\u8ba1','acts.avgDay':'\u5e73\u5747/\u5929','acts.log':'\u6d3b\u52a8\u65e5\u5fd7','acts.addCat':'+ \u5206\u7c7b','acts.noTasks':'\u6682\u65e0\u4efb\u52a1','acts.completed':'\u5df2\u5b8c\u6210',
     'an.title':'\u5206\u6790','an.all':'\u5168\u90e8','an.tasks':'\u4efb\u52a1','an.time':'\u65f6\u95f4','an.deep':'\u6df1\u5ea6\u5de5\u4f5c','an.study':'\u5b66\u4e60','an.completion':'\u5b8c\u6210\u7387','an.streak':'\u8fde\u7eed\u8bb0\u5f55','an.daily':'\u6bcf\u65e5','an.weekly':'\u6bcf\u5468','an.pie':'\u997c\u56fe','an.bar':'\u6761\u5f62\u56fe','an.trend':'\u8d8b\u52bf','an.sleep':'\u7761\u7720','an.duration':'\u65f6\u957f','an.quality':'\u8d28\u91cf','an.table':'\u9010\u65e5\u8868','an.current':'\u5f53\u524d','an.best':'\u6700\u4f73','an.days':'\u5929','an.day':'\u5929','an.total':'\u603b\u8ba1','an.completed':'\u5df2\u5b8c\u6210','an.logged':'\u5df2\u8bb0\u5f55','an.nights':'\u665a','an.night':'\u591c\u665a','an.active':'\u6d3b\u8dc3','an.past7':'\u8fc7\u53bb7\u5929','an.thisMonth':'\u672c\u6708','an.breakdown':'\u5206\u89e3','an.distribution':'\u5206\u5e03',
@@ -3376,7 +3376,7 @@ function loadAIUsage() {
 function createDefaultAIUsage() {
   return {
     chatMessagesSent: 0,
-    commandPaletteCalls: 0,
+
     filesUploaded: 0,
     tasksCreatedByAI: 0,
     totalAPICalls: 0,
@@ -3408,9 +3408,6 @@ function trackAIUsage(event) {
       aiUsage.chatMessagesSent++;
       aiUsage.dailyUsage[today].chat++;
       break;
-    case 'command':
-      aiUsage.commandPaletteCalls++;
-      break;
     case 'api':
       aiUsage.totalAPICalls++;
       aiUsage.dailyUsage[today].api++;
@@ -3435,7 +3432,7 @@ function renderAIUsage() {
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/>
       </svg>
-      <span>No AI usage yet. Start a chat or use the command palette!</span>
+      <span>No AI usage yet. Start a chat or use AI scheduling!</span>
     </div>`;
     return;
   }
@@ -3528,7 +3525,6 @@ function populateShortcuts() {
   if (!grid) return;
   const mk = (k, d) => `<div class="shortcut-row"><kbd class="shortcut-key">${k}</kbd><span class="shortcut-desc">${d}</span></div>`;
   grid.innerHTML = [
-    mk(shortcutDisplay('K'), 'Open command palette'),
     mk(shortcutDisplay('I'), 'Open AI Assistant'),
     mk('?', 'Toggle this help panel'),
     mk('Q', 'Quick new task'),
@@ -4940,88 +4936,6 @@ function handleTaskDelete() {
   if (typeof pageAfterTaskSave === 'function') pageAfterTaskSave();
 }
 
-// ─── COMMAND PALETTE ───────────────────────────────────────
-function toggleCmdPalette() {
-  if (!dom.cmdInput) return;
-  state.cmdPaletteOpen ? hideCmdPalette() : showCmdPalette();
-}
-
-function showCmdPalette() {
-  if (!dom.cmdInput) return;
-  dom.cmdPalette.classList.remove('hidden');
-  dom.cmdOverlay.classList.remove('hidden');
-  requestAnimationFrame(() => {
-    dom.cmdOverlay.classList.add('active');
-    dom.cmdPalette.classList.add('active');
-  });
-  state.cmdPaletteOpen = true;
-  dom.cmdInput.value = '';
-  dom.cmdResults.innerHTML = `
-    <div class="cmd-hint">
-      <div class="cmd-hint-grid">
-        <div class="cmd-example"><span class="cmd-example-text">"Team standup tomorrow 9am 30m"</span></div>
-        <div class="cmd-example"><span class="cmd-example-text">"Design review Friday 2pm 1hr"</span></div>
-        <div class="cmd-example"><span class="cmd-example-text">"Find a 1hr gap for deep work today"</span></div>
-      </div>
-    </div>`;
-  dom.cmdInput.focus();
-}
-
-function hideCmdPalette() {
-  if (!dom.cmdInput) return;
-  dom.cmdOverlay.classList.remove('active');
-  dom.cmdPalette.classList.remove('active');
-  setTimeout(() => {
-    dom.cmdPalette.classList.add('hidden');
-    dom.cmdOverlay.classList.add('hidden');
-  }, 200);
-  state.cmdPaletteOpen = false;
-  state._lastCommandText = null;
-}
-
-function callAI(text) {
-  if (state.apiProvider === 'gemini') return callGeminiAPI(text);
-  return callGroqAPI(text);
-}
-
-function processCommand(text) {
-  if (!dom.cmdInput) return;
-  const trimmed = text.trim();
-  if (!trimmed) return;
-  const lastCmd = state._lastCommandText;
-  if (lastCmd && lastCmd === trimmed) {
-    showToast('This command was already submitted — try something different', 'info');
-    return;
-  }
-  state._lastCommandText = trimmed;
-  const isFindGap = /find|gap|open|free|slot|available/i.test(trimmed);
-  dom.cmdResults.innerHTML = `<div class="cmd-loading"><div class="cmd-spinner"></div><span>${isFindGap ? 'Searching for open slots...' : 'Parsing your command...'}</span></div>`;
-
-  if (state.apiKey && !isFindGap) {
-    trackAIUsage('command');
-    trackAIUsage('api');
-    callAI(trimmed)
-      .then(result => showCommandResult(result))
-      .catch((err) => {
-        const errMsg = err?.message || '';
-        if (errMsg.includes('429') || errMsg.includes('Rate limited')) {
-          const parsed = localParse(trimmed);
-          if (parsed) { showCommandResult(parsed); return; }
-          showCommandError('AI is rate limited. Try again later or use a simpler format.');
-          return;
-        }
-        const parsed = localParse(trimmed);
-        if (parsed) showCommandResult(parsed);
-        else showCommandError('AI unavailable. Try a simpler format.');
-      });
-  } else if (isFindGap) {
-    const gapResult = parseFindGap(trimmed);
-    if (gapResult) showFindGapResult(gapResult);
-    else showCommandError('Could not understand the request. Try: "Find a 1hr gap for deep work tomorrow"');
-  } else {
-    showCommandResult(localParse(trimmed));
-  }
-}
 
 function buildTaskSummary() {
   const today = formatDate(new Date());
@@ -5036,285 +4950,11 @@ function buildTaskSummary() {
   }
   const lines = [];
   for (const [d, ts] of Object.entries(byDate).sort()) {
-    const times = ts.map(t => `${t.startTime}–${t.endTime} ${t.title} (${TAG_LABELS[t.tag] || t.tag})`).join(', ');
-    lines.push(`  ${d}: ${times}`);
+    const times = ts.map(t => t.startTime + '–' + t.endTime + ' ' + t.title + ' (' + (TAG_LABELS[t.tag] || t.tag) + ')').join(', ');
+    lines.push('  ' + d + ': ' + times);
   }
-  return lines.join('\n');
-}
-
-function getTimeOfDay(hours) {
-  if (hours < 6) return 'night';
-  if (hours < 12) return 'morning';
-  if (hours < 14) return 'lunch';
-  if (hours < 17) return 'afternoon';
-  if (hours < 22) return 'evening';
-  return 'night';
-}
-
-const TAG_TIME_SUGGESTIONS = {
-  'deep-work': { defaultStart: '09:00', defaultDuration: 120, times: 'morning (best focus), early afternoon', note: 'needs uninterrupted block, no meetings around it' },
-  'exercise': { defaultStart: '17:00', defaultDuration: 60, times: 'morning before work, late afternoon/evening', note: 'avoid right after meals' },
-  'meeting': { defaultStart: '14:00', defaultDuration: 30, times: 'afternoon, late morning', note: 'keep short, schedule between deep work blocks' },
-  'study': { defaultStart: '19:00', defaultDuration: 60, times: 'evening, late afternoon', note: 'consistent daily time helps retention' },
-  'hobby': { defaultStart: '20:00', defaultDuration: 60, times: 'evening, weekends', note: 'good as wind-down activity' },
-};
-
-function callGroqAPI(text) {
-  const today = new Date();
-  const todayStr = formatDate(today);
-  const nowStr = `${String(today.getHours()).padStart(2,'0')}:${String(today.getMinutes()).padStart(2,'0')}`;
-  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const taskSummary = buildTaskSummary();
-  const learningContext = getLearningContext();
-  const systemPrompt = `You are a smart calendar scheduling assistant. Today is ${todayStr} (${dayNames[today.getDay()]}). Current time: ${nowStr}.${learningContext}
-
-CALENDAR GRID: The visible hours are ${toTimeStr(START_HOUR * 60)} – ${toTimeStr((START_HOUR + VISIBLE_HOURS) * 60)}. All times must snap to :00 or :30.
-
-EXISTING TASKS (next 2 weeks):
-${taskSummary || 'None'}
-
-SMART SCHEDULING RULES — follow these strictly:
-1. Choose a START TIME and END TIME that does NOT conflict with any existing task
-2. Consider the time of day — different task types fit different times:
-   - Deep work → best in morning (9-12), needs 2hr uninterrupted blocks
-   - Exercise → morning (6-8) or late afternoon/evening (17-19)
-   - Meetings → late morning or afternoon (10-11, 14-16), keep 30min default
-   - Study → afternoon or evening, consistent schedule
-   - Hobby → evening, weekends
-3. Leave 15min buffer between consecutive tasks (don't back-to-back)
-4. Don't schedule anything before 6am or after 11pm unless the user specifies
-5. Prefer the user's established routine times from their typical schedule above
-6. "Morning" = 6-12, "afternoon" = 12-17, "evening" = 17-21
-
-TITLE QUALITY — make the task title specific and descriptive, not generic:
-- Deep work: "Deep work: [concrete goal]" (e.g. "Deep work: Design system architecture")
-- Exercise: "[specific activity]" (e.g. "Morning run 5k", "Gym: upper body", "Yoga flow")
-- Meetings: "[purpose]" (e.g. "Team standup", "1:1 with Manager", "Sprint planning")
-- Study: "Study [subject] — [topic]" (e.g. "Study Mandarin — lesson 12")
-- Hobby: "[specific activity]" (e.g. "Read 'Atomic Habits'", "Practice guitar scales")
-- NEVER use just the tag name as the title
-
-Parse the user's request into a JSON object with these exact fields:
-- title: string (event name)
-- date: string (YYYY-MM-DD)
-- startTime: string (HH:MM 24h)
-- endTime: string (HH:MM 24h)
-- tag: string (${TAG_ORDER.map(t => `"${t}"`).join(' | ')})
-- subcategory: string (optional, use a known subcategory name if the user mentions one)
-
-Tag labels: ${TAG_ORDER.map(t => `"${t}" = "${TAG_LABELS[t]}"`).join(', ')}
-${(() => {
-  const subcatMap = loadSubcategories();
-  const parts = [];
-  for (const t of TAG_ORDER) {
-    const subs = subcatMap[t] || [];
-    if (subs.length > 0) parts.push(`"${t}" subcategories: ${subs.map(s => `"${s}"`).join(', ')}`);
-  }
-  return parts.length > 0 ? 'Known subcategories:\n' + parts.join('\n') : '';
-})()}
-Tag rules: "deep work"/"focus"/"heads down" = deep-work. "gym"/"workout"/"run"/"cardio"/"exercise" = exercise. "math"/"english"/"class"/"chemistry"/"physics"/"mandarin"/"study" = study. "design"/"movie"/"build"/"app"/"hobby" = hobby. Default tag = "meeting".
-Default duration: 1 hour. Default time: 9 AM. "tomorrow" = next day. Day names = next occurrence. "morning" ≈ 9am, "afternoon" ≈ 2pm, "evening" ≈ 7pm.
-
-USER'S EXTRA INSTRUCTIONS:
-${(() => { try { return localStorage.getItem('haven-ai-extra-instructions') || ''; } catch (e) { return ''; } })()}
-
-Return ONLY valid JSON. No markdown, no code fences, no extra text.`;
-  return fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${state.apiKey}`
-    },
-    body: JSON.stringify({
-      model: state.apiModel,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: text }
-      ],
-      temperature: 0.1,
-      max_tokens: 200,
-      response_format: { type: 'json_object' }
-    })
-  }).then(async res => {
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`API error: ${res.status}${body ? ' — ' + body.slice(0, 200) : ''}`);
-    }
-    return res.json();
-  }).then(data => {
-    const raw = data?.choices?.[0]?.message?.content;
-    if (!raw) throw new Error('Empty response');
-    let p;
-    try { p = JSON.parse(raw); } catch (e) {
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (m) p = JSON.parse(m[0]);
-      else throw new Error('Invalid JSON response');
-    }
-    if (!p.title || !p.date || !p.startTime || !p.endTime) throw new Error('Incomplete data');
-    if (isNaN(new Date(p.date + 'T' + p.startTime).getTime())) throw new Error('Invalid date');
-    return { title: p.title, date: p.date, startTime: p.startTime, endTime: p.endTime, tag: p.tag || 'meeting', subcategory: p.subcategory || '' };
-  });
-}
-
-function localParse(text) {
-  const today = new Date();
-  let targetDate = new Date(today);
-  const lower = text.toLowerCase();
-
-  // Detect "this friday" = upcoming, "next friday" = 7+ days
-  const nextMatch = lower.match(/\bnext\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/);
-  const thisMatch = lower.match(/\bthis\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/);
-
-  if (lower.includes('tomorrow')) {
-    targetDate.setDate(targetDate.getDate() + 1);
-  } else if (nextMatch) {
-    const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-    const idx = dayNames.indexOf(nextMatch[1]);
-    let diff = idx - targetDate.getDay();
-    if (diff <= 0) diff += 7;
-    targetDate.setDate(targetDate.getDate() + diff + 7);
-  } else if (thisMatch) {
-    const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-    const idx = dayNames.indexOf(thisMatch[1]);
-    let diff = idx - targetDate.getDay();
-    if (diff <= 0) diff += 7;
-    targetDate.setDate(targetDate.getDate() + diff);
-  } else if (lower.includes('today')) {
-    // keep today
-  } else {
-    const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
-    const dayAbbr = ['sun','mon','tue','wed','thu','fri','sat'];
-    let found = -1;
-    for (let i = 0; i < 7; i++) { if (lower.includes(dayNames[i]) || lower.includes(dayAbbr[i])) { found = i; break; } }
-    if (found >= 0) { let diff = found - targetDate.getDay(); if (diff <= 0) diff += 7; targetDate.setDate(targetDate.getDate() + diff); }
-  }
-  const dateStr = formatDate(targetDate);
-
-  // Extract title — strip date/time/duration keywords
-  let title = text;
-  const cleanRegex = /\b(at|from|until|to|for|this|next|on|by|after)\b/gi;
-  const kwMatch = text.search(cleanRegex);
-  if (kwMatch >= 0) title = text.slice(0, kwMatch).trim();
-  title = title.replace(/\b(today|tomorrow|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun)\b/gi, '').trim();
-  title = title.replace(/\b(morning|afternoon|evening|night|noon|midnight|midday|lunch)\b/gi, '').trim();
-  title = title.replace(/\b(in\s+\d+\s+(hour|minute|min|mins|minutes|hours?))\b/gi, '').trim();
-  title = title.replace(/\b(?:for\s+)?(?:half\s+an?\s+hour|\d+\s*hours?\s*(?:and\s+\d+\s*mins?)?|an?\s+hour(?:\s+and\s+a\s+half)?|an?\s+hour)\b/gi, '').trim();
-  title = title.replace(/^["']|["']$/g, '').trim();
-  title = title.charAt(0).toUpperCase() + title.slice(1);
-
-  // Parse start time — support "noon", "midnight", "morning", "afternoon", "evening", "hh:mm am/pm", "hh am/pm"
-  const timeRegex = /(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)/gi;
-  const times = [...text.matchAll(timeRegex)];
-  let startH = 9, startM = 0;
-  if (lower.includes('noon') || lower.includes('midday')) {
-    startH = 12; startM = 0;
-  } else if (lower.includes('midnight')) {
-    startH = 0; startM = 0;
-  } else if (lower.includes('morning') && !times.length) {
-    startH = 9; startM = 0;
-  } else if ((lower.includes('afternoon') || lower.includes('lunch')) && !times.length) {
-    startH = 14; startM = 0;
-  } else if (lower.includes('evening') && !times.length) {
-    startH = 19; startM = 0;
-  }
-  if (times.length >= 1) {
-    let h = parseInt(times[0][1]); const m = times[0][2] ? parseInt(times[0][2]) : 0;
-    const mer = (times[0][3] || '').charAt(0).toLowerCase();
-    if (mer === 'p' && h < 12) h += 12; if (mer === 'a' && h === 12) h = 0;
-    startH = h; startM = m;
-  }
-  // Default end = start + 1h, will be overridden by duration or second time
-  let endH = startH + 1, endM = startM;
-  if (times.length >= 2) {
-    let h = parseInt(times[1][1]); const m = times[1][2] ? parseInt(times[1][2]) : 0;
-    const mer = (times[1][3] || '').charAt(0).toLowerCase();
-    if (mer === 'p' && h < 12) h += 12; if (mer === 'a' && h === 12) h = 0;
-    endH = h; endM = m;
-  }
-
-  // Duration — handle "for 90 minutes", "for 2 hours", "half an hour", "an hour and a half"
-  const durTotalMinutes = text.match(/(?:for\s+)?(\d+)\s*(?:hours?|hrs?|h)\s*(?:and\s+)?(\d+)?\s*(?:mins?|minutes?)?/i);
-  if (durTotalMinutes && !times[1]) {
-    let totalMins = parseInt(durTotalMinutes[1]) * 60;
-    if (durTotalMinutes[2]) totalMins += parseInt(durTotalMinutes[2]);
-    const total = startH * 60 + startM + totalMins;
-    endH = Math.floor(total / 60); endM = total % 60;
-  } else {
-    const durH = text.match(/(?:for\s+)?(\d+)\s*hours?/i);
-    const durM = text.match(/(?:for\s+)?(\d+)\s*(mins?|minutes?|m)\b/i);
-    if (durM) { const mins = parseInt(durM[1]); const total = startH * 60 + startM + mins; endH = Math.floor(total / 60); endM = total % 60; }
-    else if (durH) { endH = startH + parseInt(durH[1]); endM = startM; }
-    else if (lower.includes('half an hour') || lower.includes('30 minutes') || lower.includes('30 mins')) {
-      const total = startH * 60 + startM + 30; endH = Math.floor(total / 60); endM = total % 60;
-    } else if (lower.includes('an hour and a half') || lower.includes('90 minutes')) {
-      const total = startH * 60 + startM + 90; endH = Math.floor(total / 60); endM = total % 60;
-    } else if (lower.includes('an hour') || lower.includes('one hour') || lower.includes('1 hour')) {
-      endH = startH + 1;
-    }
-  }
-
-  // Tag detection — match built-in keywords, then custom tag labels
-  let tag = 'meeting';
-  if (lower.includes('deep work') || lower.includes('focus') || lower.includes('heads down') || lower.includes('concentrate')) tag = 'deep-work';
-  else if (lower.includes('gym') || lower.includes('workout') || lower.includes('cardio') || lower.includes('run') || lower.includes('running') || lower.includes('jog') || lower.includes('exercise') || lower.includes('fitness') || lower.includes('yoga') || lower.includes('swim')) tag = 'exercise';
-  else if (lower.includes('study') || lower.includes('math') || lower.includes('english') || lower.includes('chemistry') || lower.includes('biology') || lower.includes('physics') || lower.includes('mandarin') || lower.includes('class') || lower.includes('lesson') || lower.includes('tutor') || lower.includes('read') || lower.includes('learn') || lower.includes('homework')) tag = 'study';
-  else if (lower.includes('design') || lower.includes('movie') || lower.includes('film') || lower.includes('hobby') || lower.includes('app') || lower.includes('build') || lower.includes('project') || lower.includes('creative') || lower.includes('art') || lower.includes('music') || lower.includes('game')) tag = 'hobby';
-  // Match custom tag labels
-  for (const t of TAG_ORDER) {
-    if (t === 'deep-work' || t === 'meeting' || t === 'exercise' || t === 'study' || t === 'hobby') continue;
-    const label = (TAG_LABELS[t] || '').toLowerCase();
-    if (label && lower.includes(label)) { tag = t; break; }
-  }
-  // Time-of-day smart default if no tag keyword matched
-  if (tag === 'meeting') {
-    if (startH >= 5 && startH < 12) tag = 'deep-work';
-    else if (startH >= 17 && startH < 22) tag = 'hobby';
-  }
-
-  if (!title) title = 'Untitled Event';
-  const tStartM = startH * 60 + startM;
-  const tEndM = endH * 60 + endM;
-  const conflict = findConflict(dateStr, tStartM, tEndM);
-  if (conflict) {
-    const dur = tEndM - tStartM;
-    const slot = findFreeSlot(dateStr, dur);
-    if (slot) { return { title, date: dateStr, startTime: slot.startTime, endTime: slot.endTime, tag, subcategory: '', _adjusted: true }; }
-  }
-  return { title, date: dateStr, startTime: `${String(startH).padStart(2,'0')}:${String(startM).padStart(2,'0')}`, endTime: `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`, tag, subcategory: '' };
-}
-
-
-
-function parseFindGap(text) {
-  const lower = text.toLowerCase();
-  let durationMinutes = 60;
-  const durH = text.match(/(\d+)\s*hours?\s*(?:and\s+(\d+)\s*mins?)?/i);
-  const durM = text.match(/(?:for\s+)?(\d+)\s*(mins?|minutes?|m)\b(?!\w)/i);
-  if (durH) { durationMinutes = parseInt(durH[1]) * 60; if (durH[2]) durationMinutes += parseInt(durH[2]); }
-  else if (durM) { durationMinutes = parseInt(durM[1]); }
-  else if (lower.includes('half an hour') || lower.includes('30 minutes') || lower.includes('30 mins')) durationMinutes = 30;
-  else if (lower.includes('an hour and a half') || lower.includes('90 minutes')) durationMinutes = 90;
-  else if (lower.includes('two hours') || lower.includes('2 hours') || lower.includes('2hr')) durationMinutes = 120;
-  let title = 'New Task';
-  const titleMatch = text.match(/(?:for|a)\s+(.+?)(?:\s+(?:on|at|today|tomorrow|this|next))/i);
-  if (titleMatch) title = titleMatch[1].trim();
-  else { const lastKw = text.search(/\b(find|gap|free|open|slot|available)\b/i); if (lastKw >= 0) { const after = text.slice(lastKw).replace(/\b(find|gap|free|open|slot|available)\b/gi, '').trim(); if (after) title = after; } }
-  title = title.replace(/\b(\d+)\s*(hours?|hr|mins?|minutes?|m)\b/gi, '').trim();
-  if (!title || title.length < 2) title = 'New Task';
-  title = title.charAt(0).toUpperCase() + title.slice(1);
-  const today = new Date(); let targetDate = new Date(today);
-  if (lower.includes('tomorrow')) targetDate.setDate(targetDate.getDate() + 1);
-  else if (lower.includes('today')) { /* keep today */ }
-  else { const dayNames = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday']; const dayAbbr = ['sun','mon','tue','wed','thu','fri','sat']; let found = -1; for (let i = 0; i < 7; i++) { if (lower.includes(dayNames[i]) || lower.includes(dayAbbr[i])) { found = i; break; } } if (found >= 0) { let diff = found - targetDate.getDay(); if (diff <= 0) diff += 7; targetDate.setDate(targetDate.getDate() + diff); } }
-  let tag = 'meeting';
-  if (lower.includes('deep work') || lower.includes('focus') || lower.includes('heads down')) tag = 'deep-work';
-  else if (lower.includes('gym') || lower.includes('workout') || lower.includes('cardio') || lower.includes('run') || lower.includes('exercise') || lower.includes('fitness')) tag = 'exercise';
-  else if (lower.includes('study') || lower.includes('math') || lower.includes('english') || lower.includes('chemistry') || lower.includes('biology') || lower.includes('physics') || lower.includes('mandarin') || lower.includes('class')) tag = 'study';
-  else if (lower.includes('design') || lower.includes('movie') || lower.includes('film') || lower.includes('hobby') || lower.includes('app') || lower.includes('build')) tag = 'hobby';
-  const dateStr = formatDate(targetDate);
-  const slot = findFreeSlot(dateStr, durationMinutes);
-  if (!slot) return null;
-  return { title, date: dateStr, startTime: slot.startTime, endTime: slot.endTime, tag, durationMinutes, isGapFind: true };
+  return lines.join('
+');
 }
 
 function findFreeSlot(dateStr, durationMinutes) {
@@ -5324,7 +4964,7 @@ function findFreeSlot(dateStr, durationMinutes) {
   busy.sort((a, b) => a.start - b.start);
   const startBoundary = START_HOUR * 60;
   const endBoundary = (START_HOUR + VISIBLE_HOURS) * 60;
-  const buffer = 15; // 15min gap between tasks
+  const buffer = 15;
   let cursor = startBoundary;
   if (busy.length === 0) {
     const now = new Date(); const currentMins = now.getHours() * 60 + now.getMinutes();
@@ -5351,105 +4991,6 @@ function findConflict(dateStr, startM, endM, excludeId) {
     if (startM < tEnd + buffer && endM > tStart - buffer) return task;
   }
   return null;
-}
-
-function showCommandResult(result) {
-  if (!dom.cmdResults) return;
-  const meta = TAG_COLORS[result.tag] || TAG_COLORS.meeting;
-  const adjustedNote = result._adjusted ? '<div class="cmd-adjusted-note">Time adjusted to avoid conflict</div>' : '';
-  dom.cmdResults.innerHTML = `
-    <div class="cmd-result-item">
-      <svg class="cmd-result-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-      <div class="cmd-result-content">
-        <div class="cmd-result-title">${escapeHtml(result.title)}</div>
-        <div class="cmd-result-detail">${result.date} &middot; ${result.startTime} &ndash; ${result.endTime} &middot; <span style="color:${meta.text}">${result.tag}</span></div>${adjustedNote}
-        <div class="cmd-result-actions">
-          <button class="btn btn-primary cmd-confirm-btn">Add to Calendar</button>
-          <button class="btn btn-outline cmd-cancel-btn">Cancel</button>
-        </div>
-      </div>
-    </div>`;
-  dom.cmdResults.querySelector('.cmd-confirm-btn').addEventListener('click', () => { confirmCmdTask(result); });
-  dom.cmdResults.querySelector('.cmd-cancel-btn').addEventListener('click', () => { hideCmdPalette(); });
-}
-
-function showFindGapResult(result) {
-  if (!dom.cmdResults) return;
-  let currentResult = { ...result };
-  const meta = TAG_COLORS[result.tag] || TAG_COLORS.meeting;
-  function renderFindGapDisplay(res) {
-    dom.cmdResults.innerHTML = `
-    <div class="cmd-result-item">
-      <svg class="cmd-result-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <div class="cmd-result-content">
-        <div class="cmd-result-title">${escapeHtml(res.title)}</div>
-        <div class="cmd-result-detail">${res.date} &middot; ${res.startTime} &ndash; ${res.endTime} (${res.durationMinutes}m) &middot; <span style="color:${meta.text}">${res.tag}</span></div>
-        <div class="cmd-result-actions">
-          <button class="btn btn-primary cmd-confirm-btn">Add to Calendar</button>
-          <button class="btn btn-outline cmd-cancel-btn">Cancel</button>
-          <button class="btn btn-ghost cmd-refresh-btn" title="Find another slot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Next</button>
-        </div>
-      </div>
-    </div>`;
-    dom.cmdResults.querySelector('.cmd-confirm-btn').addEventListener('click', () => { confirmCmdTask(res); });
-    dom.cmdResults.querySelector('.cmd-cancel-btn').addEventListener('click', () => { hideCmdPalette(); });
-    const refreshBtn = dom.cmdResults.querySelector('.cmd-refresh-btn');
-    if (refreshBtn) refreshBtn.addEventListener('click', () => {
-      const next = findNextSlot(currentResult);
-      if (next) { currentResult = { ...next }; renderFindGapDisplay(currentResult); }
-      else { dom.cmdResults.innerHTML = '<div class="cmd-error">No more free slots available on this day.</div>'; }
-    });
-  }
-  renderFindGapDisplay(currentResult);
-}
-
-function findNextSlot(prevResult) {
-  const dayTasks = state.tasks.filter(t => t.date === prevResult.date && !t.completed && !isWhiteboardTask(t));
-  const busy = [];
-  const buffer = 15;
-  for (const task of dayTasks) { const start = parseTime(task.startTime); const end = parseTime(task.endTime) || start + 60; busy.push({ start, end }); }
-  busy.sort((a, b) => a.start - b.start);
-  const prevEnd = parseTime(prevResult.endTime);
-  const dur = prevResult.durationMinutes;
-  const endBoundary = (START_HOUR + VISIBLE_HOURS) * 60;
-  let cursor = prevEnd;
-  for (const interval of busy) {
-    if (interval.start <= cursor) { cursor = Math.max(cursor, interval.end + buffer); continue; }
-    if (cursor + dur <= interval.start - buffer) return { ...prevResult, startTime: toTimeStr(cursor), endTime: toTimeStr(cursor + dur) };
-    cursor = Math.max(cursor, interval.end + buffer);
-  }
-  if (cursor + dur <= endBoundary) return { ...prevResult, startTime: toTimeStr(cursor), endTime: toTimeStr(cursor + dur) };
-  return null;
-}
-
-function showCommandError(msg) {
-  if (!dom.cmdResults) return;
-  dom.cmdResults.innerHTML = `<div class="cmd-error">${escapeHtml(msg)}</div>`;
-  state._lastCommandText = null;
-}
-
-function confirmCmdTask(taskData) {
-  const startM = parseTime(taskData.startTime);
-  const endM = parseTime(taskData.endTime) || startM + 60;
-  const dur = endM - startM;
-  const conflict = findConflict(taskData.date, startM, endM);
-
-  if (conflict) {
-    const slot = findFreeSlot(taskData.date, dur);
-    if (slot) {
-      showToast(`"${escapeHtml(taskData.title)}" overlaps with ${escapeHtml(conflict.title)}. Suggest ${slot.startTime}–${slot.endTime}.`, 'warning');
-      taskData.startTime = slot.startTime;
-      taskData.endTime = slot.endTime;
-    } else {
-      showToast(`No free slot on ${taskData.date} for this task`, 'error');
-      return;
-    }
-  }
-
-  pushUndo();
-  createTask(taskData);
-  if (state.cmdPaletteOpen) hideCmdPalette();
-  if (typeof pageAfterTaskSave === 'function') pageAfterTaskSave();
 }
 
 // ─── AI CHAT AGENT ──────────────────────────────────────────
@@ -5503,7 +5044,7 @@ function showAIChat() {
       <h3>Welcome to ChickBot</h3>
       <p>Your smart schedule buddy. Get started by adding your API key in Settings.</p>
       <button class="btn btn-primary" id="aiSetupBtn">Open Settings</button>
-      <p class="ai-welcome-hint">Need a key? Get a free one at <a href="${pLink.url}" target="_blank" class="form-link">${pLink.text}</a>. Without it, basic parsing still works in the command palette (${shortcutDisplay('K')}).</p>
+      <p class="ai-welcome-hint">Need a key? Get a free one at <a href="${pLink.url}" target="_blank" class="form-link">${pLink.text}</a>. Without it, basic parsing still works in the AI chat (${shortcutDisplay('K')}).</p>
     </div>`;
     dom.aiChatInputWrapper.classList.add('disabled');
     dom.aiChatInput.disabled = true;
@@ -6474,20 +6015,15 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     if (!state.taskModalOpen && !state.helpModalOpen) toggleAIChat();
   }
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-    e.preventDefault();
-    if (!state.taskModalOpen && !state.helpModalOpen && !state.aiChatOpen) toggleCmdPalette();
-  }
+
   if (e.key === 'Escape') {
-    if (state.cmdPaletteOpen) hideCmdPalette();
+
     else if (state.aiChatOpen) hideAIChat();
     else if (state.taskModalOpen) hideTaskModal();
     else if (state.helpModalOpen) hideHelpModal();
   }
-  if (e.key === 'Enter' && state.cmdPaletteOpen && dom.cmdInput) {
-    if (!dom.cmdResults.querySelector('.cmd-result-item')) processCommand(dom.cmdInput.value);
-  }
-  if (e.key === 'Enter' && state.aiChatOpen && dom.aiChatInput && !e.shiftKey) {
+
+  if (e.key === "Enter" && state.aiChatOpen && dom.aiChatInput && !e.shiftKey) {
     e.preventDefault();
     sendAIMessage();
   }

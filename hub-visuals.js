@@ -412,7 +412,7 @@ const HUB_DEFAULTS = {
   notes: '',
   links: [{ label: 'GitHub', url: 'https://github.com' }, { label: 'Reddit', url: 'https://reddit.com' }],
   gallery: [
-    { label: 'Schedule', desc: 'Time-blocking grid with drag & drop, AI command palette, and week/month/agenda views.', href: 'schedule.html', icon: 'calendar', color: 'var(--tag-deep-work-text)', bg: 'var(--tag-deep-work-bg)' },
+    { label: 'Schedule', desc: 'Time-blocking grid with drag & drop, AI scheduling, and week/month/agenda views.', href: 'schedule.html', icon: 'calendar', color: 'var(--tag-deep-work-text)', bg: 'var(--tag-deep-work-bg)' },
     { label: 'Activities', desc: 'Chronological feed grouped by day with tag and date filters.', href: 'activities.html', icon: 'checklist', color: 'var(--tag-meeting-text)', bg: 'var(--tag-meeting-bg)' },
     { label: 'Activities + Board', desc: 'Timeline and Kanban board merged into one page with a view toggle.', href: 'activities.html', icon: 'tag', color: 'var(--tag-study-text)', bg: 'var(--tag-study-bg)' },
     { label: 'Analytics', desc: 'Charts with category distribution, daily breakdowns, and day-by-day metrics.', href: 'analytics.html', icon: 'chart', color: 'var(--tag-hobby-text)', bg: 'var(--tag-hobby-bg)' },

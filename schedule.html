@@ -63,22 +63,6 @@
       position: relative; min-width: fit-content;
     }
 
-    /* Floating command bar */
-    .sch-cmd-bar {
-      position: absolute; bottom: var(--space-5); right: var(--space-5);
-      z-index: 50;
-    }
-    .sch-cmd-btn {
-      width: 48px; height: 48px; border-radius: 50%;
-      background: var(--accent); color: var(--text-inverse);
-      border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--shadow-lg);
-      transition: all var(--t-base);
-    }
-    .sch-cmd-btn:hover { transform: scale(1.05); box-shadow: var(--shadow-xl); }
-    .sch-cmd-btn:active { transform: scale(0.95); }
-
     /* ─── PILL MANAGER (colorful chip row + dropdown) ──── */
     .sch-pill-manager {
       padding: 4px var(--space-4);
@@ -462,9 +446,7 @@
       #calendarContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
       /* Filters bar mobile */
-      /* Command palette button */
-      .sch-cmd-bar { bottom: var(--space-3); right: var(--space-3); }
-      .sch-cmd-btn { width: 44px; height: 44px; }
+
     }
     /* ─── HAMBURGER SIDE PANEL ─────────────────────────── */
     .hub-menu-overlay {
@@ -890,13 +872,6 @@
       </div>
 
 
-      <!-- Command FAB -->
-      <div class="sch-cmd-bar">
-        <button class="sch-cmd-btn" id="cmdBtn" title="Command palette (Ctrl+K)" onclick="toggleCmdPalette()">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-        </button>
-      </div>
-
       <!-- Pomodoro Timer (floating card) -->
       <div class="pomodoro-card hidden" id="pomodoroCard">
         <div class="pomodoro-header">
@@ -939,25 +914,6 @@
         <div class="pomodoro-status" id="pomodoroStatus">Ready to focus</div>
       </div>
 
-    </div>
-
-    <!-- Modals -->
-    <div id="cmdOverlay" class="overlay hidden"></div>
-    <div id="cmdPalette" class="modal cmd-modal hidden" role="dialog" aria-label="Command Palette">
-      <div class="cmd-modal-inner">
-        <div class="cmd-input-wrapper">
-          <svg class="cmd-prefix" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><polyline points="15 10 20 15 15 20"/></svg>
-          <input type="text" id="cmdInput" class="cmd-input" placeholder='Type a command...' autocomplete="off" spellcheck="false">
-          <kbd class="cmd-shortcut">&#8629;</kbd>
-          <button id="cmdPaletteBtn" style="display:none"></button>
-        </div>
-        <div id="cmdResults" class="cmd-results">
-          <div class="cmd-hint"><div class="cmd-hint-grid">
-            <div class="cmd-example"><span class="cmd-example-text">"Team standup tomorrow 9am 30m"</span></div>
-            <div class="cmd-example"><span class="cmd-example-text">"Design review Friday 2pm 1hr"</span></div>
-          </div></div>
-        </div>
-      </div>
     </div>
 
     <div id="taskOverlay" class="overlay hidden">
@@ -1122,7 +1078,7 @@
           <div class="help-tips" id="helpTipsGrid">
             <div class="help-tip">
               <span class="help-tip-icon">💡</span>
-              <div class="help-tip-text">Type natural language like <em>"Team standup tomorrow at 9am"</em> in the command palette (<kbd>Ctrl+K</kbd>)</div>
+              <div class="help-tip-text">Press <kbd>F</kbd> to toggle Focus Mode — hides sidebar and reduces clutter</div>
             </div>
             <div class="help-tip">
               <span class="help-tip-icon">🔄</span>

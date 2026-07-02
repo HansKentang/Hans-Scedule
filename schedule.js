@@ -15,12 +15,7 @@ dom.taskCount     = $('#taskCount');
 dom.localTz       = $('#localTz');
 dom.utcTz         = $('#utcTz');
 
-dom.cmdOverlay    = $('#cmdOverlay');
-dom.cmdPalette    = $('#cmdPalette');
-dom.cmdInput      = $('#cmdInput');
-dom.cmdResults    = $('#cmdResults');
-dom.cmdBtn        = $('#cmdBtn');
-dom.cmdPaletteBtn = $('#cmdPaletteBtn');
+
 
 dom.taskOverlay    = $('#taskOverlay');
 dom.taskModal      = $('#taskModal');
@@ -628,7 +623,7 @@ function showGridEmptyState(count) {
   if (!firstCol) return;
   const el = document.createElement('div');
   el.className = 'grid-empty-state';
-  el.innerHTML = '<span>No tasks this week</span><small>Press <kbd>Ctrl+K</kbd> or use the + button to add one</small>';
+  el.innerHTML = '<span>No tasks this week</span><small>Use the + button or drag a subcategory to add a task</small>';
   firstCol.appendChild(el);
 }
 
@@ -1222,81 +1217,6 @@ function removeResizeTooltip() {
   if (tip) tip.remove();
 }
 
-// ─── COMMAND PALETTE RESULTS (no more ghost blocks — direct creation) ───
-function showCommandResult(result) {
-  if (!dom.cmdResults) return;
-  const meta = TAG_COLORS[result.tag] || TAG_COLORS.meeting;
-  dom.cmdResults.innerHTML = `<div class="cmd-result-item">
-      <svg class="cmd-result-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-      <div class="cmd-result-content">
-        <div class="cmd-result-title">${escapeHtml(result.title)}</div>
-        <div class="cmd-result-detail">${result.date} &middot; ${result.startTime} &ndash; ${result.endTime} &middot; <span style="color:${meta.text}">${result.tag}</span></div>
-        <div class="cmd-result-actions">
-          <button class="btn btn-primary cmd-confirm-btn">Add to Calendar</button>
-          <button class="btn btn-outline cmd-cancel-btn">Cancel</button>
-        </div>
-      </div>
-    </div>`;
-  dom.cmdResults.querySelector('.cmd-confirm-btn').addEventListener('click', () => { confirmCmdTask(result); });
-  dom.cmdResults.querySelector('.cmd-cancel-btn').addEventListener('click', () => { hideCmdPalette(); });
-}
-
-function showFindGapResult(result) {
-  if (!dom.cmdResults) return;
-  let currentResult = { ...result };
-  const meta = TAG_COLORS[result.tag] || TAG_COLORS.meeting;
-  function renderFindGapDisplay(res) {
-    dom.cmdResults.innerHTML = `<div class="cmd-result-item">
-      <svg class="cmd-result-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <div class="cmd-result-content">
-        <div class="cmd-result-title">${escapeHtml(res.title)}</div>
-        <div class="cmd-result-detail">${res.date} &middot; ${res.startTime} &ndash; ${res.endTime} (${res.durationMinutes}m) &middot; <span style="color:${meta.text}">${res.tag}</span></div>
-        <div class="cmd-result-actions">
-          <button class="btn btn-primary cmd-confirm-btn">Add to Calendar</button>
-          <button class="btn btn-outline cmd-cancel-btn">Cancel</button>
-          <button class="btn btn-ghost cmd-refresh-btn" title="Find another slot">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg> Next</button>
-        </div>
-      </div>
-    </div>`;
-    dom.cmdResults.querySelector('.cmd-confirm-btn').addEventListener('click', () => { confirmCmdTask(res); });
-    dom.cmdResults.querySelector('.cmd-cancel-btn').addEventListener('click', () => { hideCmdPalette(); });
-    const refreshBtn = dom.cmdResults.querySelector('.cmd-refresh-btn');
-    if (refreshBtn) refreshBtn.addEventListener('click', () => {
-      const next = findNextSlot(currentResult);
-      if (next) { currentResult = { ...next }; renderFindGapDisplay(currentResult); }
-      else { dom.cmdResults.innerHTML = '<div class="cmd-error">No more free slots available on this day.</div>'; }
-    });
-  }
-  renderFindGapDisplay(currentResult);
-}
-
-function confirmCmdTask(taskData) {
-  const startM = parseTime(taskData.startTime);
-  const endM = parseTime(taskData.endTime) || startM + 60;
-  const conflict = findConflict(taskData.date, startM, endM);
-  if (conflict) {
-    const dur = endM - startM;
-    const slot = findFreeSlot(taskData.date, dur);
-    if (slot) {
-      showToast(`"${escapeHtml(taskData.title)}" overlaps with ${escapeHtml(conflict.title)} — shifted to ${slot.startTime}–${slot.endTime}`, 'warning');
-      taskData.startTime = slot.startTime;
-      taskData.endTime = slot.endTime;
-    } else {
-      showToast(`No free slot on ${taskData.date} for this task`, 'error');
-      return;
-    }
-  }
-  createTask(taskData);
-  if (state.cmdPaletteOpen) hideCmdPalette();
-  pageAfterTaskSave();
-}
-
-
-
 // ─── WEEK NAVIGATION ───────────────────────────────────────
 function goToday() {
   if (currentView === 'month') {
@@ -1370,15 +1290,12 @@ function saveScrollPosition() {
 
 // ─── KEYBOARD SHORTCUTS ────────────────────────────────────
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && state.cmdPaletteOpen && dom.cmdInput) {
-    if (!dom.cmdResults.querySelector('.cmd-result-item')) processCommand(dom.cmdInput.value);
-  }
-  if (e.key === 't' && !e.metaKey && !e.ctrlKey && !state.cmdPaletteOpen && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) { toggleTheme(); }
-  if (e.key === 'q' && !e.metaKey && !e.ctrlKey && !state.cmdPaletteOpen && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) {
+  if (e.key === 't' && !e.metaKey && !e.ctrlKey && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) { toggleTheme(); }
+  if (e.key === 'q' && !e.metaKey && !e.ctrlKey && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) {
     const now = new Date(); openNewTaskModal(formatDate(now), roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES));
   }
   // Undo (Ctrl+Z)
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !state.cmdPaletteOpen && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) {
     e.preventDefault();
     if (undo()) {
       showToast('Undo successful', 'info', 2000);
@@ -1406,10 +1323,7 @@ function bindEvents() {
   dom.todayBtn?.addEventListener('click', goToday);
   dom.prevWeek?.addEventListener('click', goPrev);
   dom.nextWeek?.addEventListener('click', goNext);
-  // Command FAB is wired via onclick in HTML (toggleCmdPalette)
-  dom.cmdPaletteBtn?.addEventListener('click', showCmdPalette);
-  dom.cmdOverlay?.addEventListener('click', hideCmdPalette);
-  dom.cmdInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); processCommand(dom.cmdInput.value); } });
+
   dom.taskOverlay?.addEventListener('click', hideTaskModal);
   dom.taskModal?.addEventListener('click', (e) => e.stopPropagation());
   dom.taskModalClose?.addEventListener('click', hideTaskModal);
@@ -1554,7 +1468,7 @@ function bindEvents() {
   applyAccessHubConfig();
   // F key to toggle focus mode (only when not in modals or input fields)
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !state.cmdPaletteOpen && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) {
+    if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) {
       e.preventDefault();
       toggleFocusMode();
       showToast('🎯 Focus mode ' + (focusModeActive ? 'activated' : 'deactivated'), 'info', 2000);
