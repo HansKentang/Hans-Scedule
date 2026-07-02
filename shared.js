@@ -3951,6 +3951,21 @@ function toggleEditMode() {
   document.dispatchEvent(new CustomEvent('editModeChange'));
 }
 
+// ─── IMAGE HOVER → Visuals button glow ──────────────────
+function initImageHoverGlow() {
+  const cls = 'img-hover';
+  let ticking = false;
+  document.addEventListener('mousemove', () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        document.documentElement.classList.toggle(cls, !!document.querySelector('[data-image-id]:hover'));
+      });
+    }
+  });
+}
+
 // ─── SIDEBAR EDIT MODE ──────────────────────────────────────
 const SIDEBAR_CONFIG_KEY = 'haven-sidebar-config';
 
@@ -6125,14 +6140,16 @@ function positionAccessItems() {
   }
 }
 
-// Render sidebar images on all pages on load
+// Init image-hover glow + render sidebar images on all pages
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', function() {
     positionAccessItems();
+    initImageHoverGlow();
     if (typeof renderSidebarImages === 'function') renderSidebarImages();
   });
 } else {
   positionAccessItems();
+  initImageHoverGlow();
   if (typeof renderSidebarImages === 'function') renderSidebarImages();
 }
 window.addEventListener('resize', positionAccessItems);
