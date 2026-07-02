@@ -9,9 +9,9 @@ function snap(v) { return Math.round(v / 20) * 20; }
 
 /* ─── Spotify height snap (115, 190, 400, then free) ─── */
 function snapSpotifyHeight(v) {
-  v = Math.max(111, v);
-  if (v < 151) return 111;
-  if (v < 295) return 189.5;
+  v = Math.max(108.5, v);
+  if (v < 147) return 108.5;
+  if (v < 295) return 185;
   if (v < 400) return 400;
   return snap(v);
 }
@@ -1898,7 +1898,7 @@ function setupBubbleResize() {
     const item = layout.find(i => i.uid === uid);
     if (item) {
       if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
-      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? Math.max(111, snapSpotifyHeight(h)) : Math.max(80, snap(h));
+      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? Math.max(108.5, snapSpotifyHeight(h)) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       pushUndoState();
       hubContent.bentoLayout = layout;
@@ -1981,7 +1981,7 @@ function setupBubbleResize() {
     const item = layout.find(i => i.uid === uid);
     if (item) {
       if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
-      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? Math.max(111, snapSpotifyHeight(h)) : Math.max(80, snap(h));
+      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? Math.max(108.5, snapSpotifyHeight(h)) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       pushUndoState();
       hubContent.bentoLayout = layout;
