@@ -2567,7 +2567,7 @@ function setupHubEditEvents() {
   if (_fabMain && !_fabMain.dataset._fabWired) {
     _fabMain.dataset._fabWired = '1';
     _fabMain.addEventListener('click', toggleHubAccess);
-    document.getElementById('hubFabEdit')?.addEventListener('click', function() { toggleHubAccess(); showHubEditToggle(); });
+    document.getElementById('hubFabCustomize')?.addEventListener('click', function() { toggleHubAccess(); toggleHubEdit(); });
     document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
   }
   document.addEventListener('click', function(e) {
@@ -2940,7 +2940,7 @@ function toggleHubAccess() {
 }
 
 /* ─── Edit mode toggle pill ─────────────────── */
-function showHubEditToggle() {
+function toggleHubEdit() {
   toggleHubEdit();
   // Show the toggle pill reflecting current state
   const existing = document.getElementById('hubEditTogglePill');
@@ -3015,8 +3015,7 @@ if (document.getElementById('hubAccessHub')) {
           main.classList.remove('open');
         }
       });
-      document.getElementById('hubFabEdit')?.addEventListener('click', function() { try { toggleHubAccess(); showHubEditToggle(); } catch(e) { console.error('Edit error:', e); } });
-      document.getElementById('hubFabAdd')?.addEventListener('click', function() { toggleHubAccess(); toggleHubEdit(); });
+      document.getElementById('hubFabCustomize')?.addEventListener('click', function() { try { toggleHubAccess(); toggleHubEdit(); } catch(e) { console.error('Edit error:', e); } });
       document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
     }
   };
@@ -3156,14 +3155,14 @@ updateSectionHandles = function() {
   function handleAction(id) {
     switch (id) {
       case 'add-widget':
-        var fabAdd = document.getElementById('hubFabAdd');
+        var fabAdd = document.getElementById('hubFabCustomize');
         if (fabAdd) fabAdd.click();
         break;
       case 'guide':
         if (typeof showCanvasGuide === 'function') showCanvasGuide();
         break;
       case 'edit':
-        var fabEdit = document.getElementById('hubFabEdit');
+        var fabEdit = document.getElementById('hubFabCustomize');
         if (fabEdit) fabEdit.click();
         break;
       case 'today':
