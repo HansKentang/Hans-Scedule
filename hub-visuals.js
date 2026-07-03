@@ -485,8 +485,18 @@ function saveHubContent() {
   if (_hadImages !== undefined) hubContent._images = _hadImages;
 }
 
+var ADMIN_PASS = 'MjcwODEw';
+
 function saveAsGuestDefault() {
   if (!hubContent) { showToast('Nothing to save', 'error', 1500); return; }
+  var stored = null;
+  try { stored = localStorage.getItem('haven-admin-password'); } catch(e) {}
+  if (!stored) {
+    try { localStorage.setItem('haven-admin-password', ADMIN_PASS); stored = ADMIN_PASS; } catch(e) {}
+  }
+  var entered = prompt('Enter admin password to save default layout:');
+  if (!entered) return;
+  try { if (btoa(entered) !== stored) { showToast('Incorrect password', 'error', 2000); return; } } catch(e) { showToast('Error verifying password', 'error', 2000); return; }
   var _hadImages = hubContent._images;
   delete hubContent._images;
   try {
@@ -2898,7 +2908,6 @@ function setupHubEditEvents() {
     _fabMain.addEventListener('click', toggleHubAccess);
     document.getElementById('hubFabCustomize')?.addEventListener('click', function() { toggleHubAccess(); toggleHubEdit(); });
     document.getElementById('hubFabSnapshot')?.addEventListener('click', function() { toggleHubAccess(); setTimeout(captureHubSnapshot, 200); });
-    document.getElementById('hubFabSetDefault')?.addEventListener('click', function() { toggleHubAccess(); saveAsGuestDefault(); });
     document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
   }
   document.addEventListener('click', function(e) {
@@ -3288,6 +3297,14 @@ function initHubEditMode() {
   // (No longer syncing hubEditMode from state.editMode — they are independent)
 }
 
+/* ─── Admin: Ctrl+Shift+D to save as guest default ─── */
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
+    e.preventDefault();
+    if (typeof saveAsGuestDefault === 'function') saveAsGuestDefault();
+  }
+});
+
 /* ─── Initialize hub FAB positioning ────────── */
 if (document.getElementById('hubAccessHub')) {
   if (document.readyState === 'loading') {
@@ -3318,7 +3335,6 @@ if (document.getElementById('hubAccessHub')) {
       });
       document.getElementById('hubFabCustomize')?.addEventListener('click', function() { try { toggleHubAccess(); toggleHubEdit(); } catch(e) { console.error('Edit error:', e); } });
       document.getElementById('hubFabSnapshot')?.addEventListener('click', function() { toggleHubAccess(); setTimeout(captureHubSnapshot, 200); });
-      document.getElementById('hubFabSetDefault')?.addEventListener('click', function() { toggleHubAccess(); saveAsGuestDefault(); });
       document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
     }
   };
