@@ -66,8 +66,8 @@
 |----------|-------|------|
 | `TAG_ORDER` | `['deep-work','meeting','exercise','study','hobby']` + custom | `shared.js` |
 | `BUILTIN_TAGS` | `['deep-work','meeting','exercise','study','hobby']` | `shared.js` |
-| `START_HOUR` | `7` (grid start) | `shared.js` |
-| `VISIBLE_HOURS` | `14` (grid span) | `shared.js` |
+| `START_HOUR` | `5` (grid start) | `shared.js` |
+| `VISIBLE_HOURS` | `24` (grid span, 5am–5am next day) | `shared.js` |
 | `BENTO_UNDO_MAX` | `30` | `hub-visuals.js` |
 
 ## Critical Rules

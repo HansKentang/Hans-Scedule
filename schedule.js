@@ -58,6 +58,26 @@ dom.tzTooltip      = $('#tzTooltip');
   dom.aiChatSend     = $('#aiChatSend');
   dom.aiChatClose    = $('#aiChatClose');
 
+// Time helper: times < START_HOUR (5am) belong to the next day in the grid
+function gridTime(str) {
+  const m = parseTime(str);
+  if (isNaN(m)) return m;
+  return m < START_HOUR * 60 ? m + 1440 : m;
+}
+function gridEndTime(startStr, endStr) {
+  const rawStart = parseTime(startStr);
+  const rawEnd = endStr ? parseTime(endStr) : rawStart + 60;
+  if (isNaN(rawStart)) return rawStart;
+  if (isNaN(rawEnd)) return rawStart + 60;
+  // If both are < START_HOUR (legacy "04:00" format), both are next-day
+  if (rawStart < START_HOUR * 60 && rawEnd < START_HOUR * 60) return rawEnd + 1440;
+  // If start is next-day but end isn't (e.g. "04:00"→"05:00"), push end too
+  if (rawStart < START_HOUR * 60 && rawEnd >= START_HOUR * 60) return rawEnd + 1440;
+  // If start ≥ START_HOUR but end is early next-day (e.g. "23:00"→"00:00"), push end
+  if (rawEnd < START_HOUR * 60) return rawEnd + 1440;
+  return rawEnd;
+}
+
 // Unified drag state — handles task-reschedule, quick-add→grid
 let gridDrag = null;
 
@@ -165,8 +185,9 @@ function renderWeekView() {
   }
 
   for (let h = START_HOUR; h < START_HOUR + VISIBLE_HOURS; h++) {
-    const disp = h % 12 === 0 ? 12 : h % 12;
-    const ampm = h < 12 ? 'AM' : 'PM';
+    const h24 = h % 24;
+    const disp = h24 % 12 === 0 ? 12 : h24 % 12;
+    const ampm = h24 < 12 ? 'AM' : 'PM';
     const timeMins = h * 60;
     html += `<div class="time-axis time-slot${h % 2 === 0 ? '' : ' time-alt'}" data-time="${timeMins}" data-hour="${h}">
       <span>${disp} ${ampm}</span><span class="half-hour-marker"></span></div>`;
@@ -402,9 +423,9 @@ function renderAgendaView() {
 
 function formatShortTime(t) {
   var p = t.split(':').map(Number);
-  var h = p[0], m = p[1];
-  var ampm = h < 12 ? 'a' : 'p';
-  var h12 = h % 12 || 12;
+  var h24 = p[0] % 24, m = p[1];
+  var ampm = h24 < 12 ? 'a' : 'p';
+  var h12 = h24 % 12 || 12;
   return m === 0 ? h12 + ampm : h12 + ':' + (m < 10 ? '0' : '') + m + ampm;
 }
 function formatCompactTime(start, end) {
@@ -446,16 +467,9 @@ function renderTasks() {
     tasksByDate[task.date].push(task);
   }
 
-  // Build a date→column map from day-column data-date attributes
-  const colMap = {};
-  dom.grid.querySelectorAll('.day-column').forEach(el => {
-    const d = el.dataset.date;
-    if (d && !colMap[d]) colMap[d] = el;
-  });
-
   // Render each day's tasks with overlap layout
   for (const [date, dateTasks] of Object.entries(tasksByDate)) {
-    const col = colMap[date];
+    const col = dom.grid.querySelector(`.day-column[data-date="${date}"]`);
     if (!col) continue;
 
     // Build task entries with parsed times for overlap detection
@@ -464,8 +478,8 @@ function renderTasks() {
       .filter(t => t.startTime)
       .map(t => ({
         task: t,
-        start: parseTime(t.startTime),
-        end: parseTime(t.endTime) || parseTime(t.startTime) + 60,
+        start: gridTime(t.startTime),
+        end: gridEndTime(t.startTime, t.endTime),
       }))
       .filter(e => !isNaN(e.start));
     // Sort by start time, then longer duration first
@@ -701,8 +715,8 @@ function startDrag(e, source) {
     if (task) {
       gridDrag.type = 'reschedule';
       gridDrag.taskId = task.id;
-      gridDrag.dragStartM = parseTime(task.startTime);
-      gridDrag.dragEndM = parseTime(task.endTime) || parseTime(task.startTime) + 60;
+      gridDrag.dragStartM = gridTime(task.startTime);
+      gridDrag.dragEndM = gridEndTime(task.startTime, task.endTime);
       gridDrag.startDate = task.date;
       gridDrag.startTime = task.startTime;
     }
@@ -800,8 +814,8 @@ function previewConflicts(date, startM, endM, excludeId) {
     if (task.id === excludeId || isWhiteboardTask(task) || task.completed) continue;
     if (task.date !== date) continue;
     if (!task.startTime) continue;
-    const tStart = parseTime(task.startTime);
-    const tEnd = parseTime(task.endTime) || tStart + 60;
+    const tStart = gridTime(task.startTime);
+    const tEnd = gridEndTime(task.startTime, task.endTime);
     if (tEnd <= startM || tStart >= endM) continue;
     const el = document.querySelector(`.calendar-task[data-task-id="${task.id}"]`);
     if (el) el.classList.add('task-conflict');
@@ -887,8 +901,8 @@ function showDragTooltip(e, snap, durMins) {
   }
   const h = Math.floor(snap / 60);
   const m = snap % 60;
-  const ampm = h < 12 ? 'AM' : 'PM';
-  const h12 = h % 12 || 12;
+  const ampm = (h % 24) < 12 ? 'AM' : 'PM';
+  const h12 = (h % 12) || 12;
   let text = `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
   if (durMins) {
     const dh = Math.floor(durMins / 60);
@@ -993,7 +1007,7 @@ function onDragEnd() {
       tag: gridDrag.tag,
     });
     bounceTaskId = newTask.id;
-    console.log('[MondayDrag] quick-add drop', { id: newTask.id, date: gridDrag.dropDate, time: gridDrag.dropTime, tag: gridDrag.tag, day: new Date(gridDrag.dropDate + 'T12:00:00').getDay() });
+
   }
 
   saveState();
@@ -1068,8 +1082,8 @@ function repelConflicts(date, startMins, endMins, excludeId, depth) {
     if (task.id === excludeId || isWhiteboardTask(task) || task.completed) continue;
     if (task.date !== date) continue;
 
-    const tStart = parseTime(task.startTime);
-    const tEnd = parseTime(task.endTime) || tStart + 60;
+    const tStart = gridTime(task.startTime);
+    const tEnd = gridEndTime(task.startTime, task.endTime);
     if (isNaN(tStart) || isNaN(tEnd)) continue;
     if (tEnd <= startMins || tStart >= endMins) continue;
 
@@ -1117,9 +1131,9 @@ function onResizeStart(e) {
     el,
     col,
     colRect,
-    startM: parseTime(task.startTime),
-    endM: parseTime(task.endTime) || parseTime(task.startTime) + 60,
-    originalEndM: parseTime(task.endTime) || parseTime(task.startTime) + 60,
+    startM: gridTime(task.startTime),
+    endM: gridEndTime(task.startTime, task.endTime),
+    originalEndM: gridEndTime(task.startTime, task.endTime),
     startTop: colRect.top,
     hourHeight: colRect.height,
   };
@@ -1195,7 +1209,7 @@ function onResizeEnd(e) {
   // Only update if changed significantly (>= 5 min difference)
   const task = getTask(taskId);
   if (task) {
-    const oldEndM = parseTime(task.endTime) || parseTime(task.startTime) + 60;
+    const oldEndM = gridEndTime(task.startTime, task.endTime);
     if (Math.abs(newEndM - oldEndM) >= 5) {
       updateTask(taskId, { endTime: toTimeStr(newEndM) });
     }
@@ -2378,12 +2392,13 @@ function renderSchTemplates() {
       }
       if (dayIdx === -1) continue;
 
-      var startMins = parseTime(t.startTime);
+      var startMins = gridTime(t.startTime);
       if (isNaN(startMins)) {
         var parts = t.startTime.split(':');
         startMins = parseInt(parts[0]) * 60 + parseInt(parts[1] || 0);
+        if (startMins < START_HOUR * 60) startMins += 1440;
       }
-      var endMins = parseTime(t.endTime);
+      var endMins = gridTime(t.endTime);
       if (isNaN(endMins)) endMins = startMins + 60;
 
       if (startMins >= endMins) endMins = startMins + 30;
@@ -2541,10 +2556,10 @@ function renderSchTemplates() {
   function formatTimeRangeShort(start, end) {
     var fmt = function(t) {
       var parts = t.split(':');
-      var h = parseInt(parts[0]);
+      var h24 = parseInt(parts[0]) % 24;
       var m = parseInt(parts[1] || 0);
-      var ampm = h < 12 ? 'AM' : 'PM';
-      var h12 = h % 12 || 12;
+      var ampm = h24 < 12 ? 'AM' : 'PM';
+      var h12 = h24 % 12 || 12;
       return h12 + ':' + String(m).padStart(2, '0') + ampm;
     };
     return fmt(start) + ' \u2013 ' + fmt(end);

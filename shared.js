@@ -43,7 +43,7 @@ const PROVIDER_LINKS = {
 
 const HOUR_HEIGHT = 60;
 const SNAP_MINUTES = 30;
-const VISIBLE_HOURS = 23;
+const VISIBLE_HOURS = 24;
 const START_HOUR = 5;
 
 // ─── RATE LIMITER & RETRY ──────────────────────────────────
@@ -2464,7 +2464,7 @@ function parseTime(str) {
 }
 
 function toTimeStr(minutes) {
-  const h = Math.floor(minutes / 60) % 24;
+  const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
@@ -2505,8 +2505,9 @@ function escapeHtml(str) {
 function formatTimeRange(start, end) {
   const fmt = (t) => {
     const [h, m] = t.split(':').map(Number);
-    const ampm = h < 12 ? 'AM' : 'PM';
-    const h12 = h % 12 || 12;
+    const h24 = h % 24;
+    const ampm = h24 < 12 ? 'AM' : 'PM';
+    const h12 = h24 % 12 || 12;
     return `${h12}:${String(m).padStart(2, '0')}${ampm}`;
   };
   const [sh, sm] = start.split(':').map(Number);
