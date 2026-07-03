@@ -446,9 +446,16 @@ function renderTasks() {
     tasksByDate[task.date].push(task);
   }
 
+  // Build a date→column map from day-column data-date attributes
+  const colMap = {};
+  dom.grid.querySelectorAll('.day-column').forEach(el => {
+    const d = el.dataset.date;
+    if (d && !colMap[d]) colMap[d] = el;
+  });
+
   // Render each day's tasks with overlap layout
   for (const [date, dateTasks] of Object.entries(tasksByDate)) {
-    const col = dom.grid.querySelector(`.day-column[data-date="${date}"]`);
+    const col = colMap[date];
     if (!col) continue;
 
     // Build task entries with parsed times for overlap detection
@@ -986,6 +993,7 @@ function onDragEnd() {
       tag: gridDrag.tag,
     });
     bounceTaskId = newTask.id;
+    console.log('[MondayDrag] quick-add drop', { id: newTask.id, date: gridDrag.dropDate, time: gridDrag.dropTime, tag: gridDrag.tag, day: new Date(gridDrag.dropDate + 'T12:00:00').getDay() });
   }
 
   saveState();
@@ -1020,7 +1028,7 @@ function onDragEnd() {
         }
       });
       // Also animate the ghost into the drop position if it was a dragged task
-      if (!moved && gridDrag.type === 'reschedule' && oldGhostRect && gridDrag.taskId) {
+      if (!moved && gridDrag && gridDrag.type === 'reschedule' && oldGhostRect && gridDrag.taskId) {
         const el = document.querySelector(`.calendar-task[data-task-id="${gridDrag.taskId}"]`);
         if (el) {
           const r = el.getBoundingClientRect();
@@ -1047,7 +1055,8 @@ function onDragEnd() {
     });
   });
 
-  gridDrag = null;
+  // Defer cleanup until after async FLIP animation runs
+  requestAnimationFrame(() => { gridDrag = null; });
 }
 
 // ─── REPEL: push conflicting tasks down on drop ────────────
