@@ -2554,32 +2554,104 @@ function renderBubbleDock(grid) {
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
   var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24' };
-  var types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','timer','pomodoro','spotify','strava','flightradar','quote','notes','images','links'];
-  types.forEach(function(t) {
-    var placed = t === 'images' ? false : has(t);
-    var item = document.createElement('div');
-    item.className = 'bubble-dock-item' + (placed ? ' placed' : '');
-    item.dataset.bubbleDockType = t;
-    if (placed) item.title = labels[t] + ' (already on canvas)';
-    else item.title = 'Drag ' + labels[t] + ' onto canvas';
-    var icon = document.createElement('span');
-    icon.className = 'bdi-icon';
-    icon.innerHTML = bubbleTypeIcon(t);
-    var label = document.createElement('span');
-    label.className = 'bdi-label';
-    label.textContent = labels[t] || t;
-    item.appendChild(icon);
-    item.appendChild(label);
-    dock.appendChild(item);
+  var categories = [
+    { name:'Productivity', short:'Prod', types:['goals','priorities','todos','habits','progress'] },
+    { name:'Media', short:'Media', types:['spotify','strava','flightradar','images'] },
+    { name:'Utilities', short:'Utils', types:['clock','weather','calendar','timer','pomodoro'] },
+    { name:'Content', short:'Content', types:['quote','notes','links'] }
+  ];
+  function applyFilters() {
+    var q = (dock.querySelector('.bds-input')?.value || '').toLowerCase().trim();
+    var activeCat = dock.querySelector('.bdf-pill.active')?.dataset?.filter || 'all';
+    dock.querySelectorAll('[data-dock-item-type]').forEach(function(it) {
+      var t = it.dataset.dockItemType;
+      var lbl = labels[t] || t;
+      var catMatch = activeCat === 'all' || it.dataset.dockCategory === activeCat;
+      var searchMatch = !q || lbl.toLowerCase().indexOf(q) !== -1 || t.toLowerCase().indexOf(q) !== -1;
+      it.style.display = (catMatch && searchMatch) ? '' : 'none';
+    });
+  }
+
+  // Top bar: search + filter pills + close
+  var topbar = document.createElement('div');
+  topbar.className = 'bubble-dock-topbar';
+
+  var searchWrap = document.createElement('div');
+  searchWrap.className = 'bubble-dock-search';
+  var searchIcon = document.createElement('span');
+  searchIcon.className = 'bds-icon';
+  searchIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+  var searchInput = document.createElement('input');
+  searchInput.className = 'bds-input';
+  searchInput.placeholder = 'Search';
+  searchInput.type = 'text';
+  searchInput.setAttribute('data-dock-search', '');
+  searchWrap.appendChild(searchIcon);
+  searchWrap.appendChild(searchInput);
+  topbar.appendChild(searchWrap);
+
+  var filters = document.createElement('div');
+  filters.className = 'bubble-dock-filters';
+  var allPill = document.createElement('button');
+  allPill.className = 'bdf-pill active';
+  allPill.textContent = 'All';
+  allPill.dataset.filter = 'all';
+  filters.appendChild(allPill);
+  categories.forEach(function(cat) {
+    var pill = document.createElement('button');
+    pill.className = 'bdf-pill';
+    pill.textContent = cat.short;
+    pill.dataset.filter = cat.name;
+    pill.title = cat.name;
+    filters.appendChild(pill);
   });
-  // Add close button to dock
+  topbar.appendChild(filters);
+
   var closeBtn = document.createElement('button');
   closeBtn.className = 'bubble-dock-close';
-  closeBtn.innerHTML = '×';
+  closeBtn.innerHTML = '\u00d7';
   closeBtn.title = 'Close dock';
   closeBtn.addEventListener('click', function() { dock.remove(); });
-  dock.appendChild(closeBtn);
-  
+  topbar.appendChild(closeBtn);
+
+  dock.appendChild(topbar);
+
+  // Items row — single horizontal scroll, icons only
+  var itemsRow = document.createElement('div');
+  itemsRow.className = 'bubble-dock-items';
+  itemsRow.setAttribute('data-dock-items', '');
+
+  categories.forEach(function(cat) {
+    cat.types.forEach(function(t) {
+      var placed = t === 'images' ? false : has(t);
+      var item = document.createElement('div');
+      item.className = 'bubble-dock-item' + (placed ? ' placed' : '');
+      item.dataset.bubbleDockType = t;
+      item.dataset.dockItemType = t;
+      item.dataset.dockCategory = cat.name;
+      item.title = (placed ? labels[t] + ' (placed)' : labels[t]);
+      var icon = document.createElement('span');
+      icon.className = 'bdi-icon';
+      icon.innerHTML = bubbleTypeIcon(t);
+      item.appendChild(icon);
+      itemsRow.appendChild(item);
+    });
+  });
+
+  dock.appendChild(itemsRow);
+
+  // Filter toggle
+  filters.addEventListener('click', function(e) {
+    var pill = e.target.closest('.bdf-pill');
+    if (!pill) return;
+    filters.querySelectorAll('.bdf-pill').forEach(function(p) { p.classList.remove('active'); });
+    pill.classList.add('active');
+    applyFilters();
+  });
+
+  // Search filter
+  searchInput.addEventListener('input', applyFilters);
+
   grid.parentNode.insertBefore(dock, grid.nextSibling);
   initBubbleDockDrag(dock);
 }
@@ -2603,19 +2675,37 @@ function initBubbleDockDrag(dock) {
     _startDockDrag(e, item, true);
   });
 
+  function _getGhostSize(type) {
+    var defSizes = {
+      goals:{w:280,h:420},priorities:{w:280,h:320},todos:{w:280,h:320},
+      habits:{w:280,h:240},progress:{w:280,h:240},clock:{w:280,h:160},
+      weather:{w:280,h:240},calendar:{w:280,h:300},timer:{w:280,h:180},
+      pomodoro:{w:280,h:180},spotify:{w:280,h:420},strava:{w:280,h:420},
+      flightradar:{w:280,h:420},quote:{w:280,h:220},notes:{w:280,h:240},
+      links:{w:280,h:240},images:{w:280,h:210}
+    };
+    var d = defSizes[type] || {w:280,h:280};
+    var maxGW = 140, maxGH = 150;
+    var scale = Math.min(maxGW / d.w, maxGH / d.h, 1);
+    return { w:Math.round(d.w * scale), h:Math.round(d.h * scale) };
+  }
+
   function _startDockDrag(e, item, isTouch) {
     var pos = isTouch ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
     var type = item.dataset.bubbleDockType;
     var rect = item.getBoundingClientRect();
     var itemW = 280;
     var itemH = type === 'spotify' ? 420 : type === 'strava' || type === 'flightradar' ? 420 : type === 'images' ? 210 : 280;
+    var ghostSize = _getGhostSize(type);
     _dockGhost = document.createElement('div');
     _dockGhost.className = 'bubble-dock-ghost';
-    _dockGhost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.querySelector('.bdi-label')?.textContent || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';
+    _dockGhost.style.width = ghostSize.w + 'px';
+    _dockGhost.style.height = ghostSize.h + 'px';
+    _dockGhost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.title?.replace(' (placed)','') || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';
     var offX = pos.x - rect.left;
     var offY = pos.y - rect.top;
-    _dockGhost.style.left = (pos.x - offX) + 'px';
-    _dockGhost.style.top = (pos.y - offY) + 'px';
+    _dockGhost.style.left = (pos.x - offX - ghostSize.w / 2 + rect.width / 2) + 'px';
+    _dockGhost.style.top = (pos.y - offY - ghostSize.h / 2 + rect.height / 2) + 'px';
     document.body.appendChild(_dockGhost);
     _dockDropPreview = document.createElement('div');
     _dockDropPreview.className = 'bubble-drop-preview';
