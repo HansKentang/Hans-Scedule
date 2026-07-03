@@ -7324,6 +7324,29 @@ html.light .hub-add-popup {
 .img-empty-placeholder span { opacity:0.6; }
 .img-empty-placeholder:hover span { opacity:1; }
 
+/* ─── Embed widget empty states (Strava, FlightRadar24) ─── */
+.embed-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; height:100%; text-align:center; color:var(--text-tertiary); font-size:0.7rem; }
+.embed-empty svg { margin-bottom:4px; }
+.embed-setup-btn { padding:6px 14px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-size:0.7rem; font-weight:500; cursor:pointer; transition:opacity 0.12s; margin-top:4px; }
+.embed-setup-btn:hover { opacity:0.85; }
+
+/* ─── Embed settings overlay (Strava, FlightRadar24) ─── */
+.embed-settings-overlay { position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.embed-settings-modal { background:var(--bg-primary); border:1px solid var(--border-color); border-radius:16px; width:min(340px,92vw); max-height:85vh; display:flex; flex-direction:column; box-shadow:0 16px 48px rgba(0,0,0,0.25); }
+.embed-settings-header { display:flex; align-items:center; gap:8px; padding:16px 18px 12px; border-bottom:1px solid var(--border-subtle); flex-shrink:0; }
+.embed-settings-title { font-size:0.9rem; font-weight:600; flex:1; color:var(--text-primary); }
+.embed-settings-close { width:26px; height:26px; border:none; border-radius:6px; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
+.embed-settings-close:hover { background:var(--accent-soft); color:var(--text-primary); }
+.embed-settings-body { padding:14px 18px 18px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:12px; }
+.embed-settings-field { display:flex; flex-direction:column; gap:4px; }
+.embed-settings-field label { font-size:0.7rem; font-weight:500; color:var(--text-secondary); }
+.embed-settings-input { padding:8px 10px; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-secondary); color:var(--text-primary); font-size:0.78rem; outline:none; }
+.embed-settings-input:focus { border-color:var(--accent); }
+.embed-settings-hint { font-size:0.65rem; color:var(--text-tertiary); margin:0; }
+.embed-settings-footer { padding:0 18px 16px; }
+.embed-settings-save { padding:8px 18px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-size:0.75rem; font-weight:500; cursor:pointer; transition:opacity 0.12s; display:block; width:100%; }
+.embed-settings-save:hover { opacity:0.85; }
+
 /* ─── Visuals Button Pulse (when uncustomized images exist) ─── */
 #bcVisualsBtn.has-empty-images svg {
   animation: visualsPulse 2s cubic-bezier(0.16, 1, 0.3, 1) infinite;

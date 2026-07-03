@@ -251,6 +251,8 @@ function normalizeBentoLayout(layout, parent) {
         norm.h = snap(norm.w / ratio);
       } else if (norm.t === 'spotify') {
         norm.h = snap(420);
+      } else if (norm.t === 'strava' || norm.t === 'flightradar') {
+        norm.h = snap(420);
       } else {
         norm.h = snap(280);
       }
@@ -909,6 +911,47 @@ function renderHubBento() {
             </div>
           </div>`;
         }
+      case 'strava':
+        var _stravaId = null;
+        try { _stravaId = localStorage.getItem('haven-strava-' + uid) || ''; } catch(e) {}
+        if (_stravaId) {
+          return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
+            ${editUI}
+            <div class="strava-widget">
+              <iframe src="${e('https://www.strava.com/activities/' + _stravaId + '/embed/')}" frameborder="0" allowtransparency="true" loading="lazy" style="display:block;width:100%;height:100%;border:none"></iframe>
+            </div>
+          </div>`;
+        } else {
+          return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px dashed var(--border-color)">
+            ${editUI}
+            <div class="embed-empty" data-embed-type="strava" data-embed-uid="${uid}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;opacity:0.3"><path d="M15.5 2L21 12l-5.5 0L10 2z"/><path d="M10.5 12L6 2l-5.5 0L6 12z"/></svg>
+              <span>Paste a Strava activity URL</span>
+              <button class="embed-setup-btn" data-embed-setup="strava" data-embed-uid="${uid}">Configure</button>
+            </div>
+          </div>`;
+        }
+      case 'flightradar':
+        var _fr24Coords = null;
+        try { _fr24Coords = localStorage.getItem('haven-fr24-' + uid) || ''; } catch(e) {}
+        if (_fr24Coords) {
+          var frUrl = 'https://www.flightradar24.com/simple?lat=' + _fr24Coords.split(',')[0] + '&lon=' + _fr24Coords.split(',')[1] + '&zoom=6';
+          return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
+            ${editUI}
+            <div class="fr24-widget">
+              <iframe src="${e(frUrl)}" frameborder="0" allowtransparency="true" loading="lazy" style="display:block;width:100%;height:100%;border:none"></iframe>
+            </div>
+          </div>`;
+        } else {
+          return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px dashed var(--border-color)">
+            ${editUI}
+            <div class="embed-empty" data-embed-type="flightradar" data-embed-uid="${uid}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;opacity:0.3"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/><circle cx="12" cy="12" r="3"/><path d="M2 12h20"/></svg>
+              <span>Set flight radar location</span>
+              <button class="embed-setup-btn" data-embed-setup="flightradar" data-embed-uid="${uid}">Configure</button>
+            </div>
+          </div>`;
+        }
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
           <div style="text-align:center;color:var(--text-tertiary);font-size:0.75rem">Unknown bubble</div>
@@ -1058,7 +1101,7 @@ function renderHubBento() {
             var item = layout.find(function(i) { return i.uid === uid; });
             if (item) {
               item.w = snap(280);
-              item.h = item.t === 'spotify' ? snap(420) : item.t === 'images' ? snap(280 / 1.333) : snap(280);
+    item.h = item.t === 'spotify' ? snap(420) : item.t === 'strava' || item.t === 'flightradar' ? snap(420) : item.t === 'images' ? snap(280 / 1.333) : snap(280);
               item.x = snap(24);
               item.y = snap(24);
               resolveBubbleCollisions(layout);
@@ -1135,6 +1178,11 @@ function renderHubBento() {
       var weatherRefreshBtn = e.target.closest('[data-weather-refresh]');
       if (weatherRefreshBtn) {
         refreshWeather();
+        return;
+      }
+      var embedSetup = e.target.closest('[data-embed-setup]');
+      if (embedSetup) {
+        openEmbedSetup(embedSetup.dataset.embedSetup, embedSetup.dataset.embedUid);
         return;
       }
       var presetBtn = e.target.closest('[data-timer-preset]');
@@ -2026,7 +2074,9 @@ function bubbleTypeIcon(t) {
     calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
     timer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><line x1="22" y1="2" x2="18" y2="6"/></svg>',
     pomodoro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/></svg>',
-    spotify: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>'
+    spotify: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>',
+    strava: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2L21 12l-5.5 0L10 2z"/><path d="M10.5 12L6 2l-5.5 0L6 12z"/></svg>',
+    flightradar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/><circle cx="12" cy="12" r="3"/><path d="M2 12h20"/></svg>'
   };
   return icons[t] || '';
 }
@@ -2123,6 +2173,62 @@ function refreshWeather() {
     });
     _fetchWeather(grid);
   }
+}
+
+function openEmbedSetup(type, uid) {
+  var existing = document.querySelector('.embed-settings-overlay');
+  if (existing) existing.remove();
+  var overlay = document.createElement('div');
+  overlay.className = 'embed-settings-overlay';
+  overlay.innerHTML = '<div class="embed-settings-modal">' +
+    '<div class="embed-settings-header">' +
+      '<span class="embed-settings-title">' + (type === 'strava' ? 'Strava Activity' : 'FlightRadar24') + '</span>' +
+      '<button class="embed-settings-close" data-embed-close><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+    '</div>' +
+    '<div class="embed-settings-body">' +
+      (type === 'strava'
+        ? '<div class="embed-settings-field"><label>Paste a Strava activity URL</label><input class="embed-settings-input" id="embedStravaInput" placeholder="https://www.strava.com/activities/123456789"></div><p class="embed-settings-hint">Only public activities can be embedded.</p>'
+        : '<div class="embed-settings-field"><label>Latitude</label><input class="embed-settings-input" id="embedFr24Lat" placeholder="51.5" value="51.5"></div><div class="embed-settings-field"><label>Longitude</label><input class="embed-settings-input" id="embedFr24Lon" placeholder="-0.12" value="-0.12"></div><p class="embed-settings-hint">Enter coordinates for the center of the flight radar map.</p>') +
+    '</div>' +
+    '<div class="embed-settings-footer"><button class="embed-settings-save" data-embed-save="' + type + '" data-embed-uid="' + uid + '">Save</button></div>' +
+  '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(ev) {
+    if (ev.target.closest('[data-embed-close]') || ev.target === overlay) overlay.remove();
+    var saveBtn = ev.target.closest('[data-embed-save]');
+    if (saveBtn) saveEmbedSettings(saveBtn.dataset.embedSave, saveBtn.dataset.embedUid);
+  });
+  overlay.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter') {
+      var saveBtn = overlay.querySelector('[data-embed-save]');
+      if (saveBtn) saveEmbedSettings(saveBtn.dataset.embedSave, saveBtn.dataset.embedUid);
+    }
+  });
+  setTimeout(function() { overlay.querySelector('.embed-settings-input')?.focus(); }, 100);
+}
+
+function saveEmbedSettings(type, uid) {
+  if (type === 'strava') {
+    var input = document.getElementById('embedStravaInput');
+    if (!input) return;
+    var url = input.value.trim();
+    var match = url.match(/strava\.com\/activities\/(\d+)/);
+    if (!match) { showToast('Could not find activity ID in URL', 'error', 2500); return; }
+    try { localStorage.setItem('haven-strava-' + uid, match[1]); } catch(e) {}
+  } else if (type === 'flightradar') {
+    var lat = document.getElementById('embedFr24Lat');
+    var lon = document.getElementById('embedFr24Lon');
+    if (!lat || !lon) return;
+    var latVal = parseFloat(lat.value.trim());
+    var lonVal = parseFloat(lon.value.trim());
+    if (isNaN(latVal) || isNaN(lonVal) || latVal < -90 || latVal > 90 || lonVal < -180 || lonVal > 180) {
+      showToast('Enter valid coordinates', 'error', 2500); return;
+    }
+    try { localStorage.setItem('haven-fr24-' + uid, latVal + ',' + lonVal); } catch(e) {}
+  }
+  var overlay = document.querySelector('.embed-settings-overlay');
+  if (overlay) overlay.remove();
+  renderHubBento();
 }
 
 /* ─── Progress chart data generator ─────────── */
@@ -2447,8 +2553,8 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify' };
-  var types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','timer','pomodoro','spotify','quote','notes','images','links'];
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24' };
+  var types = ['goals','priorities','todos','habits','progress','clock','weather','calendar','timer','pomodoro','spotify','strava','flightradar','quote','notes','images','links'];
   types.forEach(function(t) {
     var placed = t === 'images' ? false : has(t);
     var item = document.createElement('div');
@@ -2502,7 +2608,7 @@ function initBubbleDockDrag(dock) {
     var type = item.dataset.bubbleDockType;
     var rect = item.getBoundingClientRect();
     var itemW = 280;
-    var itemH = type === 'spotify' ? 420 : type === 'images' ? 210 : 280;
+    var itemH = type === 'spotify' ? 420 : type === 'strava' || type === 'flightradar' ? 420 : type === 'images' ? 210 : 280;
     _dockGhost = document.createElement('div');
     _dockGhost.className = 'bubble-dock-ghost';
     _dockGhost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.querySelector('.bdi-label')?.textContent || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';
