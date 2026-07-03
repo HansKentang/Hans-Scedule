@@ -42,7 +42,7 @@ const PROVIDER_LINKS = {
 };
 
 const HOUR_HEIGHT = 60;
-const SNAP_MINUTES = 30;
+const SNAP_MINUTES = 15;
 const VISIBLE_HOURS = 24;
 const START_HOUR = 5;
 
