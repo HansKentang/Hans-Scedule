@@ -7390,7 +7390,7 @@ html.light .hub-add-popup {
 .bento-bar-btn:hover { background:var(--bg-tertiary); border-color:var(--text-tertiary); color:var(--text-primary); }
 .bento-bar-btn:disabled { opacity:.35; cursor:default; pointer-events:none; }
 .bento-bar-btn svg { width:15px; height:15px; display:block; color:var(--primary); }
-.bento-edit-done-btn { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:100; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; background:var(--primary); color:var(--text-inverse); border:none; font-weight:600; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 16px color-mix(in srgb, var(--primary) 40%, transparent); transition:all var(--t-fast); width:fit-content; }
+.bento-edit-done-btn { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); z-index:100; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px 20px; border-radius:12px; background:var(--primary); color:var(--text-inverse); border:none; font-weight:600; font-size:0.8rem; cursor:pointer; box-shadow:0 4px 16px color-mix(in srgb, var(--primary) 40%, transparent); transition:all var(--t-fast); width:fit-content; }
 .bento-edit-done-btn:hover { filter:brightness(1.1); transform:translateX(-50%) translateY(-1px); box-shadow:0 6px 24px color-mix(in srgb, var(--primary) 50%, transparent); }
 .bento-edit-done-btn svg { width:16px; height:16px; }
 .bento-empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:40px 24px; text-align:center; user-select:none; }
