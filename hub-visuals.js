@@ -1065,10 +1065,14 @@ function renderHubBento() {
       var old = grid.querySelector('.bento-context-menu');
       if (old) old.remove();
       var uid = bubble.dataset.bubble;
+      var gridRect = grid.getBoundingClientRect();
       var menu = document.createElement('div');
       menu.className = 'bento-context-menu';
-      menu.style.left = Math.min(e.offsetX || e.clientX - grid.getBoundingClientRect().left, grid.clientWidth - 160) + 'px';
-      menu.style.top = (e.offsetY || e.clientY - grid.getBoundingClientRect().top) + 'px';
+      var mw = 170, mh = 200;
+      var ml = Math.min(Math.max(e.clientX - gridRect.left, 4), gridRect.width - mw - 4);
+      var mt = Math.min(Math.max(e.clientY - gridRect.top, 4), gridRect.height - mh - 4);
+      menu.style.left = ml + 'px';
+      menu.style.top = mt + 'px';
       menu.innerHTML =
         '<button data-action="duplicate" data-uid="' + uid + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Duplicate</button>' +
         '<button data-action="remove" data-uid="' + uid + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>Remove</button>' +
