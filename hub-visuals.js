@@ -253,6 +253,8 @@ function normalizeBentoLayout(layout, parent) {
         norm.h = snap(420);
       } else if (norm.t === 'strava' || norm.t === 'flightradar') {
         norm.h = snap(420);
+      } else if (norm.t === 'sleep-score') {
+        norm.h = snap(280);
       } else {
         norm.h = snap(280);
       }
@@ -952,6 +954,54 @@ function renderHubBento() {
             </div>
           </div>`;
         }
+      case 'sleep-score':
+        var _sleepLogs = []; try { _sleepLogs = JSON.parse(localStorage.getItem('haven-schedule-sleep') || '[]'); } catch(e) {}
+        var _sleepTargets = {targetDuration:480}; try { _sleepTargets = JSON.parse(localStorage.getItem('haven-schedule-sleep-targets') || '{}'); } catch(e) {}
+        var _recentLogs = _sleepLogs.slice(-14);
+        var _lastLog = _recentLogs[_recentLogs.length - 1] || null;
+        var _lastDur = _lastLog ? (function(){ var b=_lastLog.bedtime.split(':').map(Number), w=_lastLog.wakeTime.split(':').map(Number); var bm=b[0]*60+b[1], wm=w[0]*60+w[1]; return wm <= bm ? wm+1440-bm : wm-bm; })() : 0;
+        var _lastQual = _lastLog ? _lastLog.quality : 0;
+        var _avgDur = _recentLogs.length ? Math.round(_recentLogs.reduce(function(s,l){ var b=l.bedtime.split(':').map(Number), w=l.wakeTime.split(':').map(Number); var bm=b[0]*60+b[1], wm=w[0]*60+w[1]; return s + (wm <= bm ? wm+1440-bm : wm-bm); },0) / _recentLogs.length) : 0;
+        var _avgQual = _recentLogs.length ? (_recentLogs.reduce(function(s,l){return s+l.quality;},0) / _recentLogs.length).toFixed(1) : '—';
+        var _target = _sleepTargets.targetDuration || 480;
+        var _durPct = _target > 0 ? Math.min(100, Math.round((_avgDur / _target) * 100)) : 0;
+        var _qualStars = _lastQual ? new Array(Math.min(5,_lastQual)).fill('★').join('') + new Array(5-Math.min(5,_lastQual)).fill('☆').join('') : '';
+        var _circ = 2 * Math.PI * 15.5;
+        var _offset = _circ - (_durPct / 100) * _circ;
+        var _durStr = _lastDur ? (_lastDur >= 60 ? Math.floor(_lastDur/60)+'h '+_lastDur%60+'m' : _lastDur+'m') : '—';
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="ss-widget">
+            <div class="ss-ring-col">
+              <div class="ss-ring">
+                <svg viewBox="0 0 36 36">
+                  <circle class="bg" cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-color)" stroke-width="2.5"></circle>
+                  <circle class="fill" cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="${_circ}" stroke-dashoffset="${_offset}" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
+                </svg>
+                <div class="ss-ring-val">${_durPct}%</div>
+              </div>
+              <div class="ss-ring-label">avg vs target</div>
+            </div>
+            <div class="ss-stats">
+              <div class="ss-row">
+                <span class="ss-stat-val">${_durStr}</span>
+                <span class="ss-stat-lbl">last night</span>
+              </div>
+              <div class="ss-row ss-row-qual">
+                <span class="ss-stars">${_qualStars || '—'}</span>
+                <span class="ss-stat-lbl">quality</span>
+              </div>
+              <div class="ss-row">
+                <span class="ss-stat-val">${_avgDur >= 60 ? Math.floor(_avgDur/60)+'h '+_avgDur%60+'m' : _avgDur+'m'}</span>
+                <span class="ss-stat-lbl">7-day avg</span>
+              </div>
+              <div class="ss-row">
+                <span class="ss-stat-val">${_avgQual}</span>
+                <span class="ss-stat-lbl">/5 avg quality</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
           <div style="text-align:center;color:var(--text-tertiary);font-size:0.75rem">Unknown bubble</div>
@@ -2080,7 +2130,8 @@ function bubbleTypeIcon(t) {
     pomodoro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/></svg>',
     spotify: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>',
     strava: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2L21 12l-5.5 0L10 2z"/><path d="M10.5 12L6 2l-5.5 0L6 12z"/></svg>',
-    flightradar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/><circle cx="12" cy="12" r="3"/><path d="M2 12h20"/></svg>'
+    flightradar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/><circle cx="12" cy="12" r="3"/><path d="M2 12h20"/></svg>',
+    'sleep-score': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a9 9 0 1 0-9-9 9 9 0 0 0 9 9z"/><path d="M4 12a8 8 0 0 1 8-8"/><path d="M17 14.5a6.5 6.5 0 0 1-6-6.5"/></svg>'
   };
   return icons[t] || '';
 }
@@ -2557,11 +2608,11 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24' };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score' };
   var categories = [
     { name:'Productivity', short:'Prod', types:['goals','priorities','todos','habits','progress'] },
     { name:'Media', short:'Media', types:['spotify','strava','flightradar','images'] },
-    { name:'Utilities', short:'Utils', types:['clock','weather','calendar','timer','pomodoro'] },
+    { name:'Utilities', short:'Utils', types:['clock','weather','calendar','timer','pomodoro','sleep-score'] },
     { name:'Content', short:'Content', types:['quote','notes','links'] }
   ];
   function applyFilters() {
@@ -2686,7 +2737,7 @@ function initBubbleDockDrag(dock) {
       weather:{w:280,h:240},calendar:{w:280,h:300},timer:{w:280,h:180},
       pomodoro:{w:280,h:180},spotify:{w:280,h:420},strava:{w:280,h:420},
       flightradar:{w:280,h:420},quote:{w:280,h:220},notes:{w:280,h:240},
-      links:{w:280,h:240},images:{w:280,h:210}
+      links:{w:280,h:240},images:{w:280,h:210},'sleep-score':{w:280,h:280}
     };
     var d = defSizes[type] || {w:280,h:280};
     var maxGW = 140, maxGH = 150;
