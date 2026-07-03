@@ -23,6 +23,7 @@ const HUB_EDIT_KEY = 'haven-hub-edit';
 const HUB_VIS_KEY = 'haven-hub-visibility';
 const HUB_CONTENT_KEY = 'haven-hub-content';
 const TIMER_STATE_KEY = 'hub-timer-state';
+const GUEST_TEMPLATE_KEY = 'haven-guest-default-template';
 
 const MAX_CANVAS_HEIGHT = 10000;
 let hubEditMode = false;
@@ -463,6 +464,10 @@ if (!hc.goals) hc.goals = [...defaults.goals];
       return hc;
     }
   } catch(e) { console.warn('[img] loadHubContent: error:', e); }
+  try {
+    var _tmpl = localStorage.getItem(GUEST_TEMPLATE_KEY);
+    if (_tmpl) { return JSON.parse(_tmpl); }
+  } catch(e) {}
   return JSON.parse(JSON.stringify(HUB_DEFAULTS));
 }
 
@@ -477,6 +482,17 @@ function saveHubContent() {
     }
     if (!ok) console.warn('[img] saveHubContent: SAVE FAILED (quota)');
   } catch(e) { console.warn('[img] saveHubContent failed:', e); }
+  if (_hadImages !== undefined) hubContent._images = _hadImages;
+}
+
+function saveAsGuestDefault() {
+  if (!hubContent) { showToast('Nothing to save', 'error', 1500); return; }
+  var _hadImages = hubContent._images;
+  delete hubContent._images;
+  try {
+    localStorage.setItem(GUEST_TEMPLATE_KEY, JSON.stringify(hubContent));
+    showToast('Saved as default for new guests', 'success', 2000);
+  } catch(e) { showToast('Failed to save default', 'error', 2000); }
   if (_hadImages !== undefined) hubContent._images = _hadImages;
 }
 
@@ -2881,6 +2897,8 @@ function setupHubEditEvents() {
     _fabMain.dataset._fabWired = '1';
     _fabMain.addEventListener('click', toggleHubAccess);
     document.getElementById('hubFabCustomize')?.addEventListener('click', function() { toggleHubAccess(); toggleHubEdit(); });
+    document.getElementById('hubFabSnapshot')?.addEventListener('click', function() { toggleHubAccess(); setTimeout(captureHubSnapshot, 200); });
+    document.getElementById('hubFabSetDefault')?.addEventListener('click', function() { toggleHubAccess(); saveAsGuestDefault(); });
     document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
   }
   document.addEventListener('click', function(e) {
@@ -3299,6 +3317,8 @@ if (document.getElementById('hubAccessHub')) {
         }
       });
       document.getElementById('hubFabCustomize')?.addEventListener('click', function() { try { toggleHubAccess(); toggleHubEdit(); } catch(e) { console.error('Edit error:', e); } });
+      document.getElementById('hubFabSnapshot')?.addEventListener('click', function() { toggleHubAccess(); setTimeout(captureHubSnapshot, 200); });
+      document.getElementById('hubFabSetDefault')?.addEventListener('click', function() { toggleHubAccess(); saveAsGuestDefault(); });
       document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
     }
   };
@@ -3308,6 +3328,202 @@ if (document.getElementById('hubAccessHub')) {
     _wireHubFab();
   }
 }
+
+function _roundedRect(ctx, x, y, w, h, r) {
+  var corners = Array.isArray(r) ? r : [r, r, r, r];
+  var tl = corners[0]||0, tr = corners[1]||0, br = corners[2]||0, bl = corners[3]||0;
+  ctx.beginPath();
+  ctx.moveTo(x + tl, y);
+  ctx.lineTo(x + w - tr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + tr);
+  ctx.lineTo(x + w, y + h - br);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+  ctx.lineTo(x + bl, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - bl);
+  ctx.lineTo(x, y + tl);
+  ctx.quadraticCurveTo(x, y, x + tl, y);
+  ctx.closePath();
+}
+
+/* ─── Hub snapshot (canvas render + share/download) ─── */
+function _snapshotBubblePreview(el, type) {
+  if (!el || !type) return { title: type || '', lines: [] };
+  var title = type.charAt(0).toUpperCase() + type.slice(1);
+  var lines = [];
+  try {
+    if (type === 'clock') {
+      var t = el.querySelector('.clock-time'); var d = el.querySelector('.clock-date');
+      if (t) lines.push(t.textContent.trim().replace(/\s+/g,' '));
+      if (d) lines.push(d.textContent.trim().replace(/\s+/g,' '));
+    } else if (type === 'weather') {
+      var tmp = el.querySelector('.w-temp'); var cd = el.querySelector('.w-cond'); var lc = el.querySelector('.w-loc');
+      if (tmp) lines.push(tmp.textContent.trim().replace(/\s+/g,' '));
+      if (cd) lines.push(cd.textContent.trim().replace(/\s+/g,' '));
+      if (lc) lines.push(lc.textContent.trim().replace(/\s+/g,' '));
+    } else if (type === 'timer' || type === 'pomodoro') {
+      var tv = el.querySelector('[class*="display"], [class*="time"]');
+      if (tv) lines.push(tv.textContent.trim().replace(/\s+/g,' '));
+      var st = el.querySelector('[class*="status"], [class*="phase"]');
+      if (st) lines.push(st.textContent.trim().replace(/\s+/g,' '));
+    } else if (type === 'spotify') {
+      var sn = el.querySelector('.sp-track-name'); var sa = el.querySelector('.sp-artist');
+      if (sn) lines.push(sn.textContent.trim().replace(/\s+/g,' '));
+      if (sa) lines.push(sa.textContent.trim().replace(/\s+/g,' '));
+      if (!lines.length) lines.push('Not playing');
+    } else if (type === 'goals' || type === 'todos' || type === 'habits' || type === 'priorities') {
+      var items = el.querySelectorAll('.w-item-text');
+      items.forEach(function(it) { var t = it.textContent.trim().replace(/\s+/g,' '); if (t) lines.push(t); });
+    } else if (type === 'notes') {
+      var nt = el.querySelector('[contenteditable]');
+      if (nt) { var nt2 = nt.textContent.trim().replace(/\s+/g,' '); if (nt2) lines.push(nt2.substring(0,80)); }
+    } else if (type === 'links') {
+      var lks = el.querySelectorAll('.w-item-text');
+      lks.forEach(function(lk) { var t = lk.textContent.trim().replace(/\s+/g,' '); if (t) lines.push(t); });
+    } else if (type === 'quote') {
+      var q = el.querySelector('[class*="text"], [contenteditable]');
+      if (q) lines.push(q.textContent.trim().replace(/\s+/g,' ').substring(0,80));
+    } else if (type === 'calendar') {
+      var calTxt = el.textContent.trim().replace(/\s+/g,' ').substring(0,60);
+      if (calTxt) lines.push(calTxt);
+    } else if (type === 'progress') {
+      var pr = el.querySelector('[class*="pct"], [class*="num"]');
+      if (pr) lines.push(pr.textContent.trim().replace(/\s+/g,' '));
+    } else if (type === 'sleep-score') {
+      var rv = el.querySelector('.ss-ring-val'); var sv = el.querySelector('.ss-stat-val');
+      if (rv) lines.push(rv.textContent.trim().replace(/\s+/g,' '));
+      if (sv) lines.push(sv.textContent.trim().replace(/\s+/g,' '));
+    } else if (type === 'strava' || type === 'flightradar') {
+      lines.push('Embedded content');
+    } else if (type === 'images') {
+      lines.push('Image widget');
+    }
+  } catch(e) {}
+  return { title: title, lines: lines.slice(0,4) };
+}
+
+var _snapshotColors = {
+  goals:'#4d6356', priorities:'#6b4f6b', todos:'#5b7fa4', habits:'#7a8a4d',
+  progress:'#4d7a7a', clock:'#8a6d3b', weather:'#5a7aaa', calendar:'#6b7a8a',
+  timer:'#8a5a4d', pomodoro:'#a45b4d', spotify:'#1db954', strava:'#fc4c02',
+  flightradar:'#003399', 'sleep-score':'#6b5b8a', quote:'#7a6a5b', notes:'#7a7a5b',
+  links:'#5b7a7a', images:'#6b5b5b'
+};
+
+window.captureHubSnapshot = function() {
+  var layout = [];
+  try { layout = JSON.parse(JSON.stringify(state && state.hubLayout ? state.hubLayout : [])); } catch(e) {}
+  if (!layout || !layout.length) { if (typeof showToast === 'function') showToast('No bubbles to capture', 'error', 1500); return; }
+
+  var grid = document.getElementById('bentoGrid');
+  var MARGIN = 20, PAD = 24, HEADER_H = 60, CORNER = 12;
+  var minX = Infinity, minY = Infinity, maxR = 0, maxB = 0;
+  layout.forEach(function(it) {
+    if (it.x < minX) minX = it.x; if (it.y < minY) minY = it.y;
+    var r = it.x + it.w, b = it.y + it.h;
+    if (r > maxR) maxR = r; if (b > maxB) maxB = b;
+  });
+  if (minX === Infinity) { minX = 0; minY = 0; }
+  var innerW = maxR - minX + MARGIN * 2;
+  var innerH = HEADER_H + (maxB - minY) + MARGIN * 2;
+  var outerW = innerW + PAD * 2;
+  var outerH = innerH + PAD * 2;
+
+  var isDark = document.documentElement.classList.contains('dark') ||
+    (!document.documentElement.classList.contains('light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  var bg1 = isDark ? '#1c1b1b' : '#f9f8f4';
+  var bg2 = isDark ? '#2a2a2a' : '#f0ece6';
+  var text1 = isDark ? '#e5e2e1' : '#1c1b1b';
+  var text2 = isDark ? '#8c928d' : '#7a7670';
+  var text3 = isDark ? '#6b6b6b' : '#a09c96';
+  var border = isDark ? '#3a3939' : '#d7d2ca';
+  var borderLight = isDark ? '#2a2a2a' : '#e2ddd6';
+  var accent = '#4d6356';
+
+  var scale = 2, c = document.createElement('canvas');
+  c.width = outerW * scale; c.height = outerH * scale;
+  var ctx = c.getContext('2d');
+  ctx.scale(scale, scale);
+
+  ctx.shadowColor = 'rgba(0,0,0,' + (isDark ? '0.5' : '0.12') + ')';
+  ctx.shadowBlur = 40; ctx.shadowOffsetY = 8;
+  ctx.beginPath(); _roundedRect(ctx, PAD, PAD, innerW, innerH, CORNER);
+  ctx.fillStyle = bg1; ctx.fill();
+  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  ctx.save();
+  ctx.beginPath(); _roundedRect(ctx, PAD, PAD, innerW, innerH, CORNER); ctx.clip();
+
+  var ox = PAD, oy = PAD;
+
+  var hdrGrad = ctx.createLinearGradient(0, oy, 0, oy + HEADER_H);
+  hdrGrad.addColorStop(0, isDark ? '#2a2a2a' : '#ffffff');
+  hdrGrad.addColorStop(1, isDark ? '#1c1b1b' : '#f5f2ed');
+  ctx.fillStyle = hdrGrad; ctx.fillRect(ox, oy, innerW, HEADER_H);
+  ctx.fillStyle = border; ctx.fillRect(ox, oy + HEADER_H - 1, innerW, 1);
+
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.font = '600 14px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = text1; ctx.fillText('Hav\u00ebn Hub', ox + 16, oy + HEADER_H / 2 - 9);
+  ctx.font = '400 10px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = text2;
+  var now = new Date(); var dateStr = now.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' });
+  ctx.fillText(dateStr, ox + 16, oy + HEADER_H / 2 + 11);
+
+  ctx.textAlign = 'right';
+  var cnt = layout.length; ctx.font = '600 12px sans-serif';
+  ctx.fillStyle = text2; ctx.fillText(cnt + ' widget' + (cnt !== 1 ? 's' : ''), ox + innerW - 16, oy + HEADER_H / 2 + 2);
+
+  ctx.textAlign = 'left';
+  layout.forEach(function(item) {
+    var bx = ox + MARGIN + (item.x - minX), by = oy + HEADER_H + MARGIN + (item.y - minY);
+    var bw = item.w, bh = item.h;
+    var col = _snapshotColors[item.t] || accent;
+    var prev = _snapshotBubblePreview(grid ? grid.querySelector('[data-bubble="' + item.uid + '"]') : null, item.t);
+
+    ctx.fillStyle = isDark ? '#2a2a2a' : '#ffffff';
+    ctx.beginPath(); _roundedRect(ctx, bx, by, bw, bh, 8); ctx.fill();
+    ctx.strokeStyle = borderLight; ctx.lineWidth = 1;
+    ctx.beginPath(); _roundedRect(ctx, bx, by, bw, bh, 8); ctx.stroke();
+
+    var stripH = 26;
+    ctx.fillStyle = col;
+    ctx.beginPath(); _roundedRect(ctx, bx, by, bw, stripH, [8,8,0,0]); ctx.fill();
+    ctx.textBaseline = 'middle';
+    ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#fff'; ctx.fillText(prev.title, bx + 10, by + stripH / 2);
+
+    ctx.fillStyle = text1;
+    ctx.font = '400 9px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+    var lineY = by + stripH + 8;
+    var maxLines = Math.max(0, Math.floor((bh - stripH - 8) / 15));
+    prev.lines.slice(0, maxLines).forEach(function(line) {
+      var tw = ctx.measureText(line).width;
+      if (tw > bw - 16) {
+        while (line.length > 1 && ctx.measureText(line + '\u2026').width > bw - 16) line = line.slice(0, -1);
+        line += '\u2026';
+      }
+      ctx.fillStyle = text1; ctx.fillText(line, bx + 10, lineY + 7);
+      lineY += 15;
+    });
+  });
+
+  ctx.restore();
+  var blob = null;
+  try {
+    c.toBlob(function(b) {
+      blob = b;
+      if (!blob) { if (typeof showToast === 'function') showToast('Failed to capture snapshot', 'error', 2000); return; }
+      var file = new File([blob], 'haven-hub-snapshot.png', { type: 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'Hav\u00ebn Hub' }).catch(function(){});
+      } else {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'haven-hub-snapshot.png';
+        document.body.appendChild(a); a.click();
+        setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 1000);
+      }
+    }, 'image/png');
+  } catch(e) { if (typeof showToast === 'function') showToast('Snapshot failed', 'error', 2000); }
+};
 
 /* ─── Auto-save canvas on page unload ─────────── */
 (function initCanvasAutoSave() {
