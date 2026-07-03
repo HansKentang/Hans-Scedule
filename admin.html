@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0b">
+  <title>Admin — Havën Schedule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Override the #app rule from style.css which forces flex/overflow:hidden on id='app' */
+    #app.admin-page, .admin-page {
+      display: block !important;
+      height: auto !important;
+      width: 100% !important;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      min-height: 100vh;
+      overflow: visible !important;
+      position: relative;
+      z-index: 1;
+      animation: slideUp 300ms var(--curve);
+    }
+    html, body { overflow: auto !important; height: auto !important; min-height: 100vh; }
+    body { position: relative; }
+    .admin-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .admin-header-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .admin-header-info h1 {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .admin-header-info p {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      margin: 2px 0 0;
+    }
+    .admin-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      transition: all var(--t-fast);
+      margin-left: auto;
+    }
+    .admin-back:hover {
+      color: var(--text-primary);
+      background: var(--accent-soft);
+    }
+
+    /* Status bar */
+    .admin-status-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .admin-stat-card {
+      flex: 1;
+      min-width: 140px;
+      padding: 16px;
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .admin-stat-label {
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+    }
+    .admin-stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .admin-stat-sub {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+    }
+    .admin-stat-card.active-preset {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface-container));
+    }
+    .admin-stat-card.active-preset .admin-stat-value {
+      color: var(--accent);
+    }
+
+    /* Section */
+    .admin-section {
+      margin-bottom: 28px;
+    }
+    .admin-section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .admin-section-title svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+
+    /* Cards */
+    .admin-card {
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .admin-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .admin-card-header h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .admin-card-body {
+      padding: 16px;
+    }
+
+    /* Action row */
+    .admin-action-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+    }
+    .admin-action-row + .admin-action-row {
+      border-top: 1px solid var(--border-subtle);
+    }
+    .admin-action-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--surface-container-high);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-tertiary);
+      flex-shrink: 0;
+    }
+    .admin-action-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .admin-action-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .admin-action-desc {
+      font-size: 0.68rem;
+      color: var(--text-tertiary);
+      margin-top: 1px;
+    }
+
+    /* Preset list */
+    .admin-preset-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      transition: background var(--t-fast);
+    }
+    .admin-preset-item:hover {
+      background: var(--accent-soft);
+    }
+    .admin-preset-item.active {
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+      border-left: 3px solid var(--accent);
+    }
+    .admin-preset-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: var(--surface-container-high);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-tertiary);
+      flex-shrink: 0;
+    }
+    .admin-preset-icon.active-icon {
+      background: var(--accent);
+      color: var(--text-inverse);
+    }
+    .admin-preset-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .admin-preset-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .admin-preset-meta {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      margin-top: 1px;
+    }
+    .admin-preset-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .admin-preset-actions button {
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.68rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-family);
+      transition: all var(--t-fast);
+      white-space: nowrap;
+    }
+    .admin-preset-actions button:hover {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+      background: var(--surface-container-high);
+    }
+    .admin-preset-actions button.primary {
+      background: var(--accent);
+      color: var(--text-inverse);
+      border-color: var(--accent);
+    }
+    .admin-preset-actions button.primary:hover {
+      opacity: 0.85;
+    }
+    .admin-preset-actions button.danger {
+      color: var(--danger, #ef4444);
+      border-color: color-mix(in srgb, var(--danger, #ef4444) 30%, transparent);
+    }
+    .admin-preset-actions button.danger:hover {
+      background: color-mix(in srgb, var(--danger, #ef4444) 10%, transparent);
+      border-color: var(--danger, #ef4444);
+    }
+    .admin-preset-actions button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .admin-empty {
+      text-align: center;
+      padding: 28px 16px;
+      color: var(--text-tertiary);
+      font-size: 0.78rem;
+      line-height: 1.6;
+    }
+    .admin-empty kbd {
+      padding: 1px 6px;
+      background: var(--surface-container-high);
+      border-radius: 3px;
+      font-family: var(--font-family);
+      font-size: 0.7rem;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Buttons */
+    .admin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-family);
+      transition: all var(--t-fast);
+    }
+    .admin-btn:hover {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+      background: var(--accent-soft);
+    }
+    .admin-btn.primary {
+      background: var(--accent);
+      color: var(--text-inverse);
+      border-color: var(--accent);
+    }
+    .admin-btn.primary:hover {
+      opacity: 0.85;
+    }
+    .admin-btn.danger {
+      color: var(--danger, #ef4444);
+      border-color: color-mix(in srgb, var(--danger, #ef4444) 30%, transparent);
+    }
+    .admin-btn.danger:hover {
+      background: color-mix(in srgb, var(--danger, #ef4444) 10%, transparent);
+      border-color: var(--danger, #ef4444);
+    }
+    .admin-btn.small {
+      padding: 4px 10px;
+      font-size: 0.68rem;
+    }
+    .admin-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .admin-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 0 16px;
+    }
+
+    /* Password card */
+    .admin-password-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .admin-password-form .form-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .admin-password-form input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      font-family: var(--font-mono);
+      outline: none;
+      transition: border-color var(--t-fast);
+    }
+    .admin-password-form input:focus {
+      border-color: var(--border-focus);
+    }
+
+    /* Spacing & visual polish */
+    .admin-card { transition: border-color var(--t-fast), box-shadow var(--t-fast); }
+    .admin-card:hover { border-color: var(--border-focus); }
+    .admin-preset-item { transition: background var(--t-fast), border-color var(--t-fast); }
+    .admin-stat-card { transition: border-color var(--t-fast), background var(--t-fast); }
+    .admin-preset-item + .admin-preset-item { border-top: 1px solid var(--border-subtle); }
+
+    /* Toast */
+    .admin-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      background: var(--black);
+      color: var(--white);
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 10000;
+      pointer-events: none;
+    }
+    .admin-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .admin-toast.success {
+      background: var(--accent);
+      color: var(--text-inverse);
+    }
+    .admin-toast.error {
+      background: var(--danger, #ef4444);
+      color: #fff;
+    }
+
+    html.light .admin-toast {
+      background: #1a1a1a;
+      color: #fff;
+    }
+    html.light .admin-toast.success {
+      background: #4d6356;
+    }
+
+    .admin-export-data {
+      margin-top: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
+    .admin-export-data.visible {
+      display: block;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .admin-page { padding: 24px 16px 80px; }
+      .admin-header { flex-wrap: wrap; gap: 12px; }
+      .admin-header-info p { font-size: 0.72rem; }
+      .admin-back { margin-left: 0; width: 100%; justify-content: center; }
+      .admin-status-bar { flex-direction: column; }
+      .admin-stat-card { min-width: unset; }
+      .admin-password-form .form-row { flex-direction: column; gap: 6px; }
+      .admin-password-form input { width: 100%; }
+      .admin-action-row { flex-wrap: wrap; }
+      .admin-action-row .admin-btn { width: 100%; justify-content: center; }
+      .admin-card-body { overflow-x: auto; }
+      .admin-preset-item { flex-wrap: wrap; padding: 10px 12px; }
+      .admin-preset-actions { width: 100%; padding-left: 48px; justify-content: flex-start; flex-wrap: wrap; }
+      .admin-preset-actions button { flex: 1; min-width: 60px; text-align: center; }
+    }
+    @media (max-width: 480px) {
+      .admin-preset-actions { padding-left: 0; margin-top: 6px; }
+      .admin-preset-actions button { font-size: 0.62rem; padding: 3px 8px; }
+      .admin-section-title { font-size: 0.65rem; }
+      .admin-stat-value { font-size: 1.1rem; }
+    }
+
+    /* Loading overlay */
+    .admin-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: var(--text-tertiary);
+      font-size: 0.82rem;
+      gap: 10px;
+    }
+    .admin-loading svg {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient background -->
+  <div class="hub-ambient">
+    <div class="hub-ambient-gradient"></div>
+    <div class="hub-ambient-dots"></div>
+  </div>
+
+  <div class="admin-page" id="app">
+    <!-- Header -->
+    <div class="admin-header">
+      <div class="admin-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+      </div>
+      <div class="admin-header-info">
+        <h1>Admin Panel</h1>
+        <p>Manage presets, passwords, and default layouts for new users</p>
+      </div>
+      <a href="index.html" class="admin-back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Hub
+      </a>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="admin-status-bar" id="adminStatusBar">
+      <div class="admin-stat-card" id="statPresets">
+        <span class="admin-stat-label">Presets</span>
+        <span class="admin-stat-value" id="statPresetsCount">—</span>
+        <span class="admin-stat-sub">saved layouts</span>
+      </div>
+      <div class="admin-stat-card" id="statActive">
+        <span class="admin-stat-label">Active Preset</span>
+        <span class="admin-stat-value" id="statActiveName">—</span>
+        <span class="admin-stat-sub" id="statActiveDate"></span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="admin-stat-label">Access</span>
+        <span class="admin-stat-value" id="statAccess">—</span>
+        <span class="admin-stat-sub"><kbd style="padding:1px 5px;background:var(--accent-soft);border-radius:3px;font-family:var(--font-family);font-size:0.6rem">Ctrl+Shift+A</kbd> to open</span>
+      </div>
+    </div>
+
+    <!-- Quick Save -->
+    <div class="admin-section">
+      <div class="admin-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Quick Actions
+      </div>
+      <div class="admin-card">
+        <div class="admin-card-body" style="display:flex;flex-direction:column;gap:12px">
+          <div class="admin-action-row" style="padding-top:0">
+            <div class="admin-action-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            </div>
+            <div class="admin-action-info">
+              <div class="admin-action-label">Save Current Layout as Preset</div>
+              <div class="admin-action-desc">Capture hub layout, categories, tags, card colors, and settings</div>
+            </div>
+            <button class="admin-btn primary" id="btnSavePreset">Save Preset</button>
+          </div>
+          <div class="admin-action-row">
+            <div class="admin-action-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            </div>
+            <div class="admin-action-info">
+              <div class="admin-action-label">Refresh from Hub</div>
+              <div class="admin-action-desc">Load the latest presets and status from the hub</div>
+            </div>
+            <button class="admin-btn" id="btnRefresh">Refresh</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Settings -->
+    <div class="admin-section">
+      <div class="admin-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Password
+      </div>
+      <div class="admin-card">
+        <div class="admin-card-body">
+          <div class="admin-password-form">
+            <div class="form-row">
+              <input type="password" id="inputCurrentPass" placeholder="Current password" spellcheck="false">
+              <input type="password" id="inputNewPass" placeholder="New password (min 3 chars)" spellcheck="false">
+              <button class="admin-btn primary" id="btnChangePass">Change</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Presets List -->
+    <div class="admin-section">
+      <div class="admin-section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        Presets
+        <span id="presetCountBadge" style="font-size:0.6rem;padding:1px 6px;border-radius:8px;background:var(--accent-soft);margin-left:4px">0</span>
+      </div>
+      <div class="admin-card" id="presetsContainer">
+        <div class="admin-loading" id="presetsLoading">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Loading presets...
+        </div>
+        <div id="presetsList"></div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="admin-btn small" id="btnClearActive" disabled>Clear Active Preset</button>
+        <button class="admin-btn small danger" id="btnExportData">Export Presets JSON</button>
+      </div>
+      <div class="admin-export-data" id="adminExportData"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="admin-toast" id="adminToast"></div>
+
+  <script src="shared.js"></script>
+  <script>
+    // ─── Admin Page Script ───────────────────────────────
+    (function() {
+      var ADMIN_PASS_KEY = 'haven-admin-password';
+      var ADMIN_PASS_DEFAULT = 'MjcwODEw';
+      var ADMIN_PRESETS_KEY = 'haven-admin-presets';
+      var ACTIVE_PRESET_KEY = 'haven-active-preset';
+      var HUB_CONTENT_KEY = 'haven-hub-content';
+
+      function loadAdminPresets() {
+        try {
+          var raw = localStorage.getItem(ADMIN_PRESETS_KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch(e) { return []; }
+      }
+
+      function saveAdminPresets(presets) {
+        try { localStorage.setItem(ADMIN_PRESETS_KEY, JSON.stringify(presets)); } catch(e) {}
+      }
+
+      function getActivePresetId() {
+        try { return localStorage.getItem(ACTIVE_PRESET_KEY); } catch(e) { return null; }
+      }
+
+      function getStoredPassword() {
+        try { return localStorage.getItem(ADMIN_PASS_KEY) || ADMIN_PASS_DEFAULT; } catch(e) { return ADMIN_PASS_DEFAULT; }
+      }
+
+      function verifyPassword(pass) {
+        if (!pass) return false;
+        try {
+          if (btoa(pass) !== getStoredPassword()) {
+            showToast('Incorrect password', 'error');
+            return false;
+          }
+          return true;
+        } catch(e) {
+          showToast('Error verifying password', 'error');
+          return false;
+        }
+      }
+
+      // ─── Toast ─────────────────────────────────────────
+      var toastTimeout = null;
+      function showToast(msg, type, duration) {
+        var el = document.getElementById('adminToast');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = 'admin-toast' + (type ? ' ' + type : '');
+        clearTimeout(toastTimeout);
+        // Force reflow
+        void el.offsetWidth;
+        el.classList.add('show');
+        toastTimeout = setTimeout(function() {
+          el.classList.remove('show');
+        }, duration || 2000);
+      }
+
+      // ─── Escape HTML ───────────────────────────────────
+      function esc(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      // ─── Render ────────────────────────────────────────
+      function render() {
+        var presets = loadAdminPresets();
+        var activeId = getActivePresetId();
+        var listEl = document.getElementById('presetsList');
+        var loadingEl = document.getElementById('presetsLoading');
+        var countBadge = document.getElementById('presetCountBadge');
+        var statPresetsCount = document.getElementById('statPresetsCount');
+        var statActiveName = document.getElementById('statActiveName');
+        var statActiveDate = document.getElementById('statActiveDate');
+        var statAccess = document.getElementById('statAccess');
+        var btnClearActive = document.getElementById('btnClearActive');
+
+        // Update stats
+        statPresetsCount.textContent = presets.length;
+        statAccess.textContent = 'Admin';
+
+        // Find active preset
+        var activePreset = presets.find(function(p) { return p.id === activeId; });
+        if (activePreset) {
+          statActiveName.textContent = esc(activePreset.name);
+          if (activePreset.updatedAt) {
+            var d = new Date(activePreset.updatedAt);
+            statActiveDate.textContent = 'Updated ' + d.toLocaleDateString();
+          } else {
+            statActiveDate.textContent = '';
+          }
+          document.getElementById('statActive').classList.add('active-preset');
+        } else {
+          statActiveName.textContent = '—';
+          statActiveDate.textContent = 'No active default';
+          document.getElementById('statActive').classList.remove('active-preset');
+        }
+
+        // Update badge
+        if (countBadge) countBadge.textContent = presets.length;
+
+        // Enable/disable clear button
+        btnClearActive.disabled = !activeId;
+
+        // Render presets list
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (presets.length === 0) {
+          listEl.innerHTML = '<div class="admin-empty">No presets saved yet.<br>Go to the hub and press <kbd>Ctrl+Shift+D</kbd> to save the current layout as a preset, then manage it here.</div>';
+          return;
+        }
+
+        var html = '';
+        presets.forEach(function(p) {
+          var isActive = p.id === activeId;
+          var dateStr = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+          var widgetCount = p.data && p.data.hubContent && p.data.hubContent.bentoLayout ? p.data.hubContent.bentoLayout.length : 0;
+          var shortId = p.id ? p.id.slice(-6) : '';
+
+          html += '<div class="admin-preset-item' + (isActive ? ' active' : '') + '" data-preset-id="' + esc(p.id) + '">';
+          html += '<div class="admin-preset-icon' + (isActive ? ' active-icon' : '') + '">';
+          html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+          html += '</div>';
+          html += '<div class="admin-preset-info">';
+          html += '<div class="admin-preset-name">' + esc(p.name) + '</div>';
+          html += '<div class="admin-preset-meta">' + dateStr + ' · ' + widgetCount + ' widgets · ID: ' + shortId + '</div>';
+          html += '</div>';
+          html += '<div class="admin-preset-actions">';
+          if (isActive) {
+            html += '<button class="primary" disabled>Active</button>';
+          } else {
+            html += '<button class="primary" data-action="activate" data-id="' + esc(p.id) + '">Set Active</button>';
+          }
+          html += '<button data-action="apply" data-id="' + esc(p.id) + '">Apply</button>';
+          html += '<button class="danger" data-action="delete" data-id="' + esc(p.id) + '">Delete</button>';
+          html += '</div>';
+          html += '</div>';
+        });
+        listEl.innerHTML = html;
+      }
+
+      // ─── Actions ────────────────────────────────────────
+      function handleSavePreset() {
+        var name = prompt('Enter a name for this preset:');
+        if (!name || !name.trim()) return;
+        name = name.trim();
+
+        var currentPass = prompt('Enter admin password:');
+        if (!verifyPassword(currentPass)) return;
+
+        // Capture current hub content
+        var hubContent = null;
+        try {
+          var raw = localStorage.getItem(HUB_CONTENT_KEY);
+          if (raw) hubContent = JSON.parse(raw);
+        } catch(e) {}
+
+        if (!hubContent) {
+          showToast('No hub content found. Visit the hub page first.', 'error', 3000);
+          return;
+        }
+
+        var presetData = {
+          hubContent: JSON.parse(JSON.stringify(hubContent)),
+          hubVisibility: null,
+          hubSectionOrder: [],
+          customCategories: null,
+          customTags: null,
+          subcategories: null,
+          cardColors: null,
+          renamedLabels: null,
+          settings: {}
+        };
+        // Capture visibility from localStorage
+        try {
+          var hubVisRaw = localStorage.getItem('haven-hub-visibility');
+          if (hubVisRaw) presetData.hubVisibility = JSON.parse(hubVisRaw);
+        } catch(e) {}
+        // Capture section order from localStorage
+        try {
+          var hubOrderRaw = localStorage.getItem('haven-schedule-hub-layout');
+          if (hubOrderRaw) presetData.hubSectionOrder = JSON.parse(hubOrderRaw);
+        } catch(e) {}
+        // Capture all customization data from shared.js helper functions
+        if (typeof loadCustomCategories === 'function') {
+          try { presetData.customCategories = loadCustomCategories(); } catch(e) {}
+        }
+        if (typeof loadCustomTags === 'function') {
+          try { presetData.customTags = loadCustomTags(); } catch(e) {}
+        }
+        if (typeof loadSubcategories === 'function') {
+          try { presetData.subcategories = loadSubcategories(); } catch(e) {}
+        }
+        if (typeof loadCardColors === 'function') {
+          try { presetData.cardColors = loadCardColors(); } catch(e) {}
+        }
+        if (typeof loadRenamedLabels === 'function') {
+          try { presetData.renamedLabels = loadRenamedLabels(); } catch(e) {}
+        }
+        // Capture settings from state (if available)
+        if (typeof state !== 'undefined') {
+          presetData.settings = {
+            accentColor: state.accentColor || null,
+            darkMode: state.darkMode !== null ? state.darkMode : null,
+            accentCustomColors: state.accentCustomColors ? [...state.accentCustomColors] : [],
+            accentRemovedPresets: state.accentRemovedPresets ? [...state.accentRemovedPresets] : []
+          };
+        }
+        // Clean up transient data
+        delete presetData.hubContent._images;
+        delete presetData.hubContent.images;
+        delete presetData.hubContent.bubbleColors;
+        delete presetData.hubContent.imageAspects;
+        delete presetData.hubContent.imageAspect;
+        delete presetData.hubContent.habitData;
+        delete presetData.hubContent.gallery;
+
+        var presets = loadAdminPresets();
+        var existing = presets.find(function(p) { return p.name === name; });
+        if (existing) {
+          existing.data = presetData;
+          existing.updatedAt = new Date().toISOString();
+        } else {
+          presets.push({
+            id: 'preset-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+            name: name,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            data: presetData
+          });
+        }
+        saveAdminPresets(presets);
+        showToast('Preset "' + esc(name) + '" saved', 'success');
+        render();
+      }
+
+      function handleSetActive(presetId) {
+        var currentPass = prompt('Enter admin password:');
+        if (!verifyPassword(currentPass)) return;
+
+        var presets = loadAdminPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset) { showToast('Preset not found', 'error'); return; }
+
+        try { localStorage.setItem(ACTIVE_PRESET_KEY, presetId); } catch(e) {}
+        showToast('Preset "' + esc(preset.name) + '" set as default', 'success');
+        render();
+      }
+
+      function handleApply(presetId) {
+        var currentPass = prompt('Enter admin password:');
+        if (!verifyPassword(currentPass)) return;
+
+        var presets = loadAdminPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset || !preset.data) { showToast('Preset not found', 'error'); return; }
+
+        try {
+          var data = preset.data;
+
+          // Apply hub content
+          if (data.hubContent) {
+            localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(data.hubContent));
+          }
+
+          // Apply hub visibility
+          if (data.hubVisibility) {
+            try { localStorage.setItem('haven-hub-visibility', JSON.stringify(data.hubVisibility)); } catch(e) {}
+          }
+
+          // Apply section order
+          if (data.hubSectionOrder && data.hubSectionOrder.length) {
+            try { localStorage.setItem('haven-schedule-hub-layout', JSON.stringify(data.hubSectionOrder)); } catch(e) {}
+          }
+
+          // Apply custom categories
+          if (data.customCategories && typeof saveCustomCategories === 'function') {
+            try { saveCustomCategories(data.customCategories); } catch(e) {}
+          }
+
+          // Apply custom tags
+          if (data.customTags && typeof saveCustomTags === 'function') {
+            try { saveCustomTags(data.customTags); } catch(e) {}
+          }
+
+          // Apply subcategories
+          if (data.subcategories && typeof saveSubcategories === 'function') {
+            try { saveSubcategories(data.subcategories); } catch(e) {}
+          }
+
+          // Apply card colors
+          if (data.cardColors && typeof saveCardColors === 'function') {
+            try { saveCardColors(data.cardColors); } catch(e) {}
+          }
+
+          // Apply renamed labels
+          if (data.renamedLabels && typeof saveRenamedLabels === 'function') {
+            try { saveRenamedLabels(data.renamedLabels); } catch(e) {}
+          }
+
+          // Apply settings
+          if (data.settings) {
+            if (typeof state !== 'undefined') {
+              if (data.settings.accentColor !== undefined) state.accentColor = data.settings.accentColor;
+              if (data.settings.darkMode !== undefined) state.darkMode = data.settings.darkMode;
+              if (data.settings.accentCustomColors) state.accentCustomColors = [...data.settings.accentCustomColors];
+              if (data.settings.accentRemovedPresets) state.accentRemovedPresets = [...data.settings.accentRemovedPresets];
+            }
+            if (typeof applyAccentColor === 'function') try { applyAccentColor(); } catch(e) {}
+            if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
+          }
+
+          showToast('Preset "' + esc(preset.name) + '" applied. Reloading...', 'success', 2000);
+          setTimeout(function() { location.href = 'index.html'; }, 1000);
+        } catch(e) {
+          showToast('Failed to apply preset', 'error');
+          console.error('admin apply error:', e);
+        }
+      }
+
+      function handleDelete(presetId) {
+        var currentPass = prompt('Enter admin password:');
+        if (!verifyPassword(currentPass)) return;
+
+        var presets = loadAdminPresets();
+        var idx = presets.findIndex(function(p) { return p.id === presetId; });
+        if (idx === -1) { showToast('Preset not found', 'error'); return; }
+        var name = presets[idx].name;
+
+        if (!confirm('Delete preset "' + name + '"? This cannot be undone.')) return;
+
+        presets.splice(idx, 1);
+        saveAdminPresets(presets);
+
+        // Clear active if deleted
+        var activeId = getActivePresetId();
+        if (activeId === presetId) {
+          try { localStorage.removeItem(ACTIVE_PRESET_KEY); } catch(e) {}
+        }
+
+        showToast('Preset "' + esc(name) + '" deleted', 'info');
+        render();
+      }
+
+      function handleClearActive() {
+        var currentPass = prompt('Enter admin password:');
+        if (!verifyPassword(currentPass)) return;
+        try { localStorage.removeItem(ACTIVE_PRESET_KEY); } catch(e) {}
+        showToast('Active preset cleared', 'info');
+        render();
+      }
+
+      function handleChangePassword() {
+        var currentPass = document.getElementById('inputCurrentPass').value;
+        var newPass = document.getElementById('inputNewPass').value;
+        if (!currentPass || !newPass) { showToast('Fill in both fields', 'error'); return; }
+        if (newPass.length < 3) { showToast('Password must be at least 3 characters', 'error'); return; }
+        if (!verifyPassword(currentPass)) return;
+        try {
+          localStorage.setItem(ADMIN_PASS_KEY, btoa(newPass));
+          showToast('Password changed successfully', 'success');
+          document.getElementById('inputCurrentPass').value = '';
+          document.getElementById('inputNewPass').value = '';
+        } catch(e) {
+          showToast('Failed to save password', 'error');
+        }
+      }
+
+      // ─── Export JSON ────────────────────────────────────
+      function handleExport() {
+        var presets = loadAdminPresets();
+        var activeId = getActivePresetId();
+        var data = {
+          exportedAt: new Date().toISOString(),
+          activePresetId: activeId,
+          presetCount: presets.length,
+          presets: presets.map(function(p) {
+            return {
+              id: p.id,
+              name: p.name,
+              createdAt: p.createdAt,
+              updatedAt: p.updatedAt
+            };
+          })
+        };
+        var el = document.getElementById('adminExportData');
+        el.textContent = JSON.stringify(data, null, 2);
+        el.classList.toggle('visible');
+        if (el.classList.contains('visible')) {
+          showToast('Export data ready', 'info');
+        }
+      }
+
+      // ─── Wire events ────────────────────────────────────
+      document.addEventListener('DOMContentLoaded', function() {
+        // Initialize state for settings capture
+        if (typeof loadState === 'function') try { loadState(); } catch(e) {}
+        // Apply theme
+        if (typeof applyTheme === 'function') applyTheme();
+
+        render();
+
+        document.getElementById('btnSavePreset').addEventListener('click', handleSavePreset);
+        document.getElementById('btnRefresh').addEventListener('click', render);
+        document.getElementById('btnChangePass').addEventListener('click', handleChangePassword);
+        document.getElementById('btnClearActive').addEventListener('click', handleClearActive);
+        document.getElementById('btnExportData').addEventListener('click', handleExport);
+
+        // Preset action delegation
+        document.getElementById('presetsList').addEventListener('click', function(e) {
+          var btn = e.target.closest('button[data-action]');
+          if (!btn) return;
+          var action = btn.dataset.action;
+          var id = btn.dataset.id;
+          if (action === 'activate') handleSetActive(id);
+          else if (action === 'apply') handleApply(id);
+          else if (action === 'delete') handleDelete(id);
+        });
+
+        // Enter key in password fields
+        document.getElementById('inputNewPass').addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') handleChangePassword();
+        });
+        document.getElementById('inputCurrentPass').addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') document.getElementById('inputNewPass').focus();
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

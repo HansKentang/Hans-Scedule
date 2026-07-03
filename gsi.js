@@ -401,6 +401,32 @@ function openSettingsBubble() {
   }
 }
 
+var _adminTabRevealed = false;
+var _adminClickCount = 0;
+var _adminClickTimer = null;
+
+function revealAdminTab() {
+  _adminTabRevealed = true;
+  var nav = document.getElementById('settingsNav');
+  if (!nav) { renderSettingsNav(); return; }
+  var existing = nav.querySelector('[data-cat="admin"]');
+  if (existing) return;
+  var adminItem = document.createElement('div');
+  adminItem.className = 'settings-nav-item';
+  adminItem.dataset.cat = 'admin';
+  adminItem.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><span>Admin</span>';
+  adminItem.addEventListener('click', function() {
+    var cat = adminItem.dataset.cat;
+    if (!cat || cat === settingsPanelActiveCategory) return;
+    settingsPanelActiveCategory = cat;
+    nav.querySelectorAll('.settings-nav-item').forEach(function(i) { i.classList.remove('active'); });
+    adminItem.classList.add('active');
+    switchSettingsCategory(cat);
+  });
+  nav.appendChild(adminItem);
+  showToast('Admin panel unlocked', 'success', 1500);
+}
+
 function renderSettingsNav() {
   var nav = document.getElementById('settingsNav');
   if (!nav) return;
@@ -411,6 +437,10 @@ function renderSettingsNav() {
     { id: 'data', label: t('settings.data'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' },
     { id: 'about', label: t('settings.about'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' }
   ];
+  // If admin was already revealed, include it
+  if (_adminTabRevealed) {
+    cats.push({ id: 'admin', label: 'Admin', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' });
+  }
   nav.innerHTML = cats.map(function(c) {
     return '<div class="settings-nav-item' + (c.id === settingsPanelActiveCategory ? ' active' : '') + '" data-cat="' + c.id + '">' + c.icon + '<span>' + c.label + '</span></div>';
   }).join('');
@@ -435,8 +465,85 @@ function switchSettingsCategory(cat) {
     case 'appearance': renderAppearanceSettings(content); break;
     case 'ai': renderAISettings(content); break;
     case 'data': renderDataSettings(content); break;
+    case 'admin': renderAdminSettings(content); break;
     case 'about': renderAboutSettings(content); break;
   }
+}
+
+function renderAdminSettings(el) {
+  var presets = typeof loadAdminPresets === 'function' ? loadAdminPresets() : [];
+  var activeId = typeof getActivePresetId === 'function' ? getActivePresetId() : null;
+  var presetsHtml = presets.length === 0
+    ? '<div class="set-empty" style="padding:12px 0;font-size:0.78rem;color:var(--text-tertiary)">No presets saved yet. Press <kbd style="padding:1px 5px;background:var(--accent-soft);border-radius:3px;font-family:var(--font-family);font-size:0.7rem">Ctrl+Shift+D</kbd> on the hub page to save the current layout as a preset.</div>'
+    : presets.map(function(p) {
+        var isActive = p.id === activeId;
+        var dateStr = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString() : '';
+        return '<div class="set-acc-item' + (isActive ? ' active' : '') + '" style="flex-wrap:wrap">' +
+          '<div class="set-acc-initials" style="background:' + (isActive ? 'var(--accent)' : 'var(--surface-container-high)') + '">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
+          '</div>' +
+          '<div class="set-acc-info" style="flex:1">' +
+            '<div class="set-acc-name">' + escapeHtml(p.name) + '</div>' +
+            '<div class="set-acc-email">' + dateStr + ' &middot; ' + (p.data && p.data.hubContent && p.data.hubContent.bentoLayout ? p.data.hubContent.bentoLayout.length + ' widgets' : 'no data') + '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:4px;align-items:center;flex-shrink:0;width:100%;margin-top:6px;padding-left:36px">' +
+            (isActive
+              ? '<button class="set-btn set-btn-small admin-preset-active" disabled style="font-size:0.6rem;padding:2px 8px;background:var(--accent);color:var(--text-inverse);border:none;border-radius:4px">Active</button>'
+              : '<button class="set-btn set-btn-small" data-admin-activate="' + p.id + '" style="font-size:0.6rem;padding:2px 8px">Set Active</button>') +
+            '<button class="set-btn set-btn-small" data-admin-apply="' + p.id + '" style="font-size:0.6rem;padding:2px 8px">Apply</button>' +
+            '<button class="set-btn set-btn-small" data-admin-delete="' + p.id + '" style="font-size:0.6rem;padding:2px 8px;color:var(--danger,#ef4444)">Delete</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+  el.innerHTML =
+    '<h3>Admin</h3>' +
+    '<div class="set-desc">Manage default layouts for new and guest users</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Save Current Layout as Preset</div><div class="set-row-desc">Capture the current hub layout, categories, tags, and settings</div></div>' +
+        '<button class="set-btn" id="adminSavePresetBtn">Save Preset</button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Password</div><div class="set-row-desc">Change the admin password used to manage presets</div></div>' +
+        '<button class="set-btn" id="adminChangePasswordBtn">Change</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="set-divider"></div>' +
+    '<div class="set-group">' +
+      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">PRESETS' +
+      (presets.length > 0 ? ' <span style="font-size:0.6rem;padding:1px 6px;border-radius:8px;background:var(--accent-soft);margin-left:4px">' + presets.length + '</span>' : '') +
+      '</div>' +
+      presetsHtml +
+      (presets.length > 0 ? '<button class="set-link-btn" id="adminClearActiveBtn" style="margin-top:6px">Clear Active Preset</button>' : '') +
+    '</div>';
+
+  // Wire events
+  document.getElementById('adminSavePresetBtn')?.addEventListener('click', function() {
+    var name = prompt('Enter a name for this preset:');
+    if (name && typeof savePreset === 'function') savePreset(name.trim());
+  });
+  document.getElementById('adminChangePasswordBtn')?.addEventListener('click', function() {
+    if (typeof changeAdminPassword === 'function') changeAdminPassword();
+  });
+  document.getElementById('adminClearActiveBtn')?.addEventListener('click', function() {
+    if (typeof clearActivePreset === 'function') clearActivePreset();
+  });
+  el.querySelectorAll('[data-admin-activate]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (typeof setActivePreset === 'function') setActivePreset(btn.dataset.adminActivate);
+    });
+  });
+  el.querySelectorAll('[data-admin-apply]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (typeof applyPresetToCurrentUser === 'function') applyPresetToCurrentUser(btn.dataset.adminApply);
+    });
+  });
+  el.querySelectorAll('[data-admin-delete]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (typeof deletePreset === 'function') deletePreset(btn.dataset.adminDelete);
+    });
+  });
 }
 
 function renderAccountSettings(el) {
@@ -931,11 +1038,27 @@ function renderAboutSettings(el) {
     '<h3>About</h3>' +
     '<div class="set-about">' +
       '<div class="set-about-name">Havën Schedule</div>' +
-      '<div class="set-about-ver">Version 1.0.0</div>' +
+      '<div class="set-about-ver" id="aboutVersionTap" style="cursor:default">Version 1.0.0</div>' +
       '<div class="set-about-links">' +
         '<a href="https://github.com/HansKentang/Hans-Scedule" target="_blank" class="set-btn" style="text-decoration:none">GitHub</a>' +
       '</div>' +
     '</div>';
+  
+  // Secret tap: click version 5 times to reveal admin tab
+  var verEl = document.getElementById('aboutVersionTap');
+  if (verEl && !_adminTabRevealed) {
+    verEl.addEventListener('click', function() {
+      _adminClickCount++;
+      if (_adminClickTimer) clearTimeout(_adminClickTimer);
+      _adminClickTimer = setTimeout(function() { _adminClickCount = 0; }, 2000);
+      if (_adminClickCount >= 5) {
+        _adminClickCount = 0;
+        if (!_adminTabRevealed) {
+          revealAdminTab();
+        }
+      }
+    });
+  }
 }
 
 function closeSettingsPanel() {

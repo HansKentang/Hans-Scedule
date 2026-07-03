@@ -3297,11 +3297,19 @@ function initHubEditMode() {
   // (No longer syncing hubEditMode from state.editMode — they are independent)
 }
 
-/* ─── Admin: Ctrl+Shift+D to save as guest default ─── */
+/* ─── Admin: Ctrl+Shift+D to save preset, Ctrl+Shift+A to open admin panel ─── */
 document.addEventListener('keydown', function(e) {
-  if (e.ctrlKey && e.shiftKey && (e.key === 'D' || e.key === 'd')) {
-    e.preventDefault();
-    if (typeof saveAsGuestDefault === 'function') saveAsGuestDefault();
+  if (e.ctrlKey && e.shiftKey) {
+    if (e.key === 'D' || e.key === 'd') {
+      e.preventDefault();
+      var name = prompt('Name this preset:');
+      if (name && typeof savePreset === 'function') savePreset(name.trim());
+    } else if (e.key === 'A' || e.key === 'a') {
+      e.preventDefault();
+      var target = 'admin.html';
+      if (location.pathname.indexOf(target) !== -1) return;
+      location.href = target;
+    }
   }
 });
 
