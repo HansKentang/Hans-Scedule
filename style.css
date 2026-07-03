@@ -7166,8 +7166,8 @@ html.light .hub-add-popup {
 .bento-bubble.drag-over { box-shadow:0 4px 20px rgba(0,0,0,0.12); transform:scale(1.01); }
 .bento-bubble-handle { position:absolute; top:6px; left:6px; width:32px; height:32px; border-radius:10px; background:var(--surface-container-high); color:var(--text-tertiary); display:none; align-items:center; justify-content:center; cursor:grab; z-index:10; border:1.5px solid var(--border-color); transition:all 0.15s; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
 .hub-edit .bento-bubble-handle { display:flex; }
-.hub-edit .w-head, .hub-edit .spotify-header, .hub-edit .pomo-header, .hub-edit .clock-face { cursor:grab; }
-.hub-edit .w-head:active, .hub-edit .spotify-header:active, .hub-edit .pomo-header:active, .hub-edit .clock-face:active { cursor:grabbing; }
+.hub-edit .w-head, .hub-edit .spotify-header, .hub-edit .pomo-header, .hub-edit .clock-face, .hub-edit .ss-widget { cursor:grab; }
+.hub-edit .w-head:active, .hub-edit .spotify-header:active, .hub-edit .pomo-header:active, .hub-edit .clock-face:active, .hub-edit .ss-widget:active { cursor:grabbing; }
 .bento-bubble-handle:hover { color:var(--text-primary); background:var(--accent-subtle); transform:scale(1.12); border-color:var(--primary); }
 .bento-bubble-handle:active { cursor:grabbing; transform:scale(1.08); }
 .bento-bubble-handle svg { width:16px; height:16px; }
@@ -7192,6 +7192,7 @@ html.light .hub-add-popup {
 .bento-bubble { --bubble-accent: var(--text-primary); }
 .bento-bubble .w-head { color:var(--bubble-accent); }
 .bento-bubble .clock-face .clock-time { color:var(--bubble-accent); }
+.bento-bubble .ss-widget .ss-ring-val { color:var(--bubble-accent,var(--accent)); }
 .bento-bubble .timer-display .timer-time { color:var(--bubble-accent); }
 .bento-bubble .prog-stat-val { color:var(--bubble-accent); }
 .bento-bubble .cal-day.today { background:var(--bubble-accent); color:#fff; }
@@ -7310,6 +7311,20 @@ html.light .hub-add-popup {
 .embed-settings-footer { padding:0 18px 16px; }
 .embed-settings-save { padding:8px 18px; border:none; border-radius:8px; background:var(--accent); color:#fff; font-size:0.75rem; font-weight:500; cursor:pointer; transition:opacity 0.12s; display:block; width:100%; }
 .embed-settings-save:hover { opacity:0.85; }
+
+/* ─── Sleep Score Widget ─── */
+.ss-widget { display:flex; gap:12px; height:100%; align-items:center; }
+.ss-ring-col { display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
+.ss-ring { position:relative; width:72px; height:72px; }
+.ss-ring svg { width:100%; height:100%; }
+.ss-ring-val { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:600; color:var(--accent); }
+.ss-ring-label { font-size:0.55rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.3px; text-align:center; }
+.ss-stats { display:flex; flex-direction:column; gap:6px; flex:1; min-width:0; }
+.ss-row { display:flex; align-items:baseline; gap:6px; }
+.ss-stat-val { font-size:0.82rem; font-weight:600; color:var(--text-primary); }
+.ss-stat-lbl { font-size:0.6rem; color:var(--text-tertiary); }
+.ss-stars { font-size:0.78rem; color:var(--accent); letter-spacing:1px; }
+.ss-row-qual { gap:4px; }
 
 /* ─── Visuals Button Pulse (when uncustomized images exist) ─── */
 #bcVisualsBtn.has-empty-images svg {
