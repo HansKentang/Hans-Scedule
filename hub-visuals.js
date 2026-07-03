@@ -11,7 +11,7 @@ function snap(v) { return Math.round(v / 20) * 20; }
 function snapSpotifyHeight(v) {
   v = Math.max(108.5, v);
   if (v < 147) return 108.5;
-  if (v < 295) return 185;
+  if (v < 295) return 187.5;
   if (v < 400) return 400;
   return snap(v);
 }
