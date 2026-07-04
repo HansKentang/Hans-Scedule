@@ -1052,6 +1052,11 @@
               <div class="help-tip-text">Press F to toggle Focus Mode - hides sidebar and reduces visual clutter</div>
             </div>
           </div>
+            <div class="help-tip" style="cursor:pointer" id="helpViewTutorial">
+              <span class="help-tip-icon">🎓</span>
+              <div class="help-tip-text"><strong>View Tutorial</strong> — Replay the onboarding tour</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1141,6 +1146,27 @@
           <iframe id="spModalEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
         </div>
         <div class="sp-list" id="spList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ONBOARDING TUTORIAL ──────────────────────────────── -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-spotlight hidden" id="tutorialSpotlight"></div>
+    <div class="tutorial-tooltip" id="tutorialTooltip">
+      <div class="tutorial-tooltip-header">
+        <span class="tutorial-icon" id="tutorialIcon"></span>
+        <span class="tutorial-step" id="tutorialStep"></span>
+      </div>
+      <div class="tutorial-title" id="tutorialTitle"></div>
+      <div class="tutorial-desc" id="tutorialDesc"></div>
+      <div class="tutorial-progress" id="tutorialProgress"></div>
+      <div class="tutorial-actions">
+        <button class="tutorial-btn tutorial-btn-skip" id="tutorialSkip">Skip</button>
+        <div class="tutorial-nav">
+          <button class="tutorial-btn tutorial-btn-prev" id="tutorialPrev">← Back</button>
+          <button class="tutorial-btn tutorial-btn-next primary" id="tutorialNext">Next →</button>
+        </div>
       </div>
     </div>
   </div>

@@ -1038,6 +1038,9 @@
 
     function init() {
       loadState();
+      if (!hasSeenTutorial() && typeof startTutorial === "function") {
+        try { setTimeout(function() { startTutorial(FINANCE_TUTORIAL_STEPS); }, 300); } catch(e) {}
+      }
       const dateEl = document.getElementById('finDate');
       if (dateEl) dateEl.value = new Date().toISOString().slice(0,10);
       document.getElementById('finAddBtn').addEventListener('click', addTransaction);
@@ -1371,6 +1374,27 @@
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
   </script>
 
+  <!-- ─── ONBOARDING TUTORIAL ──────────────────────────────── -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-spotlight hidden" id="tutorialSpotlight"></div>
+    <div class="tutorial-tooltip" id="tutorialTooltip">
+      <div class="tutorial-tooltip-header">
+        <span class="tutorial-icon" id="tutorialIcon"></span>
+        <span class="tutorial-step" id="tutorialStep"></span>
+      </div>
+      <div class="tutorial-title" id="tutorialTitle"></div>
+      <div class="tutorial-desc" id="tutorialDesc"></div>
+      <div class="tutorial-progress" id="tutorialProgress"></div>
+      <div class="tutorial-actions">
+        <button class="tutorial-btn tutorial-btn-skip" id="tutorialSkip">Skip</button>
+        <div class="tutorial-nav">
+          <button class="tutorial-btn tutorial-btn-prev" id="tutorialPrev">← Back</button>
+          <button class="tutorial-btn tutorial-btn-next primary" id="tutorialNext">Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Image Picker -->
   <div id="imagePickerOverlay" class="image-picker-overlay hidden">
     <div class="image-picker-card" onclick="event.stopPropagation()">
@@ -1533,7 +1557,8 @@
           </div>
           <div class="help-tip">
             <span class="help-tip-icon">ðŸŽ¯</span>
-            <div class="help-tip-text">Press F to toggle Focus Mode - hides sidebar and reduces visual clutter</div>
+            <div class="help-tip-text">Press F to toggle Focus Mode - hides sidebar and reduces visual clutter
+          <div class="help-tip" style="cursor:pointer" id="helpViewTutorial"><span class="help-tip-icon">🎓</span><div class="help-tip-text"><strong>View Tutorial</strong> — Replay the onboarding tour</div></div></div>
           </div>
         </div>
       </div>

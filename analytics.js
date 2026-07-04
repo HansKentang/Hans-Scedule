@@ -806,6 +806,9 @@ function setupPage() {
 // ─── INIT ──────────────────────────────────────────────────
 function init() {
   loadState();
+  if (!hasSeenTutorial() && typeof startTutorial === "function") {
+    try { setTimeout(function() { startTutorial(ANALYTICS_TUTORIAL_STEPS); }, 300); } catch(e) {}
+  }
   applyTheme();
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
   renderAnalytics();
