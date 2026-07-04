@@ -1716,11 +1716,13 @@ const FINANCE_TUTORIAL_STEPS = [
   },
 ];
 
-function hasSeenTutorial() {
-  try { return localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch (e) { return false; }
+function hasSeenTutorial(page) {
+  var key = page ? TUTORIAL_SEEN_KEY + '-' + page : TUTORIAL_SEEN_KEY;
+  try { return localStorage.getItem(key) === '1'; } catch (e) { return false; }
 }
-function markTutorialSeen() {
-  try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch (e) {}
+function markTutorialSeen(page) {
+  var key = page ? TUTORIAL_SEEN_KEY + '-' + page : TUTORIAL_SEEN_KEY;
+  try { localStorage.setItem(key, '1'); } catch (e) {}
 }
 
 function startTutorial(steps) {
@@ -1899,7 +1901,10 @@ function endTutorial() {
     spotlight.classList.remove('visible');
   }
   tutorialState = null;
-  markTutorialSeen();
+  var _page = window.location.pathname.split('/').pop() || 'index.html';
+  var _pageName = _page.replace('.html', '');
+  if (_pageName === 'index') _pageName = 'hub';
+  markTutorialSeen(_pageName);
 }
 
 // ─── ACTIVE PRESET AUTO-APPLY (for new/guest users) ──

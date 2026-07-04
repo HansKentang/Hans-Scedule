@@ -571,7 +571,7 @@
       loadState();
       hubContent = loadHubContent();
   // Auto-trigger tutorial for new users
-  if (!hasSeenTutorial() && typeof startTutorial === "function") {
+  if (!hasSeenTutorial('hub') && typeof startTutorial === "function") {
     try {
       setTimeout(function() { startTutorial(HUB_TUTORIAL_STEPS); }, 300);
     } catch(e) {}
@@ -1327,6 +1327,59 @@
   </div>
 
   <script>spInit();</script>
+
+  <!-- ─── HELP MODAL ──────────────────────────────────────── -->
+  <div id="helpOverlay" class="overlay hidden"></div>
+  <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+    <div class="modal-header">
+      <h3>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Help and Shortcuts
+      </h3>
+      <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="help-section">
+        <div class="help-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/></svg>
+          Keyboard Shortcuts
+        </div>
+        <div class="shortcuts-grid" id="helpShortcutsGrid"></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          Tips and Tricks
+        </div>
+        <div class="help-tips">
+          <div class="help-tip">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text">Press <kbd>F</kbd> to toggle Focus Mode — hides sidebar and reduces clutter</div>
+          </div>
+          <div class="help-tip">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text">Hover a bento bubble and use the <kbd>Resize</kbd> handle to make it bigger or smaller</div>
+          </div>
+          <div class="help-tip">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text">Add new widgets from the dock below the canvas in edit mode</div>
+          </div>
+          <div class="help-tip">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text">Press <kbd>Shift+D</kbd> to quickly share a snapshot of your hub layout</div>
+          </div>
+          <div class="help-tip" style="cursor:pointer" id="helpViewTutorial">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text"><strong>View Tutorial</strong> — Replay the onboarding tour</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ─── ONBOARDING TUTORIAL ──────────────────────────────── -->
   <div class="tutorial-overlay" id="tutorialOverlay">

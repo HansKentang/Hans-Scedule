@@ -465,8 +465,28 @@ if (!hc.goals) hc.goals = [...defaults.goals];
     }
   } catch(e) { console.warn('[img] loadHubContent: error:', e); }
   try {
-    var _tmpl = localStorage.getItem(GUEST_TEMPLATE_KEY);
-    if (_tmpl) { return JSON.parse(_tmpl); }
+    var _orig = typeof __origLS !== 'undefined' ? __origLS : localStorage;
+    var _tmpl = _orig.getItem(GUEST_TEMPLATE_KEY);
+    if (_tmpl) {
+      var tc = JSON.parse(_tmpl);
+      // Apply same backfill/rotation as main path
+      if (!tc.goals) tc.goals = [...defaults.goals];
+      if (!tc.priorities) tc.priorities = [...defaults.priorities];
+      if (!tc.quote) tc.quote = getQuoteOfTheWeek();
+      else {
+        var _cw = getCurrentWeekNumber();
+        if (!tc.quote.weekNumber || tc.quote.weekNumber !== _cw) {
+          var _wk = getQuoteOfTheWeek();
+          tc.quote.text = _wk.text; tc.quote.author = _wk.author; tc.quote.weekNumber = _wk.weekNumber;
+        }
+      }
+      if (!tc.todos) tc.todos = defaults.todos.map(function(t) { return {text:t.text,done:t.done}; });
+      if (!tc.habits) tc.habits = [...defaults.habits];
+      if (!tc.habitData) tc.habitData = {};
+      if (tc.notes === undefined) tc.notes = '';
+      if (!tc.links) tc.links = defaults.links.map(function(l) { return {label:l.label,url:l.url}; });
+      return tc;
+    }
   } catch(e) {}
   return JSON.parse(JSON.stringify(HUB_DEFAULTS));
 }
@@ -489,10 +509,11 @@ var ADMIN_PASS = 'MjcwODEw';
 
 function saveAsGuestDefault() {
   if (!hubContent) { showToast('Nothing to save', 'error', 1500); return; }
+  var orig = typeof __origLS !== 'undefined' ? __origLS : localStorage;
   var stored = null;
-  try { stored = localStorage.getItem('haven-admin-password'); } catch(e) {}
+  try { stored = orig.getItem('haven-admin-password'); } catch(e) {}
   if (!stored) {
-    try { localStorage.setItem('haven-admin-password', ADMIN_PASS); stored = ADMIN_PASS; } catch(e) {}
+    try { orig.setItem('haven-admin-password', ADMIN_PASS); stored = ADMIN_PASS; } catch(e) {}
   }
   var entered = prompt('Enter admin password to save default layout:');
   if (!entered) return;
@@ -500,7 +521,7 @@ function saveAsGuestDefault() {
   var _hadImages = hubContent._images;
   delete hubContent._images;
   try {
-    localStorage.setItem(GUEST_TEMPLATE_KEY, JSON.stringify(hubContent));
+    orig.setItem(GUEST_TEMPLATE_KEY, JSON.stringify(hubContent));
     showToast('Saved as default for new guests', 'success', 2000);
   } catch(e) { showToast('Failed to save default', 'error', 2000); }
   if (_hadImages !== undefined) hubContent._images = _hadImages;

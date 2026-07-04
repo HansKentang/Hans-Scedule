@@ -685,6 +685,7 @@ html.dark .theme-icon-dark { display: block; }
   font-size: 0.85rem;
   margin-top: 1px;
 }
+.help-tip-icon:empty { display: none; }
 .help-tip-text {
   flex: 1;
   min-width: 0;

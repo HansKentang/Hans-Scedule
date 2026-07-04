@@ -1049,7 +1049,7 @@ function setupPage() {
 // --- INIT ------------------------------------------------------------------
 function init() {
   loadState();
-  if (!hasSeenTutorial() && typeof startTutorial === "function") {
+  if (!hasSeenTutorial('activities') && typeof startTutorial === "function") {
     try { setTimeout(function() { startTutorial(ACTIVITIES_TUTORIAL_STEPS); }, 300); } catch(e) {}
   }
   applyTheme();
