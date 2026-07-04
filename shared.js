@@ -5258,6 +5258,20 @@ function openHubMenu() {
   if (s) s.addEventListener('click', function() { closeHubMenu(); if (typeof openSettingsBubble === 'function') openSettingsBubble(); });
   var h = document.getElementById('menuHelp');
   if (h) h.addEventListener('click', function() { closeHubMenu(); if (typeof showHelpModal === 'function') showHelpModal(); });
+  var tut = document.getElementById('menuTutorial');
+  if (tut) tut.addEventListener('click', function() {
+    closeHubMenu();
+    if (typeof startTutorial !== 'function') return;
+    var _page = window.location.pathname.split('/').pop() || 'index.html';
+    switch (_page) {
+      case 'schedule.html': startTutorial(SCHEDULE_TUTORIAL_STEPS); break;
+      case 'activities.html': startTutorial(ACTIVITIES_TUTORIAL_STEPS); break;
+      case 'analytics.html': startTutorial(ANALYTICS_TUTORIAL_STEPS); break;
+      case 'goals.html': startTutorial(GOALS_TUTORIAL_STEPS); break;
+      case 'finance.html': startTutorial(FINANCE_TUTORIAL_STEPS); break;
+      default: startTutorial(HUB_TUTORIAL_STEPS); break;
+    }
+  });
   var p = document.getElementById('menuProfile');
   if (p) p.addEventListener('click', function() { closeHubMenu(); if (typeof openSettingsBubble === 'function') openSettingsBubble(); });
   // Populate profile
