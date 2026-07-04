@@ -1500,33 +1500,33 @@ let tutorialState = null;
 // Hub tutorial steps
 const HUB_TUTORIAL_STEPS = [
   {
-    title: 'Welcome to Havën',
-    desc: 'Your personal smart scheduler. This is your <strong>Hub</strong> — a customizable dashboard where you can see everything at a glance.',
+    title: 'Welcome to Haven',
+    desc: 'Your personal smart scheduler. This is the <strong>Hub</strong> — a flexible dashboard that puts everything you need right in front of you.',
     selector: null
   },
   {
     title: 'Sidebar Navigation',
-    desc: 'Use the sidebar to jump between pages: <strong>Schedule</strong> for your calendar, <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, <strong>Finance</strong>, and <strong>Gallery</strong>.',
+    desc: 'Jump between pages using the sidebar: <strong>Schedule</strong> for your calendar, <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, <strong>Finance</strong>, and <strong>Gallery</strong>. Each page is a different lens on your life.',
     selector: '.hub-sidebar-nav'
   },
   {
     title: 'Bento Canvas',
-    desc: 'The <strong>Bento Canvas</strong> is your personal dashboard. Add widgets like a clock, weather, Spotify player, habit tracker, and more. Click the + button to customize.',
+    desc: 'The <strong>Bento Canvas</strong> is your personal command center. Drop in widgets — a clock, weather, Spotify, habit tracker, and more. Tap the + button to explore what fits your day.',
     selector: '#hubAccessHub'
   },
   {
     title: 'Sleep Tracking',
-    desc: 'Track your sleep each night and get personalized insights. The <strong>Sleep section</strong> shows your 7-day average, consistency score, and a weekly timeline of your sleep patterns.',
+    desc: 'Log your sleep each night and discover patterns. The <strong>Sleep section</strong> shows your 7-day average, consistency score, and a weekly timeline of your rest.',
     selector: '.sleep-section'
   },
   {
     title: 'Customize Everything',
-    desc: 'Tap any image to change it. Use the sidebar buttons for <strong>Theme</strong> (dark/light mode), <strong>Settings</strong> (AI key, profile, colors), and <strong>Visuals</strong> (edit mode).',
+    desc: 'Tap any image to swap it out. Use the sidebar for <strong>Theme</strong> (dark or light), <strong>Settings</strong> (AI key, profile, colors), and <strong>Visuals</strong> (edit mode). Make it yours.',
     selector: '.hub-footer-btns'
   },
   {
     title: 'Good to Go!',
-    desc: 'You\'re all set! Explore the Schedule page to manage your tasks, or visit the other pages. You can replay this tour anytime from the <strong>Help</strong> menu.',
+    desc: 'You\'re all set. Head to the <strong>Schedule</strong> page to plan your week, or explore the other pages. Replay this tour anytime from the <strong>Help</strong> menu.',
     selector: null
   },
 ];
@@ -1535,37 +1535,37 @@ const HUB_TUTORIAL_STEPS = [
 const SCHEDULE_TUTORIAL_STEPS = [
   {
     title: 'Your Weekly Calendar',
-    desc: 'This is the <strong>Schedule</strong> page. See your week at a glance with tasks displayed as colorful cards on the grid. Hours run from 5 AM to 5 AM the next day.',
+    desc: 'This is the <strong>Schedule</strong> page. Tasks appear as colorful cards on a grid that runs from 5 AM to 5 AM the next day. See your whole week at a glance.',
     selector: null
   },
   {
     title: 'Category Chips',
-    desc: 'These <strong>chips</strong> are your task categories (Deep Work, Meeting, etc.). Click one to see subcategories — then drag a subcategory onto the grid to instantly create a task.',
+    desc: 'These <strong>chips</strong> are your task categories — Deep Work, Meeting, Exercise, Study, Hobby, and any you add. Click one to see subcategories, then drag one onto the grid to create a task instantly.',
     selector: '#schPillManager'
   },
   {
     title: 'Quick Add Tasks',
-    desc: 'Press <kbd>Q</kbd> to quickly add a new task for the current time. You can also drag directly from a subcategory onto the calendar grid for instant scheduling.',
+    desc: 'Press <kbd>Q</kbd> to add a task for the current time. Or drag a subcategory pill directly onto the grid — the fastest way to schedule.',
     selector: '#calendarGrid'
   },
   {
-    title: 'Drag & Reschedule',
-    desc: 'Drag any task card to a new time slot — other tasks <strong>automatically shift</strong> to avoid conflicts. Resize a task by dragging its bottom edge.',
+    title: 'Drag and Reschedule',
+    desc: 'Drag any task card to a new time. Other tasks <strong>shift automatically</strong> to avoid overlap. Resize a task by dragging its bottom edge.',
     selector: '#calendarGrid'
   },
   {
     title: 'Access Hub',
-    desc: 'The floating <strong>+</strong> button gives you quick access to Focus Mode, AI Chat (ChickBot), Screenshot, and Copy Week. Press <kbd>F</kbd> to toggle focus mode.',
+    desc: 'The floating <strong>+</strong> button opens Focus Mode, AI Chat, Screenshot, and Copy Week. Press <kbd>F</kbd> to toggle Focus Mode anytime.',
     selector: '#accessHub'
   },
   {
     title: 'Pomodoro Timer',
-    desc: 'Use the built-in <strong>Pomodoro Timer</strong> to stay focused. Open it from the Quick Actions menu. Presets: 5, 10, 25, or 50 minutes.',
+    desc: 'The built-in <strong>Pomodoro Timer</strong> helps you stay in flow. Choose from 5, 10, 25, or 50 minutes. Find it in the Quick Actions menu.',
     selector: '#pomodoroCard'
   },
   {
     title: 'All Set!',
-    desc: 'You now know the basics! Explore the <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, and other pages. Replay this tour anytime from <strong>Help</strong>.',
+    desc: 'You now know the essentials. Explore <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, and more. Replay this tour from the <strong>Help</strong> menu.',
     selector: null
   },
 ];
@@ -1574,32 +1574,32 @@ const SCHEDULE_TUTORIAL_STEPS = [
 const ACTIVITIES_TUTORIAL_STEPS = [
   {
     title: 'Activities Overview',
-    desc: 'The <strong>Activities</strong> page shows your tasks in two views: a <strong>Board</strong> (Kanban-style columns by category) and a <strong>Timeline</strong> (chronological day-by-day list).',
+    desc: 'The <strong>Activities</strong> page shows your tasks in two ways: a <strong>Board</strong> with columns by category, and a <strong>Timeline</strong> that lists your day chronologically.',
     selector: null
   },
   {
     title: 'Weekly Activity Chart',
-    desc: 'The <strong>Activity Chart</strong> shows your week at a glance — stacked bars by category. Use the arrows to navigate between weeks.',
+    desc: 'The <strong>Activity Chart</strong> gives you a bird\'s-eye view of your week. Stacked bars show how each day breaks down by category. Use the arrows to move between weeks.',
     selector: '#activityChartWrap'
   },
   {
-    title: 'Board View (Kanban)',
-    desc: 'Each <strong>column</strong> represents a task category. Cards show task title, time, and duration. Check off tasks or drag them between columns to change categories.',
+    title: 'Board View',
+    desc: 'Each <strong>column</strong> is a task category. Cards show title, time, and duration. Check off what\'s done or drag a card to a different column to change its category.',
     selector: '#tagsBoard'
   },
   {
     title: 'Timeline View',
-    desc: 'Switch to <strong>Timeline</strong> view for a chronological day-by-day list of your tasks with times, durations, and completion checkboxes.',
+    desc: 'Switch to <strong>Timeline</strong> for a clean, chronological list of your day. Each entry shows time, duration, and a checkbox for quick completion.',
     selector: '#timelineView'
   },
   {
     title: 'Activity Log',
-    desc: 'The <strong>Activity Log</strong> tracks every task you complete. Undo completions or review what you\'ve accomplished.',
+    desc: 'The <strong>Activity Log</strong> records every task you complete. Undo anything by accident, or look back at what you\'ve done.',
     selector: '#actLogSection'
   },
   {
     title: 'All Set!',
-    desc: 'You\'re all set on Activities! Use <strong>Board</strong> for a high-level view or <strong>Timeline</strong> for detailed day tracking.',
+    desc: 'That covers Activities. Use <strong>Board</strong> for a broad view or <strong>Timeline</strong> for detailed day tracking. See what works best for you.',
     selector: null
   },
 ];
@@ -1608,37 +1608,37 @@ const ACTIVITIES_TUTORIAL_STEPS = [
 const ANALYTICS_TUTORIAL_STEPS = [
   {
     title: 'Analytics Dashboard',
-    desc: 'The <strong>Analytics</strong> page gives you insights into your productivity. Filter by <strong>Week</strong>, <strong>Month</strong>, or <strong>All</strong> time.',
+    desc: 'The <strong>Analytics</strong> page turns your schedule into insights. Filter by <strong>Week</strong>, <strong>Month</strong>, or <strong>All</strong> time to zoom in or out.',
     selector: null
   },
   {
     title: 'KPI Cards',
-    desc: 'Four <strong>KPI cards</strong> show your key metrics: total tasks, time scheduled, deep work hours, and study hours.',
+    desc: 'Four <strong>KPI cards</strong> show your top-level numbers: total tasks, time scheduled, deep work hours, and study hours. These update as you filter.',
     selector: '.an-kpi-row'
   },
   {
-    title: 'Completion & Streak',
-    desc: 'Track your <strong>completion rate</strong> with the ring and bar chart. The <strong>streak chart</strong> shows your daily activity — keep the chain going!',
+    title: 'Completion and Streak',
+    desc: 'The ring and bar chart show your <strong>completion rate</strong>. The <strong>streak chart</strong> tracks daily activity — keep the chain going day after day.',
     selector: '.an-completion-row'
   },
   {
-    title: 'Charts & Trends',
-    desc: 'The <strong>pie chart</strong> shows category distribution by time. The <strong>weekly trend</strong> chart shows your progress over the last 14 days.',
+    title: 'Charts and Trends',
+    desc: 'The <strong>pie chart</strong> shows how your time is distributed across categories. The <strong>trend chart</strong> tracks your progress over the last two weeks.',
     selector: '.an-chart-grid'
   },
   {
     title: 'Sleep Analytics',
-    desc: 'If you log sleep from the Hub, your <strong>sleep duration and quality</strong> charts appear here alongside your productivity data.',
+    desc: 'When you log sleep from the Hub, <strong>sleep duration and quality</strong> charts appear here alongside your productivity data.',
     selector: '.an-sleep-row'
   },
   {
     title: 'Day-by-Day Table',
-    desc: 'The <strong>Day-by-Day</strong> table shows your daily task counts, total time, deep work, study, and other categories.',
+    desc: 'The <strong>Day-by-Day</strong> table gives you a detailed breakdown of each day: task count, total time, deep work, study, and more.',
     selector: '.an-table-card'
   },
   {
     title: 'That\'s Analytics!',
-    desc: 'Use Analytics to spot trends, track your streaks, and understand where your time goes. The more you schedule, the better the insights!',
+    desc: 'Use Analytics to spot patterns, protect your streaks, and understand where your time actually goes. The more you schedule, the richer the data.',
     selector: null
   },
 ];
@@ -1646,33 +1646,33 @@ const ANALYTICS_TUTORIAL_STEPS = [
 // Goals tutorial steps
 const GOALS_TUTORIAL_STEPS = [
   {
-    title: 'Goals & Resolutions',
-    desc: 'The <strong>Goals</strong> page helps you define and track your aspirations. Create goals with sub-tasks, progress bars, and a vision board.',
+    title: 'Goals and Resolutions',
+    desc: 'The <strong>Goals</strong> page is where you define what matters. Create goals with sub-tasks, track progress with bars, and keep your vision front and center.',
     selector: null
   },
   {
     title: 'Goal Cards',
-    desc: 'Each <strong>goal card</strong> has a title, description, progress bar, and checkable sub-tasks. Click the edit overlay (top-right) to rename, recolor, or delete.',
+    desc: 'Each <strong>goal card</strong> has a title, description, progress bar, and checkable sub-tasks. Tap the edit overlay in the top-right to rename, recolor, or delete a goal.',
     selector: '#glBento'
   },
   {
     title: 'Sub-Tasks',
-    desc: 'Check off <strong>sub-tasks</strong> to automatically update the progress bar. Add new tasks with the \"+ Add task\" button at the bottom of each card.',
+    desc: 'Check off <strong>sub-tasks</strong> and the progress bar updates automatically. Add more with the \"+ Add task\" button at the bottom of any card.',
     selector: '#glBento'
   },
   {
     title: 'Vision Board',
-    desc: 'The <strong>Vision Board</strong> shows three images that inspire you. Click any placeholder to upload or paste an image from your gallery.',
+    desc: 'The <strong>Vision Board</strong> holds three images that inspire you. Click a placeholder to upload an image or paste one from your gallery.',
     selector: '#glVisionGrid'
   },
   {
     title: 'Monthly Manifesto',
-    desc: 'Write your <strong>Monthly Manifesto</strong> — a personal statement of intention. Click the text to edit it directly.',
+    desc: 'Write a <strong>Monthly Manifesto</strong> — a personal statement of intention. Just click the text to start typing.',
     selector: '.gl-manifesto'
   },
   {
     title: 'Ready to Goal!',
-    desc: 'Create your first goal by clicking the <strong>+ Add Goal</strong> button. Track progress, visualize your vision, and stay inspired!',
+    desc: 'Create your first goal with the <strong>+ Add Goal</strong> button. Track your progress, visualize what drives you, and keep moving forward.',
     selector: null
   },
 ];
@@ -1681,37 +1681,37 @@ const GOALS_TUTORIAL_STEPS = [
 const FINANCE_TUTORIAL_STEPS = [
   {
     title: 'Finance Dashboard',
-    desc: 'The <strong>Finance</strong> page helps you manage your money. Track income/expenses, manage savings, and analyze spending patterns.',
+    desc: 'The <strong>Finance</strong> page helps you take control of your money. Track income and expenses, manage savings, and understand your spending patterns at a glance.',
     selector: null
   },
   {
-    title: 'Income & Expenses',
-    desc: 'KPI cards show your <strong>total income and expenses</strong> for the selected period. Use the tabs (7D, 30D, Month, All) to change the time range.',
+    title: 'Income and Expenses',
+    desc: 'KPI cards show your <strong>total income and expenses</strong> for the selected period. Use the tabs above — 7D, 30D, Month, All — to change the view.',
     selector: '.fin-kpi-row'
   },
   {
-    title: 'Piggy Bank & Wallet',
-    desc: 'Manage your <strong>Piggy Bank</strong> (savings) and <strong>Wallet</strong> (cash). Add or spend money and see your balance trend over the last 30 days.',
+    title: 'Piggy Bank and Wallet',
+    desc: 'Track your <strong>Piggy Bank</strong> (savings) and <strong>Wallet</strong> (spending cash) separately. Add or subtract money and watch the balance trends over 30 days.',
     selector: '.fin-savings-row'
   },
   {
-    title: 'Transaction Table & Form',
-    desc: 'Add transactions using the form on the right — choose type (income/expense), category, amount, and date. Edit or delete from the table on the left.',
+    title: 'Transaction Table and Form',
+    desc: 'Add transactions with the form on the right — pick type, category, amount, and date. Edit or delete any entry directly from the table on the left.',
     selector: '.fin-panels'
   },
   {
-    title: 'Charts & Analysis',
-    desc: 'Category bars show how your spending breaks down. The daily chart shows income vs expenses over time.',
+    title: 'Charts and Analysis',
+    desc: 'Category bars break down where your money goes. The daily chart shows income versus expenses over time — spot trends at a glance.',
     selector: '.fin-charts'
   },
   {
     title: 'Spending Intelligence',
-    desc: 'Go deeper with <strong>Spending Intelligence</strong> — explore Treemap, Month-over-Month, Heatmap, Cash Flow, and Top Merchants to understand your habits.',
+    desc: 'Go deeper with <strong>Spending Intelligence</strong>: Treemap, Month-over-Month, Heatmap, Cash Flow, and Top Merchants reveal your habits and patterns.',
     selector: '.fin-adv-section'
   },
   {
     title: 'Financially Aware!',
-    desc: 'Track consistently to unlock powerful insights into your spending. Your future self will thank you!',
+    desc: 'Track regularly and you will unlock powerful insights into your spending. Your future self will thank you.',
     selector: null
   },
 ];
