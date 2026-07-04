@@ -1492,6 +1492,270 @@ function toggleMobileSidebar() {
 let pageAfterTaskSave = null;
 let pageAfterImport = null;
 
+
+// ─── ONBOARDING TUTORIAL ──────────────────────────────────
+const TUTORIAL_SEEN_KEY = 'haven-tutorial-seen';
+let tutorialState = null;
+
+// Hub tutorial steps
+const HUB_TUTORIAL_STEPS = [
+  {
+    icon: '🏠',
+    title: 'Welcome to Havën',
+    desc: 'Your personal smart scheduler. This is your <strong>Hub</strong> — a customizable dashboard where you can see everything at a glance.',
+    selector: null
+  },
+  {
+    icon: '🧭',
+    title: 'Sidebar Navigation',
+    desc: 'Use the sidebar to jump between pages: <strong>Schedule</strong> for your calendar, <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, <strong>Finance</strong>, and <strong>Gallery</strong>.',
+    selector: '.hub-sidebar-nav'
+  },
+  {
+    icon: '🎯',
+    title: 'Bento Canvas',
+    desc: 'The <strong>Bento Canvas</strong> is your personal dashboard. Add widgets like a clock, weather, Spotify player, habit tracker, and more. Click the + button to customize.',
+    selector: '#hubAccessHub'
+  },
+  {
+    icon: '💤',
+    title: 'Sleep Tracking',
+    desc: 'Track your sleep each night and get personalized insights. The <strong>Sleep section</strong> shows your 7-day average, consistency score, and a weekly timeline of your sleep patterns.',
+    selector: '.sleep-section'
+  },
+  {
+    icon: '🎨',
+    title: 'Customize Everything',
+    desc: 'Tap any image to change it. Use the sidebar buttons for <strong>Theme</strong> (dark/light mode), <strong>Settings</strong> (AI key, profile, colors), and <strong>Visuals</strong> (edit mode).',
+    selector: '.hub-footer-btns'
+  },
+  {
+    icon: '✨',
+    title: 'Good to Go!',
+    desc: 'You\'re all set! Explore the Schedule page to manage your tasks, or visit the other pages. You can replay this tour anytime from the <strong>Help</strong> menu.',
+    selector: null
+  },
+];
+
+// Schedule tutorial steps
+const SCHEDULE_TUTORIAL_STEPS = [
+  {
+    icon: '📅',
+    title: 'Your Weekly Calendar',
+    desc: 'This is the <strong>Schedule</strong> page. See your week at a glance with tasks displayed as colorful cards on the grid. Hours run from 5 AM to 5 AM the next day.',
+    selector: null
+  },
+  {
+    icon: '🏷️',
+    title: 'Category Chips',
+    desc: 'These <strong>chips</strong> are your task categories (Deep Work, Meeting, etc.). Click one to see subcategories — then drag a subcategory onto the grid to instantly create a task.',
+    selector: '#schPillManager'
+  },
+  {
+    icon: '➕',
+    title: 'Quick Add Tasks',
+    desc: 'Press <kbd>Q</kbd> to quickly add a new task for the current time. You can also drag directly from a subcategory onto the calendar grid for instant scheduling.',
+    selector: '#calendarGrid'
+  },
+  {
+    icon: '↔️',
+    title: 'Drag & Reschedule',
+    desc: 'Drag any task card to a new time slot — other tasks <strong>automatically shift</strong> to avoid conflicts. Resize a task by dragging its bottom edge.',
+    selector: '#calendarGrid'
+  },
+  {
+    icon: '⚡',
+    title: 'Access Hub',
+    desc: 'The floating <strong>+</strong> button gives you quick access to Focus Mode, AI Chat (ChickBot), Screenshot, and Copy Week. Press <kbd>F</kbd> to toggle focus mode.',
+    selector: '#accessHub'
+  },
+  {
+    icon: '⏱️',
+    title: 'Pomodoro Timer',
+    desc: 'Use the built-in <strong>Pomodoro Timer</strong> to stay focused. Open it from the Quick Actions menu. Presets: 5, 10, 25, or 50 minutes.',
+    selector: '#pomodoroCard'
+  },
+  {
+    icon: '✨',
+    title: 'All Set!',
+    desc: 'You now know the basics! Explore the <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, and other pages. Replay this tour anytime from <strong>Help</strong>.',
+    selector: null
+  },
+];
+
+function hasSeenTutorial() {
+  try { return localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch (e) { return false; }
+}
+function markTutorialSeen() {
+  try { localStorage.setItem(TUTORIAL_SEEN_KEY, '1'); } catch (e) {}
+}
+
+function startTutorial(steps) {
+  var overlay = document.getElementById('tutorialOverlay');
+  var spotlight = document.getElementById('tutorialSpotlight');
+  var tooltip = document.getElementById('tutorialTooltip');
+  if (!overlay || !tooltip) return;
+
+  tutorialState = {
+    steps: steps || HUB_TUTORIAL_STEPS,
+    currentStep: 0
+  };
+
+  renderTutorialStep();
+  overlay.classList.add('active');
+}
+
+function renderTutorialStep() {
+  if (!tutorialState) return;
+  var overlay = document.getElementById('tutorialOverlay');
+  var spotlight = document.getElementById('tutorialSpotlight');
+  var tooltip = document.getElementById('tutorialTooltip');
+  var step = tutorialState.steps[tutorialState.currentStep];
+  if (!step) { endTutorial(); return; }
+
+  // Update icon
+  var iconEl = document.getElementById('tutorialIcon');
+  if (iconEl) iconEl.textContent = step.icon;
+
+  // Update step counter
+  var stepEl = document.getElementById('tutorialStep');
+  if (stepEl) stepEl.textContent = (tutorialState.currentStep + 1) + ' / ' + tutorialState.steps.length;
+
+  // Update title and desc
+  var titleEl = document.getElementById('tutorialTitle');
+  var descEl = document.getElementById('tutorialDesc');
+  if (titleEl) titleEl.textContent = step.title;
+  if (descEl) descEl.innerHTML = step.desc;
+
+  // Update progress dots
+  var progressEl = document.getElementById('tutorialProgress');
+  if (progressEl) {
+    progressEl.innerHTML = tutorialState.steps.map(function(_, i) {
+      return '<span class="tutorial-progress-dot' + (i === tutorialState.currentStep ? ' active' : '') + '"></span>';
+    }).join('');
+  }
+
+  // Handle spotlight positioning
+  if (step.selector) {
+    var target = document.querySelector(step.selector);
+    if (target) {
+      var rect = target.getBoundingClientRect();
+      spotlight.classList.remove('hidden');
+      spotlight.classList.add('visible');
+      spotlight.style.left = (rect.left - 8) + 'px';
+      spotlight.style.top = (rect.top - 8) + 'px';
+      spotlight.style.width = (rect.width + 16) + 'px';
+      spotlight.style.height = (rect.height + 16) + 'px';
+    } else {
+      spotlight.classList.add('hidden');
+      spotlight.classList.remove('visible');
+    }
+  } else {
+    spotlight.classList.add('hidden');
+    spotlight.classList.remove('visible');
+  }
+
+  // Show/hide prev button
+  var prevBtn = document.getElementById('tutorialPrev');
+  if (prevBtn) prevBtn.classList.toggle('hidden', tutorialState.currentStep === 0);
+
+  // Update next button text
+  var nextBtn = document.getElementById('tutorialNext');
+  if (nextBtn) {
+    var isLast = tutorialState.currentStep === tutorialState.steps.length - 1;
+    nextBtn.innerHTML = isLast
+      ? 'Got it!'
+      : 'Next <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>';
+  }
+
+  // Position tooltip relative to spotlight or centered
+  requestAnimationFrame(function() {
+    positionTutorialTooltip(step.selector);
+  });
+}
+
+function positionTutorialTooltip(selector) {
+  var tooltip = document.getElementById('tutorialTooltip');
+  if (!tooltip) return;
+  var tw = tooltip.offsetWidth || 340;
+  var th = tooltip.offsetHeight || 300;
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+
+  if (selector) {
+    var target = document.querySelector(selector);
+    if (target) {
+      var rect = target.getBoundingClientRect();
+      var centerX = rect.left + rect.width / 2;
+      var centerY = rect.top + rect.height / 2;
+
+      // Position below the target if there's room, otherwise above
+      var below = centerY + rect.height / 2 + th + 20 < vh;
+      var left = Math.max(16, Math.min(centerX - tw / 2, vw - tw - 16));
+
+      if (below) {
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = (rect.bottom + 16) + 'px';
+        tooltip.style.transform = 'none';
+        tooltip.style.bottom = 'auto';
+      } else {
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = 'auto';
+        tooltip.style.bottom = (vh - rect.top + 16) + 'px';
+        tooltip.style.transform = 'none';
+      }
+      return;
+    }
+  }
+
+  // Centered fallback
+  tooltip.style.left = Math.max(16, (vw - tw) / 2) + 'px';
+  tooltip.style.top = Math.max(16, (vh - th) / 2) + 'px';
+  tooltip.style.bottom = 'auto';
+  tooltip.style.transform = 'none';
+}
+
+// ─── TUTORIAL EVENT HANDLERS ──────────────────────────────
+document.addEventListener('click', function(e) {
+  var skipBtn = e.target.closest('#tutorialSkip');
+  var prevBtn = e.target.closest('#tutorialPrev');
+  var nextBtn = e.target.closest('#tutorialNext');
+
+  if (skipBtn) {
+    endTutorial();
+    return;
+  }
+
+  if (prevBtn && tutorialState && tutorialState.currentStep > 0) {
+    tutorialState.currentStep--;
+    renderTutorialStep();
+    return;
+  }
+
+  if (nextBtn && tutorialState) {
+    var isLast = tutorialState.currentStep === tutorialState.steps.length - 1;
+    if (isLast) {
+      endTutorial();
+    } else {
+      tutorialState.currentStep++;
+      renderTutorialStep();
+    }
+    return;
+  }
+});
+
+function endTutorial() {
+  var overlay = document.getElementById('tutorialOverlay');
+  var spotlight = document.getElementById('tutorialSpotlight');
+  if (overlay) overlay.classList.remove('active');
+  if (spotlight) {
+    spotlight.classList.add('hidden');
+    spotlight.classList.remove('visible');
+  }
+  tutorialState = null;
+  markTutorialSeen();
+}
+
 // ─── ACTIVE PRESET AUTO-APPLY (for new/guest users) ──
 function applyActivePresetIfNewUser() {
   // Only apply to new users who have no hub content yet

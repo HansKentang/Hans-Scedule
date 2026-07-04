@@ -569,6 +569,12 @@
     function init() {
       loadState();
       hubContent = loadHubContent();
+n  // Auto-trigger tutorial for new users
+  if (!hasSeenTutorial() && typeof startTutorial === "function") {
+    try {
+      setTimeout(function() { startTutorial(HUB_TUTORIAL_STEPS); }, 300);
+    } catch(e) {}
+  }
       applyTheme();
 
       // Ensure bento section is never hidden
@@ -1312,6 +1318,35 @@
   </div>
 
   <script>spInit();</script>
+
+  <!-- ─── ONBOARDING TUTORIAL ──────────────────────────────── -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-spotlight hidden" id="tutorialSpotlight"></div>
+    <div class="tutorial-tooltip" id="tutorialTooltip">
+      <div class="tutorial-tooltip-header">
+        <div class="tutorial-tooltip-icon" id="tutorialIcon"></div>
+        <span class="tutorial-tooltip-step" id="tutorialStep"></span>
+      </div>
+      <div class="tutorial-tooltip-body">
+        <div class="tutorial-tooltip-title" id="tutorialTitle"></div>
+        <div class="tutorial-tooltip-desc" id="tutorialDesc"></div>
+      </div>
+      <div class="tutorial-tooltip-footer">
+        <button class="tutorial-btn tutorial-btn-skip" id="tutorialSkip">Skip</button>
+        <div class="tutorial-progress" id="tutorialProgress"></div>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="tutorial-btn tutorial-btn-prev hidden" id="tutorialPrev">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <button class="tutorial-btn tutorial-btn-next" id="tutorialNext">
+            Next
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ─── BOTTOM NAV (mobile) ──────────────────────────────── -->
   <nav class="hub-bottom-nav" aria-label="Main navigation">

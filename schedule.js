@@ -1397,6 +1397,12 @@ function bindEvents() {
   // bcVisualsBtn handled via delegation in shared.js
   dom.helpOverlay?.addEventListener('click', hideHelpModal);
   dom.helpModalClose?.addEventListener('click', hideHelpModal);
+n  // View Tutorial link
+  var tutLink = document.getElementById('helpViewTutorial');
+  if (tutLink) tutLink.addEventListener('click', function() {
+    hideHelpModal();
+    if (typeof startTutorial === "function") startTutorial(SCHEDULE_TUTORIAL_STEPS);
+  });
 
   // AI Chat
   dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
@@ -2096,6 +2102,12 @@ function renderSchTemplates() {
     return;
   }
   loadState();
+n  // Auto-trigger tutorial for new users
+  if (!hasSeenTutorial() && typeof startTutorial === "function") {
+    try {
+      setTimeout(function() { startTutorial(SCHEDULE_TUTORIAL_STEPS); }, 300);
+    } catch(e) {}
+  }
   applyTheme();
   if (!state.currentWeekStart) {
     state.currentWeekStart = getMonday(new Date());
