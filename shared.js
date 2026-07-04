@@ -1500,37 +1500,31 @@ let tutorialState = null;
 // Hub tutorial steps
 const HUB_TUTORIAL_STEPS = [
   {
-    icon: '🏠',
     title: 'Welcome to Havën',
     desc: 'Your personal smart scheduler. This is your <strong>Hub</strong> — a customizable dashboard where you can see everything at a glance.',
     selector: null
   },
   {
-    icon: '🧭',
     title: 'Sidebar Navigation',
     desc: 'Use the sidebar to jump between pages: <strong>Schedule</strong> for your calendar, <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, <strong>Finance</strong>, and <strong>Gallery</strong>.',
     selector: '.hub-sidebar-nav'
   },
   {
-    icon: '🎯',
     title: 'Bento Canvas',
     desc: 'The <strong>Bento Canvas</strong> is your personal dashboard. Add widgets like a clock, weather, Spotify player, habit tracker, and more. Click the + button to customize.',
     selector: '#hubAccessHub'
   },
   {
-    icon: '💤',
     title: 'Sleep Tracking',
     desc: 'Track your sleep each night and get personalized insights. The <strong>Sleep section</strong> shows your 7-day average, consistency score, and a weekly timeline of your sleep patterns.',
     selector: '.sleep-section'
   },
   {
-    icon: '🎨',
     title: 'Customize Everything',
     desc: 'Tap any image to change it. Use the sidebar buttons for <strong>Theme</strong> (dark/light mode), <strong>Settings</strong> (AI key, profile, colors), and <strong>Visuals</strong> (edit mode).',
     selector: '.hub-footer-btns'
   },
   {
-    icon: '✨',
     title: 'Good to Go!',
     desc: 'You\'re all set! Explore the Schedule page to manage your tasks, or visit the other pages. You can replay this tour anytime from the <strong>Help</strong> menu.',
     selector: null
@@ -1540,43 +1534,36 @@ const HUB_TUTORIAL_STEPS = [
 // Schedule tutorial steps
 const SCHEDULE_TUTORIAL_STEPS = [
   {
-    icon: '📅',
     title: 'Your Weekly Calendar',
     desc: 'This is the <strong>Schedule</strong> page. See your week at a glance with tasks displayed as colorful cards on the grid. Hours run from 5 AM to 5 AM the next day.',
     selector: null
   },
   {
-    icon: '🏷️',
     title: 'Category Chips',
     desc: 'These <strong>chips</strong> are your task categories (Deep Work, Meeting, etc.). Click one to see subcategories — then drag a subcategory onto the grid to instantly create a task.',
     selector: '#schPillManager'
   },
   {
-    icon: '➕',
     title: 'Quick Add Tasks',
     desc: 'Press <kbd>Q</kbd> to quickly add a new task for the current time. You can also drag directly from a subcategory onto the calendar grid for instant scheduling.',
     selector: '#calendarGrid'
   },
   {
-    icon: '↔️',
     title: 'Drag & Reschedule',
     desc: 'Drag any task card to a new time slot — other tasks <strong>automatically shift</strong> to avoid conflicts. Resize a task by dragging its bottom edge.',
     selector: '#calendarGrid'
   },
   {
-    icon: '⚡',
     title: 'Access Hub',
     desc: 'The floating <strong>+</strong> button gives you quick access to Focus Mode, AI Chat (ChickBot), Screenshot, and Copy Week. Press <kbd>F</kbd> to toggle focus mode.',
     selector: '#accessHub'
   },
   {
-    icon: '⏱️',
     title: 'Pomodoro Timer',
     desc: 'Use the built-in <strong>Pomodoro Timer</strong> to stay focused. Open it from the Quick Actions menu. Presets: 5, 10, 25, or 50 minutes.',
     selector: '#pomodoroCard'
   },
   {
-    icon: '✨',
     title: 'All Set!',
     desc: 'You now know the basics! Explore the <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, and other pages. Replay this tour anytime from <strong>Help</strong>.',
     selector: null
@@ -1586,37 +1573,31 @@ const SCHEDULE_TUTORIAL_STEPS = [
 // Activities tutorial steps
 const ACTIVITIES_TUTORIAL_STEPS = [
   {
-    icon: '📋',
     title: 'Activities Overview',
     desc: 'The <strong>Activities</strong> page shows your tasks in two views: a <strong>Board</strong> (Kanban-style columns by category) and a <strong>Timeline</strong> (chronological day-by-day list).',
     selector: null
   },
   {
-    icon: '📊',
     title: 'Weekly Activity Chart',
     desc: 'The <strong>Activity Chart</strong> shows your week at a glance — stacked bars by category. Use the arrows to navigate between weeks.',
     selector: '#activityChartWrap'
   },
   {
-    icon: '🏷️',
     title: 'Board View (Kanban)',
     desc: 'Each <strong>column</strong> represents a task category. Cards show task title, time, and duration. Check off tasks or drag them between columns to change categories.',
     selector: '#tagsBoard'
   },
   {
-    icon: '⏳',
     title: 'Timeline View',
     desc: 'Switch to <strong>Timeline</strong> view for a chronological day-by-day list of your tasks with times, durations, and completion checkboxes.',
     selector: '#timelineView'
   },
   {
-    icon: '📝',
     title: 'Activity Log',
     desc: 'The <strong>Activity Log</strong> tracks every task you complete. Undo completions or review what you\'ve accomplished.',
     selector: '#actLogSection'
   },
   {
-    icon: '✨',
     title: 'All Set!',
     desc: 'You\'re all set on Activities! Use <strong>Board</strong> for a high-level view or <strong>Timeline</strong> for detailed day tracking.',
     selector: null
@@ -1626,43 +1607,36 @@ const ACTIVITIES_TUTORIAL_STEPS = [
 // Analytics tutorial steps
 const ANALYTICS_TUTORIAL_STEPS = [
   {
-    icon: '📈',
     title: 'Analytics Dashboard',
     desc: 'The <strong>Analytics</strong> page gives you insights into your productivity. Filter by <strong>Week</strong>, <strong>Month</strong>, or <strong>All</strong> time.',
     selector: null
   },
   {
-    icon: '📊',
     title: 'KPI Cards',
     desc: 'Four <strong>KPI cards</strong> show your key metrics: total tasks, time scheduled, deep work hours, and study hours.',
     selector: '.an-kpi-row'
   },
   {
-    icon: '✅',
     title: 'Completion & Streak',
     desc: 'Track your <strong>completion rate</strong> with the ring and bar chart. The <strong>streak chart</strong> shows your daily activity — keep the chain going!',
     selector: '.an-completion-row'
   },
   {
-    icon: '🥧',
     title: 'Charts & Trends',
     desc: 'The <strong>pie chart</strong> shows category distribution by time. The <strong>weekly trend</strong> chart shows your progress over the last 14 days.',
     selector: '.an-chart-grid'
   },
   {
-    icon: '💤',
     title: 'Sleep Analytics',
     desc: 'If you log sleep from the Hub, your <strong>sleep duration and quality</strong> charts appear here alongside your productivity data.',
     selector: '.an-sleep-row'
   },
   {
-    icon: '📅',
     title: 'Day-by-Day Table',
     desc: 'The <strong>Day-by-Day</strong> table shows your daily task counts, total time, deep work, study, and other categories.',
     selector: '.an-table-card'
   },
   {
-    icon: '✨',
     title: 'That\'s Analytics!',
     desc: 'Use Analytics to spot trends, track your streaks, and understand where your time goes. The more you schedule, the better the insights!',
     selector: null
@@ -1672,37 +1646,31 @@ const ANALYTICS_TUTORIAL_STEPS = [
 // Goals tutorial steps
 const GOALS_TUTORIAL_STEPS = [
   {
-    icon: '🎯',
     title: 'Goals & Resolutions',
     desc: 'The <strong>Goals</strong> page helps you define and track your aspirations. Create goals with sub-tasks, progress bars, and a vision board.',
     selector: null
   },
   {
-    icon: '📋',
     title: 'Goal Cards',
     desc: 'Each <strong>goal card</strong> has a title, description, progress bar, and checkable sub-tasks. Click the edit overlay (top-right) to rename, recolor, or delete.',
     selector: '#glBento'
   },
   {
-    icon: '✅',
     title: 'Sub-Tasks',
     desc: 'Check off <strong>sub-tasks</strong> to automatically update the progress bar. Add new tasks with the \"+ Add task\" button at the bottom of each card.',
     selector: '#glBento'
   },
   {
-    icon: '🖼️',
     title: 'Vision Board',
     desc: 'The <strong>Vision Board</strong> shows three images that inspire you. Click any placeholder to upload or paste an image from your gallery.',
     selector: '#glVisionGrid'
   },
   {
-    icon: '✍️',
     title: 'Monthly Manifesto',
     desc: 'Write your <strong>Monthly Manifesto</strong> — a personal statement of intention. Click the text to edit it directly.',
     selector: '.gl-manifesto'
   },
   {
-    icon: '✨',
     title: 'Ready to Goal!',
     desc: 'Create your first goal by clicking the <strong>+ Add Goal</strong> button. Track progress, visualize your vision, and stay inspired!',
     selector: null
@@ -1712,43 +1680,36 @@ const GOALS_TUTORIAL_STEPS = [
 // Finance tutorial steps
 const FINANCE_TUTORIAL_STEPS = [
   {
-    icon: '💰',
     title: 'Finance Dashboard',
     desc: 'The <strong>Finance</strong> page helps you manage your money. Track income/expenses, manage savings, and analyze spending patterns.',
     selector: null
   },
   {
-    icon: '📊',
     title: 'Income & Expenses',
     desc: 'KPI cards show your <strong>total income and expenses</strong> for the selected period. Use the tabs (7D, 30D, Month, All) to change the time range.',
     selector: '.fin-kpi-row'
   },
   {
-    icon: '🐷',
     title: 'Piggy Bank & Wallet',
     desc: 'Manage your <strong>Piggy Bank</strong> (savings) and <strong>Wallet</strong> (cash). Add or spend money and see your balance trend over the last 30 days.',
     selector: '.fin-savings-row'
   },
   {
-    icon: '📝',
     title: 'Transaction Table & Form',
     desc: 'Add transactions using the form on the right — choose type (income/expense), category, amount, and date. Edit or delete from the table on the left.',
     selector: '.fin-panels'
   },
   {
-    icon: '📈',
     title: 'Charts & Analysis',
     desc: 'Category bars show how your spending breaks down. The daily chart shows income vs expenses over time.',
     selector: '.fin-charts'
   },
   {
-    icon: '🧠',
     title: 'Spending Intelligence',
     desc: 'Go deeper with <strong>Spending Intelligence</strong> — explore Treemap, Month-over-Month, Heatmap, Cash Flow, and Top Merchants to understand your habits.',
     selector: '.fin-adv-section'
   },
   {
-    icon: '✨',
     title: 'Financially Aware!',
     desc: 'Track consistently to unlock powerful insights into your spending. Your future self will thank you!',
     selector: null
@@ -1784,10 +1745,6 @@ function renderTutorialStep() {
   var tooltip = document.getElementById('tutorialTooltip');
   var step = tutorialState.steps[tutorialState.currentStep];
   if (!step) { endTutorial(); return; }
-
-  // Update icon
-  var iconEl = document.getElementById('tutorialIcon');
-  if (iconEl) iconEl.textContent = step.icon;
 
   // Update step counter
   var stepEl = document.getElementById('tutorialStep');
