@@ -549,7 +549,7 @@
             </div>
             <div class="admin-action-info">
               <div class="admin-action-label">Save Current Layout as Preset</div>
-              <div class="admin-action-desc">Capture hub layout, categories, tags, card colors, and settings</div>
+              <div class="admin-action-desc">Capture hub layout, categories, tags, card colors, images, Spotify, and settings</div>
             </div>
             <button class="admin-btn primary" id="btnSavePreset">Save Preset</button>
           </div>
@@ -761,6 +761,11 @@
         var currentPass = prompt('Enter admin password:');
         if (!verifyPassword(currentPass)) return;
 
+        captureAndSavePresetData(name);
+      }
+
+      // Shared capture logic (used by handleSavePreset and handleSavePresetFromName)
+      function captureAndSavePresetData(name) {
         // Capture current hub content
         var hubContent = null;
         try {
@@ -819,6 +824,28 @@
             accentRemovedPresets: state.accentRemovedPresets ? [...state.accentRemovedPresets] : []
           };
         }
+        // Capture non-gallery images from localStorage
+        var presetImages = {};
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf('haven-image-') === 0 && k.indexOf('haven-image-gallery-') !== 0) {
+              try { presetImages[k] = localStorage.getItem(k); } catch(e) {}
+            }
+          }
+        } catch(e) {}
+        presetData.images = presetImages;
+
+        // Capture Spotify data
+        try {
+          var spPlaylists = localStorage.getItem('haven-spotify-playlists');
+          if (spPlaylists) presetData.spotifyPlaylists = JSON.parse(spPlaylists);
+        } catch(e) {}
+        try {
+          var spActive = localStorage.getItem('haven-spotify-active');
+          if (spActive) presetData.spotifyActive = spActive;
+        } catch(e) {}
+
         // Clean up transient data
         delete presetData.hubContent._images;
         delete presetData.hubContent.images;
@@ -923,6 +950,23 @@
             if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
           }
 
+          // Apply images from preset
+          if (data.images) {
+            try {
+              Object.keys(data.images).forEach(function(k) {
+                try { localStorage.setItem(k, data.images[k]); } catch(e) {}
+              });
+            } catch(e) {}
+          }
+
+          // Apply Spotify data
+          if (data.spotifyPlaylists) {
+            try { localStorage.setItem('haven-spotify-playlists', JSON.stringify(data.spotifyPlaylists)); } catch(e) {}
+          }
+          if (data.spotifyActive) {
+            try { localStorage.setItem('haven-spotify-active', data.spotifyActive); } catch(e) {}
+          }
+
           showToast('Preset "' + esc(preset.name) + '" applied. Reloading...', 'success', 2000);
           setTimeout(function() { location.href = 'index.html'; }, 1000);
         } catch(e) {
@@ -1002,6 +1046,38 @@
         if (el.classList.contains('visible')) {
           showToast('Export data ready', 'info');
         }
+      }
+
+      // ─── Expose functions globally for gsi.js Admin panel ──
+      window.savePreset = function(name) {
+        handleSavePresetFromName(name);
+      };
+      window.applyPresetToCurrentUser = function(id) {
+        handleApply(id);
+      };
+      window.setActivePreset = function(id) {
+        handleSetActive(id);
+      };
+      window.deletePreset = function(id) {
+        handleDelete(id);
+      };
+      window.clearActivePreset = function() {
+        handleClearActive();
+      };
+      window.changeAdminPassword = function() {
+        handleChangePassword();
+      };
+      window.loadAdminPresets = loadAdminPresets;
+      window.getActivePresetId = getActivePresetId;
+
+      // Variant of handleSavePreset that accepts a name directly (for gsi.js)
+      function handleSavePresetFromName(name) {
+        if (!name) return;
+
+        var currentPass = prompt('Enter admin password:');
+        if (!verifyPassword(currentPass)) return;
+
+        captureAndSavePresetData(name);
       }
 
       // ─── Wire events ────────────────────────────────────
