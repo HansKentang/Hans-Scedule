@@ -1561,7 +1561,7 @@ const SCHEDULE_TUTORIAL_STEPS = [
   {
     title: 'Pomodoro Timer',
     desc: 'The built-in <strong>Pomodoro Timer</strong> helps you stay in flow. Choose from 5, 10, 25, or 50 minutes. Find it in the Quick Actions menu.',
-    selector: '#pomodoroCard'
+    selector: null
   },
   {
     title: 'All Set!',
@@ -1590,7 +1590,7 @@ const ACTIVITIES_TUTORIAL_STEPS = [
   {
     title: 'Timeline View',
     desc: 'Switch to <strong>Timeline</strong> for a clean, chronological list of your day. Each entry shows time, duration, and a checkbox for quick completion.',
-    selector: '#timelineView'
+    selector: null
   },
   {
     title: 'Activity Log',
@@ -1771,12 +1771,17 @@ function renderTutorialStep() {
     var target = document.querySelector(step.selector);
     if (target) {
       var rect = target.getBoundingClientRect();
-      spotlight.classList.remove('hidden');
-      spotlight.classList.add('visible');
-      spotlight.style.left = (rect.left - 8) + 'px';
-      spotlight.style.top = (rect.top - 8) + 'px';
-      spotlight.style.width = (rect.width + 16) + 'px';
-      spotlight.style.height = (rect.height + 16) + 'px';
+      if (rect.width === 0 || rect.height === 0 || rect.bottom < 0 || rect.top > window.innerHeight) {
+        spotlight.classList.add('hidden');
+        spotlight.classList.remove('visible');
+      } else {
+        spotlight.classList.remove('hidden');
+        spotlight.classList.add('visible');
+        spotlight.style.left = (rect.left - 8) + 'px';
+        spotlight.style.top = (rect.top - 8) + 'px';
+        spotlight.style.width = (rect.width + 16) + 'px';
+        spotlight.style.height = (rect.height + 16) + 'px';
+      }
     } else {
       spotlight.classList.add('hidden');
       spotlight.classList.remove('visible');
@@ -1802,6 +1807,8 @@ function renderTutorialStep() {
   // Position tooltip relative to spotlight or centered
   requestAnimationFrame(function() {
     positionTutorialTooltip(step.selector);
+    // Re-position after page animations settle
+    setTimeout(function() { positionTutorialTooltip(step.selector); }, 800);
   });
 }
 
@@ -1812,36 +1819,42 @@ function positionTutorialTooltip(selector) {
   var th = tooltip.offsetHeight || 300;
   var vw = window.innerWidth;
   var vh = window.innerHeight;
+  var g = 16;
 
   if (selector) {
     var target = document.querySelector(selector);
     if (target) {
       var rect = target.getBoundingClientRect();
-      var centerX = rect.left + rect.width / 2;
-      var centerY = rect.top + rect.height / 2;
+      if (rect.width > 0 && rect.height > 0 && rect.bottom >= 0 && rect.top <= vh) {
+        var cx = rect.left + rect.width / 2;
+        var left = Math.max(g, Math.min(cx - tw / 2, vw - tw - g));
 
-      // Position below the target if there's room, otherwise above
-      var below = centerY + rect.height / 2 + th + 20 < vh;
-      var left = Math.max(16, Math.min(centerX - tw / 2, vw - tw - 16));
+        // Below the target (clamped to viewport)
+        var topPos = Math.max(g, Math.min(rect.bottom + g, vh - th - g));
+        // Above the target (clamped to viewport)
+        var bottomVal = Math.max(g, Math.min(vh - rect.top + g, vh - th - g));
+        // Pick the side that keeps the tooltip closer to the target
+        var distBelow = Math.abs(topPos - rect.bottom);
+        var distAbove = Math.abs(vh - bottomVal - th - rect.top);
 
-      if (below) {
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = (rect.bottom + 16) + 'px';
+        if (distBelow <= distAbove) {
+          tooltip.style.left = left + 'px';
+          tooltip.style.top = topPos + 'px';
+          tooltip.style.bottom = 'auto';
+        } else {
+          tooltip.style.left = left + 'px';
+          tooltip.style.top = 'auto';
+          tooltip.style.bottom = bottomVal + 'px';
+        }
         tooltip.style.transform = 'none';
-        tooltip.style.bottom = 'auto';
-      } else {
-        tooltip.style.left = left + 'px';
-        tooltip.style.top = 'auto';
-        tooltip.style.bottom = (vh - rect.top + 16) + 'px';
-        tooltip.style.transform = 'none';
+        return;
       }
-      return;
     }
   }
 
   // Centered fallback
-  tooltip.style.left = Math.max(16, (vw - tw) / 2) + 'px';
-  tooltip.style.top = Math.max(16, (vh - th) / 2) + 'px';
+  tooltip.style.left = Math.max(g, (vw - tw) / 2) + 'px';
+  tooltip.style.top = Math.max(g, Math.min((vh - th) / 2, vh - th - g)) + 'px';
   tooltip.style.bottom = 'auto';
   tooltip.style.transform = 'none';
 }
