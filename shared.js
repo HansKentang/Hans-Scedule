@@ -1492,6 +1492,97 @@ function toggleMobileSidebar() {
 let pageAfterTaskSave = null;
 let pageAfterImport = null;
 
+// ─── ACTIVE PRESET AUTO-APPLY (for new/guest users) ──
+function applyActivePresetIfNewUser() {
+  // Only apply to new users who have no hub content yet
+  try {
+    var hubContent = localStorage.getItem('haven-hub-content');
+    if (hubContent) return;
+
+    var activeId = localStorage.getItem('haven-active-preset');
+    if (!activeId) return;
+
+    var presetsRaw = localStorage.getItem('haven-admin-presets');
+    if (!presetsRaw) return;
+
+    var presets = JSON.parse(presetsRaw);
+    var preset = presets.find(function(p) { return p.id === activeId; });
+    if (!preset || !preset.data) return;
+
+    var data = preset.data;
+
+    // Apply hub content
+    if (data.hubContent) {
+      localStorage.setItem('haven-hub-content', JSON.stringify(data.hubContent));
+    }
+
+    // Apply hub visibility
+    if (data.hubVisibility) {
+      try { localStorage.setItem('haven-hub-visibility', JSON.stringify(data.hubVisibility)); } catch(e) {}
+    }
+
+    // Apply section order
+    if (data.hubSectionOrder && data.hubSectionOrder.length) {
+      try { localStorage.setItem('haven-schedule-hub-layout', JSON.stringify(data.hubSectionOrder)); } catch(e) {}
+    }
+
+    // Apply custom categories
+    if (data.customCategories && typeof saveCustomCategories === 'function') {
+      try { saveCustomCategories(data.customCategories); } catch(e) {}
+    }
+
+    // Apply custom tags
+    if (data.customTags && typeof saveCustomTags === 'function') {
+      try { saveCustomTags(data.customTags); } catch(e) {}
+    }
+
+    // Apply subcategories
+    if (data.subcategories && typeof saveSubcategories === 'function') {
+      try { saveSubcategories(data.subcategories); } catch(e) {}
+    }
+
+    // Apply card colors
+    if (data.cardColors && typeof saveCardColors === 'function') {
+      try { saveCardColors(data.cardColors); } catch(e) {}
+    }
+
+    // Apply renamed labels
+    if (data.renamedLabels && typeof saveRenamedLabels === 'function') {
+      try { saveRenamedLabels(data.renamedLabels); } catch(e) {}
+    }
+
+    // Apply settings
+    if (data.settings) {
+      if (typeof state !== 'undefined') {
+        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ darkMode: data.settings.darkMode !== undefined ? data.settings.darkMode : null, accentColor: data.settings.accentColor || null, accentCustomColors: data.settings.accentCustomColors || [], accentRemovedPresets: data.settings.accentRemovedPresets || [], showWeekends: true, showCompleted: true, accessBubbles: {}, currentView: "week" })); } catch(e) {}
+      if (typeof applyAccentColor === 'function') try { applyAccentColor(); } catch(e) {}
+      if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
+        if (data.settings.accentColor !== undefined) state.accentColor = data.settings.accentColor;
+        if (data.settings.darkMode !== undefined) state.darkMode = data.settings.darkMode;
+        if (data.settings.accentCustomColors) state.accentCustomColors = [...data.settings.accentCustomColors];
+        if (data.settings.accentRemovedPresets) state.accentRemovedPresets = [...data.settings.accentRemovedPresets];
+      }
+    }
+
+    // Apply images
+    if (data.images) {
+      Object.keys(data.images).forEach(function(k) {
+        try { localStorage.setItem(k, data.images[k]); } catch(e) {}
+      });
+    }
+
+    // Apply Spotify data
+    if (data.spotifyPlaylists) {
+      try { localStorage.setItem('haven-spotify-playlists', JSON.stringify(data.spotifyPlaylists)); } catch(e) {}
+    }
+    if (data.spotifyActive) {
+      try { localStorage.setItem('haven-spotify-active', data.spotifyActive); } catch(e) {}
+    }
+  } catch(e) {
+    console.warn('[preset] auto-apply failed:', e);
+  }
+}
+
 // ─── STATE ──────────────────────────────────────────────────
 let state = {
   tasks: [],
@@ -2564,6 +2655,8 @@ function saveState() {
 }
 
 function loadState() {
+  // Auto-apply active preset for new users before loading state
+  try { applyActivePresetIfNewUser(); } catch(e) { /* silent */ }
   try {
     const tasks = localStorage.getItem(STORAGE_KEY);
     if (tasks) state.tasks = JSON.parse(tasks);
