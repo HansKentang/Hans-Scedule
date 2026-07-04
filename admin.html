@@ -488,6 +488,150 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    .hidden { display: none !important; }
+
+    /* Preview Modal */
+    .admin-preview-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 150ms ease;
+    }
+    .admin-preview-overlay.hidden { display: none; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUpModal { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .admin-preview-modal {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      animation: slideUpModal 250ms var(--curve, cubic-bezier(0.16,1,0.3,1));
+    }
+    .admin-preview-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .admin-preview-header h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .admin-preview-header .admin-preview-name {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      font-weight: 400;
+      margin-left: 4px;
+    }
+    .admin-preview-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: all var(--t-fast);
+    }
+    .admin-preview-close:hover {
+      background: var(--accent-soft);
+      color: var(--text-primary);
+    }
+    .admin-preview-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .admin-preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .admin-preview-stat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface-container);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+    }
+    .admin-preview-stat-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--text-inverse);
+      font-size: 0.7rem;
+    }
+    .admin-preview-stat-info { flex: 1; min-width: 0; }
+    .admin-preview-stat-val {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+    .admin-preview-stat-label {
+      font-size: 0.62rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .admin-preview-stat-sub {
+      font-size: 0.6rem;
+      color: var(--text-tertiary);
+      margin-top: 1px;
+    }
+    .admin-preview-detail {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: var(--surface-container);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .admin-preview-detail strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .admin-preview-footer {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .admin-preview-footer .admin-btn {
+      min-width: 90px;
+      justify-content: center;
+    }
+
+    @media (max-width: 480px) {
+      .admin-preview-grid { grid-template-columns: 1fr; }
+      .admin-preview-modal { max-height: 90vh; }
+    }
   </style>
 </head>
 <body>
@@ -610,6 +754,22 @@
 
   <!-- Toast -->
   <div class="admin-toast" id="adminToast"></div>
+
+  <!-- Preset Preview Modal -->
+  <div class="admin-preview-overlay hidden" id="adminPreviewOverlay" onclick="if(event.target===this)closePreviewModal()">
+    <div class="admin-preview-modal">
+      <div class="admin-preview-header">
+        <h3>Preset Preview</h3>
+        <span class="admin-preview-name" id="previewName"></span>
+        <button class="admin-preview-close" id="previewClose" onclick="closePreviewModal()">&times;</button>
+      </div>
+      <div class="admin-preview-body" id="previewBody"></div>
+      <div class="admin-preview-footer">
+        <button class="admin-btn" onclick="closePreviewModal()">Cancel</button>
+        <button class="admin-btn primary" id="previewApplyBtn">Apply Preset</button>
+      </div>
+    </div>
+  </div>
 
   <script src="shared.js"></script>
   <script>
@@ -1053,7 +1213,7 @@
         handleSavePresetFromName(name);
       };
       window.applyPresetToCurrentUser = function(id) {
-        handleApply(id);
+        showPresetPreview(id);
       };
       window.setActivePreset = function(id) {
         handleSetActive(id);
@@ -1080,6 +1240,155 @@
         captureAndSavePresetData(name);
       }
 
+      // ─── Preset Preview Modal ────────────────────────────
+      var _pendingApplyId = null;
+
+      function showPresetPreview(presetId) {
+        var presets = loadAdminPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset || !preset.data) {
+          showToast('Preset not found', 'error');
+          return;
+        }
+
+        var data = preset.data;
+        var overlay = document.getElementById('adminPreviewOverlay');
+        var nameEl = document.getElementById('previewName');
+        var bodyEl = document.getElementById('previewBody');
+        var applyBtn = document.getElementById('previewApplyBtn');
+
+        if (!overlay || !bodyEl) return;
+
+        nameEl.textContent = esc(preset.name);
+        _pendingApplyId = presetId;
+
+        // Compute stats
+        var widgetCount = data.hubContent && data.hubContent.bentoLayout ? data.hubContent.bentoLayout.length : 0;
+        var imageCount = data.images ? Object.keys(data.images).length : 0;
+        var catCount = data.customCategories ? data.customCategories.length : 0;
+        var tagCount = data.customTags ? data.customTags.length : 0;
+        var subcatCount = data.subcategories ? Object.keys(data.subcategories).reduce(function(sum, k) { return sum + (data.subcategories[k] ? data.subcategories[k].length : 0); }, 0) : 0;
+        var colorCount = data.cardColors ? Object.keys(data.cardColors).length : 0;
+        var labelCount = data.renamedLabels ? Object.keys(data.renamedLabels).length : 0;
+        var spCount = data.spotifyPlaylists ? data.spotifyPlaylists.length : 0;
+
+        // Total size estimate
+        var totalSize = 0;
+        if (data.images) {
+          for (var k in data.images) {
+            if (data.images.hasOwnProperty(k)) {
+              totalSize += (data.images[k] || '').length;
+            }
+          }
+        }
+        var sizeStr = totalSize > 1048576 ? (totalSize / 1048576).toFixed(1) + ' MB' : totalSize > 1024 ? Math.round(totalSize / 1024) + ' KB' : totalSize + ' B';
+
+        // Settings summary
+        var settingsParts = [];
+        if (data.settings) {
+          if (data.settings.darkMode === true) settingsParts.push('Dark mode');
+          else if (data.settings.darkMode === false) settingsParts.push('Light mode');
+          if (data.settings.accentColor) settingsParts.push(data.settings.accentColor);
+        }
+
+        // Widget types breakdown
+        var typeCounts = {};
+        if (data.hubContent && data.hubContent.bentoLayout) {
+          data.hubContent.bentoLayout.forEach(function(w) {
+            var t = w.t || 'unknown';
+            typeCounts[t] = (typeCounts[t] || 0) + 1;
+          });
+        }
+        var typeLabels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', 'flightradar':'FlightRadar', 'sleep-score':'Sleep Score', clock2:'Clock' };
+        var typeParts = Object.keys(typeCounts).sort().map(function(t) { return (typeLabels[t] || t) + ' \u00D7' + typeCounts[t]; });
+        var typeSummary = typeParts.length ? typeParts.join(', ') : 'None';
+
+        // Build body HTML
+        bodyEl.innerHTML =
+          '<div class="admin-preview-grid">' +
+            // Widgets
+            '<div class="admin-preview-stat">' +
+              '<div class="admin-preview-stat-icon" style="background:#6366f1">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
+              '</div>' +
+              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + widgetCount + '</div><div class="admin-preview-stat-label">Widgets</div></div>' +
+            '</div>' +
+            // Images
+            '<div class="admin-preview-stat">' +
+              '<div class="admin-preview-stat-icon" style="background:#22c55e">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
+              '</div>' +
+              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + imageCount + '</div><div class="admin-preview-stat-label">Images</div>' + (sizeStr !== '0 B' ? '<div class="admin-preview-stat-sub">' + sizeStr + '</div>' : '') + '</div>' +
+            '</div>' +
+            // Categories
+            '<div class="admin-preview-stat">' +
+              '<div class="admin-preview-stat-icon" style="background:#f59e0b">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>' +
+              '</div>' +
+              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + catCount + '</div><div class="admin-preview-stat-label">Categories</div></div>' +
+            '</div>' +
+            // Subcategories
+            '<div class="admin-preview-stat">' +
+              '<div class="admin-preview-stat-icon" style="background:#ec4899">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>' +
+              '</div>' +
+              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + subcatCount + '</div><div class="admin-preview-stat-label">Subcategories</div></div>' +
+            '</div>' +
+            // Custom Tags
+            '<div class="admin-preview-stat">' +
+              '<div class="admin-preview-stat-icon" style="background:#06b6d4">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>' +
+              '</div>' +
+              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + tagCount + '</div><div class="admin-preview-stat-label">Custom Tags</div></div>' +
+            '</div>' +
+            // Card Colors
+            '<div class="admin-preview-stat">' +
+              '<div class="admin-preview-stat-icon" style="background:#a855f7">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>' +
+              '</div>' +
+              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + colorCount + '</div><div class="admin-preview-stat-label">Card Colors</div></div>' +
+            '</div>' +
+            // Renamed Labels
+            '<div class="admin-preview-stat">' +
+              '<div class="admin-preview-stat-icon" style="background:#f97316">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+              '</div>' +
+              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + labelCount + '</div><div class="admin-preview-stat-label">Renamed Labels</div></div>' +
+            '</div>' +
+            // Spotify
+            '<div class="admin-preview-stat">' +
+              '<div class="admin-preview-stat-icon" style="background:#1db954">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>' +
+              '</div>' +
+              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + spCount + '</div><div class="admin-preview-stat-label">Playlists</div></div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="admin-preview-detail">' +
+            '<strong>Widgets:</strong> ' + esc(typeSummary) + '<br>' +
+            (settingsParts.length ? '<strong>Settings:</strong> ' + esc(settingsParts.join(' · ')) + '<br>' : '') +
+            '<strong>Created:</strong> ' + (preset.createdAt ? new Date(preset.createdAt).toLocaleDateString() : 'Unknown') +
+            (preset.updatedAt ? ' · <strong>Updated:</strong> ' + new Date(preset.updatedAt).toLocaleDateString() : '') +
+          '</div>';
+
+        overlay.classList.remove('hidden');
+
+        // Wire apply button
+        applyBtn.onclick = function() {
+          var id = _pendingApplyId;
+          closePreviewModal();
+          // Small delay so modal closes before password prompt appears
+          setTimeout(function() {
+            handleApply(id);
+          }, 200);
+        };
+      }
+
+      function closePreviewModal() {
+        var overlay = document.getElementById('adminPreviewOverlay');
+        if (overlay) overlay.classList.add('hidden');
+        _pendingApplyId = null;
+      }
+
       // ─── Wire events ────────────────────────────────────
       document.addEventListener('DOMContentLoaded', function() {
         // Initialize state for settings capture
@@ -1102,7 +1411,7 @@
           var action = btn.dataset.action;
           var id = btn.dataset.id;
           if (action === 'activate') handleSetActive(id);
-          else if (action === 'apply') handleApply(id);
+          else if (action === 'apply') showPresetPreview(id);
           else if (action === 'delete') handleDelete(id);
         });
 
