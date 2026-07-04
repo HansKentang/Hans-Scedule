@@ -1395,7 +1395,7 @@ html.dark .hub-hero-decor {
 }
 
 .tutorial-spotlight {
-  position: absolute;
+  position: fixed;
   border-radius: 8px;
   box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 9999px rgba(0, 0, 0, 0.65);
   z-index: 100001;
@@ -1407,7 +1407,7 @@ html.dark .hub-hero-decor {
 }
 
 .tutorial-tooltip {
-  position: absolute;
+  position: fixed;
   z-index: 100002;
   width: 300px;
   max-width: calc(100vw - 40px);

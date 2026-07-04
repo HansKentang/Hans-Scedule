@@ -1039,8 +1039,8 @@
 
     function init() {
       loadState();
-      if (!hasSeenTutorial() && typeof startTutorial === "function") {
-        try { setTimeout(function() { startTutorial(FINANCE_TUTORIAL_STEPS); }, 300); } catch(e) {}
+      if (!hasSeenTutorial('finance') && typeof startTutorial === "function") {
+        try { setTimeout(function() { startTutorial(FINANCE_TUTORIAL_STEPS); }, 900); } catch(e) {}
       }
       const dateEl = document.getElementById('finDate');
       if (dateEl) dateEl.value = new Date().toISOString().slice(0,10);

@@ -1775,12 +1775,7 @@ function renderTutorialStep() {
         spotlight.classList.add('hidden');
         spotlight.classList.remove('visible');
       } else {
-        spotlight.classList.remove('hidden');
-        spotlight.classList.add('visible');
-        spotlight.style.left = (rect.left - 8) + 'px';
-        spotlight.style.top = (rect.top - 8) + 'px';
-        spotlight.style.width = (rect.width + 16) + 'px';
-        spotlight.style.height = (rect.height + 16) + 'px';
+        updateSpotlight(rect);
       }
     } else {
       spotlight.classList.add('hidden');
@@ -1805,11 +1800,35 @@ function renderTutorialStep() {
   }
 
   // Position tooltip relative to spotlight or centered
+  var sel = step.selector;
   requestAnimationFrame(function() {
-    positionTutorialTooltip(step.selector);
+    positionTutorialTooltip(sel);
     // Re-position after page animations settle
-    setTimeout(function() { positionTutorialTooltip(step.selector); }, 800);
+    setTimeout(function() {
+      positionTutorialTooltip(sel);
+      // Re-read target rect in case CSS animations (slideUpSpring) have settled
+      if (sel) {
+        var t = document.querySelector(sel);
+        if (t) {
+          var r = t.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0 && r.bottom >= 0 && r.top <= window.innerHeight) {
+            updateSpotlight(r);
+          }
+        }
+      }
+    }, 800);
   });
+}
+
+function updateSpotlight(rect) {
+  var sp = document.getElementById('tutorialSpotlight');
+  if (!sp) return;
+  sp.classList.remove('hidden');
+  sp.classList.add('visible');
+  sp.style.left = (rect.left - 8) + 'px';
+  sp.style.top = (rect.top - 8) + 'px';
+  sp.style.width = (rect.width + 16) + 'px';
+  sp.style.height = (rect.height + 16) + 'px';
 }
 
 function positionTutorialTooltip(selector) {
