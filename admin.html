@@ -1052,78 +1052,73 @@
 
       // ─── Render ────────────────────────────────────────
       function render() {
-        var presets = loadAdminPresets();
-        var activeId = getActivePresetId();
-        var listEl = document.getElementById('presetsList');
-        var loadingEl = document.getElementById('presetsLoading');
-        var countBadge = document.getElementById('presetCountBadge');
-        var statPresetsCount = document.getElementById('statPresetsCount');
-        var statActiveName = document.getElementById('statActiveName');
-        var statActiveDate = document.getElementById('statActiveDate');
-        var statAccess = document.getElementById('statAccess');
-        var btnClearActive = document.getElementById('btnClearActive');
+        try {
+          var presets = loadAdminPresets();
+          var activeId = getActivePresetId();
+          var listEl = document.getElementById('presetsList');
+          var loadingEl = document.getElementById('presetsLoading');
+          var countBadge = document.getElementById('presetCountBadge');
+          var statPresetsCount = document.getElementById('statPresetsCount');
+          var statActiveName = document.getElementById('statActiveName');
+          var statActiveDate = document.getElementById('statActiveDate');
+          var statAccess = document.getElementById('statAccess');
+          var btnClearActive = document.getElementById('btnClearActive');
+          var statActive = document.getElementById('statActive');
 
-        // Update stats
-        statPresetsCount.textContent = presets.length;
-        statAccess.textContent = 'Admin';
+          if (statPresetsCount) statPresetsCount.textContent = presets.length;
+          if (statAccess) statAccess.textContent = 'Admin';
 
-        // Find active preset
-        var activePreset = presets.find(function(p) { return p.id === activeId; });
-        if (activePreset) {
-          statActiveName.textContent = esc(activePreset.name);
-          if (activePreset.updatedAt) {
-            var d = new Date(activePreset.updatedAt);
-            statActiveDate.textContent = 'Updated ' + d.toLocaleDateString();
+          var activePreset = presets.find(function(p) { return p.id === activeId; });
+          if (activePreset) {
+            if (statActiveName) statActiveName.textContent = esc(activePreset.name);
+            if (statActiveDate) statActiveDate.textContent = activePreset.updatedAt ? 'Updated ' + new Date(activePreset.updatedAt).toLocaleDateString() : '';
+            if (statActive) statActive.classList.add('active-preset');
           } else {
-            statActiveDate.textContent = '';
+            if (statActiveName) statActiveName.textContent = '\u2014';
+            if (statActiveDate) statActiveDate.textContent = 'No default for new users';
+            if (statActive) statActive.classList.remove('active-preset');
           }
-          document.getElementById('statActive').classList.add('active-preset');
-        } else {
-          statActiveName.textContent = '—';
-          statActiveDate.textContent = 'No default for new users';
-          document.getElementById('statActive').classList.remove('active-preset');
-        }
 
-        // Update badge
-        if (countBadge) countBadge.textContent = presets.length;
+          if (countBadge) countBadge.textContent = presets.length;
+          if (btnClearActive) btnClearActive.disabled = !activeId;
 
-        // Enable/disable clear button
-        btnClearActive.disabled = !activeId;
-
-        // Render presets list
-        if (loadingEl) loadingEl.style.display = 'none';
-        if (presets.length === 0) {
-          listEl.innerHTML = '<div class="admin-empty">No presets saved yet.<br>Go to the hub and press <kbd>Ctrl+Shift+D</kbd> to save the current layout as a preset, then manage it here.</div>';
-          return;
-        }
-
-        var html = '';
-        presets.forEach(function(p) {
-          var isActive = p.id === activeId;
-          var dateStr = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
-          var widgetCount = p.data && p.data.hubContent && p.data.hubContent.bentoLayout ? p.data.hubContent.bentoLayout.length : 0;
-          var shortId = p.id ? p.id.slice(-6) : '';
-
-          html += '<div class="admin-preset-item' + (isActive ? ' active' : '') + '" data-preset-id="' + esc(p.id) + '">';
-          html += '<div class="admin-preset-icon' + (isActive ? ' active-icon' : '') + '">';
-          html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
-          html += '</div>';
-          html += '<div class="admin-preset-info">';
-          html += '<div class="admin-preset-name">' + esc(p.name) + '</div>';
-          html += '<div class="admin-preset-meta">' + dateStr + ' · ' + widgetCount + ' widgets · ID: ' + shortId + '</div>';
-          html += '</div>';
-          html += '<div class="admin-preset-actions">';
-          if (isActive) {
-            html += '<button class="primary" disabled title="This preset is the default for new users">Active</button>';
-          } else {
-            html += '<button class="primary" data-action="activate" data-id="' + esc(p.id) + '" title="New users get this layout by default">Set&nbsp;Active</button>';
+          if (loadingEl) loadingEl.style.display = 'none';
+          if (!listEl) return;
+          if (presets.length === 0) {
+            listEl.innerHTML = '<div class="admin-empty">No presets saved yet.<br>Go to the hub and press <kbd>Ctrl+Shift+D</kbd> to save the current layout as a preset, then manage it here.</div>';
+            return;
           }
-          html += '<button data-action="apply" data-id="' + esc(p.id) + '" title="Preview and replace your layout">Preview</button>';
-          html += '<button class="danger" data-action="delete" data-id="' + esc(p.id) + '" title="Remove this preset permanently">Delete</button>';
-          html += '</div>';
-          html += '</div>';
-        });
-        listEl.innerHTML = html;
+
+          var html = '';
+          presets.forEach(function(p) {
+            var isActive = p.id === activeId;
+            var dateStr = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+            var widgetCount = p.data && p.data.hubContent && p.data.hubContent.bentoLayout ? p.data.hubContent.bentoLayout.length : 0;
+            var shortId = p.id ? p.id.slice(-6) : '';
+
+            html += '<div class="admin-preset-item' + (isActive ? ' active' : '') + '" data-preset-id="' + esc(p.id) + '">';
+            html += '<div class="admin-preset-icon' + (isActive ? ' active-icon' : '') + '">';
+            html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>';
+            html += '</div>';
+            html += '<div class="admin-preset-info">';
+            html += '<div class="admin-preset-name">' + esc(p.name) + '</div>';
+            html += '<div class="admin-preset-meta">' + dateStr + ' · ' + widgetCount + ' widgets · ID: ' + shortId + '</div>';
+            html += '</div>';
+            html += '<div class="admin-preset-actions">';
+            if (isActive) {
+              html += '<button class="primary" disabled title="This preset is the default for new users">Active</button>';
+            } else {
+              html += '<button class="primary" data-action="activate" data-id="' + esc(p.id) + '" title="New users get this layout by default">Set&nbsp;Active</button>';
+            }
+            html += '<button data-action="apply" data-id="' + esc(p.id) + '" title="Preview and replace your layout">Preview</button>';
+            html += '<button class="danger" data-action="delete" data-id="' + esc(p.id) + '" title="Remove this preset permanently">Delete</button>';
+            html += '</div>';
+            html += '</div>';
+          });
+          listEl.innerHTML = html;
+        } catch(e) {
+          console.warn('Admin render error:', e);
+        }
       }
 
       // ─── Actions ────────────────────────────────────────
@@ -1601,66 +1596,64 @@
 
       // ─── Wire events ────────────────────────────────────
       document.addEventListener('DOMContentLoaded', function() {
-        // Initialize state for settings capture
-        if (typeof loadState === 'function') try { loadState(); } catch(e) {}
-        // Apply theme
-        if (typeof applyTheme === 'function') applyTheme();
+        try {
+          if (typeof loadState === 'function') try { loadState(); } catch(e) {}
+          if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
+          render();
 
-        render();
+          document.getElementById('btnSavePreset').addEventListener('click', handleSavePreset);
+          document.getElementById('btnRefresh').addEventListener('click', render);
+          document.getElementById('btnChangePass').addEventListener('click', handleChangePassword);
+          document.getElementById('btnClearActive').addEventListener('click', handleClearActive);
+          document.getElementById('btnExportData').addEventListener('click', handleExport);
 
-        document.getElementById('btnSavePreset').addEventListener('click', handleSavePreset);
-        document.getElementById('btnRefresh').addEventListener('click', render);
-        document.getElementById('btnChangePass').addEventListener('click', handleChangePassword);
-        document.getElementById('btnClearActive').addEventListener('click', handleClearActive);
-        document.getElementById('btnExportData').addEventListener('click', handleExport);
+          document.getElementById('presetsList').addEventListener('click', function(e) {
+            var btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            var action = btn.dataset.action;
+            var id = btn.dataset.id;
+            if (action === 'activate') handleSetActive(id);
+            else if (action === 'apply') showPresetPreview(id);
+            else if (action === 'delete') handleDelete(id);
+          });
 
-        // Preset action delegation
-        document.getElementById('presetsList').addEventListener('click', function(e) {
-          var btn = e.target.closest('button[data-action]');
-          if (!btn) return;
-          var action = btn.dataset.action;
-          var id = btn.dataset.id;
-          if (action === 'activate') handleSetActive(id);
-          else if (action === 'apply') showPresetPreview(id);
-          else if (action === 'delete') handleDelete(id);
-        });
+          document.getElementById('previewClose').addEventListener('click', closePreviewModal);
+          document.getElementById('previewCancelBtn').addEventListener('click', closePreviewModal);
+          document.getElementById('adminPreviewOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closePreviewModal();
+          });
 
-        // Preview modal close buttons
-        document.getElementById('previewClose').addEventListener('click', closePreviewModal);
-        document.getElementById('previewCancelBtn').addEventListener('click', closePreviewModal);
-        document.getElementById('adminPreviewOverlay').addEventListener('click', function(e) {
-          if (e.target === this) closePreviewModal();
-        });
-
-        // Password modal
-        document.getElementById('passwordModalSubmit').addEventListener('click', handlePasswordModalSubmit);
-        document.getElementById('passwordModalCancel').addEventListener('click', closePasswordModal);
-        document.getElementById('passwordModalClose').addEventListener('click', closePasswordModal);
-        document.getElementById('passwordModalOverlay').addEventListener('click', function(e) {
-          if (e.target === this) closePasswordModal();
-        });
-        document.getElementById('passwordModalCurrent').addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            if (_passwordModalMode === 'change') {
-              document.getElementById('passwordModalNew').focus();
-            } else {
+          document.getElementById('passwordModalSubmit').addEventListener('click', handlePasswordModalSubmit);
+          document.getElementById('passwordModalCancel').addEventListener('click', closePasswordModal);
+          document.getElementById('passwordModalClose').addEventListener('click', closePasswordModal);
+          document.getElementById('passwordModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closePasswordModal();
+          });
+          document.getElementById('passwordModalCurrent').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              if (_passwordModalMode === 'change') {
+                document.getElementById('passwordModalNew').focus();
+              } else {
+                handlePasswordModalSubmit();
+              }
+            }
+          });
+          document.getElementById('passwordModalNew').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              document.getElementById('passwordModalConfirm').focus();
+            }
+          });
+          document.getElementById('passwordModalConfirm').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
               handlePasswordModalSubmit();
             }
-          }
-        });
-        document.getElementById('passwordModalNew').addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            document.getElementById('passwordModalConfirm').focus();
-          }
-        });
-        document.getElementById('passwordModalConfirm').addEventListener('keydown', function(e) {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            handlePasswordModalSubmit();
-          }
-        });
+          });
+        } catch(e) {
+          console.warn('Admin init error:', e);
+        }
       });
     })();
   </script>
