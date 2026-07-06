@@ -10,22 +10,12 @@
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <style>
-    #app.admin-page, .admin-page {
-      display: block !important;
-      height: auto !important;
-      width: 100% !important;
-      max-width: 880px;
-      margin: 0 auto;
-      padding: 36px 24px 80px;
-      min-height: 100vh;
-      overflow: visible !important;
-      position: relative;
-      z-index: 1;
-      animation: slideUp 300ms var(--curve);
+    .admin-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 32px 28px 80px;
     }
-    html, body { overflow: auto !important; height: auto !important; min-height: 100vh; }
-    body { position: relative; }
-
     /* ─── Header ─────────────────────────────────────── */
     .admin-header {
       display: flex;
@@ -58,12 +48,6 @@
       font-size: 0.72rem;
       color: var(--text-tertiary);
       margin: 1px 0 0;
-    }
-    .admin-header-actions {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 8px;
     }
     .admin-back {
       display: inline-flex;
@@ -424,6 +408,131 @@
     }
     .admin-dash-raw.hidden { display: none; }
 
+    /* ─── Admin Sidebar ──────────────────────────────── */
+    .admin-sidebar {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .admin-sidebar::-webkit-scrollbar { width: 3px; }
+    .admin-sidebar::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
+    .admin-sidebar:hover::-webkit-scrollbar-thumb { background: var(--border-color); }
+    .admin-sb-section {
+      padding: 4px 14px;
+    }
+    .admin-sb-label {
+      font-size: 0.58rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+    .admin-sb-stat {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+    .admin-sb-stat strong {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .admin-sb-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 4px 14px;
+    }
+    /* Storage bar */
+    .admin-sb-bar-wrap {
+      padding: 2px 6px;
+      margin-bottom: 4px;
+    }
+    .admin-sb-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border-subtle);
+      overflow: hidden;
+    }
+    .admin-sb-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 300ms ease;
+    }
+    .admin-sb-bar-fill.ok { background: var(--accent); }
+    .admin-sb-bar-fill.warn { background: #f59e0b; }
+    .admin-sb-bar-fill.danger { background: #ef4444; }
+    /* Swatch */
+    .admin-sb-swatch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 6px;
+    }
+    .admin-sb-swatch-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .admin-sb-swatch-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .admin-sb-swatch-info .admin-sb-stat {
+      padding: 0;
+    }
+    /* Action buttons */
+    .admin-sb-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 2px 6px;
+    }
+    .admin-sb-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-family);
+      transition: all var(--t-fast);
+      width: 100%;
+      text-align: left;
+    }
+    .admin-sb-btn:hover {
+      background: var(--accent-soft);
+      color: var(--text-primary);
+    }
+    .admin-sb-btn svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+    .admin-sb-btn:hover svg { opacity: 1; }
+    .admin-sb-btn.primary {
+      background: var(--accent);
+      color: var(--text-inverse);
+    }
+    .admin-sb-btn.primary:hover { opacity: 0.85; }
+    .admin-sb-btn.primary svg { opacity: 1; }
+
     /* ─── Toast ──────────────────────────────────────── */
     .admin-toast {
       position: fixed;
@@ -707,14 +816,13 @@
     .hidden { display: none !important; }
 
     @media (max-width: 640px) {
-      .admin-page { padding: 24px 16px 80px; }
+      .admin-scroll { padding: 24px 16px 80px; }
       .admin-grid { grid-template-columns: 1fr; }
       .admin-toolbar .admin-btn { font-size: 0.7rem; padding: 6px 10px; }
       .admin-search { max-width: none; }
     }
     @media (max-width: 480px) {
       .admin-header { flex-wrap: wrap; }
-      .admin-header-actions { margin-left: 0; width: 100%; justify-content: flex-end; }
       .admin-status { flex-direction: column; align-items: flex-start; gap: 6px; }
     }
   </style>
@@ -726,7 +834,43 @@
     <div class="hub-ambient-dots"></div>
   </div>
 
-  <div class="admin-page" id="app">
+  <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
+
+  <div class="hub-layout">
+    <!-- ─── SIDEBAR ─────────────────────────────────────── -->
+    <aside class="hub-sidebar" id="hubSidebar">
+      <div class="hub-workspace">
+        <div class="hub-workspace-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+        <span class="hub-workspace-name">Admin</span>
+        <button class="hub-hamburger" id="hubHamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="admin-sidebar" id="adminSidebar"></div>
+
+      <div class="hub-sidebar-footer">
+        <div class="hub-footer-btns">
+          <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <span>Theme</span>
+          </button>
+          <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+            <span>Settings</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ─── MAIN ─────────────────────────────────────────── -->
+    <div class="hub-main">
+      <div class="admin-scroll">
+
     <!-- Header -->
     <div class="admin-header">
       <div class="admin-header-icon">
@@ -737,13 +881,7 @@
       </div>
       <div class="admin-header-info">
         <h1>Admin</h1>
-        <p>Presets &amp; defaults</p>
-      </div>
-      <div class="admin-header-actions">
-        <a href="index.html" class="admin-back">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-          Hub
-        </a>
+        <p>Presets, defaults &amp; dashboard</p>
       </div>
     </div>
 
@@ -776,6 +914,9 @@
 
     <!-- Presets Grid -->
     <div class="admin-grid" id="presetsGrid"></div>
+
+      </div>
+    </div>
   </div>
 
   <!-- Password Modal -->
@@ -1197,6 +1338,129 @@
         }
       }
 
+      // ─── Sidebar ───────────────────────────────────────
+      function renderAdminSidebar() {
+        var el = document.getElementById('adminSidebar');
+        if (!el) return;
+
+        var getRaw = (typeof __origLS !== 'undefined' && __origLS.getItem) ? __origLS.getItem : localStorage.getItem;
+
+        // Storage stats
+        var keyCount = 0;
+        var totalSize = 0;
+        var largestKeys = [];
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k) {
+              keyCount++;
+              var v = getRaw(k);
+              if (v) {
+                var sz = k.length + v.length;
+                totalSize += sz;
+                largestKeys.push({ key: k, size: sz });
+              }
+            }
+          }
+        } catch(e) {}
+        largestKeys.sort(function(a, b) { return b.size - a.size; });
+        var maxStorage = 5120; // ~5MB estimate for localStorage limit
+        var pct = Math.min(100, (totalSize / maxStorage) * 100);
+        var barClass = pct > 80 ? 'danger' : pct > 50 ? 'warn' : 'ok';
+
+        // Settings
+        var settings = null;
+        try { var sRaw = localStorage.getItem('haven-schedule-settings'); if (sRaw) settings = JSON.parse(sRaw); } catch(e) {}
+
+        // Task count
+        var taskCount = 0;
+        try { var tRaw = localStorage.getItem('haven-schedule-tasks'); if (tRaw) { var t = JSON.parse(tRaw); taskCount = t.length; } } catch(e) {}
+
+        // Preset count
+        var presets = loadAdminPresets();
+
+        // Image count + size
+        var imgCount = 0;
+        var imgSize = 0;
+        try {
+          for (var j = 0; j < localStorage.length; j++) {
+            var ik = localStorage.key(j);
+            if (ik && ik.indexOf('haven-image-') !== -1 && ik.indexOf('haven-image-gallery-') === -1) {
+              imgCount++;
+              var iv = getRaw(ik);
+              if (iv) imgSize += iv.length;
+            }
+          }
+        } catch(e) {}
+
+        // Sleep count
+        var sleepCount = 0;
+        try { var slRaw = localStorage.getItem('haven-schedule-sleep'); if (slRaw) { sleepCount = JSON.parse(slRaw).length; } } catch(e) {}
+
+        var accentColor = settings ? (settings.accentColor || 'var(--accent)') : 'var(--accent)';
+        var darkMode = settings ? (settings.darkMode === true ? 'Dark' : settings.darkMode === false ? 'Light' : 'System') : 'System';
+
+        var html = '';
+
+        // ── Section 1: Resource Monitor ──
+        html += '<div class="admin-sb-section">';
+        html += '<div class="admin-sb-label">Storage Monitor</div>';
+        html += '<div class="admin-sb-bar-wrap">';
+        html += '<div class="admin-sb-bar"><div class="admin-sb-bar-fill ' + barClass + '" style="width:' + pct.toFixed(0) + '%"></div></div>';
+        html += '</div>';
+        html += '<div class="admin-sb-stat"><span>Used</span> <strong>' + (totalSize / 1024).toFixed(1) + ' KB</strong></div>';
+        html += '<div class="admin-sb-stat"><span>Keys</span> <strong>' + keyCount + '</strong></div>';
+        if (largestKeys.length > 0) {
+          var top = largestKeys.slice(0, 3);
+          html += '<div class="admin-sb-stat" style="margin-top:4px;font-size:0.62rem;color:var(--text-tertiary)">Largest keys:</div>';
+          top.forEach(function(item) {
+            var label = item.key.length > 24 ? item.key.slice(0, 24) + '...' : item.key;
+            html += '<div class="admin-sb-stat" style="font-size:0.62rem;padding:1px 6px"><span style="color:var(--text-tertiary)">' + esc(label) + '</span> <strong>' + (item.size / 1024).toFixed(1) + ' KB</strong></div>';
+          });
+        }
+        html += '</div>';
+
+        // ── Section 2: Mini Dashboard ──
+        html += '<div class="admin-sb-divider"></div>';
+        html += '<div class="admin-sb-section">';
+        html += '<div class="admin-sb-label">Overview</div>';
+        html += '<div class="admin-sb-swatch">';
+        html += '<div class="admin-sb-swatch-dot" style="background:' + esc(accentColor) + '"></div>';
+        html += '<div class="admin-sb-swatch-info">';
+        html += '<div class="admin-sb-stat"><span>Accent</span> <strong style="font-size:0.65rem">' + esc(accentColor) + '</strong></div>';
+        html += '<div class="admin-sb-stat" style="font-size:0.62rem;color:var(--text-tertiary)">' + esc(darkMode) + ' mode</div>';
+        html += '</div></div>';
+        html += '<div class="admin-sb-stat"><span>Tasks</span> <strong>' + taskCount + '</strong></div>';
+        html += '<div class="admin-sb-stat"><span>Presets</span> <strong>' + presets.length + '</strong></div>';
+        html += '<div class="admin-sb-stat"><span>Images</span> <strong>' + imgCount + '</strong> <span style="font-size:0.6rem;color:var(--text-tertiary)">' + (imgSize / 1024).toFixed(1) + ' KB</span></div>';
+        html += '<div class="admin-sb-stat"><span>Sleep logs</span> <strong>' + sleepCount + '</strong></div>';
+        html += '</div>';
+
+        // ── Section 3: Command Center ──
+        html += '<div class="admin-sb-divider"></div>';
+        html += '<div class="admin-sb-section">';
+        html += '<div class="admin-sb-label">Actions</div>';
+        html += '<div class="admin-sb-actions">';
+        html += '<button class="admin-sb-btn primary" id="sbSaveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Preset</button>';
+        html += '<button class="admin-sb-btn" id="sbDashBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</button>';
+        html += '<button class="admin-sb-btn" id="sbThemeBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>Toggle Theme</button>';
+        html += '<button class="admin-sb-btn" id="sbPassBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Change Password</button>';
+        html += '</div>';
+        html += '</div>';
+
+        el.innerHTML = html;
+
+        // Wire sidebar buttons
+        var sbSave = document.getElementById('sbSaveBtn');
+        if (sbSave) sbSave.addEventListener('click', handleSavePreset);
+        var sbDash = document.getElementById('sbDashBtn');
+        if (sbDash) sbDash.addEventListener('click', toggleDashboard);
+        var sbTheme = document.getElementById('sbThemeBtn');
+        if (sbTheme && typeof toggleTheme === 'function') sbTheme.addEventListener('click', toggleTheme);
+        var sbPass = document.getElementById('sbPassBtn');
+        if (sbPass) sbPass.addEventListener('click', handleChangePassword);
+      }
+
       // ─── Render ────────────────────────────────────────
       var _filterText = '';
 
@@ -1272,6 +1536,7 @@
         } catch(e) {
           console.warn('Admin render error:', e);
         }
+        renderAdminSidebar();
       }
 
       // ─── Actions ────────────────────────────────────────
@@ -1741,6 +2006,23 @@
           document.getElementById('btnSavePreset').addEventListener('click', handleSavePreset);
           document.getElementById('btnChangePass').addEventListener('click', handleChangePassword);
           document.getElementById('btnDashboard').addEventListener('click', toggleDashboard);
+
+          // Sidebar: theme
+          var themeBtn = document.getElementById('themeBtnSidebar');
+          if (themeBtn && typeof toggleTheme === 'function') themeBtn.addEventListener('click', toggleTheme);
+          // Sidebar: settings
+          var settingsBtn = document.getElementById('aiChatBtnSidebar');
+          if (settingsBtn) {
+            settingsBtn.addEventListener('click', function() {
+              if (typeof openSettings === 'function') try { openSettings(); } catch(e) {}
+            });
+          }
+          // Sidebar: hamburger for mobile
+          var hamburger = document.getElementById('hubHamburger');
+          var sidebar = document.getElementById('hubSidebar');
+          if (hamburger && sidebar) {
+            hamburger.addEventListener('click', function() { sidebar.classList.toggle('open'); });
+          }
 
           document.getElementById('adminSearch').addEventListener('input', function(e) {
             _filterText = e.target.value;
