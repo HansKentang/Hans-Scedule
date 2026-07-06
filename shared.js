@@ -1718,7 +1718,15 @@ const FINANCE_TUTORIAL_STEPS = [
 
 function hasSeenTutorial(page) {
   var key = page ? TUTORIAL_SEEN_KEY + '-' + page : TUTORIAL_SEEN_KEY;
-  try { return localStorage.getItem(key) === '1'; } catch (e) { return false; }
+  try {
+    if (localStorage.getItem(key) === '1') return true;
+    // Migrate from old global key to per-page key
+    if (page && localStorage.getItem(TUTORIAL_SEEN_KEY) === '1') {
+      try { localStorage.setItem(key, '1'); } catch (e) {}
+      return true;
+    }
+    return false;
+  } catch (e) { return false; }
 }
 function markTutorialSeen(page) {
   var key = page ? TUTORIAL_SEEN_KEY + '-' + page : TUTORIAL_SEEN_KEY;
