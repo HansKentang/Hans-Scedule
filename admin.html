@@ -1310,6 +1310,7 @@
                 }
                 if (typeof applyAccentColor === 'function') try { applyAccentColor(); } catch(e) {}
                 if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
+                if (typeof saveState === 'function') try { saveState(); } catch(e) {}
               }
 
               if (data.images) {
