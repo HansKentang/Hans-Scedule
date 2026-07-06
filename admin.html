@@ -1021,9 +1021,7 @@
             errorEl.classList.remove('hidden');
             return;
           }
-          closePasswordModal();
           showToast('Password changed successfully', 'success');
-          if (typeof _pendingPasswordCallback.onSuccess === 'function') _pendingPasswordCallback.onSuccess();
         } else {
           if (!currentPass) {
             errorEl.textContent = 'Please enter your password';
@@ -1045,9 +1043,11 @@
             errorEl.classList.remove('hidden');
             return;
           }
-          closePasswordModal();
-          if (typeof _pendingPasswordCallback.onSuccess === 'function') _pendingPasswordCallback.onSuccess();
         }
+        // Save callback reference before closing modal (closePasswordModal nulls _pendingPasswordCallback)
+        var cb = _pendingPasswordCallback;
+        closePasswordModal();
+        if (typeof cb === 'object' && typeof cb.onSuccess === 'function') cb.onSuccess();
       }
 
       // ─── Render ────────────────────────────────────────
