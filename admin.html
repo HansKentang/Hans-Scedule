@@ -329,6 +329,101 @@
       cursor: default;
     }
 
+    /* ─── Dashboard ──────────────────────────────────── */
+    .admin-dashboard {
+      margin-bottom: 20px;
+      animation: slideUp 200ms var(--curve);
+    }
+    .admin-dashboard.hidden { display: none; }
+    .admin-dash-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .admin-dash-card {
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .admin-dash-card.full {
+      grid-column: 1 / -1;
+    }
+    .admin-dash-label {
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+    .admin-dash-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .admin-dash-sub {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      margin-top: 1px;
+    }
+    .admin-dash-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .admin-dash-chip {
+      font-size: 0.62rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: var(--text-secondary);
+    }
+    .admin-dash-preview {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+    .admin-dash-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+    .admin-dash-preview-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .admin-dash-preview-info .admin-dash-label {
+      margin-bottom: 2px;
+    }
+    .admin-dash-preview-info .admin-dash-value {
+      font-size: 0.82rem;
+    }
+    .admin-dash-raw {
+      margin-top: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.68rem;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .admin-dash-raw.hidden { display: none; }
+
     /* ─── Toast ──────────────────────────────────────── */
     .admin-toast {
       position: fixed;
@@ -669,8 +764,15 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         Password
       </button>
+      <button class="admin-btn" id="btnDashboard">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Dashboard
+      </button>
       <input class="admin-search" id="adminSearch" type="text" placeholder="Filter presets..." spellcheck="false">
     </div>
+
+    <!-- Dashboard Section -->
+    <div class="admin-dashboard hidden" id="adminDashboard"></div>
 
     <!-- Presets Grid -->
     <div class="admin-grid" id="presetsGrid"></div>
@@ -882,6 +984,217 @@
         var cb = _pendingPasswordCallback;
         closePasswordModal();
         if (cb && typeof cb.onSuccess === 'function') cb.onSuccess();
+      }
+
+      // ─── Dashboard ────────────────────────────────────
+      var _dashboardVisible = false;
+
+      function renderDashboard() {
+        var el = document.getElementById('adminDashboard');
+        if (!el) return;
+
+        // Gather stats
+        var stats = {};
+
+        // Storage
+        var getRaw = (typeof __origLS !== 'undefined' && __origLS.getItem) ? __origLS.getItem : localStorage.getItem;
+        var keyCount = 0;
+        var totalSize = 0;
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k) {
+              keyCount++;
+              var v = getRaw(k);
+              if (v) totalSize += k.length + v.length;
+            }
+          }
+        } catch(e) {}
+        stats.storage = { label: 'Storage Keys', value: keyCount, sub: (totalSize / 1024).toFixed(1) + ' KB' };
+
+        // Login
+        var userId = '';
+        try { if (typeof state !== 'undefined' && state.currentUserId) userId = state.currentUserId; } catch(e) {}
+        stats.login = { label: 'User ID', value: userId || 'Local only', sub: userId ? 'Logged in' : 'No account linked' };
+
+        // Settings
+        var settings = null;
+        try { var sRaw = localStorage.getItem('haven-schedule-settings'); if (sRaw) settings = JSON.parse(sRaw); } catch(e) {}
+
+        // Tasks
+        var tasks = [];
+        try { var tRaw = localStorage.getItem('haven-schedule-tasks'); if (tRaw) tasks = JSON.parse(tRaw); } catch(e) {}
+        var taskCount = tasks.length;
+        var taskTags = {};
+        tasks.forEach(function(t) {
+          var tag = t.tag || 'none';
+          taskTags[tag] = (taskTags[tag] || 0) + 1;
+        });
+        stats.tasks = { label: 'Tasks', value: taskCount, sub: Object.keys(taskTags).length + ' tags' };
+
+        // Categories
+        var cats = [];
+        try { var cRaw = localStorage.getItem('haven-schedule-categories'); if (cRaw) cats = JSON.parse(cRaw); } catch(e) {}
+        stats.categories = { label: 'Categories', value: cats.length, sub: 'custom schedule categories' };
+
+        // Custom tags
+        var customTags = [];
+        try { var ctRaw = localStorage.getItem('haven-custom-tags'); if (ctRaw) customTags = JSON.parse(ctRaw); } catch(e) {}
+        stats.tags = { label: 'Custom Tags', value: customTags.length, sub: 'for board & activities' };
+
+        // Card colors
+        var cardColors = {};
+        try { var ccRaw = localStorage.getItem('haven-card-colors'); if (ccRaw) cardColors = JSON.parse(ccRaw); } catch(e) {}
+        stats.cardColors = { label: 'Card Colors', value: Object.keys(cardColors).length, sub: 'tag overrides' };
+
+        // Subcategories
+        var subcats = {};
+        try { var scRaw = localStorage.getItem('haven-subcategories'); if (scRaw) subcats = JSON.parse(scRaw); } catch(e) {}
+        var subcatCount = 0;
+        Object.keys(subcats).forEach(function(k) { if (subcats[k]) subcatCount += subcats[k].length; });
+        stats.subcategories = { label: 'Subcategories', value: subcatCount, sub: Object.keys(subcats).length + ' groups' };
+
+        // Activities
+        var completions = [];
+        try { var aRaw = localStorage.getItem('haven-activities-completions'); if (aRaw) completions = JSON.parse(aRaw); } catch(e) {}
+        var uniqueActTags = {};
+        completions.forEach(function(c) { if (c.tag) uniqueActTags[c.tag] = true; });
+        stats.activities = { label: 'Activity Completions', value: completions.length, sub: Object.keys(uniqueActTags).length + ' tags logged' };
+
+        // Sleep
+        var sleepLogs = [];
+        try { var slRaw = localStorage.getItem('haven-schedule-sleep'); if (slRaw) sleepLogs = JSON.parse(slRaw); } catch(e) {}
+        var recentSleep = 0;
+        var sevenDaysAgo = Date.now() - 7 * 86400000;
+        sleepLogs.forEach(function(s) {
+          if (s.date && new Date(s.date).getTime() > sevenDaysAgo) recentSleep++;
+        });
+        stats.sleep = { label: 'Sleep Logs', value: sleepLogs.length, sub: recentSleep + ' in last 7 days' };
+
+        // Finance
+        var piggy = 0;
+        try { var pRaw = localStorage.getItem('haven-piggybank'); if (pRaw) { var pData = JSON.parse(pRaw); piggy = pData.balance || 0; } } catch(e) {}
+        var wallet = 0;
+        try { var wRaw = localStorage.getItem('haven-wallet'); if (wRaw) { var wData = JSON.parse(wRaw); wallet = wData.balance || 0; } } catch(e) {}
+        stats.finance = { label: 'Piggy Bank', value: '$' + piggy.toFixed(2), sub: 'Wallet: $' + wallet.toFixed(2) };
+
+        // Images
+        var imgCount = 0;
+        var imgSize = 0;
+        try {
+          for (var j = 0; j < localStorage.length; j++) {
+            var ik = localStorage.key(j);
+            if (ik && ik.indexOf('haven-image-') !== -1 && ik.indexOf('haven-image-gallery-') === -1) {
+              imgCount++;
+              var iv = getRaw(ik);
+              if (iv) imgSize += iv.length;
+            }
+          }
+        } catch(e) {}
+        stats.images = { label: 'Images', value: imgCount, sub: (imgSize / 1024).toFixed(1) + ' KB' };
+
+        // Bento Widgets
+        var widgetTypes = {};
+        try {
+          var hcRaw = localStorage.getItem('haven-hub-content');
+          if (hcRaw) {
+            var hc = JSON.parse(hcRaw);
+            if (hc.bentoLayout) {
+              hc.bentoLayout.forEach(function(w) {
+                var t = w.t || 'unknown';
+                widgetTypes[t] = (widgetTypes[t] || 0) + 1;
+              });
+            }
+          }
+        } catch(e) {}
+        var typeLabels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', 'flightradar':'FlightRadar24', 'sleep-score':'Sleep Score', clock2:'Clock2' };
+        var widgetTotal = 0;
+        Object.keys(widgetTypes).forEach(function(t) { widgetTotal += widgetTypes[t]; });
+        stats.widgets = { label: 'Bento Widgets', value: widgetTotal, sub: Object.keys(widgetTypes).length + ' types' };
+
+        // AI Usage
+        var aiUsage = {};
+        try { var auRaw = localStorage.getItem('haven-schedule-ai-usage'); if (auRaw) aiUsage = JSON.parse(auRaw); } catch(e) {}
+        var aiTotalTokens = aiUsage.totalTokens || 0;
+        stats.ai = { label: 'AI Tokens Used', value: aiTotalTokens.toLocaleString(), sub: 'lifetime usage' };
+
+        // Build HTML
+        var html = '<div class="admin-dash-grid">';
+        var order = ['storage','login','tasks','activities','categories','tags','cardColors','subcategories','sleep','finance','images','widgets','ai'];
+        order.forEach(function(key) {
+          var s = stats[key];
+          if (!s) return;
+          html += '<div class="admin-dash-card">';
+          html += '<div class="admin-dash-label">' + esc(s.label) + '</div>';
+          html += '<div class="admin-dash-value">' + esc(String(s.value)) + '</div>';
+          if (s.sub) html += '<div class="admin-dash-sub">' + esc(s.sub) + '</div>';
+          html += '</div>';
+        });
+
+        // Task tag breakdown
+        html += '<div class="admin-dash-card full">';
+        html += '<div class="admin-dash-label">Tasks by Tag</div>';
+        html += '<div class="admin-dash-row">';
+        var tagOrder = Object.keys(taskTags).sort();
+        tagOrder.forEach(function(tag) {
+          html += '<span class="admin-dash-chip">' + esc(tag) + ': ' + taskTags[tag] + '</span>';
+        });
+        if (tagOrder.length === 0) html += '<span class="admin-dash-chip" style="opacity:0.5">No tasks</span>';
+        html += '</div></div>';
+
+        // Customization Preview
+        html += '<div class="admin-dash-card full">';
+        html += '<div class="admin-dash-label">Customization Preview</div>';
+        var accentColor = settings ? (settings.accentColor || 'var(--accent)') : 'var(--accent)';
+        var darkMode = settings ? (settings.darkMode === true ? 'Dark' : settings.darkMode === false ? 'Light' : 'System') : 'System';
+        html += '<div class="admin-dash-preview">';
+        html += '<div class="admin-dash-swatch" style="background:' + esc(accentColor) + '"></div>';
+        html += '<div class="admin-dash-preview-info">';
+        html += '<div class="admin-dash-value">' + esc(accentColor) + ' &middot; ' + esc(darkMode) + ' mode</div>';
+        html += '<div class="admin-dash-sub">' + (cats.length + 5) + ' total categories &middot; ' + customTags.length + ' custom tags</div>';
+        html += '</div></div>';
+
+        // Raw data toggle
+        html += '<button class="admin-btn small" id="dashRawToggle" style="margin-top:8px">Show Raw Settings</button>';
+        html += '<div class="admin-dash-raw hidden" id="dashRawData">' + (settings ? esc(JSON.stringify(settings, null, 2)) : 'No settings found') + '</div>';
+        html += '</div>';
+
+        // Widget type breakdown
+        var wTypes = Object.keys(widgetTypes).sort();
+        if (wTypes.length > 0) {
+          html += '<div class="admin-dash-card full">';
+          html += '<div class="admin-dash-label">Widget Types</div>';
+          html += '<div class="admin-dash-row">';
+          wTypes.forEach(function(t) {
+            html += '<span class="admin-dash-chip">' + esc(typeLabels[t] || t) + ' \u00D7' + widgetTypes[t] + '</span>';
+          });
+          html += '</div></div>';
+        }
+
+        html += '</div>';
+        el.innerHTML = html;
+
+        // Wire raw toggle
+        var toggleBtn = document.getElementById('dashRawToggle');
+        var rawEl = document.getElementById('dashRawData');
+        if (toggleBtn && rawEl) {
+          toggleBtn.addEventListener('click', function() {
+            rawEl.classList.toggle('hidden');
+            toggleBtn.textContent = rawEl.classList.contains('hidden') ? 'Show Raw Settings' : 'Hide Raw Settings';
+          });
+        }
+      }
+
+      function toggleDashboard() {
+        _dashboardVisible = !_dashboardVisible;
+        var el = document.getElementById('adminDashboard');
+        if (!el) return;
+        if (_dashboardVisible) {
+          el.classList.remove('hidden');
+          renderDashboard();
+        } else {
+          el.classList.add('hidden');
+        }
       }
 
       // ─── Render ────────────────────────────────────────
@@ -1427,6 +1740,7 @@
 
           document.getElementById('btnSavePreset').addEventListener('click', handleSavePreset);
           document.getElementById('btnChangePass').addEventListener('click', handleChangePassword);
+          document.getElementById('btnDashboard').addEventListener('click', toggleDashboard);
 
           document.getElementById('adminSearch').addEventListener('input', function(e) {
             _filterText = e.target.value;
