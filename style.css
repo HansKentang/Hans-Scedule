@@ -2842,7 +2842,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 }
 
 /* Responsive tweaks */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   #hubSidebarEditBtn {
     width: 24px; height: 24px; font-size: 0.75rem;
   }
@@ -3231,7 +3231,7 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
 }
 
 /* ─── RESPONSIVE ─────────────────────────────────────── */
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   .hub-minifooter { padding: var(--space-2) var(--space-4); }
   .hub-sidebar { width: 56px; min-width: 56px; }
   .hub-snav-item .snav-label,
@@ -4110,7 +4110,7 @@ html.light .hub-db-header .hub-db-count strong {
 .hub-sidebar-overlay, .sch-hamburger { display: none !important; }
 
 /* ─── RESPONSIVE ───────────────────────────────────────────── */
-@media (max-width: 1024px) {
+@media (max-width: 767px) {
   :root { --time-axis-width: 52px; --hour-height: 48px; }
   .day-header { padding: var(--space-2) var(--space-2); min-height: 40px; }
   .day-number { font-size: 1rem; }
@@ -4877,13 +4877,13 @@ html.light .sleep-header h3 svg {
   font-size: 0.7rem; color: var(--text-tertiary); margin-top: var(--space-1);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .sleep-summary { grid-template-columns: repeat(3, 1fr); }
   .an-sleep-row { grid-template-columns: 1fr; }
   .sleep-log-form .form-row { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   :root { --hour-height: 44px; --time-axis-width: 44px; }
   #calendarHeader { padding: var(--space-2) var(--space-3); }
   #weekLabel { font-size: 0.9rem; }
@@ -7793,7 +7793,7 @@ html.light .hub-add-popup {
    ════════════════════════════════════════════════════════════ */
 
 /* ─── HUB PAGE (bento, sleep, hero, gallery) ─────────── */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .hub-main > section:first-child { height: 160px !important; }
   .hub-main > section:first-child h1 { font-size: 18px !important; }
   .hub-main > section:first-child .glass-card { padding: 3px 8px !important; }
@@ -7875,7 +7875,7 @@ html.light .hub-add-popup {
 }
 
 /* ─── ANALYTICS PAGE ─────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .hub-main > section:first-child .font-headline-lg { font-size: 24px !important; }
   .hub-main > section:first-child [style*="padding:0 var(--container-padding)"] { padding: 0 12px !important; }
   .an-filter-bar { justify-content: center; }
@@ -7920,7 +7920,7 @@ html.light .hub-add-popup {
 }
 
 /* ─── FINANCE PAGE ───────────────────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .hub-main > section:first-child { height: 150px !important; }
   .hub-main > section:first-child .font-headline-lg { font-size: 26px !important; }
   .fin-hero-decor { width: 80px; height: 80px; right: 4px; top: 4px; }
@@ -7949,7 +7949,7 @@ html.light .hub-add-popup {
    NOTION MOBILE - Responsive redesign (mobile only)
    ════════════════════════════════════════════════════════════ */
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .hub-mobile-menu-btn { display: flex; }
   .hub-sidebar {
     position: fixed !important;
@@ -8180,7 +8180,7 @@ html.light .hub-add-popup {
   .sch-cmd-bar { bottom: calc(env(safe-area-inset-bottom, 8px) + 60px); right: var(--space-2); }
 }
 
-@media (min-width: 769px) {
+@media (min-width: 768px) {
   .hub-hamburger { display: none; }
 }
 
