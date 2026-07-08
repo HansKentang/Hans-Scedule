@@ -786,20 +786,47 @@
       color: var(--text-tertiary);
       margin-top: 1px;
     }
-    .admin-preview-detail {
-      margin-top: 12px;
-      padding: 10px 12px;
-      background: var(--surface-container);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
+    .admin-preview-summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
       font-size: 0.7rem;
       color: var(--text-secondary);
-      line-height: 1.5;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
     }
-    .admin-preview-detail strong {
+    .admin-preview-summary strong {
       color: var(--text-primary);
       font-weight: 600;
     }
+    .admin-preview-bento {
+      position: relative;
+      width: 100%;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+    .admin-preview-bento-widget {
+      position: absolute;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 500;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      padding: 2px 4px;
+      box-sizing: border-box;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .admin-preview-bento-widget.sm { font-size: 0.5rem; }
+
     .admin-preview-footer {
       display: flex;
       gap: 8px;
@@ -1852,100 +1879,75 @@
         nameEl.textContent = esc(preset.name);
         _pendingApplyId = presetId;
 
-        var widgetCount = data.hubContent && data.hubContent.bentoLayout ? data.hubContent.bentoLayout.length : 0;
+        var layout = data.hubContent && data.hubContent.bentoLayout ? data.hubContent.bentoLayout : [];
+        var widgetCount = layout.length;
         var imageCount = data.images ? Object.keys(data.images).length : 0;
         var catCount = data.customCategories ? data.customCategories.length : 0;
-        var tagCount = data.customTags ? data.customTags.length : 0;
-        var subcatCount = data.subcategories ? Object.keys(data.subcategories).reduce(function(sum, k) { return sum + (data.subcategories[k] ? data.subcategories[k].length : 0); }, 0) : 0;
-        var colorCount = data.cardColors ? Object.keys(data.cardColors).length : 0;
-        var labelCount = data.renamedLabels ? Object.keys(data.renamedLabels).length : 0;
-        var spCount = data.spotifyPlaylists ? data.spotifyPlaylists.length : 0;
-
-        var totalSize = 0;
-        if (data.images) {
-          for (var k in data.images) {
-            if (data.images.hasOwnProperty(k)) {
-              totalSize += (data.images[k] || '').length;
-            }
-          }
-        }
-        var sizeStr = totalSize > 1048576 ? (totalSize / 1048576).toFixed(1) + ' MB' : totalSize > 1024 ? Math.round(totalSize / 1024) + ' KB' : totalSize + ' B';
 
         var settingsParts = [];
         if (data.settings) {
-          if (data.settings.darkMode === true) settingsParts.push('Dark mode');
-          else if (data.settings.darkMode === false) settingsParts.push('Light mode');
+          if (data.settings.darkMode === true) settingsParts.push('Dark');
+          else if (data.settings.darkMode === false) settingsParts.push('Light');
           if (data.settings.accentColor) settingsParts.push(data.settings.accentColor);
         }
 
-        var typeCounts = {};
-        if (data.hubContent && data.hubContent.bentoLayout) {
-          data.hubContent.bentoLayout.forEach(function(w) {
-            var t = w.t || 'unknown';
-            typeCounts[t] = (typeCounts[t] || 0) + 1;
-          });
+        var typeMeta = {
+          clock: { label: 'Clock', color: '#6366f1' },
+          goals: { label: 'Goals', color: '#10b981' },
+          todos: { label: 'To-Dos', color: '#f59e0b' },
+          habits: { label: 'Habits', color: '#ec4899' },
+          spotify: { label: 'Spotify', color: '#1db954' },
+          weather: { label: 'Weather', color: '#0ea5e9' },
+          quote: { label: 'Quote', color: '#8b5cf6' },
+          notes: { label: 'Notes', color: '#64748b' },
+          priorities: { label: 'Priorities', color: '#f43f5e' },
+          progress: { label: 'Progress', color: '#14b8a6' },
+          links: { label: 'Links', color: '#06b6d4' },
+          images: { label: 'Images', color: '#a855f7' },
+          calendar: { label: 'Calendar', color: '#f97316' },
+          timer: { label: 'Timer', color: '#ef4444' },
+          pomodoro: { label: 'Pomodoro', color: '#65a30d' },
+          strava: { label: 'Strava', color: '#fc4c02' },
+          flightradar: { label: 'Flight', color: '#3b82f6' },
+          'sleep-score': { label: 'Sleep', color: '#6366f1' },
+          clock2: { label: 'Clock', color: '#6366f1' }
+        };
+
+        var maxRow = 0;
+        layout.forEach(function(w) {
+          var bottom = (w.y || 0) + (w.h || 1);
+          if (bottom > maxRow) maxRow = bottom;
+        });
+        var cols = 12;
+        var cellW = 100 / cols;
+        var rowH = 38;
+        var gridH = Math.max(maxRow * rowH + 2, 40);
+
+        var widgetsHtml = '';
+        layout.forEach(function(w) {
+          var meta = typeMeta[w.t] || { label: w.t || 'Widget', color: '#6b7280' };
+          var left = (w.x || 0) * cellW;
+          var top = (w.y || 0) * rowH;
+          var width = (w.w || 1) * cellW;
+          var height = (w.h || 1) * rowH;
+          var isSmall = (w.w || 1) < 3;
+          widgetsHtml += '<div class="admin-preview-bento-widget' + (isSmall ? ' sm' : '') + '" style="left:' + left + '%;top:' + top + 'px;width:' + width + '%;height:' + height + 'px;background:' + meta.color + '">' + esc(meta.label) + '</div>';
+        });
+
+        var summaryAttrs = '';
+        if (data.settings && data.settings.accentColor) {
+          summaryAttrs = ' style="border-left:3px solid ' + esc(data.settings.accentColor) + ';padding-left:10px"';
         }
-        var typeLabels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', 'flightradar':'FlightRadar', 'sleep-score':'Sleep Score', clock2:'Clock' };
-        var typeParts = Object.keys(typeCounts).sort().map(function(t) { return (typeLabels[t] || t) + ' \u00D7' + typeCounts[t]; });
-        var typeSummary = typeParts.length ? typeParts.join(', ') : 'None';
 
         bodyEl.innerHTML =
-          '<div class="admin-preview-grid">' +
-            '<div class="admin-preview-stat">' +
-              '<div class="admin-preview-stat-icon" style="background:#6366f1">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
-              '</div>' +
-              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + widgetCount + '</div><div class="admin-preview-stat-label">Widgets</div></div>' +
-            '</div>' +
-            '<div class="admin-preview-stat">' +
-              '<div class="admin-preview-stat-icon" style="background:#22c55e">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' +
-              '</div>' +
-              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + imageCount + '</div><div class="admin-preview-stat-label">Images</div>' + (sizeStr !== '0 B' ? '<div class="admin-preview-stat-sub">' + sizeStr + '</div>' : '') + '</div>' +
-            '</div>' +
-            '<div class="admin-preview-stat">' +
-              '<div class="admin-preview-stat-icon" style="background:#f59e0b">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>' +
-              '</div>' +
-              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + catCount + '</div><div class="admin-preview-stat-label">Categories</div></div>' +
-            '</div>' +
-            '<div class="admin-preview-stat">' +
-              '<div class="admin-preview-stat-icon" style="background:#ec4899">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>' +
-              '</div>' +
-              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + subcatCount + '</div><div class="admin-preview-stat-label">Subcategories</div></div>' +
-            '</div>' +
-            '<div class="admin-preview-stat">' +
-              '<div class="admin-preview-stat-icon" style="background:#06b6d4">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>' +
-              '</div>' +
-              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + tagCount + '</div><div class="admin-preview-stat-label">Custom Tags</div></div>' +
-            '</div>' +
-            '<div class="admin-preview-stat">' +
-              '<div class="admin-preview-stat-icon" style="background:#a855f7">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>' +
-              '</div>' +
-              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + colorCount + '</div><div class="admin-preview-stat-label">Card Colors</div></div>' +
-            '</div>' +
-            '<div class="admin-preview-stat">' +
-              '<div class="admin-preview-stat-icon" style="background:#f97316">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
-              '</div>' +
-              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + labelCount + '</div><div class="admin-preview-stat-label">Renamed Labels</div></div>' +
-            '</div>' +
-            '<div class="admin-preview-stat">' +
-              '<div class="admin-preview-stat-icon" style="background:#1db954">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="12" height="12"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>' +
-              '</div>' +
-              '<div class="admin-preview-stat-info"><div class="admin-preview-stat-val">' + spCount + '</div><div class="admin-preview-stat-label">Playlists</div></div>' +
-            '</div>' +
+          '<div class="admin-preview-summary"' + summaryAttrs + '>' +
+            '<span><strong>' + widgetCount + '</strong> widget' + (widgetCount !== 1 ? 's' : '') + '</span>' +
+            (imageCount ? ' <span><strong>' + imageCount + '</strong> image' + (imageCount !== 1 ? 's' : '') + '</span>' : '') +
+            (catCount ? ' <span><strong>' + catCount + '</strong> categor' + (catCount !== 1 ? 'ies' : 'y') + '</span>' : '') +
+            (settingsParts.length ? ' <span style="color:var(--text-tertiary)">' + esc(settingsParts.join(' \u00B7 ')) + '</span>' : '') +
+            ' <span style="color:var(--text-tertiary);font-size:0.65rem">Created ' + (preset.createdAt ? new Date(preset.createdAt).toLocaleDateString() : 'Unknown') + '</span>' +
           '</div>' +
-          '<div class="admin-preview-detail">' +
-            '<strong>Widgets:</strong> ' + esc(typeSummary) + '<br>' +
-            (settingsParts.length ? '<strong>Settings:</strong> ' + esc(settingsParts.join(' \u00B7 ')) + '<br>' : '') +
-            '<strong>Created:</strong> ' + (preset.createdAt ? new Date(preset.createdAt).toLocaleDateString() : 'Unknown') +
-            (preset.updatedAt ? ' \u00B7 <strong>Updated:</strong> ' + new Date(preset.updatedAt).toLocaleDateString() : '') +
-          '</div>';
+          '<div class="admin-preview-bento" style="height:' + gridH + 'px">' + widgetsHtml + '</div>';
 
         overlay.classList.remove('hidden');
 
