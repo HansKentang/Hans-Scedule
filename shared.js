@@ -4051,6 +4051,76 @@ function importData(e) {
   reader.readAsText(file);
 }
 
+// ─── HUB + SETTINGS EXPORT / IMPORT ─────────────
+function exportHubSettings() {
+  var data = { version: 1, exportedAt: new Date().toISOString() };
+  var keys = [
+    'haven-hub-content', 'haven-hub-visibility', 'haven-schedule-hub-layout',
+    'haven-schedule-settings', 'haven-schedule-categories', 'haven-custom-tags',
+    'haven-card-colors', 'haven-subcategories', 'haven-renamed-labels'
+  ];
+  keys.forEach(function(key) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (raw) data[key] = JSON.parse(raw);
+    } catch(e) {}
+  });
+  try {
+    var imgs = {};
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('haven-image-') === 0 && k.indexOf('haven-image-gallery-') === -1) {
+        try { imgs[k] = localStorage.getItem(k); } catch(e) {}
+      }
+    }
+    if (Object.keys(imgs).length) data.images = imgs;
+  } catch(e) {}
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'haven-hub-settings-' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importHubSettings(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = JSON.parse(ev.target.result);
+      var keys = [
+        'haven-hub-content', 'haven-hub-visibility', 'haven-schedule-hub-layout',
+        'haven-schedule-settings', 'haven-schedule-categories', 'haven-custom-tags',
+        'haven-card-colors', 'haven-subcategories', 'haven-renamed-labels'
+      ];
+      keys.forEach(function(key) {
+        if (data[key] !== undefined) {
+          try { localStorage.setItem(key, JSON.stringify(data[key])); } catch(e) {}
+        }
+      });
+      if (data.images) {
+        Object.keys(data.images).forEach(function(k) {
+          try { localStorage.setItem(k, data.images[k]); } catch(e) {}
+        });
+      }
+      if (typeof loadState === 'function') try { loadState(); } catch(e) {}
+      if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
+      if (typeof renderHubBento === 'function') try { renderHubBento(); } catch(e) {}
+      showToast('Hub settings imported successfully', 'success');
+    } catch(err) {
+      alert('Invalid file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
 // ─── HELP MODAL ────────────────────────────────────────────
 function showHelpModal() {
   if (!dom.helpModal) return;
@@ -4292,6 +4362,31 @@ const IMAGE_MANAGER_GROUPS = [
   }
 ];
 
+function injectHubExportUI() {
+  var section = document.getElementById('settingsSection-data');
+  if (!section) return;
+  if (section.querySelector('.hs-export-card')) return;
+  var card = document.createElement('div');
+  card.className = 'settings-card hs-export-card';
+  card.innerHTML =
+    '<div class="settings-card-header">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
+      '<span class="settings-card-title">Hub & Settings</span>' +
+    '</div>' +
+    '<div class="drawer-actions-row">' +
+      '<button type="button" class="drawer-btn" onclick="exportHubSettings()">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+        'Export Hub' +
+      '</button>' +
+      '<button type="button" class="drawer-btn" onclick="document.getElementById(\'hsImportFile\').click()">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>' +
+        'Import Hub' +
+      '</button>' +
+    '</div>' +
+    '<input type="file" id="hsImportFile" accept=".json" style="display:none" onchange="importHubSettings(event)">';
+  section.appendChild(card);
+}
+
 function openSettingsDrawer() {
   dom.settingsApiKey = document.getElementById('drawerApiKey');
   // Reset to first section
@@ -4315,6 +4410,7 @@ function openSettingsDrawer() {
   try { renderAccentPickerInSettings(); } catch (e) {}
   try { renderCardColorsInSettings(); } catch (e) {}
   try { renderBubbleConfigInSettings(); } catch (e) {}
+  try { injectHubExportUI(); } catch (e) {}
   overlay.classList.remove('hidden');
   drawer.classList.remove('hidden');
   requestAnimationFrame(() => {
