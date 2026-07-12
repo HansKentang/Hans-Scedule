@@ -5001,7 +5001,16 @@ function renderSidebarImages() {
         if (_sbDef) url = _sbDef.url;
       }
       // Sync to state.images so Visuals image picker shows correct URL
-      if (state.images) state.images[sidebarId] = url;
+      // Never overwrite a custom image with a default or empty URL
+      if (state.images) {
+        var existing = state.images[sidebarId];
+        var isDefault = !url || SIDEBAR_IMAGE_DEFAULTS.some(function(d) { return d.page === currentPage && d.url === url; });
+        if (!existing || existing === DEFAULT_IMAGES[sidebarId]) {
+          state.images[sidebarId] = url;
+        } else if (!isDefault) {
+          state.images[sidebarId] = url;
+        }
+      }
 
       const item = document.createElement('div');
       item.className = 'hub-sidebar-image-item';
