@@ -56,7 +56,9 @@ function renderAuthUI() {
     var avatarHtml = activeUser.picture
       ? '<img class="gsi-avatar" src="' + activeUser.picture + '" alt="' + escapeHtml(activeUser.name) + '">'
       : '<div class="gsi-avatar gsi-avatar-local" style="background:' + color + '"><span class="gsi-avatar-initials">' + escapeHtml(initials) + '</span></div>';
-    var dropdownItems = localUsers.map(function(u) {
+    var maxVisible = 3;
+    var visibleUsers = localUsers.slice(0, maxVisible);
+    var dropdownItems = visibleUsers.map(function(u) {
       var i2 = getInitials(u.name);
       var c2 = u._color || getColorForId(u.id);
       var icon = u.picture
@@ -65,6 +67,11 @@ function renderAuthUI() {
       return '<div class="gsi-dd-item' + (u.id === activeId ? ' active' : '') + '" data-gsi-switch="' + u.id + '">' +
         icon + '<span class="gsi-dd-name">' + escapeHtml(u.name) + '</span></div>';
     }).join('');
+    var extraCount = localUsers.length - maxVisible;
+    if (extraCount > 0) {
+      dropdownItems +=
+        '<div class="gsi-dd-item" id="gsiViewAllAccounts"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>View all accounts &rarr;</span></div>';
+    }
 
     container.innerHTML =
       '<div class="gsi-avatar-wrap">' + avatarHtml +
@@ -72,7 +79,7 @@ function renderAuthUI() {
         '<div class="gsi-avatar-dropdown" id="gsiDropdown">' +
           dropdownItems +
           '<div class="gsi-dd-divider"></div>' +
-          '<div class="gsi-dd-item" id="gsiAddAccountBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add account</span></div>' +
+          (localUsers.length < maxVisible ? '<div class="gsi-dd-item" id="gsiAddAccountBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add account</span></div>' : '') +
           '<div class="gsi-dd-item danger" id="gsiSignOutBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Remove profile</span></div>' +
         '</div></div>';
 
@@ -85,10 +92,23 @@ function renderAuthUI() {
     dropdown.querySelectorAll('[data-gsi-switch]').forEach(function(el) {
       el.addEventListener('click', function() { switchAccount(el.dataset.gsiSwitch); });
     });
-    container.querySelector('#gsiAddAccountBtn').addEventListener('click', function(e) {
-      e.stopPropagation(); dropdown.classList.remove('open');
-      gsiSignIn();
-    });
+    var addBtn = container.querySelector('#gsiAddAccountBtn');
+    if (addBtn) {
+      addBtn.addEventListener('click', function(e) {
+        e.stopPropagation(); dropdown.classList.remove('open');
+        gsiSignIn();
+      });
+    }
+    var viewAllBtn = container.querySelector('#gsiViewAllAccounts');
+    if (viewAllBtn) {
+      viewAllBtn.addEventListener('click', function(e) {
+        e.stopPropagation(); dropdown.classList.remove('open');
+        if (typeof openSettingsBubble === 'function') {
+          settingsPanelActiveCategory = 'account';
+          openSettingsBubble();
+        }
+      });
+    }
     container.querySelector('#gsiSignOutBtn').addEventListener('click', function(e) {
       e.stopPropagation(); dropdown.classList.remove('open');
       removeProfile(activeId);
