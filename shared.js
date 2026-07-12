@@ -7282,6 +7282,15 @@ function spAddPlaylist() {
   }
   spRenderList();
   spUpdateNav();
+  fetch('https://open.spotify.com/oembed?url=https://open.spotify.com/playlist/' + playlistId)
+    .then(function(r) { if (r.ok) return r.json(); })
+    .then(function(data) {
+      if (data && data.title) {
+        var p = spPlaylists.find(function(x) { return x.id === playlistId; });
+        if (p) { p.name = data.title; spSavePlaylists(); spRenderList(); spUpdateNav(); }
+      }
+    })
+    .catch(function() {});
 }
 
 function spPlayPlaylist(id) {
