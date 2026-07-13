@@ -486,13 +486,13 @@ html.light .card-glass {
 
 /* Variants */
 .btn-primary { background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); }
-.btn-primary:hover { background: var(--accent-soft); }
+.btn-primary:hover { background: color-mix(in srgb, var(--accent-soft) 50%, var(--bg-primary)); }
 .btn-secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); }
-.btn-secondary:hover { background: var(--accent-soft); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--accent-soft) 50%, var(--bg-primary)); }
 .btn-outline { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); }
-.btn-outline:hover { background: var(--accent-soft); }
+.btn-outline:hover { background: color-mix(in srgb, var(--accent-soft) 50%, var(--bg-primary)); }
 .btn-ghost { background: transparent; color: var(--text-tertiary); border: none; }
-.btn-ghost:hover { background: var(--accent-soft); color: var(--text-primary); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--accent-soft) 50%, transparent); color: var(--text-primary); }
 .btn-danger { background: transparent; color: var(--error); border: 1px solid var(--error); }
 .btn-danger:hover { background: var(--error); color: var(--on-error); }
 
@@ -529,7 +529,7 @@ html.light .card-glass {
   color: var(--text-tertiary); cursor: pointer;
   transition: all var(--t-base);
 }
-.btn-small:hover { background: var(--accent-soft); color: var(--text-primary); }
+.btn-small:hover { background: color-mix(in srgb, var(--accent-soft) 50%, var(--bg-primary)); color: var(--text-primary); }
 
 /* ─── Shared Form Inputs ─── */
 .input, .select, .textarea {
@@ -6239,11 +6239,11 @@ html.dark .tf-pr.active {
 .tf-btn-primary {
   background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color);
 }
-.tf-btn-primary:hover { background: var(--accent-soft); }
+.tf-btn-primary:hover { background: color-mix(in srgb, var(--accent-soft) 50%, var(--bg-primary)); }
 .tf-btn-ghost {
   background: transparent; color: var(--text-tertiary); border: none;
 }
-.tf-btn-ghost:hover { background: var(--accent-soft); color: var(--text-primary); }
+.tf-btn-ghost:hover { background: color-mix(in srgb, var(--accent-soft) 50%, transparent); color: var(--text-primary); }
 .tf-btn-danger {
   background: var(--bg-primary); color: var(--error); border: 1px solid var(--border-color);
 }
