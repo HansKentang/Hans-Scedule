@@ -4998,21 +4998,19 @@ function renderSidebarImages() {
     images.forEach(img => {
       var sidebarId = 'sidebar-' + currentPage;
       // Use URL from sidebar config, fall back to main image system (haven-image-sidebar-*)
-      var url = img.url || getImage(sidebarId);
+      // Try user-set image first (from image picker), then check config
+      var url = getImage(sidebarId);
       if (!url) {
-        var _sbDef = SIDEBAR_IMAGE_DEFAULTS.find(function(d) { return d.page === currentPage; });
-        if (_sbDef) url = _sbDef.url;
-      }
-      // Sync to state.images so Visuals image picker shows correct URL
-      // Never overwrite a custom image with a default or empty URL
-      if (state.images) {
-        var existing = state.images[sidebarId];
-        var isDefault = !url || SIDEBAR_IMAGE_DEFAULTS.some(function(d) { return d.page === currentPage && d.url === url; });
-        if (!existing || existing === DEFAULT_IMAGES[sidebarId]) {
-          state.images[sidebarId] = url;
-        } else if (!isDefault) {
-          state.images[sidebarId] = url;
+        var cfgUrl = img.url;
+        if (cfgUrl) {
+          // Only use config URL if it's NOT an Unsplash default
+          var isDefault = SIDEBAR_IMAGE_DEFAULTS.some(function(d) { return d.page === currentPage && d.url === cfgUrl; });
+          if (!isDefault) url = cfgUrl;
         }
+      }
+      // Only sync user-set images to state.images, never defaults
+      if (state.images && url) {
+        state.images[sidebarId] = url;
       }
 
       const item = document.createElement('div');
