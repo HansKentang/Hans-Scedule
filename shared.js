@@ -5977,33 +5977,14 @@ function showToast(message, type, duration) {
   if (existing) existing.remove();
 
   const toast = document.createElement('div');
-  toast.className = 'ai-toast';
+  toast.className = 'toast ai-toast';
+  if (type) toast.classList.add('toast-' + type);
 
-  var borderColor = 'var(--border-color)';
-  var bgColor = 'var(--bg-card)';
-  if (type === 'error') { borderColor = 'var(--danger,#ef4444)'; bgColor = 'color-mix(in srgb, var(--danger,#ef4444) 10%, var(--bg-card))'; }
-  else if (type === 'success') { borderColor = 'var(--success,#22c55e)'; bgColor = 'color-mix(in srgb, var(--success,#22c55e) 10%, var(--bg-card))'; }
-  else if (type === 'warning') { borderColor = 'var(--warning,#f59e0b)'; bgColor = 'color-mix(in srgb, var(--warning,#f59e0b) 10%, var(--bg-card))'; }
-  else if (type === 'info') { borderColor = 'var(--accent)'; bgColor = 'color-mix(in srgb, var(--accent) 10%, var(--bg-card))'; }
-
-  toast.style.cssText = `
-    position: fixed; bottom: 100px; right: 28px; z-index: 9999;
-    padding: 10px 18px; border-radius: 10px;
-    font-size: 0.82rem; font-family: var(--font-family); font-weight: 500;
-    background: ${bgColor}; border: 1px solid ${borderColor};
-    color: var(--text-primary);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-    display: flex; align-items: center; gap: 8px;
-    animation: slideUp 200ms cubic-bezier(0.16, 1, 0.3, 1);
-    max-width: 360px;
-  `;
   toast.innerHTML = tStr(message);
   document.body.appendChild(toast);
 
   setTimeout(() => {
-    toast.style.transition = 'opacity 200ms ease, transform 200ms ease';
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(8px)';
+    toast.classList.add('out');
     setTimeout(() => toast.remove(), 200);
   }, duration || 4000);
 }

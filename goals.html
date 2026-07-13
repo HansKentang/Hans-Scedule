@@ -16,23 +16,26 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <title>Havën Schedule — Goals &amp; Resolutions</title>
   <style>
+<style>
     /* ─── GOALS BENTO LAYOUT ──────────────────────────── */
     .gl-bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
     .gl-card {
       background: var(--bg-card); border: 1px solid var(--border-color);
       border-radius: var(--radius-xl); padding: var(--space-5);
       position: relative; overflow: hidden;
-      transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 250ms var(--curve);
     }
-    .gl-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
+    .gl-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: var(--card-hover-lift); }
     .gl-card::before {
       content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
       background: var(--gl-accent, var(--primary)); opacity: 0.7;
+      z-index: 1;
     }
     .gl-card::after {
       content: ''; position: absolute; top: 3px; right: 0; bottom: 0; left: 0;
       background: radial-gradient(ellipse 80px 80px at 100% 0%, color-mix(in srgb, var(--gl-accent, var(--primary)) 4%, transparent), transparent);
       pointer-events: none;
+      box-shadow: var(--card-inner-glow);
     }
     .gl-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-3); position: relative; z-index: 1; }
     .gl-card-icon {
@@ -394,31 +397,6 @@
     /* ─── CUSTOM SCROLLBAR ──────────────────────────────── */
     .hub-main::-webkit-scrollbar { width: 4px; }
     .hub-main::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
-    .hub-menu-panel { position:fixed; top:0; right:0; width:300px; max-width:85vw; height:100vh; background:var(--bg-primary); border-left:1px solid var(--border-color); z-index:10000; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 200ms cubic-bezier(0.16,1,0.3,1); box-shadow:-4px 0 24px rgba(0,0,0,0.12); }
-    .hub-menu-panel.open { transform:translateX(0); }
-    .hub-menu-panel.hidden { display:flex; }
-    .hub-menu-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; opacity:0; pointer-events:none; transition:opacity 200ms ease; }
-    .hub-menu-overlay.active { opacity:1; pointer-events:auto; }
-    .hub-menu-panel-header { display:flex; align-items:center; justify-content:space-between; padding:var(--space-3) var(--space-3) var(--space-2); border-bottom:1px solid var(--border-subtle); flex-shrink:0; }
-    .hub-menu-panel-title { font-size:1rem; font-weight:700; }
-    .hub-menu-panel-close { background:none; border:none; color:var(--text-secondary); cursor:pointer; padding:4px; border-radius:6px; display:flex; align-items:center; justify-content:center; }
-    .hub-menu-panel-close:hover { background:var(--hover-bg,rgba(128,128,128,0.1)); color:var(--text-primary); }
-    .hub-menu-profile { display:flex; align-items:center; gap:10px; padding:var(--space-3); cursor:pointer; border-bottom:1px solid var(--border-subtle); flex-shrink:0; }
-    .hub-menu-profile:hover { background:var(--hover-bg,rgba(128,128,128,0.05)); }
-    .hub-menu-avatar { width:36px; height:36px; border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.85rem; font-weight:600; flex-shrink:0; }
-    .hub-menu-user { min-width:0; }
-    .hub-menu-name { font-size:0.82rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .hub-menu-email { font-size:0.65rem; color:var(--text-tertiary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .hub-menu-panel-section { padding:var(--space-2); display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
-    .hub-menu-panel-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; border:none; background:none; cursor:pointer; font-size:0.82rem; color:var(--text-primary); text-align:left; width:100%; transition:background 0.15s; }
-    .hub-menu-panel-item:hover { background:var(--hover-bg,rgba(128,128,128,0.08)); }
-    .hub-menu-spacer { flex:1; min-height:0; }
-    .hub-menu-footer { border-top:1px solid var(--border-subtle); padding-top:var(--space-2); }
-    .hub-menu-plus-popup { background:var(--surface); border:1px solid var(--border-color); border-radius:10px; padding:6px; margin-top:4px; box-shadow:var(--shadow-lg, 0 8px 30px rgba(0,0,0,0.15)); }
-    .hub-menu-plus-popup.hidden { display:none; }
-    #menuPlusList { display:flex; flex-direction:column; gap:2px; }
-    #menuPlusList .plus-action-item { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; border:none; background:none; cursor:pointer; font-size:0.8rem; color:var(--text-primary); text-align:left; width:100%; transition:background 0.15s; }
-    #menuPlusList .plus-action-item:hover { background:var(--accent-bg, rgba(128,128,128,0.1)); }
   </style>
 </head>
 <body>
@@ -458,7 +436,7 @@
       </div>
     </div>
     <!-- ─── SIDEBAR ───────────────────────────────── -->
-    <aside class="hub-sidebar" id="hubSidebar">
+    <aside class="hub-sidebar" role="navigation" aria-label="Sidebar" id="hubSidebar">
       <div class="hub-workspace">
         <div class="hub-workspace-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M6 4v16M18 4v16M6 12h12"/></svg></div>
         <span class="hub-workspace-name">Havën</span>
@@ -529,7 +507,7 @@
     </aside>
 
     <!-- ─── MAIN ───────────────────────────────────────── -->
-    <div class="hub-main">
+    <div class="hub-main" role="main">
       <!-- ─── HERO ────────────────────────────────────── -->
       <section class="gl-hero">
         <img data-image-id="goals-hero" src="" alt="Goals hero" class="gl-hero-bg">
