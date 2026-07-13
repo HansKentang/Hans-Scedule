@@ -173,6 +173,7 @@ function renderWeekView() {
   const visibleDays = state.showWeekends ? days : days.filter(d => !isWeekend(d));
   const colCount = visibleDays.length;
   dom.grid.style.gridTemplateColumns = `var(--time-axis-width) repeat(${colCount}, 1fr)`;
+  dom.grid.style.gridTemplateRows = '';
 
   html += '<div class="day-header time-axis-header"></div>';
   for (const day of visibleDays) {
@@ -244,6 +245,7 @@ function renderMonthView() {
   dom.taskCount.textContent = state.tasks.filter(t => !isWhiteboardTask(t)).length;
 
   dom.grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+  dom.grid.style.gridTemplateRows = `auto repeat(${rows}, minmax(90px, 1fr))`;
   let html = '';
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   for (const dn of dayNames) {
@@ -351,6 +353,7 @@ function renderAgendaView() {
   dom.taskCount.textContent = state.tasks.filter(t => !isWhiteboardTask(t)).length;
 
   dom.grid.style.gridTemplateColumns = '1fr';
+  dom.grid.style.gridTemplateRows = '';
   let html = '';
 
   for (const [date, tasks] of Object.entries(dayTasks)) {

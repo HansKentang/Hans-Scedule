@@ -48,19 +48,27 @@
     .sch-header-left h2 { font-size: 0.85rem; font-weight: 600; letter-spacing: -0.01em; }
     .sch-header-right { display: flex; align-items: center; gap: var(--space-3); }
     .sch-api-badge {
-      display: flex; align-items: center; gap: 4px;
-      font-size: 0.65rem; padding: 2px 8px; border-radius: 12px;
-      background: var(--accent-soft); color: var(--text-tertiary);
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.62rem; padding: 3px 10px; border-radius: 6px;
+      background: var(--bg-primary); color: var(--text-tertiary);
+      border: 1px solid var(--border-color);
+      user-select: none; white-space: nowrap;
+      transition: all var(--t-fast);
     }
-    .sch-api-badge.active { background: color-mix(in srgb, #2a8a4a 12%, transparent); color: #2a8a4a; }
-    .sch-holiday-badge.active { background: color-mix(in srgb, #e06c00 12%, transparent); color: #e06c00; }
+    .sch-api-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
+    .sch-holiday-badge { cursor: pointer; }
+    .sch-holiday-badge:hover { background: var(--accent-soft); }
+    .sch-holiday-badge:active { transform: scale(0.95); }
+    .sch-holiday-badge:focus-visible { box-shadow: var(--focus-ring); }
+    .sch-api-badge #taskCount { font-weight: 600; color: var(--text-primary); font-size: 0.68rem; }
+    /* active = holiday mode on — keep neutral, accent only on hover */
 
     /* Calendar container */
-    #calendarContainer { flex: 1; overflow: auto; position: relative; }
+    #calendarContainer { flex: 1; overflow: auto; position: relative; display: flex; flex-direction: column; }
     #calendarGrid {
       display: grid;
       grid-template-columns: var(--time-axis-width) repeat(7, 1fr);
-      position: relative; min-width: fit-content;
+      position: relative; min-width: fit-content; flex: 1; min-height: 0;
     }
 
     /* ─── PILL MANAGER (colorful chip row + dropdown) ──── */
@@ -412,7 +420,8 @@
       #todayBtn { font-size: 0.72rem; padding: 2px var(--space-2); }
       .nav-arrows .btn { width: 24px; height: 24px; }
       .sch-header-right { gap: var(--space-1); }
-      .sch-api-badge { font-size: 0.6rem; padding: 1px 6px; }
+      .sch-api-badge { font-size: 0.58rem; padding: 2px 8px; }
+      .sch-api-badge svg { width: 10px; height: 10px; }
 
       /* Pill manager mobile */
     #pmChips { display: contents; }
