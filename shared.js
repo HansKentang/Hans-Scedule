@@ -3513,8 +3513,10 @@ function imageLabel(id) {
 }
 
 let _pickerImageId = null;
+let _pickerCloseTimer = null;
 
 function openImagePicker(id) {
+  if (_pickerCloseTimer) { clearTimeout(_pickerCloseTimer); _pickerCloseTimer = null; }
   _pickerImageId = id;
   const overlay = document.getElementById('imagePickerOverlay');
   const preview = document.getElementById('imagePickerPreview');
@@ -3532,6 +3534,7 @@ function openImagePicker(id) {
 }
 
 function closeImagePicker() {
+  if (_pickerCloseTimer) { clearTimeout(_pickerCloseTimer); _pickerCloseTimer = null; }
   const overlay = document.getElementById('imagePickerOverlay');
   if (!overlay) return;
   overlay.classList.remove('active');
@@ -3679,7 +3682,7 @@ function handleImagePickerSave() {
   if (typeof window._onImageSaved === 'function') {
     window._onImageSaved(id, urlVal || (preview?.dataset.pasted) || null);
   }
-  setTimeout(closeImagePicker, 400);
+  _pickerCloseTimer = setTimeout(closeImagePicker, 400);
 }
 
 function handleImagePickerReset() {
