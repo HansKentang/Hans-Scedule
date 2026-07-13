@@ -3524,8 +3524,9 @@ function openImagePicker(id) {
   const status = document.getElementById('imagePickerStatus');
   if (!overlay) return;
   const url = getImage(id);
-  if (preview) preview.src = url;
-  if (preview) preview.style.display = 'block';
+  if (preview) { preview.src = url; preview.style.display = url ? 'block' : 'none'; }
+  // Clear stale pasted data from previous session
+  if (preview) delete preview.dataset.pasted;
   if (urlInput) urlInput.value = url === DEFAULT_IMAGES[id] ? '' : url;
   if (status) status.textContent = 'Paste an image (Ctrl+V) or type a URL';
   overlay.classList.remove('hidden');
@@ -3647,6 +3648,53 @@ function handleImagePickerPaste(e) {
     var _zone = document.getElementById('imagePickerPasteZone');
     if (_zone) _zone.innerHTML = '';
     handleImagePickerPaste(e);
+  });
+})();
+
+// Global drop listener for the image picker — handles drag & drop
+(function initImageDropListener() {
+  document.addEventListener('dragover', function(e) {
+    var _overlay = document.getElementById('imagePickerOverlay');
+    if (!_overlay || _overlay.classList.contains('hidden')) return;
+    // Allow drop on the paste zone
+    var _dropZone = e.target.closest('#imagePickerPasteZone');
+    if (_dropZone) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  });
+  document.addEventListener('drop', function(e) {
+    var _overlay = document.getElementById('imagePickerOverlay');
+    if (!_overlay || _overlay.classList.contains('hidden')) return;
+    var _dropZone = e.target.closest('#imagePickerPasteZone');
+    if (!_dropZone) return;
+    e.preventDefault();
+    var files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+    var file = files[0];
+    if (!file.type.startsWith('image/')) {
+      var _st = document.getElementById('imagePickerStatus');
+      if (_st) { _st.textContent = 'Not an image file'; _st.style.color = '#ef4444'; }
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      var _st2 = document.getElementById('imagePickerStatus');
+      if (_st2) { _st2.textContent = 'Image too large (max 2MB)'; _st2.style.color = '#ef4444'; }
+      return;
+    }
+    var _preview = document.getElementById('imagePickerPreview');
+    var _status = document.getElementById('imagePickerStatus');
+    var _urlInput = document.getElementById('imagePickerUrl');
+    if (_status) { _status.textContent = 'Processing image...'; _status.style.color = 'var(--text-tertiary)'; }
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      resizeImageDataUrl(ev.target.result, 800, 800, 0.78).then(function(rUrl) {
+        if (_preview) { _preview.src = rUrl; _preview.style.display = 'block'; _preview.dataset.pasted = rUrl; }
+        if (_status) { _status.textContent = 'Image loaded — click Save to apply'; _status.style.color = 'var(--primary)'; }
+        if (_urlInput) _urlInput.value = '';
+      });
+    };
+    reader.readAsDataURL(file);
   });
 })();
 
