@@ -2,7 +2,7 @@
   "name": "Havën Schedule",
   "short_name": "Havën",
   "description": "A beautiful, AI-powered time-blocking calendar app",
-  "start_url": "/landing.html",
+  "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#fafafa",
   "theme_color": "#0a0a0b",

@@ -1,4 +1,4 @@
-// ─── Auth (Firebase + local fallback) ────────────────
+// ─── Auth (Local profiles) ──────────────────────────────
 var AUTH_USERS_KEY = 'haven-gsi-accounts';
 var AUTH_ACTIVE_KEY = 'haven-gsi-active';
 var localUsers = [];
@@ -166,68 +166,9 @@ function guestSignOut() {
   location.href = 'login.html';
 }
 
-// ─── Firebase Firestore sync ───────────────────────────
-function syncProfileToFirestore(user) {
-  if (typeof syncUserToFirestore === 'function') {
-    syncUserToFirestore(user).catch(function() {});
-  }
-}
 
-function removeProfileFromFirestore(id) {
-  if (typeof removeUserFromFirestore === 'function') {
-    removeUserFromFirestore(id).catch(function() {});
-  }
-}
 
-// ─── Firebase Google Sign-In ──────────────────────────
-var FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDhGJuLw9TW7i6GUQkhVQwOSRkX4nAoS8g",
-  authDomain: "haven-schedule-c8fec.firebaseapp.com",
-  projectId: "haven-schedule-c8fec",
-  storageBucket: "haven-schedule-c8fec.firebasestorage.app",
-  messagingSenderId: "372760068715",
-  appId: "1:372760068715:web:e18957b41d42b727ab272e"
-};
 
-function firebaseSignIn() {
-  if (typeof firebase === 'undefined') { showToast('Firebase SDK not loaded. Refresh the page.', 'error', 4000); return; }
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  var provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  firebase.auth().signInWithPopup(provider)
-    .then(function(result) { handleFirebaseUser(result.user); })
-    .catch(function(error) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        showToast('Sign-in failed: ' + error.message, 'error', 4000);
-      }
-    });
-}
-
-function handleFirebaseUser(fbUser) {
-  if (!fbUser) return;
-  var uid = fbUser.uid;
-  var existing = localUsers.find(function(u) { return u.id === 'firebase-' + uid; });
-  if (existing) { switchAccount(existing.id); return; }
-  var user = {
-    id: 'firebase-' + uid,
-    name: fbUser.displayName || fbUser.email || 'User',
-    email: fbUser.email || '',
-    picture: fbUser.photoURL || '',
-    _color: getColorForId('firebase-' + uid)
-  };
-  recordDeviceAccess(user);
-  localUsers.push(user);
-  saveUsers();
-  setActiveUserId(user.id);
-  if (typeof state !== 'undefined') state.currentUserId = user.id;
-  migrateExistingData(user.id);
-  renderAuthUI();
-  // Sync user profile to Firestore for the friend system
-  syncProfileToFirestore(user);
-  showToast('Signed in as ' + user.name, 'info', 2000);
-  if (isLoginPage()) location.href = 'index.html';
-  else location.reload();
-}
 
 // ─── Local profile ────────────────────────────────────
 function createLocalProfile(name) {
@@ -240,8 +181,6 @@ function createLocalProfile(name) {
   setActiveUserId(user.id);
   if (typeof state !== 'undefined') state.currentUserId = user.id;
   renderAuthUI();
-  // Sync local profile to Firestore for the friend system
-  syncProfileToFirestore(user);
   if (isLoginPage()) location.href = 'index.html';
   else location.reload();
 }
@@ -253,8 +192,6 @@ function switchAccount(id) {
   setActiveUserId(id);
   if (typeof state !== 'undefined') state.currentUserId = id;
   renderAuthUI();
-  // Sync the switched-to profile to Firestore
-  syncProfileToFirestore(user);
   showToast('Switched to ' + user.name, 'info', 1500);
   location.reload();
 }
@@ -270,8 +207,6 @@ function removeProfile(id) {
   }
   localUsers = localUsers.filter(function(u) { return u.id !== id; });
   saveUsers();
-  // Remove user profile from Firestore
-  removeProfileFromFirestore(id);
   var active = getActiveUserId();
   if (active === id) {
     if (localUsers.length > 0) {
@@ -299,11 +234,7 @@ function migrateExistingData(id) {
 }
 
 function initGSI() {
-  // Initialize Firestore for the friend system
-  if (typeof initFirestore === 'function') {
-    initFirestore();
-  }
-  loadUsers();
+    loadUsers();
   var activeId = getActiveUserId();
   if (typeof state !== 'undefined') {
     state.currentUserId = activeId || null;
@@ -322,11 +253,6 @@ function initGSI() {
     return;
   }
 
-  // Initialize chat badge for unread message count
-  // Initialize chat badge for unread message count
-  if (typeof initChatBadge === 'function') {
-    initChatBadge();
-  }
 }
 
 function isLoginPage() {
@@ -688,7 +614,7 @@ function renderAccountSettings(el) {
       (localUsers.length > 0 ? ' <span class="set-acc-device-count">' + localUsers.length + '</span>' : '') +
       '</div>' +
       listHtml +
-      '<button class="set-link-btn" id="setAddGoogle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/></svg>Sign in with Google</button>' +
+      
       '<button class="set-link-btn" id="setAddLocal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add local profile</button>' +
     '</div>' +
     '<div class="set-divider"></div>' +
@@ -791,8 +717,7 @@ function renderAccountSettings(el) {
       removeProfile(btn.dataset.accRemove);
     });
   });
-  document.getElementById('setAddGoogle')?.addEventListener('click', function() { closeSettingsPanel(); firebaseSignIn(); });
-  document.getElementById('setAddLocal')?.addEventListener('click', function() { closeSettingsPanel(); gsiSignIn(); });
+    document.getElementById('setAddLocal')?.addEventListener('click', function() { closeSettingsPanel(); gsiSignIn(); });
   document.getElementById('setSignOut')?.addEventListener('click', function() { closeSettingsPanel(); removeProfile(activeId); });
 }
 
@@ -841,11 +766,12 @@ function renderAppearanceSettings(el) {
   el.querySelectorAll('[data-acc-color]').forEach(function(el2) {
     el2.addEventListener('click', function() {
       if (typeof state === 'undefined') return;
-      state.accentColor = el2.dataset.accColor;
-      if (typeof applyAccentColor !== 'undefined') applyAccentColor();
-      if (typeof saveState !== 'undefined') saveState();
+      // Update active class immediately for visual feedback
       el.querySelectorAll('[data-acc-color]').forEach(function(s) { s.classList.remove('active'); });
       el2.classList.add('active');
+      state.accentColor = el2.dataset.accColor;
+      try { if (typeof applyAccentColor !== 'undefined') applyAccentColor(); } catch(ex) { if (typeof console !== 'undefined') console.warn('[accent] apply error', ex); }
+      try { if (typeof saveState !== 'undefined') saveState(); } catch(ex) { if (typeof console !== 'undefined') console.warn('[accent] save error', ex); }
     });
   });
 
@@ -1094,5 +1020,4 @@ window.gsiSignOut = removeProfile;
 window.switchGSIAccount = switchAccount;
 window.getGSIActiveSub = getActiveUserId;
 window.createLocalProfile = createLocalProfile;
-window.firebaseSignIn = firebaseSignIn;
 window.openSettingsBubble = openSettingsBubble;
