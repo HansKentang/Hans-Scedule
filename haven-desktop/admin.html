@@ -1,0 +1,2157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0b">
+  <title>Admin — Havën Schedule</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-scroll {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 32px 28px 80px;
+    }
+    /* ─── Header ─────────────────────────────────────── */
+    .admin-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .admin-header-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+    .admin-header-info h1 {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .admin-header-info p {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      margin: 1px 0 0;
+    }
+    .admin-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      transition: all var(--t-fast);
+    }
+    .admin-back:hover {
+      color: var(--text-primary);
+      background: var(--accent-soft);
+    }
+
+    /* ─── Status line ────────────────────────────────── */
+    .admin-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .admin-status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .admin-status-item strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .admin-status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.65rem;
+      font-weight: 700;
+    }
+    .admin-status-badge.active {
+      background: var(--accent);
+      color: var(--text-inverse);
+    }
+
+    /* ─── Toolbar ────────────────────────────────────── */
+    .admin-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .admin-toolbar .admin-btn {
+      flex-shrink: 0;
+    }
+    .admin-search {
+      flex: 1;
+      min-width: 140px;
+      max-width: 220px;
+      padding: 7px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.78rem;
+      font-family: var(--font-family);
+      outline: none;
+      transition: border-color var(--t-fast);
+    }
+    .admin-search:focus {
+      border-color: var(--accent);
+    }
+    .admin-search::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    /* ─── Preset grid ────────────────────────────────── */
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+    }
+    .admin-card {
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      position: relative;
+      transition: border-color var(--t-fast), box-shadow var(--t-fast);
+      cursor: default;
+    }
+    .admin-card:hover {
+      border-color: var(--border-focus);
+    }
+    .admin-card.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 4%, var(--surface-container));
+    }
+    .admin-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .admin-card-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .admin-card-name[contenteditable] {
+      outline: none;
+      border-bottom: 1px solid var(--accent);
+      padding: 0 2px;
+      white-space: normal;
+    }
+    .admin-card-badge {
+      flex-shrink: 0;
+      font-size: 0.58rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--accent);
+      color: var(--text-inverse);
+    }
+    .admin-card-badge.inactive {
+      background: var(--surface-container-high);
+      color: var(--text-tertiary);
+    }
+    .admin-card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    .admin-card-chip {
+      font-size: 0.62rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: var(--text-tertiary);
+    }
+    .admin-card-actions {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      opacity: 0;
+      transition: opacity var(--t-fast);
+    }
+    .admin-card:hover .admin-card-actions,
+    .admin-card:focus-within .admin-card-actions {
+      opacity: 1;
+    }
+    .admin-card-actions button {
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border-subtle);
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: 0.64rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-family);
+      transition: all var(--t-fast);
+    }
+    .admin-card-actions button:hover {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+      background: var(--surface-container-high);
+    }
+    .admin-card-actions button.primary {
+      background: var(--accent);
+      color: var(--text-inverse);
+      border-color: var(--accent);
+    }
+    .admin-card-actions button.primary:hover {
+      opacity: 0.85;
+    }
+    .admin-card-actions button.danger {
+      color: var(--danger, #ef4444);
+    }
+    .admin-card-actions button.danger:hover {
+      background: color-mix(in srgb, var(--danger, #ef4444) 10%, transparent);
+      border-color: var(--danger, #ef4444);
+    }
+    .admin-card-actions button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* Empty state */
+    .admin-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 48px 16px;
+      color: var(--text-tertiary);
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    .admin-empty kbd {
+      padding: 1px 6px;
+      background: var(--surface-container-high);
+      border-radius: 3px;
+      font-family: var(--font-family);
+      font-size: 0.72rem;
+      border: 1px solid var(--border-color);
+    }
+
+    /* ─── Buttons ────────────────────────────────────── */
+    .admin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-family);
+      transition: all var(--t-fast);
+      white-space: nowrap;
+    }
+    .admin-btn:hover {
+      border-color: var(--text-primary);
+      color: var(--text-primary);
+      background: var(--accent-soft);
+    }
+    .admin-btn.primary {
+      background: var(--accent);
+      color: var(--text-inverse);
+      border-color: var(--accent);
+    }
+    .admin-btn.primary:hover {
+      opacity: 0.85;
+    }
+    .admin-btn.small {
+      padding: 4px 10px;
+      font-size: 0.68rem;
+    }
+    .admin-btn:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    /* ─── Dashboard ──────────────────────────────────── */
+    .admin-dashboard {
+      margin-bottom: 20px;
+      animation: slideUp 200ms var(--curve);
+    }
+    .admin-dashboard.hidden { display: none; }
+    .admin-dash-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .admin-dash-card {
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .admin-dash-card.full {
+      grid-column: 1 / -1;
+    }
+    .admin-dash-label {
+      font-size: 0.6rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+    .admin-dash-value {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .admin-dash-sub {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      margin-top: 1px;
+    }
+    .admin-dash-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .admin-dash-chip {
+      font-size: 0.62rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: var(--text-secondary);
+    }
+    .admin-dash-preview {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+    .admin-dash-swatch {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+    .admin-dash-preview-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .admin-dash-preview-info .admin-dash-label {
+      margin-bottom: 2px;
+    }
+    .admin-dash-preview-info .admin-dash-value {
+      font-size: 0.82rem;
+    }
+    .admin-dash-raw {
+      margin-top: 8px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 0.68rem;
+      color: var(--text-tertiary);
+      font-family: var(--font-mono);
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .admin-dash-raw.hidden { display: none; }
+
+    /* ─── Admin Sidebar ──────────────────────────────── */
+    .admin-sidebar {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .admin-sidebar::-webkit-scrollbar { width: 3px; }
+    .admin-sidebar::-webkit-scrollbar-thumb { background: transparent; border-radius: 2px; }
+    .admin-sidebar:hover::-webkit-scrollbar-thumb { background: var(--border-color); }
+    .admin-sb-section {
+      padding: 4px 14px;
+    }
+    .admin-sb-label {
+      font-size: 0.58rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+    .admin-sb-stat {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+    .admin-sb-stat strong {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .admin-sb-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 4px 14px;
+    }
+    /* Storage bar */
+    .admin-sb-bar-wrap {
+      padding: 2px 6px;
+      margin-bottom: 4px;
+    }
+    .admin-sb-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border-subtle);
+      overflow: hidden;
+    }
+    .admin-sb-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 300ms ease;
+    }
+    .admin-sb-bar-fill.ok { background: var(--accent); }
+    .admin-sb-bar-fill.warn { background: #f59e0b; }
+    .admin-sb-bar-fill.danger { background: #ef4444; }
+    /* Swatch */
+    .admin-sb-swatch {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 6px;
+    }
+    .admin-sb-swatch-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .admin-sb-swatch-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .admin-sb-swatch-info .admin-sb-stat {
+      padding: 0;
+    }
+    /* Action buttons */
+    .admin-sb-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 2px 6px;
+    }
+    .admin-sb-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-family);
+      transition: all var(--t-fast);
+      width: 100%;
+      text-align: left;
+    }
+    .admin-sb-btn:hover {
+      background: var(--accent-soft);
+      color: var(--text-primary);
+    }
+    .admin-sb-btn svg {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      opacity: 0.6;
+    }
+    .admin-sb-btn:hover svg { opacity: 1; }
+    .admin-sb-btn.primary {
+      background: var(--accent);
+      color: var(--text-inverse);
+    }
+    .admin-sb-btn.primary:hover { opacity: 0.85; }
+    .admin-sb-btn.primary svg { opacity: 1; }
+
+    /* ─── Toast ──────────────────────────────────────── */
+    .admin-toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      background: var(--black);
+      color: var(--white);
+      box-shadow: var(--shadow-lg);
+      opacity: 0;
+      transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 10000;
+      pointer-events: none;
+    }
+    .admin-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .admin-toast.success {
+      background: var(--accent);
+      color: var(--text-inverse);
+    }
+    .admin-toast.error {
+      background: var(--danger, #ef4444);
+      color: #fff;
+    }
+    html.light .admin-toast {
+      background: #1a1a1a;
+      color: #fff;
+    }
+    html.light .admin-toast.success {
+      background: #4d6356;
+    }
+
+    /* ─── Password Modal ─────────────────────────────── */
+    .password-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 150ms ease;
+    }
+    .password-modal-overlay.hidden { display: none; }
+    .password-modal {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      animation: slideUpModal 250ms cubic-bezier(0.16,1,0.3,1);
+    }
+    .password-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .password-modal-header h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .password-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: all var(--t-fast);
+    }
+    .password-modal-close:hover {
+      background: var(--accent-soft);
+      color: var(--text-primary);
+    }
+    .password-modal-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .password-modal-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .password-modal-field label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .password-modal-field input {
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      font-family: var(--font-mono);
+      outline: none;
+      transition: border-color var(--t-fast);
+    }
+    .password-modal-field input:focus {
+      border-color: var(--accent);
+    }
+    .password-modal-error {
+      padding: 8px 12px;
+      background: color-mix(in srgb, var(--danger, #ef4444) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--danger, #ef4444) 30%, transparent);
+      border-radius: 6px;
+      font-size: 0.72rem;
+      color: var(--danger, #ef4444);
+      line-height: 1.4;
+    }
+    .password-modal-error.hidden { display: none; }
+    .password-modal-footer {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .password-modal-footer .admin-btn {
+      min-width: 80px;
+      justify-content: center;
+    }
+
+    /* ─── Preview Modal ──────────────────────────────── */
+    .admin-preview-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 150ms ease;
+    }
+    .admin-preview-overlay.hidden { display: none; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUpModal { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .admin-preview-modal {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      animation: slideUpModal 250ms var(--curve, cubic-bezier(0.16,1,0.3,1));
+    }
+    .admin-preview-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .admin-preview-header h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .admin-preview-header .admin-preview-name {
+      font-size: 0.75rem;
+      color: var(--text-tertiary);
+      font-weight: 400;
+      margin-left: 4px;
+    }
+    .admin-preview-close {
+      margin-left: auto;
+      background: none;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: all var(--t-fast);
+    }
+    .admin-preview-close:hover {
+      background: var(--accent-soft);
+      color: var(--text-primary);
+    }
+    .admin-preview-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1 1 auto;
+      min-height: 80px;
+    }
+    .admin-preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .admin-preview-stat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface-container);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+    }
+    .admin-preview-stat-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--text-inverse);
+      font-size: 0.7rem;
+    }
+    .admin-preview-stat-info { flex: 1; min-width: 0; }
+    .admin-preview-stat-val {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+    .admin-preview-stat-label {
+      font-size: 0.62rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .admin-preview-stat-sub {
+      font-size: 0.6rem;
+      color: var(--text-tertiary);
+      margin-top: 1px;
+    }
+    .admin-preview-summary {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .admin-preview-summary strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .admin-preview-bento {
+      position: relative;
+      width: 100%;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+    .admin-preview-bento-widget {
+      position: absolute;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-end;
+      font-size: 0.5rem;
+      font-weight: 500;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+      overflow: hidden;
+      padding: 4px 5px;
+      box-sizing: border-box;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12);
+      transition: box-shadow 150ms;
+    }
+    .admin-preview-bento-widget .pw-icon {
+      width: 14px;
+      height: 14px;
+      margin-bottom: 2px;
+      opacity: 0.85;
+      flex-shrink: 0;
+    }
+    .admin-preview-bento-widget .pw-label {
+      font-size: 0.5rem;
+      font-weight: 500;
+      opacity: 0.85;
+      line-height: 1.2;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .admin-preview-bento-widget .pw-img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      border-radius: 4px;
+    }
+    .admin-preview-bento-widget .pw-overlay {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      pointer-events: none;
+    }
+    .admin-preview-bento-widget.sm { font-size: 0.45rem; }
+    .admin-preview-bento-widget.sm .pw-icon { width: 10px; height: 10px; }
+    .admin-preview-bento-widget.sm .pw-label { font-size: 0.4rem; }
+
+    .admin-preview-footer {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+    .admin-preview-footer .admin-btn {
+      min-width: 90px;
+      justify-content: center;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 640px) {
+      .admin-scroll { padding: 24px 16px 80px; }
+      .admin-grid { grid-template-columns: 1fr; }
+      .admin-toolbar .admin-btn { font-size: 0.7rem; padding: 6px 10px; }
+      .admin-search { max-width: none; }
+    }
+    @media (max-width: 480px) {
+      .admin-header { flex-wrap: wrap; }
+      .admin-status { flex-direction: column; align-items: flex-start; gap: 6px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient background -->
+  <div class="hub-ambient">
+    <div class="hub-ambient-gradient"></div>
+    <div class="hub-ambient-dots"></div>
+  </div>
+
+  <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
+
+  <div class="hub-layout">
+    <!-- ─── SIDEBAR ─────────────────────────────────────── -->
+    <aside class="hub-sidebar" id="hubSidebar">
+      <div class="hub-workspace">
+        <div class="hub-workspace-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+        <span class="hub-workspace-name">Admin</span>
+        <button class="hub-hamburger" id="hubHamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="admin-sidebar" id="adminSidebar"></div>
+
+      <div class="hub-sidebar-footer">
+        <div class="hub-footer-btns">
+          <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <span>Theme</span>
+          </button>
+          <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+            <span>Settings</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ─── MAIN ─────────────────────────────────────────── -->
+    <div class="hub-main">
+      <div class="admin-scroll">
+
+    <!-- Header -->
+    <div class="admin-header">
+      <div class="admin-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+      </div>
+      <div class="admin-header-info">
+        <h1>Admin</h1>
+        <p>Presets, defaults &amp; dashboard</p>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="admin-status">
+      <span class="admin-status-item">Presets <strong id="statPresetsCount">0</strong></span>
+      <span class="admin-status-item">Active <strong id="statActiveName">&mdash;</strong></span>
+      <span class="admin-status-item admin-status-badge" id="statAccess">Admin</span>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="admin-toolbar">
+      <button class="admin-btn primary" id="btnSavePreset">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Preset
+      </button>
+      <button class="admin-btn" id="btnChangePass">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        Password
+      </button>
+      <button class="admin-btn" id="btnDashboard">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+        Dashboard
+      </button>
+      <input class="admin-search" id="adminSearch" type="text" placeholder="Filter presets..." spellcheck="false">
+    </div>
+
+    <!-- Dashboard Section -->
+    <div class="admin-dashboard hidden" id="adminDashboard"></div>
+
+    <!-- Presets Grid -->
+    <div class="admin-grid" id="presetsGrid"></div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Modal -->
+  <div class="password-modal-overlay hidden" id="passwordModalOverlay">
+    <div class="password-modal">
+      <div class="password-modal-header">
+        <h3 id="passwordModalTitle">Enter Password</h3>
+        <button class="password-modal-close" id="passwordModalClose">&times;</button>
+      </div>
+      <div class="password-modal-body">
+        <div class="password-modal-field" id="passwordModalCurrentGroup">
+          <label for="passwordModalCurrent">Current Password</label>
+          <input type="password" id="passwordModalCurrent" placeholder="Enter current password" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="password-modal-field hidden" id="passwordModalNewGroup">
+          <label for="passwordModalNew">New Password</label>
+          <input type="password" id="passwordModalNew" placeholder="At least 3 characters" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="password-modal-field hidden" id="passwordModalConfirmGroup">
+          <label for="passwordModalConfirm">Confirm New Password</label>
+          <input type="password" id="passwordModalConfirm" placeholder="Repeat new password" spellcheck="false" autocomplete="off">
+        </div>
+        <div class="password-modal-error hidden" id="passwordModalError"></div>
+      </div>
+      <div class="password-modal-footer">
+        <button class="admin-btn" id="passwordModalCancel">Cancel</button>
+        <button class="admin-btn primary" id="passwordModalSubmit">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="admin-toast" id="adminToast"></div>
+
+  <!-- Preset Preview Modal -->
+  <div class="admin-preview-overlay hidden" id="adminPreviewOverlay">
+    <div class="admin-preview-modal">
+      <div class="admin-preview-header">
+        <h3>Preset Preview</h3>
+        <span class="admin-preview-name" id="previewName"></span>
+        <button class="admin-preview-close" id="previewClose">&times;</button>
+      </div>
+      <div class="admin-preview-body" id="previewBody"></div>
+      <div class="admin-preview-footer">
+        <button class="admin-btn" id="previewCancelBtn">Cancel</button>
+        <button class="admin-btn primary" id="previewApplyBtn">Apply Preset</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="shared.js"></script>
+  <script>
+    (function() {
+      var ADMIN_PASS_KEY = 'haven-admin-password';
+      var ADMIN_PASS_DEFAULT = 'MjcwODEw';
+      var ADMIN_PRESETS_KEY = 'haven-admin-presets';
+      var ACTIVE_PRESET_KEY = 'haven-active-preset';
+      var HUB_CONTENT_KEY = 'haven-hub-content';
+
+      function loadAdminPresets() {
+        try {
+          var raw = localStorage.getItem(ADMIN_PRESETS_KEY);
+          return raw ? JSON.parse(raw) : [];
+        } catch(e) { return []; }
+      }
+
+      function saveAdminPresets(presets) {
+        try { localStorage.setItem(ADMIN_PRESETS_KEY, JSON.stringify(presets)); } catch(e) {}
+      }
+
+      function getActivePresetId() {
+        try { return localStorage.getItem(ACTIVE_PRESET_KEY); } catch(e) { return null; }
+      }
+
+      // ─── Toast ─────────────────────────────────────────
+      var toastTimeout = null;
+      function showToast(msg, type, duration) {
+        var el = document.getElementById('adminToast');
+        if (!el) return;
+        el.textContent = msg;
+        el.className = 'admin-toast' + (type ? ' ' + type : '');
+        clearTimeout(toastTimeout);
+        void el.offsetWidth;
+        el.classList.add('show');
+        toastTimeout = setTimeout(function() {
+          el.classList.remove('show');
+        }, duration || 2000);
+      }
+
+      // ─── Escape HTML ───────────────────────────────────
+      function esc(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      // ─── Password Modal ────────────────────────────────
+      var _pendingPasswordCallback = null;
+      var _passwordModalMode = 'verify';
+
+      function openPasswordModal(mode, opts) {
+        _passwordModalMode = mode || 'verify';
+        _pendingPasswordCallback = opts || {};
+
+        var overlay = document.getElementById('passwordModalOverlay');
+        var title = document.getElementById('passwordModalTitle');
+        var currentInput = document.getElementById('passwordModalCurrent');
+        var newGroup = document.getElementById('passwordModalNewGroup');
+        var confirmGroup = document.getElementById('passwordModalConfirmGroup');
+        var errorEl = document.getElementById('passwordModalError');
+        var submitBtn = document.getElementById('passwordModalSubmit');
+
+        currentInput.value = '';
+        document.getElementById('passwordModalNew').value = '';
+        document.getElementById('passwordModalConfirm').value = '';
+        errorEl.classList.add('hidden');
+
+        if (_passwordModalMode === 'change') {
+          title.textContent = _pendingPasswordCallback.title || 'Change Password';
+          newGroup.classList.remove('hidden');
+          confirmGroup.classList.remove('hidden');
+          submitBtn.textContent = 'Change';
+        } else {
+          title.textContent = _pendingPasswordCallback.title || 'Enter Password';
+          newGroup.classList.add('hidden');
+          confirmGroup.classList.add('hidden');
+          submitBtn.textContent = 'Confirm';
+        }
+
+        overlay.classList.remove('hidden');
+        setTimeout(function() { currentInput.focus(); }, 100);
+      }
+
+      function closePasswordModal() {
+        document.getElementById('passwordModalOverlay').classList.add('hidden');
+        _pendingPasswordCallback = null;
+      }
+
+      function handlePasswordModalSubmit() {
+        var currentPass = document.getElementById('passwordModalCurrent').value;
+        var errorEl = document.getElementById('passwordModalError');
+
+        if (_passwordModalMode === 'change') {
+          var newPass = document.getElementById('passwordModalNew').value;
+          var confirmPass = document.getElementById('passwordModalConfirm').value;
+
+          if (!currentPass) {
+            errorEl.textContent = 'Please enter your current password';
+            errorEl.classList.remove('hidden');
+            document.getElementById('passwordModalCurrent').focus();
+            return;
+          }
+          var stored;
+          try { stored = localStorage.getItem(ADMIN_PASS_KEY) || ADMIN_PASS_DEFAULT; } catch(e) { stored = ADMIN_PASS_DEFAULT; }
+          try {
+            if (btoa(currentPass) !== stored) {
+              errorEl.textContent = 'Current password is incorrect';
+              errorEl.classList.remove('hidden');
+              document.getElementById('passwordModalCurrent').focus();
+              return;
+            }
+          } catch(e) {
+            errorEl.textContent = 'Error verifying password';
+            errorEl.classList.remove('hidden');
+            return;
+          }
+          if (!newPass || newPass.length < 3) {
+            errorEl.textContent = 'New password must be at least 3 characters';
+            errorEl.classList.remove('hidden');
+            document.getElementById('passwordModalNew').focus();
+            return;
+          }
+          if (newPass !== confirmPass) {
+            errorEl.textContent = 'Passwords do not match';
+            errorEl.classList.remove('hidden');
+            document.getElementById('passwordModalConfirm').focus();
+            return;
+          }
+
+          try { localStorage.setItem(ADMIN_PASS_KEY, btoa(newPass)); } catch(e) {
+            errorEl.textContent = 'Failed to save password';
+            errorEl.classList.remove('hidden');
+            return;
+          }
+        } else {
+          if (!currentPass) {
+            errorEl.textContent = 'Please enter your password';
+            errorEl.classList.remove('hidden');
+            document.getElementById('passwordModalCurrent').focus();
+            return;
+          }
+          var storedPass;
+          try { storedPass = localStorage.getItem(ADMIN_PASS_KEY) || ADMIN_PASS_DEFAULT; } catch(e) { storedPass = ADMIN_PASS_DEFAULT; }
+          try {
+            if (btoa(currentPass) !== storedPass) {
+              errorEl.textContent = 'Incorrect password';
+              errorEl.classList.remove('hidden');
+              document.getElementById('passwordModalCurrent').focus();
+              return;
+            }
+          } catch(e) {
+            errorEl.textContent = 'Error verifying password';
+            errorEl.classList.remove('hidden');
+            return;
+          }
+        }
+        var cb = _pendingPasswordCallback;
+        closePasswordModal();
+        if (cb && typeof cb.onSuccess === 'function') cb.onSuccess();
+      }
+
+      // ─── Dashboard ────────────────────────────────────
+      var _dashboardVisible = false;
+
+      function renderDashboard() {
+        var el = document.getElementById('adminDashboard');
+        if (!el) return;
+
+        // Gather stats
+        var stats = {};
+
+        // Storage
+        var getRaw = (typeof __origLS !== 'undefined' && __origLS.getItem) ? __origLS.getItem : localStorage.getItem;
+        var keyCount = 0;
+        var totalSize = 0;
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k) {
+              keyCount++;
+              var v = getRaw(k);
+              if (v) totalSize += k.length + v.length;
+            }
+          }
+        } catch(e) {}
+        stats.storage = { label: 'Storage Keys', value: keyCount, sub: (totalSize / 1024).toFixed(1) + ' KB' };
+
+        // Login
+        var userId = '';
+        try { if (typeof state !== 'undefined' && state.currentUserId) userId = state.currentUserId; } catch(e) {}
+        stats.login = { label: 'User ID', value: userId || 'Local only', sub: userId ? 'Logged in' : 'No account linked' };
+
+        // Settings
+        var settings = null;
+        try { var sRaw = localStorage.getItem('haven-schedule-settings'); if (sRaw) settings = JSON.parse(sRaw); } catch(e) {}
+
+        // Tasks
+        var tasks = [];
+        try { var tRaw = localStorage.getItem('haven-schedule-tasks'); if (tRaw) tasks = JSON.parse(tRaw); } catch(e) {}
+        var taskCount = tasks.length;
+        var taskTags = {};
+        tasks.forEach(function(t) {
+          var tag = t.tag || 'none';
+          taskTags[tag] = (taskTags[tag] || 0) + 1;
+        });
+        stats.tasks = { label: 'Tasks', value: taskCount, sub: Object.keys(taskTags).length + ' tags' };
+
+        // Categories
+        var cats = [];
+        try { var cRaw = localStorage.getItem('haven-schedule-categories'); if (cRaw) cats = JSON.parse(cRaw); } catch(e) {}
+        stats.categories = { label: 'Categories', value: cats.length, sub: 'custom schedule categories' };
+
+        // Custom tags
+        var customTags = [];
+        try { var ctRaw = localStorage.getItem('haven-custom-tags'); if (ctRaw) customTags = JSON.parse(ctRaw); } catch(e) {}
+        stats.tags = { label: 'Custom Tags', value: customTags.length, sub: 'for board & activities' };
+
+        // Card colors
+        var cardColors = {};
+        try { var ccRaw = localStorage.getItem('haven-card-colors'); if (ccRaw) cardColors = JSON.parse(ccRaw); } catch(e) {}
+        stats.cardColors = { label: 'Card Colors', value: Object.keys(cardColors).length, sub: 'tag overrides' };
+
+        // Subcategories
+        var subcats = {};
+        try { var scRaw = localStorage.getItem('haven-subcategories'); if (scRaw) subcats = JSON.parse(scRaw); } catch(e) {}
+        var subcatCount = 0;
+        Object.keys(subcats).forEach(function(k) { if (subcats[k]) subcatCount += subcats[k].length; });
+        stats.subcategories = { label: 'Subcategories', value: subcatCount, sub: Object.keys(subcats).length + ' groups' };
+
+        // Activities
+        var completions = [];
+        try { var aRaw = localStorage.getItem('haven-activities-completions'); if (aRaw) completions = JSON.parse(aRaw); } catch(e) {}
+        var uniqueActTags = {};
+        completions.forEach(function(c) { if (c.tag) uniqueActTags[c.tag] = true; });
+        stats.activities = { label: 'Activity Completions', value: completions.length, sub: Object.keys(uniqueActTags).length + ' tags logged' };
+
+        // Sleep
+        var sleepLogs = [];
+        try { var slRaw = localStorage.getItem('haven-schedule-sleep'); if (slRaw) sleepLogs = JSON.parse(slRaw); } catch(e) {}
+        var recentSleep = 0;
+        var sevenDaysAgo = Date.now() - 7 * 86400000;
+        sleepLogs.forEach(function(s) {
+          if (s.date && new Date(s.date).getTime() > sevenDaysAgo) recentSleep++;
+        });
+        stats.sleep = { label: 'Sleep Logs', value: sleepLogs.length, sub: recentSleep + ' in last 7 days' };
+
+        // Finance
+        var piggy = 0;
+        try { var pRaw = localStorage.getItem('haven-piggybank'); if (pRaw) { var pData = JSON.parse(pRaw); piggy = pData.balance || 0; } } catch(e) {}
+        var wallet = 0;
+        try { var wRaw = localStorage.getItem('haven-wallet'); if (wRaw) { var wData = JSON.parse(wRaw); wallet = wData.balance || 0; } } catch(e) {}
+        stats.finance = { label: 'Piggy Bank', value: '$' + piggy.toFixed(2), sub: 'Wallet: $' + wallet.toFixed(2) };
+
+        // Images
+        var imgCount = 0;
+        var imgSize = 0;
+        try {
+          for (var j = 0; j < localStorage.length; j++) {
+            var ik = localStorage.key(j);
+            if (ik && ik.indexOf('haven-image-') !== -1 && ik.indexOf('haven-image-gallery-') === -1) {
+              imgCount++;
+              var iv = getRaw(ik);
+              if (iv) imgSize += iv.length;
+            }
+          }
+        } catch(e) {}
+        stats.images = { label: 'Images', value: imgCount, sub: (imgSize / 1024).toFixed(1) + ' KB' };
+
+        // Bento Widgets
+        var widgetTypes = {};
+        try {
+          var hcRaw = localStorage.getItem('haven-hub-content');
+          if (hcRaw) {
+            var hc = JSON.parse(hcRaw);
+            if (hc.bentoLayout) {
+              hc.bentoLayout.forEach(function(w) {
+                var t = w.t || 'unknown';
+                widgetTypes[t] = (widgetTypes[t] || 0) + 1;
+              });
+            }
+          }
+        } catch(e) {}
+        var typeLabels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', 'flightradar':'FlightRadar24', 'sleep-score':'Sleep Score', clock2:'Clock2' };
+        var widgetTotal = 0;
+        Object.keys(widgetTypes).forEach(function(t) { widgetTotal += widgetTypes[t]; });
+        stats.widgets = { label: 'Bento Widgets', value: widgetTotal, sub: Object.keys(widgetTypes).length + ' types' };
+
+        // AI Usage
+        var aiUsage = {};
+        try { var auRaw = localStorage.getItem('haven-schedule-ai-usage'); if (auRaw) aiUsage = JSON.parse(auRaw); } catch(e) {}
+        var aiTotalTokens = aiUsage.totalTokens || 0;
+        stats.ai = { label: 'AI Tokens Used', value: aiTotalTokens.toLocaleString(), sub: 'lifetime usage' };
+
+        // Build HTML
+        var html = '<div class="admin-dash-grid">';
+        var order = ['storage','login','tasks','activities','categories','tags','cardColors','subcategories','sleep','finance','images','widgets','ai'];
+        order.forEach(function(key) {
+          var s = stats[key];
+          if (!s) return;
+          html += '<div class="admin-dash-card">';
+          html += '<div class="admin-dash-label">' + esc(s.label) + '</div>';
+          html += '<div class="admin-dash-value">' + esc(String(s.value)) + '</div>';
+          if (s.sub) html += '<div class="admin-dash-sub">' + esc(s.sub) + '</div>';
+          html += '</div>';
+        });
+
+        // Task tag breakdown
+        html += '<div class="admin-dash-card full">';
+        html += '<div class="admin-dash-label">Tasks by Tag</div>';
+        html += '<div class="admin-dash-row">';
+        var tagOrder = Object.keys(taskTags).sort();
+        tagOrder.forEach(function(tag) {
+          html += '<span class="admin-dash-chip">' + esc(tag) + ': ' + taskTags[tag] + '</span>';
+        });
+        if (tagOrder.length === 0) html += '<span class="admin-dash-chip" style="opacity:0.5">No tasks</span>';
+        html += '</div></div>';
+
+        // Customization Preview
+        html += '<div class="admin-dash-card full">';
+        html += '<div class="admin-dash-label">Customization Preview</div>';
+        var accentColor = settings ? (settings.accentColor || 'var(--accent)') : 'var(--accent)';
+        var darkMode = settings ? (settings.darkMode === true ? 'Dark' : settings.darkMode === false ? 'Light' : 'System') : 'System';
+        html += '<div class="admin-dash-preview">';
+        html += '<div class="admin-dash-swatch" style="background:' + esc(accentColor) + '"></div>';
+        html += '<div class="admin-dash-preview-info">';
+        html += '<div class="admin-dash-value">' + esc(accentColor) + ' &middot; ' + esc(darkMode) + ' mode</div>';
+        html += '<div class="admin-dash-sub">' + (cats.length + 5) + ' total categories &middot; ' + customTags.length + ' custom tags</div>';
+        html += '</div></div>';
+
+        // Raw data toggle
+        html += '<button class="admin-btn small" id="dashRawToggle" style="margin-top:8px">Show Raw Settings</button>';
+        html += '<div class="admin-dash-raw hidden" id="dashRawData">' + (settings ? esc(JSON.stringify(settings, null, 2)) : 'No settings found') + '</div>';
+        html += '</div>';
+
+        // Widget type breakdown
+        var wTypes = Object.keys(widgetTypes).sort();
+        if (wTypes.length > 0) {
+          html += '<div class="admin-dash-card full">';
+          html += '<div class="admin-dash-label">Widget Types</div>';
+          html += '<div class="admin-dash-row">';
+          wTypes.forEach(function(t) {
+            html += '<span class="admin-dash-chip">' + esc(typeLabels[t] || t) + ' \u00D7' + widgetTypes[t] + '</span>';
+          });
+          html += '</div></div>';
+        }
+
+        html += '</div>';
+        el.innerHTML = html;
+
+        // Wire raw toggle
+        var toggleBtn = document.getElementById('dashRawToggle');
+        var rawEl = document.getElementById('dashRawData');
+        if (toggleBtn && rawEl) {
+          toggleBtn.addEventListener('click', function() {
+            rawEl.classList.toggle('hidden');
+            toggleBtn.textContent = rawEl.classList.contains('hidden') ? 'Show Raw Settings' : 'Hide Raw Settings';
+          });
+        }
+      }
+
+      function toggleDashboard() {
+        _dashboardVisible = !_dashboardVisible;
+        var el = document.getElementById('adminDashboard');
+        if (!el) return;
+        if (_dashboardVisible) {
+          el.classList.remove('hidden');
+          renderDashboard();
+        } else {
+          el.classList.add('hidden');
+        }
+      }
+
+      // ─── Sidebar ───────────────────────────────────────
+      function renderAdminSidebar() {
+        var el = document.getElementById('adminSidebar');
+        if (!el) return;
+
+        var getRaw = (typeof __origLS !== 'undefined' && __origLS.getItem) ? __origLS.getItem : localStorage.getItem;
+
+        // Storage stats
+        var keyCount = 0;
+        var totalSize = 0;
+        var largestKeys = [];
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k) {
+              keyCount++;
+              var v = getRaw(k);
+              if (v) {
+                var sz = k.length + v.length;
+                totalSize += sz;
+                largestKeys.push({ key: k, size: sz });
+              }
+            }
+          }
+        } catch(e) {}
+        largestKeys.sort(function(a, b) { return b.size - a.size; });
+        var maxStorage = 5120; // ~5MB estimate for localStorage limit
+        var pct = Math.min(100, (totalSize / maxStorage) * 100);
+        var barClass = pct > 80 ? 'danger' : pct > 50 ? 'warn' : 'ok';
+
+        // Settings
+        var settings = null;
+        try { var sRaw = localStorage.getItem('haven-schedule-settings'); if (sRaw) settings = JSON.parse(sRaw); } catch(e) {}
+
+        // Task count
+        var taskCount = 0;
+        try { var tRaw = localStorage.getItem('haven-schedule-tasks'); if (tRaw) { var t = JSON.parse(tRaw); taskCount = t.length; } } catch(e) {}
+
+        // Preset count
+        var presets = loadAdminPresets();
+
+        // Image count + size
+        var imgCount = 0;
+        var imgSize = 0;
+        try {
+          for (var j = 0; j < localStorage.length; j++) {
+            var ik = localStorage.key(j);
+            if (ik && ik.indexOf('haven-image-') !== -1 && ik.indexOf('haven-image-gallery-') === -1) {
+              imgCount++;
+              var iv = getRaw(ik);
+              if (iv) imgSize += iv.length;
+            }
+          }
+        } catch(e) {}
+
+        // Sleep count
+        var sleepCount = 0;
+        try { var slRaw = localStorage.getItem('haven-schedule-sleep'); if (slRaw) { sleepCount = JSON.parse(slRaw).length; } } catch(e) {}
+
+        var accentColor = settings ? (settings.accentColor || 'var(--accent)') : 'var(--accent)';
+        var darkMode = settings ? (settings.darkMode === true ? 'Dark' : settings.darkMode === false ? 'Light' : 'System') : 'System';
+
+        var html = '';
+
+        // ── Section 1: Resource Monitor ──
+        html += '<div class="admin-sb-section">';
+        html += '<div class="admin-sb-label">Storage Monitor</div>';
+        html += '<div class="admin-sb-bar-wrap">';
+        html += '<div class="admin-sb-bar"><div class="admin-sb-bar-fill ' + barClass + '" style="width:' + pct.toFixed(0) + '%"></div></div>';
+        html += '</div>';
+        html += '<div class="admin-sb-stat"><span>Used</span> <strong>' + (totalSize / 1024).toFixed(1) + ' KB</strong></div>';
+        html += '<div class="admin-sb-stat"><span>Keys</span> <strong>' + keyCount + '</strong></div>';
+        if (largestKeys.length > 0) {
+          var top = largestKeys.slice(0, 3);
+          html += '<div class="admin-sb-stat" style="margin-top:4px;font-size:0.62rem;color:var(--text-tertiary)">Largest keys:</div>';
+          top.forEach(function(item) {
+            var label = item.key.length > 24 ? item.key.slice(0, 24) + '...' : item.key;
+            html += '<div class="admin-sb-stat" style="font-size:0.62rem;padding:1px 6px"><span style="color:var(--text-tertiary)">' + esc(label) + '</span> <strong>' + (item.size / 1024).toFixed(1) + ' KB</strong></div>';
+          });
+        }
+        html += '</div>';
+
+        // ── Section 2: Mini Dashboard ──
+        html += '<div class="admin-sb-divider"></div>';
+        html += '<div class="admin-sb-section">';
+        html += '<div class="admin-sb-label">Overview</div>';
+        html += '<div class="admin-sb-swatch">';
+        html += '<div class="admin-sb-swatch-dot" style="background:' + esc(accentColor) + '"></div>';
+        html += '<div class="admin-sb-swatch-info">';
+        html += '<div class="admin-sb-stat"><span>Accent</span> <strong style="font-size:0.65rem">' + esc(accentColor) + '</strong></div>';
+        html += '<div class="admin-sb-stat" style="font-size:0.62rem;color:var(--text-tertiary)">' + esc(darkMode) + ' mode</div>';
+        html += '</div></div>';
+        html += '<div class="admin-sb-stat"><span>Tasks</span> <strong>' + taskCount + '</strong></div>';
+        html += '<div class="admin-sb-stat"><span>Presets</span> <strong>' + presets.length + '</strong></div>';
+        html += '<div class="admin-sb-stat"><span>Images</span> <strong>' + imgCount + '</strong> <span style="font-size:0.6rem;color:var(--text-tertiary)">' + (imgSize / 1024).toFixed(1) + ' KB</span></div>';
+        html += '<div class="admin-sb-stat"><span>Sleep logs</span> <strong>' + sleepCount + '</strong></div>';
+        html += '</div>';
+
+        // ── Section 3: Command Center ──
+        html += '<div class="admin-sb-divider"></div>';
+        html += '<div class="admin-sb-section">';
+        html += '<div class="admin-sb-label">Actions</div>';
+        html += '<div class="admin-sb-actions">';
+        html += '<button class="admin-sb-btn primary" id="sbSaveBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Preset</button>';
+        html += '<button class="admin-sb-btn" id="sbDashBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Dashboard</button>';
+        html += '<button class="admin-sb-btn" id="sbThemeBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>Toggle Theme</button>';
+        html += '<button class="admin-sb-btn" id="sbPassBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Change Password</button>';
+        html += '</div>';
+        html += '</div>';
+
+        el.innerHTML = html;
+
+        // Wire sidebar buttons
+        var sbSave = document.getElementById('sbSaveBtn');
+        if (sbSave) sbSave.addEventListener('click', handleSavePreset);
+        var sbDash = document.getElementById('sbDashBtn');
+        if (sbDash) sbDash.addEventListener('click', toggleDashboard);
+        var sbTheme = document.getElementById('sbThemeBtn');
+        if (sbTheme && typeof toggleTheme === 'function') sbTheme.addEventListener('click', toggleTheme);
+        var sbPass = document.getElementById('sbPassBtn');
+        if (sbPass) sbPass.addEventListener('click', handleChangePassword);
+      }
+
+      // ─── Render ────────────────────────────────────────
+      var _filterText = '';
+
+      function render() {
+        try {
+          var presets = loadAdminPresets();
+          var activeId = getActivePresetId();
+          var gridEl = document.getElementById('presetsGrid');
+          var countEl = document.getElementById('statPresetsCount');
+          var nameEl = document.getElementById('statActiveName');
+
+          if (countEl) countEl.textContent = presets.length;
+
+          var activePreset = presets.find(function(p) { return p.id === activeId; });
+          if (nameEl) {
+            nameEl.textContent = activePreset ? esc(activePreset.name) : '\u2014';
+          }
+
+          if (!gridEl) return;
+
+          // Filter
+          var filtered = presets;
+          if (_filterText) {
+            var f = _filterText.toLowerCase();
+            filtered = presets.filter(function(p) { return p.name.toLowerCase().indexOf(f) !== -1; });
+          }
+
+          var html = '';
+
+          if (filtered.length === 0) {
+            if (presets.length === 0) {
+              html = '<div class="admin-empty">No presets saved yet.<br>Go to the hub and press <kbd>Ctrl+Shift+D</kbd> to save your layout as a preset.</div>';
+            } else {
+              html = '<div class="admin-empty">No presets match "' + esc(_filterText) + '".</div>';
+            }
+            gridEl.innerHTML = html;
+            return;
+          }
+
+          filtered.forEach(function(p) {
+            var isActive = p.id === activeId;
+            var dateStr = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+            var widgetCount = p.data && p.data.hubContent && p.data.hubContent.bentoLayout ? p.data.hubContent.bentoLayout.length : 0;
+            var imgCount = p.data && p.data.images ? Object.keys(p.data.images).length : 0;
+            var catCount = p.data && p.data.customCategories ? p.data.customCategories.length : 0;
+
+            html += '<div class="admin-card' + (isActive ? ' active' : '') + '" data-id="' + esc(p.id) + '">';
+            html += '<div class="admin-card-top">';
+            html += '<div class="admin-card-name" title="' + esc(p.name) + '">' + esc(p.name) + '</div>';
+            html += isActive
+              ? '<span class="admin-card-badge">Active</span>'
+              : '<span class="admin-card-badge inactive">Set Default</span>';
+            html += '</div>';
+            html += '<div class="admin-card-meta">';
+            if (dateStr) html += '<span class="admin-card-chip">' + esc(dateStr) + '</span>';
+            html += '<span class="admin-card-chip">' + widgetCount + ' widgets</span>';
+            if (imgCount) html += '<span class="admin-card-chip">' + imgCount + ' imgs</span>';
+            if (catCount) html += '<span class="admin-card-chip">' + catCount + ' cats</span>';
+            html += '</div>';
+            html += '<div class="admin-card-actions">';
+            if (!isActive) {
+              html += '<button class="primary" data-action="activate" data-id="' + esc(p.id) + '">Set Active</button>';
+            }
+            html += '<button data-action="preview" data-id="' + esc(p.id) + '">Preview</button>';
+            html += '<button data-action="rename" data-id="' + esc(p.id) + '">Rename</button>';
+            html += '<button data-action="duplicate" data-id="' + esc(p.id) + '">Duplicate</button>';
+            html += '<button class="danger" data-action="delete" data-id="' + esc(p.id) + '">Delete</button>';
+            html += '</div>';
+            html += '</div>';
+          });
+
+          gridEl.innerHTML = html;
+        } catch(e) {
+          console.warn('Admin render error:', e);
+        }
+        renderAdminSidebar();
+      }
+
+      // ─── Actions ────────────────────────────────────────
+      function handleSavePreset() {
+        var name = prompt('Enter a name for this preset:');
+        if (!name || !name.trim()) return;
+        name = name.trim();
+
+        openPasswordModal('verify', {
+          title: 'Enter password to save preset',
+          onSuccess: function() {
+            captureAndSavePresetData(name);
+          }
+        });
+      }
+
+      function captureAndSavePresetData(name) {
+        var hubContent = null;
+        try {
+          var raw = localStorage.getItem(HUB_CONTENT_KEY);
+          if (raw) hubContent = JSON.parse(raw);
+        } catch(e) {}
+
+        if (!hubContent) {
+          showToast('No hub content found. Visit the hub page first.', 'error', 3000);
+          return;
+        }
+
+        var presetData = {
+          hubContent: JSON.parse(JSON.stringify(hubContent)),
+          hubVisibility: null,
+          hubSectionOrder: [],
+          customCategories: null,
+          customTags: null,
+          subcategories: null,
+          cardColors: null,
+          renamedLabels: null,
+          settings: {}
+        };
+        try {
+          var hubVisRaw = localStorage.getItem('haven-hub-visibility');
+          if (hubVisRaw) presetData.hubVisibility = JSON.parse(hubVisRaw);
+        } catch(e) {}
+        try {
+          var hubOrderRaw = localStorage.getItem('haven-schedule-hub-layout');
+          if (hubOrderRaw) presetData.hubSectionOrder = JSON.parse(hubOrderRaw);
+        } catch(e) {}
+        if (typeof loadCustomCategories === 'function') {
+          try { presetData.customCategories = loadCustomCategories(); } catch(e) {}
+        }
+        if (typeof loadCustomTags === 'function') {
+          try { presetData.customTags = loadCustomTags(); } catch(e) {}
+        }
+        if (typeof loadSubcategories === 'function') {
+          try { presetData.subcategories = loadSubcategories(); } catch(e) {}
+        }
+        if (typeof loadCardColors === 'function') {
+          try { presetData.cardColors = loadCardColors(); } catch(e) {}
+        }
+        if (typeof loadRenamedLabels === 'function') {
+          try { presetData.renamedLabels = loadRenamedLabels(); } catch(e) {}
+        }
+        if (typeof state !== 'undefined') {
+          presetData.settings = {
+            accentColor: state.accentColor || null,
+            darkMode: state.darkMode !== null ? state.darkMode : null,
+            accentCustomColors: state.accentCustomColors ? [...state.accentCustomColors] : [],
+            accentRemovedPresets: state.accentRemovedPresets ? [...state.accentRemovedPresets] : []
+          };
+        }
+        var presetImages = {};
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf('haven-image-') === 0 && k.indexOf('haven-image-gallery-') !== 0) {
+              try { presetImages[k] = localStorage.getItem(k); } catch(e) {}
+            }
+          }
+        } catch(e) {}
+        presetData.images = presetImages;
+
+        try {
+          var spPlaylists = localStorage.getItem('haven-spotify-playlists');
+          if (spPlaylists) presetData.spotifyPlaylists = JSON.parse(spPlaylists);
+        } catch(e) {}
+        try {
+          var spActive = localStorage.getItem('haven-spotify-active');
+          if (spActive) presetData.spotifyActive = spActive;
+        } catch(e) {}
+
+        delete presetData.hubContent._images;
+        delete presetData.hubContent.images;
+        delete presetData.hubContent.bubbleColors;
+        delete presetData.hubContent.imageAspects;
+        delete presetData.hubContent.imageAspect;
+        delete presetData.hubContent.habitData;
+        delete presetData.hubContent.gallery;
+
+        var presets = loadAdminPresets();
+        var existing = presets.find(function(p) { return p.name === name; });
+        if (existing) {
+          existing.data = presetData;
+          existing.updatedAt = new Date().toISOString();
+        } else {
+          presets.push({
+            id: 'preset-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+            name: name,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            data: presetData
+          });
+        }
+        saveAdminPresets(presets);
+        showToast('Preset "' + esc(name) + '" saved', 'success');
+        render();
+      }
+
+      function handleSetActive(presetId) {
+        openPasswordModal('verify', {
+          title: 'Enter password to set active preset',
+          onSuccess: function() {
+            var presets = loadAdminPresets();
+            var preset = presets.find(function(p) { return p.id === presetId; });
+            if (!preset) { showToast('Preset not found', 'error'); return; }
+            try { localStorage.setItem(ACTIVE_PRESET_KEY, presetId); } catch(e) {}
+            showToast('Preset "' + esc(preset.name) + '" set as default for new users', 'success');
+            render();
+          }
+        });
+      }
+
+      function handleApply(presetId) {
+        openPasswordModal('verify', {
+          title: 'Enter password to apply preset',
+          onSuccess: function() {
+            var presets = loadAdminPresets();
+            var preset = presets.find(function(p) { return p.id === presetId; });
+            if (!preset || !preset.data) { showToast('Preset not found', 'error'); return; }
+
+            try {
+              var data = preset.data;
+
+              if (data.hubContent) {
+                localStorage.setItem(HUB_CONTENT_KEY, JSON.stringify(data.hubContent));
+              }
+              if (data.hubVisibility) {
+                try { localStorage.setItem('haven-hub-visibility', JSON.stringify(data.hubVisibility)); } catch(e) {}
+              }
+              if (data.hubSectionOrder && data.hubSectionOrder.length) {
+                try { localStorage.setItem('haven-schedule-hub-layout', JSON.stringify(data.hubSectionOrder)); } catch(e) {}
+              }
+              if (data.customCategories && typeof saveCustomCategories === 'function') {
+                try { saveCustomCategories(data.customCategories); } catch(e) {}
+              }
+              if (data.customTags && typeof saveCustomTags === 'function') {
+                try { saveCustomTags(data.customTags); } catch(e) {}
+              }
+              if (data.subcategories && typeof saveSubcategories === 'function') {
+                try { saveSubcategories(data.subcategories); } catch(e) {}
+              }
+              if (data.cardColors && typeof saveCardColors === 'function') {
+                try { saveCardColors(data.cardColors); } catch(e) {}
+              }
+              if (data.renamedLabels && typeof saveRenamedLabels === 'function') {
+                try { saveRenamedLabels(data.renamedLabels); } catch(e) {}
+              }
+              if (data.settings) {
+                if (typeof state !== 'undefined') {
+                  if (data.settings.accentColor !== undefined) state.accentColor = data.settings.accentColor;
+                  if (data.settings.darkMode !== undefined) state.darkMode = data.settings.darkMode;
+                  if (data.settings.accentCustomColors) state.accentCustomColors = [...data.settings.accentCustomColors];
+                  if (data.settings.accentRemovedPresets) state.accentRemovedPresets = [...data.settings.accentRemovedPresets];
+                }
+                if (typeof applyAccentColor === 'function') try { applyAccentColor(); } catch(e) {}
+                if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
+                if (typeof saveState === 'function') try { saveState(); } catch(e) {}
+              }
+              if (data.images) {
+                try {
+                  Object.keys(data.images).forEach(function(k) {
+                    try { localStorage.setItem(k, data.images[k]); } catch(e) {}
+                  });
+                } catch(e) {}
+              }
+              if (data.spotifyPlaylists) {
+                try { localStorage.setItem('haven-spotify-playlists', JSON.stringify(data.spotifyPlaylists)); } catch(e) {}
+              }
+              if (data.spotifyActive) {
+                try { localStorage.setItem('haven-spotify-active', data.spotifyActive); } catch(e) {}
+              }
+
+              showToast('Preset "' + esc(preset.name) + '" applied. Reloading...', 'success', 2000);
+              setTimeout(function() { location.href = 'index.html'; }, 1000);
+            } catch(e) {
+              showToast('Failed to apply preset', 'error');
+              console.error('admin apply error:', e);
+            }
+          }
+        });
+      }
+
+      function handleDelete(presetId) {
+        var presets = loadAdminPresets();
+        var idx = presets.findIndex(function(p) { return p.id === presetId; });
+        if (idx === -1) { showToast('Preset not found', 'error'); return; }
+        var name = presets[idx].name;
+
+        if (!confirm('Delete preset "' + name + '"? This cannot be undone.')) return;
+
+        openPasswordModal('verify', {
+          title: 'Enter password to delete preset',
+          onSuccess: function() {
+            var presets2 = loadAdminPresets();
+            var idx2 = presets2.findIndex(function(p) { return p.id === presetId; });
+            if (idx2 === -1) { showToast('Preset not found', 'error'); return; }
+            presets2.splice(idx2, 1);
+            saveAdminPresets(presets2);
+
+            var activeId = getActivePresetId();
+            if (activeId === presetId) {
+              try { localStorage.removeItem(ACTIVE_PRESET_KEY); } catch(e) {}
+            }
+
+            showToast('Preset "' + esc(name) + '" deleted', 'info');
+            render();
+          }
+        });
+      }
+
+      function handleClearActive() {
+        openPasswordModal('verify', {
+          title: 'Enter password to clear active preset',
+          onSuccess: function() {
+            try { localStorage.removeItem(ACTIVE_PRESET_KEY); } catch(e) {}
+            showToast('Active preset cleared', 'info');
+            render();
+          }
+        });
+      }
+
+      function handleChangePassword() {
+        openPasswordModal('change', {
+          title: 'Change Admin Password',
+          onSuccess: function() {
+            showToast('Password changed successfully', 'success');
+          }
+        });
+      }
+
+      // ─── New: Duplicate ────────────────────────────────
+      function handleDuplicate(presetId) {
+        var presets = loadAdminPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset) { showToast('Preset not found', 'error'); return; }
+
+        var newName = preset.name + ' (Copy)';
+        // Find unique name
+        var counter = 1;
+        while (presets.some(function(p) { return p.name === newName; })) {
+          counter++;
+          newName = preset.name + ' (Copy ' + counter + ')';
+        }
+
+        presets.push({
+          id: 'preset-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+          name: newName,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          data: JSON.parse(JSON.stringify(preset.data))
+        });
+        saveAdminPresets(presets);
+        showToast('Preset duplicated as "' + esc(newName) + '"', 'success');
+        render();
+      }
+
+      // ─── New: Rename ──────────────────────────────────
+      function handleRename(presetId) {
+        var newName = prompt('Enter new name for this preset:');
+        if (!newName || !newName.trim()) return;
+        newName = newName.trim();
+
+        var presets = loadAdminPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset) { showToast('Preset not found', 'error'); return; }
+
+        var oldName = preset.name;
+        preset.name = newName;
+        preset.updatedAt = new Date().toISOString();
+        saveAdminPresets(presets);
+        showToast('Preset renamed to "' + esc(newName) + '"', 'success');
+        render();
+      }
+
+      // ─── Preview Modal ────────────────────────────────
+      var _pendingApplyId = null;
+
+      var PW_ICONS = {
+        clock:    'M8 1.5a6.5 6.5 0 100 13a6.5 6.5 0 000-13zM8 4v4.5L10 10',
+        goals:    'M8 1L5.5 6.5 0 7l4 4-1 5.5L8 13l5 3.5-1-5.5 4-4-5.5-.5z',
+        todos:    'M2 4h12M2 8h12M2 12h12',
+        habits:   'M8 13.5S2.5 9 2.5 5.5 5 2 8 4.5c3-2.5 5.5 0 5.5 3S8 13.5 8 13.5z',
+        spotify:  'M4 5l9 2M4 9l9 2M4 13l6 1.5',
+        weather:  'M5 7a4 4 0 118 0M3 12h14M7 12v3M12 12v3M10 3V1M6 3V1',
+        quote:    'M3 13V8l2-4v5H3zm8 0V8l2-4v5h-2z',
+        notes:    'M4 2h8l2 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V4l2-2zm0 4h8M6 8h5M6 10h5',
+        priorities: 'M8 1v14M1 8h14',
+        progress: 'M1 14l4-6 3 3 6-9',
+        links:    'M7 9l2 2 4-4M5 7l-2 2 4 4',
+        images:   'M2 3h12v10H2zm2 6l2-2 1.5 1.5L10 6l3 4',
+        calendar: 'M3 5h10v9H3zm1-3v3m8-3v3M3 8h10',
+        timer:    'M8 2v2m5 .5l-1 1M4 4.5L5 5.5M8 7v4l3 1.5',
+        pomodoro: 'M8 2a6 6 0 100 12A6 6 0 008 2zm0 2v4l2 2',
+        strava:   'M10 2L5 14h3l2-4 2 4h3L10 2z',
+        flightradar: 'M14 8H2m6-6v12',
+        'sleep-score': 'M14 9A6 6 0 017 2a6 6 0 107 7z',
+        clock2:   'M8 1.5a6.5 6.5 0 100 13a6.5 6.5 0 000-13zM8 4v4.5L10 10'
+      };
+
+      var PW_COLORS = {
+        clock: '#6366f1', goals: '#10b981', todos: '#f59e0b', habits: '#ec4899',
+        spotify: '#1db954', weather: '#0ea5e9', quote: '#8b5cf6', notes: '#64748b',
+        priorities: '#f43f5e', progress: '#14b8a6', links: '#06b6d4', images: '#a855f7',
+        calendar: '#f97316', timer: '#ef4444', pomodoro: '#65a30d', strava: '#fc4c02',
+        flightradar: '#3b82f6', 'sleep-score': '#6366f1', clock2: '#6366f1'
+      };
+
+      var PW_LABELS = {
+        clock:'Clock', goals:'Goals', todos:'To-Dos', habits:'Habits',
+        spotify:'Spotify', weather:'Weather', quote:'Quote', notes:'Notes',
+        priorities:'Priorities', progress:'Progress', links:'Links', images:'Images',
+        calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', strava:'Strava',
+        flightradar:'Flight', 'sleep-score':'Sleep', clock2:'Clock'
+      };
+
+      function showPresetPreview(presetId) {
+        var presets = loadAdminPresets();
+        var preset = presets.find(function(p) { return p.id === presetId; });
+        if (!preset || !preset.data) {
+          showToast('Preset not found', 'error');
+          return;
+        }
+
+        var data = preset.data;
+        var overlay = document.getElementById('adminPreviewOverlay');
+        var nameEl = document.getElementById('previewName');
+        var bodyEl = document.getElementById('previewBody');
+        var applyBtn = document.getElementById('previewApplyBtn');
+
+        if (!overlay || !bodyEl) return;
+
+        nameEl.textContent = esc(preset.name);
+        _pendingApplyId = presetId;
+
+        var layout = data.hubContent && data.hubContent.bentoLayout ? data.hubContent.bentoLayout : [];
+        var widgetCount = layout.length;
+        var imageCount = data.images ? Object.keys(data.images).length : 0;
+        var catCount = data.customCategories ? data.customCategories.length : 0;
+
+        var settingsParts = [];
+        if (data.settings) {
+          if (data.settings.darkMode === true) settingsParts.push('Dark');
+          else if (data.settings.darkMode === false) settingsParts.push('Light');
+          if (data.settings.accentColor) settingsParts.push(data.settings.accentColor);
+        }
+
+        var maxRow = 0;
+        layout.forEach(function(w) {
+          var bottom = (w.y || 0) + (w.h || 1);
+          if (bottom > maxRow) maxRow = bottom;
+        });
+        var cols = 12;
+        var cellW = 100 / cols;
+        var rowH = 38;
+        var gridH = Math.max(maxRow * rowH + 2, 40);
+
+        var widgetsHtml = '';
+        layout.forEach(function(w) {
+          var t = w.t;
+          var color = PW_COLORS[t] || '#6b7280';
+          var label = PW_LABELS[t] || t || 'Widget';
+          var iconPath = PW_ICONS[t] || 'M8 2a6 6 0 100 12A6 6 0 008 2z';
+          var left = (w.x || 0) * cellW;
+          var top = (w.y || 0) * rowH;
+          var width = (w.w || 1) * cellW;
+          var height = (w.h || 1) * rowH;
+          var isSmall = (w.w || 1) < 3;
+
+          var innerHtml = '';
+          if (t === 'images') {
+            var imgKey = 'haven-image-' + (w.imageId || '');
+            var imgData = data.images && data.images[imgKey];
+            if (imgData) {
+              innerHtml = '<img class="pw-img" src="' + esc(imgData) + '" alt="" loading="lazy">';
+            }
+            innerHtml += '<div class="pw-overlay"><svg class="pw-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="' + iconPath + '"/></svg><span class="pw-label">' + esc(label) + '</span></div>';
+          } else {
+            innerHtml = '<svg class="pw-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="' + iconPath + '"/></svg><span class="pw-label">' + esc(label) + '</span>';
+          }
+
+          widgetsHtml += '<div class="admin-preview-bento-widget' + (isSmall ? ' sm' : '') + '" style="left:' + left + '%;top:' + top + 'px;width:' + width + '%;height:' + height + 'px;background:' + color + '">' + innerHtml + '</div>';
+        });
+
+        var summaryAttrs = '';
+        if (data.settings && data.settings.accentColor) {
+          summaryAttrs = ' style="border-left:3px solid ' + esc(data.settings.accentColor) + ';padding-left:10px"';
+        }
+
+        bodyEl.innerHTML =
+          '<div class="admin-preview-summary"' + summaryAttrs + '>' +
+            '<span><strong>' + widgetCount + '</strong> widget' + (widgetCount !== 1 ? 's' : '') + '</span>' +
+            (imageCount ? ' <span><strong>' + imageCount + '</strong> image' + (imageCount !== 1 ? 's' : '') + '</span>' : '') +
+            (catCount ? ' <span><strong>' + catCount + '</strong> categor' + (catCount !== 1 ? 'ies' : 'y') + '</span>' : '') +
+            (settingsParts.length ? ' <span style="color:var(--text-tertiary)">' + esc(settingsParts.join(' \u00B7 ')) + '</span>' : '') +
+            ' <span style="color:var(--text-tertiary);font-size:0.65rem">Created ' + (preset.createdAt ? new Date(preset.createdAt).toLocaleDateString() : 'Unknown') + '</span>' +
+          '</div>' +
+          '<div class="admin-preview-bento" style="height:' + gridH + 'px">' + widgetsHtml + '</div>';
+
+        overlay.classList.remove('hidden');
+
+        applyBtn.onclick = function() {
+          var id = _pendingApplyId;
+          closePreviewModal();
+          setTimeout(function() {
+            handleApply(id);
+          }, 200);
+        };
+      }
+
+      function closePreviewModal() {
+        var overlay = document.getElementById('adminPreviewOverlay');
+        if (overlay) overlay.classList.add('hidden');
+        _pendingApplyId = null;
+      }
+
+      // ─── Expose functions globally for gsi.js ─────────
+      window.savePreset = function(name) {
+        handleSavePresetFromName(name);
+      };
+      window.applyPresetToCurrentUser = function(id) {
+        showPresetPreview(id);
+      };
+      window.setActivePreset = function(id) {
+        handleSetActive(id);
+      };
+      window.deletePreset = function(id) {
+        handleDelete(id);
+      };
+      window.clearActivePreset = function() {
+        handleClearActive();
+      };
+      window.changeAdminPassword = function() {
+        handleChangePassword();
+      };
+      window.loadAdminPresets = loadAdminPresets;
+      window.getActivePresetId = getActivePresetId;
+
+      function handleSavePresetFromName(name) {
+        if (!name) return;
+        openPasswordModal('verify', {
+          title: 'Enter password to save preset',
+          onSuccess: function() {
+            captureAndSavePresetData(name);
+          }
+        });
+      }
+
+      // ─── Wire events ────────────────────────────────────
+      document.addEventListener('DOMContentLoaded', function() {
+        try {
+          if (typeof loadState === 'function') try { loadState(); } catch(e) {}
+          if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
+          render();
+
+          document.getElementById('btnSavePreset').addEventListener('click', handleSavePreset);
+          document.getElementById('btnChangePass').addEventListener('click', handleChangePassword);
+          document.getElementById('btnDashboard').addEventListener('click', toggleDashboard);
+
+          // Sidebar: theme
+          var themeBtn = document.getElementById('themeBtnSidebar');
+          if (themeBtn && typeof toggleTheme === 'function') themeBtn.addEventListener('click', toggleTheme);
+          // Sidebar: settings
+          var settingsBtn = document.getElementById('aiChatBtnSidebar');
+          if (settingsBtn) {
+            settingsBtn.addEventListener('click', function() {
+              if (typeof openSettings === 'function') try { openSettings(); } catch(e) {}
+            });
+          }
+          // Sidebar: hamburger for mobile
+          var hamburger = document.getElementById('hubHamburger');
+          var sidebar = document.getElementById('hubSidebar');
+          if (hamburger && sidebar) {
+            hamburger.addEventListener('click', function() { sidebar.classList.toggle('open'); });
+          }
+
+          document.getElementById('adminSearch').addEventListener('input', function(e) {
+            _filterText = e.target.value;
+            render();
+          });
+
+          document.getElementById('presetsGrid').addEventListener('click', function(e) {
+            var btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            var action = btn.dataset.action;
+            var id = btn.dataset.id;
+            if (action === 'activate') handleSetActive(id);
+            else if (action === 'preview') showPresetPreview(id);
+            else if (action === 'delete') handleDelete(id);
+            else if (action === 'duplicate') handleDuplicate(id);
+            else if (action === 'rename') handleRename(id);
+          });
+
+          document.getElementById('previewClose').addEventListener('click', closePreviewModal);
+          document.getElementById('previewCancelBtn').addEventListener('click', closePreviewModal);
+          document.getElementById('adminPreviewOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closePreviewModal();
+          });
+
+          document.getElementById('passwordModalSubmit').addEventListener('click', handlePasswordModalSubmit);
+          document.getElementById('passwordModalCancel').addEventListener('click', closePasswordModal);
+          document.getElementById('passwordModalClose').addEventListener('click', closePasswordModal);
+          document.getElementById('passwordModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closePasswordModal();
+          });
+          document.getElementById('passwordModalCurrent').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              if (_passwordModalMode === 'change') {
+                document.getElementById('passwordModalNew').focus();
+              } else {
+                handlePasswordModalSubmit();
+              }
+            }
+          });
+          document.getElementById('passwordModalNew').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              document.getElementById('passwordModalConfirm').focus();
+            }
+          });
+          document.getElementById('passwordModalConfirm').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handlePasswordModalSubmit();
+            }
+          });
+        } catch(e) {
+          console.warn('Admin init error:', e);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

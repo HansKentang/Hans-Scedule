@@ -1,0 +1,8 @@
+node_modules/
+dist/
+out/
+*.exe
+*.dmg
+*.AppImage
+.DS_Store
+Thumbs.db

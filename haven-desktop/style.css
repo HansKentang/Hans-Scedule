@@ -7536,9 +7536,11 @@ html.light .hub-section-header:hover {
   width: 22px; height: 22px; border-radius: 50%;
   border: 2px solid transparent; cursor: pointer;
   transition: border-color 0.1s, transform 0.1s; flex-shrink: 0;
+  position: relative; z-index: 1;
+  pointer-events: auto;
 }
-.set-swatch:hover { transform: scale(1.15); }
-.set-swatch.active { border-color: var(--text-primary); transform: scale(1.15); }
+.set-swatch:hover { transform: scale(1.15); z-index: 2; }
+.set-swatch.active { border-color: var(--text-primary); transform: scale(1.15); z-index: 3; }
 .set-swatch-group { }
 .set-swatch-group-label { font-size:0.5rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-tertiary); opacity:0.55; margin-bottom:1px; padding-left:1px; }
 .set-acc-header { cursor:pointer; user-select:none; display:flex; align-items:center; gap:5px; }

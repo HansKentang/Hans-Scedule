@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Havën">
+  <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Havën Schedule — Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+    <style>
+<style>
+    /* ─── ANALYTICS: DATA DASHBOARD ── */
+
+    /* KPI cards — minimal, no colored borders */
+    .an-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .an-kpi {
+      padding: var(--space-5) var(--space-5);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      transition: all 250ms var(--curve);
+      position: relative;
+      overflow: hidden;
+    }
+    .an-kpi::after {
+      content: ''; position: absolute; inset: 0;
+      border-radius: inherit;
+      box-shadow: var(--card-inner-glow);
+      pointer-events: none;
+    }
+    .an-kpi::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--accent);
+      z-index: 1;
+    }
+    .an-kpi:nth-child(3)::before { background: var(--tag-deep-work-text, var(--accent)); }
+    .an-kpi:nth-child(4)::before { background: var(--tag-study-text, var(--accent)); }
+    .an-kpi:hover { border-color: var(--border-color); transform: var(--card-hover-lift); box-shadow: var(--shadow-sm); }
+    .an-kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-1);
+    }
+    .an-kpi-icon {
+      width: 28px; height: 28px; border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-tertiary);
+      opacity: 0.5;
+    }
+    .an-kpi-icon svg { width: 14px; height: 14px; }
+    .an-kpi-label {
+      font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--text-tertiary);
+    }
+    .an-kpi-value {
+      font-size: 1.6rem; font-weight: 700; line-height: 1.2;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
+    }
+    .an-kpi-sub {
+      font-size: 0.68rem; color: var(--text-tertiary); margin-top: 1px;
+      display: flex; align-items: center; gap: var(--space-1);
+    }
+    .an-kpi-trend {
+      display: inline-flex; align-items: center; gap: 2px;
+      font-size: 0.6rem; font-weight: 600; padding: 1px 6px;
+      border-radius: 10px;
+    }
+    .an-kpi-trend.up { background: color-mix(in srgb, #10b981 10%, transparent); color: #10b981; }
+    .an-kpi-trend.down { background: color-mix(in srgb, #ef4444 10%, transparent); color: #ef4444; }
+    .an-kpi-trend.flat { background: var(--accent-soft); color: var(--text-tertiary); }
+
+    /* Completion + Streak row */
+    .an-completion-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .an-completion-card {
+      padding: var(--space-5) var(--space-5);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      transition: all 250ms var(--curve);
+      position: relative;
+    }
+    .an-completion-card::after {
+      content: ''; position: absolute; inset: 0;
+      border-radius: inherit;
+      box-shadow: var(--card-inner-glow);
+      pointer-events: none;
+    }
+    .an-completion-card:hover { border-color: var(--border-color); box-shadow: var(--shadow-sm); }
+    .an-completion-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-3);
+    }
+    .an-completion-header h3 { font-size: 0.75rem; font-weight: 600; }
+    .an-completion-header span { font-size: 0.65rem; color: var(--text-tertiary); }
+    .an-comp-ring-wrap { display: flex; align-items: center; gap: var(--space-2); }
+    .an-comp-ring {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: conic-gradient(var(--accent) 0%, var(--bg-secondary) 0%);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .an-comp-ring span {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--bg-card);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.55rem; font-weight: 700; line-height: 1;
+    }
+    .an-completion-bar {
+      height: 6px; background: var(--bg-secondary); border-radius: 3px;
+      overflow: hidden; margin-bottom: var(--space-3);
+    }
+    .an-completion-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, transparent));
+      transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .an-completion-stats {
+      display: flex; gap: var(--space-5);
+    }
+    .an-completion-stat {
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .an-completion-stat .val {
+      font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    }
+    .an-completion-stat .lbl {
+      font-size: 0.58rem; color: var(--text-tertiary); text-transform: uppercase;
+      letter-spacing: 0.04em; font-weight: 600;
+    }
+
+    /* Streak card */
+    .an-streak-card {
+      padding: var(--space-5);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      transition: all 250ms var(--curve);
+      position: relative;
+    }
+    .an-streak-card::after {
+      content: ''; position: absolute; inset: 0;
+      border-radius: inherit;
+      box-shadow: var(--card-inner-glow);
+      pointer-events: none;
+    }
+    .an-streak-card:hover { border-color: var(--border-color); box-shadow: var(--shadow-sm); }
+    .an-streak-header {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .an-streak-header h3 { font-size: 0.75rem; font-weight: 600; }
+    .an-streak-days {
+      display: flex; gap: 0;
+      position: relative;
+      padding: 0 var(--space-1);
+    }
+    .an-streak-days::before {
+      content: ''; position: absolute; top: 50%; left: var(--space-1); right: var(--space-1);
+      height: 2px; transform: translateY(-50%);
+      background: var(--border-subtle);
+      border-radius: 1px;
+      z-index: 0;
+    }
+    .an-streak-day {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.55rem; font-weight: 600; color: var(--text-tertiary);
+      background: var(--bg-card);
+      transition: all var(--t-fast);
+      position: relative; z-index: 1;
+      flex-shrink: 0;
+    }
+    .an-streak-day:not(:last-child)::after {
+      content: ''; position: absolute; top: 50%; left: 100%;
+      width: calc(100% + var(--space-1)); height: 2px;
+      background: var(--border-subtle);
+      transform: translateY(-50%);
+      z-index: -1;
+    }
+    .an-streak-day.active {
+      background: var(--accent); color: var(--text-inverse);
+      box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--accent);
+    }
+    .an-streak-day.active::after { background: var(--accent); }
+    .an-streak-day.today {
+      box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px color-mix(in srgb, var(--accent) 40%, transparent);
+    }
+    .an-streak-day.active.today {
+      box-shadow: 0 0 0 2px var(--bg-card), 0 0 0 4px var(--accent);
+    }
+    .an-streak-summary {
+      display: flex; gap: var(--space-5);
+    }
+    .an-streak-stat {
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .an-streak-stat .val {
+      font-size: 1rem; font-weight: 700; font-variant-numeric: tabular-nums;
+    }
+    .an-streak-stat .lbl {
+      font-size: 0.58rem; color: var(--text-tertiary); text-transform: uppercase;
+      letter-spacing: 0.04em; font-weight: 600;
+    }
+
+    /* Chart grid */
+    .an-chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .an-chart-card {
+      padding: var(--space-5);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      transition: all 250ms var(--curve);
+      position: relative;
+    }
+    .an-chart-card::after {
+      content: ''; position: absolute; inset: 0;
+      border-radius: inherit;
+      box-shadow: var(--card-inner-glow);
+      pointer-events: none;
+    }
+    .an-chart-card:hover { border-color: var(--border-color); box-shadow: var(--shadow-sm); }
+    .an-chart-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-3);
+    }
+    .an-chart-header h3 { font-size: 0.75rem; font-weight: 600; }
+    .an-chart-header span { font-size: 0.65rem; color: var(--text-tertiary); }
+    .an-chart-card canvas { width: 100%; height: 200px; display: block; }
+    .an-chart-legend {
+      display: flex; flex-wrap: wrap; gap: var(--space-2);
+      margin-top: var(--space-2);
+    }
+    .an-legend-item {
+      display: flex; align-items: center; gap: var(--space-1);
+      font-size: 0.68rem; color: var(--text-secondary);
+    }
+    .an-legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Full-width chart */
+    .an-full-chart { margin-bottom: var(--space-6); }
+    .an-full-chart canvas { height: 160px; }
+
+    /* Table card */
+    .an-table-card {
+      padding: var(--space-5);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-card);
+      margin-bottom: var(--space-6);
+      position: relative;
+    }
+    .an-table-card::after {
+      content: ''; position: absolute; inset: 0;
+      border-radius: inherit;
+      box-shadow: var(--card-inner-glow);
+      pointer-events: none;
+    }
+    .an-table-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-3);
+    }
+    .an-table-header h3 { font-size: 0.75rem; font-weight: 600; }
+    .an-table-header span { font-size: 0.65rem; color: var(--text-tertiary); }
+    .an-table {
+      width: 100%; border-collapse: collapse; font-size: 0.78rem;
+    }
+    .an-table th {
+      text-align: left; padding: var(--space-1) var(--space-2);
+      font-size: 0.58rem; color: var(--text-tertiary);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      font-weight: 600; border-bottom: 1px solid var(--border-subtle);
+    }
+    .an-table td {
+      padding: var(--space-1) var(--space-2);
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .an-table tbody tr:nth-child(2n) td { background: var(--bg-secondary); }
+    .an-table tbody tr:hover td { background: var(--accent-soft); }
+    .an-table .num { text-align: right; font-family: var(--font-mono); }
+    .an-table .tag-pill {
+      display: inline-block; font-size: 0.52rem; font-weight: 600;
+      padding: 1px 5px; border-radius: 3px; text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    /* Filter bar — pill-style period selector */
+    .an-filter-bar {
+      display: flex; align-items: center; justify-content: flex-end;
+      margin-bottom: var(--space-4);
+    }
+    .an-period-pills {
+      display: inline-flex; gap: 2px;
+      padding: 3px; border-radius: var(--radius-lg);
+      background: var(--bg-secondary);
+    }
+    .an-period-pill {
+      padding: 5px 14px; border: none; border-radius: 10px;
+      font-size: 0.72rem; font-weight: 600;
+      font-family: var(--font-family);
+      color: var(--text-tertiary); background: transparent;
+      cursor: pointer; transition: all var(--t-fast);
+    }
+    .an-period-pill:hover { color: var(--text-primary); }
+    .an-period-pill.active {
+      background: var(--bg-primary); color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+
+    /* Empty state */
+    .an-empty {
+      text-align: center; padding: var(--space-10) var(--space-8);
+      color: var(--text-tertiary);
+    }
+    .an-empty svg { margin-bottom: var(--space-4); opacity: 0.2; }
+    .an-empty p { font-size: 0.9rem; }
+    .an-empty .sub { font-size: 0.78rem; margin-top: var(--space-2); color: var(--text-tertiary); opacity: 0.6; }
+
+    @media (max-width: 767px) {
+      .an-kpi-row { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+      .an-kpi { padding: var(--space-3) var(--space-4); }
+      .an-kpi-value { font-size: 1.3rem; }
+      .an-completion-row { grid-template-columns: 1fr; }
+      .an-chart-grid { grid-template-columns: 1fr; }
+      .an-chart-card { padding: var(--space-3) var(--space-4); }
+      .an-chart-card canvas { height: 160px; }
+      .an-table-card { padding: var(--space-3) var(--space-4); }
+      .an-period-pills { width: 100%; }
+      .an-period-pill { flex: 1; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient background -->
+  <div class="hub-ambient">
+    <div class="hub-ambient-gradient"></div>
+    <div class="hub-ambient-dots"></div>
+  </div>
+
+  <div class="hub-layout">
+    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────────── -->
+    <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
+    <!-- ─── HAMBURGER SIDE PANEL ─────────────────────── -->
+    <div class="hub-menu-overlay" id="hubMenuOverlay"></div>
+    <div class="hub-menu-panel hidden" id="hubMenuPanel">
+      <div class="hub-menu-panel-header">
+        <span class="hub-menu-panel-title">Menu</span>
+        <button class="hub-menu-panel-close" id="hubMenuClose">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="hub-menu-profile" id="menuProfile">
+        <div class="hub-menu-avatar" id="menuAvatar">?</div>
+        <div class="hub-menu-user">
+          <div class="hub-menu-name" id="menuName">User</div>
+          <div class="hub-menu-email" id="menuEmail"></div>
+        </div>
+      </div>
+      <div class="hub-menu-panel-section">
+        <button class="hub-menu-panel-item" id="menuTheme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>Theme</button>
+      </div>
+      <div class="hub-menu-spacer"></div>
+      <div class="hub-menu-footer">
+        <button class="hub-menu-panel-item" id="menuSettings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
+        <button class="hub-menu-panel-item" id="menuHelp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</button>
+        <button class="hub-menu-panel-item" id="menuTutorial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 16 12 12 12 8"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Tutorial</button>
+      </div>
+    </div>
+    <!-- ─── SIDEBAR (Notion workspace) ──────────────────── -->
+    <aside class="hub-sidebar" role="navigation" aria-label="Sidebar" id="hubSidebar">
+      <div class="hub-workspace">
+        <div class="hub-workspace-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M6 4v16M18 4v16M6 12h12"/></svg></div>
+        <span class="hub-workspace-name">Havën</span>
+        <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+        <button class="hub-hamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+      <nav class="hub-sidebar-nav">
+        <div class="hub-sidebar-section-label">Pages</div>
+        <div class="hub-snav-stagger">
+          <a href="index.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </span>
+            <span class="snav-label">Hub</span>
+          </a>
+          <a href="schedule.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </span>
+            <span class="snav-label">Schedule</span>
+          </a>
+          <a href="activities.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+              </svg>
+            </span>
+            <span class="snav-label">Activities</span>
+          </a>
+          <a href="analytics.html" class="hub-snav-item active">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </span>
+            <span class="snav-label" data-i18n="nav.analytics">Analytics</span>
+          </a>
+          <a href="goals.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </span>
+            <span class="snav-label">Goals</span>
+          </a>
+          <a href="finance.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              </svg>
+            </span>
+            <span class="snav-label">Finance</span>
+          </a>
+          <a href="gallery.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
+        </div>
+      </nav>
+      <div class="hub-sidebar-body">
+      <div class="hub-sidebar-images"></div>
+      <!-- ─── SPOTIFY EMBED ───────────────────────── -->
+      <div class="sp-sidebar" id="spSidebar">
+        <div class="sp-header" onclick="spToggleSection()">
+          <button class="sp-toggle-btn" onclick="event.stopPropagation();spToggleSection()" title="Toggle player">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+          </button>
+          <span class="sp-header-text">Spotify</span>
+          <svg class="sp-header-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <button class="sp-gear-btn" onclick="event.stopPropagation();spOpenSettings()" title="Manage playlists">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+        </div>
+        <div class="sp-body">
+        <div class="sp-player">
+          <div class="sp-empty" id="spEmpty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+            <span>No playlist linked</span>
+            <button onclick="spOpenSettings()">Add playlist</button>
+          </div>
+          <div class="sp-embed-wrap" id="spEmbedWrap">
+            <iframe id="spEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+          </div>
+        </div>
+        <div class="sp-controls" id="spControls">
+          <button class="sp-nav-btn" id="spNavPrev" onclick="spSidePrev()" title="Previous playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="sp-controls-label">Playlist</span>
+          <button class="sp-nav-btn" id="spNavNext" onclick="spSideNext()" title="Next playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        </div>
+      </div>
+      </div>
+      <div class="hub-sidebar-footer">
+        <div class="hub-footer-btns">
+          <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <span>Theme</span>
+          </button>
+          <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+            <span>Settings</span>
+          </button>
+          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Visuals</span>
+          </button>
+          <span id="syncStatusDot" class="sync-dot" title="Sync status"></span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ─── MAIN ─────────────────────────────────────────── -->
+    <div class="hub-main" role="main">
+      <!-- ─── ANALYTICS HERO BANNER ──────────────────────── -->
+      <section style="position:relative;height:160px;overflow:hidden;flex-shrink:0">
+          <img data-image-id="analytics-hero" src="" alt=""
+               style="width:100%;height:100%;object-fit:cover;opacity:0.7"
+               >
+          <div style="position:absolute;inset:0;background:linear-gradient(to top, var(--bg-primary) 0%, transparent 60%)"></div>
+          <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding);display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <h1 style="font-family:var(--font-serif);font-size:32px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)" data-i18n="nav.analytics">Analytics</h1>
+              <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
+                <span id="analyticsHeroSub">Track your progress</span>
+              </div>
+            </div>
+            <div id="gsiContainer" class="gsi-section"></div>
+          </div>
+        </section>
+
+      <div class="hub-content hub-page-transition">
+
+        <!-- Period Filter -->
+        <div class="an-filter-bar hub-anim-in hub-anim-in-2">
+          <div class="an-period-pills" id="analyticsPeriodPills">
+            <button class="an-period-pill active" data-period="week" data-i18n="an.weekly">Week</button>
+            <button class="an-period-pill" data-period="month" data-i18n="an.thisMonth">Month</button>
+            <button class="an-period-pill" data-period="all" data-i18n="an.all">All</button>
+          </div>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="an-kpi-row hub-anim-in hub-anim-in-3">
+          <div class="an-kpi">
+            <div class="an-kpi-header">
+              <span class="an-kpi-label" data-i18n="an.tasks">Tasks</span>
+              <div class="an-kpi-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+              </div>
+            </div>
+            <div class="an-kpi-value" id="statTasks">0</div>
+            <div class="an-kpi-sub"><span id="statTasksSub">active</span> <span class="an-kpi-trend flat" id="statTasksTrend"></span></div>
+          </div>
+          <div class="an-kpi">
+            <div class="an-kpi-header">
+              <span class="an-kpi-label">Total Time</span>
+              <div class="an-kpi-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+            </div>
+            <div class="an-kpi-value" id="statTime">0h</div>
+            <div class="an-kpi-sub"><span id="statTimeSub">scheduled</span></div>
+          </div>
+          <div class="an-kpi">
+            <div class="an-kpi-header">
+              <span class="an-kpi-label" data-i18n="an.deep">Deep Work</span>
+              <div class="an-kpi-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+              </div>
+            </div>
+            <div class="an-kpi-value" id="statDeep">0h</div>
+            <div class="an-kpi-sub"><span id="statDeepSub">focus time</span></div>
+          </div>
+          <div class="an-kpi">
+            <div class="an-kpi-header">
+              <span class="an-kpi-label" data-i18n="an.study">Study</span>
+              <div class="an-kpi-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+              </div>
+            </div>
+            <div class="an-kpi-value" id="statStudy">0h</div>
+            <div class="an-kpi-sub"><span id="statStudySub">learning</span></div>
+          </div>
+        </div>
+
+        <!-- Completion + Streak Row -->
+        <div class="an-completion-row hub-anim-in hub-anim-in-4">
+          <div class="an-completion-card">
+            <div class="an-completion-header">
+              <h3>Completion Rate</h3>
+              <div class="an-comp-ring-wrap">
+                <div class="an-comp-ring" id="compRing">
+                  <span id="compRingPct">0%</span>
+                </div>
+                <span id="completionPeriod" data-i18n="an.weekly">This Week</span>
+              </div>
+            </div>
+            <div class="an-completion-bar"><div class="an-completion-fill" id="completionFill" style="width:0%"></div></div>
+            <div class="an-completion-stats">
+              <div class="an-completion-stat"><span class="val" id="compDone">0</span><span class="lbl">Completed</span></div>
+              <div class="an-completion-stat"><span class="val" id="compTotal">0</span><span class="lbl">Total</span></div>
+              <div class="an-completion-stat"><span class="val" id="compPct">0%</span><span class="lbl">Rate</span></div>
+            </div>
+          </div>
+          <div class="an-streak-card">
+            <div class="an-streak-header">
+              <h3>Activity Streak</h3>
+            </div>
+            <div class="an-streak-days" id="streakDays"></div>
+            <div class="an-streak-summary">
+              <div class="an-streak-stat"><span class="val" id="streakCurrent">0</span><span class="lbl" data-i18n="an.weekly">This Week</span></div>
+              <div class="an-streak-stat"><span class="val" id="streakBest">0</span><span class="lbl">Best Streak</span></div>
+              <div class="an-streak-stat"><span class="val" id="streakActive">0</span><span class="lbl">Days Active</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="an-chart-grid hub-anim-in hub-anim-in-5">
+          <div class="an-chart-card">
+            <div class="an-chart-header"><h3>Category Distribution</h3><span>By time</span></div>
+            <canvas id="pieChart" width="400" height="220"></canvas>
+            <div class="an-chart-legend" id="pieLegend"></div>
+          </div>
+          <div class="an-chart-card">
+            <div class="an-chart-header"><h3 data-i18n="an.daily">Daily Breakdown</h3><span>Past 7 days</span></div>
+            <canvas id="barChart" width="400" height="220"></canvas>
+            <div class="an-chart-legend" id="barLegend"></div>
+          </div>
+        </div>
+
+        <!-- Weekly Trend (full-width) -->
+        <div class="an-full-chart hub-anim-in hub-anim-in-6">
+          <div class="an-chart-card">
+            <div class="an-chart-header"><h3 data-i18n="an.trend">Weekly Trend</h3><span>Last 14 days</span></div>
+            <canvas id="trendChart" width="800" height="180"></canvas>
+          </div>
+        </div>
+
+        <!-- Sleep Analytics -->
+        <div class="an-sleep-row hub-anim-in hub-anim-in-7">
+          <div class="an-sleep-card">
+            <div class="an-sleep-header">
+              <h3>Sleep Duration</h3>
+              <span>Past 7 nights</span>
+            </div>
+            <div class="an-sleep-value" id="sleepAnalyticsDuration">—</div>
+            <div class="an-sleep-sub" id="sleepAnalyticsDurationSub">No sleep data</div>
+            <div class="an-sleep-sub" id="sleepAnalyticsTarget" style="margin-top:2px;font-size:0.6rem"></div>
+            <canvas id="sleepChart" width="400" height="140" style="width:100%;height:140px;margin-top:var(--space-3)"></canvas>
+          </div>
+          <div class="an-sleep-card">
+            <div class="an-sleep-header">
+              <h3>Sleep Quality</h3>
+              <span>Past 7 nights</span>
+            </div>
+            <div class="an-sleep-value" id="sleepAnalyticsQuality">—</div>
+            <div class="an-sleep-sub" id="sleepAnalyticsQualitySub">No sleep data</div>
+            <div style="margin-top:var(--space-3)">
+              <div class="an-completion-bar"><div class="an-completion-fill" id="sleepQualityFill" style="width:0%"></div></div>
+              <div class="an-completion-stats">
+                <div class="an-completion-stat"><span class="val" id="sleepQualityScore">0</span><span class="lbl" data-i18n="an.quality">Quality</span></div>
+                <div class="an-completion-stat"><span class="val" id="sleepLogCount">0</span><span class="lbl">Nights Logged</span></div>
+                <div class="an-completion-stat"><span class="val" id="sleepBestNight">—</span><span class="lbl">Best Night</span></div>
+              </div>
+              <div style="margin-top:var(--space-2);padding-top:var(--space-2);border-top:1px solid var(--border-subtle);display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2)">
+                <div>
+                  <div class="an-completion-stat"><span class="val" id="sleepAnalyticsConsistency">—</span><span class="lbl">Consistency</span></div>
+                  <div class="an-sleep-sub" id="sleepAnalyticsConsistencySub" style="font-size:0.55rem"></div>
+                </div>
+                <div>
+                  <div class="an-completion-stat"><span class="val" id="sleepAnalyticsDebt">—</span><span class="lbl">Sleep Debt</span></div>
+                  <div class="an-sleep-sub" id="sleepAnalyticsDebtSub" style="font-size:0.55rem"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="an-table-card hub-anim-in hub-anim-in-7">
+          <div class="an-table-header"><h3>Day by Day</h3><span id="detailPeriodLabel" data-i18n="an.weekly">This Week</span></div>
+          <table class="an-table">
+            <thead><tr><th>Date</th><th class="num" data-i18n="an.tasks">Tasks</th><th class="num">Total</th><th class="num" data-i18n="an.deep">Deep Work</th><th class="num" data-i18n="an.study">Study</th><th class="num">Other</th></tr></thead>
+            <tbody id="analyticsTableBody"></tbody>
+          </table>
+      </div>
+
+    <!-- Minimal footer -->
+    <footer class="hub-minifooter hub-anim-in hub-anim-in-8">
+      <span>Havën Schedule v1.0</span>
+        <div class="hub-minifooter-actions">
+          <button id="exportBtn" class="btn btn-ghost">Export</button>
+          <button id="importBtn" class="btn btn-ghost">Import</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+
+
+  <!-- AI Chat Modal -->
+  <!-- Image Picker -->
+  <div id="imagePickerOverlay" class="image-picker-overlay hidden">
+    <div class="image-picker-card" onclick="event.stopPropagation()">
+      <h3>Customize Image</h3>
+      <img id="imagePickerPreview" class="image-picker-preview" src="" alt="">
+      <div class="image-picker-pastezone" id="imagePickerPasteZone" tabindex="0" contenteditable="true" onpaste="handleImagePickerPaste(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div>Paste image (Ctrl+V) or drag &amp; drop</div>
+      </div>
+      <div class="image-picker-file-row">
+        <input type="file" id="imagePickerFileInput" accept="image/*" onchange="handleImagePickerFile(event)" style="display:none">
+        <button class="drawer-btn" onclick="document.getElementById('imagePickerFileInput').click()" style="width:100%;justify-content:center;gap:6px;font-size:0.75rem;margin-bottom:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Choose from gallery
+        </button>
+      </div>
+      <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()">
+      <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
+      <div class="img-fit-row" id="imagePickerFitRow">
+        <span class="img-fit-label">Fit:</span>
+        <div class="img-fit-options" id="imagePickerFitOptions"></div>
+      </div>
+      <div class="image-picker-actions">
+        <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
+        <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
+        <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Settings Drawer -->
+  <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
+  <div id="settingsDrawer" class="settings-drawer hidden">
+    <div class="settings-drawer-header">
+      <div class="settings-drawer-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+      </div>
+      <h3>Customize</h3>
+      <button id="settingsDrawerClose" class="settings-drawer-close" onclick="closeSettingsDrawer()" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="settings-drawer-body" id="settingsDrawerBody">
+      <div id="settingsContent">
+        <form id="settingsForm" onsubmit="handleSettingsSubmit(event)">
+          <div class="drawer-section">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+              <span class="drawer-section-title">AI Provider</span>
+            </div>
+            <div class="form-group">
+              <label for="drawerProvider">Provider</label>
+              <select id="drawerProvider" class="form-input">
+                <option value="groq">Groq (Gemma2-9B)</option>
+                <option value="gemini">Gemini (1.5 Flash)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="drawerModel">Model</label>
+              <select id="drawerModel" class="form-input"></select>
+            </div>
+            <div class="form-group">
+              <label for="drawerApiKey">API Key</label>
+              <input type="password" id="drawerApiKey" class="form-input" placeholder="sk-...">
+            </div>
+            <div id="drawerKeyStatus">
+              <span id="drawerKeyStatusText" class="drawer-status"></span>
+            </div>
+            <div id="drawerAIUsage" class="drawer-status"></div>
+          </div>
+
+          <div class="drawer-section" id="settingsCardColors">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.5-4.5-10-10-10z"/></svg>
+              <span class="drawer-section-title">Tag Colors</span>
+            </div>
+          </div>
+
+          <div class="drawer-section" id="settingsAccentColor">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+              <span class="drawer-section-title">Accent Color</span>
+            </div>
+          </div>
+          <div class="drawer-section" id="settingsImageManager">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span class="drawer-section-title">Images</span>
+            </div>
+          </div>
+          <div class="drawer-section">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="drawer-section-title">Data</span>
+            </div>
+            <div class="drawer-actions-row">
+              <button type="button" class="drawer-btn" onclick="exportData()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+              <button type="button" class="drawer-btn" onclick="document.getElementById('drawerImportFile').click()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import
+              </button>
+              <button type="button" class="drawer-btn danger" onclick="handleSettingsClear()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                Clear Key
+              </button>
+            </div>
+            <input type="file" id="drawerImportFile" accept=".json" style="display:none" onchange="importData(event)">
+          </div>
+          <div class="drawer-save-wrap">
+            <button type="submit" class="drawer-save-btn">Save Settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+        <!-- HELP MODAL -->
+    <div id="helpOverlay" class="overlay hidden"></div>
+    <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+      <div class="modal-header">
+        <h3>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          Help and Shortcuts
+        </h3>
+        <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/></svg>
+            Keyboard Shortcuts
+          </div>
+          <div class="shortcuts-grid" id="helpShortcutsGrid"></div>
+        </div>
+        <div class="help-section">
+          <div class="help-section-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Tips and Tricks
+          </div>
+          <div class="help-tips">
+            <div class="help-tip">
+              <span class="help-tip-icon"></span>
+              <div class="help-tip-text">Press <kbd>F</kbd> to toggle Focus Mode — hides sidebar and reduces clutter</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon"></span>
+              <div class="help-tip-text">Drag tasks to reschedule - other tasks automatically shift to avoid conflicts</div>
+            </div>
+            <div class="help-tip">
+              <span class="help-tip-icon"></span>
+              <div class="help-tip-text">Attach images to AI chat for visual analysis of schedules and screenshots</div>
+            </div>
+          </div>
+            <div class="help-tip" style="cursor:pointer" id="helpViewTutorial">
+              <span class="help-tip-icon"></span>
+              <div class="help-tip-text"><strong>View Tutorial</strong> — Replay the onboarding tour</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- AI CHAT PANEL (right-side drawer) -->
+  <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
+  <div id="aiChatPanel" class="ai-panel hidden" role="dialog" aria-label="AI Assistant">
+    <div class="ai-panel-header">
+      <div class="ai-panel-header-left">
+        <div class="ai-panel-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/>
+          </svg>
+        </div>
+        <div>
+          <div class="ai-panel-title">ChickBot</div>
+          <div class="ai-panel-subtitle">Your smart schedule buddy</div>
+        </div>
+      </div>
+      <div class="ai-panel-header-actions">
+        <button id="aiChatSettingsBtn" class="ai-panel-icon-btn" title="Settings" >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+        <button id="aiChatClose" class="ai-panel-icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="ai-panel-body">
+      <div class="ai-messages" id="aiChatMessages"></div>
+    </div>
+    <div class="ai-panel-footer">
+      <div class="ai-input-wrapper" id="aiChatInputWrapper">
+        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your schedule..." autocomplete="off">
+        <button id="aiChatSend" class="ai-send-btn show" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ai-panel-footer-hint">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+        <span>Natural language scheduling</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+    }
+  </script>
+  <script src="shared.js"></script>
+  <script src="settings.js"></script>
+  <script src="gsi.js"></script>
+
+  <script src="hub-visuals.js"></script>
+  <script src="analytics.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
+
+  <!-- ─── Spotify Settings Modal ──────────────── -->
+  <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
+    <div class="sp-modal">
+      <div class="sp-modal-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+        <h2>Playlists</h2>
+        <button class="sp-modal-close" onclick="spCloseSettings()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="sp-modal-body">
+        <div class="sp-add-row">
+          <input id="spAddInput" placeholder="Playlist URL or ID..." onkeydown="if(event.key==='Enter')spAddPlaylist()">
+          <button onclick="spAddPlaylist()">Add</button>
+        </div>
+        <div class="sp-search-row">
+          <input id="spSearchInput" placeholder="Search playlists..." oninput="spRenderList(this.value)">
+        </div>
+        <div class="sp-iframe-wrap">
+          <iframe id="spModalEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+        </div>
+        <div class="sp-list" id="spList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ONBOARDING TUTORIAL ──────────────────────────────── -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-spotlight hidden" id="tutorialSpotlight"></div>
+    <div class="tutorial-tooltip" id="tutorialTooltip">
+      <div class="tutorial-tooltip-header">
+        <div class="tutorial-tooltip-icon" id="tutorialIcon"></div>
+        <span class="tutorial-tooltip-step" id="tutorialStep"></span>
+      </div>
+      <div class="tutorial-tooltip-body">
+        <div class="tutorial-tooltip-title" id="tutorialTitle"></div>
+        <div class="tutorial-tooltip-desc" id="tutorialDesc"></div>
+      </div>
+      <div class="tutorial-tooltip-footer">
+        <button class="tutorial-btn tutorial-btn-skip" id="tutorialSkip">Skip</button>
+        <div class="tutorial-progress" id="tutorialProgress"></div>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="tutorial-btn tutorial-btn-prev hidden" id="tutorialPrev">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <button class="tutorial-btn tutorial-btn-next" id="tutorialNext">
+            Next
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>spInit();</script>
+</body>
+</html>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Havën">
+  <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Havën Schedule — Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+    <style>
+<style>
+    /* ─── GALLERY HERO ───────────────────────────────── */
+    .gl-hero {
+      position: relative; height: 200px; overflow: hidden; flex-shrink: 0;
+    }
+    .gl-hero-bg {
+      width: 100%; height: 100%; object-fit: cover;
+      opacity: 0.5;
+      transition: opacity 0.6s ease;
+    }
+    .gl-hero:hover .gl-hero-bg { opacity: 0.55; }
+    .gl-hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, var(--bg-primary) 0%, transparent 60%),
+                  linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    .gl-hero-inner {
+      position: absolute; inset: 0;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      padding: var(--space-5) var(--container-padding);
+      gap: var(--space-4);
+    }
+    .gl-hero-text { min-width: 0; }
+    .gl-hero-title {
+      font-family: var(--font-serif);
+      font-size: 1.75rem; font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      line-height: 1.15;
+      margin-bottom: var(--space-1);
+    }
+    .gl-hero-meta {
+      display: flex; align-items: center; gap: var(--space-2);
+      font-size: 0.75rem; color: var(--text-tertiary);
+      flex-wrap: wrap;
+    }
+    .gl-hero-dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: var(--text-tertiary); opacity: 0.4;
+    }
+    .gl-hero-sub {
+      font-size: 0.68rem; color: var(--text-tertiary);
+      margin-top: var(--space-1);
+      font-weight: 400;
+      opacity: 0.65;
+    }
+    @media (max-width: 767px) {
+      .gl-hero { height: 170px; }
+      .gl-hero-title { font-size: 1.4rem; }
+      .gl-hero-inner { padding: var(--space-4) var(--space-4); }
+    }
+
+    /* ─── GALLERY VISION BOARD ───────────────────────── */
+    .gal-top-actions {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-2);
+    }
+    .gal-top-title {
+      font-family: var(--font-serif); font-size: 1.2rem; font-weight: 500;
+      color: var(--text-primary);
+    }
+    .gal-top-count {
+      font-size: 0.68rem; color: var(--text-tertiary);
+      font-weight: 500;
+    }
+    .gal-actions-row {
+      display: flex; gap: var(--space-2);
+    }
+
+    .gal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .gal-item {
+      position: relative;
+      aspect-ratio: 4 / 3;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--surface-container-low);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: all 250ms var(--curve);
+    }
+    .gal-item::after {
+      content: ''; position: absolute; inset: 0;
+      border-radius: inherit;
+      box-shadow: var(--card-inner-glow);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .gal-item:hover {
+      border-color: var(--text-primary);
+      box-shadow: var(--shadow-sm);
+      transform: translateY(-2px);
+    }
+    .gal-item img {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block;
+      transition: transform 0.5s ease;
+    }
+    .gal-item:hover img { transform: scale(1.04); }
+
+    /* Empty / placeholder state */
+    .gal-item-placeholder {
+      border: 2px dashed var(--border-subtle);
+      background: transparent;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: var(--space-2);
+      color: var(--text-tertiary);
+      transition: all 250ms var(--curve);
+    }
+    .gal-item-placeholder:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 6%, transparent);
+      transform: var(--card-hover-lift);
+    }
+    .gal-item-placeholder svg {
+      width: 28px; height: 28px; opacity: 0.4;
+    }
+    .gal-item-placeholder span {
+      font-size: 0.75rem; font-weight: 500;
+    }
+
+    /* Edit overlay (visible on hover in edit mode) */
+    .gal-item-remove {
+      position: absolute; top: 8px; right: 8px;
+      width: 28px; height: 28px; border-radius: 50%;
+      border: none;
+      background: color-mix(in srgb, #000 50%, transparent);
+      color: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: all var(--t-fast);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      font-size: 0.9rem; padding: 0; z-index: 2;
+    }
+    .gal-item:hover .gal-item-remove,
+    .edit-mode .gal-item .gal-item-remove { opacity: 1; }
+    .gal-item-remove:hover {
+      background: rgba(239, 68, 68, 0.85);
+      transform: scale(1.15);
+    }
+
+    /* Drag handle overlay */
+    .gal-item-drag {
+      position: absolute; top: 8px; left: 8px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: color-mix(in srgb, #000 50%, transparent);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: all var(--t-fast);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      cursor: grab;
+      font-size: 0.8rem; z-index: 2;
+    }
+    .edit-mode .gal-item .gal-item-drag,
+    .gal-item:hover .gal-item-drag { opacity: 1; }
+    .gal-item-drag:active { cursor: grabbing; }
+
+    /* Empty state */
+    .gal-empty {
+      text-align: center; padding: var(--space-10) var(--space-4);
+      color: var(--text-tertiary);
+    }
+    .gal-empty svg { width: 48px; height: 48px; margin-bottom: var(--space-3); opacity: 0.15; }
+    .gal-empty p { font-size: 0.9rem; font-weight: 500; margin-bottom: var(--space-2); }
+    .gal-empty .sub { font-size: 0.75rem; opacity: 0.6; }
+    .gal-empty .btn {
+      margin-top: var(--space-3);
+    }
+
+    /* Stagger animations */
+    .gal-item { animation: galItemIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .gal-item:nth-child(1) { animation-delay: 0.03s; }
+    .gal-item:nth-child(2) { animation-delay: 0.06s; }
+    .gal-item:nth-child(3) { animation-delay: 0.09s; }
+    .gal-item:nth-child(4) { animation-delay: 0.12s; }
+    .gal-item:nth-child(5) { animation-delay: 0.15s; }
+    .gal-item:nth-child(6) { animation-delay: 0.18s; }
+    .gal-item:nth-child(7) { animation-delay: 0.21s; }
+    .gal-item:nth-child(8) { animation-delay: 0.24s; }
+    .gal-item:nth-child(9) { animation-delay: 0.27s; }
+    .gal-item:nth-child(10) { animation-delay: 0.30s; }
+    @keyframes galItemIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Dragging state */
+    .gal-item.dragging {
+      opacity: 0.5;
+      transform: scale(0.95);
+      transition: all 150ms ease !important;
+    }
+    .gal-item.drag-over {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+
+    @media (max-width: 640px) {
+      .gal-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+      .gal-hero-title { font-size: 1.3rem; }
+    }
+    @media (max-width: 400px) {
+      .gal-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient background -->
+  <div class="hub-ambient">
+    <div class="hub-ambient-gradient"></div>
+    <div class="hub-ambient-dots"></div>
+  </div>
+
+  <div class="hub-layout">
+    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────── -->
+    <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
+    <!-- ─── HAMBURGER SIDE PANEL ─────────────────────── -->
+    <div class="hub-menu-overlay" id="hubMenuOverlay"></div>
+    <div class="hub-menu-panel hidden" id="hubMenuPanel">
+      <div class="hub-menu-panel-header">
+        <span class="hub-menu-panel-title">Menu</span>
+        <button class="hub-menu-panel-close" id="hubMenuClose">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="hub-menu-profile" id="menuProfile">
+        <div class="hub-menu-avatar" id="menuAvatar">?</div>
+        <div class="hub-menu-user">
+          <div class="hub-menu-name" id="menuName">User</div>
+          <div class="hub-menu-email" id="menuEmail"></div>
+        </div>
+      </div>
+      <div class="hub-menu-panel-section">
+        <button class="hub-menu-panel-item" id="menuTheme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>Theme</button>
+      </div>
+      <div class="hub-menu-spacer"></div>
+      <div class="hub-menu-footer">
+        <button class="hub-menu-panel-item" id="menuSettings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
+        <button class="hub-menu-panel-item" id="menuHelp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</button>
+        <button class="hub-menu-panel-item" id="menuTutorial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 16 12 12 12 8"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Tutorial</button>
+      </div>
+    </div>
+    <!-- ─── SIDEBAR ───────────────────────────────── -->
+    <aside class="hub-sidebar" role="navigation" aria-label="Sidebar" id="hubSidebar">
+      <div class="hub-workspace">
+        <div class="hub-workspace-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M6 4v16M18 4v16M6 12h12"/></svg></div>
+        <span class="hub-workspace-name">Havën</span>
+        <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+        <button class="hub-hamburger" id="hubHamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+      <nav class="hub-sidebar-nav">
+        <div class="hub-sidebar-section-label">Pages</div>
+        <div class="hub-snav-stagger">
+          <a href="index.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="snav-label">Hub</span></a>
+          <a href="schedule.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span><span class="snav-label">Schedule</span></a>
+          <a href="activities.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span><span class="snav-label">Activities</span></a>
+          <a href="analytics.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span><span class="snav-label">Analytics</span></a>
+          <a href="goals.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span><span class="snav-label">Goals</span></a>
+          <a href="finance.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span><span class="snav-label">Finance</span></a>
+          <a href="gallery.html" class="hub-snav-item active"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label" data-i18n="nav.gallery">Gallery</span></a>
+        </div>
+      </nav>
+      <div class="hub-sidebar-body">
+      <div class="hub-sidebar-images"></div>
+      <!-- ─── SPOTIFY EMBED ───────────────────────── -->
+      <div class="sp-sidebar" id="spSidebar">
+        <div class="sp-header" onclick="spToggleSection()">
+          <button class="sp-toggle-btn" onclick="event.stopPropagation();spToggleSection()" title="Toggle player">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+          </button>
+          <span class="sp-header-text">Spotify</span>
+          <svg class="sp-header-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <button class="sp-gear-btn" onclick="event.stopPropagation();spOpenSettings()" title="Manage playlists">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+        </div>
+        <div class="sp-body">
+        <div class="sp-player">
+          <div class="sp-empty" id="spEmpty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+            <span>No playlist linked</span>
+            <button onclick="spOpenSettings()">Add playlist</button>
+          </div>
+          <div class="sp-embed-wrap" id="spEmbedWrap">
+            <iframe id="spEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+          </div>
+        </div>
+        <div class="sp-controls" id="spControls">
+          <button class="sp-nav-btn" id="spNavPrev" onclick="spSidePrev()" title="Previous playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="sp-controls-label">Playlist</span>
+          <button class="sp-nav-btn" id="spNavNext" onclick="spSideNext()" title="Next playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        </div>
+      </div>
+      </div>
+      <div class="hub-sidebar-footer">
+        <div class="hub-footer-btns">
+          <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><span>Theme</span></button>
+          <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
+          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Visuals</span></button>
+          <span id="syncStatusDot" class="sync-dot" title="Sync status"></span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ─── MAIN ───────────────────────────────────────── -->
+    <div class="hub-main" role="main">
+      <!-- ─── HERO ────────────────────────────────────── -->
+      <section class="gl-hero">
+        <img data-image-id="gallery-hero" src="" alt="Gallery hero" class="gl-hero-bg">
+        <div class="gl-hero-overlay"></div>
+        <div class="gl-hero-inner">
+          <div class="gl-hero-text">
+            <h1 class="gl-hero-title" data-i18n="nav.gallery">Gallery</h1>
+            <div class="gl-hero-meta">
+              <span id="galPageMeta" data-i18n="gal.vision">Vision Board</span>
+              <span class="gl-hero-dot"></span>
+              <span id="galImageCount">0 images</span>
+            </div>
+            <div class="gl-hero-sub" id="galHeroSub">Your designs &amp; posters</div>
+          </div>
+          <div id="gsiContainer" class="gsi-section"></div>
+        </div>
+      </section>
+
+      <div class="hub-content hub-page-transition">
+
+        <!-- ─── GALLERY GRID ───────────────────────── -->
+        <div class="hub-anim-in hub-anim-in-2" style="margin-bottom:var(--space-6)">
+          <div class="gal-top-actions hub-anim-in hub-anim-in-3">
+            <div>
+              <div class="gal-top-title" data-i18n="gal.vision">Vision Board</div>
+              <span class="gal-top-count" id="galCount">0 images</span>
+            </div>
+            <div class="gal-actions-row">
+              <button class="btn btn-ghost" id="galResetBtn" title="Reset all gallery images" style="display:none">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+                Reset
+              </button>
+              <button class="btn btn-outline" id="galAddBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Image
+              </button>
+            </div>
+          </div>
+
+          <!-- Gallery Grid -->
+          <div class="gal-grid hub-anim-in hub-anim-in-4" id="galGrid"></div>
+        </div>
+
+      </div>
+
+      <!-- ─── FOOTER ───────────────────────────────── -->
+      <footer class="hub-minifooter hub-anim-in hub-anim-in-5">
+        <span>Havën Schedule v1.0</span>
+        <div class="hub-minifooter-actions">
+          <button id="exportBtn" class="btn btn-ghost">Export</button>
+          <button id="importBtn" class="btn btn-ghost">Import</button>
+          <button id="focusToggleBtn" class="btn btn-ghost" title="Focus mode"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg> Focus</button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ─── IMAGE PICKER ───────────────────────── -->
+  <div id="imagePickerOverlay" class="image-picker-overlay hidden">
+    <div class="image-picker-card" onclick="event.stopPropagation()">
+      <h3>Customize Image</h3>
+      <img id="imagePickerPreview" class="image-picker-preview" src="" alt="">
+      <div class="image-picker-pastezone" id="imagePickerPasteZone" tabindex="0" contenteditable="true" onpaste="handleImagePickerPaste(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div>Paste image (Ctrl+V) or drag &amp; drop</div>
+      </div>
+      <div class="image-picker-file-row">
+        <input type="file" id="imagePickerFileInput" accept="image/*" onchange="handleImagePickerFile(event)" style="display:none">
+        <button class="drawer-btn" onclick="document.getElementById('imagePickerFileInput').click()" style="width:100%;justify-content:center;gap:6px;font-size:0.75rem;margin-bottom:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Choose from gallery
+        </button>
+      </div>
+      <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()">
+      <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
+      <div class="img-fit-row" id="imagePickerFitRow">
+        <span class="img-fit-label">Fit:</span>
+        <div class="img-fit-options" id="imagePickerFitOptions"></div>
+      </div>
+      <div class="image-picker-actions">
+        <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
+        <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1" data-i18n="gal.reset">Reset</button>
+        <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── SETTINGS DRAWER ─────────────────────── -->
+  <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
+  <div id="settingsDrawer" class="settings-drawer hidden">
+    <div class="settings-drawer-header">
+      <div class="settings-drawer-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </div>
+      <h3>Customize</h3>
+      <button id="settingsDrawerClose" class="settings-drawer-close" onclick="closeSettingsDrawer()" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="settings-drawer-body" id="settingsDrawerBody">
+      <div id="settingsContent">
+        <form id="settingsForm" onsubmit="handleSettingsSubmit(event)">
+          <div class="drawer-section">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+              <span class="drawer-section-title">AI Provider</span>
+            </div>
+            <div class="form-group">
+              <label for="drawerProvider">Provider</label>
+              <select id="drawerProvider" class="form-input">
+                <option value="groq">Groq (Gemma2-9B)</option>
+                <option value="gemini">Gemini (1.5 Flash)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="drawerModel">Model</label>
+              <select id="drawerModel" class="form-input"></select>
+            </div>
+            <div class="form-group">
+              <label for="drawerApiKey">API Key</label>
+              <input type="password" id="drawerApiKey" class="form-input" placeholder="sk-...">
+            </div>
+            <div id="drawerKeyStatus"><span id="drawerKeyStatusText" class="drawer-status"></span></div>
+            <div id="drawerAIUsage" class="drawer-status"></div>
+          </div>
+
+          <div class="drawer-section" id="settingsCardColors">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.5-4.5-10-10-10z"/></svg>
+              <span class="drawer-section-title">Tag Colors</span>
+            </div>
+          </div>
+          <div class="drawer-section" id="settingsAccentColor">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+              <span class="drawer-section-title">Accent Color</span>
+            </div>
+          </div>
+          <div class="drawer-section" id="settingsImageManager">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span class="drawer-section-title">Images</span>
+            </div>
+          </div>
+          <div class="drawer-section">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="drawer-section-title">Data</span>
+            </div>
+            <div class="drawer-actions-row">
+              <button type="button" class="drawer-btn" onclick="exportData()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export</button>
+              <button type="button" class="drawer-btn" onclick="document.getElementById('drawerImportFile').click()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import</button>
+              <button type="button" class="drawer-btn danger" onclick="handleSettingsClear()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> Clear Key</button>
+            </div>
+            <input type="file" id="drawerImportFile" accept=".json" style="display:none" onchange="importData(event)">
+          </div>
+          <div class="drawer-save-wrap">
+            <button type="submit" class="drawer-save-btn">Save Settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── HELP MODAL ───────────────────────────── -->
+  <div id="helpOverlay" class="overlay hidden"></div>
+  <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+    <div class="modal-header">
+      <h3><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Help and Shortcuts</h3>
+      <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="help-section">
+        <div class="help-section-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/></svg> Keyboard Shortcuts</div>
+        <div class="shortcuts-grid" id="helpShortcutsGrid"></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Tips and Tricks</div>
+        <div class="help-tips">
+          <div class="help-tip"><span class="help-tip-icon"></span><div class="help-tip-text">Click any image to customize it — paste an image or URL</div></div>
+          <div class="help-tip"><span class="help-tip-icon"></span><div class="help-tip-text">Toggle Edit Mode (Visuals) to see the reset option on custom images</div></div>
+          <div class="help-tip"><span class="help-tip-icon"></span><div class="help-tip-text">Use "Add Image" to add new vision board slots</div></div>
+          <div class="help-tip" style="cursor:pointer" id="helpViewTutorial"><span class="help-tip-icon"></span><div class="help-tip-text"><strong>View Tutorial</strong> — Replay the onboarding tour</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── AI CHAT PANEL ────────────────────────── -->
+  <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
+  <div id="aiChatPanel" class="ai-panel hidden" role="dialog" aria-label="AI Assistant">
+    <div class="ai-panel-header">
+      <div class="ai-panel-header-left">
+        <div class="ai-panel-avatar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
+        <div>
+          <div class="ai-panel-title">ChickBot</div>
+          <div class="ai-panel-subtitle">Your smart schedule buddy</div>
+        </div>
+      </div>
+      <div class="ai-panel-header-actions">
+        <button id="aiChatSettingsBtn" class="ai-panel-icon-btn" title="Settings" ><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+        <button id="aiChatClose" class="ai-panel-icon-btn" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>
+    <div class="ai-panel-body"><div class="ai-messages" id="aiChatMessages"></div></div>
+    <div class="ai-panel-footer">
+      <div class="ai-input-wrapper" id="aiChatInputWrapper">
+        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your gallery..." autocomplete="off">
+        <button id="aiChatSend" class="ai-send-btn show" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+      </div>
+      <div class="ai-panel-footer-hint"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg><span>Natural language scheduling</span></div>
+    </div>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+    }
+  </script>
+  <script src="shared.js"></script>
+  <script src="settings.js"></script>
+  <script src="gsi.js"></script>
+  <script src="gallery.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
+
+  <!-- ─── Spotify Settings Modal ──────────────── -->
+  <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
+    <div class="sp-modal">
+      <div class="sp-modal-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+        <h2>Playlists</h2>
+        <button class="sp-modal-close" onclick="spCloseSettings()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="sp-modal-body">
+        <div class="sp-add-row">
+          <input id="spAddInput" placeholder="Playlist URL or ID..." onkeydown="if(event.key==='Enter')spAddPlaylist()">
+          <button onclick="spAddPlaylist()">Add</button>
+        </div>
+        <div class="sp-search-row">
+          <input id="spSearchInput" placeholder="Search playlists..." oninput="spRenderList(this.value)">
+        </div>
+        <div class="sp-iframe-wrap">
+          <iframe id="spModalEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+        </div>
+        <div class="sp-list" id="spList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>spInit();</script>
+</body>
+</html>

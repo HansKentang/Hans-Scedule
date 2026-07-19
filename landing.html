@@ -675,6 +675,17 @@
   </div>
 
   <script>
+    // Auto-redirect returning users to the app after a brief moment
+    (function() {
+      var hasUser = !!localStorage.getItem('haven-gsi-active');
+      var isGuest = sessionStorage.getItem('haven-guest') === '1';
+      if (hasUser || isGuest) {
+        setTimeout(function() {
+          window.location.replace('index.html');
+        }, 1500);
+      }
+    })();
+
     (function() {
       var cards = document.querySelectorAll('.feature-card, .screenshot-card, .showcase-quote');
       var observer = new IntersectionObserver(function(entries) {

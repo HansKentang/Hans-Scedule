@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0a0b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Havën">
+  <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <title>Havën Schedule — Hub</title>
+  <script>// Redirect new visitors to landing page
+  (function(){
+    var hasUser = !!localStorage.getItem('haven-gsi-active');
+    var isGuest = sessionStorage.getItem('haven-guest') === '1';
+    if (!hasUser && !isGuest) {
+      window.location.replace('landing.html');
+    }
+  })();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* All page CSS consolidated in style.css */
+  </style>
+</head>
+<body>
+  <!-- Ambient background -->
+  <div class="hub-ambient">
+    <div class="hub-ambient-gradient"></div>
+    <div class="hub-ambient-dots"></div>
+  </div>
+
+  <div class="hub-layout">
+    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────────── -->
+    <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
+    <!-- ─── HAMBURGER SIDE PANEL ─────────────────────── -->
+    <div class="hub-menu-overlay" id="hubMenuOverlay"></div>
+    <div class="hub-menu-panel hidden" id="hubMenuPanel">
+      <div class="hub-menu-panel-header">
+        <span class="hub-menu-panel-title">Menu</span>
+        <button class="hub-menu-panel-close" id="hubMenuClose">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="hub-menu-profile" id="menuProfile">
+        <div class="hub-menu-avatar" id="menuAvatar">?</div>
+        <div class="hub-menu-user">
+          <div class="hub-menu-name" id="menuName">User</div>
+          <div class="hub-menu-email" id="menuEmail"></div>
+        </div>
+      </div>
+      <div class="hub-menu-panel-section">
+        <button class="hub-menu-panel-item" id="menuTheme"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>Theme</button>
+      </div>
+      <div class="hub-menu-panel-section" style="border-top:1px solid var(--border-subtle);padding-top:var(--space-2)">
+        <button class="hub-menu-panel-item" id="menuPlus"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Quick Actions</span><span style="margin-left:auto;font-size:0.6rem;opacity:0.4">+</span></button>
+        <div class="hub-menu-plus-popup hidden" id="menuPlusPopup">
+          <div id="menuPlusList"></div>
+          <button class="hub-menu-panel-item" id="menuPlusCustomize" style="font-size:0.7rem;opacity:0.6"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span id="menuPlusCustLabel">Customize</span></button>
+        </div>
+      </div>
+      <div class="hub-menu-spacer"></div>
+      <div class="hub-menu-footer">
+        <button class="hub-menu-panel-item" id="menuSettings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
+        <button class="hub-menu-panel-item" id="menuHelp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</button>
+        <button class="hub-menu-panel-item" id="menuTutorial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 16 12 12 12 8"/><line x1="12" y1="16" x2="12" y2="16"/></svg>Tutorial</button>
+      </div>
+    </div>
+    <!-- ─── SIDEBAR (Notion workspace) ──────────────────── -->
+    <aside class="hub-sidebar" role="navigation" aria-label="Sidebar" id="hubSidebar">
+      <div class="hub-workspace">
+        <div class="hub-workspace-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M6 4v16M18 4v16M6 12h12"/></svg></div>
+        <span class="hub-workspace-name">Havën</span>
+        <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+        <button class="hub-hamburger" id="hubHamburger" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+
+      <nav class="hub-sidebar-nav">
+        <div class="hub-sidebar-section-label">Pages</div>
+        <div class="hub-snav-stagger">
+          <a href="index.html" class="hub-snav-item active">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </span>
+            <span class="snav-label">Hub</span>
+          </a>
+          <a href="schedule.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </span>
+            <span class="snav-label" data-i18n="nav.schedule">Schedule</span>
+          </a>
+          <a href="activities.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+              </svg>
+            </span>
+            <span class="snav-label" data-i18n="nav.activities">Activities</span>
+          </a>
+          <a href="analytics.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </span>
+            <span class="snav-label" data-i18n="nav.analytics">Analytics</span>
+          </a>
+          <a href="goals.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            </span>
+            <span class="snav-label" data-i18n="nav.goals">Goals</span>
+          </a>
+          <a href="finance.html" class="hub-snav-item">
+            <span class="snav-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+              </svg>
+            </span>
+            <span class="snav-label">Finance</span>
+          </a>
+          <a href="gallery.html" class="hub-snav-item"><span class="snav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="snav-label">Gallery</span></a>
+        </div>
+      </nav>
+      <div class="hub-sidebar-body">
+      <div class="hub-sidebar-images"></div>
+      <div class="sp-sidebar" id="spSidebar">
+        <div class="sp-header" onclick="spToggleSection()">
+          <button class="sp-toggle-btn" onclick="event.stopPropagation();spToggleSection()" title="Toggle player">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+          </button>
+          <span class="sp-header-text">Spotify</span>
+          <svg class="sp-header-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <button class="sp-gear-btn" onclick="event.stopPropagation();spOpenSettings()" title="Manage playlists">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+        </div>
+        <div class="sp-body">
+        <div class="sp-player">
+          <div class="sp-empty" id="spEmpty">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+            <span>No playlist linked</span>
+            <button onclick="spOpenSettings()">Add playlist</button>
+          </div>
+          <div class="sp-embed-wrap" id="spEmbedWrap">
+            <iframe id="spEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+          </div>
+        </div>
+        <div class="sp-controls" id="spControls">
+          <button class="sp-nav-btn" id="spNavPrev" onclick="spSidePrev()" title="Previous playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="sp-controls-label">Playlist</span>
+          <button class="sp-nav-btn" id="spNavNext" onclick="spSideNext()" title="Next playlist">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+
+        </div>
+      </div>
+      </div>
+      <div class="hub-sidebar-footer">
+        <div class="hub-footer-btns">
+          <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <span>Theme</span>
+          </button>
+          <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
+            <span>Settings</span>
+          </button>
+          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Visuals</span>
+          </button>
+          <span id="syncStatusDot" class="sync-dot" title="Sync status"></span>
+
+        </div>
+      </div>
+    </aside>
+
+    <!-- ─── MAIN ─────────────────────────────────────────── -->
+    <div class="hub-main" role="main">
+      <!-- ─── HUB HERO ────────────────────────────────── -->
+      <section style="position:relative;height:220px;overflow:hidden;flex-shrink:0">
+          <img data-image-id="hub-hero" src="" alt="Hero" style="width:100%;height:100%;object-fit:cover;opacity:0.85">
+          <div style="position:absolute;inset:0;background:linear-gradient(to right, var(--bg-primary) 0%, transparent 55%)"></div>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;padding:0 var(--container-padding)">
+            <div style="display:flex;align-items:center;gap:var(--space-4);width:100%">
+              <div id="gsiContainer" class="gsi-section"></div>
+              <div style="flex:1;min-width:0">
+                <h1 style="font-family:var(--font-serif);font-size:22px;font-weight:500;line-height:1.2;letter-spacing:-0.01em;color:var(--text-primary);margin:0" id="hubGreeting">Good morning</h1>
+                <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px">
+                  <span id="hubDateLine"></span>
+                </div>
+              </div>
+              <div style="display:flex;gap:var(--space-2);align-items:center;flex-shrink:0">
+                <div class="glass-card dark-stat" style="padding:4px 12px;border-radius:var(--radius-md);text-align:center">
+                  <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;line-height:1.2"><span class="stat-value" id="statTodayBlock" data-target="0">0</span></div>
+                  <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;margin-top:1px">TODAY</div>
+                </div>
+                <div class="glass-card dark-stat" style="padding:4px 12px;border-radius:var(--radius-md);text-align:center">
+                  <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;line-height:1.2"><span class="stat-value" id="statWeek" data-target="0">0</span></div>
+                  <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;margin-top:1px">WEEK</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Hub Visuals FAB -->
+        <div class="access-hub" id="hubAccessHub">
+          <div class="access-items" id="hubAccessItems">
+            <button class="access-item" id="hubFabCustomize" title="Customize">
+              <span class="access-item-icon" style="background:color-mix(in srgb, var(--text-primary) 12%, transparent);color:var(--text-primary)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </span>
+              <span class="access-item-label">Customize</span>
+            </button>
+            <button class="access-item" id="hubFabSnapshot" title="Share snapshot of your hub">
+              <span class="access-item-icon" style="background:color-mix(in srgb, var(--text-primary) 12%, transparent);color:var(--text-primary)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </span>
+              <span class="access-item-label">Snapshot</span>
+            </button>
+            <button class="access-item" id="hubFabGuide" title="How to use the canvas">
+              <span class="access-item-icon" style="background:color-mix(in srgb, var(--text-primary) 12%, transparent);color:var(--text-primary)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </span>
+              <span class="access-item-label" data-i18n="hub.guide">Guide</span>
+            </button>
+          </div>
+          <button class="access-main" id="hubAccessMain" aria-label="Hub actions">
+            <svg class="access-icon-plus" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="hub-section-wrap" data-hub-section="bento">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label" data-i18n="hub.sectionGoals">Goals &amp; Priorities</span>
+          </div>
+          <div class="bento-grid fade-in" style="margin-bottom:var(--section-gap)">
+            <!-- Populated by renderHubBento() -->
+          </div>
+        </div>
+
+        <div class="hub-section-wrap" data-hub-section="sleep">
+          <div class="hub-section-header">
+            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-label" data-i18n="hub.sectionSleep">Sleep</span>
+          </div>
+          <section class="fade-in sleep-section" style="margin-bottom:var(--section-gap)">
+            <div class="sleep-card">
+              <div class="sleep-header">
+                <h3>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                  </svg>
+                  Sleep
+                </h3>
+                <div class="sleep-header-actions">
+                  <button class="btn btn-outline" onclick="openSleepLogModal()" style="font-size:0.72rem;padding:var(--space-1) var(--space-3)" data-i18n="sleep.log">+ Log Sleep</button>
+                </div>
+              </div>
+
+              <!-- Tabs -->
+              <div class="sleep-tabs">
+                <button class="sleep-tab active" data-sleep-tab="overview" data-i18n="sleep.overview">Overview</button>
+                <button class="sleep-tab" data-sleep-tab="history" data-i18n="sleep.history">History</button>
+                <button class="sleep-tab" data-sleep-tab="insights" data-i18n="sleep.insights">Insights</button>
+                <button class="sleep-tab" data-sleep-tab="targets" data-i18n="sleep.targets">Targets</button>
+              </div>
+
+              <!-- Overview Tab -->
+              <div class="sleep-tab-content active" data-sleep-tab-content="overview">
+
+                <!-- Top row: Score + Last Night quick card -->
+                <div class="sleep-overview-top">
+                  <div class="sleep-score-ring" id="sleepScoreRing">
+                    <svg viewBox="0 0 36 36">
+                      <circle class="bg" cx="18" cy="18" r="15.5"></circle>
+                      <circle class="fill" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" id="sleepScoreCircle"></circle>
+                    </svg>
+                    <div class="sleep-score-value" id="sleepScoreValue">—</div>
+                    <div class="sleep-score-label" data-i18n="sleep.score">Score</div>
+                  </div>
+                  <div class="s-last-card" id="sLastCard">
+                    <div class="s-last-main">
+                      <span class="s-last-dur" id="sleepEnhLastDur">—</span>
+                      <span class="s-last-label" data-i18n="sleep.lastNight">last night</span>
+                    </div>
+                    <div class="s-last-sub" id="sleepEnhLastTime">—</div>
+                    <div class="s-last-quality" id="sLastQuality"></div>
+                  </div>
+                </div>
+
+                <!-- Metrics row -->
+                <div class="s-metrics">
+                  <div class="s-metric">
+                    <span class="s-metric-val" id="sleepEnhAvgDur">—</span>
+                    <span class="s-metric-lbl" data-i18n="sleep.avg7">7-Day Avg</span>
+                    <span class="s-metric-sub" id="sleepEnhOnTrack"></span>
+                  </div>
+                  <div class="s-metric">
+                    <span class="s-metric-val" id="sleepEnhQuality">—</span>
+                    <span class="s-metric-lbl" data-i18n="sleep.avgQuality">Avg Quality</span>
+                    <span class="s-metric-sub" id="sleepEnhQualityLabel">—</span>
+                  </div>
+                  <div class="s-metric">
+                    <span class="s-metric-val" id="sleepGaugeScore">—</span>
+                    <span class="s-metric-lbl" data-i18n="sleep.consistency">Consistency</span>
+                    <span class="s-metric-sub" id="sleepGaugeDetail">Log 3+ nights</span>
+                  </div>
+                </div>
+
+                <!-- Weekly sleep schedule (visual timeline) -->
+                <div class="s-schedule-label">This Week's Sleep</div>
+                <div class="s-schedule" id="sSchedule">
+                  <div style="text-align:center;padding:var(--space-3);font-size:0.72rem;color:var(--text-tertiary)">No data yet</div>
+                </div>
+
+              </div>
+
+              <!-- History Tab -->
+              <div class="sleep-tab-content" data-sleep-tab-content="history">
+                <div class="sleep-history-list" id="sleepHistoryList">
+                  <div class="sleep-history-empty">No sleep logs yet. Log your first night!</div>
+                </div>
+              </div>
+
+              <!-- Insights Tab -->
+              <div class="sleep-tab-content" data-sleep-tab-content="insights">
+                <div class="sleep-insights-grid" id="sleepInsightsGrid"></div>
+              </div>
+
+              <!-- Targets Tab -->
+              <div class="sleep-tab-content" data-sleep-tab-content="targets">
+                <div class="sleep-targets-section">
+                  <div class="sleep-targets-row">
+                    <div class="sleep-target-field">
+                      <label for="sleepTargetBedtime" data-i18n="sleep.targetBedtime">Target Bedtime</label>
+                      <input type="time" id="sleepTargetBedtime" value="23:00">
+                    </div>
+                    <div class="sleep-target-field">
+                      <label for="sleepTargetWake" data-i18n="sleep.targetWake">Target Wake Time</label>
+                      <input type="time" id="sleepTargetWake" value="07:00">
+                    </div>
+                    <div class="sleep-target-field">
+                      <label for="sleepTargetDuration" data-i18n="sleep.targetDuration">Target Duration</label>
+                      <input type="number" id="sleepTargetDuration" value="480" min="300" max="600" step="15">
+                    </div>
+                  </div>
+                  <div class="sleep-target-actions">
+                    <button class="btn btn-primary" onclick="saveSleepTargetsFromHub()" data-i18n="sleep.saveTargets">Save Targets</button>
+                    <span class="sleep-target-status" id="sleepTargetStatus"></span>
+                  </div>
+                </div>
+
+                <!-- Bedtime Routine Checklist -->
+                <div class="sleep-routine-section">
+                  <div class="sleep-targets-field" style="margin-bottom:var(--space-2)">
+                    <label style="font-size:0.72rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:var(--space-2)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                      Bedtime Routine
+                    </label>
+                  </div>
+                  <div class="sleep-routine-list" id="sleepRoutineList">
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="screen-off"> <span data-i18n="sleep.routineItem1">Screen off 30min before</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="read"> <span data-i18n="sleep.routineItem2">Read / unwind</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="meditate"> <span data-i18n="sleep.routineItem3">Meditate / breathe</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="journal"> <span data-i18n="sleep.routineItem4">Journal / reflect</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="no-caffeine"> <span data-i18n="sleep.routineItem5">No caffeine after 5pm</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="water"> <span data-i18n="sleep.routineItem6">Drink water</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="dark-room"> <span data-i18n="sleep.routineItem7">Darken the room</span>
+                    </label>
+                    <label class="sleep-routine-item">
+                      <input type="checkbox" data-routine="stretch"> <span data-i18n="sleep.routineItem8">Light stretch</span>
+                    </label>
+                  </div>
+                  <div class="sleep-target-actions" style="margin-top:var(--space-2)">
+                    <button class="btn btn-outline" onclick="saveSleepRoutine()" style="font-size:0.65rem" data-i18n="sleep.saveRoutine">Save Routine</button>
+                    <span class="sleep-target-status" id="sleepRoutineStatus"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+
+      <!-- Minimal footer -->
+      <footer class="hub-minifooter hub-anim-in hub-anim-in-8">
+        <span data-i18n="hub.footer">Havën Schedule v1.0</span>
+        <div class="hub-minifooter-actions">
+          <button id="exportBtn" class="btn btn-ghost" data-i18n="hub.export">Export</button>
+          <button id="importBtn" class="btn btn-ghost" data-i18n="hub.import">Import</button>
+          <button id="focusToggleBtn" class="btn btn-ghost" title="Focus mode">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
+            Focus
+          </button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+
+
+  <!-- ─── AI CHAT PANEL (right-side drawer) ──────────────── -->
+  <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
+  <div id="aiChatPanel" class="ai-panel hidden" role="dialog" aria-label="AI Assistant">
+    <div class="ai-panel-header">
+      <div class="ai-panel-header-left">
+        <div class="ai-panel-avatar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/>
+          </svg>
+        </div>
+        <div>
+          <div class="ai-panel-title">ChickBot</div>
+          <div class="ai-panel-subtitle">Your smart schedule buddy</div>
+        </div>
+      </div>
+      <div class="ai-panel-header-actions">
+        <button id="aiChatSettingsBtn" class="ai-panel-icon-btn" title="Settings" >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </button>
+        <button id="aiChatClose" class="ai-panel-icon-btn" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="ai-panel-body">
+      <div class="ai-messages" id="aiChatMessages"></div>
+    </div>
+    <div class="ai-panel-footer">
+      <div class="ai-input-wrapper" id="aiChatInputWrapper">
+        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your schedule..." autocomplete="off">
+        <button id="aiChatSend" class="ai-send-btn show" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="ai-panel-footer-hint">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+        <span>Natural language scheduling</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+    }
+  </script>
+  <script src="shared.js"></script>
+  <script src="settings.js"></script>
+  <script src="gsi.js"></script>
+
+  <script src="hub-visuals.js"></script>
+  <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
+  <script>
+    // ════════════════════════════════════════════════════════════
+    // HUB: PAGE-SPECIFIC CODE
+    // ════════════════════════════════════════════════════════════
+
+    pageAfterImport = () => { updateHub(); };
+
+    // ─── GREETING & DATE ─────────────────────────────────
+    document.getElementById('hubDateLine').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+    // ─── UPDATE HUB ──────────────────────────────────────
+    function updateHub() {
+      const all = state.tasks.filter(t => !isWhiteboardTask(t));
+      const now = new Date();
+      const ws = getMonday(now);
+      const we = addDays(ws, 7);
+      const weekTasks = all.filter(t => { const d = new Date(t.date + 'T12:00:00'); return d >= ws && d < we; });
+      const todayStr = formatDate(now);
+      const todayTasks = all.filter(t => t.date === todayStr);
+
+      const weekTasksEl = document.getElementById('hubWeekTasks');
+      if (weekTasksEl) weekTasksEl.textContent = weekTasks.length + ' this week';
+      const totalTasksEl = document.getElementById('hubTotalTasks');
+      if (totalTasksEl) totalTasksEl.textContent = all.length + ' total';
+
+      if (typeof renderSleepHub === 'function') renderSleepHub();
+    }
+
+
+    // ─── QUICK ADD ───────────────────────────────────────
+    const _hubQuickTags = ['meeting', 'deep-work', 'exercise', 'study', 'hobby'];
+    let _hubQuickTagIdx = 0;
+
+
+
+
+    // ════════════════════════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════════════════════════
+
+    function init() {
+      loadState();
+      hubContent = loadHubContent();
+  // Auto-trigger tutorial for new users
+  if (!hasSeenTutorial('hub') && typeof startTutorial === "function") {
+    try {
+      setTimeout(function() { startTutorial(HUB_TUTORIAL_STEPS); }, 300);
+    } catch(e) {}
+  }
+      applyTheme();
+
+      // Ensure bento section is never hidden
+      const bentoWrap = document.querySelector('.hub-section-wrap[data-hub-section="bento"]');
+      if (bentoWrap) bentoWrap.classList.remove('hidden-section');
+      try {
+        const vis = JSON.parse(localStorage.getItem(HUB_VIS_KEY) || '{}');
+        if (vis.bento === false) {
+          delete vis.bento;
+          localStorage.setItem(HUB_VIS_KEY, JSON.stringify(vis));
+        }
+      } catch {} 
+      document.querySelectorAll('img[data-image-id]').forEach(el => {
+        el.src = getImage(el.dataset.imageId) || '';
+      });
+
+      dom.aiChatBtn = document.getElementById('aiChatBtnSidebar');
+      dom.aiChatPanel = document.getElementById('aiChatPanel');
+      dom.aiChatOverlay = document.getElementById('aiChatOverlay');
+      dom.aiChatMessages = document.getElementById('aiChatMessages');
+      dom.aiChatInput = document.getElementById('aiChatInput');
+      dom.aiChatInputWrapper = document.getElementById('aiChatInputWrapper');
+      dom.aiChatSend = document.getElementById('aiChatSend');
+      dom.aiChatClose = document.getElementById('aiChatClose');
+
+      document.getElementById('menuTutorial')?.addEventListener('click', function() {
+        closeHubMenu();
+        if (typeof startTutorial === 'function') startTutorial(HUB_TUTORIAL_STEPS);
+      });
+      document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
+      document.getElementById('focusToggleBtn')?.addEventListener('click', toggleFocusMode);
+      dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
+
+      document.getElementById('bcThemeBtn')?.addEventListener('click', toggleTheme);
+      
+      document.getElementById('bcAiChatBtn')?.addEventListener('click', showAIChat);
+
+      updateModelOptions();
+
+      dom.aiChatOverlay?.addEventListener('click', hideAIChat);
+      dom.aiChatClose?.addEventListener('click', hideAIChat);
+      dom.aiChatSend?.addEventListener('click', sendAIMessage);
+      dom.aiChatInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendAIMessage(); } });
+
+      const observer = new MutationObserver(() => {});
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+      initHubLayout();
+      initHubEditMode();
+      renderHubBento();
+
+      // Save hub content when leaving the page
+      window.addEventListener('beforeunload', function() {
+        if (typeof saveHubContent === 'function') saveHubContent();
+      });
+
+    }
+
+    if (document.readyState === 'loading')
+      document.addEventListener('DOMContentLoaded', () => { try { init(); } catch(e) { console.error('init() failed:', e); } });
+    else { try { init(); } catch(e) { console.error('init() failed:', e); } }
+  </script>
+
+  <!-- Sleep Log Modal -->
+  <div id="sleepLogOverlay" class="sleep-log-overlay hidden" onclick="closeSleepLogModal()"></div>
+  <div id="sleepLogModal" class="sleep-log-modal hidden">
+    <h3>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+      </svg>
+      Log Sleep
+    </h3>
+    <button class="sleep-log-close" onclick="closeSleepLogModal()" aria-label="Close">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <div class="sleep-log-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sleepDate">Date</label>
+          <input type="date" id="sleepDate" class="form-input">
+        </div>
+        <div class="form-group">
+          <label for="sleepQuality">Quality</label>
+          <div class="sleep-quality-select" id="sleepQualitySelect">
+            <button class="sleep-quality-opt q1" data-quality="1">1</button>
+            <button class="sleep-quality-opt q2" data-quality="2">2</button>
+            <button class="sleep-quality-opt q3 active" data-quality="3">3</button>
+            <button class="sleep-quality-opt q4" data-quality="4">4</button>
+            <button class="sleep-quality-opt q5" data-quality="5">5</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sleepBedtime">Bedtime</label>
+          <input type="time" id="sleepBedtime" class="form-input" value="23:00" oninput="previewSleepDuration()">
+        </div>
+        <div class="form-group">
+          <label for="sleepWakeTime">Wake Time</label>
+          <input type="time" id="sleepWakeTime" class="form-input" value="07:00" oninput="previewSleepDuration()">
+        </div>
+      </div>
+
+      <!-- Auto-calculated duration preview -->
+      <div class="s-dur-preview" id="sDurPreview">
+        <span class="s-dur-preview-icon">&#9200;</span>
+        <span class="s-dur-preview-text">Duration: <strong id="sDurPreviewVal">8h 00m</strong></span>
+      </div>
+
+      <!-- Mood chips (compact) -->
+      <div class="form-group">
+        <label>How did you feel?</label>
+        <div class="sleep-mood-chips" id="sleepMoodChips">
+          <button class="sleep-mood-chip" data-mood="restful">Restful</button>
+          <button class="sleep-mood-chip" data-mood="restless">Restless</button>
+          <button class="sleep-mood-chip" data-mood="dreams">Dreams</button>
+          <button class="sleep-mood-chip" data-mood="tired">Woke Tired</button>
+          <button class="sleep-mood-chip" data-mood="nightmare">Nightmare</button>
+          <button class="sleep-mood-chip" data-mood="insomnia">Insomnia</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="sleepNotes">Notes (optional)</label>
+        <input type="text" id="sleepNotes" class="form-input" placeholder="How was your sleep?">
+      </div>
+      <div class="sleep-log-actions">
+        <button class="btn btn-outline" onclick="closeSleepLogModal()">Cancel</button>
+        <button class="btn btn-primary" id="sleepSaveBtn" onclick="handleSleepLogSave()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── SLEEP TRACKING (Hub) ───────────────────────────
+    let sleepSelectedQuality = 3;
+    let sleepLogEditId = null;
+
+    function previewSleepDuration() {
+      var bt = document.getElementById('sleepBedtime').value;
+      var wt = document.getElementById('sleepWakeTime').value;
+      var el = document.getElementById('sDurPreviewVal');
+      var preview = document.getElementById('sDurPreview');
+      if (!bt || !wt || !el || !preview) return;
+      var dur = calculateSleepDuration(bt, wt);
+      el.textContent = formatSleepMinutes(dur);
+      preview.style.opacity = '1';
+    }
+
+    function getWeekLogs(now) {
+      var logs = [];
+      for (var i = 6; i >= 0; i--) {
+        var d = new Date(now);
+        d.setDate(d.getDate() - i);
+        var log = getSleepLog(formatDate(d));
+        if (log) logs.push(log);
+      }
+      return logs;
+    }
+
+    function renderSleepHub() {
+      const logs = loadSleepLogs();
+      const now = new Date();
+      const targets = loadSleepTargets();
+      const weekLogs = getWeekLogs(now);
+
+      // ── Last night ──
+      const lastLog = logs.length > 0 ? logs.reduce((a, b) => a.date > b.date ? a : b) : null;
+      var lastDurEl = document.getElementById('sleepEnhLastDur');
+      var lastTimeEl = document.getElementById('sleepEnhLastTime');
+      var lastQualityEl = document.getElementById('sLastQuality');
+      if (lastLog) {
+        if (lastDurEl) lastDurEl.textContent = formatSleepMinutes(lastLog.duration);
+        if (lastTimeEl) lastTimeEl.textContent = formatTimeAMPM(lastLog.bedtime) + ' \u2013 ' + formatTimeAMPM(lastLog.wakeTime);
+        if (lastQualityEl) lastQualityEl.innerHTML = Array(5).fill(0).map(function(_, i) {
+          return '<span class="s-star' + (i < lastLog.quality ? ' s-star-on' : '') + '">\u2605</span>';
+        }).join('');
+      } else {
+        if (lastDurEl) lastDurEl.textContent = '\u2014';
+        if (lastTimeEl) lastTimeEl.textContent = '\u2014';
+        if (lastQualityEl) lastQualityEl.innerHTML = '';
+      }
+
+      // ── 7-day avg ──
+      var avgDurEl = document.getElementById('sleepEnhAvgDur');
+      var onTrackEl = document.getElementById('sleepEnhOnTrack');
+      if (weekLogs.length > 0) {
+        var avg = Math.round(weekLogs.reduce(function(s, l) { return s + l.duration; }, 0) / weekLogs.length);
+        if (avgDurEl) avgDurEl.textContent = formatSleepMinutes(avg);
+        if (onTrackEl) {
+          var diff = avg - targets.targetDuration;
+          if (Math.abs(diff) < 30) onTrackEl.textContent = 'On track';
+          else if (diff > 0) onTrackEl.textContent = '+' + formatSleepMinutes(diff) + ' over';
+          else onTrackEl.textContent = formatSleepMinutes(Math.abs(diff)) + ' under';
+        }
+      } else {
+        if (avgDurEl) avgDurEl.textContent = '\u2014';
+        if (onTrackEl) onTrackEl.textContent = '';
+      }
+
+      // ── Avg quality ──
+      var qualityEl = document.getElementById('sleepEnhQuality');
+      var qLabelEl = document.getElementById('sleepEnhQualityLabel');
+      if (weekLogs.length > 0) {
+        var avgQ = Math.round(weekLogs.reduce(function(s, l) { return s + l.quality; }, 0) / weekLogs.length * 10) / 10;
+        if (qualityEl) qualityEl.textContent = avgQ.toFixed(1);
+        if (qLabelEl) qLabelEl.textContent = SLEEP_QUALITY_LABELS[Math.round(avgQ)] || '\u2014';
+      } else {
+        if (qualityEl) qualityEl.textContent = '\u2014';
+        if (qLabelEl) qLabelEl.textContent = '\u2014';
+      }
+
+      // ── Score + Consistency + Routine + History + Insights ──
+      renderSleepScore(logs, targets);
+      renderSleepConsistency(logs);
+      renderSleepRoutine();
+      renderTargetEditor(targets);
+      renderSleepHistory(logs);
+      renderSleepInsights(logs);
+      renderSleepSchedule(logs);
+    }
+
+    // ── Score ──
+    function computeSleepScore(logs, targets) {
+      if (logs.length < 3) return null;
+      var now = new Date();
+      var weekLogs = getWeekLogs(now);
+      if (weekLogs.length === 0) return null;
+      var durScore = 0, targetDur = targets ? targets.targetDuration : 480;
+      var durData = weekLogs.filter(function(l) { return l.duration; });
+      if (durData.length > 0) {
+        var avgDur = durData.reduce(function(s, l) { return s + l.duration; }, 0) / durData.length;
+        durScore = Math.max(0, 40 - Math.abs(avgDur - targetDur) * 0.15);
+      }
+      var qualityScore = 0;
+      var qData = weekLogs.filter(function(l) { return l.quality; });
+      if (qData.length > 0) {
+        qualityScore = (qData.reduce(function(s, l) { return s + l.quality; }, 0) / qData.length / 5) * 30;
+      }
+      var consistencyScore = 0;
+      var consistency = getSleepConsistencyScore(logs);
+      if (consistency) consistencyScore = (consistency.score / 100) * 30;
+      return Math.round(durScore + qualityScore + consistencyScore);
+    }
+
+    function renderSleepScore(logs, targets) {
+      var score = computeSleepScore(logs, targets);
+      var scoreEl = document.getElementById('sleepScoreValue');
+      var circleEl = document.getElementById('sleepScoreCircle');
+      if (!scoreEl || !circleEl) return;
+      if (score === null) { scoreEl.textContent = '\u2014'; return; }
+      scoreEl.textContent = score;
+      var circumference = 97.4;
+      var offset = circumference - (score / 100) * circumference;
+      requestAnimationFrame(function() {
+        circleEl.style.strokeDashoffset = offset;
+        circleEl.style.stroke = score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444';
+      });
+    }
+
+    // ── Consistency (compact) ──
+    function renderSleepConsistency(logs) {
+      var consistency = getSleepConsistencyScore(logs);
+      var scoreEl = document.getElementById('sleepGaugeScore');
+      var detailEl = document.getElementById('sleepGaugeDetail');
+      if (!scoreEl || !detailEl) return;
+      if (!consistency) {
+        scoreEl.textContent = '\u2014';
+        detailEl.textContent = 'Log 3+ nights';
+        return;
+      }
+      scoreEl.textContent = consistency.score;
+      var msg = consistency.score >= 80 ? 'Very consistent' : consistency.score >= 60 ? 'Good' : consistency.score >= 40 ? 'Some variation' : 'Irregular';
+      detailEl.textContent = msg;
+    }
+
+    // ── Weekly sleep schedule (visual horizontal bars) ──
+    function renderSleepSchedule(logs) {
+      var container = document.getElementById('sSchedule');
+      if (!container) return;
+      var now = new Date();
+      var ws = getMonday(now);
+      var todayStr = formatDate(now);
+      var dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      var targets = loadSleepTargets();
+
+      var entries = [];
+      var hasAny = false;
+      for (var i = 0; i < 7; i++) {
+        var d = addDays(ws, i);
+        var ds = formatDate(d);
+        var log = getSleepLog(ds);
+        var bt = log ? log.bedtime : null;
+        var wt = log ? log.wakeTime : null;
+        if (bt && wt) hasAny = true;
+        entries.push({
+          label: dayLabels[i],
+          dayNum: d.getDate(),
+          isToday: ds === todayStr,
+          hasData: !!log,
+          bedtime: bt,
+          wakeTime: wt,
+          duration: log ? log.duration : 0,
+          quality: log ? log.quality : 0
+        });
+      }
+
+      if (!hasAny) {
+        container.innerHTML = '<div style="text-align:center;padding:var(--space-4);font-size:0.72rem;color:var(--text-tertiary)">No sleep data this week</div>';
+        return;
+      }
+
+      // Compute target range as fraction of the timeline
+      var targetLeft = 0, targetRight = 100;
+      try {
+        var tBt = targets.targetBedtime.split(':').map(Number);
+        var tWt = targets.targetWakeTime.split(':').map(Number);
+        var tBtMins = tBt[0] * 60 + tBt[1];
+        var tWtMins = tWt[0] * 60 + tWt[1];
+        if (tWtMins <= tBtMins) tWtMins += 1440;
+        var rangeStart = 20 * 60;
+        var rangeEnd = 12 * 60 + 1440;
+        var totalRange = rangeEnd - rangeStart;
+        targetLeft = Math.max(0, Math.min(100, ((tBtMins - rangeStart) / totalRange) * 100));
+        targetRight = Math.max(0, Math.min(100, ((tWtMins - rangeStart) / totalRange) * 100));
+      } catch(e) {}
+
+      var html = '<div class="ss-grid">';
+      html += '<div class="ss-axis"><span>8PM</span><span>10PM</span><span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span><span>8AM</span><span>10AM</span><span>12PM</span></div>';
+
+      for (var ei = 0; ei < entries.length; ei++) {
+        var e = entries[ei];
+        var barHtml = '';
+        var infoHtml = '';
+        if (e.hasData && e.bedtime && e.wakeTime) {
+          var btMins = e.bedtime.split(':').map(Number);
+          var wtMins = e.wakeTime.split(':').map(Number);
+          var btTotal = btMins[0] * 60 + btMins[1];
+          var wtTotal = wtMins[0] * 60 + wtMins[1];
+          if (wtTotal <= btTotal) wtTotal += 1440;
+          var rangeStart = 20 * 60;
+          var rangeEnd = 12 * 60 + 1440;
+          var totalRange = rangeEnd - rangeStart;
+          var barLeft = ((btTotal - rangeStart) / totalRange) * 100;
+          var barWidth = ((wtTotal - btTotal) / totalRange) * 100;
+          barLeft = Math.max(0, Math.min(100, barLeft));
+          barWidth = Math.max(2, Math.min(100 - barLeft, barWidth));
+
+          var qualityColors = {1:'#ef4444',2:'#f59e0b',3:'#6366f1',4:'#10b981',5:'#059669'};
+          var qc = qualityColors[e.quality] || '#6366f1';
+          var qGrad = {1:'#fca5a5',2:'#fcd34d',3:'#a78bfa',4:'#34d399',5:'#6ee7b7'};
+          var qg = qGrad[e.quality] || '#a78bfa';
+          var starHtml = '';
+          for (var si = 0; si < 5; si++) {
+            starHtml += '<span class="ss-star' + (si < e.quality ? ' ss-star-on' : '') + '">\u2605</span>';
+          }
+          barHtml = '<div class="ss-bar" style="left:' + barLeft + '%;width:' + barWidth + '%;background:linear-gradient(135deg,' + qg + ',' + qc + ')"></div>';
+          barHtml += '<div class="ss-bar-glow" style="left:' + barLeft + '%;width:' + barWidth + '%;background:' + qc + '"></div>';
+          infoHtml = '<div class="ss-info"><span class="ss-dur">' + formatSleepMinutes(e.duration) + '</span><span class="ss-stars">' + starHtml + '</span></div>';
+        }
+
+        var todayCls = e.isToday ? ' ss-row-today' : '';
+        html += '<div class="ss-row' + todayCls + '">';
+        html += '<div class="ss-label"><span>' + e.label + '</span><span class="ss-date">' + e.dayNum + '</span></div>';
+        html += '<div class="ss-track" data-bedtime="' + (e.bedtime || '') + '" data-waketime="' + (e.wakeTime || '') + '">';
+        html += '<div class="ss-target-range" style="left:' + targetLeft + '%;width:' + (targetRight - targetLeft) + '%"></div>';
+        html += barHtml;
+        html += '</div>';
+        html += infoHtml;
+        html += '</div>';
+      }
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    // ── Routine ──
+    var ROUTINE_LIST_KEY = 'haven-schedule-sleep-routine';
+    function loadSleepRoutine() {
+      try {
+        var data = localStorage.getItem(ROUTINE_LIST_KEY);
+        return data ? JSON.parse(data) : { 'screen-off': false, 'read': false, 'meditate': false, 'journal': false, 'no-caffeine': false, 'water': false, 'dark-room': false, 'stretch': false };
+      } catch (e) { return {}; }
+    }
+    function saveSleepRoutine() {
+      var checks = document.querySelectorAll('[data-routine]');
+      var state = {};
+      checks.forEach(function(c) { state[c.dataset.routine] = c.checked; });
+      localStorage.setItem(ROUTINE_LIST_KEY, JSON.stringify(state));
+      var statusEl = document.getElementById('sleepRoutineStatus');
+      if (statusEl) { statusEl.textContent = '\u2714 Saved!'; statusEl.className = 'sleep-target-status on-track'; setTimeout(function() { if (statusEl) statusEl.textContent = ''; }, 2000); }
+      showToast('Routine saved', 'success', 1500);
+    }
+    function renderSleepRoutine() {
+      var state = loadSleepRoutine();
+      var checks = document.querySelectorAll('[data-routine]');
+      checks.forEach(function(c) { c.checked = !!state[c.dataset.routine]; });
+    }
+
+    // ── Tab switching ──
+    document.addEventListener('click', function(e) {
+      const tab = e.target.closest('.sleep-tab');
+      if (!tab) return;
+      const container = tab.closest('.sleep-card');
+      if (!container) return;
+      const tabName = tab.dataset.sleepTab;
+      if (!tabName) return;
+      container.querySelectorAll('.sleep-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      container.querySelectorAll('.sleep-tab-content').forEach(c => c.classList.remove('active'));
+      const content = container.querySelector('[data-sleep-tab-content="' + tabName + '"]');
+      if (content) content.classList.add('active');
+    });
+
+    // ── Targets editor ──
+    function renderTargetEditor(targets) {
+      var btEl = document.getElementById('sleepTargetBedtime');
+      var wtEl = document.getElementById('sleepTargetWake');
+      var durEl = document.getElementById('sleepTargetDuration');
+      var statusEl = document.getElementById('sleepTargetStatus');
+      if (btEl) btEl.value = targets.targetBedtime;
+      if (wtEl) wtEl.value = targets.targetWakeTime;
+      if (durEl) durEl.value = targets.targetDuration;
+      if (statusEl) {
+        var logs = loadSleepLogs();
+        var now = new Date();
+        var recent7 = [];
+        for (var i = 6; i >= 0; i--) { var d = new Date(now); d.setDate(d.getDate() - i); var log = getSleepLog(formatDate(d)); if (log) recent7.push(log); }
+        if (recent7.length > 0) {
+          var avg = Math.round(recent7.reduce(function(s, l) { return s + l.duration; }, 0) / recent7.length);
+          var diff = avg - targets.targetDuration;
+          if (Math.abs(diff) < 30) { statusEl.textContent = '\u2714 On track!'; statusEl.className = 'sleep-target-status on-track'; }
+          else if (diff > 0) { statusEl.textContent = 'Avg ' + formatSleepMinutes(avg) + ' (+' + formatSleepMinutes(diff) + ')'; statusEl.className = 'sleep-target-status on-track'; }
+          else { statusEl.textContent = 'Avg ' + formatSleepMinutes(avg) + ' (' + formatSleepMinutes(Math.abs(diff)) + ' under)'; statusEl.className = 'sleep-target-status behind'; }
+        }
+      }
+    }
+
+    function saveSleepTargetsFromHub() {
+      var btEl = document.getElementById('sleepTargetBedtime');
+      var wtEl = document.getElementById('sleepTargetWake');
+      var durEl = document.getElementById('sleepTargetDuration');
+      if (!btEl || !wtEl || !durEl) return;
+      var targets = loadSleepTargets();
+      targets.targetBedtime = btEl.value;
+      targets.targetWakeTime = wtEl.value;
+      targets.targetDuration = parseInt(durEl.value) || 480;
+      saveSleepTargets(targets);
+      var statusEl = document.getElementById('sleepTargetStatus');
+      if (statusEl) { statusEl.textContent = '\u2714 Saved!'; statusEl.className = 'sleep-target-status on-track'; }
+      renderSleepHub();
+      showToast('Sleep targets saved', 'success', 1500);
+    }
+
+    // ── History ──
+    function renderSleepHistory(logs) {
+      var container = document.getElementById('sleepHistoryList');
+      if (!container) return;
+      if (logs.length === 0) { container.innerHTML = '<div class="sleep-history-empty">No sleep logs yet. Log your first night!</div>'; return; }
+      var sorted = [...logs].sort(function(a, b) { return b.date.localeCompare(a.date); });
+      var qualityColors = { 1: '#ef4444', 2: '#f59e0b', 3: '#6366f1', 4: '#10b981', 5: '#059669' };
+      var html = '';
+      for (var hi = 0; hi < sorted.length; hi++) {
+        var log = sorted[hi];
+        var d = new Date(log.date + 'T12:00:00');
+        var dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        var moodTags = '';
+        if (log.mood && Array.isArray(log.mood) && log.mood.length) {
+          moodTags = log.mood.map(function(m) { return '<span class="sleep-history-tag mood-' + m + '">' + m.charAt(0).toUpperCase() + m.slice(1) + '</span>'; }).join('');
+        }
+        html += '<div class="sleep-history-item">';
+        html += '<span class="sleep-history-date">' + dateLabel + '</span>';
+        html += '<span class="sleep-history-dur">' + formatSleepMinutes(log.duration) + '</span>';
+        html += '<span class="sleep-history-detail">';
+        html += '<span class="time-range">' + log.bedtime + '\u2013' + log.wakeTime + '</span>';
+        html += '<span class="q-badge" style="background:' + qualityColors[log.quality] + '22;color:' + qualityColors[log.quality] + '">' + log.quality + '/5</span>';
+        if (log.notes) html += '<span style="opacity:0.6;margin-left:6px">' + escapeHtml(log.notes) + '</span>';
+        html += '</span>';
+        html += '<span class="sleep-history-tags">' + moodTags + '</span>';
+        html += '<span class="sleep-history-actions">';
+        html += '<button class="edit" title="Edit" onclick="editSleepLog(\'' + log.id + '\')">\u270E</button>';
+        html += '<button class="del" title="Delete" onclick="deleteSleepLogEntry(\'' + log.id + '\')">\u2715</button>';
+        html += '</span>';
+        html += '</div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function deleteSleepLogEntry(id) {
+      if (!confirm('Delete this sleep log?')) return;
+      deleteSleepLog(id);
+      renderSleepHub();
+      showToast('Sleep log deleted', 'info', 1500);
+    }
+
+    function editSleepLog(id) {
+      var logs = loadSleepLogs();
+      var log = logs.find(function(l) { return l.id === id; });
+      if (!log) return;
+      sleepLogEditId = id;
+      document.getElementById('sleepDate').value = log.date;
+      document.getElementById('sleepBedtime').value = log.bedtime;
+      document.getElementById('sleepWakeTime').value = log.wakeTime;
+      document.getElementById('sleepNotes').value = log.notes || '';
+      sleepSelectedQuality = log.quality;
+      document.querySelectorAll('.sleep-quality-opt').forEach(function(o) { o.classList.toggle('active', parseInt(o.dataset.quality) === log.quality); });
+      resetSleepModalChips();
+      if (log.mood && Array.isArray(log.mood)) {
+        log.mood.forEach(function(m) { var chip = document.querySelector('.sleep-mood-chip[data-mood="' + m + '"]'); if (chip) chip.classList.add('active'); });
+      }
+      openSleepLogModal();
+    }
+
+    // ── Insights ──
+    function renderSleepInsights(logs) {
+      var container = document.getElementById('sleepInsightsGrid');
+      if (!container) return;
+      var insights = generateSleepInsights(logs);
+      if (!insights || insights.length === 0) { container.innerHTML = '<div class="sleep-insight-card"><span class="sleep-insight-icon">\uD83D\uDCA4</span><span class="sleep-insight-text">Log at least 3 nights to see personalized insights.</span></div>'; return; }
+      var html = '';
+      for (var ii = 0; ii < insights.length; ii++) {
+        html += '<div class="sleep-insight-card"><span class="sleep-insight-icon">' + (insights[ii].icon || '\uD83D\uDCA1') + '</span><span class="sleep-insight-text">' + insights[ii].text + '</span></div>';
+      }
+      container.innerHTML = html;
+    }
+
+    // ── Modal ──
+    function resetSleepModalChips() {
+      document.querySelectorAll('.sleep-mood-chip').forEach(function(c) { c.classList.remove('active'); });
+    }
+    function getSelectedMoods() {
+      var chips = document.querySelectorAll('.sleep-mood-chip.active');
+      return Array.from(chips).map(function(c) { return c.dataset.mood; });
+    }
+    function openSleepLogModal() {
+      var overlay = document.getElementById('sleepLogOverlay');
+      var modal = document.getElementById('sleepLogModal');
+      if (!overlay || !modal) return;
+      resetSleepModalChips();
+      if (!sleepLogEditId) {
+        document.getElementById('sleepDate').value = formatDate(new Date());
+        document.getElementById('sleepBedtime').value = '23:00';
+        document.getElementById('sleepWakeTime').value = '07:00';
+        document.getElementById('sleepNotes').value = '';
+        sleepSelectedQuality = 3;
+        document.querySelectorAll('.sleep-quality-opt').forEach(function(o) { o.classList.toggle('active', o.dataset.quality == 3); });
+      }
+      overlay.classList.remove('hidden');
+      modal.classList.remove('hidden');
+      requestAnimationFrame(function() { overlay.classList.add('active'); modal.classList.add('active'); });
+      previewSleepDuration();
+    }
+    function closeSleepLogModal() {
+      var overlay = document.getElementById('sleepLogOverlay');
+      var modal = document.getElementById('sleepLogModal');
+      if (!overlay || !modal) return;
+      overlay.classList.remove('active');
+      modal.classList.remove('active');
+      setTimeout(function() { overlay.classList.add('hidden'); modal.classList.add('hidden'); }, 300);
+      sleepLogEditId = null;
+    }
+    function handleSleepLogSave() {
+      var date = document.getElementById('sleepDate').value;
+      var bedtime = document.getElementById('sleepBedtime').value;
+      var wakeTime = document.getElementById('sleepWakeTime').value;
+      var notes = document.getElementById('sleepNotes').value.trim();
+      var mood = getSelectedMoods();
+      if (sleepLogEditId) {
+        updateSleepLog(sleepLogEditId, { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
+        sleepLogEditId = null;
+      } else {
+        var existing = getSleepLog(date);
+        if (existing) updateSleepLog(existing.id, { bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
+        else addSleepLog({ date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
+      }
+      closeSleepLogModal();
+      renderSleepHub();
+      showToast('Sleep saved for ' + date, 'success', 2000);
+    }
+
+    // ── Modal chip toggles ──
+    document.addEventListener('click', function(e) {
+      var qualityOpt = e.target.closest('.sleep-quality-opt');
+      if (qualityOpt) {
+        sleepSelectedQuality = parseInt(qualityOpt.dataset.quality);
+        document.querySelectorAll('.sleep-quality-opt').forEach(function(o) { o.classList.toggle('active', parseInt(o.dataset.quality) === sleepSelectedQuality); });
+      }
+      var moodChip = e.target.closest('.sleep-mood-chip');
+      if (moodChip) moodChip.classList.toggle('active');
+    });
+  </script>
+
+  <script>
+    // Initialize sleep tracking on the hub
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderSleepHub);
+    } else {
+      renderSleepHub();
+    }
+  </script>
+
+  <!-- Image Picker -->
+  <div id="imagePickerOverlay" class="image-picker-overlay hidden">
+    <div class="image-picker-card" onclick="event.stopPropagation()">
+      <h3>Customize Image</h3>
+      <img id="imagePickerPreview" class="image-picker-preview" src="" alt="">
+      <div class="image-picker-pastezone" id="imagePickerPasteZone" tabindex="0" contenteditable="true" onpaste="handleImagePickerPaste(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <div>Paste image (Ctrl+V) or drag & drop</div>
+      </div>
+      <div class="image-picker-file-row">
+        <input type="file" id="imagePickerFileInput" accept="image/*" onchange="handleImagePickerFile(event)" style="display:none">
+        <button class="drawer-btn" onclick="document.getElementById('imagePickerFileInput').click()" style="width:100%;justify-content:center;gap:6px;font-size:0.75rem;margin-bottom:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Choose from gallery
+        </button>
+      </div>
+      <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()">
+      <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
+      <div class="img-fit-row" id="imagePickerFitRow">
+        <span class="img-fit-label">Fit:</span>
+        <div class="img-fit-options" id="imagePickerFitOptions"></div>
+      </div>
+      <div class="image-picker-actions">
+        <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
+        <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
+        <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
+      </div>
+    </div>
+  </div>
+
+<!-- Settings Drawer -->
+  <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
+  <div id="settingsDrawer" class="settings-drawer hidden">
+    <div class="settings-drawer-header">
+      <div class="settings-drawer-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+      </div>
+      <h3>Customize</h3>
+      <button id="settingsDrawerClose" class="settings-drawer-close" onclick="closeSettingsDrawer()" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="settings-drawer-body" id="settingsDrawerBody">
+      <div id="settingsContent">
+        <form id="settingsForm" onsubmit="handleSettingsSubmit(event)">
+          <div class="drawer-section">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
+              <span class="drawer-section-title">AI Provider</span>
+            </div>
+            <div class="form-group">
+              <label for="drawerProvider">Provider</label>
+              <select id="drawerProvider" class="form-input">
+                <option value="groq">Groq (Gemma2-9B)</option>
+                <option value="gemini">Gemini (1.5 Flash)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="drawerModel">Model</label>
+              <select id="drawerModel" class="form-input"></select>
+            </div>
+            <div class="form-group">
+              <label for="drawerApiKey">API Key</label>
+              <input type="password" id="drawerApiKey" class="form-input" placeholder="sk-...">
+            </div>
+            <div id="drawerKeyStatus">
+              <span id="drawerKeyStatusText" class="drawer-status"></span>
+            </div>
+            <div id="drawerAIUsage" class="drawer-status"></div>
+          </div>
+
+          <div class="drawer-section" id="settingsCardColors">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-1 0-.83.67-1.5 1.5-1.5H16c3.31 0 6-2.69 6-6 0-5.5-4.5-10-10-10z"/></svg>
+              <span class="drawer-section-title">Tag Colors</span>
+            </div>
+          </div>
+          <div class="drawer-section" id="settingsAccentColor">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+              <span class="drawer-section-title">Accent Color</span>
+            </div>
+          </div>
+          <div class="drawer-section" id="settingsImageManager">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span class="drawer-section-title">Images</span>
+            </div>
+          </div>
+          <div class="drawer-section">
+            <div class="drawer-section-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              <span class="drawer-section-title">Data</span>
+            </div>
+            <div class="drawer-actions-row">
+              <button type="button" class="drawer-btn" onclick="exportData()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export
+              </button>
+              <button type="button" class="drawer-btn" onclick="document.getElementById('drawerImportFile').click()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Import
+              </button>
+              <button type="button" class="drawer-btn danger" onclick="handleSettingsClear()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                Clear Key
+              </button>
+              <button type="button" class="drawer-btn" onclick="saveAsGuestDefault()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save as Default
+              </button>
+            </div>
+            <input type="file" id="drawerImportFile" accept=".json" style="display:none" onchange="importData(event)">
+          </div>
+          <div class="drawer-save-wrap">
+            <button type="submit" class="drawer-save-btn">Save Settings</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Spotify Settings Modal ──────────────── -->
+  <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
+    <div class="sp-modal">
+      <div class="sp-modal-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+        <h2>Playlists</h2>
+        <button class="sp-modal-close" onclick="spCloseSettings()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="sp-modal-body">
+        <div class="sp-add-row">
+          <input id="spAddInput" placeholder="Playlist URL or ID..." onkeydown="if(event.key==='Enter')spAddPlaylist()">
+          <button onclick="spAddPlaylist()">Add</button>
+        </div>
+        <div class="sp-search-row">
+          <input id="spSearchInput" placeholder="Search playlists..." oninput="spRenderList(this.value)">
+        </div>
+        <div class="sp-iframe-wrap">
+          <iframe id="spModalEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
+        </div>
+        <div class="sp-list" id="spList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>spInit();</script>
+
+  <!-- ─── HELP MODAL ──────────────────────────────────────── -->
+  <div id="helpOverlay" class="overlay hidden"></div>
+  <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+    <div class="modal-header">
+      <h3>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        Help and Shortcuts
+      </h3>
+      <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="help-section">
+        <div class="help-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01"/></svg>
+          Keyboard Shortcuts
+        </div>
+        <div class="shortcuts-grid" id="helpShortcutsGrid"></div>
+      </div>
+      <div class="help-section">
+        <div class="help-section-title">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          Tips and Tricks
+        </div>
+        <div class="help-tips">
+          <div class="help-tip">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text">Press <kbd>F</kbd> to toggle Focus Mode — hides sidebar and reduces clutter</div>
+          </div>
+          <div class="help-tip">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text">Hover a bento bubble and use the <kbd>Resize</kbd> handle to make it bigger or smaller</div>
+          </div>
+          <div class="help-tip">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text">Add new widgets from the dock below the canvas in edit mode</div>
+          </div>
+          <div class="help-tip">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text">Press <kbd>Shift+D</kbd> to quickly share a snapshot of your hub layout</div>
+          </div>
+          <div class="help-tip" style="cursor:pointer" id="helpViewTutorial">
+            <span class="help-tip-icon"></span>
+            <div class="help-tip-text"><strong>View Tutorial</strong> — Replay the onboarding tour</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ONBOARDING TUTORIAL ──────────────────────────────── -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-spotlight hidden" id="tutorialSpotlight"></div>
+    <div class="tutorial-tooltip" id="tutorialTooltip">
+      <div class="tutorial-tooltip-header">
+        <div class="tutorial-tooltip-icon" id="tutorialIcon"></div>
+        <span class="tutorial-tooltip-step" id="tutorialStep"></span>
+      </div>
+      <div class="tutorial-tooltip-body">
+        <div class="tutorial-tooltip-title" id="tutorialTitle"></div>
+        <div class="tutorial-tooltip-desc" id="tutorialDesc"></div>
+      </div>
+      <div class="tutorial-tooltip-footer">
+        <button class="tutorial-btn tutorial-btn-skip" id="tutorialSkip">Skip</button>
+        <div class="tutorial-progress" id="tutorialProgress"></div>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="tutorial-btn tutorial-btn-prev hidden" id="tutorialPrev">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <button class="tutorial-btn tutorial-btn-next" id="tutorialNext">
+            Next
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── BOTTOM NAV (mobile) ──────────────────────────────── -->
+  <nav class="hub-bottom-nav" aria-label="Main navigation">
+    <div class="hub-bottom-nav-inner">
+      <a href="index.html" class="hub-bottom-nav-item active" data-nav="hub" aria-current="page">
+        <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+        <span class="bnav-label">Hub</span>
+      </a>
+      <a href="schedule.html" class="hub-bottom-nav-item" data-nav="schedule">
+        <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        <span class="bnav-label" data-i18n="nav.schedule">Schedule</span>
+      </a>
+      <a href="activities.html" class="hub-bottom-nav-item" data-nav="activities">
+        <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></span>
+        <span class="bnav-label" data-i18n="nav.activities">Activities</span>
+      </a>
+      <a href="finance.html" class="hub-bottom-nav-item" data-nav="finance">
+        <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+        <span class="bnav-label">Finance</span>
+      </a>
+        <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
+        <span class="bnav-label">Friends</span>
+      </a>
+    </div>
+  </nav>
+</body>
+</html>
