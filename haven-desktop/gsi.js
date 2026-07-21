@@ -185,6 +185,50 @@ function createLocalProfile(name) {
   else location.reload();
 }
 
+// ─── Google Sign-In ────────────────────────────────────
+function googleSignIn(googleUser) {
+  if (!googleUser || !googleUser.name) return;
+  var email = googleUser.email || '';
+  
+  // Check if a user with this email already exists
+  var existing = null;
+  if (email) {
+    existing = localUsers.find(function(u) { return u.email === email; });
+  }
+  
+  if (existing) {
+    // Update their Google info
+    if (googleUser.picture) existing.picture = googleUser.picture;
+    if (googleUser.googleId) existing.googleId = googleUser.googleId;
+    if (googleUser.email) existing.email = googleUser.email;
+    saveUsers();
+    setActiveUserId(existing.id);
+    if (typeof state !== 'undefined') state.currentUserId = existing.id;
+    renderAuthUI();
+    if (isLoginPage()) location.href = 'index.html';
+    else location.reload();
+  } else {
+    // Create new profile with Google data
+    var name = googleUser.name.trim();
+    var user = {
+      id: generateId(),
+      name: name,
+      email: email,
+      picture: googleUser.picture || '',
+      googleId: googleUser.googleId || '',
+      _color: getColorForId(generateId())
+    };
+    recordDeviceAccess(user);
+    localUsers.push(user);
+    saveUsers();
+    setActiveUserId(user.id);
+    if (typeof state !== 'undefined') state.currentUserId = user.id;
+    renderAuthUI();
+    if (isLoginPage()) location.href = 'index.html';
+    else location.reload();
+  }
+}
+
 function switchAccount(id) {
   var user = localUsers.find(function(u) { return u.id === id; });
   if (!user) return;

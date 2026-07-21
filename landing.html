@@ -37,7 +37,7 @@
       --smooth: cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    html { scroll-behavior: smooth; }
+    html { font-size: 110%; scroll-behavior: smooth; }
     body {
       font-family: var(--font-sans);
       background: var(--bg);
@@ -165,7 +165,7 @@
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid var(--glass-border);
       border-radius: 20px;
-      padding: 56px 48px;
+      padding: clamp(32px, 5vw, 64px) clamp(24px, 4vw, 56px);
       box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.06);
       position: relative;
       overflow: hidden;
@@ -191,17 +191,17 @@
 
     .hero-grid {
       display: grid; grid-template-columns: 1fr 1fr;
-      gap: 48px; align-items: center;
+      gap: clamp(24px, 4vw, 56px); align-items: center;
       position: relative; z-index: 1;
     }
 
     /* ─── Badge ─── */
     .hero-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      padding: 5px 14px 5px 5px; border-radius: 100px;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: clamp(4px, 0.5vw, 6px) clamp(10px, 1.2vw, 16px) clamp(4px, 0.5vw, 6px) clamp(4px, 0.5vw, 6px); border-radius: 100px;
       border: 1px solid var(--border);
-      font-size: 0.72rem; color: var(--text-secondary); font-weight: 500;
-      margin-bottom: 28px; text-decoration: none;
+      font-size: clamp(0.65rem, 0.7vw, 0.75rem); color: var(--text-secondary); font-weight: 500;
+      margin-bottom: clamp(16px, 2.5vw, 28px); text-decoration: none;
       transition: all 0.3s var(--bounce);
       animation: bounceIn 0.6s var(--bounce) both 0.25s;
     }
@@ -225,9 +225,9 @@
 
     /* ─── Headline ─── */
     .hero h1 {
-      font-size: clamp(2.2rem, 5vw, 3.8rem);
+      font-size: clamp(2rem, 5vw, 3.8rem);
       font-weight: 600; line-height: 1.08; letter-spacing: -0.03em;
-      margin-bottom: 20px; color: var(--text);
+      margin-bottom: clamp(12px, 1.5vw, 24px); color: var(--text);
       max-width: 600px;
       animation: bounceIn 0.7s var(--bounce) both 0.35s;
     }
@@ -244,22 +244,23 @@
     }
 
     .hero p {
-      font-size: 1rem; color: var(--text-tertiary);
-      max-width: 460px; line-height: 1.7; margin-bottom: 36px;
+      font-size: clamp(0.85rem, 1.1vw, 1rem); color: var(--text-tertiary);
+      max-width: 460px; line-height: 1.7; margin-bottom: clamp(20px, 3vw, 36px);
       font-weight: 400;
       animation: bounceIn 0.7s var(--bounce) both 0.45s;
     }
 
     /* ─── CTA Buttons ─── */
     .hero-actions {
-      display: flex; align-items: center; gap: 12px;
+      display: flex; align-items: center; gap: clamp(8px, 1.2vw, 14px);
+      flex-wrap: wrap;
       animation: bounceIn 0.7s var(--bounce) both 0.55s;
     }
     .hero-cta {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 13px 30px; border-radius: 10px;
+      padding: clamp(10px, 1.2vw, 14px) clamp(20px, 2.5vw, 32px); border-radius: 10px;
       background: var(--text); color: var(--bg);
-      font-size: 0.88rem; font-weight: 600; text-decoration: none;
+      font-size: clamp(0.8rem, 0.9vw, 0.9rem); font-weight: 600; text-decoration: none;
       transition: all 0.25s var(--bounce);
       position: relative; overflow: hidden;
     }
@@ -280,9 +281,9 @@
 
     .hero-guest {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 13px 24px; border-radius: 10px;
+      padding: clamp(10px, 1.2vw, 14px) clamp(16px, 2vw, 26px); border-radius: 10px;
       background: transparent; border: 1px solid var(--border);
-      color: var(--text-secondary); font-size: 0.82rem; font-weight: 500;
+      color: var(--text-secondary); font-size: clamp(0.78rem, 0.85vw, 0.85rem); font-weight: 500;
       text-decoration: none; transition: all 0.25s var(--bounce);
     }
     .hero-guest:hover {
@@ -297,7 +298,7 @@
       animation: bounceIn 0.8s var(--bounce) both 0.5s;
     }
     .hero-mockup {
-      width: 100%; border-radius: 14px;
+      width: 100%; border-radius: clamp(10px, 1vw, 14px);
       border: 1px solid var(--border);
       box-shadow: 0 24px 80px rgba(0,0,0,0.5);
       background: linear-gradient(160deg, #111 0%, #1a1a1a 100%);
@@ -425,6 +426,56 @@
       transition: transform 0.3s var(--bounce);
     }
     .hero-float-card:hover .hero-float-arrow { transform: translateX(3px); }
+
+    /* ─── Floating Decorative Badges ─── */
+    .hero-deco-badge {
+      position: absolute; z-index: 2;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 6px 10px 6px 8px;
+      box-shadow: var(--glass-shadow);
+      display: flex; align-items: center; gap: 6px;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .hero-deco-badge svg {
+      width: 14px; height: 14px;
+      color: rgba(255,255,255,0.4);
+      flex-shrink: 0;
+    }
+    .hero-deco-badge span {
+      font-size: 0.5rem;
+      color: var(--text-tertiary);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    @keyframes badgeAppear {
+      0% { opacity: 0; transform: translateY(12px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes badgeFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .hero-deco-analytics {
+      top: -8px; right: -6px;
+      animation: badgeAppear 0.6s var(--smooth) 0.15s forwards,
+                 badgeFloat 6s ease-in-out 1s infinite;
+    }
+    .hero-deco-goals {
+      top: 16%; left: -12px;
+      animation: badgeAppear 0.6s var(--smooth) 0.45s forwards,
+                 badgeFloat 5.5s ease-in-out 1.3s infinite;
+    }
+    .hero-deco-finance {
+      bottom: 14%; left: -8px;
+      animation: badgeAppear 0.6s var(--smooth) 0.3s forwards,
+                 badgeFloat 6.5s ease-in-out 1.15s infinite;
+    }
 
     /* ─── Bounce In Keyframes ─── */
     @keyframes bounceIn {
@@ -805,6 +856,7 @@
       .cta-section { padding: 80px 0; }
       .footer-inner { flex-direction: column; gap: 12px; text-align: center; }
       .hero-float-card { display: none; }
+      .hero-deco-badge { display: none; }
       .bg-orb { opacity: 0.15; }
     }
     @media (max-width: 480px) {
@@ -868,7 +920,7 @@
                 </a>
               </div>
             </div>
-            <div class="hero-visual">
+            <div class="hero-visual" data-parallax="0.04">
               <div class="hero-mockup">
                 <div class="hm-header">
                   <div class="hm-header-left">
@@ -939,12 +991,25 @@
                   </div>
                 </div>
               </div>
-              <div class="hero-float-card">
+              <div class="hero-float-card reveal reveal-delay-4">
                 <span class="hero-float-dot"></span>
                 <span class="hero-float-text">8 tasks <strong>today</strong></span>
                 <span class="hero-float-arrow">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </span>
+              </div>
+              <!-- Floating SVG badges -->
+              <div class="hero-deco-badge hero-deco-analytics">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                <span>Analytics</span>
+              </div>
+              <div class="hero-deco-badge hero-deco-goals">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span>Goals</span>
+              </div>
+              <div class="hero-deco-badge hero-deco-finance">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                <span>Finance</span>
               </div>
             </div>
           </div>
