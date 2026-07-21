@@ -1,3 +1,14 @@
+// ─── Firebase Configuration ────────────────────────────
+var FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDhGJuLw9TW7i6GUQkhVQwOSRkX4nAoS8g",
+  authDomain: "haven-schedule-c8fec.firebaseapp.com",
+  projectId: "haven-schedule-c8fec",
+  storageBucket: "haven-schedule-c8fec.firebasestorage.app",
+  messagingSenderId: "372760068715",
+  appId: "1:372760068715:web:e18957b41d42b727ab272e",
+  measurementId: "G-QD3WMGTYVS"
+};
+
 // ─── Auth (Local profiles) ──────────────────────────────
 var AUTH_USERS_KEY = 'haven-gsi-accounts';
 var AUTH_ACTIVE_KEY = 'haven-gsi-active';
@@ -163,6 +174,11 @@ function gsiSignIn() {
 
 function guestSignOut() {
   sessionStorage.removeItem('haven-guest');
+  try {
+    if (typeof firebase !== 'undefined' && firebase.auth && firebase.apps.length) {
+      firebase.auth().signOut().catch(function() {});
+    }
+  } catch (e) {}
   location.href = 'login.html';
 }
 
@@ -200,6 +216,10 @@ function removeProfile(id) {
   var user = localUsers.find(function(u) { return u.id === id; });
   if (!user) return;
   if (!confirm('Remove "' + user.name + '" and all their data?')) return;
+  // Sign out of Firebase Auth if this was a Google-authenticated user
+  if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+    firebase.auth().signOut().catch(function() {});
+  }
   var prefix = user.id + ':';
   for (var i = 0; i < __origLS.length; i++) {
     var key = __origLS.key(i);
@@ -260,7 +280,11 @@ function isLoginPage() {
 }
 
 function isGuestMode() {
-  return sessionStorage.getItem('haven-guest') === '1';
+  if (sessionStorage.getItem('haven-guest') === '1') return true;
+  try {
+    if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.isAnonymous) return true;
+  } catch (e) {}
+  return false;
 }
 
 // ─── Device helpers ─────────────────────────

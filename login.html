@@ -251,7 +251,7 @@
       width: 100%; display: flex; justify-content: center;
       min-height: 36px;
     }
-    #googleButtonContainer iframe { max-width: 100% !important; }
+
 
     /* ─── Toggle Link ─── */
     .auth-toggle {
@@ -435,8 +435,6 @@
       font-weight: 400;
     }
 
-    /* ─── Google Setup Dialog ─── */
-
     /* --- Floating Badges --- */
     .auth-float-badge {
       position: absolute;
@@ -481,47 +479,7 @@
       bottom: 24%; left: 6%;
       animation-delay: 2s, 1.2s;
     }
-    .gsetup-overlay {
-      position: fixed; inset: 0; z-index: 1000;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(8px);
-      display: flex; align-items: center; justify-content: center;
-      animation: gsFade 0.2s ease both;
-    }
-    @keyframes gsFade { from { opacity: 0; } to { opacity: 1; } }
-    .gsetup-dialog {
-      background: #111;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px 22px 20px;
-      max-width: 380px; width: 90%;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-      animation: gsSlide 0.3s var(--bounce) both;
-    }
-    @keyframes gsSlide {
-      from { opacity: 0; transform: translateY(12px) scale(0.96); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    .gsetup-dialog h3 { font-size: 0.92rem; font-weight: 600; margin-bottom: 4px; }
-    .gsetup-dialog p { font-size: 0.75rem; color: var(--text-tertiary); margin-bottom: 14px; line-height: 1.5; }
-    .gsetup-input {
-      width: 100%; padding: 10px 13px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: rgba(255,255,255,0.03);
-      color: var(--text); font-family: inherit; font-size: 0.8rem;
-      outline: none; transition: border-color 0.2s; margin-bottom: 10px;
-    }
-    .gsetup-input:focus { border-color: var(--border-light); }
-    .gsetup-actions { display: flex; gap: 6px; justify-content: flex-end; }
-    .gsetup-btn {
-      padding: 7px 14px; border-radius: 7px;
-      border: 1px solid var(--border);
-      background: transparent; color: var(--text-secondary);
-      font-family: inherit; font-size: 0.75rem; font-weight: 500;
-      cursor: pointer; transition: all 0.2s var(--bounce);
-    }
-    .gsetup-btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+
 
     /* ─── Responsive ─── */
     @media (max-width: 820px) {
@@ -561,9 +519,17 @@
 
         <!-- Form Fields -->
         <div class="auth-fields">
-          <div class="auth-input-group">
+          <div class="auth-input-group" id="loginNameGroup" style="display:none">
             <label class="auth-label" for="loginNameInput">Your name</label>
             <input class="auth-input" id="loginNameInput" type="text" placeholder="e.g. Alex" autocomplete="name" spellcheck="false" maxlength="30">
+          </div>
+          <div class="auth-input-group">
+            <label class="auth-label" for="loginEmailInput">Email</label>
+            <input class="auth-input" id="loginEmailInput" type="email" placeholder="you@example.com" autocomplete="email" spellcheck="false" maxlength="100">
+          </div>
+          <div class="auth-input-group">
+            <label class="auth-label" for="loginPasswordInput">Password</label>
+            <input class="auth-input" id="loginPasswordInput" type="password" placeholder="Min. 6 characters" autocomplete="current-password" spellcheck="false" minlength="6">
           </div>
 
           <button class="auth-submit" id="loginNameBtn" disabled>Sign In</button>
@@ -573,7 +539,7 @@
           <!-- Google Sign-In -->
           <div id="googleSection">
             <div id="googleButtonContainer"></div>
-            <button class="auth-google-btn" id="loginGoogleBtn" style="display:none">
+            <button class="auth-google-btn" id="loginGoogleBtn">
               <svg viewBox="0 0 48 48" fill="none">
                 <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
                 <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
@@ -583,6 +549,13 @@
               <span>Continue with Google</span>
             </button>
           </div>
+
+          <div class="auth-divider"><span>or</span></div>
+
+          <button class="auth-google-btn" id="loginGuestBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;opacity:0.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Continue as Guest</span>
+          </button>
         </div>
 
         <!-- Toggle -->
@@ -877,7 +850,8 @@
   </div>
 
   <!-- Google Identity Services -->
-  <script src="https://accounts.google.com/gsi/client" async defer id="gsiScript"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
   <script src="shared.js"></script>
   <script src="settings.js"></script>
   <script src="gsi.js"></script>
@@ -918,22 +892,20 @@
 
         // ─── Toggle Sign In / Sign Up ───
         function updateToggle() {
+          var nameGroup = document.getElementById('loginNameGroup');
           if (isSignIn) {
             heading.innerHTML = 'Welcome <span class="hl-accent">back</span>';
-            sub.textContent = 'Enter your name to sign in to your account';
+            sub.textContent = 'Enter your email and password to sign in';
             nameBtn.textContent = 'Sign In';
             toggleText.innerHTML = "Don't have an account? <button id='authToggleBtn'>Sign up</button>";
+            if (nameGroup) nameGroup.style.display = 'none';
           } else {
-            heading.innerHTML = 'Create your <span class="hl-accent">profile</span>';
-            sub.textContent = 'Enter your name to get started with Havën';
+            heading.innerHTML = 'Create your <span class="hl-accent">account</span>';
+            sub.textContent = 'Enter your details to get started';
             nameBtn.textContent = 'Sign Up';
             toggleText.innerHTML = "Already have an account? <button id='authToggleBtn'>Sign in</button>";
+            if (nameGroup) nameGroup.style.display = 'block';
           }
-          // Re-bind toggle button
-          document.getElementById('authToggleBtn').addEventListener('click', function() {
-            isSignIn = !isSignIn;
-            updateToggle();
-          });
         }
 
         // ─── Toggle via event delegation ───
@@ -945,23 +917,74 @@
         });
 
         // ─── Input handling ───
+        var emailInput = document.getElementById('loginEmailInput');
+        var passInput = document.getElementById('loginPasswordInput');
+        var nameInput = document.getElementById('loginNameInput');
+
         function updateBtn() {
-          nameBtn.disabled = !input.value.trim();
+          var valid = emailInput.value.trim() && passInput.value.length >= 6;
+          if (!isSignIn) valid = valid && nameInput.value.trim();
+          nameBtn.disabled = !valid;
         }
         updateBtn();
-        input.addEventListener('input', updateBtn);
+        emailInput.addEventListener('input', updateBtn);
+        passInput.addEventListener('input', updateBtn);
+        nameInput.addEventListener('input', updateBtn);
 
-        input.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' && input.value.trim()) goLocal();
-        });
+        function handleKeydown(e) {
+          if (e.key === 'Enter' && !nameBtn.disabled) goLocal();
+        }
+        emailInput.addEventListener('keydown', handleKeydown);
+        passInput.addEventListener('keydown', handleKeydown);
+        nameInput.addEventListener('keydown', handleKeydown);
         nameBtn.addEventListener('click', goLocal);
 
         function goLocal() {
-          var name = input.value.trim();
-          if (!name) return;
+          var email = document.getElementById('loginEmailInput').value.trim();
+          var password = document.getElementById('loginPasswordInput').value;
+          var name = document.getElementById('loginNameInput').value.trim();
+          if (!email || !password) { showToast('Please enter email and password', 'error'); return; }
+          if (password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
           nameBtn.disabled = true;
-          nameBtn.textContent = '…';
-          createLocalProfile(name);
+          nameBtn.textContent = isSignIn ? 'Signing in…' : 'Creating account…';
+
+          if (isSignIn) {
+            firebase.auth().signInWithEmailAndPassword(email, password).then(function(result) {
+              var fbUser = result.user;
+              var fbName = fbUser.displayName || email.split('@')[0];
+              if (typeof googleSignIn === 'function') {
+                googleSignIn({ name: fbName, email: email, picture: fbUser.photoURL || '', googleId: fbUser.uid });
+              } else {
+                createLocalProfile(fbName);
+              }
+            }).catch(function(error) {
+              nameBtn.disabled = false;
+              nameBtn.textContent = 'Sign In';
+              if (error.code === 'auth/user-not-found') showToast('No account found with this email', 'error');
+              else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') showToast('Incorrect email or password', 'error');
+              else if (error.code === 'auth/invalid-email') showToast('Invalid email address', 'error');
+              else showToast('Sign in failed: ' + (error.message || 'unknown error'), 'error');
+            });
+          } else {
+            var displayName = name || email.split('@')[0];
+            firebase.auth().createUserWithEmailAndPassword(email, password).then(function(result) {
+              var fbUser = result.user;
+              return fbUser.updateProfile({ displayName: displayName }).then(function() {
+                if (typeof googleSignIn === 'function') {
+                  googleSignIn({ name: displayName, email: email, picture: fbUser.photoURL || '', googleId: fbUser.uid });
+                } else {
+                  createLocalProfile(displayName);
+                }
+              });
+            }).catch(function(error) {
+              nameBtn.disabled = false;
+              nameBtn.textContent = 'Sign Up';
+              if (error.code === 'auth/email-already-in-use') showToast('This email is already registered', 'error');
+              else if (error.code === 'auth/weak-password') showToast('Password is too weak (min 6 characters)', 'error');
+              else if (error.code === 'auth/invalid-email') showToast('Invalid email address', 'error');
+              else showToast('Sign up failed: ' + (error.message || 'unknown error'), 'error');
+            });
+          }
         }
 
 
@@ -1060,105 +1083,70 @@
             });
           }
         }
-        // ─── Initialize Google Sign-In ───
-        var gsiScript = document.getElementById('gsiScript');
-        if (gsiScript) {
-          gsiScript.onload = initGoogleSignIn;
-        } else {
-          var _retry = setInterval(function() {
-            if (typeof google !== 'undefined' && google.accounts) {
-              clearInterval(_retry);
-              initGoogleSignIn();
-            }
-          }, 200);
-          setTimeout(function() { clearInterval(_retry); }, 10000);
-        }
+        // ─── Initialize Firebase Auth Google Sign-In ───
+        initFirebaseGoogle();
       });
 
-      // ─── Google Sign-In ───
-      function initGoogleSignIn() {
-        var clientId = getGoogleClientId();
-        var container = document.getElementById('googleButtonContainer');
-        var fallbackBtn = document.getElementById('loginGoogleBtn');
-        if (!container) return;
-
-        function tryInit() {
-          if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-            if (clientId) {
-              fallbackBtn.style.display = 'none';
-              google.accounts.id.initialize({
-                client_id: clientId,
-                callback: handleGoogleCredentialResponse,
-                cancel_on_tap_outside: false,
-                auto_select: false
-              });
-              google.accounts.id.renderButton(container, {
-                type: 'standard', shape: 'pill', theme: 'outline',
-                text: 'continue_with', size: 'large',
-                width: 280, logo_alignment: 'left'
-              });
-            } else {
-              container.innerHTML = '';
-              fallbackBtn.style.display = 'flex';
-            }
-          } else {
-            setTimeout(tryInit, 300);
-          }
+      function initFirebaseGoogle() {
+        var googleBtn = document.getElementById('loginGoogleBtn');
+        var guestBtn = document.getElementById('loginGuestBtn');
+        if (!googleBtn) return;
+        if (typeof firebase !== 'undefined' && typeof FIREBASE_CONFIG !== 'undefined' && !firebase.apps.length) {
+          firebase.initializeApp(FIREBASE_CONFIG);
         }
-        if (clientId) tryInit();
-        else { container.innerHTML = ''; fallbackBtn.style.display = 'flex'; }
-
-        fallbackBtn.addEventListener('click', function(e) {
+        googleBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          showGoogleSetupDialog();
+          if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') {
+            showToast('Firebase SDK not loaded. Refresh the page.', 'error');
+            return;
+          }
+          var provider = new firebase.auth.GoogleAuthProvider();
+          provider.addScope('profile');
+          provider.addScope('email');
+          firebase.auth().signInWithPopup(provider).then(function(result) {
+            var user = result.user;
+            if (!user) { showToast('Google sign-in failed', 'error'); return; }
+            var gdata = {
+              name: user.displayName || '',
+              email: user.email || '',
+              picture: user.photoURL || '',
+              googleId: user.uid || ''
+            };
+            if (typeof googleSignIn === 'function') {
+              googleSignIn(gdata);
+            } else if (typeof createLocalProfile === 'function') {
+              createLocalProfile(gdata.name || gdata.email.split('@')[0] || 'Google User');
+            }
+          }).catch(function(error) {
+            if (error.code === 'auth/popup-closed-by-user') return;
+            console.error('Firebase Google sign-in error:', error);
+            showToast('Google sign-in failed: ' + (error.message || 'unknown error'), 'error');
+          });
         });
+
+        // ─── Anonymous / Guest sign-in ───
+        if (guestBtn) {
+          guestBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') {
+              showToast('Firebase SDK not loaded. Refresh the page.', 'error');
+              return;
+            }
+            firebase.auth().signInAnonymously().then(function(result) {
+              var user = result.user;
+              if (!user) { showToast('Guest sign-in failed', 'error'); return; }
+              sessionStorage.setItem('haven-guest', '1');
+              if (typeof createLocalProfile === 'function') {
+                createLocalProfile(user.uid ? 'Guest' : 'Guest');
+              }
+            }).catch(function(error) {
+              console.error('Firebase anonymous sign-in error:', error);
+              showToast('Guest sign-in failed: ' + (error.message || 'unknown error'), 'error');
+            });
+          });
+        }
       }
 
-      window.handleGoogleCredentialResponse = function(response) {
-        if (!response || !response.credential) { showToast('Google sign-in failed', 'error'); return; }
-        try {
-          var b64 = response.credential.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-          var p = JSON.parse(window.atob(b64));
-          var name = p.name || '', email = p.email || '', picture = p.picture || '', sub = p.sub || '';
-          if (!name && !email) { showToast('Could not retrieve user info from Google', 'error'); return; }
-          if (typeof googleSignIn === 'function') googleSignIn({ name: name, email: email, picture: picture, googleId: sub });
-          else createLocalProfile(name || email.split('@')[0] || 'Google User');
-        } catch(e) { console.error('Google error:', e); showToast('Failed to process Google sign-in', 'error'); }
-      };
-
-      var GOOGLE_CLIENT_ID_KEY = 'haven-google-client-id';
-      function getGoogleClientId() { try { return localStorage.getItem(GOOGLE_CLIENT_ID_KEY) || ''; } catch(e) { return ''; } }
-      function setGoogleClientId(id) { try { localStorage.setItem(GOOGLE_CLIENT_ID_KEY, id); } catch(e) {} }
-
-      function showGoogleSetupDialog() {
-        var existing = document.querySelector('.gsetup-overlay');
-        if (existing) existing.remove();
-        var overlay = document.createElement('div');
-        overlay.className = 'gsetup-overlay';
-        overlay.innerHTML =
-          '<div class="gsetup-dialog">' +
-            '<h3>Set up Google Sign-In</h3>' +
-            '<p>Enter your Google OAuth Client ID to enable sign-in with Google.</p>' +
-            '<input class="gsetup-input" id="gsetupClientId" type="text" placeholder="Paste your Client ID" spellcheck="false" value="' + escapeHtml(getGoogleClientId()) + '">' +
-            '<div class="gsetup-actions">' +
-              '<button class="gsetup-btn" id="gsetupCancel">Cancel</button>' +
-              '<button class="gsetup-btn primary" id="gsetupSave">Save</button>' +
-            '</div></div>';
-        document.body.appendChild(overlay);
-        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
-        document.getElementById('gsetupCancel').addEventListener('click', function() { overlay.remove(); });
-        document.getElementById('gsetupSave').addEventListener('click', function() {
-          var val = document.getElementById('gsetupClientId').value.trim();
-          if (val) { setGoogleClientId(val); overlay.remove(); initGoogleSignIn(); showToast('Google Client ID saved!', 'success', 2000); }
-          else overlay.remove();
-        });
-        setTimeout(function() { var inp = document.getElementById('gsetupClientId'); if (inp) inp.focus(); }, 100);
-      }
-
-      function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      }
     })();
   </script>
 </body>
