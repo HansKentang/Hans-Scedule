@@ -4,8 +4,10 @@
   "description": "Havën Schedule — Desktop App",
   "main": "main.js",
   "scripts": {
+    "prestart": "node scripts/sync-shared.js",
     "start": "electron .",
-    "test": "echo \"No tests configured\" && exit 0"
+    "test": "echo \"No tests configured\" && exit 0",
+    "sync": "node scripts/sync-shared.js"
   },
   "author": "Havën",
   "license": "MIT",

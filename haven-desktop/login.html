@@ -1137,7 +1137,7 @@
               if (!user) { showToast('Guest sign-in failed', 'error'); return; }
               sessionStorage.setItem('haven-guest', '1');
               if (typeof createLocalProfile === 'function') {
-                createLocalProfile('Guest');
+                createLocalProfile(user.uid ? 'Guest' : 'Guest');
               }
             }).catch(function(error) {
               console.error('Firebase anonymous sign-in error:', error);
@@ -1147,10 +1147,6 @@
         }
       }
 
-      function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      }
     })();
   </script>
 </body>

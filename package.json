@@ -1,0 +1,14 @@
+{
+  "name": "haven-schedule",
+  "version": "1.0.0",
+  "description": "Havën Schedule — Web App (PWA)",
+  "private": true,
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "serve:https": "python server/serve_https.py",
+    "gen:cert": "python server/gen_cert.py",
+    "test": "echo \"No tests configured\" && exit 0"
+  },
+  "author": "Havën",
+  "license": "MIT"
+}

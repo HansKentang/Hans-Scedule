@@ -500,8 +500,14 @@ function saveHubContent() {
     if (hubContent.bentoLayout) {
       try { localStorage.setItem(HUB_BENTO_KEY, JSON.stringify(hubContent.bentoLayout)); } catch(e) {}
     }
-    if (!ok) console.warn('[img] saveHubContent: SAVE FAILED (quota)');
-  } catch(e) { console.warn('[img] saveHubContent failed:', e); }
+    if (!ok) {
+      console.warn('[img] saveHubContent: SAVE FAILED (quota)');
+      if (typeof showToast === 'function') showToast('Could not save layout: storage is full. Try removing some images.', 'error', 4000);
+    }
+  } catch(e) {
+    console.warn('[img] saveHubContent failed:', e);
+    if (typeof showToast === 'function') showToast('Failed to save layout. Storage may be full.', 'error', 4000);
+  }
   if (_hadImages !== undefined) hubContent._images = _hadImages;
 }
 

@@ -487,6 +487,7 @@
   <script>
     // Register service worker for PWA
     if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
     }
   </script>
   <script src="shared.js"></script>
@@ -576,10 +577,6 @@
       document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
       document.getElementById('focusToggleBtn')?.addEventListener('click', toggleFocusMode);
       dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
-
-      document.getElementById('bcThemeBtn')?.addEventListener('click', toggleTheme);
-      
-      document.getElementById('bcAiChatBtn')?.addEventListener('click', showAIChat);
 
       updateModelOptions();
 
