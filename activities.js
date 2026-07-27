@@ -823,6 +823,9 @@ function switchActivitiesView(view) {
 
 // --- WEEKLY ACTIVITY CHART (stacked bar by tag) ----------------------------
 function renderActivityChart() {
+  // Clean up any lingering tooltip before re-render
+  hideChartTooltip();
+  
   const chart = document.getElementById('activityChart');
   const totalEl = document.getElementById('actChartTotal');
   const legendEl = document.getElementById('actChartLegend');
@@ -920,6 +923,7 @@ function renderActivityChart() {
 
   if (totalEl) totalEl.textContent = `${formatDuration(grandTotal)} total · avg ${formatDuration(avgDaily)}/day`;
 
+  // Legend
   let legendHtml = '';
   for (const tag of tags) {
     const hasAny = dayData.some(dd => dd.tagMins[tag] > 0);
@@ -930,6 +934,78 @@ function renderActivityChart() {
     </span>`;
   }
   if (legendEl) legendEl.innerHTML = legendHtml;
+
+  // ─── HOVER TOOLTIP ─────────────────────────────────
+  chart.querySelectorAll('.act-chart-bar-col').forEach(function(col, i) {
+    var dd = dayData[i];
+    if (!dd || dd.total === 0) return;
+    var colBar = col.querySelector('.act-chart-bar');
+    if (!colBar) return;
+
+    colBar.addEventListener('mouseenter', function(e) {
+      showChartTooltip(e, dd, dayLabels[i]);
+    });
+    colBar.addEventListener('mousemove', function(e) {
+      moveChartTooltip(e);
+    });
+    colBar.addEventListener('mouseleave', function() {
+      hideChartTooltip();
+    });
+  });
+}
+
+// ─── CHART TOOLTIP ──────────────────────────────────────
+var _chartTooltipEl = null;
+
+function showChartTooltip(e, dayData, dayLabel) {
+  hideChartTooltip();
+  var tip = document.createElement('div');
+  tip.className = 'act-chart-tooltip';
+
+  var html = '<div class="act-chart-tooltip-title">' + dayLabel + ' — ' + formatDuration(dayData.total) + '</div>';
+  
+  var sortedTags = TAG_ORDER.filter(function(tag) { return dayData.tagMins[tag] > 0; });
+  sortedTags.sort(function(a, b) { return dayData.tagMins[b] - dayData.tagMins[a]; });
+  
+  for (var ti = 0; ti < sortedTags.length; ti++) {
+    var tag = sortedTags[ti];
+    var pct = Math.round((dayData.tagMins[tag] / dayData.total) * 100);
+    html += '<div class="act-chart-tooltip-row">' +
+      '<span class="act-chart-tooltip-dot" style="background:' + (TAG_COLORS[tag] ? TAG_COLORS[tag].text : '#888') + '"></span>' +
+      '<span>' + TAG_LABELS[tag] + '</span>' +
+      '<span class="val">' + formatDuration(dayData.tagMins[tag]) + ' (' + pct + '%)</span>' +
+      '</div>';
+  }
+  
+  html += '<div class="act-chart-tooltip-total"><span>Total</span><span>' + formatDuration(dayData.total) + '</span></div>';
+  
+  tip.innerHTML = html;
+  document.body.appendChild(tip);
+  _chartTooltipEl = tip;
+  positionChartTooltip(e);
+}
+
+function moveChartTooltip(e) {
+  if (_chartTooltipEl) positionChartTooltip(e);
+}
+
+function positionChartTooltip(e) {
+  if (!_chartTooltipEl) return;
+  var w = _chartTooltipEl.offsetWidth;
+  var h = _chartTooltipEl.offsetHeight;
+  var x = e.clientX + 12;
+  var y = e.clientY - h - 12;
+  if (x + w > window.innerWidth - 8) x = e.clientX - w - 12;
+  if (y < 8) y = e.clientY + 12;
+  _chartTooltipEl.style.left = x + 'px';
+  _chartTooltipEl.style.top = y + 'px';
+}
+
+function hideChartTooltip() {
+  if (_chartTooltipEl) {
+    _chartTooltipEl.remove();
+    _chartTooltipEl = null;
+  }
 }
 
 function updateView() {

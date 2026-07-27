@@ -334,10 +334,10 @@
                   </div>
                 </div>
 
-                <!-- Weekly sleep schedule (visual timeline) -->
+                <!-- Weekly sleep chart (canvas) -->
                 <div class="s-schedule-label">This Week's Sleep</div>
-                <div class="s-schedule" id="sSchedule">
-                  <div style="text-align:center;padding:var(--space-3);font-size:0.72rem;color:var(--text-tertiary)">No data yet</div>
+                <div class="sleep-chart-wrap">
+                  <canvas id="sleepChart"></canvas>
                 </div>
 
               </div>
@@ -493,6 +493,7 @@
   <script src="shared.js"></script>
   <script src="settings.js"></script>
   <script src="gsi.js"></script>
+  <script src="firestore-sync.js"></script>
 
   <script src="hub-visuals.js"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
@@ -760,7 +761,7 @@
       renderTargetEditor(targets);
       renderSleepHistory(logs);
       renderSleepInsights(logs);
-      renderSleepSchedule(logs);
+      renderSleepChart(logs);
     }
 
     // ── Score ──
@@ -817,10 +818,13 @@
       detailEl.textContent = msg;
     }
 
-    // ── Weekly sleep schedule (visual horizontal bars) ──
-    function renderSleepSchedule(logs) {
-      var container = document.getElementById('sSchedule');
-      if (!container) return;
+    // ── Weekly sleep chart (canvas: duration bars + quality line) ──
+    var sleepChartTooltipEl = null;
+
+    function renderSleepChart(logs) {
+      var canvas = document.getElementById('sleepChart');
+      if (!canvas) return;
+      var container = canvas.parentElement;
       var now = new Date();
       var ws = getMonday(now);
       var todayStr = formatDate(now);
@@ -833,88 +837,276 @@
         var d = addDays(ws, i);
         var ds = formatDate(d);
         var log = getSleepLog(ds);
-        var bt = log ? log.bedtime : null;
-        var wt = log ? log.wakeTime : null;
-        if (bt && wt) hasAny = true;
+        if (log && log.duration) hasAny = true;
         entries.push({
           label: dayLabels[i],
           dayNum: d.getDate(),
           isToday: ds === todayStr,
-          hasData: !!log,
-          bedtime: bt,
-          wakeTime: wt,
+          hasData: !!log && !!log.duration,
           duration: log ? log.duration : 0,
-          quality: log ? log.quality : 0
+          quality: log ? log.quality : 0,
+          bedtime: log ? log.bedtime : '',
+          wakeTime: log ? log.wakeTime : '',
+          dateStr: ds
         });
       }
 
+      var rect = container.getBoundingClientRect();
+      var W = rect.width;
+      if (W < 50) { W = 600; }
+      var H = 180;
+      var dpr = window.devicePixelRatio || 1;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+
+      var ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      var cs = getComputedStyle(document.documentElement);
+      var textPrimary = cs.getPropertyValue('--text-primary').trim() || '#e5e2e1';
+      var textSecondary = cs.getPropertyValue('--text-secondary').trim() || '#9c9a99';
+      var textTertiary = cs.getPropertyValue('--text-tertiary').trim() || '#6b6a6a';
+      var borderColor = cs.getPropertyValue('--border-color').trim() || '#3b3b3b';
+      var borderSubtle = cs.getPropertyValue('--border-subtle').trim() || '#2d2d2d';
+      var accent = cs.getPropertyValue('--accent').trim() || '#6366f1';
+      var surfaceHigh = cs.getPropertyValue('--surface-container-high').trim() || '#262626';
+      var bgPrimary = cs.getPropertyValue('--bg-primary').trim() || '#1c1c1c';
+
+      var PAD = { top: 16, bottom: 28, left: 36, right: 36 };
+      var chartW = W - PAD.left - PAD.right;
+      var chartH = H - PAD.top - PAD.bottom;
+      var maxDur = 720;
+      var targetDur = targets ? targets.targetDuration : 480;
+      var barGap = 6;
+      var barW = (chartW / 7) - barGap;
+
+      // ── empty state ──
       if (!hasAny) {
-        container.innerHTML = '<div style="text-align:center;padding:var(--space-4);font-size:0.72rem;color:var(--text-tertiary)">No sleep data this week</div>';
+        ctx.fillStyle = textTertiary;
+        ctx.font = '13px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('No sleep data this week', W / 2, H / 2);
         return;
       }
 
-      // Compute target range as fraction of the timeline
-      var targetLeft = 0, targetRight = 100;
-      try {
-        var tBt = targets.targetBedtime.split(':').map(Number);
-        var tWt = targets.targetWakeTime.split(':').map(Number);
-        var tBtMins = tBt[0] * 60 + tBt[1];
-        var tWtMins = tWt[0] * 60 + tWt[1];
-        if (tWtMins <= tBtMins) tWtMins += 1440;
-        var rangeStart = 20 * 60;
-        var rangeEnd = 12 * 60 + 1440;
-        var totalRange = rangeEnd - rangeStart;
-        targetLeft = Math.max(0, Math.min(100, ((tBtMins - rangeStart) / totalRange) * 100));
-        targetRight = Math.max(0, Math.min(100, ((tWtMins - rangeStart) / totalRange) * 100));
-      } catch(e) {}
+      // ── background ──
+      ctx.clearRect(0, 0, W, H);
 
-      var html = '<div class="ss-grid">';
-      html += '<div class="ss-axis"><span>8PM</span><span>10PM</span><span>12AM</span><span>2AM</span><span>4AM</span><span>6AM</span><span>8AM</span><span>10AM</span><span>12PM</span></div>';
+      // ── Y axis ──
+      ctx.fillStyle = textTertiary;
+      ctx.font = '10px system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      var ySteps = [0, 2, 4, 6, 8, 10, 12];
+      for (var si = 0; si < ySteps.length; si++) {
+        var yVal = ySteps[si];
+        var yPx = PAD.top + chartH - (yVal / 12) * chartH;
+        ctx.fillStyle = textTertiary;
+        ctx.fillText(yVal + 'h', PAD.left - 6, yPx);
+        ctx.strokeStyle = borderSubtle;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(PAD.left, yPx);
+        ctx.lineTo(W - PAD.right, yPx);
+        ctx.stroke();
+      }
 
-      for (var ei = 0; ei < entries.length; ei++) {
-        var e = entries[ei];
-        var barHtml = '';
-        var infoHtml = '';
-        if (e.hasData && e.bedtime && e.wakeTime) {
-          var btMins = e.bedtime.split(':').map(Number);
-          var wtMins = e.wakeTime.split(':').map(Number);
-          var btTotal = btMins[0] * 60 + btMins[1];
-          var wtTotal = wtMins[0] * 60 + wtMins[1];
-          if (wtTotal <= btTotal) wtTotal += 1440;
-          var rangeStart = 20 * 60;
-          var rangeEnd = 12 * 60 + 1440;
-          var totalRange = rangeEnd - rangeStart;
-          var barLeft = ((btTotal - rangeStart) / totalRange) * 100;
-          var barWidth = ((wtTotal - btTotal) / totalRange) * 100;
-          barLeft = Math.max(0, Math.min(100, barLeft));
-          barWidth = Math.max(2, Math.min(100 - barLeft, barWidth));
+      // ── quality axis (right) ──
+      ctx.textAlign = 'left';
+      var qSteps = [1, 2, 3, 4, 5];
+      ctx.fillStyle = textTertiary;
+      ctx.font = '9px system-ui, sans-serif';
+      for (var qi = 0; qi < qSteps.length; qi++) {
+        var qVal = qSteps[qi];
+        var qyPx = PAD.top + chartH - ((qVal - 1) / 4) * chartH;
+        ctx.fillText(qVal, W - PAD.right + 4, qyPx);
+      }
 
-          var qualityColors = {1:'#ef4444',2:'#f59e0b',3:'#6366f1',4:'#10b981',5:'#059669'};
-          var qc = qualityColors[e.quality] || '#6366f1';
-          var qGrad = {1:'#fca5a5',2:'#fcd34d',3:'#a78bfa',4:'#34d399',5:'#6ee7b7'};
-          var qg = qGrad[e.quality] || '#a78bfa';
-          var starHtml = '';
-          for (var si = 0; si < 5; si++) {
-            starHtml += '<span class="ss-star' + (si < e.quality ? ' ss-star-on' : '') + '">\u2605</span>';
+      // ── quality label ──
+      ctx.save();
+      ctx.translate(W - PAD.right + 14, PAD.top + chartH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = 'center';
+      ctx.font = '8px system-ui, sans-serif';
+      ctx.fillStyle = textTertiary;
+      ctx.globalAlpha = 0.5;
+      ctx.fillText('Quality', 0, 0);
+      ctx.restore();
+
+      // ── target line ──
+      var targetY = PAD.top + chartH - (targetDur / maxDur) * chartH;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, targetY);
+      ctx.lineTo(W - PAD.right, targetY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = accent;
+      ctx.font = '9px system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Target ' + formatSleepMinutes(targetDur), W - PAD.right - 70, targetY - 5);
+
+      // ── bars ──
+      var qualityColors = {1:'#ef4444',2:'#f59e0b',3:'#6366f1',4:'#10b981',5:'#059669'};
+      var qFillColors = {1:'rgba(239,68,68,0.85)',2:'rgba(245,158,11,0.85)',3:'rgba(99,102,241,0.85)',4:'rgba(16,185,129,0.85)',5:'rgba(5,150,105,0.85)'};
+      var barData = [];
+
+      for (var bi = 0; bi < entries.length; bi++) {
+        var e = entries[bi];
+        var x = PAD.left + bi * (chartW / 7) + barGap / 2;
+        var barH = e.hasData ? (e.duration / maxDur) * chartH : 0;
+        var y = e.hasData ? PAD.top + chartH - barH : 0;
+        var color = e.hasData ? (qFillColors[e.quality] || 'rgba(99,102,241,0.85)') : 'transparent';
+        var barColor = e.hasData ? (qualityColors[e.quality] || '#6366f1') : 'transparent';
+
+        // Rounded rect bar
+        if (e.hasData) {
+          var r = Math.min(4, barW / 2);
+          ctx.beginPath();
+          ctx.moveTo(x + r, y);
+          ctx.lineTo(x + barW - r, y);
+          ctx.quadraticCurveTo(x + barW, y, x + barW, y + r);
+          ctx.lineTo(x + barW, y + barH - r);
+          ctx.quadraticCurveTo(x + barW, y + barH, x + barW - r, y + barH);
+          ctx.lineTo(x + r, y + barH);
+          ctx.quadraticCurveTo(x, y + barH, x, y + barH - r);
+          ctx.lineTo(x, y + r);
+          ctx.quadraticCurveTo(x, y, x + r, y);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+
+          // Glow
+          ctx.shadowColor = barColor;
+          ctx.shadowBlur = 8;
+          ctx.fillStyle = color;
+          ctx.fill();
+          ctx.shadowBlur = 0;
+
+          // Duration label above bar
+          ctx.fillStyle = textPrimary;
+          ctx.font = 'bold 10px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(formatSleepMinutes(e.duration), x + barW / 2, y - 2);
+
+          // Today highlight
+          if (e.isToday) {
+            ctx.strokeStyle = accent;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x + barW / 2, PAD.top + chartH + 4);
+            ctx.lineTo(x + barW / 2, PAD.top + chartH + 10);
+            ctx.stroke();
           }
-          barHtml = '<div class="ss-bar" style="left:' + barLeft + '%;width:' + barWidth + '%;background:linear-gradient(135deg,' + qg + ',' + qc + ')"></div>';
-          barHtml += '<div class="ss-bar-glow" style="left:' + barLeft + '%;width:' + barWidth + '%;background:' + qc + '"></div>';
-          infoHtml = '<div class="ss-info"><span class="ss-dur">' + formatSleepMinutes(e.duration) + '</span><span class="ss-stars">' + starHtml + '</span></div>';
         }
 
-        var todayCls = e.isToday ? ' ss-row-today' : '';
-        html += '<div class="ss-row' + todayCls + '">';
-        html += '<div class="ss-label"><span>' + e.label + '</span><span class="ss-date">' + e.dayNum + '</span></div>';
-        html += '<div class="ss-track" data-bedtime="' + (e.bedtime || '') + '" data-waketime="' + (e.wakeTime || '') + '">';
-        html += '<div class="ss-target-range" style="left:' + targetLeft + '%;width:' + (targetRight - targetLeft) + '%"></div>';
-        html += barHtml;
-        html += '</div>';
-        html += infoHtml;
-        html += '</div>';
+        barData.push({ x: x, w: barW, y: y, h: barH, entry: e });
+
+        // X-axis label
+        ctx.fillStyle = e.isToday ? accent : textTertiary;
+        ctx.font = e.isToday ? 'bold 10px system-ui, sans-serif' : '9px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(e.label, x + barW / 2, PAD.top + chartH + 6);
       }
-      html += '</div>';
-      container.innerHTML = html;
+
+      // ── quality polyline ──
+      var qPoints = [];
+      for (var pi = 0; pi < entries.length; pi++) {
+        if (entries[pi].hasData) {
+          var qx = PAD.left + pi * (chartW / 7) + (chartW / 7) / 2;
+          var qy = PAD.top + chartH - ((entries[pi].quality - 1) / 4) * chartH;
+          qPoints.push({ x: qx, y: qy, quality: entries[pi].quality });
+        }
+      }
+      if (qPoints.length >= 2) {
+        ctx.beginPath();
+        ctx.moveTo(qPoints[0].x, qPoints[0].y);
+        for (var pi2 = 1; pi2 < qPoints.length; pi2++) {
+          ctx.lineTo(qPoints[pi2].x, qPoints[pi2].y);
+        }
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = 0.7;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        // Dots
+        for (var di = 0; di < qPoints.length; di++) {
+          ctx.beginPath();
+          ctx.arc(qPoints[di].x, qPoints[di].y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = accent;
+          ctx.fill();
+          ctx.strokeStyle = bgPrimary;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+
+      // ── store data for tooltips ──
+      canvas._barData = barData;
+      canvas._qPoints = qPoints || [];
     }
+
+    // ── Sleep chart tooltip ──
+    function createSleepTooltip() {
+      var el = document.getElementById('sleepChartTooltip');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'sleepChartTooltip';
+        el.style.cssText = 'position:fixed;pointer-events:none;z-index:999;background:var(--bg-sidebar,#1f1f1f);border:1px solid var(--border-color,#3b3b3b);border-radius:8px;padding:8px 12px;font-size:0.7rem;color:var(--text-primary,#e5e2e1);box-shadow:0 4px 20px rgba(0,0,0,0.4);opacity:0;transition:opacity 150ms;line-height:1.5;min-width:120px';
+        document.body.appendChild(el);
+      }
+      return el;
+    }
+
+    document.addEventListener('mousemove', function(e) {
+      var canvas = document.getElementById('sleepChart');
+      if (!canvas || !canvas._barData) return;
+      var tip = createSleepTooltip();
+      var rect = canvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var my = e.clientY - rect.top;
+      var found = null;
+      for (var bi = 0; bi < canvas._barData.length; bi++) {
+        var bd = canvas._barData[bi];
+        if (bd.entry.hasData && mx >= bd.x && mx <= bd.x + bd.w && my >= bd.y && my <= bd.y + bd.h) {
+          found = bd.entry;
+          break;
+        }
+      }
+      if (found) {
+        var qualityLabels = {1:'Poor',2:'Fair',3:'Good',4:'Great',5:'Excellent'};
+        tip.innerHTML = '<strong>' + found.label + ' ' + found.dayNum + '</strong><br>' +
+          found.bedtime + ' \u2013 ' + found.wakeTime + '<br>' +
+          formatSleepMinutes(found.duration) + ' &middot; ' + (qualityLabels[found.quality] || '');
+        tip.style.opacity = '1';
+        var tx = e.clientX + 14;
+        var ty = e.clientY - 10;
+        if (tx + 140 > window.innerWidth) tx = e.clientX - 150;
+        if (ty < 10) ty = 10;
+        tip.style.left = tx + 'px';
+        tip.style.top = ty + 'px';
+      } else {
+        tip.style.opacity = '0';
+      }
+    });
+
+    // ── Resize handler ──
+    var sleepChartResizeTimer = null;
+    window.addEventListener('resize', function() {
+      clearTimeout(sleepChartResizeTimer);
+      sleepChartResizeTimer = setTimeout(function() {
+        var logs = loadSleepLogs();
+        renderSleepChart(logs);
+      }, 200);
+    });
 
     // ── Routine ──
     var ROUTINE_LIST_KEY = 'haven-schedule-sleep-routine';
