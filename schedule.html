@@ -465,6 +465,47 @@
       /* Filters bar mobile */
 
     }
+    @media (max-width: 480px) {
+      /* ─── HERO COMPACT ── */
+      .hub-main > section:first-child { height: 100px !important; }
+      .hub-main > section:first-child h1 { font-size: 22px !important; }
+      .hub-main > section:first-child > div:last-child { padding: 0 12px !important; }
+      .hub-main > section:first-child .gsi-section .gsi-avatar-name { display: none; }
+
+      /* ─── HEADER EXTRA COMPACT ── */
+      .sch-header { padding: var(--space-1) var(--space-2) !important; gap: var(--space-1); min-height: 38px; flex-wrap: wrap; }
+      .sch-header-left { gap: var(--space-1); }
+      .sch-header-left h2 { font-size: 0.7rem; }
+      .sch-header-right { gap: 4px; }
+      .sch-api-badge { font-size: 0.5rem; padding: 1px 6px; gap: 3px; }
+      .sch-api-badge svg { width: 8px; height: 8px; }
+      #taskCount { font-size: 0.55rem !important; }
+      .nav-arrows .btn { width: 20px; height: 20px; }
+      .nav-arrows .btn svg { width: 12px; height: 12px; }
+      #todayBtn { font-size: 0.65rem; padding: 1px 6px; }
+      #weekLabel { font-size: 0.72rem; }
+
+      /* ─── VIEW TOGGLE COMPACT ── */
+      .sch-header-center { width: 100%; order: 3; justify-content: flex-start; }
+
+      /* ─── PILL MANAGER EXTRA COMPACT ── */
+      .sch-pill-manager { padding: 2px var(--space-2); gap: 2px; min-height: 24px; }
+      .sch-pm-chip { font-size: 0.52rem; padding: 3px 7px 3px 5px; gap: 3px; min-height: 28px; }
+      .sch-pm-chip-dot { width: 5px; height: 5px; }
+      .sch-pm-chip-count { font-size: 0.42rem; padding: 0 3px; }
+      .sch-pm-add-chip { width: 22px; height: 22px; font-size: 0.8rem; }
+
+      /* ─── SUBCATEGORY BAR COMPACT ── */
+      .sch-sc-bar { padding: 3px var(--space-2); gap: 3px; }
+      .sch-sc-bar-pill { font-size: 0.55rem; padding: 3px 7px 3px 5px; gap: 3px; }
+      .sch-sc-bar-pill .sc-name { max-width: 60px; }
+      .sch-sc-bar-add-input { width: 65px; padding: 2px 8px; font-size: 0.55rem; }
+      .sch-sc-bar-add-input:focus { width: 90px; }
+      .sch-sc-bar-add-btn { width: 20px; height: 20px; }
+
+      /* ─── BOTTOM NAV SAFE AREA ── */
+      .hub-main { padding-bottom: 56px; }
+    }
     /* ─── All page CSS consolidated in style.css ─── */
   </style>
 </head>
