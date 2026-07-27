@@ -16,21 +16,11 @@ const ROOT_DIR = path.resolve(DESKTOP_DIR, '..');
 
 // Files that are shared between root (web) and desktop (Electron)
 // These get copied FROM root TO haven-desktop/
+//
+// NOTE: HTML files are NOT synced because the desktop versions have
+// Electron-specific differences (no PWA manifest, guarded SW, etc.).
+// They must be kept in sync manually or via a separate process.
 const SHARED_FILES = [
-  // HTML pages
-  'activities.html',
-  'analytics.html',
-  'finance.html',
-  'gallery.html',
-  'goals.html',
-  'index.html',
-  'login.html',
-  'schedule.html',
-  'tags.html',
-  'landing.html',
-  'clear-images.html',
-  'admin.html',
-
   // JavaScript
   'activities.js',
   'analytics.js',
