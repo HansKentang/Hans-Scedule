@@ -495,6 +495,21 @@ function renderBento() {
       });
     });
   }
+
+  // Add-goal button (persists outside glList container, clone to avoid stale listeners)
+  const addBtn = document.getElementById('glAddGoalBtn');
+  if (addBtn) {
+    const newBtn = addBtn.cloneNode(true);
+    addBtn.parentNode.replaceChild(newBtn, addBtn);
+    newBtn.addEventListener('click', function() {
+      const g = addGoal({ title: 'New Goal', description: 'Describe this goal...' });
+      renderAll();
+      setTimeout(() => {
+        const el = document.querySelector(`[data-action="edit-goal"][data-goal-id="${g.id}"]`);
+        if (el) showGoalEditPopup(g.id, el);
+      }, 100);
+    });
+  }
 }
 
 // ─── GOAL EDIT POPUP ──────────────────────────────────────
