@@ -534,7 +534,10 @@ function renderBento() {
 
   const addBtn = document.getElementById('glAddGoalBtn');
   if (addBtn) {
-    addBtn.addEventListener('click', function() {
+    // Replace button to remove stale listeners (btn persists outside glBento container)
+    const newBtn = addBtn.cloneNode(true);
+    addBtn.parentNode.replaceChild(newBtn, addBtn);
+    newBtn.addEventListener('click', function() {
       const g = addGoal({ title: 'New Goal', description: 'Describe this goal...' });
       renderAll();
       setTimeout(() => {
