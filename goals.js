@@ -562,6 +562,11 @@ function showGoalEditPopup(goalId, anchorEl) {
   const goal = getGoal(goalId);
   if (!goal) return;
 
+  const overlay = document.createElement('div');
+  overlay.className = 'gl-edit-overlay-bg';
+  overlay.addEventListener('click', closeGoalPopup);
+  document.body.appendChild(overlay);
+
   const popup = document.createElement('div');
   popup.className = 'gl-edit-popup';
 
@@ -578,25 +583,28 @@ function showGoalEditPopup(goalId, anchorEl) {
   ).join('');
 
   popup.innerHTML = `
-    <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);margin-bottom:10px">Edit Goal</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary)">Edit Goal</div>
+      <button class="gj-close-btn" id="gepClose">&times;</button>
+    </div>
     <input type="text" id="gepTitle" value="${escapeHtml(goal.title)}" placeholder="Goal title">
     <textarea id="gepDesc" placeholder="Description (optional)" rows="2">${escapeHtml(goal.description)}</textarea>
     <div style="margin-bottom:var(--space-2)">
-      <label style="font-size:0.6rem;color:var(--text-tertiary);display:block;margin-bottom:4px">Color</label>
+      <label style="font-size:0.58rem;color:var(--text-tertiary);display:block;margin-bottom:6px;font-weight:600;letter-spacing:0.04em">Color</label>
       <div class="gl-color-picker">${colorSwatches}</div>
     </div>
     <div class="gep-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);margin-bottom:var(--space-2)">
       <div>
-        <label style="font-size:0.6rem;color:var(--text-tertiary);display:block;margin-bottom:4px">Icon</label>
+        <label style="font-size:0.58rem;color:var(--text-tertiary);display:block;margin-bottom:6px;font-weight:600;letter-spacing:0.04em">Icon</label>
         <select id="gepIcon">${iconOptions}</select>
       </div>
       <div>
-        <label style="font-size:0.6rem;color:var(--text-tertiary);display:block;margin-bottom:4px">Status</label>
+        <label style="font-size:0.58rem;color:var(--text-tertiary);display:block;margin-bottom:6px;font-weight:600;letter-spacing:0.04em">Status</label>
         <select id="gepStatus">${statusOptions}</select>
       </div>
     </div>
     <div style="margin-bottom:var(--space-2)">
-      <label style="font-size:0.6rem;color:var(--text-tertiary);display:block;margin-bottom:4px">Target Date (optional)</label>
+      <label style="font-size:0.58rem;color:var(--text-tertiary);display:block;margin-bottom:6px;font-weight:600;letter-spacing:0.04em">Target Date</label>
       <input type="date" id="gepTarget" value="${goal.targetDate || ''}">
     </div>
     <div class="gl-edit-popup-actions">
@@ -608,9 +616,7 @@ function showGoalEditPopup(goalId, anchorEl) {
 
   document.body.appendChild(popup);
 
-  const rect = anchorEl.getBoundingClientRect();
-  popup.style.top = Math.min(rect.bottom + 4, window.innerHeight - 360) + 'px';
-  popup.style.left = Math.max(8, Math.min(rect.left - 100, window.innerWidth - 280)) + 'px';
+  document.getElementById('gepClose')?.addEventListener('click', closeGoalPopup);
 
   popup.querySelectorAll('.gl-color-swatch').forEach(el => {
     el.addEventListener('click', function() {
@@ -642,8 +648,8 @@ function showGoalEditPopup(goalId, anchorEl) {
   function onKey(e) { if (e.key === 'Escape') closeGoalPopup(); }
   document.addEventListener('keydown', onKey);
 
-  _goalPopup = { popup, onKey };
-  setTimeout(() => document.getElementById('gepTitle')?.focus(), 100);
+  _goalPopup = { popup, onKey, overlay };
+  setTimeout(() => document.getElementById('gepTitle')?.focus(), 150);
 }
 
 // ─── GOAL JOURNAL POPUP ─────────────────────────────────────
@@ -653,10 +659,18 @@ function showGoalJournalPopup(goalId) {
   if (!goal) return;
 
   const progress = calcProgress(goal);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'gl-edit-overlay-bg';
+  overlay.addEventListener('click', closeGoalPopup);
+  document.body.appendChild(overlay);
+
   const popup = document.createElement('div');
   popup.className = 'gl-edit-popup';
   popup.style.maxHeight = '80vh';
   popup.style.overflowY = 'auto';
+  popup.style.minWidth = '360px';
+  popup.style.maxWidth = '460px';
 
   const journalHtml = goal.journal.length > 0
     ? goal.journal.map(j => {
@@ -682,14 +696,14 @@ function showGoalJournalPopup(goalId) {
 
   popup.innerHTML = `
     <div class="gj-header">
-      <div style="display:flex;align-items:center;gap:var(--space-2)">
-        <div style="width:32px;height:32px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:color-mix(in srgb, ${goal.color} 15%, transparent);color:${goal.color}">
-          <span class="material-symbols-outlined" style="font-size:1rem">${goal.icon}</span>
+      <div style="display:flex;align-items:center;gap:var(--space-3)">
+        <div style="width:38px;height:38px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:color-mix(in srgb, ${goal.color} 15%, transparent);color:${goal.color};box-shadow:0 2px 8px color-mix(in srgb, ${goal.color} 15%, transparent)">
+          <span class="material-symbols-outlined" style="font-size:1.15rem">${goal.icon}</span>
         </div>
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:0.9rem">${escapeHtml(goal.title)}</div>
-          <div style="font-size:0.65rem;color:var(--text-tertiary)">
-            ${progress}% complete ${dateLabel ? '\u00b7 Due ' + dateLabel : ''}
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary)">${escapeHtml(goal.title)}</div>
+          <div style="font-size:0.62rem;color:var(--text-tertiary);margin-top:1px">
+            ${progress}% complete${dateLabel ? ' \u00b7 Due ' + dateLabel : ''}
           </div>
         </div>
       </div>
@@ -700,18 +714,13 @@ function showGoalJournalPopup(goalId) {
     <div class="gj-list">${journalHtml}</div>
     <div class="gj-section-label" style="margin-top:var(--space-3)">New Check-In</div>
     <div class="gj-mood-row">${moodBtns}</div>
-    <textarea class="gj-input" id="gjInput" rows="2" placeholder="How is this goal going? Any wins or struggles..."></textarea>
+    <textarea class="gj-input" id="gjInput" rows="2" placeholder="How is this goal going? Any wins or struggles?"></textarea>
     <div class="gj-actions">
       <button class="gj-save-btn" id="gjSaveBtn">Log Check-In</button>
     </div>
   `;
 
   document.body.appendChild(popup);
-  popup.style.top = '50%';
-  popup.style.left = '50%';
-  popup.style.transform = 'translate(-50%, -50%)';
-  popup.style.minWidth = '340px';
-  popup.style.maxWidth = '440px';
 
   let selectedMood = '';
   popup.querySelectorAll('.gj-mood-btn').forEach(el => {
@@ -735,13 +744,15 @@ function showGoalJournalPopup(goalId) {
 
   function onKey(e) { if (e.key === 'Escape') closeGoalPopup(); }
   document.addEventListener('keydown', onKey);
-  _goalPopup = { popup, onKey };
+  _goalPopup = { popup, onKey, overlay };
+  setTimeout(() => document.getElementById('gjInput')?.focus(), 200);
 }
 
 function closeGoalPopup() {
   if (_goalPopup) {
     document.removeEventListener('keydown', _goalPopup.onKey);
     _goalPopup.popup.remove();
+    if (_goalPopup.overlay) _goalPopup.overlay.remove();
     _goalPopup = null;
   }
 }
@@ -890,18 +901,28 @@ function showResolutionEditPopup(resId, anchorEl) {
   const res = goalsData.resolutions.find(r => r.id === resId);
   if (!res) return;
 
+  const overlay = document.createElement('div');
+  overlay.className = 'gl-edit-overlay-bg';
+  overlay.addEventListener('click', closeGoalPopup);
+  document.body.appendChild(overlay);
+
   const popup = document.createElement('div');
   popup.className = 'gl-edit-popup';
+  popup.style.minWidth = '320px';
+  popup.style.maxWidth = '400px';
 
   const catOptions = RESOLUTION_CATEGORIES.map(c =>
     `<option value="${c.id}" ${c.id === res.category ? 'selected' : ''}>${c.label}</option>`
   ).join('');
 
   popup.innerHTML = `
-    <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);margin-bottom:10px">Edit Resolution</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary)">Edit Resolution</div>
+      <button class="gj-close-btn" id="repClose">&times;</button>
+    </div>
     <input type="text" id="repTitle" value="${escapeHtml(res.title)}" placeholder="Resolution title">
     <div style="margin-bottom:var(--space-2)">
-      <label style="font-size:0.6rem;color:var(--text-tertiary);display:block;margin-bottom:4px">Category</label>
+      <label style="font-size:0.58rem;color:var(--text-tertiary);display:block;margin-bottom:6px;font-weight:600;letter-spacing:0.04em">Category</label>
       <select id="repCategory">${catOptions}</select>
     </div>
     <div class="gl-edit-popup-actions">
@@ -913,9 +934,7 @@ function showResolutionEditPopup(resId, anchorEl) {
 
   document.body.appendChild(popup);
 
-  const rect = anchorEl.getBoundingClientRect();
-  popup.style.top = Math.min(rect.bottom + 4, window.innerHeight - 260) + 'px';
-  popup.style.left = Math.max(8, Math.min(rect.left - 100, window.innerWidth - 280)) + 'px';
+  document.getElementById('repClose')?.addEventListener('click', closeGoalPopup);
 
   document.getElementById('repSave').addEventListener('click', function() {
     const title = document.getElementById('repTitle').value.trim();
@@ -933,8 +952,8 @@ function showResolutionEditPopup(resId, anchorEl) {
 
   function onKey(e) { if (e.key === 'Escape') closeGoalPopup(); }
   document.addEventListener('keydown', onKey);
-  _goalPopup = { popup, onKey };
-  setTimeout(() => document.getElementById('repTitle')?.focus(), 100);
+  _goalPopup = { popup, onKey, overlay };
+  setTimeout(() => document.getElementById('repTitle')?.focus(), 150);
 }
 
 // ─── COUNTS ──────────────────────────────────────────────────
