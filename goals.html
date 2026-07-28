@@ -16,99 +16,154 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <title>Havën Schedule — Goals &amp; Resolutions</title>
   <style>
-<style>
-    /* ─── GOALS BENTO LAYOUT ──────────────────────────── */
-    .gl-bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
-    .gl-card {
-      background: var(--bg-card); border: 1px solid var(--border-color);
-      border-radius: var(--radius-xl); padding: var(--space-5);
-      position: relative; overflow: hidden;
-      transition: all 250ms var(--curve);
+    /* ─── HERO ────────────────────────────────────────── */
+    .gl-hero {
+      position: relative; height: 120px; overflow: hidden; flex-shrink: 0;
     }
-    .gl-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: var(--card-hover-lift); }
-    .gl-card::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-      background: var(--gl-accent, var(--primary)); opacity: 0.7;
-      z-index: 1;
+    .gl-hero-bg {
+      width: 100%; height: 100%; object-fit: cover; opacity: 0.35;
+      transition: opacity 0.6s ease;
     }
-    .gl-card::after {
-      content: ''; position: absolute; top: 3px; right: 0; bottom: 0; left: 0;
-      background: radial-gradient(ellipse 80px 80px at 100% 0%, color-mix(in srgb, var(--gl-accent, var(--primary)) 4%, transparent), transparent);
+    .gl-hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, var(--bg-primary) 0%, transparent 50%),
+                  linear-gradient(135deg, color-mix(in srgb, var(--primary) 14%, transparent) 0%, transparent 50%);
       pointer-events: none;
-      box-shadow: var(--card-inner-glow);
     }
-    .gl-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-3); position: relative; z-index: 1; }
+    .gl-hero-inner {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 var(--container-padding); gap: var(--space-4);
+    }
+    .gl-hero-text { min-width: 0; }
+    .gl-hero-title {
+      font-family: var(--font-serif); font-size: 1.35rem; font-weight: 500;
+      letter-spacing: -0.02em; color: var(--text-primary); line-height: 1.2;
+      margin-bottom: 2px;
+    }
+    .gl-hero-meta {
+      display: flex; align-items: center; gap: var(--space-2);
+      font-size: 0.7rem; color: var(--text-tertiary); flex-wrap: wrap;
+    }
+    .gl-hero-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-tertiary); opacity: 0.4; }
+    .gl-hero-sub { font-size: 0.62rem; color: var(--text-tertiary); opacity: 0.6; margin-top: 1px; }
+    .gl-hero-ring-wrap { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+    .gl-hero-ring-label { font-size: 0.6rem; color: var(--text-tertiary); line-height: 1.3; text-align: right; }
+    .gl-hero-ring-label strong { color: var(--text-primary); font-size: 0.72rem; font-weight: 700; display: block; }
+
+    /* ─── STATS DASHBOARD ─────────────────────────────── */
+    .gl-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-bottom: var(--space-5); }
+    .gl-stat {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: var(--space-3);
+      display: flex; flex-direction: column; gap: 2px;
+      transition: all 250ms var(--curve); position: relative; overflow: hidden;
+    }
+    .gl-stat:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+    .gl-stat::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--stat-color, var(--primary)); opacity: 0.5;
+    }
+    .gl-stat-value {
+      font-size: 1.2rem; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .gl-stat-label { font-size: 0.62rem; color: var(--text-tertiary); font-weight: 500; }
+
+    /* ─── GOALS BENTO ──────────────────────────────────── */
+    .gl-bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--space-4); margin-bottom: var(--space-5); }
+    .gl-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-xl); padding: var(--space-5) var(--space-5) var(--space-4);
+      position: relative; overflow: hidden;
+      transition: all 350ms var(--curve);
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .gl-card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.04);
+      transform: translateY(-3px);
+    }
+    .gl-card-header {
+      display: flex; align-items: center; gap: var(--space-3);
+      margin-bottom: var(--space-3); position: relative; z-index: 1;
+    }
     .gl-card-icon {
-      width: 36px; height: 36px; border-radius: var(--radius-md);
+      width: 38px; height: 38px; border-radius: var(--radius-lg);
       display: flex; align-items: center; justify-content: center;
-      background: color-mix(in srgb, var(--gl-accent, var(--primary)) 12%, transparent);
+      background: color-mix(in srgb, var(--gl-accent, var(--primary)) 10%, transparent);
       color: var(--gl-accent, var(--primary)); flex-shrink: 0;
+      border: 1px solid color-mix(in srgb, var(--gl-accent, var(--primary)) 8%, transparent);
     }
     .gl-card-icon .material-symbols-outlined { font-size: 1.2rem; }
-    .gl-status-badge {
-      font-size: 0.55rem; font-weight: 700; padding: 2px 8px;
-      border-radius: var(--radius-full); text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    .gl-status-active { background: color-mix(in srgb, #6366f1 12%, transparent); color: #6366f1; }
-    .gl-status-in-progress { background: color-mix(in srgb, #f59e0b 12%, transparent); color: #f59e0b; }
-    .gl-status-milestone { background: color-mix(in srgb, #10b981 12%, transparent); color: #10b981; }
-    .gl-status-done { background: color-mix(in srgb, #6b7280 12%, transparent); color: #6b7280; }
+    .gl-card-title-group { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .gl-card-title {
-      font-family: var(--font-serif); font-size: 1.15rem; font-weight: 500;
-      color: var(--text-primary); margin-bottom: var(--space-1); position: relative; z-index: 1;
+      font-family: var(--font-serif); font-size: 1.05rem; font-weight: 600;
+      color: var(--text-primary); line-height: 1.25; position: relative; z-index: 1;
     }
+    .gl-card-title-row {
+      display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap;
+    }
+    .gl-status-badge {
+      font-size: 0.5rem; font-weight: 700; padding: 2px 8px;
+      border-radius: var(--radius-full); text-transform: uppercase; letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+    .gl-status-active { background: color-mix(in srgb, #6366f1 10%, transparent); color: #6366f1; border: 1px solid color-mix(in srgb, #6366f1 12%, transparent); }
+    .gl-status-in-progress { background: color-mix(in srgb, #f59e0b 10%, transparent); color: #f59e0b; border: 1px solid color-mix(in srgb, #f59e0b 12%, transparent); }
+    .gl-status-milestone { background: color-mix(in srgb, #10b981 10%, transparent); color: #10b981; border: 1px solid color-mix(in srgb, #10b981 12%, transparent); }
+    .gl-status-done { background: color-mix(in srgb, #6b7280 10%, transparent); color: #6b7280; border: 1px solid color-mix(in srgb, #6b7280 12%, transparent); }
     .gl-card-desc {
-      font-size: 0.78rem; color: var(--text-tertiary); margin-bottom: var(--space-4);
-      line-height: 1.5; position: relative; z-index: 1;
+      font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: var(--space-3);
+      line-height: 1.45; position: relative; z-index: 1; padding-left: 0;
     }
 
-    /* ─── PROGRESS BAR ──────────────────────────────────── */
-    .gl-progress-wrap { margin-bottom: var(--space-3); position: relative; z-index: 1; }
-    .gl-progress-header { display: flex; justify-content: space-between; font-size: 0.65rem; margin-bottom: 4px; }
-    .gl-progress-label { color: var(--text-tertiary); font-weight: 500; }
-    .gl-progress-pct { color: var(--gl-accent, var(--primary)); font-weight: 700; font-variant-numeric: tabular-nums; }
-    .gl-progress-track {
-      height: 4px; background: var(--bg-secondary); border-radius: var(--radius-full); overflow: hidden;
+    /* ─── RING + FOOTER ─────────────────────────────────── */
+    .gl-card-footer {
+      margin-top: var(--space-3); padding-top: var(--space-3);
+      border-top: 1px solid var(--border-subtle);
+      position: relative; z-index: 1;
     }
-    .gl-progress-fill {
-      height: 100%; border-radius: var(--radius-full);
-      background: linear-gradient(90deg, var(--gl-accent, var(--primary)), color-mix(in srgb, var(--gl-accent, var(--primary)) 60%, transparent));
-      transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    .gl-ring-wrap {
+      display: flex; align-items: center; gap: var(--space-3);
+      position: relative; z-index: 1;
     }
+    .gl-ring-meta { display: flex; flex-direction: column; gap: 1px; }
+    .gl-ring-pct { font-size: 0.68rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .gl-ring-date { font-size: 0.6rem; color: var(--text-tertiary); }
+    .gl-ring-date.overdue { color: #ef4444; font-weight: 600; }
+    .gl-ring-journal { font-size: 0.58rem; color: var(--text-tertiary); }
 
-    /* ─── SUB-TASK LIST ─────────────────────────────────── */
+    /* ─── SUB-TASKS ────────────────────────────────────── */
     .gl-tasks { position: relative; z-index: 1; }
     .gl-task {
       display: flex; align-items: center; gap: var(--space-2);
-      padding: var(--space-2) 0; border-top: 1px solid var(--border-subtle);
-      font-size: 0.78rem; cursor: pointer; transition: opacity var(--t-fast);
+      padding: var(--space-1) 0; border-top: 1px solid var(--border-subtle);
+      font-size: 0.75rem; cursor: pointer; transition: opacity var(--t-fast);
       position: relative;
     }
-    .gl-task:first-child { border-top: none; }
+    .gl-task:first-child { border-top: none; padding-top: 0; }
     .gl-task:hover { opacity: 0.85; }
     .gl-task-check {
-      width: 16px; height: 16px; border-radius: 50%;
+      width: 15px; height: 15px; border-radius: 50%;
       border: 2px solid var(--gl-accent, var(--text-tertiary));
       flex-shrink: 0; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .gl-task-check:hover {
-      transform: scale(1.15);
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--gl-accent, var(--text-tertiary)) 15%, transparent);
-    }
+    .gl-task-check:hover { transform: scale(1.15); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gl-accent, var(--text-tertiary)) 15%, transparent); }
     .gl-task-check.checked {
       background: var(--gl-accent, currentColor); border-color: var(--gl-accent, currentColor);
       animation: glCheckPop 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .gl-task-check.checked::after {
-      content: ''; width: 6px; height: 3px;
+      content: ''; width: 5px; height: 3px;
       border-left: 1.5px solid var(--text-inverse);
       border-bottom: 1.5px solid var(--text-inverse);
       transform: rotate(-45deg); margin-top: -1px;
     }
-    .gl-task-text { flex: 1; color: var(--text-primary); }
-    .gl-task.done .gl-task-text { text-decoration: line-through; opacity: 0.5; }
+    .gl-task-text { flex: 1; color: var(--text-primary); font-size: 0.72rem; }
+    .gl-task.done .gl-task-text { text-decoration: line-through; opacity: 0.45; }
     @keyframes glCheckPop {
       0% { transform: scale(1); }
       35% { transform: scale(1.3); }
@@ -116,26 +171,26 @@
       100% { transform: scale(1); }
     }
     .gl-task-del {
-      width: 18px; height: 18px; border: none; background: transparent;
+      width: 16px; height: 16px; border: none; background: transparent;
       color: var(--text-tertiary); cursor: pointer; border-radius: 3px;
       display: flex; align-items: center; justify-content: center;
-      opacity: 0; transition: all var(--t-fast); font-size: 0.65rem; padding: 0;
+      opacity: 0; transition: all var(--t-fast); font-size: 0.6rem; padding: 0;
     }
     .gl-task-wrap:hover .gl-task-del { opacity: 0.5; }
     .gl-task-del:hover { opacity: 1 !important; color: #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
     .gl-add-task-btn {
       border: none; background: transparent; color: var(--text-tertiary);
-      cursor: pointer; font-size: 0.7rem; font-weight: 600; padding: var(--space-1) 0;
+      cursor: pointer; font-size: 0.65rem; font-weight: 600; padding: var(--space-1) 0;
       display: inline-flex; align-items: center; gap: 4px;
-      transition: color var(--t-fast); margin-top: var(--space-1);
+      transition: color var(--t-fast); margin-top: 2px;
     }
     .gl-add-task-btn:hover { color: var(--gl-accent, var(--primary)); }
     .gl-add-task-input {
-      display: none; width: 100%; padding: var(--space-1) var(--space-2);
-      font-size: 0.78rem; font-family: var(--font-family);
+      display: none; width: 100%; padding: 6px 8px;
+      font-size: 0.72rem; font-family: var(--font-family);
       background: var(--bg-primary); color: var(--text-primary);
       border: 1px solid var(--border-color); border-radius: var(--radius-md);
-      outline: none; margin-top: var(--space-1);
+      outline: none; margin-top: var(--space-1); box-sizing: border-box;
     }
     .gl-add-task-input:focus { border-color: var(--border-focus); }
     .gl-add-task-input.show { display: block; }
@@ -150,7 +205,7 @@
     .gl-vision {
       background: var(--surface-container-lowest); border: 1px solid var(--border-color);
       border-radius: var(--radius-xl); padding: var(--space-5);
-      margin-bottom: var(--space-6); transition: all var(--t-base);
+      margin-bottom: var(--space-5); transition: all var(--t-base);
     }
     .gl-vision:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
     .gl-vision-header {
@@ -158,10 +213,10 @@
       margin-bottom: var(--space-4);
     }
     .gl-vision-title {
-      font-family: var(--font-serif); font-size: 1.2rem; font-weight: 500;
+      font-family: var(--font-serif); font-size: 1.1rem; font-weight: 500;
       color: var(--text-primary);
     }
-    .gl-vision-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-4); }
+    .gl-vision-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3); }
     .gl-vision-img-wrap {
       aspect-ratio: 4/3; border-radius: var(--radius-lg); overflow: hidden;
       position: relative; background: var(--surface-container); cursor: pointer;
@@ -170,93 +225,153 @@
     .gl-vision-img-wrap:hover { transform: scale(1.02); box-shadow: var(--shadow-sm); }
     .gl-vision-img-wrap img {
       width: 100%; height: 100%; object-fit: cover;
-      filter: grayscale(0.6); transition: all 0.5s;
+      filter: grayscale(0.5); transition: all 0.5s;
     }
     .gl-vision-img-wrap:hover img { filter: grayscale(0); }
     .gl-vision-img-placeholder {
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 6px;
       border: 2px dashed var(--border-color); border-radius: var(--radius-lg);
-      color: var(--text-tertiary); font-size: 0.6rem; font-weight: 500;
+      color: var(--text-tertiary); font-size: 0.55rem; font-weight: 500;
       text-align: center; transition: all var(--t-fast); padding: var(--space-2);
     }
     .gl-vision-img-placeholder:hover { border-color: var(--primary); color: var(--primary); }
-    .gl-vision-img-placeholder svg { width: 20px; height: 20px; opacity: 0.4; }
+    .gl-vision-img-placeholder svg { width: 18px; height: 18px; opacity: 0.4; }
     .gl-manifesto {
       background: var(--accent-soft); border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg); padding: var(--space-4);
       display: flex; flex-direction: column; gap: var(--space-2);
     }
     .gl-manifesto-label {
-      font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+      font-size: 0.55rem; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.1em; color: var(--text-tertiary);
     }
     .gl-manifesto-text {
-      font-family: var(--font-serif); font-size: 0.95rem; font-style: italic;
+      font-family: var(--font-serif); font-size: 0.88rem; font-style: italic;
       color: var(--text-secondary); line-height: 1.5;
       cursor: text; transition: background var(--t-fast); padding: 2px 4px; margin: -2px -4px;
       border-radius: 3px;
     }
     .gl-manifesto-text:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
-    .gl-manifesto-text:active {
-      background: transparent; font-style: normal;
-    }
+    .gl-manifesto-text:active { background: transparent; font-style: normal; }
 
-    /* ─── TASK DEEP DIVE ────────────────────────────────── */
-    .gl-dive-header {
+    /* ─── RESOLUTIONS ───────────────────────────────────── */
+    .gl-resolutions { margin-bottom: var(--space-5); }
+    .gl-res-head {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: var(--space-4);
+      margin-bottom: var(--space-3);
     }
-    .gl-dive-title {
-      font-family: var(--font-serif); font-size: 1.2rem; font-weight: 500;
+    .gl-res-head-left { display: flex; align-items: center; gap: var(--space-2); }
+    .gl-res-title-label {
+      font-family: var(--font-serif); font-size: 1.1rem; font-weight: 500; color: var(--text-primary);
     }
-    .gl-dive-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
-    .gl-dive-card {
-      padding: var(--space-4); background: var(--bg-card);
-      border: 1px solid var(--border-color); border-radius: var(--radius-lg);
-      position: relative; transition: all var(--t-base);
+    .gl-res-head-badge {
+      font-size: 0.55rem; font-weight: 700; padding: 2px 10px; border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary);
+      text-transform: uppercase; letter-spacing: 0.05em;
     }
-    .gl-dive-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
-    .gl-dive-card::before {
-      content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 3px;
-      border-radius: 3px 0 0 3px;
+    .gl-res-head-sub { font-size: 0.62rem; color: var(--text-tertiary); }
+    .gl-res-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4);
+      margin-bottom: var(--space-2); transition: all var(--t-base);
     }
-    .gl-dive-card.gl-accent-primary::before { background: var(--primary); }
-    .gl-dive-card.gl-accent-secondary::before { background: var(--secondary); }
-    .gl-dive-meta {
-      display: flex; align-items: center; gap: var(--space-2);
-      font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-tertiary); margin-bottom: var(--space-1);
+    .gl-res-card:hover { border-color: var(--text-primary); }
+    .gl-res-row1 {
+      display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2);
     }
-    .gl-dive-card-title { font-size: 0.85rem; font-weight: 600; margin-bottom: var(--space-1); }
-    .gl-dive-card-desc { font-size: 0.72rem; color: var(--text-tertiary); line-height: 1.4; }
+    .gl-res-cat {
+      font-size: 0.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 1px 7px; border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--cat-color) 14%, transparent);
+      color: var(--cat-color); flex-shrink: 0;
+    }
+    .gl-res-title { font-size: 0.78rem; font-weight: 500; color: var(--text-primary); flex: 1; min-width: 0; }
+    .gl-res-row2 { display: flex; align-items: center; gap: var(--space-3); }
+    .gl-res-bar-wrap { flex: 1; min-width: 0; }
+    .gl-res-bar-track { height: 4px; background: var(--bg-secondary); border-radius: var(--radius-full); overflow: hidden; }
+    .gl-res-bar-fill {
+      height: 100%; border-radius: var(--radius-full);
+      background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 60%, transparent));
+      transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .gl-res-grid { display: flex; gap: 2px; flex-shrink: 0; }
+    .gl-res-dot {
+      width: 10px; height: 10px; border-radius: 2px; cursor: pointer;
+      transition: all var(--t-fast); flex-shrink: 0;
+    }
+    .gl-res-dot.checked { background: var(--primary); }
+    .gl-res-dot.empty { background: var(--bg-secondary); border: 1px solid var(--border-subtle); }
+    .gl-res-dot.future { background: transparent; border: 1px dashed var(--border-color); cursor: default; }
+    .gl-res-dot:hover:not(.future) { transform: scale(1.3); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent); }
+    .gl-res-stat { font-size: 0.58rem; color: var(--text-tertiary); white-space: nowrap; flex-shrink: 0; }
+    .gl-res-stat strong { color: var(--text-primary); font-weight: 700; }
+    .gl-res-actions { display: flex; gap: 2px; flex-shrink: 0; }
+    .gl-res-edit-btn, .gl-res-del-btn {
+      border: none; background: transparent; color: var(--text-tertiary);
+      cursor: pointer; width: 18px; height: 18px; border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0; font-size: 0.55rem; transition: all var(--t-fast);
+    }
+    .gl-res-edit-btn:hover { color: var(--text-primary); background: var(--accent-soft); }
+    .gl-res-del-btn:hover { color: #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
+    .gl-add-resolution-btn {
+      display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+      padding: var(--space-3); border: 2px dashed var(--border-color);
+      border-radius: var(--radius-lg); background: transparent;
+      color: var(--text-tertiary); cursor: pointer;
+      font-size: 0.7rem; font-weight: 600; font-family: var(--font-family);
+      transition: all var(--t-fast); width: 100%;
+    }
+    .gl-add-resolution-btn:hover { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); }
+
+    /* ─── JOURNAL POPUP ──────────────────────────────────── */
+    .gj-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-3); }
+    .gj-close-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; font-size: 1.1rem; padding: 0; line-height: 1; transition: color var(--t-fast); }
+    .gj-close-btn:hover { color: var(--text-primary); }
+    .gj-desc { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: var(--space-3); line-height: 1.4; }
+    .gj-section-label { font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); margin-bottom: var(--space-2); }
+    .gj-list { max-height: 160px; overflow-y: auto; margin-bottom: var(--space-2); }
+    .gj-entry { padding: var(--space-2); border-left: 2px solid var(--border-subtle); margin-bottom: var(--space-1); transition: all var(--t-fast); }
+    .gj-entry:hover { border-left-color: var(--primary); background: var(--accent-soft); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
+    .gj-entry-head { display: flex; align-items: center; gap: var(--space-2); margin-bottom: 4px; }
+    .gj-entry-date { font-size: 0.58rem; color: var(--text-tertiary); font-weight: 600; }
+    .gj-entry-mood { font-size: 0.85rem; line-height: 1; }
+    .gj-entry-text { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4; }
+    .gj-empty { font-size: 0.7rem; color: var(--text-tertiary); padding: var(--space-2) 0; text-align: center; }
+    .gj-mood-row { display: flex; gap: 4px; margin-bottom: var(--space-2); flex-wrap: wrap; }
+    .gj-mood-btn { border: 1px solid var(--border-color); background: transparent; border-radius: var(--radius-md); padding: 4px 8px; cursor: pointer; font-size: 0.95rem; transition: all var(--t-fast); line-height: 1; }
+    .gj-mood-btn:hover { border-color: var(--primary); transform: scale(1.1); }
+    .gj-mood-btn.active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); box-shadow: 0 0 0 1px var(--primary); }
+    .gj-input { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-family); font-size: 0.72rem; resize: vertical; outline: none; box-sizing: border-box; }
+    .gj-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent); }
+    .gj-actions { margin-top: var(--space-2); display: flex; justify-content: flex-end; }
+    .gj-save-btn { border: none; padding: 7px 16px; border-radius: 8px; font-weight: 600; font-size: 0.7rem; cursor: pointer; background: var(--primary); color: var(--text-inverse); transition: all var(--t-fast); }
+    .gj-save-btn:hover { filter: brightness(1.1); }
 
     /* ─── EMPTY STATE / BUTTONS ─────────────────────────── */
-    .gl-empty {
-      text-align: center; padding: var(--space-8) var(--space-4);
-      color: var(--text-tertiary); animation: slideUp 400ms var(--curve);
-    }
-    .gl-empty svg { width: 40px; height: 40px; margin-bottom: var(--space-3); opacity: 0.15; }
-    .gl-empty p { font-size: 0.85rem; font-weight: 500; margin-bottom: var(--space-2); }
-    .gl-empty .sub { font-size: 0.72rem; opacity: 0.7; }
+    .gl-empty { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-tertiary); animation: slideUp 400ms var(--curve); }
+    .gl-empty svg { width: 36px; height: 36px; margin-bottom: var(--space-2); opacity: 0.15; }
+    .gl-empty p { font-size: 0.8rem; font-weight: 500; margin-bottom: var(--space-1); }
+    .gl-empty .sub { font-size: 0.68rem; opacity: 0.7; }
 
     .gl-add-goal-btn {
       display: flex; align-items: center; justify-content: center; gap: var(--space-2);
       padding: var(--space-4); border: 2px dashed var(--border-color);
       border-radius: var(--radius-xl); background: transparent;
       color: var(--text-tertiary); cursor: pointer;
-      font-size: 0.8rem; font-weight: 600; font-family: var(--font-family);
+      font-size: 0.75rem; font-weight: 600; font-family: var(--font-family);
       transition: all var(--t-fast); grid-column: span 4;
     }
     .gl-add-goal-btn:hover { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, transparent); }
-    .gl-add-goal-btn svg { width: 18px; height: 18px; }
+    .gl-add-goal-btn svg { width: 16px; height: 16px; }
 
     /* ─── CARD STAGGER ANIMATIONS ───────────────────────── */
-    .gl-card { animation: glCardIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both; }
-    .gl-card:nth-child(1) { animation-delay: 0.03s; }
-    .gl-card:nth-child(2) { animation-delay: 0.06s; }
-    .gl-card:nth-child(3) { animation-delay: 0.09s; }
-    .gl-card:nth-child(4) { animation-delay: 0.12s; }
+    .gl-card, .gl-stat { animation: glCardIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .gl-card:nth-child(1), .gl-stat:nth-child(1) { animation-delay: 0.03s; }
+    .gl-card:nth-child(2), .gl-stat:nth-child(2) { animation-delay: 0.06s; }
+    .gl-card:nth-child(3), .gl-stat:nth-child(3) { animation-delay: 0.09s; }
+    .gl-card:nth-child(4), .gl-stat:nth-child(4) { animation-delay: 0.12s; }
     .gl-card:nth-child(5) { animation-delay: 0.15s; }
     .gl-card:nth-child(6) { animation-delay: 0.18s; }
     .gl-card:nth-child(7) { animation-delay: 0.21s; }
@@ -277,18 +392,14 @@
       display: block; width: 100%; padding: 8px 10px; border-radius: 8px;
       border: 1px solid var(--border-color); background: var(--bg-primary);
       color: var(--text-primary); font-family: var(--font-family);
-      font-size: 0.78rem; margin-bottom: var(--space-2); outline: none;
+      font-size: 0.75rem; margin-bottom: var(--space-2); outline: none; box-sizing: border-box;
     }
     .gl-edit-popup input:focus, .gl-edit-popup select:focus, .gl-edit-popup textarea:focus {
       border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
     }
     .gl-edit-popup textarea { resize: vertical; min-height: 50px; }
     .gl-edit-popup-actions { display: flex; gap: var(--space-2); justify-content: flex-end; margin-top: var(--space-2); }
-    .gl-edit-popup-actions button {
-      border: none; padding: 6px 14px; border-radius: 8px;
-      font-weight: 600; font-size: 0.72rem; cursor: pointer;
-      transition: all var(--t-fast);
-    }
+    .gl-edit-popup-actions button { border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; font-size: 0.7rem; cursor: pointer; transition: all var(--t-fast); }
     .gl-edit-popup-actions .primary { background: var(--primary); color: var(--text-inverse); }
     .gl-edit-popup-actions .primary:hover { filter: brightness(1.1); }
     .gl-edit-popup-actions .cancel { background: transparent; color: var(--text-secondary); }
@@ -296,14 +407,8 @@
     .gl-edit-popup-actions .danger { background: transparent; color: #ef4444; }
     .gl-edit-popup-actions .danger:hover { background: color-mix(in srgb, #ef4444 12%, transparent); }
 
-    .gl-color-picker {
-      display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: var(--space-2);
-    }
-    .gl-color-swatch {
-      width: 24px; height: 24px; border-radius: 50%;
-      border: 2px solid transparent; cursor: pointer;
-      transition: all var(--t-fast);
-    }
+    .gl-color-picker { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: var(--space-2); }
+    .gl-color-swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all var(--t-fast); }
     .gl-color-swatch:hover { transform: scale(1.2); }
     .gl-color-swatch.active { border-color: var(--text-primary); transform: scale(1.15); }
 
@@ -316,83 +421,41 @@
       border: none; background: var(--surface-container); color: var(--text-tertiary);
       cursor: pointer; width: 22px; height: 22px; border-radius: 4px;
       display: flex; align-items: center; justify-content: center;
-      padding: 0; font-size: 0.6rem; line-height: 1; transition: all var(--t-fast);
+      padding: 0; font-size: 0.55rem; line-height: 1; transition: all var(--t-fast);
     }
     .gl-edit-item-btn:hover { color: var(--text-primary); background: var(--accent-soft); }
     .gl-edit-item-btn.del:hover { color: #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
 
     /* ─── RESPONSIVE ────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .gl-stats { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 767px) {
       .gl-bento { gap: var(--space-3); }
       .gl-card-sm, .gl-card-md, .gl-card-lg { grid-column: span 12; }
       .gl-vision-grid { grid-template-columns: 1fr; }
-      .gl-dive-grid { grid-template-columns: 1fr; }
+      .gl-card .gl-edit-overlay { opacity: 1; }
+      .gl-task-del { opacity: 0.5; }
       .gl-add-goal-btn { grid-column: span 12; }
     }
     @media (max-width: 640px) {
       .hub-content { padding-bottom: 64px; }
+      .gl-hero { height: 100px; }
+      .gl-hero-title { font-size: 1.1rem; }
       .gl-card { padding: var(--space-4); }
-      .gl-card-title { font-size: 1rem; }
-      .gl-card-desc { font-size: 0.72rem; }
+      .gl-card-title { font-size: 0.95rem; }
+      .gl-card-desc { font-size: 0.68rem; }
       .gl-vision { padding: var(--space-4); }
-      .gl-vision-title { font-size: 1rem; }
-    }
-
-    /* ─── HERO ────────────────────────────────────────── */
-    .gl-hero {
-      position: relative; height: 200px; overflow: hidden; flex-shrink: 0;
-    }
-    .gl-hero-bg {
-      width: 100%; height: 100%; object-fit: cover;
-      opacity: 0.5;
-      transition: opacity 0.6s ease;
-    }
-    .gl-hero:hover .gl-hero-bg { opacity: 0.55; }
-    .gl-hero-overlay {
-      position: absolute; inset: 0;
-      background: linear-gradient(to top, var(--bg-primary) 0%, transparent 60%),
-                  linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 50%);
-      pointer-events: none;
-    }
-    .gl-hero-inner {
-      position: absolute; inset: 0;
-      display: flex; align-items: flex-end; justify-content: space-between;
-      padding: var(--space-5) var(--container-padding);
-      gap: var(--space-4);
-    }
-    .gl-hero-text { min-width: 0; }
-    .gl-hero-title {
-      font-family: var(--font-serif);
-      font-size: 1.75rem; font-weight: 500;
-      letter-spacing: -0.02em;
-      color: var(--text-primary);
-      line-height: 1.15;
-      margin-bottom: var(--space-1);
-    }
-    .gl-hero-meta {
-      display: flex; align-items: center; gap: var(--space-2);
-      font-size: 0.75rem; color: var(--text-tertiary);
-      flex-wrap: wrap;
-    }
-    .gl-hero-dot {
-      width: 3px; height: 3px; border-radius: 50%;
-      background: var(--text-tertiary); opacity: 0.4;
-    }
-    .gl-hero-sub {
-      font-size: 0.68rem; color: var(--text-tertiary);
-      margin-top: var(--space-1);
-      font-weight: 400;
-      opacity: 0.65;
-    }
-    @media (max-width: 767px) {
-      .gl-hero { height: 170px; }
-      .gl-hero-title { font-size: 1.4rem; }
-      .gl-hero-inner { padding: var(--space-4) var(--space-4); }
+      .gl-vision-title { font-size: 0.95rem; }
+      .gl-stats { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
+      .gl-stat { padding: var(--space-2); }
+      .gl-stat-value { font-size: 1rem; }
     }
     @media (max-width: 480px) {
-      .gl-hero { height: 150px; }
-      .gl-hero-title { font-size: 1.2rem; }
-      .gl-hero-meta { font-size: 0.68rem; }
+      .gl-hero { height: 90px; }
+      .gl-hero-title { font-size: 1rem; }
+      .gl-hero-meta { font-size: 0.62rem; }
+      .gl-stat-value { font-size: 0.9rem; }
     }
 
     /* ─── CUSTOM SCROLLBAR ──────────────────────────────── */
@@ -522,11 +585,20 @@
             </div>
             <div class="gl-hero-sub" id="glHeroSub">Track your aspirations</div>
           </div>
+          <div class="gl-hero-ring-wrap" id="glHeroRingWrap">
+            <div class="gl-hero-ring-label" id="glHeroRingLabel">
+              <strong>0%</strong>
+              overall
+            </div>
+          </div>
           <div id="gsiContainer" class="gsi-section"></div>
         </div>
       </section>
 
       <div class="hub-content hub-page-transition">
+
+        <!-- ─── STATS DASHBOARD ──────────────────────── -->
+        <div class="gl-stats hub-anim-in hub-anim-in-2" id="glStats"></div>
 
         <!-- ─── GOALS BENTO GRID ─────────────────────── -->
         <div class="gl-bento hub-anim-in hub-anim-in-3" id="glBento"></div>
@@ -567,16 +639,8 @@
           </div>
         </div>
 
-        <!-- ─── TASK DEEP DIVE ───────────────────────── -->
-        <div class="hub-anim-in hub-anim-in-5" style="margin-bottom:var(--space-6)">
-          <div class="gl-dive-header">
-            <div class="gl-dive-title" data-i18n="gl.related">Related Tasks</div>
-            <span style="font-size:0.68rem;color:var(--text-tertiary)" id="glDiveCount">0 tasks across goals</span>
-          </div>
-          <div class="gl-dive-grid" id="glDiveGrid">
-            <div class="gl-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>No related tasks</p><div class="sub">Schedule tasks in the Schedule page linked to your goals.</div></div>
-          </div>
-      </div>
+        <!-- ─── RESOLUTIONS ─────────────────────────── -->
+        <div class="gl-resolutions hub-anim-in hub-anim-in-5" id="glResolutions"></div>
 
     <!-- ─── FOOTER ───────────────────────────────── -->
     <footer class="hub-minifooter hub-anim-in hub-anim-in-6">

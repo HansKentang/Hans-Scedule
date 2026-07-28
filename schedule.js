@@ -5,6 +5,118 @@
 // ─── VIEW STATE ────────────────────────────────────────────
 let currentView = 'week'; // 'week' | 'month' | 'agenda'
 let currentMonthDate = new Date();
+let mobileDayDate = null; // current day shown in mobile single-day view
+
+function isMobileLayout() { return window.innerWidth < 640; }
+
+// Mobile add-task FAB — create on demand
+let _mobileAddFab = null;
+function ensureMobileAddFab() {
+  if (_mobileAddFab && _mobileAddFab.parentNode) return _mobileAddFab;
+  _mobileAddFab = document.createElement('button');
+  _mobileAddFab.id = 'mobileAddFab';
+  _mobileAddFab.className = 'mobile-add-fab';
+  _mobileAddFab.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  _mobileAddFab.setAttribute('aria-label', 'Add task');
+  _mobileAddFab.addEventListener('click', () => {
+    const now = new Date();
+    const snap = roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES);
+    openNewTaskModal(mobileDayDate || formatDate(now), snap);
+  });
+  document.body.appendChild(_mobileAddFab);
+  return _mobileAddFab;
+}
+
+function updateMobileAddFabVisibility() {
+  const fab = document.getElementById('mobileAddFab') || _mobileAddFab;
+  if (!fab) return;
+  if (isMobileLayout() && currentView === 'week') {
+    fab.classList.remove('hidden');
+  } else {
+    fab.classList.add('hidden');
+  }
+}
+
+// Mobile day navigation — moves within the current week
+function navigateMobileDay(direction) {
+  const ws = state.currentWeekStart;
+  const today = new Date();
+  if (!mobileDayDate) mobileDayDate = formatDate(today);
+  const current = new Date(mobileDayDate + 'T12:00:00');
+  const next = addDays(current, direction);
+  const nextStr = formatDate(next);
+  const weekEnd = addDays(ws, 7);
+  
+  // Cross week boundary — advance the week directly (avoid recursion via goNext/goPrev)
+  if (next < ws) {
+    state.currentWeekStart = addDays(ws, -7);
+    // Set to the last day of previous week (Saturday for Mon-based week)
+    mobileDayDate = formatDate(addDays(ws, -1));
+    renderCalendar();
+    saveState();
+    return;
+  }
+  if (next >= weekEnd) {
+    state.currentWeekStart = addDays(ws, 7);
+    // Set to the first day of next week (Sunday for Mon-based week)
+    mobileDayDate = formatDate(weekEnd);
+    renderCalendar();
+    saveState();
+    return;
+  }
+  
+  mobileDayDate = nextStr;
+  renderCalendar();
+}
+
+// Swipe state for mobile day view
+let _mobileSwipeStartX = 0;
+let _mobileSwipeStartY = 0;
+let _mobileSwipeActive = false;
+
+function initMobileDaySwipe() {
+  const container = dom.container || document.getElementById('calendarContainer');
+  if (!container) return;
+  // Remove old listeners
+  container.removeEventListener('touchstart', _onSwipeStart);
+  container.removeEventListener('touchmove', _onSwipeMove);
+  container.removeEventListener('touchend', _onSwipeEnd);
+  container.addEventListener('touchstart', _onSwipeStart, { passive: true });
+  container.addEventListener('touchmove', _onSwipeMove, { passive: true });
+  container.addEventListener('touchend', _onSwipeEnd, { passive: true });
+}
+
+function _onSwipeStart(e) {
+  if (!isMobileLayout() || currentView !== 'week') return;
+  if (e.touches.length !== 1) return;
+  _mobileSwipeStartX = e.touches[0].clientX;
+  _mobileSwipeStartY = e.touches[0].clientY;
+  _mobileSwipeActive = false;
+}
+
+function _onSwipeMove(e) {
+  if (!isMobileLayout() || currentView !== 'week') return;
+  if (e.touches.length !== 1) return;
+  const dx = e.touches[0].clientX - _mobileSwipeStartX;
+  const dy = e.touches[0].clientY - _mobileSwipeStartY;
+  if (Math.abs(dx) < Math.abs(dy) * 1.5 && Math.abs(dy) > 10) {
+    _mobileSwipeActive = false;
+    return;
+  }
+  if (Math.abs(dx) > 10) _mobileSwipeActive = true;
+}
+
+function _onSwipeEnd(e) {
+  if (!isMobileLayout() || currentView !== 'week' || !_mobileSwipeActive) {
+    _mobileSwipeActive = false;
+    return;
+  }
+  _mobileSwipeActive = false;
+  const dx = (e.changedTouches?.[0]?.clientX || 0) - _mobileSwipeStartX;
+  if (Math.abs(dx) > 40) {
+    navigateMobileDay(dx < 0 ? 1 : -1);
+  }
+}
 
 // ─── DOM REFS (page-specific) ──────────────────────────────
 dom.grid          = $('#calendarGrid');
@@ -161,9 +273,20 @@ function renderMiniWeek() {
 }
 
 function renderCalendar() {
-  if (currentView === 'month') return renderMonthView();
-  if (currentView === 'agenda') return renderAgendaView();
-  renderWeekView();
+  if (currentView === 'month') {
+    updateMobileAddFabVisibility();
+    return renderMonthView();
+  }
+  if (currentView === 'agenda') {
+    updateMobileAddFabVisibility();
+    return renderAgendaView();
+  }
+  if (isMobileLayout()) {
+    renderMobileDayView();
+  } else {
+    renderWeekView();
+  }
+  updateMobileAddFabVisibility();
 }
 
 function renderWeekView() {
@@ -220,6 +343,146 @@ function renderWeekView() {
   dom.taskCount.textContent = state.tasks.filter(t => !isWhiteboardTask(t)).length;
   renderMiniWeek();
   attachTimeAxisTooltips();
+}
+
+// ─── MOBILE DAY VIEW ──────────────────────────────────────
+function renderMobileDayView() {
+  const weekStart = state.currentWeekStart;
+  const days = getWeekRange(weekStart);
+  const today = new Date();
+  const todayStr = formatDate(today);
+
+  // Determine which day to show
+  if (!mobileDayDate) mobileDayDate = todayStr;
+  // Ensure mobileDayDate is within the current week
+  const md = new Date(mobileDayDate + 'T12:00:00');
+  if (md < weekStart || md >= addDays(weekStart, 7)) {
+    mobileDayDate = todayStr;
+  }
+
+  // Build the grid: time axis + 1 day column
+  dom.grid.style.gridTemplateColumns = 'var(--time-axis-width) 1fr';
+  dom.grid.style.gridTemplateRows = '';
+
+  let html = '';
+
+  // Day header (with today/weekend classes)
+  const activeDay = new Date(mobileDayDate + 'T12:00:00');
+  const headerCls = ['day-header'];
+  if (isToday(activeDay)) headerCls.push('today');
+  if (isWeekend(activeDay)) headerCls.push('weekend');
+  html += `<div class="${headerCls.join(' ')}" data-date="${mobileDayDate}">
+    <span class="day-name">${getDayName(activeDay, false)}</span>
+    <span class="day-number">${activeDay.getDate()}</span>
+  </div>`;
+
+  // Time slots
+  for (let h = START_HOUR; h < START_HOUR + VISIBLE_HOURS; h++) {
+    const h24 = h % 24;
+    const disp = h24 % 12 === 0 ? 12 : h24 % 12;
+    const ampm = h24 < 12 ? 'AM' : 'PM';
+    const timeMins = h * 60;
+    html += `<div class="time-axis time-slot${h % 2 === 0 ? '' : ' time-alt'}" data-time="${timeMins}" data-hour="${h}">
+      <span>${disp} ${ampm}</span><span class="half-hour-marker"></span></div>`;
+
+    const cls = ['day-column', 'hour-slot'];
+    if (isWeekend(activeDay)) cls.push('weekend');
+    if (mobileDayDate === todayStr) cls.push('today-column');
+    if (h % 2 !== 0) cls.push('hour-alt');
+    html += `<div class="${cls.join(' ')}" data-date="${mobileDayDate}" data-time="${timeMins}" data-hour="${h}">
+      <span class="half-hour-line"></span></div>`;
+  }
+
+  dom.grid.innerHTML = html;
+
+  // Render the day selector bar outside the grid
+  renderMobileDayBar(weekStart, todayStr);
+
+  // Mobile: add tap handler on day column for quick task creation
+  dom.grid.querySelectorAll('.day-column').forEach(col => {
+    col.addEventListener('click', function onClickSlot(e) {
+      // Don't trigger if clicking on a task card
+      if (e.target.closest('.calendar-task') || e.target.closest('.task-check') || e.target.closest('.task-title')) return;
+      if (e.target.closest('.sch-mobile-day-chip')) return;
+      const rect = this.getBoundingClientRect();
+      const yOffset = e.clientY - rect.top;
+      const hourHeight = rect.height;
+      const rawMins = (yOffset / hourHeight) * 60 + START_HOUR * 60;
+      const snapped = roundToNearest(Math.max(START_HOUR * 60, Math.min(rawMins, (START_HOUR + VISIBLE_HOURS) * 60 - SNAP_MINUTES)), SNAP_MINUTES);
+      const date = this.dataset.date || mobileDayDate || formatDate(new Date());
+      openNewTaskModal(date, snapped);
+    });
+  });
+
+  // Render tasks & time line
+  renderTasks();
+  renderCurrentTime();
+
+  // Update week label — show the selected day name
+  const dayLabel = activeDay.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  dom.weekLabel.textContent = dayLabel;
+  if (dom.weekLabelHero) dom.weekLabelHero.textContent = dayLabel;
+  dom.taskCount.textContent = state.tasks.filter(t => !isWhiteboardTask(t)).length;
+
+  renderMiniWeek();
+  attachTimeAxisTooltips();
+  initMobileDaySwipe();
+
+  // Show/hide mobile add FAB
+  ensureMobileAddFab();
+  updateMobileAddFabVisibility();
+}
+
+// ─── MOBILE DAY SELECTOR BAR (rendered outside the grid) ──
+function renderMobileDayBar(weekStart, todayStr) {
+  let bar = document.getElementById('schMobileDayBar');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'schMobileDayBar';
+    bar.className = 'sch-mobile-day-bar';
+    const container = dom.container || document.getElementById('calendarContainer');
+    if (container && container.parentNode) {
+      container.parentNode.insertBefore(bar, container);
+    }
+  }
+  
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(weekStart, i);
+    const ds = formatDate(d);
+    const cls = ['sch-mobile-day-chip'];
+    if (ds === mobileDayDate) cls.push('active');
+    if (ds === todayStr) cls.push('is-today');
+    if (isWeekend(d) && !state.showWeekends) cls.push('sch-mob-day-hidden');
+
+    const dayTaskCount = state.tasks.filter(t => t.date === ds && !isWhiteboardTask(t) && !t.completed).length;
+    const dotHtml = dayTaskCount > 0 ? '<span class="sch-mob-day-dot"></span>' : '';
+
+    html += `<button class="${cls.join(' ')}" data-date="${ds}" data-day-idx="${i}">
+      <span class="sch-mob-day-name">${d.toLocaleDateString('en-US', { weekday: 'short' })}</span>
+      <span class="sch-mob-day-num">${d.getDate()}</span>
+      ${dotHtml}
+    </button>`;
+  }
+  bar.innerHTML = html;
+  
+  // Bind day selector clicks
+  bar.querySelectorAll('.sch-mobile-day-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const ds = chip.dataset.date;
+      if (ds !== mobileDayDate) {
+        mobileDayDate = ds;
+        renderCalendar();
+      }
+    });
+  });
+
+  // Clean up bar when not in mobile layout
+  if (!isMobileLayout()) {
+    bar.style.display = 'none';
+  } else {
+    bar.style.display = '';
+  }
 }
 
 // ─── MONTH VIEW ────────────────────────────────────────────
@@ -1260,25 +1523,31 @@ function goToday() {
     renderCalendar();
   } else {
     state.currentWeekStart = getMonday(new Date());
+    if (isMobileLayout()) {
+      mobileDayDate = formatDate(new Date());
+    }
     renderCalendar();
   }
   saveState();
-  // Smooth scroll to today's column with flash indicator
-  requestAnimationFrame(() => {
-    const todayStr = formatDate(new Date());
-    const col = document.querySelector(`[data-date="${todayStr}"]`);
-    if (col) {
-      col.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      col.classList.add('today-flash');
-      setTimeout(() => col.classList.remove('today-flash'), 1200);
-    }
-  });
+  if (!isMobileLayout()) {
+    requestAnimationFrame(() => {
+      const todayStr = formatDate(new Date());
+      const col = document.querySelector(`[data-date="${todayStr}"]`);
+      if (col) {
+        col.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        col.classList.add('today-flash');
+        setTimeout(() => col.classList.remove('today-flash'), 1200);
+      }
+    });
+  }
 }
 function goPrev() {
   if (currentView === 'month') {
     currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
     state.currentMonthDate = new Date(currentMonthDate);
     renderCalendar();
+  } else if (isMobileLayout()) {
+    navigateMobileDay(-1);
   } else {
     state.currentWeekStart = addDays(state.currentWeekStart, -7);
     renderCalendar();
@@ -1290,6 +1559,8 @@ function goNext() {
     currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
     state.currentMonthDate = new Date(currentMonthDate);
     renderCalendar();
+  } else if (isMobileLayout()) {
+    navigateMobileDay(1);
   } else {
     state.currentWeekStart = addDays(state.currentWeekStart, 7);
     renderCalendar();

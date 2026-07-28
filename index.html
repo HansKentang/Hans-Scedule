@@ -27,6 +27,221 @@
   <style>
     /* All page CSS consolidated in style.css */
   </style>
+  <style>
+    /* ─── Mobile Dashboard (hidden on desktop, shown on mobile) ── */
+    .hub-mobile-dash { display: none; }
+    @media (max-width: 767px) {
+      .hub-mobile-dash {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 0 12px 12px;
+        animation: slideUp 300ms var(--curve);
+      }
+      .hub-mobile-dash .hmd-card {
+        background: var(--surface-container);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-lg);
+        padding: 12px 14px;
+      }
+      .hub-mobile-dash .hmd-card-header {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 0.68rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.04em;
+        color: var(--text-tertiary); margin-bottom: 8px;
+      }
+      .hub-mobile-dash .hmd-card-header svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.6; }
+      .hub-mobile-dash .hmd-kpis { display: flex; gap: 6px; }
+      .hub-mobile-dash .hmd-kpi {
+        flex: 1; text-align: center; padding: 6px 4px;
+        border-radius: var(--radius-md); background: var(--surface-container-high);
+      }
+      .hub-mobile-dash .hmd-kpi-val {
+        font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+      }
+      .hub-mobile-dash .hmd-kpi-lbl {
+        font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.04em;
+        color: var(--text-tertiary); margin-top: 1px;
+      }
+      .hub-mobile-dash .hmd-task-item {
+        display: flex; align-items: center; gap: 8px; padding: 6px 0;
+        border-bottom: 1px solid var(--border-subtle); min-height: 32px;
+      }
+      .hub-mobile-dash .hmd-task-item:last-child { border-bottom: none; }
+      .hub-mobile-dash .hmd-task-check {
+        width: 16px; height: 16px; border-radius: 50%;
+        border: 1.5px solid var(--border-color); flex-shrink: 0; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: all var(--t-fast);
+      }
+      .hub-mobile-dash .hmd-task-check.done { background: var(--accent); border-color: var(--accent); }
+      .hub-mobile-dash .hmd-task-check.done svg { width: 9px; height: 9px; color: var(--text-inverse); }
+      .hub-mobile-dash .hmd-task-title {
+        flex: 1; font-size: 0.78rem; color: var(--text-primary);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .hub-mobile-dash .hmd-task-title.done { text-decoration: line-through; opacity: 0.5; }
+      .hub-mobile-dash .hmd-task-tag {
+        font-size: 0.55rem; font-weight: 600; padding: 1px 5px;
+        border-radius: 3px; text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0;
+      }
+      .hub-mobile-dash .hmd-goal-row {
+        display: flex; align-items: center; gap: 8px; padding: 4px 0;
+      }
+      .hub-mobile-dash .hmd-goal-num {
+        width: 18px; height: 18px; border-radius: 50%;
+        background: var(--accent-soft); color: var(--accent);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.6rem; font-weight: 600; flex-shrink: 0;
+      }
+      .hub-mobile-dash .hmd-goal-text {
+        flex: 1; font-size: 0.75rem; color: var(--text-secondary);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      .hub-mobile-dash .hmd-streak {
+        display: flex; align-items: center; gap: 10px; padding: 4px 0;
+      }
+      .hub-mobile-dash .hmd-streak-fire { font-size: 1.4rem; line-height: 1; }
+      .hub-mobile-dash .hmd-streak-val {
+        font-size: 1.6rem; font-weight: 700; color: var(--text-primary);
+        font-variant-numeric: tabular-nums; line-height: 1;
+      }
+      .hub-mobile-dash .hmd-streak-lbl { font-size: 0.65rem; color: var(--text-tertiary); }
+      .hub-mobile-dash .hmd-todo-scroll {
+        display: flex; gap: 6px; overflow-x: auto;
+        -webkit-overflow-scrolling: touch; padding-bottom: 4px;
+      }
+      .hub-mobile-dash .hmd-todo-scroll::-webkit-scrollbar { height: 2px; }
+      .hub-mobile-dash .hmd-todo-chip {
+        flex-shrink: 0; display: flex; align-items: center; gap: 5px;
+        padding: 5px 10px; border-radius: var(--radius-full);
+        background: var(--surface-container-high); border: 1px solid var(--border-color);
+        font-size: 0.7rem; color: var(--text-secondary); white-space: nowrap; cursor: pointer;
+        transition: all var(--t-fast); max-width: 200px;
+      }
+      .hub-mobile-dash .hmd-todo-chip:active { transform: scale(0.96); }
+      .hub-mobile-dash .hmd-todo-chip.done { opacity: 0.5; text-decoration: line-through; }
+      .hub-mobile-dash .hmd-todo-chip .hmd-todo-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+      .hub-mobile-dash .hmd-time { display: flex; align-items: center; gap: 10px; }
+      .hub-mobile-dash .hmd-time-digits {
+        font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums;
+        font-family: var(--font-mono); color: var(--text-primary); line-height: 1;
+      }
+      .hub-mobile-dash .hmd-time-date { font-size: 0.6rem; color: var(--text-tertiary); line-height: 1.3; }
+      .hub-mobile-dash .hmd-links { display: flex; flex-wrap: wrap; gap: 6px; }
+      .hub-mobile-dash .hmd-link-btn {
+        display: flex; align-items: center; gap: 4px; padding: 4px 10px;
+        border-radius: var(--radius-full); background: var(--surface-container-high);
+        border: 1px solid var(--border-color); font-size: 0.68rem;
+        color: var(--text-secondary); text-decoration: none; transition: all var(--t-fast);
+      }
+      .hub-mobile-dash .hmd-link-btn:active { transform: scale(0.96); }
+      .hub-mobile-dash .hmd-quick-add { display: flex; gap: 6px; }
+      .hub-mobile-dash .hmd-quick-add input {
+        flex: 1; padding: 8px 10px; border: 1px solid var(--border-color);
+        border-radius: var(--radius-md); background: var(--surface-container-high);
+        color: var(--text-primary); font-size: 0.78rem; font-family: var(--font-family);
+        outline: none; min-width: 0;
+      }
+      .hub-mobile-dash .hmd-quick-add input:focus { border-color: var(--accent); }
+      .hub-mobile-dash .hmd-quick-add input::placeholder { color: var(--text-tertiary); }
+      .hub-mobile-dash .hmd-quick-add button {
+        padding: 8px 14px; border-radius: var(--radius-md);
+        background: var(--accent); color: var(--text-inverse);
+        border: none; font-size: 0.78rem; font-weight: 500; cursor: pointer; white-space: nowrap;
+      }
+      .hub-mobile-dash .hmd-quick-add button:active { transform: scale(0.96); }
+      .hub-mobile-dash .hmd-ai-brief {
+        display: flex; align-items: flex-start; gap: 8px;
+      }
+      .hub-mobile-dash .hmd-ai-avatar {
+        width: 28px; height: 28px; border-radius: 50%;
+        background: var(--accent-soft); color: var(--accent);
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      }
+      .hub-mobile-dash .hmd-ai-msg {
+        flex: 1; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;
+      }
+      .hub-mobile-dash .hmd-ai-msg strong { color: var(--text-primary); }
+      .hub-mobile-dash .hmd-empty {
+        text-align: center; padding: 20px 10px;
+        font-size: 0.78rem; color: var(--text-tertiary);
+      }
+
+      /* ── Sleep Card ── */
+      .hub-mobile-dash .hmd-sleep-top {
+        display: flex; align-items: center; gap: 10px;
+      }
+      .hub-mobile-dash .hmd-sleep-ring {
+        width: 48px; height: 48px; flex-shrink: 0;
+        position: relative;
+      }
+      .hub-mobile-dash .hmd-sleep-ring svg {
+        width: 48px; height: 48px;
+        transform: rotate(-90deg);
+      }
+      .hub-mobile-dash .hmd-sleep-ring svg circle {
+        fill: none; stroke-width: 3;
+      }
+      .hub-mobile-dash .hmd-sleep-ring svg circle.bg {
+        stroke: var(--border-color);
+      }
+      .hub-mobile-dash .hmd-sleep-ring svg circle.fill {
+        stroke: var(--accent);
+        stroke-dasharray: 125.6;
+        stroke-dashoffset: 125.6;
+        transition: stroke-dashoffset 600ms ease;
+      }
+      .hub-mobile-dash .hmd-sleep-val-overlay {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 700; color: var(--text-primary);
+      }
+      .hub-mobile-dash .hmd-sleep-last {
+        flex: 1; min-width: 0;
+      }
+      .hub-mobile-dash .hmd-sleep-last-dur {
+        font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+      }
+      .hub-mobile-dash .hmd-sleep-last-label {
+        font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.04em;
+        color: var(--text-tertiary);
+      }
+      .hub-mobile-dash .hmd-sleep-last-time {
+        font-size: 0.65rem; color: var(--text-secondary); margin-top: 1px;
+      }
+      .hub-mobile-dash .hmd-sleep-stars {
+        display: flex; gap: 1px; margin-top: 2px;
+      }
+      .hub-mobile-dash .hmd-sleep-stars .s-star {
+        font-size: 0.7rem; color: var(--border-color);
+      }
+      .hub-mobile-dash .hmd-sleep-stars .s-star.s-star-on {
+        color: #f59e0b;
+      }
+      .hub-mobile-dash .hmd-sleep-metrics {
+        display: flex; gap: 6px; margin-top: 8px;
+      }
+      .hub-mobile-dash .hmd-sleep-metric {
+        flex: 1; text-align: center;
+        padding: 4px 2px; border-radius: var(--radius-sm);
+        background: var(--surface-container-high);
+      }
+      .hub-mobile-dash .hmd-sleep-metric-val {
+        font-size: 0.85rem; font-weight: 700; color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+      }
+      .hub-mobile-dash .hmd-sleep-metric-lbl {
+        font-size: 0.5rem; text-transform: uppercase; letter-spacing: 0.04em;
+        color: var(--text-tertiary);
+      }
+      .hub-mobile-dash .hmd-sleep-metric-sub {
+        font-size: 0.5rem; color: var(--text-secondary);
+      }
+    }
+  </style>
 </head>
 <body>
   <!-- Ambient background -->
@@ -253,6 +468,11 @@
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
           </button>
+        </div>
+
+        <!-- ─── MOBILE DASHBOARD (replaces bento canvas on mobile) ── -->
+        <div class="hub-mobile-dash" id="hubMobileDash">
+          <!-- Populated by renderMobileDashboard() -->
         </div>
 
         <div class="hub-section-wrap" data-hub-section="bento">
@@ -508,6 +728,194 @@
     document.getElementById('hubDateLine').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
     // ─── UPDATE HUB ──────────────────────────────────────
+    function renderMobileDashboard() {
+      var dash = document.getElementById('hubMobileDash');
+      if (!dash) return;
+      var now = new Date();
+      var todayStr = formatDate(now);
+      var all = state.tasks.filter(function(t) { return !isWhiteboardTask(t); });
+      var todayTasks = all.filter(function(t) { return t.date === todayStr; });
+      var ws = getMonday(now);
+      var weekTasks = all.filter(function(t) { var d = new Date(t.date + 'T12:00:00'); return d >= ws && d < addDays(ws, 7); });
+      var doneToday = todayTasks.filter(function(t) { return t.done; }).length;
+      var totalToday = todayTasks.length;
+      var pct = totalToday > 0 ? Math.round(doneToday / totalToday * 100) : 0;
+      var goals = hubContent && hubContent.goals ? hubContent.goals : [];
+      var todos = hubContent && hubContent.todos ? hubContent.todos : [];
+      var links = hubContent && hubContent.links ? hubContent.links : [];
+      var hh = String(now.getHours()).padStart(2,'0');
+      var mm = String(now.getMinutes()).padStart(2,'0');
+
+      // Calculate streak from completions
+      var streak = 0;
+      try {
+        var comp = JSON.parse(localStorage.getItem('haven-activity-completions') || '[]');
+        var dates = {};
+        comp.forEach(function(c) {
+          if (c.completedAt) {
+            var d = c.completedAt.slice(0,10);
+            dates[d] = (dates[d] || 0) + 1;
+          }
+        });
+        var d = new Date();
+        while (true) {
+          var ds = d.toISOString().slice(0,10);
+          if (dates[ds] && dates[ds] > 0) { streak++; d.setDate(d.getDate() - 1); }
+          else break;
+        }
+      } catch(e) {}
+
+      var greeting = 'Good ' + (now.getHours() < 12 ? 'morning' : now.getHours() < 17 ? 'afternoon' : 'evening');
+
+      var html = '';
+
+      // ── Clock + Greeting ──
+      html += '<div class="hmd-card"><div class="hmd-time"><div class="hmd-time-digits">' + hh + ':' + mm + '</div><div class="hmd-time-date">' + now.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) + '<br>' + greeting + '</div></div></div>';
+
+      // ── KPIs ──
+      html += '<div class="hmd-card"><div class="hmd-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Overview</div><div class="hmd-kpis"><div class="hmd-kpi"><div class="hmd-kpi-val">' + doneToday + '/' + totalToday + '</div><div class="hmd-kpi-lbl">Today</div></div><div class="hmd-kpi"><div class="hmd-kpi-val">' + weekTasks.length + '</div><div class="hmd-kpi-lbl">Week</div></div><div class="hmd-kpi"><div class="hmd-kpi-val">' + pct + '%</div><div class="hmd-kpi-lbl">Done</div></div><div class="hmd-kpi"><div class="hmd-kpi-val">' + all.length + '</div><div class="hmd-kpi-lbl">Total</div></div></div></div>';
+
+      // ── Today's Tasks ──
+      if (todayTasks.length > 0) {
+        html += '<div class="hmd-card"><div class="hmd-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Today\'s Schedule</div>';
+        var maxShow = 5;
+        todayTasks.slice(0, maxShow).forEach(function(t) {
+          var tagLabels = typeof TAG_LABELS !== 'undefined' ? TAG_LABELS : {};
+          var tagColors = typeof TAG_COLORS !== 'undefined' ? TAG_COLORS : {};
+          var tag = t.tag || '';
+          var tagColor = tagColors[tag] || 'var(--text-tertiary)';
+          html += '<div class="hmd-task-item"><span class="hmd-task-check' + (t.done ? ' done' : '') + '" onclick="window._mdToggleTask(\'' + escapeHtml(t.id || '') + '\')">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="hmd-task-title' + (t.done ? ' done' : '') + '">' + escapeHtml(t.title || '') + '</span><span class="hmd-task-tag" style="background:' + tagColor + '20;color:' + tagColor + '">' + escapeHtml(tagLabels[tag] || tag) + '</span></div>';
+        });
+        if (todayTasks.length > maxShow) html += '<div style="font-size:0.65rem;color:var(--text-tertiary);padding-top:4px;text-align:center">+' + (todayTasks.length - maxShow) + ' more</div>';
+        html += '</div>';
+      }
+
+      // ── Goals ──
+      if (goals.length > 0) {
+        html += '<div class="hmd-card"><div class="hmd-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Goals</div>';
+        goals.slice(0, 4).forEach(function(g, i) {
+          html += '<div class="hmd-goal-row"><span class="hmd-goal-num">' + (i+1) + '</span><span class="hmd-goal-text">' + escapeHtml(g) + '</span></div>';
+        });
+        html += '</div>';
+      }
+
+      // ── Streak ──
+      html += '<div class="hmd-card"><div class="hmd-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Streak</div><div class="hmd-streak"><span class="hmd-streak-fire">' + (streak > 0 ? '&#x1F525;' : '&#x1F4A4;') + '</span><span class="hmd-streak-val">' + streak + '</span><span class="hmd-streak-lbl">day' + (streak !== 1 ? 's' : '') + '</span></div></div>';
+
+      // ── Sleep Tracker ──
+      var sleepLogs = (typeof loadSleepLogs === 'function') ? loadSleepLogs() : [];
+      var sleepTargets = (typeof loadSleepTargets === 'function') ? loadSleepTargets() : null;
+      var lastLog = sleepLogs.length > 0 ? sleepLogs.reduce(function(a, b) { return a.date > b.date ? a : b; }) : null;
+      var weekLogs = [];
+      if (sleepLogs.length > 0 && typeof getWeekLogs === 'function') {
+        try { weekLogs = getWeekLogs(now); } catch(e) {}
+      }
+      html += '<div class="hmd-card"><div class="hmd-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>Sleep</div>';
+      if (lastLog) {
+        var durStr = (typeof formatSleepMinutes === 'function') ? formatSleepMinutes(lastLog.duration) : (lastLog.duration || '') + 'm';
+        var timeStr = (typeof formatTimeAMPM === 'function') ? formatTimeAMPM(lastLog.bedtime) + ' \u2013 ' + formatTimeAMPM(lastLog.wakeTime) : (lastLog.bedtime || '') + '-' + (lastLog.wakeTime || '');
+        // Compute sleep score for ring
+        var sScore = null;
+        if (typeof computeSleepScore === 'function') {
+          try { sScore = computeSleepScore(sleepLogs, sleepTargets); } catch(e) {}
+        }
+        var ringPct = sScore !== null && sScore !== undefined ? Math.min(100, Math.max(0, sScore)) : 0;
+        var ringOffset = 125.6 - (ringPct / 100) * 125.6;
+        html += '<div class="hmd-sleep-top">';
+        html += '<div class="hmd-sleep-ring"><svg viewBox="0 0 48 48"><circle class="bg" cx="24" cy="24" r="20"></circle><circle class="fill" cx="24" cy="24" r="20" stroke-dashoffset="' + ringOffset + '"></circle></svg><div class="hmd-sleep-val-overlay">' + (sScore !== null ? Math.round(sScore) : '\u2014') + '</div></div>';
+        html += '<div class="hmd-sleep-last"><div class="hmd-sleep-last-dur">' + durStr + '</div><div class="hmd-sleep-last-label">last night</div><div class="hmd-sleep-last-time">' + timeStr + '</div><div class="hmd-sleep-stars">' + Array(5).fill(0).map(function(_, i) { return '<span class="s-star' + (i < lastLog.quality ? ' s-star-on' : '') + '">\u2605</span>'; }).join('') + '</div></div>';
+        html += '</div>';
+      } else {
+        html += '<div class="hmd-empty">No sleep data yet. <button onclick="openSleepLogModal()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:inherit;text-decoration:underline;padding:0">Log your first night</button></div>';
+      }
+      // Metrics row
+      html += '<div class="hmd-sleep-metrics">';
+      // 7-day avg duration
+      if (weekLogs.length > 0) {
+        var avg = Math.round(weekLogs.reduce(function(s, l) { return s + l.duration; }, 0) / weekLogs.length);
+        var avgStr = (typeof formatSleepMinutes === 'function') ? formatSleepMinutes(avg) : avg + 'm';
+        var diff = avg - (sleepTargets ? sleepTargets.targetDuration : 480);
+        var onTrack = Math.abs(diff) < 30 ? 'On track' : (diff > 0 ? '+' + (typeof formatSleepMinutes === 'function' ? formatSleepMinutes(diff) : diff + 'm') : (typeof formatSleepMinutes === 'function' ? formatSleepMinutes(Math.abs(diff)) : Math.abs(diff) + 'm') + ' under');
+        html += '<div class="hmd-sleep-metric"><div class="hmd-sleep-metric-val">' + avgStr + '</div><div class="hmd-sleep-metric-lbl">7-Day Avg</div><div class="hmd-sleep-metric-sub">' + onTrack + '</div></div>';
+      } else {
+        html += '<div class="hmd-sleep-metric"><div class="hmd-sleep-metric-val">\u2014</div><div class="hmd-sleep-metric-lbl">7-Day Avg</div><div class="hmd-sleep-metric-sub">Log sleep</div></div>';
+      }
+      // Avg quality
+      if (weekLogs.length > 0) {
+        var avgQ = Math.round(weekLogs.reduce(function(s, l) { return s + l.quality; }, 0) / weekLogs.length * 10) / 10;
+        var qLabel = (typeof SLEEP_QUALITY_LABELS !== 'undefined') ? (SLEEP_QUALITY_LABELS[Math.round(avgQ)] || '\u2014') : '\u2014';
+        html += '<div class="hmd-sleep-metric"><div class="hmd-sleep-metric-val">' + avgQ.toFixed(1) + '</div><div class="hmd-sleep-metric-lbl">Avg Quality</div><div class="hmd-sleep-metric-sub">' + qLabel + '</div></div>';
+      } else {
+        html += '<div class="hmd-sleep-metric"><div class="hmd-sleep-metric-val">\u2014</div><div class="hmd-sleep-metric-lbl">Avg Quality</div><div class="hmd-sleep-metric-sub">\u2014</div></div>';
+      }
+      // Consistency
+      if (sleepLogs.length >= 3 && typeof getSleepConsistencyScore === 'function') {
+        try {
+          var consistency = getSleepConsistencyScore(sleepLogs);
+          if (consistency) {
+            html += '<div class="hmd-sleep-metric"><div class="hmd-sleep-metric-val">' + consistency.score + '</div><div class="hmd-sleep-metric-lbl">Consistency</div><div class="hmd-sleep-metric-sub">' + (consistency.score >= 80 ? 'Great!' : consistency.score >= 60 ? 'Good' : 'Needs work') + '</div></div>';
+          }
+        } catch(e) {}
+      } else {
+        html += '<div class="hmd-sleep-metric"><div class="hmd-sleep-metric-val">\u2014</div><div class="hmd-sleep-metric-lbl">Consistency</div><div class="hmd-sleep-metric-sub">' + (sleepLogs.length < 3 ? 'Log ' + (3 - sleepLogs.length) + ' more' : '\u2014') + '</div></div>';
+      }
+      html += '</div></div>';
+
+      // ── Todos (horizontal scroll) ──
+      if (todos.length > 0) {
+        html += '<div class="hmd-card"><div class="hmd-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>To Do\'s</div><div class="hmd-todo-scroll">';
+        todos.forEach(function(t, i) {
+          html += '<div class="hmd-todo-chip' + (t.done ? ' done' : '') + '" onclick="window._mdToggleTodo(' + i + ')"><span class="hmd-todo-dot" style="background:' + (t.done ? 'var(--accent)' : 'var(--border-color)') + '"></span>' + escapeHtml(t.text) + '</div>';
+        });
+        html += '</div></div>';
+      }
+
+      // ── Quick Links ──
+      if (links.length > 0) {
+        html += '<div class="hmd-card"><div class="hmd-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>Links</div><div class="hmd-links">';
+        links.forEach(function(l) {
+          html += '<a class="hmd-link-btn" href="' + escapeHtml(l.url) + '" target="_blank" rel="noopener"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' + escapeHtml(l.label) + '</a>';
+        });
+        html += '</div></div>';
+      }
+
+      // ── AI Brief ──
+      var taskCount = todayTasks.length;
+      var doneCount = doneToday;
+      var brief = taskCount > 0 ? 'You have <strong>' + taskCount + '</strong> task' + (taskCount !== 1 ? 's' : '') + ' today' + (doneCount > 0 ? ', <strong>' + doneCount + '</strong> completed' : '') + '.' : 'No tasks scheduled for today. A clean slate!';
+      html += '<div class="hmd-card"><div class="hmd-ai-brief"><div class="hmd-ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div><div class="hmd-ai-msg">' + brief + '</div></div></div>';
+
+      // ── Quick Add ──
+      html += '<div class="hmd-card"><div class="hmd-card-header"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Quick Add</div><div class="hmd-quick-add"><input type="text" id="hmdQuickInput" placeholder="Add a task..."><button onclick="window._mdQuickAdd()">Add</button></div></div>';
+
+      dash.innerHTML = html;
+    }
+
+    window._mdToggleTask = function(id) {
+      var task = state.tasks.find(function(t) { return t.id === id; });
+      if (task) { task.done = !task.done; saveState(); renderMobileDashboard(); if (typeof updateHub === 'function') updateHub(); }
+    };
+
+    window._mdToggleTodo = function(i) {
+      if (!hubContent || !hubContent.todos || !hubContent.todos[i]) return;
+      hubContent.todos[i].done = !hubContent.todos[i].done;
+      saveHubContent();
+      renderMobileDashboard();
+      if (typeof renderHubBento === 'function') renderHubBento();
+    };
+
+    window._mdQuickAdd = function() {
+      var input = document.getElementById('hmdQuickInput');
+      if (!input || !input.value.trim()) return;
+      if (typeof addTask === 'function') {
+        var tag = _hubQuickTags ? _hubQuickTags[_hubQuickTagIdx] : 'deep-work';
+        _hubQuickTagIdx = (_hubQuickTagIdx + 1) % (_hubQuickTags ? _hubQuickTags.length : 1);
+        addTask({ title: input.value.trim(), tag: tag, date: formatDate(new Date()) });
+        input.value = '';
+        if (typeof updateHub === 'function') updateHub();
+      }
+    };
+
     function updateHub() {
       const all = state.tasks.filter(t => !isWhiteboardTask(t));
       const now = new Date();
@@ -523,6 +931,7 @@
       if (totalTasksEl) totalTasksEl.textContent = all.length + ' total';
 
       if (typeof renderSleepHub === 'function') renderSleepHub();
+      renderMobileDashboard();
     }
 
 
@@ -592,6 +1001,8 @@
       initHubLayout();
       initHubEditMode();
       renderHubBento();
+      renderMobileDashboard();
+      setInterval(renderMobileDashboard, 60000); // Update clock every minute
 
       // Save hub content when leaving the page
       window.addEventListener('beforeunload', function() {

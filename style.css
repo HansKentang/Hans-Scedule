@@ -7737,6 +7737,9 @@ html.light .hub-add-popup {
 
 /* ─── Hidden Section ───────────────────────────── */
 .hub-section-wrap.hidden-section { display:none; }
+
+/* ─── Mobile Dashboard (hidden on desktop) ── */
+.hub-mobile-dash { display: none; }
 .hub-section-wrap.hidden-section .hub-section-label { text-decoration:line-through; opacity:0.4; }
 
 /* ─── Bento Bubbles ──────────────────────────── */
@@ -8845,11 +8848,9 @@ html.light .hub-add-popup {
   .hub-main > section:first-child .gsi-avatar-wrap { width: 30px !important; height: 30px !important; }
   .hub-main > section:first-child .gsi-avatar { width: 30px !important; height: 30px !important; }
 
-  /* Bento grid */
-  .bento-grid { padding: 0 8px; }
-  .bento-bubble { width: calc(50% - 6px) !important; min-height: 120px !important; }
-  .bento-bubble-dock { padding:4px 6px; gap:4px; }
-  .bds-input { width:60px; }
+  /* ─── Hide bento canvas + access hub on mobile ── */
+  .hub-section-wrap[data-hub-section="bento"],
+  .access-hub { display: none !important; }
   .bdf-pill { font-size:0.55rem; padding:1px 6px; }
   .bubble-dock-item { width:36px; height:36px; }
   .bubble-dock-item .bdi-icon { width:16px; height:16px; }

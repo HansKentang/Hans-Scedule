@@ -506,6 +506,145 @@
       /* ─── BOTTOM NAV SAFE AREA ── */
       .hub-main { padding-bottom: 56px; }
     }
+    /* ─── MOBILE DAY VIEW ────────────────────────────────── */
+    .sch-mobile-day-bar {
+      display: none;
+      gap: 3px;
+      padding: 6px var(--space-2);
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      flex-shrink: 0;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .sch-mobile-day-bar::-webkit-scrollbar { display: none; }
+    .sch-mobile-day-chip {
+      flex: 1 0 auto;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 6px 6px 5px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-tertiary);
+      font-family: var(--font-family);
+      cursor: pointer;
+      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .sch-mobile-day-chip:active { transform: scale(0.92); }
+    .sch-mobile-day-chip:hover { background: var(--accent-soft); }
+    .sch-mobile-day-chip.active {
+      background: var(--accent);
+      color: var(--text-inverse);
+      border-color: var(--accent);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 25%, transparent);
+    }
+    .sch-mobile-day-chip.is-today:not(.active) {
+      color: var(--accent);
+    }
+    .sch-mobile-day-chip.is-today:not(.active) .sch-mob-day-num {
+      background: var(--accent);
+      color: var(--text-inverse);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sch-mob-day-name {
+      font-size: 0.55rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+    }
+    .sch-mob-day-num {
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .sch-mob-day-dot {
+      position: absolute;
+      bottom: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .sch-mobile-day-chip.active .sch-mob-day-dot {
+      background: var(--text-inverse);
+    }
+    .sch-mob-day-hidden { display: none !important; }
+
+    /* Mobile grid: single day column */
+    @media (max-width: 640px) {
+      .sch-mobile-day-bar { display: flex; }
+      #calendarGrid {
+        min-width: 0;
+        grid-template-columns: var(--time-axis-width) 1fr;
+      }
+      #calendarContainer { overflow-x: hidden; }
+      .day-column { min-width: 0; cursor: pointer; }
+      .day-header { min-height: 40px; }
+      .day-header.time-axis-header { display: none; }
+    }
+
+    /* ─── MOBILE ADD-TASK FAB ──────────────────────────────── */
+    .mobile-add-fab {
+      position: fixed;
+      z-index: 999;
+      bottom: calc(env(safe-area-inset-bottom, 8px) + 80px);
+      right: var(--space-4);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: var(--text-inverse);
+      box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 35%, transparent), 0 2px 8px rgba(0,0,0,0.15);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    .mobile-add-fab:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 40%, transparent);
+    }
+    .mobile-add-fab:active {
+      transform: scale(0.92);
+    }
+    .mobile-add-fab.hidden {
+      display: none;
+    }
+    @media (min-width: 641px) {
+      .mobile-add-fab { display: none !important; }
+    }
+    /* FAB shows above access hub in week view, but in month/agenda there's no hub */
+    @media (max-width: 480px) {
+      .mobile-add-fab {
+        width: 48px;
+        height: 48px;
+        bottom: calc(env(safe-area-inset-bottom, 8px) + 70px);
+        right: var(--space-3);
+      }
+      .mobile-add-fab svg { width: 18px; height: 18px; }
+    }
+
     /* ─── All page CSS consolidated in style.css ─── */
   </style>
 </head>
