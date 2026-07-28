@@ -354,17 +354,32 @@ function renderStats() {
   const overdue = goals.filter(g => g.targetDate && new Date(g.targetDate + 'T23:59:59') < new Date() && calcProgress(g) < 100).length;
   const avgProgress = total > 0 ? Math.round(goals.reduce((s, g) => s + calcProgress(g), 0) / total) : 0;
 
+  // Calculate streak: count resolutions with at least 1 check in recent weeks
+  const resolutions = getResolutions();
+  const weekKeys = getWeekKeys();
+  const recentKeys = weekKeys.slice(-4); // last 4 weeks
+  const activeStreaks = resolutions.filter(r => recentKeys.some(w => r.weekChecks[w])).length;
+  const resolutionPct = resolutions.length > 0
+    ? Math.round((resolutions.reduce((s, r) => s + recentKeys.filter(w => r.weekChecks[w]).length, 0) / (resolutions.length * recentKeys.length)) * 100)
+    : 0;
+
   const stats = [
-    { value: total, label: 'Total Goals', color: 'var(--primary)' },
-    { value: active, label: 'Active', color: '#6366f1' },
-    { value: completed, label: 'Completed', color: '#10b981' },
-    { value: overdue > 0 ? overdue : avgProgress + '%', label: overdue > 0 ? 'Overdue' : 'Avg Progress', color: overdue > 0 ? '#ef4444' : 'var(--primary)' },
+    { value: total, label: 'Total Goals', color: 'var(--primary)', pct: total > 0 ? 100 : 0 },
+    { value: active, label: 'Active', color: '#6366f1', pct: total > 0 ? Math.round((active / total) * 100) : 0 },
+    { value: completed, label: 'Completed', color: '#10b981', pct: total > 0 ? Math.round((completed / total) * 100) : 0 },
+    { value: overdue > 0 ? overdue : avgProgress + '%', label: overdue > 0 ? 'Overdue' : 'Avg Progress', color: overdue > 0 ? '#ef4444' : 'var(--primary)', pct: overdue > 0 ? Math.round((overdue / total) * 100) : avgProgress },
   ];
+
+  // Add resolution streak stat if there are resolutions
+  if (resolutions.length > 0) {
+    stats.push({ value: activeStreaks, label: 'Habit Streaks', color: '#f59e0b', pct: resolutionPct });
+  }
 
   container.innerHTML = stats.map(s => `
     <div class="gl-stat" style="--stat-color:${s.color}">
       <span class="gl-stat-value">${escapeHtml(s.value.toString())}</span>
       <span class="gl-stat-label">${escapeHtml(s.label)}</span>
+      <div class="gl-stat-bar"><div class="gl-stat-bar-fill" style="width:${s.pct}%;background:${s.color}"></div></div>
     </div>
   `).join('');
 }

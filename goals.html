@@ -60,19 +60,11 @@
       transition: all 250ms var(--curve); position: relative; overflow: hidden;
     }
     .gl-stat:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
-    .gl-stat::before {
-      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      background: var(--stat-color, var(--primary)); opacity: 0.5;
-    }
-    .gl-stat-value {
-      font-size: 1.2rem; font-weight: 700; color: var(--text-primary);
-      font-variant-numeric: tabular-nums; line-height: 1;
-    }
-    .gl-stat-label { font-size: 0.62rem; color: var(--text-tertiary); font-weight: 500; }
-
-    /* ─── GOALS BENTO ──────────────────────────────────── */
-    .gl-bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--space-4); margin-bottom: var(--space-5); }
-    .gl-card {
+    .gl-stat-value { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .gl-stat-label { font-size: 0.62rem; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+    .gl-stat-bar { height: 3px; background: var(--bg-secondary); border-radius: 2px; margin-top: var(--space-2); overflow: hidden; }
+    .gl-stat-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    .gl-stat {
       background: var(--bg-card);
       border-radius: var(--radius-xl); padding: var(--space-5) var(--space-5) var(--space-4);
       position: relative; overflow: hidden;
@@ -426,6 +418,23 @@
     .gl-edit-item-btn:hover { color: var(--text-primary); background: var(--accent-soft); }
     .gl-edit-item-btn.del:hover { color: #ef4444; background: color-mix(in srgb, #ef4444 12%, transparent); }
 
+    /* ─── SECTION HEADERS ────────────────────────────────── */
+    .gl-section-header {
+      display: flex; align-items: center; gap: var(--space-3);
+      margin-bottom: var(--space-4); padding-left: var(--space-3);
+      border-left: 3px solid var(--accent);
+    }
+    .gl-section-header h2 {
+      font-family: var(--font-serif); font-size: 1.1rem; font-weight: 500;
+      color: var(--text-primary); margin: 0;
+    }
+    .gl-section-header .gl-badge {
+      font-size: 0.55rem; font-weight: 700; padding: 2px 10px;
+      border-radius: var(--radius-full);
+      background: color-mix(in srgb, var(--primary) 14%, transparent);
+      color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+
     /* ─── RESPONSIVE ────────────────────────────────────── */
     @media (max-width: 900px) {
       .gl-stats { grid-template-columns: repeat(2, 1fr); }
@@ -437,11 +446,15 @@
       .gl-card .gl-edit-overlay { opacity: 1; }
       .gl-task-del { opacity: 0.5; }
       .gl-add-goal-btn { grid-column: span 12; }
+      .gl-res-grid { gap: 3px; }
+      .gl-res-dot { width: 14px; height: 14px; }
     }
     @media (max-width: 640px) {
       .hub-content { padding-bottom: 64px; }
       .gl-hero { height: 100px; }
       .gl-hero-title { font-size: 1.1rem; }
+      .gl-hero-inner { padding: 0 var(--space-3); }
+      .gl-hero-ring-wrap .gl-hero-ring-label strong { font-size: 0.65rem; }
       .gl-card { padding: var(--space-4); }
       .gl-card-title { font-size: 0.95rem; }
       .gl-card-desc { font-size: 0.68rem; }
@@ -450,12 +463,19 @@
       .gl-stats { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
       .gl-stat { padding: var(--space-2); }
       .gl-stat-value { font-size: 1rem; }
+      .gl-stat-label { font-size: 0.6rem; }
+      .gl-res-row2 { flex-direction: column; align-items: stretch; gap: var(--space-2); }
+      .gl-res-grid { justify-content: flex-start; }
+      .gl-res-card { padding: var(--space-3) var(--space-3); }
+      .gl-vision { border-radius: var(--radius-lg); }
     }
     @media (max-width: 480px) {
       .gl-hero { height: 90px; }
       .gl-hero-title { font-size: 1rem; }
       .gl-hero-meta { font-size: 0.62rem; }
       .gl-stat-value { font-size: 0.9rem; }
+      .gl-stat { padding: var(--space-2) var(--space-3); }
+      .gl-res-dot { width: 18px; height: 18px; }
     }
 
     /* ─── CUSTOM SCROLLBAR ──────────────────────────────── */

@@ -25,7 +25,6 @@
     .fin-kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
     .fin-kpi { padding: var(--space-5); border-radius: var(--radius-xl); border: 1px solid var(--border-color); background: var(--bg-card); position: relative; overflow: hidden; transition: all 250ms var(--curve); cursor: default; }
     .fin-kpi:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: var(--card-hover-lift); }
-    .fin-kpi::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 1; }
     .fin-kpi::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: var(--card-inner-glow); pointer-events: none; }
     .fin-kpi.income::before { background: var(--fin-income); }
     .fin-kpi.income .fin-kpi-value { color: var(--fin-income); }
@@ -58,9 +57,7 @@
     .fin-table-head { display:grid; grid-template-columns: 0.9fr 1fr 0.9fr 1.1fr 0.7fr 0.7fr; gap: var(--space-3); padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
     .fin-table { max-height: 420px; overflow-y: auto; }
     .fin-row { display:grid; grid-template-columns: 0.9fr 1fr 0.9fr 1.1fr 0.7fr 0.7fr; gap: var(--space-3); padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); align-items: center; font-size: 0.85rem; transition: background var(--t-fast); position: relative; cursor: pointer; }
-    .fin-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: transparent; transition: background var(--t-fast); }
     .fin-row:hover { background: var(--accent-soft); }
-    .fin-row:hover::before { background: var(--primary); }
     .fin-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
     .fin-amount.income { color: var(--fin-income); }
     .fin-amount.expense { color: var(--fin-expense); }
@@ -72,7 +69,6 @@
     .fin-row-del { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); padding: 0; }
     .fin-row-del:hover { background: color-mix(in srgb, #e04040 12%, transparent); color: #e04040; }
     .fin-row.editing { background: var(--accent-soft); }
-    .fin-row.editing::before { background: var(--primary); }
     .fin-row-edit.editing { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
 
     .fin-form-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: var(--space-5); position: sticky; top: 12px; transition: all 250ms var(--curve); }
