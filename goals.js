@@ -354,32 +354,25 @@ function renderStats() {
   const overdue = goals.filter(g => g.targetDate && new Date(g.targetDate + 'T23:59:59') < new Date() && calcProgress(g) < 100).length;
   const avgProgress = total > 0 ? Math.round(goals.reduce((s, g) => s + calcProgress(g), 0) / total) : 0;
 
-  // Calculate streak: count resolutions with at least 1 check in recent weeks
   const resolutions = getResolutions();
   const weekKeys = getWeekKeys();
-  const recentKeys = weekKeys.slice(-4); // last 4 weeks
+  const recentKeys = weekKeys.slice(-4);
   const activeStreaks = resolutions.filter(r => recentKeys.some(w => r.weekChecks[w])).length;
-  const resolutionPct = resolutions.length > 0
-    ? Math.round((resolutions.reduce((s, r) => s + recentKeys.filter(w => r.weekChecks[w]).length, 0) / (resolutions.length * recentKeys.length)) * 100)
-    : 0;
 
-  const stats = [
-    { value: total, label: 'Total Goals', color: 'var(--primary)', pct: total > 0 ? 100 : 0 },
-    { value: active, label: 'Active', color: '#6366f1', pct: total > 0 ? Math.round((active / total) * 100) : 0 },
-    { value: completed, label: 'Completed', color: '#10b981', pct: total > 0 ? Math.round((completed / total) * 100) : 0 },
-    { value: overdue > 0 ? overdue : avgProgress + '%', label: overdue > 0 ? 'Overdue' : 'Avg Progress', color: overdue > 0 ? '#ef4444' : 'var(--primary)', pct: overdue > 0 ? Math.round((overdue / total) * 100) : avgProgress },
+  const metrics = [
+    { value: total, label: 'Goals', color: 'var(--primary)' },
+    { value: active, label: 'Active', color: '#6366f1' },
+    { value: completed, label: 'Done', color: '#10b981' },
+    { value: overdue > 0 ? overdue + ' overdue' : avgProgress + '% avg', label: overdue > 0 ? 'Overdue' : 'Progress', color: overdue > 0 ? '#ef4444' : 'var(--primary)' },
   ];
-
-  // Add resolution streak stat if there are resolutions
   if (resolutions.length > 0) {
-    stats.push({ value: activeStreaks, label: 'Habit Streaks', color: '#f59e0b', pct: resolutionPct });
+    metrics.push({ value: activeStreaks, label: 'Streaks', color: '#f59e0b' });
   }
 
-  container.innerHTML = stats.map(s => `
-    <div class="gl-stat" style="--stat-color:${s.color}">
-      <span class="gl-stat-value">${escapeHtml(s.value.toString())}</span>
-      <span class="gl-stat-label">${escapeHtml(s.label)}</span>
-      <div class="gl-stat-bar"><div class="gl-stat-bar-fill" style="width:${s.pct}%;background:${s.color}"></div></div>
+  container.innerHTML = metrics.map(m => `
+    <div class="gl-metric" style="--stat-color:${m.color}">
+      <div class="gl-metric-value" style="color:${m.color}"><span class="gl-metric-dot" style="background:${m.color}"></span>${escapeHtml(m.value.toString())}</div>
+      <div class="gl-metric-label">${escapeHtml(m.label)}</div>
     </div>
   `).join('');
 }
@@ -392,11 +385,10 @@ function renderBento() {
   const isEdit = state.editMode;
 
   if (goals.length === 0) {
-    container.innerHTML = `<div class="gl-empty" style="grid-column:span 12"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><p>No goals yet</p><div class="sub">Add your first goal to start tracking</div></div>`;
+    container.innerHTML = `<div class="gl-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><p>No goals yet</p><div class="sub">Add your first goal to start tracking</div></div>`;
     return;
   }
 
-  // Sort by target date (upcoming first), then by progress ascending
   const sorted = [...goals].sort((a, b) => {
     if (a.targetDate && b.targetDate) return a.targetDate.localeCompare(b.targetDate);
     if (a.targetDate) return -1;
@@ -408,7 +400,6 @@ function renderBento() {
   for (let i = 0; i < sorted.length; i++) {
     const g = sorted[i];
     const progress = calcProgress(g);
-    const statusInfo = statusClass(g.status);
 
     const dateLabel = g.targetDate
       ? new Date(g.targetDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -416,67 +407,47 @@ function renderBento() {
     const isOverdue = g.targetDate && new Date(g.targetDate + 'T23:59:59') < new Date() && progress < 100;
     const journalCount = g.journal.length;
 
-    const tasksHtml = g.tasks.map((t, ti) => `
-      <div class="gl-task-wrap" style="position:relative">
-        <div class="gl-task ${t.done ? 'done' : ''}" data-goal-id="${g.id}" data-task-idx="${ti}">
-          <div class="gl-task-check ${t.done ? 'checked' : ''}" data-action="toggle-task" data-goal-id="${g.id}" data-task-idx="${ti}"></div>
-          <span class="gl-task-text">${escapeHtml(t.text)}</span>
-          ${isEdit ? `<button class="gl-task-del" data-action="del-task" data-goal-id="${g.id}" data-task-idx="${ti}">\u00d7</button>` : ''}
-        </div>
-      </div>
+    const tasksHtml = g.tasks.slice(0, 4).map((t, ti) => `
+      <span class="gl-card-task-chip ${t.done ? 'done' : ''}" data-action="toggle-task" data-goal-id="${g.id}" data-task-idx="${ti}">${escapeHtml(t.text)}</span>
     `).join('');
-
-    const editOverlay = isEdit ? `
-      <div class="gl-edit-overlay">
-        <button class="gl-edit-item-btn" data-action="edit-goal" data-goal-id="${g.id}" title="Edit goal">\u270e</button>
-        <button class="gl-edit-item-btn del" data-action="del-goal" data-goal-id="${g.id}" title="Delete goal">\u00d7</button>
-      </div>
-    ` : '';
-
-    const size = sorted.length <= 3 ? 'gl-card-md' : 'gl-card-sm';
+    const hasMore = g.tasks.length > 4;
+    if (hasMore) tasksHtml += `<span class="gl-card-task-chip" style="opacity:0.5">+${g.tasks.length - 4} more</span>`;
 
     html += `
-      <div class="gl-card ${size}" style="--gl-accent:${g.color}" data-goal-id="${g.id}">
-        ${editOverlay}
-        <!-- Accent top bar -->
-        <div class="gl-card-accent" style="background:${g.color}"></div>
-        <div class="gl-card-inner">
-          <div class="gl-card-header">
-            <div class="gl-card-icon" style="background:color-mix(in srgb, ${g.color} 12%, transparent);color:${g.color}">
-              <span class="material-symbols-outlined">${g.icon}</span>
+      <div class="gl-card" style="--gl-accent:${g.color}" data-goal-id="${g.id}">
+        ${isEdit ? `
+        <div class="gl-edit-overlay">
+          <button class="gl-edit-item-btn" data-action="edit-goal" data-goal-id="${g.id}" title="Edit">\u270e</button>
+          <button class="gl-edit-item-btn del" data-action="del-goal" data-goal-id="${g.id}" title="Delete">\u00d7</button>
+        </div>` : ''}
+        <div class="gl-card-strip"></div>
+        <div class="gl-card-body">
+          <div class="gl-card-top">
+            <div class="gl-card-title">${escapeHtml(g.title)}</div>
+            <div class="gl-card-badge-row">
+              <span class="gl-status-badge ${statusClass(g.status)}">${statusLabel(g.status)}</span>
             </div>
-            <div class="gl-card-title-group">
-              <div class="gl-card-title-row">
-                <span class="gl-card-title">${escapeHtml(g.title)}</span>
-                <span class="gl-status-badge ${statusInfo}">${statusLabel(g.status)}</span>
-              </div>
-              ${g.description ? `<div class="gl-card-desc">${escapeHtml(g.description)}</div>` : ''}
-            </div>
-          </div>
-          <div class="gl-tasks">
-            ${tasksHtml}
-            <button class="gl-add-task-btn" data-action="add-task" data-goal-id="${g.id}">+ Add task</button>
-            <input type="text" class="gl-add-task-input" data-goal-id="${g.id}" placeholder="Task description..." data-task-input>
           </div>
           <div class="gl-card-progress">
-            <div class="gl-card-progress-track">
-              <div class="gl-card-progress-fill" style="width:${progress}%"></div>
-            </div>
+            <div class="gl-card-progress-track"><div class="gl-card-progress-fill" style="width:${progress}%"></div></div>
             <span class="gl-card-progress-pct">${progress}%</span>
           </div>
+          ${g.description ? `<div class="gl-card-desc">${escapeHtml(g.description)}</div>` : ''}
+          <div class="gl-card-tasks">${tasksHtml}</div>
           <div class="gl-card-footer">
-            <div style="display:flex;gap:var(--space-3);align-items:center">
-              ${dateLabel ? `<span class="gl-ring-date ${isOverdue ? 'overdue' : ''}">${isOverdue ? '\u26a0 ' : ''}${dateLabel}</span>` : ''}
-              ${journalCount > 0 ? `<span class="gl-ring-journal">${journalCount} journal${journalCount > 1 ? 's' : ''}</span>` : ''}
-            </div>
-            <span style="font-size:0.58rem;color:var(--text-tertiary)">${progress < 100 ? g.tasks.filter(t => t.done).length + '/' + g.tasks.length + ' tasks' : 'Done \u2713'}</span>
+            <span>${dateLabel ? `<span class="${isOverdue ? 'overdue' : ''}">${isOverdue ? '\u26a0 ' : ''}${dateLabel}</span>` : 'No deadline'} ${journalCount > 0 ? '\u00b7 ' + journalCount + ' journal' : ''}</span>
+            <span>${progress < 100 ? g.tasks.filter(t => t.done).length + '/' + g.tasks.length + ' tasks' : '\u2713 Done'}</span>
           </div>
+          <button class="gl-card-add" data-action="add-task" data-goal-id="${g.id}">+ Add task</button>
+          <input type="text" class="gl-card-add-input" data-goal-id="${g.id}" placeholder="Task..." data-task-input>
         </div>
       </div>
     `;
   }
 
-  // ─── Event Delegation ──────────────────────────────
+  container.innerHTML = html;
+
+  // Events
   container.querySelectorAll('[data-action="toggle-task"]').forEach(el => {
     el.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -485,18 +456,21 @@ function renderBento() {
     });
   });
 
-  container.querySelectorAll('[data-action="del-task"]').forEach(el => {
+  container.querySelectorAll('[data-action="edit-goal"]').forEach(el => {
+    el.addEventListener('click', function(e) { e.stopPropagation(); showGoalEditPopup(this.dataset.goalId, this); });
+  });
+
+  container.querySelectorAll('[data-action="del-goal"]').forEach(el => {
     el.addEventListener('click', function(e) {
       e.stopPropagation();
-      deleteGoalTask(this.dataset.goalId, parseInt(this.dataset.taskIdx));
-      renderAll();
+      if (confirm('Delete this goal?')) { deleteGoal(this.dataset.goalId); renderAll(); }
     });
   });
 
   container.querySelectorAll('[data-action="add-task"]').forEach(el => {
     el.addEventListener('click', function(e) {
       e.stopPropagation();
-      const input = this.parentElement.querySelector('[data-task-input]');
+      const input = this.nextElementSibling;
       if (input) { input.classList.add('show'); input.focus(); }
     });
   });
@@ -506,46 +480,12 @@ function renderBento() {
       if (e.key === 'Enter') {
         e.preventDefault();
         const text = this.value.trim();
-        if (text) {
-          addGoalTask(this.dataset.goalId, text);
-          this.value = ''; this.classList.remove('show');
-          renderAll();
-        }
+        if (text) { addGoalTask(this.dataset.goalId, text); this.value = ''; this.classList.remove('show'); renderAll(); }
       }
       if (e.key === 'Escape') { this.value = ''; this.classList.remove('show'); }
     });
     el.addEventListener('blur', function() { setTimeout(() => { this.classList.remove('show'); }, 200); });
   });
-
-  container.querySelectorAll('[data-action="edit-goal"]').forEach(el => {
-    el.addEventListener('click', function(e) {
-      e.stopPropagation();
-      showGoalEditPopup(this.dataset.goalId, this);
-    });
-  });
-
-  container.querySelectorAll('[data-action="del-goal"]').forEach(el => {
-    el.addEventListener('click', function(e) {
-      e.stopPropagation();
-      const id = this.dataset.goalId;
-      if (confirm('Delete this goal and all its tasks?')) { deleteGoal(id); renderAll(); }
-    });
-  });
-
-  const addBtn = document.getElementById('glAddGoalBtn');
-  if (addBtn) {
-    // Replace button to remove stale listeners (btn persists outside glBento container)
-    const newBtn = addBtn.cloneNode(true);
-    addBtn.parentNode.replaceChild(newBtn, addBtn);
-    newBtn.addEventListener('click', function() {
-      const g = addGoal({ title: 'New Goal', description: 'Describe this goal...' });
-      renderAll();
-      setTimeout(() => {
-        const el = document.querySelector(`[data-action="edit-goal"][data-goal-id="${g.id}"]`);
-        if (el) showGoalEditPopup(g.id, el);
-      }, 100);
-    });
-  }
 
   if (!isEdit) {
     container.querySelectorAll('.gl-card').forEach(el => {
@@ -778,9 +718,7 @@ function saveManifesto() {
   goalsData.manifesto = goalsData.manifesto || {};
   goalsData.manifesto.text = clean;
   saveGoals();
-}
-
-// ─── RESOLUTIONS ────────────────────────────────────────────
+}  // ─── RESOLUTIONS ────────────────────────────────────────────
 function renderResolutions() {
   const container = document.getElementById('glResolutions');
   if (!container) return;
@@ -818,7 +756,7 @@ function renderResolutions() {
     <div class="gl-res-head">
       <div class="gl-res-head-left">
         <span class="gl-res-title-label">Resolutions</span>
-        <span class="gl-res-head-badge">${overallPct}% consistency</span>
+        <span class="gl-res-head-badge">${overallPct}%</span>
       </div>
       <span class="gl-res-head-sub">${monthLabel}</span>
     </div>
@@ -838,15 +776,15 @@ function renderResolutions() {
       if (isFuture) cls += ' future';
       else if (checked) cls += ' checked';
       else cls += ' empty';
-      return `<span class="${cls}" data-res-id="${r.id}" data-week="${w}" title="${w}${checked ? ' \u2713' : isFuture ? ' (ahead)' : ''}"></span>`;
+      return `<span class="${cls}" data-res-id="${r.id}" data-week="${w}" title="${w}${checked ? ' \u2713' : isFuture ? '' : ''}"></span>`;
     }).join('');
 
     html += `
-      <div class="gl-res-card" data-res-id="${r.id}">
+      <div class="gl-res-card" style="--cat-color:${cat.color}" data-res-id="${r.id}">
         <div class="gl-res-row1">
-          <span class="gl-res-cat" style="--cat-color:${cat.color}">${cat.label}</span>
+          <span class="gl-res-cat">${cat.label}</span>
           <span class="gl-res-title">${escapeHtml(r.title)}</span>
-          <span class="gl-res-stat">Streak <strong>${streak}</strong></span>
+          <span class="gl-res-stat">${streak}wk</span>
           ${isEdit ? `
             <div class="gl-res-actions">
               <button class="gl-res-edit-btn" data-action="edit-res" data-res-id="${r.id}" title="Edit">\u270e</button>
