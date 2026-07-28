@@ -409,7 +409,6 @@ function renderBento() {
     const g = sorted[i];
     const progress = calcProgress(g);
     const statusInfo = statusClass(g.status);
-    const ring = progressRing(progress, g.color, 52);
 
     const dateLabel = g.targetDate
       ? new Date(g.targetDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -439,45 +438,43 @@ function renderBento() {
     html += `
       <div class="gl-card ${size}" style="--gl-accent:${g.color}" data-goal-id="${g.id}">
         ${editOverlay}
-        <div class="gl-card-header">
-          <div class="gl-card-icon"><span class="material-symbols-outlined">${g.icon}</span></div>
-          <div class="gl-card-title-group">
-            <div class="gl-card-title-row">
-              <span class="gl-card-title">${escapeHtml(g.title)}</span>
-              <span class="gl-status-badge ${statusInfo}">${statusLabel(g.status)}</span>
+        <!-- Accent top bar -->
+        <div class="gl-card-accent" style="background:${g.color}"></div>
+        <div class="gl-card-inner">
+          <div class="gl-card-header">
+            <div class="gl-card-icon" style="background:color-mix(in srgb, ${g.color} 12%, transparent);color:${g.color}">
+              <span class="material-symbols-outlined">${g.icon}</span>
+            </div>
+            <div class="gl-card-title-group">
+              <div class="gl-card-title-row">
+                <span class="gl-card-title">${escapeHtml(g.title)}</span>
+                <span class="gl-status-badge ${statusInfo}">${statusLabel(g.status)}</span>
+              </div>
+              ${g.description ? `<div class="gl-card-desc">${escapeHtml(g.description)}</div>` : ''}
             </div>
           </div>
-        </div>
-        ${g.description ? `<div class="gl-card-desc">${escapeHtml(g.description)}</div>` : ''}
-        <div class="gl-tasks">
-          ${tasksHtml}
-          <button class="gl-add-task-btn" data-action="add-task" data-goal-id="${g.id}">+ Add task</button>
-          <input type="text" class="gl-add-task-input" data-goal-id="${g.id}" placeholder="Task description..." data-task-input>
-        </div>
-        <div class="gl-card-footer">
-          <div class="gl-ring-wrap">
-            ${ring}
-            <div class="gl-ring-meta">
-              <span class="gl-ring-pct">${progress}%</span>
+          <div class="gl-tasks">
+            ${tasksHtml}
+            <button class="gl-add-task-btn" data-action="add-task" data-goal-id="${g.id}">+ Add task</button>
+            <input type="text" class="gl-add-task-input" data-goal-id="${g.id}" placeholder="Task description..." data-task-input>
+          </div>
+          <div class="gl-card-progress">
+            <div class="gl-card-progress-track">
+              <div class="gl-card-progress-fill" style="width:${progress}%"></div>
+            </div>
+            <span class="gl-card-progress-pct">${progress}%</span>
+          </div>
+          <div class="gl-card-footer">
+            <div style="display:flex;gap:var(--space-3);align-items:center">
               ${dateLabel ? `<span class="gl-ring-date ${isOverdue ? 'overdue' : ''}">${isOverdue ? '\u26a0 ' : ''}${dateLabel}</span>` : ''}
               ${journalCount > 0 ? `<span class="gl-ring-journal">${journalCount} journal${journalCount > 1 ? 's' : ''}</span>` : ''}
             </div>
+            <span style="font-size:0.58rem;color:var(--text-tertiary)">${progress < 100 ? g.tasks.filter(t => t.done).length + '/' + g.tasks.length + ' tasks' : 'Done \u2713'}</span>
           </div>
         </div>
       </div>
     `;
   }
-
-  if (isEdit) {
-    html += `
-      <button class="gl-add-goal-btn" id="glAddGoalBtn" data-action="add-goal">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        New Goal
-      </button>
-    `;
-  }
-
-  container.innerHTML = html;
 
   // ─── Event Delegation ──────────────────────────────
   container.querySelectorAll('[data-action="toggle-task"]').forEach(el => {

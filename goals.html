@@ -55,18 +55,23 @@
     .gl-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); margin-bottom: var(--space-5); }
     .gl-stat {
       background: var(--bg-card); border: 1px solid var(--border-color);
-      border-radius: var(--radius-lg); padding: var(--space-3);
+      border-radius: var(--radius-xl); padding: var(--space-4) var(--space-4) var(--space-3);
       display: flex; flex-direction: column; gap: 2px;
-      transition: all 250ms var(--curve); position: relative; overflow: hidden;
+      position: relative; overflow: hidden; cursor: pointer;
+      transition: all 300ms var(--curve);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
     }
-    .gl-stat:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+    .gl-stat:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); transform: translateY(-2px); }
     .gl-stat-value { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; line-height: 1.1; }
     .gl-stat-label { font-size: 0.62rem; color: var(--text-tertiary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
     .gl-stat-bar { height: 3px; background: var(--bg-secondary); border-radius: 2px; margin-top: var(--space-2); overflow: hidden; }
     .gl-stat-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
-    .gl-stat {
+
+    /* ─── GOAL CARDS ──────────────────────────────────── */
+    .gl-card {
       background: var(--bg-card);
-      border-radius: var(--radius-xl); padding: var(--space-5) var(--space-5) var(--space-4);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
       position: relative; overflow: hidden;
       transition: all 350ms var(--curve);
       cursor: pointer;
@@ -75,17 +80,22 @@
     .gl-card:hover {
       box-shadow: 0 4px 16px rgba(0,0,0,0.06), 0 12px 32px rgba(0,0,0,0.04);
       transform: translateY(-3px);
+      border-color: var(--gl-accent, var(--border-color));
+    }
+    .gl-card-accent {
+      height: 3px; width: 100%; flex-shrink: 0;
+    }
+    .gl-card-inner {
+      padding: var(--space-4) var(--space-5) var(--space-4);
     }
     .gl-card-header {
-      display: flex; align-items: center; gap: var(--space-3);
-      margin-bottom: var(--space-3); position: relative; z-index: 1;
+      display: flex; align-items: flex-start; gap: var(--space-3);
+      margin-bottom: var(--space-3);
     }
     .gl-card-icon {
-      width: 38px; height: 38px; border-radius: var(--radius-lg);
+      width: 40px; height: 40px; border-radius: var(--radius-lg);
       display: flex; align-items: center; justify-content: center;
-      background: color-mix(in srgb, var(--gl-accent, var(--primary)) 10%, transparent);
-      color: var(--gl-accent, var(--primary)); flex-shrink: 0;
-      border: 1px solid color-mix(in srgb, var(--gl-accent, var(--primary)) 8%, transparent);
+      flex-shrink: 0;
     }
     .gl-card-icon .material-symbols-outlined { font-size: 1.2rem; }
     .gl-card-title-group { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
@@ -110,21 +120,39 @@
       line-height: 1.45; position: relative; z-index: 1; padding-left: 0;
     }
 
-    /* ─── RING + FOOTER ─────────────────────────────────── */
+    /* ─── CARD PROGRESS BAR ────────────────────────────── */
+    .gl-card-progress {
+      margin-top: var(--space-3);
+      display: flex; align-items: center; gap: var(--space-3);
+    }
+    .gl-card-progress-track {
+      flex: 1; height: 6px; background: var(--bg-secondary);
+      border-radius: 3px; overflow: hidden;
+    }
+    .gl-card-progress-fill {
+      height: 100%; border-radius: 3px;
+      background: var(--gl-accent, var(--primary));
+      transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .gl-card-progress-pct {
+      font-size: 0.72rem; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums; min-width: 32px; text-align: right;
+    }
     .gl-card-footer {
       margin-top: var(--space-3); padding-top: var(--space-3);
       border-top: 1px solid var(--border-subtle);
-      position: relative; z-index: 1;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: var(--space-2);
     }
-    .gl-ring-wrap {
-      display: flex; align-items: center; gap: var(--space-3);
-      position: relative; z-index: 1;
+    .gl-card-footer .gl-ring-date {
+      font-size: 0.6rem; color: var(--text-tertiary);
     }
-    .gl-ring-meta { display: flex; flex-direction: column; gap: 1px; }
-    .gl-ring-pct { font-size: 0.68rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
-    .gl-ring-date { font-size: 0.6rem; color: var(--text-tertiary); }
-    .gl-ring-date.overdue { color: #ef4444; font-weight: 600; }
-    .gl-ring-journal { font-size: 0.58rem; color: var(--text-tertiary); }
+    .gl-card-footer .gl-ring-date.overdue {
+      color: #ef4444; font-weight: 600;
+    }
+    .gl-card-footer .gl-ring-journal {
+      font-size: 0.58rem; color: var(--text-tertiary);
+    }
 
     /* ─── SUB-TASKS ────────────────────────────────────── */
     .gl-tasks { position: relative; z-index: 1; }
@@ -186,6 +214,14 @@
     }
     .gl-add-task-input:focus { border-color: var(--border-focus); }
     .gl-add-task-input.show { display: block; }
+
+    /* ─── BENTO GRID ──────────────────────────────────── */
+    .gl-bento {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: var(--space-4);
+      margin-bottom: var(--space-5);
+    }
 
     /* ─── CARD SIZES ──────────────────────────────────── */
     .gl-card-sm { grid-column: span 4; }
@@ -455,7 +491,7 @@
       .gl-hero-title { font-size: 1.1rem; }
       .gl-hero-inner { padding: 0 var(--space-3); }
       .gl-hero-ring-wrap .gl-hero-ring-label strong { font-size: 0.65rem; }
-      .gl-card { padding: var(--space-4); }
+      .gl-card-inner { padding: var(--space-3) var(--space-4); }
       .gl-card-title { font-size: 0.95rem; }
       .gl-card-desc { font-size: 0.68rem; }
       .gl-vision { padding: var(--space-4); }
