@@ -5335,6 +5335,7 @@ html.light .sleep-header h3 svg {
 }
 .an-sleep-card::before {
   content: ''; position: absolute; inset: 0;
+  border-radius: inherit;
   background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 5%, transparent) 0%, transparent 60%);
   opacity: 0; pointer-events: none;
   transition: opacity 400ms;
