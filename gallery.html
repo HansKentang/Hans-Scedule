@@ -22,7 +22,7 @@
 
     /* ─── GALLERY HERO ───────────────────────────────── */
     .gl-hero {
-      position: relative; height: 200px; overflow: hidden; flex-shrink: 0;
+      position: relative; height: 200px; overflow: hidden;
     }
     @keyframes glHeroBreath {
       0%, 100% { filter: brightness(1); }
@@ -72,7 +72,7 @@
     }
     .gl-hero-meta {
       display: flex; align-items: center; gap: var(--space-2);
-      font-size: 0.75rem; color: var(--text-tertiary);
+      font-size: 0.75rem; color: var(--text-primary);
       flex-wrap: wrap;
     }
     .gl-hero-dot {
@@ -85,7 +85,7 @@
       50% { opacity: 0.8; }
     }
     .gl-hero-sub {
-      font-size: 0.68rem; color: var(--text-tertiary);
+      font-size: 0.68rem; color: var(--text-primary);
       margin-top: var(--space-1);
       font-weight: 400;
       opacity: 0.65;
@@ -117,7 +117,7 @@
       background-clip: text;
     }
     .gal-top-count {
-      font-size: 0.68rem; color: var(--text-tertiary);
+      font-size: 0.68rem; color: var(--text-primary);
       font-weight: 500;
     }
     .gal-actions-row {
@@ -206,7 +206,7 @@
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
       gap: var(--space-2);
-      color: var(--text-tertiary);
+      color: var(--text-primary);
       transition: all 350ms var(--curve);
     }
     .gal-item-placeholder::before {
@@ -298,7 +298,7 @@
     /* Empty state */
     .gal-empty {
       text-align: center; padding: var(--space-12) var(--space-4);
-      color: var(--text-tertiary);
+      color: var(--text-primary);
       animation: glFadeUp 500ms var(--curve);
     }
     @keyframes glFadeUp {
@@ -470,7 +470,9 @@
     <!-- ─── MAIN ───────────────────────────────────────── -->
     <div class="hub-main" role="main">
       <!-- ─── HERO ────────────────────────────────────── -->
-      <section class="gl-hero">
+      <div class="hub-content hub-page-transition">
+
+        <section class="gl-hero page-hero">
         <img data-image-id="gallery-hero" src="" alt="Gallery hero" class="gl-hero-bg">
         <div class="gl-hero-overlay"></div>
         <div class="gl-hero-inner">
@@ -486,8 +488,6 @@
           <div id="gsiContainer" class="gsi-section"></div>
         </div>
       </section>
-
-      <div class="hub-content hub-page-transition">
 
         <!-- ─── GALLERY GRID ───────────────────────── -->
         <div class="hub-anim-in hub-anim-in-2" style="margin-bottom:var(--space-6)">

@@ -19,7 +19,7 @@
   <style>
     /* ─── FRIENDS PAGE ──────────────────────────────── */
     .fr-hero {
-      position: relative; height: 200px; overflow: hidden; flex-shrink: 0;
+      position: relative; height: 200px; overflow: hidden;
     }
     .fr-hero-bg {
       width: 100%; height: 100%; object-fit: cover;
@@ -50,7 +50,7 @@
     }
     .fr-hero-meta {
       display: flex; align-items: center; gap: var(--space-2);
-      font-size: 0.75rem; color: var(--text-tertiary);
+      font-size: 0.75rem; color: var(--text-primary);
       flex-wrap: wrap;
     }
     .fr-hero-dot {
@@ -145,7 +145,7 @@
     .fr-add-btn:active { transform: scale(0.97); }
     .fr-add-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
     .fr-add-status {
-      font-size: 0.72rem; color: var(--text-tertiary);
+      font-size: 0.72rem; color: var(--text-primary);
       margin-top: var(--space-2); min-height: 1.2em;
     }
     .fr-add-status.success { color: #10b981; }
@@ -161,7 +161,7 @@
       color: var(--text-primary);
     }
     .fr-section-count {
-      font-size: 0.68rem; color: var(--text-tertiary);
+      font-size: 0.68rem; color: var(--text-primary);
       font-weight: 500;
     }
 
@@ -257,7 +257,7 @@
     /* ─── EMPTY STATE ───────────────────────────────── */
     .fr-empty {
       text-align: center; padding: var(--space-10) var(--space-4);
-      color: var(--text-tertiary);
+      color: var(--text-primary);
     }
     .fr-empty svg { width: 48px; height: 48px; margin-bottom: var(--space-3); opacity: 0.15; }
     .fr-empty p { font-size: 0.9rem; font-weight: 500; margin-bottom: var(--space-2); }
@@ -417,8 +417,10 @@
 
     <!-- ─── MAIN ───────────────────────────────────────── -->
     <div class="hub-main">
-      <!-- ─── HERO ───────────────────────────────────── -->
-      <section class="fr-hero">
+      <div class="hub-content hub-page-transition">
+
+        <!-- ─── HERO ───────────────────────────────────── -->
+        <section class="fr-hero page-hero">
         <img data-image-id="friends-hero" src="" alt="Friends hero" class="fr-hero-bg">
         <div class="fr-hero-overlay"></div>
         <div class="fr-hero-inner">
@@ -434,8 +436,6 @@
           <div id="gsiContainer" class="gsi-section"></div>
         </div>
       </section>
-
-      <div class="hub-content hub-page-transition">
 
         <!-- ─── FRIEND CODE CARD ─────────────────────── -->
         <div class="hub-anim-in hub-anim-in-2" style="margin-bottom:var(--space-6)">

@@ -338,7 +338,7 @@ function progressRing(pct, color, size) {
         stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
         transform="rotate(-90 ${s/2} ${s/2})" style="transition: stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)"/>
       <text x="${s/2}" y="${s/2}" text-anchor="middle" dominant-baseline="central"
-        fill="${pct >= 100 ? color : 'var(--text-tertiary)'}"
+        fill="${pct >= 100 ? color : 'var(--text-primary)'}"
         font-size="${s * 0.28}" font-weight="700" font-variant-numeric="tabular-nums">${pct}%</text>
     </svg>`;
 }
@@ -371,7 +371,7 @@ function renderStats() {
 
   container.innerHTML = metrics.map(m => `
     <div class="gl-metric" style="--stat-color:${m.color}">
-      <div class="gl-metric-value" style="color:${m.color}"><span class="gl-metric-dot" style="background:${m.color}"></span>${escapeHtml(m.value.toString())}</div>
+      <div class="gl-metric-value"><span class="gl-metric-dot" style="background:${m.color}"></span>${escapeHtml(m.value.toString())}</div>
       <div class="gl-metric-label">${escapeHtml(m.label)}</div>
     </div>
   `).join('');

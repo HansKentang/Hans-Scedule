@@ -2767,15 +2767,15 @@ html.light .s-schedule-label {
   display: flex; flex-direction: column;
 }
 /* In-hero profile (replaces decorative ceramic avatar on all pages) */
-.hub-main > section:first-child { overflow: visible !important; }
-.hub-main > section:first-child #gsiContainer { padding: 0; }
-.hub-main > section:first-child #gsiContainer .gsi-avatar-name { display: none; }
-.hub-main > section:first-child #gsiContainer .gsi-avatar-wrap {
+section.page-hero { overflow: visible !important; }
+section.page-hero #gsiContainer { padding: 0; }
+section.page-hero #gsiContainer .gsi-avatar-name { display: none; }
+section.page-hero #gsiContainer .gsi-avatar-wrap {
   padding: 0; border: 2px solid var(--primary); border-radius: 50%; cursor: pointer;
 }
-.hub-main > section:first-child #gsiContainer .gsi-avatar { width: 36px; height: 36px; border: none; }
-.hub-main > section:first-child #gsiContainer .gsi-avatar-initials { font-size: 0.8rem; }
-.hub-main > section:first-child #gsiContainer .gsi-avatar-dropdown {
+section.page-hero #gsiContainer .gsi-avatar { width: 36px; height: 36px; border: none; }
+section.page-hero #gsiContainer .gsi-avatar-initials { font-size: 0.8rem; }
+section.page-hero #gsiContainer .gsi-avatar-dropdown {
   top: 100%; bottom: auto; left: 50%; right: auto;
   transform: translateX(-50%); margin-top: 8px;
 }
@@ -3434,7 +3434,7 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
 /* ─── MAIN AREA ─────────────────────────────────────── */
 .hub-main {
   flex: 1; display: flex; flex-direction: column;
-  height: 100dvh; overflow: hidden;
+  height: 100dvh; overflow-y: auto; overflow-x: hidden;
   background: var(--bg-primary); position: relative;
 }
 
@@ -3473,8 +3473,6 @@ html.sidebar-edit-mode .hub-snav-item[snav-hidden="true"] {
   flex: 1; overflow-y: auto;
   width: 100%; box-sizing: border-box;
 }
-.hub-content::-webkit-scrollbar { width: 4px; }
-.hub-content::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
 
 /* ─── PAGE HEADER (Notion icon + title) ─────────────── */
 .hub-page-header {
@@ -3712,8 +3710,8 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
 /* ─── RESPONSIVE ─────────────────────────────────────── */
 @media (max-width: 1024px) {
   .hub-properties { grid-template-columns: repeat(2, 1fr); }
-  .hub-main > section:first-child { height: 160px !important; }
-  .hub-main > section:first-child h1 { font-size: 22px !important; }
+  section.page-hero { height: 160px !important; }
+  section.page-hero h1 { font-size: 22px !important; }
 }
 
 @media (max-width: 767px) {
@@ -3753,15 +3751,15 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
   .hub-page-meta { font-size: 0.75rem; gap: var(--space-2); }
 
   /* ─── HUB HERO MOBILE ── */
-  .hub-main > section:first-child { height: 140px !important; }
-  .hub-main > section:first-child h1 { font-size: 18px !important; }
-  .hub-main > section:first-child .glass-card { padding: 2px 8px !important; }
-  .hub-main > section:first-child .glass-card .stat-value { font-size: 1.1rem !important; }
-  .hub-main > section:first-child > div:last-child { padding: 0 var(--space-3) !important; }
-  .hub-main > section:first-child > div:last-child > div { gap: var(--space-2) !important; }
+  section.page-hero { height: 140px !important; }
+  section.page-hero h1 { font-size: 18px !important; }
+  section.page-hero .glass-card { padding: 2px 8px !important; }
+  section.page-hero .glass-card .stat-value { font-size: 1.1rem !important; }
+  section.page-hero > div:last-child { padding: 0 var(--space-3) !important; }
+  section.page-hero > div:last-child > div { gap: var(--space-2) !important; }
 
   /* ─── SCHEDULE HERO MOBILE ── */
-  .hub-main > section:first-child h1[style*="font-size:36px"] { font-size: 24px !important; }
+  section.page-hero h1[style*="font-size:36px"] { font-size: 24px !important; }
 
   /* ─── ACCESS HUB MOBILE (avoid bottom nav overlap) ── */
   .access-hub { bottom: calc(var(--space-5) + 60px) !important; right: var(--space-3) !important; }
@@ -7749,9 +7747,6 @@ html.light .hub-add-popup {
 .hide-toggle.on .hide-knob { left:20px; }
 .hide-toggle.off .hide-knob { left:2px; }
 
-/* ─── Hub scroll ──────────────────────────── */
-.hub-main { overflow-y:auto !important; overflow-x:hidden !important; }
-
 /* ─── Hidden Section ───────────────────────────── */
 .hub-section-wrap.hidden-section { display:none; }
 
@@ -8855,15 +8850,15 @@ html.light .hub-add-popup {
 
 /* ─── HUB PAGE (bento, sleep, hero, gallery) ─────────── */
 @media (max-width: 767px) {
-  .hub-main > section:first-child { height: 160px !important; }
-  .hub-main > section:first-child h1 { font-size: 18px !important; }
-  .hub-main > section:first-child .glass-card { padding: 3px 8px !important; }
-  .hub-main > section:first-child .glass-card div:first-child { font-size: 1.1rem !important; }
-  .hub-main > section:first-child .glass-card div:last-child { font-size: 0.5rem !important; }
-  .hub-main > section:first-child [style*="padding:0 var(--container-padding)"] { padding: 0 12px !important; }
-  .hub-main > section:first-child [style*="gap:var(--space-4)"] { gap: 8px !important; flex-wrap: wrap; }
-  .hub-main > section:first-child .gsi-avatar-wrap { width: 30px !important; height: 30px !important; }
-  .hub-main > section:first-child .gsi-avatar { width: 30px !important; height: 30px !important; }
+  section.page-hero { height: 160px !important; }
+  section.page-hero h1 { font-size: 18px !important; }
+  section.page-hero .glass-card { padding: 3px 8px !important; }
+  section.page-hero .glass-card div:first-child { font-size: 1.1rem !important; }
+  section.page-hero .glass-card div:last-child { font-size: 0.5rem !important; }
+  section.page-hero [style*="padding:0 var(--container-padding)"] { padding: 0 12px !important; }
+  section.page-hero [style*="gap:var(--space-4)"] { gap: 8px !important; flex-wrap: wrap; }
+  section.page-hero .gsi-avatar-wrap { width: 30px !important; height: 30px !important; }
+  section.page-hero .gsi-avatar { width: 30px !important; height: 30px !important; }
 
   /* ─── Hide bento canvas + access hub on mobile ── */
   .hub-section-wrap[data-hub-section="bento"],
@@ -8913,8 +8908,8 @@ html.light .hub-add-popup {
 }
 
 @media (max-width: 480px) {
-  .hub-main > section:first-child { height: 140px !important; }
-  .hub-main > section:first-child h1 { font-size: 16px !important; }
+  section.page-hero { height: 140px !important; }
+  section.page-hero h1 { font-size: 16px !important; }
   .bento-bubble { width: 100% !important; min-height: 100px !important; }
   .bubble-dock-item { width:34px; height:34px; }
   .bubble-dock-item .bdi-icon { width:14px; height:14px; }
@@ -8928,8 +8923,8 @@ html.light .hub-add-popup {
 
 /* ─── ANALYTICS PAGE ─────────────────────────────────── */
 @media (max-width: 767px) {
-  .hub-main > section:first-child .font-headline-lg { font-size: 24px !important; }
-  .hub-main > section:first-child [style*="padding:0 var(--container-padding)"] { padding: 0 12px !important; }
+  section.page-hero .font-headline-lg { font-size: 24px !important; }
+  section.page-hero [style*="padding:0 var(--container-padding)"] { padding: 0 12px !important; }
   .an-filter-bar { justify-content: center; }
   .an-period-pills { width: 100%; }
   .an-period-pill { flex: 1; text-align: center; font-size: 0.68rem; padding: 4px 8px; }
@@ -8973,8 +8968,8 @@ html.light .hub-add-popup {
 
 /* ─── FINANCE PAGE ───────────────────────────────────── */
 @media (max-width: 767px) {
-  .hub-main > section:first-child { height: 150px !important; }
-  .hub-main > section:first-child .font-headline-lg { font-size: 26px !important; }
+  section.page-hero { height: 150px !important; }
+  section.page-hero .font-headline-lg { font-size: 26px !important; }
   .fin-hero-decor { width: 80px; height: 80px; right: 4px; top: 4px; }
   .fin-kpi-row { grid-template-columns: 1fr; gap: var(--space-3); }
   .fin-kpi { padding: var(--space-4); }
@@ -9099,16 +9094,15 @@ html.light .hub-add-popup {
   .hub-main { height: auto; min-height: 0; }
   .hub-content { padding-bottom: 8px; }
 
-  .hub-main > section:first-child {
+  section.page-hero {
     height: 100px !important;
     min-height: 100px !important;
   }
-  .hub-main > section:first-child img[data-image-id] { display: none !important; }
-  .hub-main > section:first-child [style*="position:absolute;inset:0;background:linear-gradient"] { background: transparent !important; }
-  .hub-main > section:first-child h1 { font-size: 1.3rem !important; letter-spacing: -0.02em !important; }
-  .hub-main > section:first-child .glass-card { display: none !important; }
-  .hub-main > section:first-child [style*="gap:var(--space-4)"] { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; margin-top: 2px !important; }
-  .hub-main > section:first-child [style*="gap:var(--space-4)"] > * { font-size: 0.65rem !important; padding: 2px 8px !important; }
+
+  section.page-hero h1 { font-size: 1.3rem !important; letter-spacing: -0.02em !important; }
+  section.page-hero .glass-card { display: none !important; }
+  section.page-hero [style*="gap:var(--space-4)"] { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; margin-top: 2px !important; }
+  section.page-hero [style*="gap:var(--space-4)"] > * { font-size: 0.65rem !important; padding: 2px 8px !important; }
 
   #calendarHeader { padding: var(--space-2) var(--space-3) !important; flex-wrap: wrap; gap: var(--space-1); }
   .header-left { gap: var(--space-2); }
@@ -9242,8 +9236,8 @@ html.light .hub-add-popup {
   .hub-mbb-item .snav-icon svg { width: 16px; height: 16px; }
   .hub-mbb-item .snav-label { font-size: 0.45rem !important; }
   .hub-mobile-bottom-nav { padding: 3px 4px env(safe-area-inset-bottom, 6px) 4px; gap: 2px; }
-  .hub-main > section:first-child { height: 80px !important; min-height: 80px !important; }
-  .hub-main > section:first-child h1 { font-size: 1.1rem !important; }
+  section.page-hero { height: 80px !important; min-height: 80px !important; }
+  section.page-hero h1 { font-size: 1.1rem !important; }
   #weekLabel { font-size: 0.78rem !important; }
   :root { --hour-height: 38px; --time-axis-width: 36px; --container-padding: 8px; }
   .hub-content { padding-left: 8px; padding-right: 8px; }

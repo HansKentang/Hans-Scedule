@@ -48,7 +48,7 @@
         display: flex; align-items: center; gap: 6px;
         font-size: 0.68rem; font-weight: 600;
         text-transform: uppercase; letter-spacing: 0.04em;
-        color: var(--text-tertiary); margin-bottom: 8px;
+        color: var(--text-primary); margin-bottom: 8px;
       }
       .hub-mobile-dash .hmd-card-header svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.6; }
       .hub-mobile-dash .hmd-kpis { display: flex; gap: 6px; }
@@ -62,7 +62,7 @@
       }
       .hub-mobile-dash .hmd-kpi-lbl {
         font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.04em;
-        color: var(--text-tertiary); margin-top: 1px;
+        color: var(--text-primary); margin-top: 1px;
       }
       .hub-mobile-dash .hmd-task-item {
         display: flex; align-items: center; gap: 8px; padding: 6px 0;
@@ -107,7 +107,7 @@
         font-size: 1.6rem; font-weight: 700; color: var(--text-primary);
         font-variant-numeric: tabular-nums; line-height: 1;
       }
-      .hub-mobile-dash .hmd-streak-lbl { font-size: 0.65rem; color: var(--text-tertiary); }
+      .hub-mobile-dash .hmd-streak-lbl { font-size: 0.65rem; color: var(--text-primary); }
       .hub-mobile-dash .hmd-todo-scroll {
         display: flex; gap: 6px; overflow-x: auto;
         -webkit-overflow-scrolling: touch; padding-bottom: 4px;
@@ -128,7 +128,7 @@
         font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums;
         font-family: var(--font-mono); color: var(--text-primary); line-height: 1;
       }
-      .hub-mobile-dash .hmd-time-date { font-size: 0.6rem; color: var(--text-tertiary); line-height: 1.3; }
+      .hub-mobile-dash .hmd-time-date { font-size: 0.6rem; color: var(--text-primary); line-height: 1.3; }
       .hub-mobile-dash .hmd-links { display: flex; flex-wrap: wrap; gap: 6px; }
       .hub-mobile-dash .hmd-link-btn {
         display: flex; align-items: center; gap: 4px; padding: 4px 10px;
@@ -163,10 +163,9 @@
       .hub-mobile-dash .hmd-ai-msg {
         flex: 1; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;
       }
-      .hub-mobile-dash .hmd-ai-msg strong { color: var(--text-primary); }
-      .hub-mobile-dash .hmd-empty {
+      .hub-mobile-dash .hmd-ai-msg strong { color: var(--text-primary); }        .hub-mobile-dash .hmd-empty {
         text-align: center; padding: 20px 10px;
-        font-size: 0.78rem; color: var(--text-tertiary);
+        font-size: 0.78rem; color: var(--text-primary);
       }
 
       /* ── Sleep Card ── */
@@ -415,7 +414,7 @@
     <!-- ─── MAIN ─────────────────────────────────────────── -->
     <div class="hub-main" role="main">
       <!-- ─── HUB HERO ────────────────────────────────── -->
-      <section style="position:relative;height:220px;overflow:hidden;flex-shrink:0">
+      <section class="page-hero" style="position:relative;height:220px;overflow:hidden">
           <img data-image-id="hub-hero" src="" alt="Hero" style="width:100%;height:100%;object-fit:cover;opacity:0.85">
           <div style="position:absolute;inset:0;background:linear-gradient(to right, var(--bg-primary) 0%, transparent 55%)"></div>
           <div style="position:absolute;inset:0;display:flex;align-items:center;padding:0 var(--container-padding)">

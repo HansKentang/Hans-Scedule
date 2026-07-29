@@ -20,7 +20,7 @@
        HERO — Premium with glow and pulse
        ══════════════════════════════════════════════════════════ */
     .gl-hero {
-      position: relative; height: 130px; overflow: hidden; flex-shrink: 0;
+      position: relative; height: 130px; overflow: hidden;
       background: linear-gradient(135deg, 
         color-mix(in srgb, var(--primary) 6%, var(--bg-primary)) 0%, 
         var(--bg-primary) 100%
@@ -104,17 +104,15 @@
       border-left: 1px solid var(--border-subtle);
     }
     .gl-metric:hover {
-      background: color-mix(in srgb, var(--primary) 6%, transparent);
+      background: color-mix(in srgb, var(--primary) 10%, transparent);
       transform: translateY(-2px);
     }
     .gl-metric-value {
       font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
       font-variant-numeric: tabular-nums; line-height: 1.2;
-      transition: color 300ms;
     }
-    .gl-metric:hover .gl-metric-value { color: var(--stat-color); }
     .gl-metric-label {
-      font-size: 0.55rem; color: var(--text-tertiary); font-weight: 500;
+      font-size: 0.55rem; color: var(--text-primary); font-weight: 500;
       text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px;
     }
     .gl-metric-dot {
@@ -230,7 +228,7 @@
       100% { transform: translateX(100%); }
     }
     .gl-card-progress-pct {
-      font-size: 0.65rem; font-weight: 700; color: var(--text-secondary);
+      font-size: 0.65rem; font-weight: 700; color: var(--text-primary);
       font-variant-numeric: tabular-nums; min-width: 30px; text-align: right;
     }
     .gl-card-desc {
@@ -479,7 +477,7 @@
       transform: scale(1.5); 
       box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent);
     }
-    .gl-res-stat { font-size: 0.55rem; color: var(--text-tertiary); white-space: nowrap; flex-shrink: 0; }
+    .gl-res-stat { font-size: 0.55rem; color: var(--text-primary); font-weight: 600; white-space: nowrap; flex-shrink: 0; }
     .gl-res-stat strong { color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
     .gl-res-actions { display: flex; gap: 2px; flex-shrink: 0; }
     .gl-res-edit-btn, .gl-res-del-btn {
@@ -831,7 +829,9 @@
     <!-- ─── MAIN ───────────────────────────────────────── -->
     <div class="hub-main" role="main">
       <!-- ─── HERO ────────────────────────────────────── -->
-      <section class="gl-hero">
+      <div class="hub-content hub-page-transition">
+
+        <section class="gl-hero page-hero">
         <img data-image-id="goals-hero" src="" alt="Goals hero" class="gl-hero-bg">
         <div class="gl-hero-overlay"></div>
         <div class="gl-hero-inner">
@@ -853,8 +853,6 @@
           <div id="gsiContainer" class="gsi-section"></div>
         </div>
       </section>
-
-      <div class="hub-content hub-page-transition">
 
         <!-- ─── STATS DASHBOARD ──────────────────────── -->
         <div class="gl-metrics" id="glStats"></div>
