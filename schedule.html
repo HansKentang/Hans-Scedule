@@ -398,7 +398,7 @@
       .sch-hamburger { display: flex; }
       .hub-sidebar {
         position: fixed; left: 0; top: 0; width: 240px; min-width: 240px;
-        transform: translateX(-100%); transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+        transform: translateX(-100%);
         z-index: 10; box-shadow: none;
       }
       .hub-sidebar.open {
@@ -459,8 +459,8 @@
       .sch-sc-bar-add-input:focus { width: 120px; }
       .sch-sc-bar-add-btn { width: 24px; height: 24px; }
 
-      /* Calendar grid mobile */
-      #calendarContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      /* Calendar grid mobile — single-day view with hidden overflow */
+      #calendarContainer { overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 
       /* Filters bar mobile */
 
@@ -1524,6 +1524,7 @@
         <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
         <span class="bnav-label">Finance</span>
       </a>
+      <a href="friends.html" class="hub-bottom-nav-item" data-nav="friends">
         <span class="bnav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></span>
         <span class="bnav-label">Friends</span>
       </a>

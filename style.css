@@ -728,7 +728,6 @@ html.light .card-glass {
   border-left: 1px solid var(--border-color);
   display: flex; flex-direction: column;
   transform: translateX(100%);
-  transition: transform 200ms cubic-bezier(0.16,1,0.3,1);
   box-shadow: -4px 0 24px rgba(0,0,0,0.12);
 }
 .hub-menu-panel.open { transform: translateX(0); }
@@ -3720,28 +3719,16 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
   .hub-snav-item .snav-label,
   .hub-sidebar-footer .btn span { display: none; }
   .hub-snav-item { justify-content: center; padding: var(--space-1); }
-  .hub-sidebar-footer .btn { padding: var(--space-1); }
+  .hub-sidebar-footer .hub-footer-btns { padding: 4px 4px; gap: 2px; flex-wrap: wrap; justify-content: center; }
+  .hub-sidebar-footer .btn { padding: 2px; min-width: 0; flex: 0 0 auto; width: 24px; height: 24px; }
+  .hub-sidebar-footer .btn svg { width: 11px; height: 11px; }
+  .hub-sidebar-footer .sync-dot { width: 6px; height: 6px; }
 }
 
 @media (max-width: 640px) {
   .hub-bottom-nav { display: block; }
   .hub-main { padding-bottom: 56px; }
-  .hub-sidebar {
-    position: fixed; left: 0; top: 0; width: 240px; min-width: 240px;
-    transform: translateX(-100%); transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 10; box-shadow: none;
-  }
-  .hub-sidebar.open {
-    transform: translateX(0);
-    box-shadow: 8px 0 32px rgba(0,0,0,0.15);
-  }
   .hub-mobile-menu-btn { display: flex; }
-  .hub-sidebar .hub-workspace-name,
-  .hub-sidebar .hub-snav-item .snav-label,
-  .hub-sidebar .hub-sidebar-section-label,
-  .hub-sidebar .hub-sidebar-footer .btn span { display: block; }
-  .hub-sidebar .hub-snav-item { justify-content: flex-start; padding: var(--space-1) var(--space-2); }
-  .hub-sidebar .hub-sidebar-footer .btn { padding: var(--space-2); }
   .hub-hamburger { display: flex !important; }
   .hub-minifooter { padding: var(--space-2) var(--space-4); }
   .hub-page-header { margin-bottom: var(--space-4); }
@@ -3894,12 +3881,30 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
   /* ─── BENTO CANVAS MOBILE ── */
   .bento-grid {
     overflow-x: hidden !important;
+    padding: var(--space-2) 0 var(--space-4);
+    min-height: auto !important;
   }
+  /* Bento bubbles as full-width stacked cards */
   .bento-bubble:not(.hub-edit .bento-bubble) {
-    left: 12px !important;
-    width: calc(100% - 24px) !important;
-    min-width: calc(100% - 24px) !important;
-    max-width: calc(100% - 24px) !important;
+    position: relative !important;
+    left: var(--space-3) !important;
+    width: calc(100% - var(--space-3) * 2) !important;
+    min-width: calc(100% - var(--space-3) * 2) !important;
+    max-width: calc(100% - var(--space-3) * 2) !important;
+    margin-bottom: var(--space-3);
+    top: auto !important;
+    height: auto !important;
+    min-height: 80px;
+    border-radius: var(--radius-lg);
+    background: var(--surface-container-low);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-xs), var(--card-inner-glow);
+    transition: transform 0.2s var(--curve), box-shadow 0.2s var(--curve), border-color 0.2s var(--curve);
+    overflow: hidden;
+    touch-action: auto;
+  }
+  .bento-bubble:not(.hub-edit .bento-bubble):active {
+    transform: scale(0.98);
   }
   /* In edit mode, allow resizing — don't force full-width */
   .hub-edit .bento-bubble {
@@ -3913,6 +3918,10 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
     right: 50% !important;
     transform: translateX(50%) !important;
   }
+  /* Hide bento handles/dock on mobile for cleaner look */
+  .bento-bubble-handle,
+  .bento-bubble-btn,
+  .bento-resize-handle { display: none !important; }
 
   /* ─── SCHEDULE HEADER MOBILE ── */
   .sch-header-center { display: flex !important; width: 100%; order: 3; justify-content: flex-start; gap: 2px; margin-top: 2px; }
@@ -3944,10 +3953,20 @@ button, a, input, select, textarea, .clickable { touch-action: manipulation; }
 
   /* ─── SLEEP LOG MODAL MOBILE ── */
   .sleep-log-modal {
-    width: 92vw !important;
-    max-height: 80dvh !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 85dvh !important;
+    transform: translateY(100%) !important;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0 !important;
     padding: var(--space-4) !important;
-    top: 5dvh !important;
+    padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .sleep-log-modal.active {
+    transform: translateY(0) !important;
   }
   .sleep-log-modal .form-row { flex-direction: column !important; }
   .sleep-log-modal .form-group { width: 100% !important; }
@@ -4573,8 +4592,8 @@ html.light .hub-db-header .hub-db-count strong {
 
 .hidden { display: none !important; }
 
-/* Sidebar overlay hidden by default (shown on mobile) */
-.hub-sidebar-overlay, .sch-hamburger { display: none !important; }
+/* Sidebar overlay — visibility/opacity controlled by JS .active class (lines 3570-3577) */
+/* .sch-hamburger styling is in schedule.html (display:none by default, shown at 640px) */
 
 /* ─── RESPONSIVE ───────────────────────────────────────────── */
 @media (max-width: 767px) {
@@ -5228,41 +5247,57 @@ html.light .sleep-header h3 svg {
   opacity: 0; visibility: hidden;
   transition: opacity 300ms ease, visibility 300ms ease;
   pointer-events: none;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 .sleep-log-overlay.active {
   opacity: 1; visibility: visible; pointer-events: auto;
 }
 .sleep-log-modal {
-  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95);
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.92);
   z-index: 101;
   width: 440px; max-width: calc(100vw - 32px);
+  max-height: 80vh;
+  display: flex; flex-direction: column;
   background: var(--bg-sidebar);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
   opacity: 0; visibility: hidden;
-  transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: opacity 350ms cubic-bezier(0.22, 1, 0.36, 1), visibility 350ms cubic-bezier(0.22, 1, 0.36, 1), transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
   padding: var(--space-5);
 }
 .sleep-log-modal.active {
   opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1);
 }
-.sleep-log-modal h3 {
+.sleep-log-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--space-4);
+  flex-shrink: 0;
+}
+.sleep-log-modal-header h3 {
   font-family: var(--font-serif);
   font-size: 1.1rem; font-weight: 500;
-  margin-bottom: var(--space-4);
   display: flex; align-items: center; gap: var(--space-2);
+  margin: 0;
 }
-.sleep-log-modal h3 svg { color: var(--tag-deep-work-text, #6366f1); }
-.sleep-log-close {
-  position: absolute; top: var(--space-4); right: var(--space-4);
+.sleep-log-modal-header h3 svg { color: var(--tag-deep-work-text, #6366f1); }
+.sleep-log-modal-close {
   width: 28px; height: 28px; border: none; background: transparent;
   color: var(--text-tertiary); cursor: pointer; border-radius: var(--radius-full);
   display: flex; align-items: center; justify-content: center;
   transition: all var(--t-fast);
+  flex-shrink: 0;
 }
-.sleep-log-close:hover { background: var(--accent-soft); color: var(--text-primary); }
+.sleep-log-modal-close:hover { background: var(--accent-soft); color: var(--text-primary); }
+.sleep-log-modal-body {
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+  padding-right: var(--space-1);
+}
+.sleep-log-modal-body::-webkit-scrollbar { width: 4px; }
+.sleep-log-modal-body::-webkit-scrollbar-thumb { background: var(--outline); border-radius: var(--radius-full); }
 
 .sleep-log-form .form-group { margin-bottom: var(--space-3); }
 .sleep-log-form .form-group label {
@@ -6202,7 +6237,6 @@ html.dark .tf-pr.active {
   border-left: 1px solid var(--border-color);
   display: flex; flex-direction: column;
   transform: translateX(100%);
-  transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: -8px 0 40px rgba(0,0,0,0.15);
 }
 .settings-drawer.open {
@@ -6783,7 +6817,6 @@ select.form-input {
   border-left: 1px solid var(--border-color);
   box-shadow: -12px 0 48px rgba(0,0,0,0.35);
   transform: translateX(100%);
-  transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
   display: flex; flex-direction: column;
 }
 .settings-drawer.open { transform: translateX(0); }
@@ -8860,9 +8893,19 @@ html.light .hub-add-popup {
   section.page-hero .gsi-avatar-wrap { width: 30px !important; height: 30px !important; }
   section.page-hero .gsi-avatar { width: 30px !important; height: 30px !important; }
 
-  /* ─── Hide bento canvas + access hub on mobile ── */
-  .hub-section-wrap[data-hub-section="bento"],
-  .access-hub { display: none !important; }
+  /* ─── Access hub + mobile dash hidden on mobile; bento canvas now shows ── */
+  .access-hub,
+  .hub-mobile-dash { display: none !important; }
+  /* Show bento canvas with polished mobile styling */
+  .hub-section-wrap[data-hub-section="bento"] {
+    display: block !important;
+  }
+  .hub-section-wrap[data-hub-section="bento"] .hub-section-header {
+    padding: var(--space-3) var(--space-3) 0;
+  }
+  .hub-section-wrap[data-hub-section="bento"] .hub-section-drag-handle {
+    display: none;
+  }
   .bdf-pill { font-size:0.55rem; padding:1px 6px; }
   .bubble-dock-item { width:36px; height:36px; }
   .bubble-dock-item .bdi-icon { width:16px; height:16px; }
@@ -8908,8 +8951,6 @@ html.light .hub-add-popup {
 }
 
 @media (max-width: 480px) {
-  section.page-hero { height: 140px !important; }
-  section.page-hero h1 { font-size: 16px !important; }
   .bento-bubble { width: 100% !important; min-height: 100px !important; }
   .bubble-dock-item { width:34px; height:34px; }
   .bubble-dock-item .bdi-icon { width:14px; height:14px; }
@@ -9006,7 +9047,6 @@ html.light .hub-add-popup {
     min-width: 270px !important;
     height: 100dvh !important;
     transform: translateX(-100%);
-    transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 20 !important;
     box-shadow: none !important;
     border-right: 1px solid var(--border-color);
@@ -9090,13 +9130,12 @@ html.light .hub-add-popup {
     background: var(--accent);
   }
 
-  .hub-layout { padding-bottom: 60px; }
-  .hub-main { height: auto; min-height: 0; }
+  .hub-main { height: auto; min-height: 0; padding-bottom: 56px; }
   .hub-content { padding-bottom: 8px; }
 
   section.page-hero {
-    height: 100px !important;
-    min-height: 100px !important;
+    height: 120px !important;
+    min-height: 120px !important;
   }
 
   section.page-hero h1 { font-size: 1.3rem !important; letter-spacing: -0.02em !important; }
@@ -9236,12 +9275,20 @@ html.light .hub-add-popup {
   .hub-mbb-item .snav-icon svg { width: 16px; height: 16px; }
   .hub-mbb-item .snav-label { font-size: 0.45rem !important; }
   .hub-mobile-bottom-nav { padding: 3px 4px env(safe-area-inset-bottom, 6px) 4px; gap: 2px; }
-  section.page-hero { height: 80px !important; min-height: 80px !important; }
-  section.page-hero h1 { font-size: 1.1rem !important; }
+  section.page-hero { height: 90px !important; min-height: 90px !important; }
+  section.page-hero h1 { font-size: 1.15rem !important; }
   #weekLabel { font-size: 0.78rem !important; }
-  :root { --hour-height: 38px; --time-axis-width: 36px; --container-padding: 8px; }
-  .hub-content { padding-left: 8px; padding-right: 8px; }
-  .hub-layout { padding-bottom: 52px; }
+  :root { --hour-height: 38px; --time-axis-width: 36px; --container-padding: 8px; }  .hub-content { padding-left: 8px; padding-right: 8px; }
+
+  /* ─── MOBILE TOUCH TARGETS ── */
+  .btn, .chip { min-height: 44px; }
+  .modal-close { width: 40px; height: 40px; }
+  .hub-hamburger { min-width: 44px; min-height: 44px; }
+  .access-main, .access-item { width: 48px; height: 48px; }
+  .mobile-add-fab { width: 56px; height: 56px; }
+  .hub-bottom-nav-item { min-height: 48px; }
+
+
 }
 
 
