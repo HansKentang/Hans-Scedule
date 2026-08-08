@@ -30,6 +30,7 @@ const URLS = [
   '/assets/icon.svg',
   '/assets/icon-192.png',
   '/assets/icon-512.png',
+  '/favicon.ico',
   '/manifest.json'
 ];
 

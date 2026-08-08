@@ -383,12 +383,12 @@ function duplicateGalleryImage(id) {
   showToast('Image duplicated', 'info', 1500);
 }
 
-function updateCanvasSize() {
+function updateCanvasSize(layout) {
   const canvas = document.getElementById('galGrid');
   if (!canvas) return;
-  const layout = getGalleryLayout();
+  const items = layout || getGalleryLayout();
   let maxY = 0;
-  for (const it of layout) maxY = Math.max(maxY, (it.y || 0) + (it.h || GAL_DEFAULT_H));
+  for (const it of items) maxY = Math.max(maxY, (it.y || 0) + (it.h || GAL_DEFAULT_H));
   canvas.style.minHeight = Math.max(420, maxY + GAL_PAD) + 'px';
 }
 
@@ -440,6 +440,7 @@ function scheduleGalleryReflow() {
 function reflowGallery() {
   const canvas = document.getElementById('galGrid');
   if (!canvas) return;
+  if (_galDrag) return; // never reflow mid-drag
   const layout = getGalleryLayout();
   if (!layout.length) return;
   resolveGalleryCollisions(layout, canvas.clientWidth, GAL_CANVAS_HEIGHT);
@@ -448,7 +449,17 @@ function reflowGallery() {
     const el = canvas.querySelector('[data-gallery-id="' + it.id + '"]');
     if (el) { el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; }
   });
-  updateCanvasSize();
+  updateCanvasSize(layout);
+}
+
+// Apply a layout's positions to the DOM (only for cards that exist)
+function applyGalleryPositions(layout) {
+  const canvas = document.getElementById('galGrid');
+  if (!canvas) return;
+  layout.forEach(it => {
+    const el = canvas.querySelector('[data-gallery-id="' + it.id + '"]');
+    if (el) { el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; }
+  });
 }
 
 function cancelGalDrag() {
@@ -456,16 +467,22 @@ function cancelGalDrag() {
   const d = _galDrag;
   _galDrag = null;
   if (d.active) {
-    d.card.style.left = d.originalX + 'px';
-    d.card.style.top = d.originalY + 'px';
+    // Restore EVERY card to its pre-drag position (not just the dragged one)
+    if (d.snapshot) applyGalleryPositions(d.snapshot);
     d.card.classList.remove('dragging');
     d.card.style.zIndex = '';
+    canvasEl().classList.remove('gal-live-drag');
     if (d._ghost && d._ghost.parentNode) d._ghost.parentNode.removeChild(d._ghost);
+    updateCanvasSize();
   }
 }
 
+function canvasEl() {
+  return document.getElementById('galGrid');
+}
+
 function setupGalleryCanvasDrag() {
-  const canvas = document.getElementById('galGrid');
+  const canvas = canvasEl();
   if (!canvas) return;
   if (canvas._galDragWired) return;
   canvas._galDragWired = true;
@@ -481,22 +498,25 @@ function setupGalleryCanvasDrag() {
     const layout = getGalleryLayout();
     const item = layout.find(i => i.id === id);
     if (!item) return;
+    // Keep receiving pointer events even when the cursor leaves the canvas
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
     const cr = card.getBoundingClientRect();
     const gr = canvas.getBoundingClientRect();
     _galDrag = {
       card,
       itemId: id,
+      itemUid: item.uid,
       offsetX: e.clientX - cr.left,
       offsetY: e.clientY - cr.top,
-      gridLeft: gr.left,
-      gridTop: gr.top,
       startX: e.clientX,
       startY: e.clientY,
-      originalX: item.x,
-      originalY: item.y,
       pointerId: e.pointerId,
       active: false,
       dragLayout: null,
+      snapshot: null,
+      elements: null,
+      lastX: null,
+      lastY: null,
       _ghost: null
     };
   });
@@ -510,9 +530,21 @@ function setupGalleryCanvasDrag() {
       const dx = e.clientX - d.startX, dy = e.clientY - d.startY;
       if (dx * dx + dy * dy < 25) return;
       d.active = true;
+      // Only capture the pointer once the drag actually starts, so plain
+      // clicks are never retargeted away from the image/picker handlers.
+      try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      // Working copy of the layout + full snapshot for cancel/restore
       d.dragLayout = getGalleryLayout().map(i => ({ ...i }));
+      d.snapshot = d.dragLayout.map(i => ({ ...i }));
+      d.dragItem = d.dragLayout.find(i => i.id === d.itemId);
+      // Cache element refs once (no querySelector per item per frame)
+      d.elements = {};
+      d.dragLayout.forEach(it => {
+        d.elements[it.id] = canvas.querySelector('[data-gallery-id="' + it.id + '"]');
+      });
       d.card.classList.add('dragging');
       d.card.style.zIndex = '9999';
+      canvas.classList.add('gal-live-drag');
       // Origin ghost marker
       const ghost = document.createElement('div');
       ghost.className = 'gal-drag-origin';
@@ -524,12 +556,22 @@ function setupGalleryCanvasDrag() {
       canvas.appendChild(ghost);
     }
     const gr = canvas.getBoundingClientRect();
-    const newX = galSnap(e.clientX - d.offsetX - gr.left);
+    const newX = Math.max(0, galSnap(e.clientX - d.offsetX - gr.left));
     const newY = Math.max(0, galSnap(e.clientY - d.offsetY - gr.top));
-    d.card.style.left = newX + 'px';
-    d.card.style.top = newY + 'px';
-    const di = d.dragLayout && d.dragLayout.find(i => i.id === d.itemId);
+    // Skip all work when the snapped position hasn't changed (20px grid)
+    if (newX === d.lastX && newY === d.lastY) return;
+    d.lastX = newX;
+    d.lastY = newY;
+    const di = d.dragItem;
     if (di) { di.x = newX; di.y = newY; }
+    // LIVE collision: other cards slide out of the way as you drag
+    resolveGalleryCollisions(d.dragLayout, gr.width, GAL_CANVAS_HEIGHT, d.itemUid);
+    d.dragLayout.forEach(it => {
+      const el = d.elements[it.id];
+      if (el) { el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; }
+    });
+    // Grow the canvas live so the drop zone is always reachable
+    updateCanvasSize(d.dragLayout);
   }
 
   function endDrag(e) {
@@ -541,6 +583,7 @@ function setupGalleryCanvasDrag() {
     if (d._ghost && d._ghost.parentNode) d._ghost.parentNode.removeChild(d._ghost);
     d.card.classList.remove('dragging');
     d.card.style.zIndex = '';
+    canvas.classList.remove('gal-live-drag');
     const gr = canvas.getBoundingClientRect();
     let x = Math.max(0, Math.min(galSnap(parseInt(d.card.style.left, 10) || 0), gr.width - d.card.offsetWidth));
     // Freeform canvas: clamp to the tall canvas, not the current content height,
@@ -554,15 +597,11 @@ function setupGalleryCanvasDrag() {
       // Resolve collisions but keep the dropped card exactly where it landed
       resolveGalleryCollisions(layout, gr.width, GAL_CANVAS_HEIGHT, item.uid);
       saveGalleryLayout(layout);
-      // Update all cards' positions without full re-render
-      layout.forEach(it => {
-        const el = canvas.querySelector('[data-gallery-id="' + it.id + '"]');
-        if (el) { el.style.left = it.x + 'px'; el.style.top = it.y + 'px'; }
-      });
+      applyGalleryPositions(layout);
       // Drop bounce
       d.card.classList.add('drop-bounce');
       setTimeout(function() { d.card.classList.remove('drop-bounce'); }, 500);
-      updateCanvasSize();
+      updateCanvasSize(layout);
       showToast('Position saved', 'info', 800);
     }
     d.card.setAttribute('data-suppress-click', '1');
@@ -571,7 +610,10 @@ function setupGalleryCanvasDrag() {
 
   document.addEventListener('pointermove', moveDrag);
   document.addEventListener('pointerup', endDrag);
-  document.addEventListener('pointercancel', endDrag);
+  // Interrupted pointer (e.g. touch scroll grab) → cancel, don't commit
+  document.addEventListener('pointercancel', function(e) {
+    if (_galDrag && e.pointerId === _galDrag.pointerId) cancelGalDrag();
+  });
 
   // Escape cancels drag
   document.addEventListener('keydown', function galEsc(e) {

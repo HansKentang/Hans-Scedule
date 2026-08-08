@@ -126,7 +126,12 @@
       background: var(--text); color: var(--bg);
       display: flex; align-items: center; justify-content: center;
       font-size: 0.8rem; font-weight: 700;
+      overflow: hidden;
       transition: transform 0.3s var(--bounce);
+    }
+    .nav-icon img {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block;
     }
     .nav-brand:hover .nav-icon { transform: scale(1.1) rotate(-4deg); }
     .nav-name { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.02em; }
@@ -880,7 +885,7 @@
   <nav>
     <div class="nav-inner">
       <a href="#" class="nav-brand">
-        <div class="nav-icon">H</div>
+        <div class="nav-icon"><img src="assets/icon-192.png" alt="Havën"></div>
         <span class="nav-name">Havën</span>
       </a>
       <div class="nav-links">

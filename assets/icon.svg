@@ -1,11 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#0a0a0b"/>
-  <g fill="none" stroke="#e2e2e4" stroke-width="22" stroke-linecap="round">
-    <line x1="156" y1="128" x2="156" y2="384"/>
-    <line x1="356" y1="128" x2="356" y2="384"/>
-    <line x1="156" y1="256" x2="356" y2="256"/>
-    <circle cx="200" cy="256" r="8" fill="#e2e2e4"/>
-    <circle cx="256" cy="256" r="8" fill="#e2e2e4"/>
-    <circle cx="312" cy="256" r="8" fill="#e2e2e4"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#18181b"/>
+      <stop offset="1" stop-color="#0a0a0b"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.5" cy="0.28" r="0.9">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#sheen)"/>
+  <rect x="1.5" y="1.5" width="509" height="509" rx="110.5" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="3"/>
+  <g fill="#f4f4f5">
+    <rect x="146" y="156" width="56" height="200" rx="28"/>
+    <rect x="310" y="156" width="56" height="200" rx="28"/>
+    <rect x="202" y="232" width="46" height="48" rx="24"/>
+    <rect x="264" y="232" width="46" height="48" rx="24"/>
   </g>
+  <circle cx="256" cy="256" r="16" fill="#a1a1aa"/>
 </svg>

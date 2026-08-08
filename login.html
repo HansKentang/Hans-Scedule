@@ -148,7 +148,12 @@
       font-size: clamp(0.85rem, 1.2vw, 1.1rem);
       font-weight: 700;
       flex-shrink: 0;
+      overflow: hidden;
       transition: transform 0.3s var(--bounce);
+    }
+    .auth-brand-icon img {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block;
     }
     .auth-brand:hover .auth-brand-icon { transform: scale(1.1) rotate(-4deg); }
     .auth-brand-text { display: flex; flex-direction: column; gap: 2px; }
@@ -732,7 +737,7 @@
       <div class="auth-form-wrap">
         <!-- Brand -->
         <div class="auth-brand auth-reveal" style="--d:0.05s">
-          <div class="auth-brand-icon">H</div>
+          <div class="auth-brand-icon"><img src="assets/icon-192.png" alt="Havën"></div>
           <div class="auth-brand-text">
             <span class="auth-brand-name">Havën</span>
             <span class="auth-brand-tagline">Your schedule, synced</span>

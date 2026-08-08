@@ -2190,6 +2190,11 @@ html.dark .hub-hero-decor {
   display: flex; align-items: center; justify-content: center;
   color: var(--bg-primary); font-size: 0.7rem; font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.hub-workspace-icon img {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block;
 }
 .hub-workspace-name {
   font-size: 0.85rem; font-weight: 600; color: var(--text-primary);
@@ -9627,6 +9632,13 @@ html.light.edit-mode .gal-canvas .gal-item {
 html.edit-mode .gal-canvas .gal-item:hover {
   outline-color: var(--accent);
   box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+}
+
+/* Live drag: non-dragged cards glide out of the way smoothly.
+   The dragged card itself keeps left/top instant (see .dragging). */
+.gal-canvas.gal-live-drag .gal-item:not(.dragging) {
+  transition: left 0.18s cubic-bezier(0.25, 1, 0.5, 1), top 0.18s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: left, top;
 }
 
 /* Dragging state (mirrors bento bubbles) */
