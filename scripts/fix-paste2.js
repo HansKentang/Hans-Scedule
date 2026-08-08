@@ -1,5 +1,5 @@
 const fs = require('fs');
-let content = fs.readFileSync('shared.js', 'utf8');
+let content = fs.readFileSync('js/shared.js', 'utf8');
 
 // Use regex to find the pattern regardless of line endings
 const regex = /(\s+if\s*\(preview\)\s*preview\.dataset\.pasted\s*=\s*dataUrl;\s*)\};\s*reader\.readAsDataURL\(blob\);/;
@@ -26,5 +26,5 @@ if (match) {
   }
 }
 
-fs.writeFileSync('shared.js', content, 'utf8');
+fs.writeFileSync('js/shared.js', content, 'utf8');
 console.log('Done');

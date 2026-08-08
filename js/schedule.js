@@ -2058,8 +2058,8 @@ function updatePomodoroDisplay() {
     // Browser notification with vibration
     if (typeof _sendNotification === 'function') {
       _sendNotification('\uD83C\uDF89 Pomodoro Complete!', 'Time for a break!', { tag: 'pomodoro', vibratePattern: [200, 100, 200] });
-    } else if ('Notification' in window && Notification.permission === 'granted') {
-      try { new Notification('\uD83C\uDF89 Pomodoro Complete!', { body: 'Time for a break!' }); if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(e) {}
+    } else if ('Notification' in window && Notification.permission === 'granted' && state.notifications !== false) {
+      try { new Notification('\uD83C\uDF89 Pomodoro Complete!', { body: 'Time for a break!' }); if (state.vibrate !== false && navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(e) {}
     }
   }
 }
@@ -2073,6 +2073,7 @@ function updateRingProgress(pct) {
 }
 
 function playPomodoroSound() {
+  if (state.soundEnabled === false) return;
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
@@ -2442,20 +2443,20 @@ function renderSchTemplates() {
     var ch = topH + totalHours * ROW_H;
 
     // Theme colours
-    var bg1 = isDark ? '#1c1b1b' : '#f9f8f4';
-    var bg2 = isDark ? '#2a2a2a' : '#f0ece6';
+    var bg1 = isDark ? '#0a0a0a' : '#f9f8f4';
+    var bg2 = isDark ? '#111111' : '#f0ece6';
     var textPrimary = isDark ? '#e5e2e1' : '#1c1b1b';
     var textSecondary = isDark ? '#8c928d' : '#7a7670';
     var textTertiary = isDark ? '#6b6b6b' : '#a09c96';
-    var borderColor = isDark ? '#3a3939' : '#d7d2ca';
-    var borderLight = isDark ? '#2a2a2a' : '#e2ddd6';
-    var accent = '#4d6356';
-    var accentLight = isDark ? '#b4ccbc' : '#d4e8d8';
+    var borderColor = isDark ? '#2a2a2a' : '#d7d2ca';
+    var borderLight = isDark ? '#1a1a1a' : '#e2ddd6';
+    var accent = isDark ? '#ffffff' : '#1c1b1b';
+    var accentLight = isDark ? '#d0d0d0' : '#3a3a3a';
     var white = '#ffffff';
-    var todayColor = '#3b82f6';
-    var weekendBg = isDark ? '#222' : '#f4f2ed';
+    var todayColor = isDark ? '#ffffff' : '#1c1b1b';
+    var weekendBg = isDark ? '#0d0d0d' : '#f4f2ed';
     var gridLineColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
-    var headerBg = isDark ? '#131313' : '#ffffff';
+    var headerBg = isDark ? '#000000' : '#ffffff';
     var rowAltBg = isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)';
 
     // Build canvas with outer rounded rect + shadow
@@ -2494,8 +2495,8 @@ function renderSchTemplates() {
 
     // ─── APP HEADER ───
     var hdrGrad = ctx.createLinearGradient(0, oy, 0, oy + HEADER_H);
-    hdrGrad.addColorStop(0, isDark ? '#2a2a2a' : '#ffffff');
-    hdrGrad.addColorStop(1, isDark ? '#1c1b1b' : '#f5f2ed');
+    hdrGrad.addColorStop(0, isDark ? '#111111' : '#ffffff');
+    hdrGrad.addColorStop(1, isDark ? '#0a0a0a' : '#f5f2ed');
     ctx.fillStyle = hdrGrad;
     ctx.fillRect(ox, oy, innerW, HEADER_H);
 
@@ -2716,7 +2717,7 @@ function renderSchTemplates() {
       var r = 6;
       ctx.beginPath();
       roundedRect(ctx, x1, y1, bw, bh, r);
-      ctx.fillStyle = isDark ? '#2a2a2a' : '#ffffff';
+      ctx.fillStyle = isDark ? '#161616' : '#ffffff';
       ctx.fill();
 
       // Reset shadow for inner elements

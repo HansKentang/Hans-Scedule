@@ -403,7 +403,12 @@ function renderSettingsNav() {
   var cats = [
     { id: 'account', label: t('settings.account'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
     { id: 'appearance', label: t('settings.appearance'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>' },
-    { id: 'ai', label: t('settings.ai'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4c0 2-2 3-2 3h-4s-2-1-2-3a4 4 0 014-4z"/><path d="M8 15h8v2a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2z"/><line x1="12" y1="19" x2="12" y2="22"/></svg>' },
+    { id: 'language', label: 'Language & Format', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>' },
+    { id: 'behavior', label: 'General', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>' },
+    { id: 'sound', label: 'Sound & Feedback', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M15.54 8.46a5 5 0 010 7.07"/></svg>' },
+    { id: 'shortcuts', label: 'Shortcuts', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M18 12h.01M6 16h.01M18 16h.01M9 16h6"/></svg>' },
+    { id: 'ai', label: 'AI Assistant', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 014 4c0 2-2 3-2 3h-4s-2-1-2-3a4 4 0 014-4z"/><path d="M8 15h8v2a2 2 0 01-2 2h-4a2 2 0 01-2-2v-2z"/><line x1="12" y1="19" x2="12" y2="22"/></svg>' },
+    { id: 'privacy', label: 'Storage & Privacy', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>' },
     { id: 'data', label: t('settings.data'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' },
     { id: 'about', label: t('settings.about'), icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' }
   ];
@@ -433,7 +438,12 @@ function switchSettingsCategory(cat) {
   switch (cat) {
     case 'account': renderAccountSettings(content); break;
     case 'appearance': renderAppearanceSettings(content); break;
+    case 'language': renderLanguageSettings(content); break;
+    case 'behavior': renderBehaviorSettings(content); break;
+    case 'sound': renderSoundSettings(content); break;
+    case 'shortcuts': renderShortcutsSettings(content); break;
     case 'ai': renderAISettings(content); break;
+    case 'privacy': renderPrivacySettings(content); break;
     case 'data': renderDataSettings(content); break;
     case 'admin': renderAdminSettings(content); break;
     case 'about': renderAboutSettings(content); break;
@@ -521,9 +531,6 @@ function renderAccountSettings(el) {
   var activeUser = localUsers.find(function(u) { return u.id === activeId; });
   var guest = isGuestMode();
   var tz = typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : '—';
-  var savedLang = 'en'; try { savedLang = localStorage.getItem('haven-language') || 'en'; } catch(e) {}
-  var savedWeekStart = 'monday'; try { savedWeekStart = localStorage.getItem('haven-week-start') || 'monday'; } catch(e) {}
-  var savedTimeFormat = '12h'; try { savedTimeFormat = localStorage.getItem('haven-time-format') || '12h'; } catch(e) {}
 
   // Avatar + profile fields
   var avatarHtml = '';
@@ -598,24 +605,10 @@ function renderAccountSettings(el) {
       (connectedHtml || '') +
     '</div>' +
     '<div class="set-divider"></div>' +
-    // Preferences
     '<div class="set-group">' +
-      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:4px">PREFERENCES</div>' +
-      '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">Language</div><div class="set-row-desc">UI language</div></div>' +
-        '<div class="set-row-control"><select class="set-select" id="accLang"><option value="en">' + t('lang.en') + '</option><option value="id">' + t('lang.id') + '</option><option value="zh">' + t('lang.zh') + '</option></select></div>' +
-      '</div>' +
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">Timezone</div><div class="set-row-desc">Detected from browser</div></div>' +
         '<div class="set-row-control"><div class="set-readonly">' + escapeHtml(tz) + '</div></div>' +
-      '</div>' +
-      '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">Week starts on</div></div>' +
-        '<div class="set-row-control"><select class="set-select" id="accWeekStart"><option value="monday">Monday</option><option value="sunday">Sunday</option></select></div>' +
-      '</div>' +
-      '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">Time format</div></div>' +
-        '<div class="set-row-control"><select class="set-select" id="accTimeFormat"><option value="12h">12h</option><option value="24h">24h</option></select></div>' +
       '</div>' +
     '</div>' +
     '<div class="set-divider"></div>' +
@@ -646,11 +639,6 @@ function renderAccountSettings(el) {
     '<div class="set-logout">' +
       '<button class="set-btn set-btn-danger" id="setSignOut">Sign Out</button>' +
     '</div>';
-  // Set saved values
-  document.getElementById('accLang').value = savedLang;
-  document.getElementById('accWeekStart').value = savedWeekStart;
-  document.getElementById('accTimeFormat').value = savedTimeFormat;
-
   // Profile save
   document.getElementById('accProfileSave')?.addEventListener('click', function() {
     if (!activeUser) return;
@@ -671,21 +659,6 @@ function renderAccountSettings(el) {
     saveUsers();
     // Re-render
     renderAccountSettings(el);
-  });
-
-  // Preferences save on change
-  document.getElementById('accLang')?.addEventListener('change', function() {
-    if (typeof safeSetItem === 'function') safeSetItem('haven-language', this.value);
-    else try { localStorage.setItem('haven-language', this.value); } catch (e) {}
-    if (typeof applyLanguage === 'function') applyLanguage(this.value);
-  });
-  document.getElementById('accWeekStart')?.addEventListener('change', function() {
-    if (typeof safeSetItem === 'function') safeSetItem('haven-week-start', this.value);
-    else try { localStorage.setItem('haven-week-start', this.value); } catch (e) {}
-  });
-  document.getElementById('accTimeFormat')?.addEventListener('change', function() {
-    if (typeof safeSetItem === 'function') safeSetItem('haven-time-format', this.value);
-    else try { localStorage.setItem('haven-time-format', this.value); } catch (e) {}
   });
 
   // Export
@@ -710,9 +683,8 @@ function renderAccountSettings(el) {
 
   // Delete all data
   document.getElementById('accDeleteAll')?.addEventListener('click', function() {
-    if (!confirm('This will permanently delete ALL your data (tasks, habits, goals, finance, gallery, settings).\n\nThis cannot be undone. Are you sure?')) return;
-    if (!confirm('Really delete everything? Type "yes" to confirm.') && false) return;
-    if (!confirm('Final confirmation: delete all data?')) return;
+    if (!confirmAction('This will permanently delete ALL your data (tasks, habits, goals, finance, gallery, settings).\n\nThis cannot be undone. Are you sure?')) return;
+    if (!confirmAction('Final confirmation: delete all data?')) return;
     var keys = [];
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
@@ -749,18 +721,6 @@ function renderAppearanceSettings(el) {
   var prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
   var isDark = state.darkMode === null ? prefersDark : state.darkMode;
   var accent = typeof state !== 'undefined' && state.accentColor ? state.accentColor : null;
-  var swatchesHtml = '';
-  if (typeof ACCENT_PALETTE !== 'undefined' && typeof ACCENT_GROUPS !== 'undefined') {
-    ACCENT_GROUPS.forEach(function(g) {
-      var groupColors = ACCENT_PALETTE.filter(function(c) { return c.group === g.id; });
-      if (!groupColors.length) return;
-      swatchesHtml += '<div class="set-swatch-group"><div class="set-swatch-group-label">' + g.label + '</div><div class="set-swatches">';
-      groupColors.forEach(function(c) {
-        swatchesHtml += '<div class="set-swatch' + (accent === c.dark ? ' active' : '') + '" data-acc-color="' + c.dark + '" style="background:' + c.dark + '" title="' + c.name + '"></div>';
-      });
-      swatchesHtml += '</div></div>';
-    });
-  }
 
   el.innerHTML =
     '<h3>Appearance</h3>' +
@@ -773,7 +733,7 @@ function renderAppearanceSettings(el) {
     '</div>' +
     '<div class="set-group set-group-collapse">' +
       '<div class="set-row-label set-acc-header" onclick="var n=this.nextElementSibling;n.classList.toggle(\'collapsed\');this.classList.toggle(\'collapsed\')">ACCENT COLOR <span class="set-acc-badge" style="background:' + (accent || '#888') + '"></span> <span class="set-acc-toggle">›</span></div>' +
-      '<div class="set-acc-body">' + swatchesHtml + '</div>' +
+      '<div class="set-acc-body"></div>' +
     '</div>' +
     '<div class="set-group">' +
       '<div class="set-row">' +
@@ -787,24 +747,16 @@ function renderAppearanceSettings(el) {
     this.classList.toggle('on');
   });
 
-  el.querySelectorAll('[data-acc-color]').forEach(function(el2) {
-    el2.addEventListener('click', function() {
-      if (typeof state === 'undefined') return;
-      // Update active class immediately for visual feedback
-      el.querySelectorAll('[data-acc-color]').forEach(function(s) { s.classList.remove('active'); });
-      el2.classList.add('active');
-      state.accentColor = el2.dataset.accColor;
-      try { if (typeof applyAccentColor !== 'undefined') applyAccentColor(); } catch(ex) { if (typeof console !== 'undefined') console.warn('[accent] apply error', ex); }
-      try { if (typeof saveState !== 'undefined') saveState(); } catch(ex) { if (typeof console !== 'undefined') console.warn('[accent] save error', ex); }
-    });
-  });
+  var accBody = el.querySelector('.set-acc-body');
+  if (accBody && typeof renderAccentColorPicker === 'function') {
+    renderAccentColorPicker(accBody);
+  }
 
   document.getElementById('setVisualsToggle')?.addEventListener('click', function() {
     if (typeof toggleEditMode !== 'undefined') toggleEditMode();
     this.classList.toggle('on');
   });
 }
-
 function renderAISettings(el) {
   var savedProvider = 'groq'; try { savedProvider = localStorage.getItem('haven-schedule-provider') || 'groq'; } catch(e) {}
   var savedKey = ''; try { savedKey = localStorage.getItem('haven-schedule-apikey') || ''; } catch(e) {}
@@ -835,9 +787,13 @@ function renderAISettings(el) {
   var extra = ''; try { extra = localStorage.getItem('haven-ai-extra-instructions') || ''; } catch(e) {}
 
   el.innerHTML =
-    '<h3>AI & API</h3>' +
+    '<h3>AI Assistant</h3>' +
     '<div class="set-desc">Configure the AI assistant provider and API key</div>' +
     '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Enable AI Assistant</div><div class="set-row-desc">Turn the assistant on or off app-wide</div></div>' +
+        '<button class="set-toggle' + (state.aiEnabled !== false ? ' on' : '') + '" id="setAiEnabledToggle"></button>' +
+      '</div>' +
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">Provider</div><div class="set-row-desc">Select which AI service to use</div></div>' +
         '<div class="set-row-control"><select class="set-select" id="setAiProvider"><option value="groq">Groq</option><option value="gemini">Gemini</option></select></div>' +
@@ -849,7 +805,7 @@ function renderAISettings(el) {
     '</div>' +
     '<div class="set-divider"></div>' +
     '<div class="set-group set-group-collapse">' +
-      '<div class="set-row-label set-acc-header" onclick="var n=this.nextElementSibling;n.classList.toggle(\'collapsed\');this.classList.toggle(\'collapsed\')">AI PROFILE & LEARNING <span class="set-acc-toggle">\u203A</span></div>' +
+      '<div class="set-row-label set-acc-header" onclick="var n=this.nextElementSibling;n.classList.toggle(\'collapsed\');this.classList.toggle(\'collapsed\')">PROFILE &amp; LEARNING <span class="set-acc-toggle">\u203A</span></div>' +
       '<div class="set-acc-body">' +
         '<div class="set-subsection-label">ABOUT YOU</div>' +
         '<div class="set-ai-grid">' +
@@ -881,6 +837,12 @@ function renderAISettings(el) {
         '<button class="set-btn set-ai-save" id="aiExtraSave" style="margin-top:4px">Save Instructions</button>' +
       '</div>' +
     '</div>';
+
+  document.getElementById('setAiEnabledToggle').addEventListener('click', function() {
+    state.aiEnabled = !(state.aiEnabled !== false);
+    this.classList.toggle('on', state.aiEnabled);
+    saveState();
+  });
 
   document.getElementById('setAiProvider').value = savedProvider;
   document.getElementById('setAiProvider').addEventListener('change', function() {
@@ -981,6 +943,252 @@ function renderAISettings(el) {
     try { localStorage.setItem('haven-ai-extra-instructions', val); } catch (e) { /* ignore */ }
     if (typeof showToast === 'function') showToast('Instructions saved');
   });
+}
+
+function renderLanguageSettings(el) {
+  var savedLang = 'en'; try { savedLang = localStorage.getItem('haven-language') || 'en'; } catch(e) {}
+  var savedWeekStart = 'monday'; try { savedWeekStart = localStorage.getItem('haven-week-start') || 'monday'; } catch(e) {}
+  var savedTimeFormat = '12h'; try { savedTimeFormat = localStorage.getItem('haven-time-format') || '12h'; } catch(e) {}
+
+  el.innerHTML =
+    '<h3>Language & Format</h3>' +
+    '<div class="set-desc">Choose how the app displays language and time</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Language</div><div class="set-row-desc">UI language</div></div>' +
+        '<div class="set-row-control"><select class="set-select" id="setLang"><option value="en">' + t('lang.en') + '</option><option value="id">' + t('lang.id') + '</option><option value="zh">' + t('lang.zh') + '</option></select></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Week starts on</div><div class="set-row-desc">First day of the week on calendars</div></div>' +
+        '<div class="set-row-control"><select class="set-select" id="setWeekStart"><option value="monday">Monday</option><option value="sunday">Sunday</option></select></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Time format</div><div class="set-row-desc">12-hour or 24-hour clock</div></div>' +
+        '<div class="set-row-control"><select class="set-select" id="setTimeFormat"><option value="12h">12h</option><option value="24h">24h</option></select></div>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('setLang').value = savedLang;
+  document.getElementById('setWeekStart').value = savedWeekStart;
+  document.getElementById('setTimeFormat').value = savedTimeFormat;
+
+  document.getElementById('setLang').addEventListener('change', function() {
+    if (typeof safeSetItem === 'function') safeSetItem('haven-language', this.value);
+    else try { localStorage.setItem('haven-language', this.value); } catch (e) {}
+    if (typeof applyLanguage === 'function') applyLanguage(this.value);
+  });
+  document.getElementById('setWeekStart').addEventListener('change', function() {
+    if (typeof safeSetItem === 'function') safeSetItem('haven-week-start', this.value);
+    else try { localStorage.setItem('haven-week-start', this.value); } catch (e) {}
+  });
+  document.getElementById('setTimeFormat').addEventListener('change', function() {
+    if (typeof safeSetItem === 'function') safeSetItem('haven-time-format', this.value);
+    else try { localStorage.setItem('haven-time-format', this.value); } catch (e) {}
+  });
+}
+
+function renderBehaviorSettings(el) {
+  el.innerHTML =
+    '<h3>General</h3>' +
+    '<div class="set-desc">App-wide behavior and interface density</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Animations</div><div class="set-row-desc">Motion effects across the app</div></div>' +
+        '<button class="set-toggle' + (state.animations !== false ? ' on' : '') + '" id="setAnimationsToggle"></button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Compact mode</div><div class="set-row-desc">Tighter spacing throughout the app</div></div>' +
+        '<button class="set-toggle' + (state.compactMode ? ' on' : '') + '" id="setCompactToggle"></button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Confirm before deleting</div><div class="set-row-desc">Ask for confirmation on destructive actions</div></div>' +
+        '<button class="set-toggle' + (state.confirmBeforeDelete !== false ? ' on' : '') + '" id="setConfirmToggle"></button>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('setAnimationsToggle').addEventListener('click', function() {
+    state.animations = !(state.animations !== false);
+    this.classList.toggle('on', state.animations);
+    applyBehaviorClasses();
+    saveState();
+  });
+  document.getElementById('setCompactToggle').addEventListener('click', function() {
+    state.compactMode = !state.compactMode;
+    this.classList.toggle('on', state.compactMode);
+    applyBehaviorClasses();
+    saveState();
+  });
+  document.getElementById('setConfirmToggle').addEventListener('click', function() {
+    state.confirmBeforeDelete = !(state.confirmBeforeDelete !== false);
+    this.classList.toggle('on', state.confirmBeforeDelete);
+    saveState();
+  });
+}
+
+function renderSoundSettings(el) {
+  el.innerHTML =
+    '<h3>Sound & Feedback</h3>' +
+    '<div class="set-desc">Audio, notifications, and vibration</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Pomodoro sound</div><div class="set-row-desc">Play a chime when a timer completes</div></div>' +
+        '<button class="set-toggle' + (state.soundEnabled !== false ? ' on' : '') + '" id="setSoundToggle"></button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Browser notifications</div><div class="set-row-desc">Reminders for tasks and timers</div></div>' +
+        '<button class="set-toggle' + (state.notifications !== false ? ' on' : '') + '" id="setNotifToggle"></button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Vibration</div><div class="set-row-desc">Haptic feedback on supported devices</div></div>' +
+        '<button class="set-toggle' + (state.vibrate !== false ? ' on' : '') + '" id="setVibrateToggle"></button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Toast duration</div><div class="set-row-desc">How long notifications stay on screen</div></div>' +
+        '<div class="set-row-control"><select class="set-select" id="setToastDur"><option value="2000">2s</option><option value="4000">4s</option><option value="6000">6s</option></select></div>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('setSoundToggle').addEventListener('click', function() {
+    state.soundEnabled = !(state.soundEnabled !== false);
+    this.classList.toggle('on', state.soundEnabled);
+    saveState();
+  });
+  document.getElementById('setNotifToggle').addEventListener('click', function() {
+    state.notifications = !(state.notifications !== false);
+    this.classList.toggle('on', state.notifications);
+    if (state.notifications) requestNotifPermission();
+    saveState();
+  });
+  document.getElementById('setVibrateToggle').addEventListener('click', function() {
+    state.vibrate = !(state.vibrate !== false);
+    this.classList.toggle('on', state.vibrate);
+    saveState();
+  });
+  document.getElementById('setToastDur').value = String(state.toastDuration || 4000);
+  document.getElementById('setToastDur').addEventListener('change', function() {
+    state.toastDuration = parseInt(this.value, 10) || 4000;
+    saveState();
+  });
+}
+
+function renderShortcutsSettings(el) {
+  var mk = function(k, d) { return '<div class="shortcut-row"><kbd class="shortcut-key">' + k + '</kbd><span class="shortcut-desc">' + d + '</span></div>'; };
+  var items = [
+    mk(shortcutDisplay('I'), 'Open AI Assistant'),
+    mk('?', 'Toggle help panel'),
+    mk(shortcutDisplay('K'), 'Open AI chat'),
+    mk('Q', 'Quick new task'),
+    mk('T', 'Toggle dark/light theme'),
+    mk('F', 'Toggle focus mode'),
+    mk('Ctrl+K', 'Open command palette'),
+    mk('Ctrl+Z / Ctrl+Shift+Z', 'Undo / Redo (hub)'),
+    mk('Esc', 'Close any open modal')
+  ];
+  if (typeof state !== 'undefined' && state.editMode) {
+    items.push(mk('Ctrl+D', 'Duplicate selected bubble'), mk('\u2191 \u2193 \u2190 \u2192', 'Nudge bubble'));
+  }
+  el.innerHTML =
+    '<h3>Shortcuts</h3>' +
+    '<div class="set-desc">Available keyboard shortcuts</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">KEYBOARD</div>' +
+      items.join('') +
+    '</div>';
+}
+
+function renderPrivacySettings(el) {
+  var keys = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var k = localStorage.key(i);
+    if (k && k.indexOf('haven-') === 0) keys.push(k);
+  }
+  var totalBytes = 0;
+  keys.forEach(function(k) { try { totalBytes += (localStorage.getItem(k) || '').length; } catch(e) {} });
+  var kb = totalBytes > 1024 ? (totalBytes / 1024).toFixed(1) + ' KB' : totalBytes + ' B';
+
+  var listHtml = keys.length === 0
+    ? '<div class="set-empty">No stored data found</div>'
+    : keys.map(function(k) {
+        var len = 0; try { len = (localStorage.getItem(k) || '').length; } catch(e) {}
+        var size = len > 1024 ? (len / 1024).toFixed(1) + ' KB' : len + ' B';
+        return '<div class="set-stor-item" data-stor-key="' + escapeHtml(k) + '">' +
+          '<div class="set-stor-body"><div class="set-stor-key">' + escapeHtml(k) + '</div>' +
+          '<div class="set-stor-size">' + size + '</div></div>' +
+          '<button class="set-stor-del" data-stor-del="' + escapeHtml(k) + '">\u2715</button></div>';
+      }).join('');
+
+  el.innerHTML =
+    '<h3>Storage & Privacy</h3>' +
+    '<div class="set-desc">View and manage the data stored on this device</div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Local storage</div><div class="set-row-desc">' + keys.length + ' keys \u00B7 ' + kb + '</div></div>' +
+        '<button class="set-btn" id="privacyRefresh">Refresh</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="set-divider"></div>' +
+    '<div class="set-group">' +
+      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">CLEAR DATA</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Tasks & schedule</div></div>' +
+        '<button class="set-btn" data-clear="tasks">Clear</button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Categories & tags</div></div>' +
+        '<button class="set-btn" data-clear="categories">Clear</button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Sleep & routine</div></div>' +
+        '<button class="set-btn" data-clear="sleep">Clear</button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Finance</div></div>' +
+        '<button class="set-btn" data-clear="finance">Clear</button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Gallery images</div></div>' +
+        '<button class="set-btn" data-clear="gallery">Clear</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="set-divider"></div>' +
+    '<div class="set-group">' +
+      '<div class="set-row-label" style="font-size:0.72rem;color:var(--text-tertiary);margin-bottom:6px">STORAGE</div>' +
+      listHtml +
+    '</div>';
+
+  var clearGroups = {
+    tasks: ['haven-schedule-tasks'],
+    categories: ['haven-schedule-categories', 'haven-subcategories', 'haven-custom-tags', 'haven-card-colors'],
+    sleep: ['haven-schedule-sleep', 'haven-schedule-sleep-targets', 'haven-schedule-routine'],
+    finance: ['haven-schedule-finance', 'haven-piggybank', 'haven-wallet'],
+    gallery: ['haven-gallery-layout']
+  };
+
+  el.querySelectorAll('[data-clear]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var group = btn.dataset.clear;
+      var list = clearGroups[group] || [];
+      var found = list.filter(function(k) { return localStorage.getItem(k) !== null; });
+      if (!confirmAction('Clear ' + group + ' data? This cannot be undone.')) return;
+      found.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
+      if (group === 'tasks') { try { loadState(); } catch(e) {} }
+      if (typeof showToast === 'function') showToast(found.length > 0 ? group + ' data cleared' : 'Nothing to clear');
+      renderPrivacySettings(el);
+    });
+  });
+
+  el.querySelectorAll('[data-stor-del]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var k = btn.dataset.storDel;
+      if (!confirmAction('Delete "' + k + '"? This cannot be undone.')) return;
+      try { localStorage.removeItem(k); } catch(e) {}
+      if (k === 'haven-schedule-settings') { try { loadState(); } catch(e) {} }
+      if (typeof showToast === 'function') showToast('Deleted ' + k);
+      renderPrivacySettings(el);
+    });
+  });
+
+  document.getElementById('privacyRefresh')?.addEventListener('click', function() { renderPrivacySettings(el); });
 }
 
 function renderDataSettings(el) {

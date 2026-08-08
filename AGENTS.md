@@ -24,9 +24,9 @@
 
 | File | Role |
 |------|------|
-| `shared.js` | Core state, storage (localStorage + IndexedDB), helpers, AI |
-| `schedule.js` | Schedule page logic: grid, tasks, drag/drop, focus |
-| `hub-visuals.js` | Bento canvas hub: bubbles, undo/redo, widgets |
+| `js/shared.js` | Core state, storage (localStorage + IndexedDB), helpers, AI |
+| `js/schedule.js` | Schedule page logic: grid, tasks, drag/drop, focus |
+| `js/hub-visuals.js` | Bento canvas hub: bubbles, undo/redo, widgets |
 | `schedule.html` | Schedule page DOM + CSS |
 | `finance.html` | Finance page DOM + CSS |
 | `activities.html` | Activities page DOM + CSS |
@@ -64,11 +64,11 @@
 
 | Constant | Value | File |
 |----------|-------|------|
-| `TAG_ORDER` | `['deep-work','meeting','exercise','study','hobby']` + custom | `shared.js` |
-| `BUILTIN_TAGS` | `['deep-work','meeting','exercise','study','hobby']` | `shared.js` |
-| `START_HOUR` | `5` (grid start) | `shared.js` |
-| `VISIBLE_HOURS` | `24` (grid span, 5am–5am next day) | `shared.js` |
-| `BENTO_UNDO_MAX` | `30` | `hub-visuals.js` |
+| `TAG_ORDER` | `['deep-work','meeting','exercise','study','hobby']` + custom | `js/shared.js` |
+| `BUILTIN_TAGS` | `['deep-work','meeting','exercise','study','hobby']` | `js/shared.js` |
+| `START_HOUR` | `5` (grid start) | `js/shared.js` |
+| `VISIBLE_HOURS` | `24` (grid span, 5am–5am next day) | `js/shared.js` |
+| `BENTO_UNDO_MAX` | `30` | `js/hub-visuals.js` |
 
 ## Critical Rules
 

@@ -2528,6 +2528,7 @@ function _pomoState(uid) {
   return _pomodoroState[uid];
 }
 function _playPomoAlert() {
+  if (typeof state !== 'undefined' && state.soundEnabled === false) return;
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
     var osc = ctx.createOscillator();
@@ -3453,11 +3454,11 @@ function _snapshotBubblePreview(el, type) {
 }
 
 var _snapshotColors = {
-  goals:'#4d6356', priorities:'#6b4f6b', todos:'#5b7fa4', habits:'#7a8a4d',
-  progress:'#4d7a7a', clock:'#8a6d3b', weather:'#5a7aaa', calendar:'#6b7a8a',
-  timer:'#8a5a4d', pomodoro:'#a45b4d', spotify:'#1db954', strava:'#fc4c02',
-  flightradar:'#003399', 'sleep-score':'#6b5b8a', quote:'#7a6a5b', notes:'#7a7a5b',
-  links:'#5b7a7a', images:'#6b5b5b'
+  goals:'#bdbdbd', priorities:'#b0b0b0', todos:'#a3a3a3', habits:'#979797',
+  progress:'#8a8a8a', clock:'#bdbdbd', weather:'#b0b0b0', calendar:'#a3a3a3',
+  timer:'#979797', pomodoro:'#8a8a8a', spotify:'#c7c7c7', strava:'#9a9a9a',
+  flightradar:'#8d8d8d', 'sleep-score':'#b5b5b5', quote:'#a8a8a8', notes:'#9c9c9c',
+  links:'#909090', images:'#c2c2c2'
 };
 
 window.captureHubSnapshot = function() {
@@ -3481,14 +3482,14 @@ window.captureHubSnapshot = function() {
 
   var isDark = document.documentElement.classList.contains('dark') ||
     (!document.documentElement.classList.contains('light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  var bg1 = isDark ? '#1c1b1b' : '#f9f8f4';
-  var bg2 = isDark ? '#2a2a2a' : '#f0ece6';
+  var bg1 = isDark ? '#0a0a0a' : '#f9f8f4';
+  var bg2 = isDark ? '#111111' : '#f0ece6';
   var text1 = isDark ? '#e5e2e1' : '#1c1b1b';
   var text2 = isDark ? '#8c928d' : '#7a7670';
   var text3 = isDark ? '#6b6b6b' : '#a09c96';
-  var border = isDark ? '#3a3939' : '#d7d2ca';
-  var borderLight = isDark ? '#2a2a2a' : '#e2ddd6';
-  var accent = '#4d6356';
+  var border = isDark ? '#2a2a2a' : '#d7d2ca';
+  var borderLight = isDark ? '#1a1a1a' : '#e2ddd6';
+  var accent = isDark ? '#ffffff' : '#1c1b1b';
 
   var scale = 2, c = document.createElement('canvas');
   c.width = outerW * scale; c.height = outerH * scale;
@@ -3506,8 +3507,8 @@ window.captureHubSnapshot = function() {
   var ox = PAD, oy = PAD;
 
   var hdrGrad = ctx.createLinearGradient(0, oy, 0, oy + HEADER_H);
-  hdrGrad.addColorStop(0, isDark ? '#2a2a2a' : '#ffffff');
-  hdrGrad.addColorStop(1, isDark ? '#1c1b1b' : '#f5f2ed');
+  hdrGrad.addColorStop(0, isDark ? '#111111' : '#ffffff');
+  hdrGrad.addColorStop(1, isDark ? '#0a0a0a' : '#f5f2ed');
   ctx.fillStyle = hdrGrad; ctx.fillRect(ox, oy, innerW, HEADER_H);
   ctx.fillStyle = border; ctx.fillRect(ox, oy + HEADER_H - 1, innerW, 1);
 
@@ -3530,7 +3531,7 @@ window.captureHubSnapshot = function() {
     var col = _snapshotColors[item.t] || accent;
     var prev = _snapshotBubblePreview(grid ? grid.querySelector('[data-bubble="' + item.uid + '"]') : null, item.t);
 
-    ctx.fillStyle = isDark ? '#2a2a2a' : '#ffffff';
+    ctx.fillStyle = isDark ? '#161616' : '#ffffff';
     ctx.beginPath(); _roundedRect(ctx, bx, by, bw, bh, 8); ctx.fill();
     ctx.strokeStyle = borderLight; ctx.lineWidth = 1;
     ctx.beginPath(); _roundedRect(ctx, bx, by, bw, bh, 8); ctx.stroke();

@@ -42,9 +42,9 @@ const PROVIDER_LINKS = {
 };
 
 const HOUR_HEIGHT = 60;
-const SNAP_MINUTES = 15;
-const VISIBLE_HOURS = 24;
-const START_HOUR = 5;
+let SNAP_MINUTES = 15;
+let VISIBLE_HOURS = 24;
+let START_HOUR = 5;
 
 // ─── RATE LIMITER & RETRY ──────────────────────────────────
 const rateLimiter = {
@@ -1090,6 +1090,7 @@ let _dailyBriefingNotifiedDate = '';
 // Centralized notification sender with vibration support
 function _sendNotification(title, body, opts) {
   opts = opts || {};
+  if (state.notifications === false) return;
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
     var n = new Notification(title, {
@@ -1098,7 +1099,7 @@ function _sendNotification(title, body, opts) {
       tag: opts.tag || ('haven-' + Date.now()),
     });
     n.onclick = function() { window.focus(); if (opts.onClick) opts.onClick(); };
-    if (opts.vibrate !== false && 'vibrate' in navigator) {
+    if (state.vibrate !== false && opts.vibrate !== false && 'vibrate' in navigator) {
       try { navigator.vibrate(opts.vibratePattern || [100, 50, 100]); } catch(e) {}
     }
   } catch (e) { /* ignore */ }
@@ -1113,6 +1114,7 @@ function _updateNotifBadge() {
 }
 
 function requestNotifPermission() {
+  if (state.notifications === false) return;
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
   }
@@ -1984,6 +1986,19 @@ let state = {
   currentView: 'week',
   currentMonthDate: null,
   savedScrollPosition: null,
+  gridStartHour: 5,
+  gridVisibleHours: 24,
+  snapMinutes: 15,
+  ambientEffects: true,
+  monochrome: true,
+  soundEnabled: true,
+  notifications: true,
+  vibrate: true,
+  toastDuration: 4000,
+  compactMode: false,
+  animations: true,
+  confirmBeforeDelete: true,
+  aiEnabled: true,
   currentUserId: null,
   localUsers: [],
 };
@@ -2190,7 +2205,7 @@ function applyLanguage(lang) {
     var a = el.closest('a');
     if (!a) return;
     var href = a.getAttribute('href');
-    var map = { 'index.html':'nav.hub','schedule.html':'nav.schedule','activities.html':'nav.activities','analytics.html':'nav.analytics','goals.html':'nav.goals','finance.html':'nav.finance','gallery.html':'nav.gallery' };
+    var map = { 'index.html':'nav.hub','schedule.html':'nav.schedule','activities.html':'nav.activities','analytics.html':'nav.analytics','goals.html':'nav.goals','finance.html':'nav.finance','gallery.html':'nav.gallery','friends.html':'nav.friends' };
     var key = map[href];
     if (key) el.textContent = t(key);
   });
@@ -3024,7 +3039,20 @@ function saveState() {
       currentView: state.currentView || 'week',
       currentWeekStart: state.currentWeekStart ? formatDate(state.currentWeekStart) : null,
       currentMonthDate: state.currentMonthDate ? formatDate(state.currentMonthDate) : null,
-      savedScrollPosition: state.savedScrollPosition ?? null
+      savedScrollPosition: state.savedScrollPosition ?? null,
+      gridStartHour: state.gridStartHour,
+      gridVisibleHours: state.gridVisibleHours,
+      snapMinutes: state.snapMinutes,
+      ambientEffects: state.ambientEffects,
+      monochrome: state.monochrome,
+      soundEnabled: state.soundEnabled,
+      notifications: state.notifications,
+      vibrate: state.vibrate,
+      toastDuration: state.toastDuration,
+      compactMode: state.compactMode,
+      animations: state.animations,
+      confirmBeforeDelete: state.confirmBeforeDelete,
+      aiEnabled: state.aiEnabled
     }));
   } catch (e) { console.warn('[img] saveState failed:', e); }
 }
@@ -3049,6 +3077,22 @@ function loadState() {
       if (s.currentWeekStart) state.currentWeekStart = new Date(s.currentWeekStart + 'T00:00:00');
       if (s.currentMonthDate) state.currentMonthDate = new Date(s.currentMonthDate + 'T00:00:00');
       state.savedScrollPosition = s.savedScrollPosition ?? null;
+      state.gridStartHour = (s.gridStartHour >= 0 && s.gridStartHour <= 20) ? s.gridStartHour : 5;
+      state.gridVisibleHours = (s.gridVisibleHours >= 8 && s.gridVisibleHours <= 24) ? s.gridVisibleHours : 24;
+      state.snapMinutes = ([5, 10, 15, 30, 60].indexOf(s.snapMinutes) !== -1) ? s.snapMinutes : 15;
+      state.ambientEffects = s.ambientEffects !== false;
+      state.monochrome = s.monochrome !== false;
+      state.soundEnabled = s.soundEnabled !== false;
+      state.notifications = s.notifications !== false;
+      state.vibrate = s.vibrate !== false;
+      state.toastDuration = ([2000, 4000, 6000].indexOf(s.toastDuration) !== -1) ? s.toastDuration : 4000;
+      state.compactMode = s.compactMode === true;
+      state.animations = s.animations !== false;
+      state.confirmBeforeDelete = s.confirmBeforeDelete !== false;
+      state.aiEnabled = s.aiEnabled !== false;
+      START_HOUR = state.gridStartHour;
+      VISIBLE_HOURS = state.gridVisibleHours;
+      SNAP_MINUTES = state.snapMinutes;
       // Images are restored via haven-image-* keys directly
     }
     const key = localStorage.getItem(API_KEY_STORAGE);
@@ -3225,9 +3269,9 @@ function applyImages() {
         el.src = url;
         el.style.display = "block";
         el.removeAttribute("data-empty-img");
-        var wrap = el.closest(".bento-img-wrap");
+        var wrap = el.closest(".bento-img-wrap, .gl-vision-img-wrap");
         if (wrap) {
-          var placeholder = wrap.querySelector(".bento-img-placeholder");
+          var placeholder = wrap.querySelector(".bento-img-placeholder, .gl-vision-img-placeholder");
           if (placeholder) placeholder.style.display = "none";
         }
         // Remove any .img-empty-placeholder sibling when image is set
@@ -3240,9 +3284,11 @@ function applyImages() {
         el.src = "";
         el.style.display = "none";
         el.setAttribute("data-empty-img", "");
-        var wrap = el.closest(".bento-img-wrap");
+        var wrap = el.closest(".bento-img-wrap, .gl-vision-img-wrap");
         if (!wrap) {
           if (_isLanding) return;
+          // Heroes have designed empty states (gradient backgrounds) — skip the generic placeholder
+          if (_id.indexOf('-hero') > 0) return;
           var parent = el.parentElement;
           if (parent && !parent.querySelector(".img-empty-placeholder")) {
             var ph = document.createElement("div");
@@ -3251,7 +3297,7 @@ function applyImages() {
             parent.insertBefore(ph, el);
           }
         } else {
-          var placeholder = wrap.querySelector(".bento-img-placeholder");
+          var placeholder = wrap.querySelector(".bento-img-placeholder, .gl-vision-img-placeholder");
           if (placeholder) placeholder.style.display = _isLanding ? "none" : "flex";
         }
       }
@@ -3334,9 +3380,9 @@ function setImage(id, url) {
   document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(function(el) {
     el.src = url;
     el.style.display = url ? 'block' : 'none';
-    var wrap = el.closest('.bento-img-wrap');
+    var wrap = el.closest('.bento-img-wrap, .gl-vision-img-wrap');
     if (wrap) {
-      var placeholder = wrap.querySelector('.bento-img-placeholder');
+      var placeholder = wrap.querySelector('.bento-img-placeholder, .gl-vision-img-placeholder');
       if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
     }
     if (url) {
@@ -3376,9 +3422,9 @@ function resetImage(id) {
   document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => {
     el.src = url;
     el.style.display = url ? 'block' : 'none';
-    const wrap = el.closest('.bento-img-wrap');
+    const wrap = el.closest('.bento-img-wrap, .gl-vision-img-wrap');
     if (wrap) {
-      const placeholder = wrap.querySelector('.bento-img-placeholder');
+      const placeholder = wrap.querySelector('.bento-img-placeholder, .gl-vision-img-placeholder');
       if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
     }
   });
@@ -3672,9 +3718,19 @@ function darkenColor(hex, amount) {
 }
 
 function applyAccentColor() {
-  const hex = state.accentColor;
   const el = document.documentElement;
-  if (!hex) { el.style.removeProperty('--user-primary'); el.style.removeProperty('--accent-soft'); return; }
+  const isLight = el.classList.contains('light');
+  if (state.monochrome) {
+    el.style.setProperty('--user-primary', isLight ? '#1c1b1b' : '#ffffff');
+    el.style.setProperty('--accent-soft', isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.12)');
+    return;
+  }
+  const hex = (state && state.accentColor) || '';
+  if (!hex) {
+    el.style.setProperty('--user-primary', isLight ? '#4d6356' : '#b4ccbc');
+    el.style.setProperty('--accent-soft', isLight ? '#d4e8d8' : '#2d4236');
+    return;
+  }
   const palette = ACCENT_PALETTE.find(p => p.dark === hex);
   if (palette) {
     el.style.setProperty('--user-primary', palette.dark);
@@ -3690,8 +3746,19 @@ function applyTheme() {
   const isDark = state.darkMode === null ? prefersDark : state.darkMode;
   document.documentElement.classList.toggle('light', !isDark);
   document.documentElement.classList.toggle('dark', isDark);
+  applyBehaviorClasses();
   applyCardColors();
   applyAccentColor();
+  applyAmbientEffects();
+}
+
+function applyBehaviorClasses() {
+  document.documentElement.classList.toggle('compact', !!state.compactMode);
+  document.documentElement.classList.toggle('no-anim', state.animations === false);
+}
+
+function applyAmbientEffects() {
+  document.documentElement.classList.toggle('no-ambient', state.ambientEffects === false);
 }
 
 function toggleTheme() {
@@ -4167,90 +4234,136 @@ function updateSettingsKeyStatus() {
   dom.settingsKeyStatusText.textContent = hasKey ? `${label} key saved and active` : `No ${label.toLowerCase()} API key configured`;
 }
 
-function renderAccentPickerInSettings() {
-  var container = document.getElementById('settingsAccentColor');
+function renderAccentColorPicker(container) {
   if (!container) return;
+  var body = container.querySelector('.acc-picker-body');
+  if (!body) {
+    body = document.createElement('div');
+    body.className = 'acc-picker-body';
+    container.appendChild(body);
+  }
   var selected = state.accentColor;
   var custom = state.accentCustomColors || [];
   var removed = state.accentRemovedPresets || [];
   var html = '<div class="acc-swatches">';
+  html += '<div class="acc-swatch-group"><div class="acc-swatch-group-label">Default</div><div class="acc-swatch-row">';
   html += '<div class="acc-swatch' + (selected ? '' : ' active') + '" data-acc="" title="Default">';
   html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  html += '</div>';
-  for (var i = 0; i < ACCENT_PALETTE.length; i++) {
-    var c = ACCENT_PALETTE[i];
-    if (removed.indexOf(c.dark) !== -1) continue;
-    var isOn = selected === c.dark;
-    html += '<div class="acc-swatch' + (isOn ? ' active' : '') + '" data-acc="' + c.dark + '" data-acc-preset="' + c.dark + '" title="' + c.name + ' — right-click to remove" style="background:' + c.dark + '"></div>';
+  html += '</div></div></div>';
+  if (typeof ACCENT_GROUPS !== 'undefined') {
+    for (var gi = 0; gi < ACCENT_GROUPS.length; gi++) {
+      var g = ACCENT_GROUPS[gi];
+      var groupColors = [];
+      for (var pi = 0; pi < ACCENT_PALETTE.length; pi++) {
+        if (ACCENT_PALETTE[pi].group === g.id) groupColors.push(ACCENT_PALETTE[pi]);
+      }
+      if (!groupColors.length) continue;
+      html += '<div class="acc-swatch-group"><div class="acc-swatch-group-label">' + g.label + '</div><div class="acc-swatch-row">';
+      for (var ci = 0; ci < groupColors.length; ci++) {
+        var c = groupColors[ci];
+        if (removed.indexOf(c.dark) !== -1) continue;
+        html += '<div class="acc-swatch' + (selected === c.dark ? ' active' : '') + '" data-acc="' + c.dark + '" data-acc-preset="' + c.dark + '" title="' + c.name + ' - right-click to remove" style="background:' + c.dark + '"></div>';
+      }
+      html += '</div></div>';
+    }
+  } else {
+    html += '<div class="acc-swatch-group"><div class="acc-swatch-group-label">Palette</div><div class="acc-swatch-row">';
+    for (var ai = 0; ai < ACCENT_PALETTE.length; ai++) {
+      var pc = ACCENT_PALETTE[ai];
+      if (removed.indexOf(pc.dark) !== -1) continue;
+      html += '<div class="acc-swatch' + (selected === pc.dark ? ' active' : '') + '" data-acc="' + pc.dark + '" data-acc-preset="' + pc.dark + '" title="' + pc.name + '" style="background:' + pc.dark + '"></div>';
+    }
+    html += '</div></div>';
   }
-  for (var ci = 0; ci < custom.length; ci++) {
-    var isOn = selected === custom[ci];
-    html += '<div class="acc-swatch acc-swatch-custom' + (isOn ? ' active' : '') + '" data-acc-custom="' + ci + '" data-acc="' + custom[ci] + '" title="Right-click to remove" style="background:' + custom[ci] + '"></div>';
+  if (custom.length) {
+    html += '<div class="acc-swatch-group acc-swatch-group-custom"><div class="acc-swatch-group-label">Custom</div><div class="acc-swatch-row">';
+    for (var ci2 = 0; ci2 < custom.length; ci2++) {
+      html += '<div class="acc-swatch acc-swatch-custom' + (selected === custom[ci2] ? ' active' : '') + '" data-acc-custom="' + ci2 + '" data-acc="' + custom[ci2] + '" title="Right-click to remove" style="background:' + custom[ci2] + '"></div>';
+    }
+    html += '</div></div>';
   }
   html += '</div>';
   if (removed.length > 0) {
-    html += '<div style="display:flex;justify-content:center;margin-top:6px"><button class="acc-custom-add" id="accResetPresetsBtn">Reset palette</button></div>';
+    html += '<div class="acc-reset-row"><button class="acc-custom-add" data-acc-reset="1">Reset palette</button></div>';
   }
   html += '<div class="acc-custom-hint">Right-click any swatch to remove it</div>';
-  html += '<div class="acc-custom-row"><input type="color" id="accCustomPicker" value="#a8c8e8" class="acc-custom-picker"><input type="text" id="accCustomHex" class="acc-custom-hex" value="#a8c8e8" maxlength="7" placeholder="#hex"><button class="acc-custom-add" id="accCustomAddBtn">Save</button></div>';
-  container.innerHTML = html;
-  if (removed.length) console.log('[accent] removed presets:', removed);
-  console.log('[accent] rendered', container.querySelectorAll('.acc-swatch').length, 'swatches');
-  if (container._accListener) container.removeEventListener('click', container._accListener);
-  if (container._accCtxListener) container.removeEventListener('contextmenu', container._accCtxListener);
-  container._accListener = function(e) {
-    var swatch = e.target.closest('.acc-swatch');
-    if (!swatch) return;
-    var val = swatch.dataset.acc || null;
-    state.accentColor = val;
-    container.querySelectorAll('.acc-swatch').forEach(function(s) { s.classList.remove('active'); });
-    if (val) swatch.classList.add('active');
-    else container.querySelector('.acc-swatch[data-acc=""]')?.classList.add('active');
-    try { applyAccentColor(); } catch (ex) { console.warn('applyAccentColor error', ex); }
-    try { saveState(); } catch (ex) { console.warn('saveState error', ex); }
-  };
-  container._accCtxListener = function(e) {
-    var swatch = e.target.closest('.acc-swatch');
-    if (!swatch) return;
-    var acc = swatch.dataset.acc;
-    if (!acc) return;
-    e.preventDefault();
-    var idx = swatch.dataset.accCustom;
-    if (idx !== undefined) {
-      state.accentCustomColors.splice(parseInt(idx), 1);
-    } else if (swatch.dataset.accPreset) {
-      state.accentRemovedPresets.push(swatch.dataset.accPreset);
-    }
-    if (state.accentColor === acc) state.accentColor = null;
-    try { saveState(); } catch (ex) { console.warn('saveState error', ex); }
-    try { applyAccentColor(); } catch (ex) { console.warn('applyAccentColor error', ex); }
-    renderAccentPickerInSettings();
-  };
-  container.addEventListener('click', container._accListener);
-  container.addEventListener('contextmenu', container._accCtxListener);
-  document.getElementById('accResetPresetsBtn')?.addEventListener('click', function() {
-    state.accentRemovedPresets = [];
-    saveState();
-    renderAccentPickerInSettings();
-  });
-  var picker = document.getElementById('accCustomPicker');
-  var hexInput = document.getElementById('accCustomHex');
+  html += '<div class="acc-custom-row"><input type="color" class="acc-custom-picker" value="#a8c8e8"><input type="text" class="acc-custom-hex" value="#a8c8e8" maxlength="7" placeholder="#hex"><button class="acc-custom-add" data-acc-add="1">Save</button></div>';
+  body.innerHTML = html;
+
+  if (!container._accBound) {
+    container._accBound = true;
+    container.addEventListener('click', function(e) {
+      var t = e.target;
+      if (!t || !t.closest) return;
+      var swatch = t.closest('.acc-swatch');
+      if (swatch) {
+        var val = swatch.getAttribute('data-acc') || null;
+        state.accentColor = val;
+        try { applyAccentColor(); } catch (ex) { console.warn('applyAccentColor error', ex); }
+        try { saveState(); } catch (ex) { console.warn('saveState error', ex); }
+        syncAccentBadges();
+        renderAccentColorPicker(container);
+        return;
+      }
+      if (t.closest('[data-acc-reset]')) {
+        state.accentRemovedPresets = [];
+        try { saveState(); } catch (ex) { console.warn('saveState error', ex); }
+        renderAccentColorPicker(container);
+        return;
+      }
+      if (t.closest('[data-acc-add]')) {
+        var picker = body.querySelector('.acc-custom-picker');
+        var hexInput = body.querySelector('.acc-custom-hex');
+        var hex = (hexInput ? hexInput.value : (picker ? picker.value : '')).trim();
+        if (!/^#[0-9a-f]{6}$/i.test(hex)) { if (typeof showToast === 'function') showToast('Invalid hex color', 'error', 2000); return; }
+        if (state.accentCustomColors.indexOf(hex) !== -1) { if (typeof showToast === 'function') showToast('Color already saved', 'info', 2000); return; }
+        state.accentCustomColors.push(hex);
+        state.accentColor = hex;
+        try { applyAccentColor(); } catch (ex) { console.warn('applyAccentColor error', ex); }
+        try { saveState(); } catch (ex) { console.warn('saveState error', ex); }
+        syncAccentBadges();
+        renderAccentColorPicker(container);
+      }
+    });
+    container.addEventListener('contextmenu', function(e) {
+      var swatch = e.target && e.target.closest ? e.target.closest('.acc-swatch') : null;
+      if (!swatch) return;
+      var acc = swatch.getAttribute('data-acc');
+      if (!acc) return;
+      e.preventDefault();
+      var idx = swatch.getAttribute('data-acc-custom');
+      if (idx !== null) {
+        state.accentCustomColors.splice(parseInt(idx, 10), 1);
+      } else if (swatch.getAttribute('data-acc-preset')) {
+        state.accentRemovedPresets.push(swatch.getAttribute('data-acc-preset'));
+      }
+      if (state.accentColor === acc) state.accentColor = null;
+      try { saveState(); } catch (ex) { console.warn('saveState error', ex); }
+      try { applyAccentColor(); } catch (ex) { console.warn('applyAccentColor error', ex); }
+      syncAccentBadges();
+      renderAccentColorPicker(container);
+    });
+  }
+
+  var picker = body.querySelector('.acc-custom-picker');
+  var hexInput = body.querySelector('.acc-custom-hex');
   if (picker && hexInput) {
     picker.addEventListener('input', function() { hexInput.value = this.value; });
     hexInput.addEventListener('input', function() { if (/^#[0-9a-f]{6}$/i.test(this.value)) picker.value = this.value; });
-    document.getElementById('accCustomAddBtn')?.addEventListener('click', function() {
-      var hex = hexInput.value.trim();
-      if (!/^#[0-9a-f]{6}$/i.test(hex)) { showToast('Invalid hex color', 'error', 2000); return; }
-      if (state.accentCustomColors.indexOf(hex) !== -1) { showToast('Color already saved', 'info', 2000); return; }
-      state.accentCustomColors.push(hex);
-      state.accentColor = hex;
-      saveState();
-      applyAccentColor();
-      renderAccentPickerInSettings();
-    });
   }
 }
 
+function syncAccentBadges() {
+  var acc = state.accentColor || '#888';
+  var badges = document.querySelectorAll('.set-acc-badge');
+  for (var i = 0; i < badges.length; i++) badges[i].style.background = acc;
+}
+
+function renderAccentPickerInSettings() {
+  var container = document.getElementById('settingsAccentColor');
+  if (!container) return;
+  renderAccentColorPicker(container);
+}
 function renderCardColorsInSettings() {
   const container = document.getElementById('settingsCardColors');
   if (!container) return;
@@ -5909,7 +6022,13 @@ function showToast(message, type, duration) {
   setTimeout(() => {
     toast.classList.add('out');
     setTimeout(() => toast.remove(), 200);
-  }, duration || 4000);
+  }, duration || state.toastDuration || 4000);
+}
+
+// ─── CONFIRM GATE ──────────────────────────────────────────
+function confirmAction(msg) {
+  if (state.confirmBeforeDelete === false) return true;
+  return window.confirm(msg);
 }
 
 // ─── FLASH AND SCROLL TO TASK ─────────────────────────────
@@ -6045,6 +6164,10 @@ function executeActions(actions, responseText) {
 }
 
 function sendAIMessage() {
+  if (state.aiEnabled === false) {
+    if (typeof showToast === 'function') showToast('AI assistant is disabled in Settings');
+    return;
+  }
   if (!dom.aiChatInput || !dom.aiChatInput.value.trim() || !state.apiKey) return;
   const text = dom.aiChatInput.value.trim();
   dom.aiChatInput.value = '';

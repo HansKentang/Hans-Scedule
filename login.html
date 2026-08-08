@@ -10,13 +10,13 @@
   <meta name="apple-mobile-web-app-title" content="Havën">
   <meta name="description" content="Havën Schedule — Your personal smart scheduler.">
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
-  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
   <title>Havën</title>
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -55,37 +55,82 @@
     /* ─── Left Panel ─── */
     .auth-left {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: clamp(16px, 3vh, 40px) clamp(16px, 4vw, 48px);
       position: relative;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      animation: fadeIn 0.6s var(--bounce) both;
+      overflow: hidden;
+      animation: fadeIn 0.7s var(--smooth) both;
     }
     .auth-left::before {
       content: ''; position: absolute; inset: 0;
       background:
-        radial-gradient(ellipse 70% 50% at 30% 20%, rgba(255,255,255,0.025) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 40% at 70% 80%, rgba(255,255,255,0.015) 0%, transparent 50%);
+        radial-gradient(ellipse 70% 50% at 30% 20%, rgba(255,255,255,0.03) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 70% 80%, rgba(255,255,255,0.02) 0%, transparent 50%);
       pointer-events: none;
     }
     .auth-left::after {
-      content: ''; position: absolute; right: 0; top: 8%; bottom: 8%;
+      content: ''; position: absolute; right: 0; top: 6%; bottom: 6%;
       width: 1px;
-      background: linear-gradient(180deg, transparent, var(--border), transparent);
+      background: linear-gradient(180deg, transparent, rgba(255,255,255,0.16), transparent);
+      pointer-events: none;
+    }
+    .auth-glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(72px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .auth-glow-1 {
+      width: 360px; height: 360px;
+      top: -90px; left: -110px;
+      background: radial-gradient(circle, rgba(255,255,255,0.075) 0%, transparent 65%);
+      animation: glowDrift1 16s ease-in-out infinite alternate;
+    }
+    .auth-glow-2 {
+      width: 320px; height: 320px;
+      bottom: -70px; right: -90px;
+      background: radial-gradient(circle, rgba(255,255,255,0.055) 0%, transparent 65%);
+      animation: glowDrift2 20s ease-in-out infinite alternate;
+    }
+    @keyframes glowDrift1 {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(44px, 32px) scale(1.18); }
+    }
+    @keyframes glowDrift2 {
+      0% { transform: translate(0, 0) scale(1.1); }
+      100% { transform: translate(-34px, -22px) scale(0.92); }
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
+      from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+    /* Staggered entrance */
+    .auth-reveal {
+      opacity: 0;
+      animation: authReveal 0.7s var(--smooth) both;
+      animation-delay: var(--d, 0s);
+    }
+    @keyframes authReveal {
+      from { opacity: 0; transform: translateY(16px); filter: blur(6px); }
+      to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+    .auth-swap {
+      animation: authSwap 0.45s var(--smooth);
+    }
+    @keyframes authSwap {
+      from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+      to { opacity: 1; transform: translateY(0); filter: blur(0); }
     }
 
     /* ─── Form Container ─── */
     .auth-form-wrap {
-      width: min(420px, 100%);
+      width: min(440px, 100%);
       display: flex;
       flex-direction: column;
-      gap: clamp(4px, 1vh, 8px);
+      gap: clamp(6px, 1vh, 12px);
       position: relative;
       z-index: 1;
     }
@@ -93,14 +138,14 @@
     /* ─── Brand ─── */
     .auth-brand {
       display: flex; align-items: center; gap: clamp(8px, 1.2vw, 14px);
-      margin-bottom: clamp(4px, 0.8vh, 10px);
+      margin-bottom: clamp(2px, 0.4vh, 6px);
     }
     .auth-brand-icon {
-      width: clamp(28px, 4vh, 38px); height: clamp(28px, 4vh, 38px);
-      border-radius: clamp(7px, 1vh, 10px);
+      width: clamp(30px, 4.4vh, 42px); height: clamp(30px, 4.4vh, 42px);
+      border-radius: clamp(8px, 1.1vh, 11px);
       background: var(--text); color: var(--bg);
       display: flex; align-items: center; justify-content: center;
-      font-size: clamp(0.82rem, 1.2vw, 1.05rem);
+      font-size: clamp(0.85rem, 1.2vw, 1.1rem);
       font-weight: 700;
       flex-shrink: 0;
       transition: transform 0.3s var(--bounce);
@@ -108,7 +153,7 @@
     .auth-brand:hover .auth-brand-icon { transform: scale(1.1) rotate(-4deg); }
     .auth-brand-text { display: flex; flex-direction: column; gap: 2px; }
     .auth-brand-name {
-      font-size: clamp(0.9rem, 1.3vw, 1.1rem);
+      font-size: clamp(0.92rem, 1.3vw, 1.12rem);
       font-weight: 600; letter-spacing: -0.02em; line-height: 1.2;
     }
     .auth-brand-tagline {
@@ -117,30 +162,96 @@
     }
 
     /* ─── Heading ─── */
+    .auth-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: clamp(0.58rem, 0.85vw, 0.68rem);
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: clamp(6px, 1vh, 10px);
+    }
+    .auth-eyebrow::before {
+      content: '';
+      width: 18px; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35));
+    }
     .auth-heading {
-      font-size: clamp(1.25rem, 2.5vw, 1.75rem);
-      font-weight: 600; line-height: 1.15;
-      letter-spacing: -0.028em;
-      margin-top: clamp(16px, 3vh, 30px);
+      font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+      font-weight: 600; line-height: 1.12;
+      letter-spacing: -0.03em;
+      margin-top: 0;
     }
     .auth-heading .hl-accent {
-      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.55) 100%);
+      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.5) 50%, #fff 100%);
+      background-size: 200% 100%;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      animation: accentShimmer 7s ease-in-out infinite;
+    }
+    @keyframes accentShimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
     }
     .auth-sub {
       font-size: clamp(0.78rem, 1.1vw, 0.9rem);
       color: var(--text-tertiary);
       font-weight: 400;
       line-height: 1.5;
-      margin-bottom: clamp(4px, 0.8vh, 8px);
+      margin-bottom: clamp(8px, 1.2vh, 14px);
     }
+
+    /* ─── Glass Card ─── */
+    .auth-card {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: clamp(16px, 2.2vh, 20px);
+      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
+      padding: clamp(18px, 2.6vh, 26px) clamp(18px, 2.4vw, 26px);
+      box-shadow: 0 24px 60px -28px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: transform 0.4s var(--smooth), box-shadow 0.4s var(--smooth), border-color 0.4s var(--smooth);
+    }
+    .auth-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,0.06) 0%, transparent 55%);
+      pointer-events: none;
+    }
+    .auth-card:hover {
+      border-color: var(--border-light);
+      box-shadow: 0 30px 70px -28px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07);
+    }
+
+    /* ─── Footer ─── */
+    .auth-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(14px, 2vw, 22px);
+      margin-top: clamp(10px, 1.6vh, 18px);
+      font-size: clamp(0.6rem, 0.85vw, 0.68rem);
+      color: var(--text-tertiary);
+      font-weight: 400;
+      letter-spacing: 0.04em;
+    }
+    .auth-footer-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.85;
+    }
+    .auth-footer-item svg { flex-shrink: 0; opacity: 0.6; }
 
     /* ─── Form inputs area ─── */
     .auth-fields {
       display: flex; flex-direction: column; gap: clamp(8px, 1.2vh, 14px);
-      margin-top: clamp(14px, 2.5vh, 28px);
+      margin-top: 0;
     }
 
     /* ─── Label + Input ─── */
@@ -171,37 +282,72 @@
       font-weight: 400;
       opacity: 0.4;
     }
-    .auth-input:focus {
+    .auth-input:hover:not(:focus) {
       border-color: var(--border-light);
-      background: rgba(255,255,255,0.06);
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.045);
     }
-    .auth-input:hover { border-color: var(--border-light); }
+    .auth-input:focus {
+      border-color: rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.07);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.06), 0 8px 24px -12px rgba(255,255,255,0.16);
+      transform: translateY(-1px);
+    }
+    .auth-input.has-value { border-color: rgba(255,255,255,0.18); }
+    .auth-input.invalid {
+      border-color: rgba(255,120,110,0.65);
+      box-shadow: 0 0 0 3px rgba(255,120,110,0.10);
+      animation: shake 0.4s var(--smooth);
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .auth-label { transition: color 0.25s var(--smooth); }
+    .auth-label.has-value { color: var(--text); }
 
     /* ─── Submit Button ─── */
     .auth-submit {
+      position: relative;
+      overflow: hidden;
       width: 100%;
       padding: clamp(11px, 2vh, 16px) clamp(14px, 3vw, 24px);
       border: none;
-      border-radius: 10px;
-      background: var(--text);
+      border-radius: 11px;
+      background: linear-gradient(180deg, #ffffff, #e8e8e8);
       color: var(--bg);
       font-family: inherit;
       font-size: clamp(0.82rem, 1.2vw, 0.95rem);
       font-weight: 600;
+      letter-spacing: 0.01em;
       cursor: pointer;
-      transition: all 0.2s var(--bounce);
+      transition: all 0.25s var(--bounce);
       margin-top: clamp(2px, 0.5vh, 6px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 16px -6px rgba(255,255,255,0.25);
     }
+    .auth-submit::before {
+      content: ''; position: absolute; top: 0; left: -80%;
+      width: 55%; height: 100%;
+      background: linear-gradient(105deg, transparent, rgba(0,0,0,0.10), transparent);
+      transform: skewX(-20deg);
+      transition: left 0.6s var(--smooth);
+      pointer-events: none;
+    }
+    .auth-submit:hover:not(:disabled)::before { left: 140%; }
     .auth-submit:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 24px rgba(255,255,255,0.12);
+      box-shadow: 0 10px 28px -10px rgba(255,255,255,0.28), inset 0 1px 0 rgba(255,255,255,0.9);
     }
-    .auth-submit:active:not(:disabled) { transform: scale(0.97); }
+    .auth-submit:active:not(:disabled) { transform: translateY(0) scale(0.98); }
     .auth-submit:disabled {
       opacity: 0.2;
       cursor: default;
     }
+    .auth-submit.loading { pointer-events: none; }
+    .auth-submit .auth-submit-label { transition: opacity 0.2s; }
+    .auth-submit.loading .auth-submit-label { opacity: 0; }
 
     /* ─── Divider ─── */
     .auth-divider {
@@ -212,40 +358,103 @@
     .auth-divider::after {
       content: ''; position: absolute; inset: 0; top: 50%;
       z-index: 0;
-      border-top: 1px solid var(--border);
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border) 18%, var(--border) 82%, transparent);
     }
     .auth-divider span {
       position: relative; z-index: 1;
-      background: var(--bg);
+      background: #0d0d0d;
       padding: 0 12px;
-      font-size: 0.72rem;
+      font-size: 0.66rem;
       color: var(--text-tertiary);
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.16em;
+      font-weight: 500;
     }
 
     /* ─── Google Button ─── */
     .auth-google-btn {
-      display: flex; align-items: center; justify-content: center; gap: clamp(6px, 1vw, 10px);
-      width: 100%; padding: clamp(10px, 1.5vh, 14px) clamp(12px, 2.5vw, 18px);
-      border-radius: 10px;
+      position: relative;
+      display: flex; align-items: center; justify-content: center; gap: clamp(8px, 1vw, 12px);
+      width: 100%; padding: clamp(12px, 1.7vh, 16px) clamp(12px, 2.5vw, 18px);
+      border-radius: 12px;
       border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-secondary);
+      background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02));
+      color: var(--text);
       font-family: inherit;
-      font-size: clamp(0.8rem, 1.1vw, 0.9rem);
+      font-size: clamp(0.82rem, 1.1vw, 0.92rem);
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s var(--bounce);
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+      transition: all 0.3s var(--bounce);
     }
+    .auth-google-btn::after {
+      content: ''; position: absolute; top: 0; left: -80%;
+      width: 55%; height: 100%;
+      background: linear-gradient(105deg, transparent, rgba(255,255,255,0.09), transparent);
+      transform: skewX(-20deg);
+      transition: left 0.7s var(--smooth);
+      pointer-events: none;
+    }
+    .auth-google-btn:hover::after { left: 140%; }
     .auth-google-btn:hover {
-      border-color: var(--border-light);
+      border-color: rgba(255,255,255,0.22);
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035));
       color: var(--text);
-      background: rgba(255,255,255,0.04);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px -14px rgba(255,255,255,0.22), inset 0 1px 0 rgba(255,255,255,0.09);
     }
-    .auth-google-btn:active { transform: scale(0.97); }
-    .auth-google-btn img, .auth-google-btn svg { width: 18px; height: 18px; }
+    .auth-google-btn:active { transform: translateY(0) scale(0.98); }
+    .auth-google-btn img, .auth-google-btn svg { width: 19px; height: 19px; flex-shrink: 0; transition: transform 0.4s var(--bounce); }
+    .auth-google-btn:hover svg { transform: rotate(-8deg) scale(1.14); }
+    .auth-google-btn .auth-btn-label { transition: opacity 0.2s; }
+    .auth-google-btn.loading { pointer-events: none; opacity: 0.85; }
+    .auth-google-btn.loading .auth-btn-label { opacity: 0; }
+    .auth-guest-btn {
+      opacity: 0.85;
+      font-size: clamp(0.76rem, 1vw, 0.86rem);
+      padding: clamp(10px, 1.5vh, 13px);
+      border-radius: 10px;
+    }
+    .auth-guest-btn svg { opacity: 0.6; }
+    .auth-guest-btn:hover { opacity: 1; }
+    .auth-google-caption {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      font-size: 0.62rem;
+      color: var(--text-tertiary);
+      margin-top: 9px;
+      letter-spacing: 0.02em;
+      opacity: 0.75;
+    }
+    .auth-google-caption svg { flex-shrink: 0; }
+
+    /* Spinner (shared by submit / google / guest) */
+    .spinner {
+      position: absolute; left: 50%; top: 50%;
+      width: 17px; height: 17px;
+      margin: -8.5px 0 0 -8.5px;
+      border: 2px solid rgba(0,0,0,0.20);
+      border-top-color: rgba(0,0,0,0.85);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .loading > .spinner { opacity: 1; }
+    .auth-google-btn .spinner {
+      border-color: rgba(255,255,255,0.16);
+      border-top-color: rgba(255,255,255,0.9);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .auth-submit:focus-visible,
+    .auth-google-btn:focus-visible {
+      outline: 2px solid rgba(255,255,255,0.4);
+      outline-offset: 2px;
+    }
 
     #googleButtonContainer {
       width: 100%; display: flex; justify-content: center;
@@ -258,7 +467,7 @@
       text-align: center;
       font-size: clamp(0.75rem, 1vw, 0.85rem);
       color: var(--text-tertiary);
-      margin-top: clamp(4px, 0.8vh, 10px);
+      margin-top: clamp(10px, 1.4vh, 16px);
     }
     .auth-toggle button {
       background: none; border: none;
@@ -267,13 +476,25 @@
       font-size: clamp(0.75rem, 1vw, 0.85rem);
       font-weight: 500;
       cursor: pointer;
-      padding: 0 4px;
-      transition: color 0.2s;
-      text-decoration: underline;
-      text-underline-offset: 2px;
+      padding: 2px 4px;
+      position: relative;
+      transition: color 0.2s var(--smooth);
+    }
+    .auth-toggle button::after {
+      content: '';
+      position: absolute; left: 4px; right: 4px; bottom: 0;
+      height: 1px;
+      background: var(--text-secondary);
+      transform: scaleX(0.3);
+      opacity: 0;
+      transition: all 0.3s var(--smooth);
     }
     .auth-toggle button:hover {
       color: var(--text);
+    }
+    .auth-toggle button:hover::after {
+      transform: scaleX(1);
+      opacity: 1;
     }
 
     /* ─── Right Panel ─── */
@@ -491,11 +712,14 @@
       .auth-left { padding: clamp(12px, 3vw, 20px); }
     }
     /* Safety net for very short viewports */
-    @media (max-height: 560px) {
-      .auth-heading { font-size: 1.1rem; margin-top: 8px; }
-      .auth-fields { gap: 4px; margin-top: 8px; }
-      .auth-sub { margin-bottom: 2px; }
-      .auth-brand { margin-bottom: 4px; }
+    @media (max-height: 640px) {
+      .auth-heading { font-size: 1.2rem; }
+      .auth-eyebrow { margin-bottom: 4px; }
+      .auth-sub { margin-bottom: 8px; }
+      .auth-card { padding: 14px 16px; }
+      .auth-fields { gap: 6px; }
+      .auth-brand { margin-bottom: 2px; }
+      .auth-footer { display: none; }
     }
   </style>
 </head>
@@ -503,9 +727,11 @@
   <div class="auth-grid">
     <!-- ═══════════ LEFT: FORM ═══════════ -->
     <div class="auth-left">
+      <div class="auth-glow auth-glow-1"></div>
+      <div class="auth-glow auth-glow-2"></div>
       <div class="auth-form-wrap">
         <!-- Brand -->
-        <div class="auth-brand">
+        <div class="auth-brand auth-reveal" style="--d:0.05s">
           <div class="auth-brand-icon">H</div>
           <div class="auth-brand-text">
             <span class="auth-brand-name">Havën</span>
@@ -514,54 +740,78 @@
         </div>
 
         <!-- Heading (changes with toggle) -->
-        <h1 class="auth-heading" id="authHeading">Welcome <span class="hl-accent">back</span></h1>
-        <p class="auth-sub" id="authSub">Enter your name to sign in to your account</p>
+        <div class="auth-eyebrow auth-reveal" style="--d:0.14s">Secure access</div>
+        <h1 class="auth-heading auth-reveal" id="authHeading" style="--d:0.2s">Welcome <span class="hl-accent">back</span></h1>
+        <p class="auth-sub auth-reveal" id="authSub" style="--d:0.26s">Enter your name to sign in to your account</p>
 
-        <!-- Form Fields -->
-        <div class="auth-fields">
-          <div class="auth-input-group" id="loginNameGroup" style="display:none">
-            <label class="auth-label" for="loginNameInput">Your name</label>
-            <input class="auth-input" id="loginNameInput" type="text" placeholder="e.g. Alex" autocomplete="name" spellcheck="false" maxlength="30">
-          </div>
-          <div class="auth-input-group">
-            <label class="auth-label" for="loginEmailInput">Email</label>
-            <input class="auth-input" id="loginEmailInput" type="email" placeholder="you@example.com" autocomplete="email" spellcheck="false" maxlength="100">
-          </div>
-          <div class="auth-input-group">
-            <label class="auth-label" for="loginPasswordInput">Password</label>
-            <input class="auth-input" id="loginPasswordInput" type="password" placeholder="Min. 6 characters" autocomplete="current-password" spellcheck="false" minlength="6">
-          </div>
+        <!-- Form Card -->
+        <div class="auth-card auth-reveal" style="--d:0.32s">
+          <div class="auth-fields">
+            <div class="auth-input-group" id="loginNameGroup" style="display:none">
+              <label class="auth-label" for="loginNameInput">Your name</label>
+              <input class="auth-input" id="loginNameInput" type="text" placeholder="e.g. Alex" autocomplete="name" spellcheck="false" maxlength="30">
+            </div>
+            <div class="auth-input-group">
+              <label class="auth-label" for="loginEmailInput">Email</label>
+              <input class="auth-input" id="loginEmailInput" type="email" placeholder="you@example.com" autocomplete="email" spellcheck="false" maxlength="100">
+            </div>
+            <div class="auth-input-group">
+              <label class="auth-label" for="loginPasswordInput">Password</label>
+              <input class="auth-input" id="loginPasswordInput" type="password" placeholder="Min. 6 characters" autocomplete="current-password" spellcheck="false" minlength="6">
+            </div>
 
-          <button class="auth-submit" id="loginNameBtn" disabled>Sign In</button>
+            <button class="auth-submit" id="loginNameBtn" disabled>
+              <span class="auth-submit-label">Sign In</span>
+              <span class="spinner"></span>
+            </button>
 
-          <div class="auth-divider"><span>Or continue with</span></div>
+            <div class="auth-divider"><span>Or continue with</span></div>
 
-          <!-- Google Sign-In -->
-          <div id="googleSection">
-            <div id="googleButtonContainer"></div>
-            <button class="auth-google-btn" id="loginGoogleBtn">
-              <svg viewBox="0 0 48 48" fill="none">
-                <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
-                <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
-                <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
-                <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
-              </svg>
-              <span>Continue with Google</span>
+            <!-- Google Sign-In -->
+            <div id="googleSection">
+              <div id="googleButtonContainer"></div>
+              <button class="auth-google-btn" id="loginGoogleBtn">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/>
+                  <path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/>
+                  <path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/>
+                  <path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/>
+                </svg>
+                <span class="auth-btn-label">Continue with Google</span>
+                <span class="spinner"></span>
+              </button>
+              <div class="auth-google-caption">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                <span>Secure sign-in · no password needed</span>
+              </div>
+            </div>
+
+            <div class="auth-divider"><span>or</span></div>
+
+            <button class="auth-google-btn auth-guest-btn" id="loginGuestBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="auth-btn-label">Continue as Guest</span>
+              <span class="spinner"></span>
             </button>
           </div>
-
-          <div class="auth-divider"><span>or</span></div>
-
-          <button class="auth-google-btn" id="loginGuestBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;opacity:0.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span>Continue as Guest</span>
-          </button>
         </div>
 
         <!-- Toggle -->
-        <p class="auth-toggle" id="authToggle">
+        <p class="auth-toggle auth-reveal" id="authToggle" style="--d:0.5s">
           Don't have an account? <button id="authToggleBtn">Sign up</button>
         </p>
+
+        <!-- Footer -->
+        <div class="auth-footer auth-reveal" style="--d:0.58s">
+          <span class="auth-footer-item">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            End-to-end encrypted
+          </span>
+          <span class="auth-footer-item">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Your data, yours
+          </span>
+        </div>
       </div>
     </div>
 
@@ -830,7 +1080,8 @@
         <button class="auth-carousel-dot" data-index="3"></button>
         <button class="auth-carousel-dot" data-index="4"></button>
         <button class="auth-carousel-dot" data-index="5"></button>
-      </div>      <!-- Floating badges (outside carousel) -->
+      </div>
+      <!-- Floating badges (outside carousel) -->
       <div class="auth-float-badge auth-float-badge-1">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         <span>5 active</span>
@@ -852,10 +1103,10 @@
   <!-- Google Identity Services -->
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
-  <script src="shared.js"></script>
-  <script src="settings.js"></script>
-  <script src="gsi.js"></script>
-  <script src="firestore-sync.js"></script>
+  <script src="js/shared.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/gsi.js"></script>
+  <script src="js/firestore-sync.js"></script>
   <script>
     (function() {
       var isSignIn = true;
@@ -892,21 +1143,35 @@
         setTimeout(typeNextChar, 600);
 
         // ─── Toggle Sign In / Sign Up ───
+        function setBtnLabel(btn, text) {
+          if (!btn) return;
+          var label = btn.querySelector('.auth-submit-label, .auth-btn-label');
+          if (label) label.textContent = text;
+          else btn.textContent = text;
+        }
+        function animateSwap(el) {
+          if (!el) return;
+          el.classList.remove('auth-swap');
+          void el.offsetWidth;
+          el.classList.add('auth-swap');
+        }
         function updateToggle() {
           var nameGroup = document.getElementById('loginNameGroup');
           if (isSignIn) {
             heading.innerHTML = 'Welcome <span class="hl-accent">back</span>';
             sub.textContent = 'Enter your email and password to sign in';
-            nameBtn.textContent = 'Sign In';
+            setBtnLabel(nameBtn, 'Sign In');
             toggleText.innerHTML = "Don't have an account? <button id='authToggleBtn'>Sign up</button>";
             if (nameGroup) nameGroup.style.display = 'none';
           } else {
             heading.innerHTML = 'Create your <span class="hl-accent">account</span>';
             sub.textContent = 'Enter your details to get started';
-            nameBtn.textContent = 'Sign Up';
+            setBtnLabel(nameBtn, 'Sign Up');
             toggleText.innerHTML = "Already have an account? <button id='authToggleBtn'>Sign in</button>";
-            if (nameGroup) nameGroup.style.display = 'block';
+            if (nameGroup) { nameGroup.style.display = 'block'; animateSwap(nameGroup); }
           }
+          animateSwap(heading);
+          animateSwap(sub);
         }
 
         // ─── Toggle via event delegation ───
@@ -922,15 +1187,36 @@
         var passInput = document.getElementById('loginPasswordInput');
         var nameInput = document.getElementById('loginNameInput');
 
+        function syncInputState(input) {
+          if (!input) return;
+          var has = !!input.value.trim();
+          input.classList.toggle('has-value', has);
+          var group = input.closest('.auth-input-group');
+          if (group) {
+            var label = group.querySelector('.auth-label');
+            if (label) label.classList.toggle('has-value', has);
+          }
+        }
+        function shakeInput(input) {
+          if (!input) return;
+          input.classList.remove('invalid');
+          void input.offsetWidth;
+          input.classList.add('invalid');
+          input.addEventListener('animationend', function h() {
+            input.classList.remove('invalid');
+            input.removeEventListener('animationend', h);
+          });
+        }
         function updateBtn() {
           var valid = emailInput.value.trim() && passInput.value.length >= 6;
           if (!isSignIn) valid = valid && nameInput.value.trim();
           nameBtn.disabled = !valid;
         }
         updateBtn();
-        emailInput.addEventListener('input', updateBtn);
-        passInput.addEventListener('input', updateBtn);
-        nameInput.addEventListener('input', updateBtn);
+        emailInput.addEventListener('input', function() { updateBtn(); syncInputState(emailInput); });
+        passInput.addEventListener('input', function() { updateBtn(); syncInputState(passInput); });
+        nameInput.addEventListener('input', function() { updateBtn(); syncInputState(nameInput); });
+        syncInputState(emailInput); syncInputState(passInput);
 
         function handleKeydown(e) {
           if (e.key === 'Enter' && !nameBtn.disabled) goLocal();
@@ -944,10 +1230,11 @@
           var email = document.getElementById('loginEmailInput').value.trim();
           var password = document.getElementById('loginPasswordInput').value;
           var name = document.getElementById('loginNameInput').value.trim();
-          if (!email || !password) { showToast('Please enter email and password', 'error'); return; }
-          if (password.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
+          if (!email || !password) { showToast('Please enter email and password', 'error'); shakeInput(document.getElementById('loginEmailInput')); return; }
+          if (password.length < 6) { showToast('Password must be at least 6 characters', 'error'); shakeInput(document.getElementById('loginPasswordInput')); return; }
           nameBtn.disabled = true;
-          nameBtn.textContent = isSignIn ? 'Signing in…' : 'Creating account…';
+          nameBtn.classList.add('loading');
+          setBtnLabel(nameBtn, isSignIn ? 'Signing in…' : 'Creating account…');
 
           if (isSignIn) {
             firebase.auth().signInWithEmailAndPassword(email, password).then(function(result) {
@@ -960,10 +1247,11 @@
               }
             }).catch(function(error) {
               nameBtn.disabled = false;
-              nameBtn.textContent = 'Sign In';
-              if (error.code === 'auth/user-not-found') showToast('No account found with this email', 'error');
-              else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') showToast('Incorrect email or password', 'error');
-              else if (error.code === 'auth/invalid-email') showToast('Invalid email address', 'error');
+              nameBtn.classList.remove('loading');
+              setBtnLabel(nameBtn, 'Sign In');
+              if (error.code === 'auth/user-not-found') { showToast('No account found with this email', 'error'); shakeInput(document.getElementById('loginEmailInput')); }
+              else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') { showToast('Incorrect email or password', 'error'); shakeInput(document.getElementById('loginPasswordInput')); }
+              else if (error.code === 'auth/invalid-email') { showToast('Invalid email address', 'error'); shakeInput(document.getElementById('loginEmailInput')); }
               else showToast('Sign in failed: ' + (error.message || 'unknown error'), 'error');
             });
           } else {
@@ -979,10 +1267,11 @@
               });
             }).catch(function(error) {
               nameBtn.disabled = false;
-              nameBtn.textContent = 'Sign Up';
+              nameBtn.classList.remove('loading');
+              setBtnLabel(nameBtn, 'Sign Up');
               if (error.code === 'auth/email-already-in-use') showToast('This email is already registered', 'error');
-              else if (error.code === 'auth/weak-password') showToast('Password is too weak (min 6 characters)', 'error');
-              else if (error.code === 'auth/invalid-email') showToast('Invalid email address', 'error');
+              else if (error.code === 'auth/weak-password') { showToast('Password is too weak (min 6 characters)', 'error'); shakeInput(document.getElementById('loginPasswordInput')); }
+              else if (error.code === 'auth/invalid-email') { showToast('Invalid email address', 'error'); shakeInput(document.getElementById('loginEmailInput')); }
               else showToast('Sign up failed: ' + (error.message || 'unknown error'), 'error');
             });
           }
@@ -1104,6 +1393,7 @@
           var provider = new firebase.auth.GoogleAuthProvider();
           provider.addScope('profile');
           provider.addScope('email');
+          googleBtn.classList.add('loading');
           firebase.auth().signInWithPopup(provider).then(function(result) {
             var user = result.user;
             if (!user) { showToast('Google sign-in failed', 'error'); return; }
@@ -1119,6 +1409,7 @@
               createLocalProfile(gdata.name || gdata.email.split('@')[0] || 'Google User');
             }
           }).catch(function(error) {
+            googleBtn.classList.remove('loading');
             if (error.code === 'auth/popup-closed-by-user') return;
             console.error('Firebase Google sign-in error:', error);
             showToast('Google sign-in failed: ' + (error.message || 'unknown error'), 'error');
@@ -1133,6 +1424,7 @@
               showToast('Firebase SDK not loaded. Refresh the page.', 'error');
               return;
             }
+            guestBtn.classList.add('loading');
             firebase.auth().signInAnonymously().then(function(result) {
               var user = result.user;
               if (!user) { showToast('Guest sign-in failed', 'error'); return; }
@@ -1141,6 +1433,7 @@
                 createLocalProfile(user.uid ? 'Guest' : 'Guest');
               }
             }).catch(function(error) {
+              guestBtn.classList.remove('loading');
               console.error('Firebase anonymous sign-in error:', error);
               showToast('Guest sign-in failed: ' + (error.message || 'unknown error'), 'error');
             });

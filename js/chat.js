@@ -70,12 +70,17 @@ function subscribeToConversations() {
 
   chatState.convUnsubscribe = db.collection('conversations')
     .where('participants', 'array-contains', activeId)
-    .orderBy('updatedAt', 'desc')
     .onSnapshot(function(snapshot) {
       var convs = [];
       snapshot.forEach(function(doc) {
         var data = doc.data();
         convs.push({ id: doc.id, data: data });
+      });
+      // Sort most recent first (avoids needing a composite index in the console)
+      convs.sort(function(a, b) {
+        var at = a.data.updatedAt && a.data.updatedAt.toDate ? a.data.updatedAt.toDate().getTime() : 0;
+        var bt = b.data.updatedAt && b.data.updatedAt.toDate ? b.data.updatedAt.toDate().getTime() : 0;
+        return bt - at;
       });
 
       // Before updating, check for new unread messages to fire notifications
@@ -114,12 +119,17 @@ function subscribeToMessages(conversationId) {
 
   chatState.msgUnsubscribe = db.collection('messages')
     .where('conversationId', '==', conversationId)
-    .orderBy('createdAt', 'asc')
     .onSnapshot(function(snapshot) {
       var msgs = [];
       snapshot.forEach(function(doc) {
         var data = doc.data();
         msgs.push({ id: doc.id, data: data });
+      });
+      // Sort oldest first (avoids needing a composite index in the console)
+      msgs.sort(function(a, b) {
+        var at = a.data.createdAt && a.data.createdAt.toDate ? a.data.createdAt.toDate().getTime() : 0;
+        var bt = b.data.createdAt && b.data.createdAt.toDate ? b.data.createdAt.toDate().getTime() : 0;
+        return at - bt;
       });
 
       chatState.messages = msgs;

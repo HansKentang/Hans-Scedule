@@ -62,22 +62,20 @@ function syncUserToFirestore(user) {
 
     var friendCode = generateFriendCode(user.id);
 
-    return FIRESTORE_DB.collection('users').doc(user.id).set({
-      displayName: user.name || 'User',
-      photoURL: user.picture || '',
-      avatarColor: user._color || '#b4ccbc',
-      email: user.email || '',
-      friendCode: friendCode,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-      status: 'online',
-      stats: {
-        totalTasks: 0,
-        currentStreak: 0,
-        bestStreak: 0,
-        completionRate: 0
-      }
-    }, { merge: true }).catch(function(err) {
+    var ref = FIRESTORE_DB.collection('users').doc(user.id);
+    return ref.get().then(function(doc) {
+      var payload = {
+        displayName: user.name || 'User',
+        photoURL: user.picture || '',
+        avatarColor: user._color || '#b4ccbc',
+        friendCode: friendCode,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+        status: 'online'
+      };
+      if (user.email) payload.email = user.email;
+      if (!doc.exists) payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      return ref.set(payload, { merge: true });
+    }).catch(function(err) {
       console.warn('[firestore] syncUser failed:', err);
     });
   } catch (e) {
@@ -105,13 +103,4 @@ function removeUserFromFirestore(userId) {
   } catch (e) { return Promise.resolve(); }
 }
 
-// Update a user's task stats in Firestore (called after task changes)
-function updateUserStats(userId, stats) {
-  if (!userId || !FIRESTORE_DB) return Promise.resolve();
-  try {
-    return FIRESTORE_DB.collection('users').doc(userId).update({
-      stats: stats,
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(function() {});
-  } catch (e) { return Promise.resolve(); }
-}
+

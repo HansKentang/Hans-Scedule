@@ -10,6 +10,8 @@ var SYNC_DEBOUNCE_TIMER = null;
 var SYNC_DEBOUNCE_MS = 3000; // 3 seconds after last change
 var SYNC_PULLED_ONCE = false;
 var SYNC_PULLING = false;
+var SYNC_PRESENCE_WIRED = false;
+var SYNC_STATS_DIRTY = false;
 
 // ─── Initialize ──────────────────────────────────────────
 function initSync() {
@@ -57,6 +59,24 @@ function setupFirestore() {
     }
 
     setSyncStatus('synced');
+
+    // Ensure the user's public profile + friend code exist in Firestore
+    syncUserProfileToFirestore();
+
+    // Push current task stats (total tasks, streak, completion rate)
+    syncUserStatsToFirestore();
+
+    // Presence: mark offline when the tab is hidden, online again when visible
+    if (typeof document !== 'undefined' && !SYNC_PRESENCE_WIRED) {
+      SYNC_PRESENCE_WIRED = true;
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+          setUserPresence('offline');
+        } else {
+          syncUserProfileToFirestore();
+        }
+      });
+    }
 
     // Pull from cloud on init
     pullFromCloud();
@@ -248,6 +268,155 @@ function pushToCloud() {
   }
 }
 
+// ─── User profile sync (users/{id}) — powers the Friends page ──
+function getCurrentLocalUser() {
+  if (typeof localUsers === 'undefined' || !Array.isArray(localUsers)) return null;
+  if (!state.currentUserId) return null;
+  for (var i = 0; i < localUsers.length; i++) {
+    if (localUsers[i].id === state.currentUserId) return localUsers[i];
+  }
+  return null;
+}
+
+function generateProfileFriendCode(userId) {
+  return 'haven-' + userId.slice(-7);
+}
+
+// Write/refresh the current user's public profile so friends can find them
+function syncUserProfileToFirestore() {
+  if (!SYNC_ENABLED || !SYNC_DB || !state.currentUserId) return;
+  var user = getCurrentLocalUser();
+  var uid = state.currentUserId;
+  var name = user && user.name ? user.name : 'User';
+  var picture = user && user.picture ? user.picture : '';
+  var color = user && user._color ? user._color : '#b4ccbc';
+
+  var ref = SYNC_DB.collection('users').doc(uid);
+  ref.get().then(function(doc) {
+    var payload = {
+      displayName: name,
+      photoURL: picture,
+      avatarColor: color,
+      friendCode: generateProfileFriendCode(uid),
+      status: 'online',
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (!doc.exists) payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+    return ref.set(payload, { merge: true });
+  }).catch(function(err) {
+    console.warn('[sync] Profile sync failed:', err);
+  });
+}
+
+// Update the user's online status + last seen in Firestore
+function setUserPresence(status) {
+  if (!SYNC_ENABLED || !SYNC_DB || !state.currentUserId) return;
+  try {
+    SYNC_DB.collection('users').doc(state.currentUserId).update({
+      status: status,
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function() {});
+  } catch (e) {}
+}
+
+// ─── User stats sync (users/{id}.stats) — powers friend cards ──
+function statDateKey(d) {
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function statDateFromKey(key) {
+  var parts = key.split('-');
+  return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+}
+
+// Compute total tasks, completion rate, and streaks from local data
+function computeUserStats() {
+  var stats = { totalTasks: 0, currentStreak: 0, bestStreak: 0, completionRate: 0 };
+  try {
+    var tasks = [];
+    try {
+      var tasksRaw = localStorage.getItem('haven-schedule-tasks');
+      tasks = tasksRaw ? JSON.parse(tasksRaw) : [];
+    } catch (e) {}
+    if (!Array.isArray(tasks)) tasks = [];
+
+    var completed = 0;
+    for (var i = 0; i < tasks.length; i++) {
+      if (tasks[i] && tasks[i].completed) completed++;
+    }
+    stats.totalTasks = tasks.length;
+    stats.completionRate = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
+
+    // Build the set of days with at least one completed activity
+    var daySet = {};
+    try {
+      var logRaw = localStorage.getItem('haven-activities-completions');
+      var log = logRaw ? JSON.parse(logRaw) : [];
+      if (Array.isArray(log)) {
+        for (var j = 0; j < log.length; j++) {
+          if (log[j] && log[j].completedAt) {
+            var d = new Date(log[j].completedAt);
+            if (!isNaN(d.getTime())) daySet[statDateKey(d)] = true;
+          }
+        }
+      }
+    } catch (e) {}
+
+    var dayKeys = Object.keys(daySet).sort();
+    var now = new Date();
+    var todayKey = statDateKey(now);
+    var yesterdayKey = statDateKey(new Date(now.getTime() - 86400000));
+
+    // Current streak: count back from today (or yesterday if today has no completions yet)
+    var anchor = daySet[todayKey] ? todayKey : (daySet[yesterdayKey] ? yesterdayKey : null);
+    if (anchor) {
+      var cur = 0;
+      var cursor = statDateFromKey(anchor);
+      while (daySet[statDateKey(cursor)]) {
+        cur++;
+        cursor = new Date(cursor.getTime() - 86400000);
+      }
+      stats.currentStreak = cur;
+    }
+
+    // Best streak: longest consecutive run of active days (DST-safe day compare)
+    var best = 0;
+    var run = 0;
+    var prevKey = null;
+    for (var k = 0; k < dayKeys.length; k++) {
+      var expected = null;
+      if (prevKey) {
+        var prevDate = statDateFromKey(prevKey);
+        prevDate.setDate(prevDate.getDate() + 1);
+        expected = statDateKey(prevDate);
+      }
+      if (prevKey && expected === dayKeys[k]) run++;
+      else run = 1;
+      if (run > best) best = run;
+      prevKey = dayKeys[k];
+    }
+    stats.bestStreak = best;
+  } catch (e) {}
+  return stats;
+}
+
+// Write the current user's stats to Firestore so friends can see them
+function syncUserStatsToFirestore() {
+  if (!SYNC_ENABLED || !SYNC_DB || !state.currentUserId) return;
+  var stats = computeUserStats();
+  try {
+    SYNC_DB.collection('users').doc(state.currentUserId).set({
+      stats: stats,
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).catch(function(err) {
+      console.warn('[sync] Stats sync failed:', err);
+    });
+  } catch (e) {}
+}
+
 // ─── Watch for data changes via localStorage proxy ───────
 function onDataChanged(key) {
   if (!SYNC_ENABLED || !state.currentUserId) return;
@@ -259,10 +428,19 @@ function onDataChanged(key) {
   if (key.indexOf('haven-gsi-') === 0) return;
   if (key.indexOf('haven-image-') === 0 || key.indexOf('hub-image-') === 0) return;
 
+  // Track whether task stats changed so we can push them alongside the data sync
+  if (key === 'haven-schedule-tasks' || key.indexOf('haven-activities-completions') === 0 || key.indexOf('haven-activity-completions') === 0) {
+    SYNC_STATS_DIRTY = true;
+  }
+
   // Debounce: reset timer on each change
   if (SYNC_DEBOUNCE_TIMER) clearTimeout(SYNC_DEBOUNCE_TIMER);
   SYNC_DEBOUNCE_TIMER = setTimeout(function() {
     pushToCloud();
+    if (SYNC_STATS_DIRTY) {
+      SYNC_STATS_DIRTY = false;
+      syncUserStatsToFirestore();
+    }
   }, SYNC_DEBOUNCE_MS);
 }
 

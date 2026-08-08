@@ -6,39 +6,39 @@
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  /* ─── Stitch Dark Palette ─── */
-  --surface-dim: #131313;
-  --surface: #131313;
-  --surface-bright: #3a3939;
-  --surface-container-lowest: #0e0e0e;
-  --surface-container-low: #1c1b1b;
-  --surface-container: #201f1f;
-  --surface-container-high: #2a2a2a;
-  --surface-container-highest: #353534;
-  --surface-variant: #353534;
+  /* ─── Stitch Dark Palette (landing-page black) ─── */
+  --surface-dim: #000000;
+  --surface: #000000;
+  --surface-bright: #1a1a1a;
+  --surface-container-lowest: #0a0a0a;
+  --surface-container-low: #111111;
+  --surface-container: #111111;
+  --surface-container-high: #161616;
+  --surface-container-highest: #1a1a1a;
+  --surface-variant: #1a1a1a;
 
-  --primary: var(--user-primary, #b4ccbc);
-  --on-primary: #203529;
-  --primary-container: #2d4236;
-  --on-primary-container: #96ae9e;
-  --primary-fixed: #d0e8d7;
-  --primary-fixed-dim: #b4ccbc;
+  --primary: var(--user-primary, #ffffff);
+  --on-primary: #000000;
+  --primary-container: rgba(255,255,255,0.12);
+  --on-primary-container: #ffffff;
+  --primary-fixed: #ffffff;
+  --primary-fixed-dim: #d0d0d0;
 
-  --secondary: #dfc1a6;
-  --on-secondary: #3f2d1a;
-  --secondary-container: #57432e;
-  --on-secondary-container: #ccb096;
+  --secondary: #c8c6c5;
+  --on-secondary: #000000;
+  --secondary-container: rgba(255,255,255,0.08);
+  --on-secondary-container: #c8c6c5;
 
   --tertiary: #c8c6c5;
-  --on-tertiary: #313030;
-  --tertiary-container: #3e3d3d;
+  --on-tertiary: #000000;
+  --tertiary-container: rgba(255,255,255,0.08);
 
   --error: #ffb4ab;
-  --on-error: #690005;
-  --error-container: #93000a;
+  --on-error: #000000;
+  --error-container: #5a2a2a;
 
-  --outline: #8c928d;
-  --outline-variant: #424844;
+  --outline: rgba(255,255,255,0.5);
+  --outline-variant: rgba(255,255,255,0.12);
 
   --bg-primary: var(--surface);
   --bg-secondary: var(--surface-container-low);
@@ -56,7 +56,7 @@
   --on-surface-variant: #c2c8c2;
 
   --border-color: var(--outline-variant);
-  --border-subtle: rgba(42,42,42,1);
+  --border-subtle: rgba(255,255,255,0.08);
   --border-focus: var(--primary);
 
   --accent: var(--primary);
@@ -141,24 +141,28 @@ html.light {
   --surface-container-highest: #d7d2ca;
   --surface-variant: #e2ddd6;
 
-  --primary: var(--user-primary, #4d6356);
+  --primary: var(--user-primary, #1c1b1b);
   --on-primary: #ffffff;
-  --primary-container: #d4e8d8;
-  --on-primary-container: #1a2e22;
-  --primary-fixed: #4d6356;
-  --primary-fixed-dim: #7a9c86;
+  --primary-container: rgba(0,0,0,0.08);
+  --on-primary-container: #1c1b1b;
+  --primary-fixed: #1c1b1b;
+  --primary-fixed-dim: #4a4a4a;
 
-  --secondary: #7a6a58;
+  --secondary: #5a5a5a;
   --on-secondary: #ffffff;
-  --secondary-container: #dfc1a6;
-  --on-secondary-container: #2a1f12;
+  --secondary-container: rgba(0,0,0,0.06);
+  --on-secondary-container: #2a2a2a;
+
+  --tertiary: #5a5a5a;
+  --on-tertiary: #ffffff;
+  --tertiary-container: rgba(0,0,0,0.06);
 
   --error: #ba1a1a;
   --on-error: #ffffff;
   --error-container: #ffdad6;
 
-  --outline: #7a7670;
-  --outline-variant: #c2bfb8;
+  --outline: rgba(0,0,0,0.5);
+  --outline-variant: rgba(0,0,0,0.12);
 
   --bg-primary: var(--surface);
   --bg-secondary: var(--surface-container-low);
@@ -1859,9 +1863,9 @@ html.light .tag-item:hover { background: var(--accent-soft); }
 }
 html.dark .hub-ambient-gradient {
   background:
-    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(129, 140, 248, 0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(96, 165, 250, 0.09) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(52, 211, 153, 0.07) 0%, transparent 50%);
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(255,255,255,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(255,255,255,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 50%);
 }
 @keyframes ambientDrift {
   0% { transform: translate(0, 0) rotate(0deg); }
@@ -1883,6 +1887,27 @@ html.dark .hub-ambient-dots {
   background-image: radial-gradient(circle, rgba(255,255,255,0.4) 0.8px, transparent 0.8px);
   opacity: 0.12;
 }
+html.no-ambient .hub-ambient {
+  display: none !important;
+}
+
+/* Reduced-motion / animations off */
+html.no-anim *,
+html.no-anim *::before,
+html.no-anim *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* Compact mode: tighter spacing */
+html.compact .page-hero { height: 120px !important; padding: 8px 16px; }
+html.compact .hub-main { padding: 6px 10px; }
+html.compact .hub-page-header { margin-bottom: 8px; }
+html.compact .calendar-task { font-size: 0.68rem; }
+html.compact .set-row { padding: 5px 10px; }
+html.compact .set-group { padding: 6px 10px; }
+html.compact .settings-panel { max-height: 88vh; }
+html.compact .pomodoro-card { zoom: 0.85; }
 
 /* ─── HERO DECORATION ───────────────────────────────────── */
 .hub-hero-decor {
@@ -2191,7 +2216,10 @@ html.dark .hub-hero-decor {
   position: relative;
 }
 .hub-snav-item:hover {
-  background: var(--accent-soft); color: var(--text-primary);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 .hub-snav-item:active {
   transform: scale(0.97);
@@ -2750,7 +2778,7 @@ html.light .s-schedule-label {
   align-items: center; justify-content: center;
   flex-shrink: 0; opacity: 0.6;
 }
-.hub-snav-item:hover .snav-icon { opacity: 0.85; }
+.hub-snav-item:hover .snav-icon { opacity: 1; color: var(--accent); }
 .hub-snav-item.active .snav-icon { opacity: 1; color: var(--accent); }
 .hub-snav-item .snav-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -6594,8 +6622,41 @@ select.form-input {
 
 /* ─── Accent Color Picker ─────────────────────────────── */
 .acc-swatches {
-  display: flex; flex-wrap: wrap; gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: start;
+  gap: 14px 12px;
   margin-bottom: var(--space-3);
+}
+.acc-picker-body {
+  display: block;
+}
+.acc-swatch-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.acc-swatch-group:first-child,
+.acc-swatch-group-custom {
+  grid-column: 1 / -1;
+}
+.acc-swatch-group-label {
+  font-size: 0.55rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-tertiary); opacity: 0.6;
+  padding-left: 1px;
+}
+.acc-swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+@media (max-width: 480px) {
+  .acc-swatches { grid-template-columns: 1fr; }
+}
+.acc-reset-row {
+  display: flex; justify-content: center;
+  margin-top: 8px;
 }
 .acc-swatch {
   width: 32px; height: 32px; border-radius: 50%;
@@ -6619,10 +6680,20 @@ select.form-input {
   transform: scale(1.15);
   box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--text-primary);
 }
+.acc-swatch.active::before {
+  content: '';
+  position: absolute;
+  bottom: 2px; right: 2px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.25);
+}
 .acc-swatch.active svg {
   opacity: 0.6;
 }
 .acc-swatch-custom::after { content:''; position:absolute; bottom:1px; right:1px; width:6px; height:6px; border-radius:1px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.3); }
+.acc-swatch-custom.active::after { display: none; }
 .acc-swatch-custom:hover::after { background:#e74c3c; border-color:#e74c3c; }
 .acc-swatch-remove {
   display: inline-flex; align-items: center; gap: 4px;
@@ -6637,11 +6708,19 @@ select.form-input {
 .acc-swatch-remove:hover {
   border-color: #e04040; color: #e04040;
 }
+.acc-custom-hint {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  opacity: 0.65;
+  margin-top: 8px;
+  text-align: center;
+}
 .acc-custom-row {
   display: flex; align-items: center; gap: var(--space-3);
   margin-top: var(--space-3);
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);
+  justify-content: center;
 }
 .acc-custom-picker {
   width: 32px; height: 32px; padding: 0; border: none;
@@ -7515,7 +7594,7 @@ html.light .hub-section-header:hover {
 .set-acc-toggle { font-size:0.65rem; margin-left:auto; transition:transform 0.2s; }
 .set-acc-header.collapsed .set-acc-toggle { transform:rotate(90deg); }
 .set-acc-header:not(.collapsed) .set-acc-toggle { transform:rotate(180deg); }
-.set-acc-body { display:grid; grid-template-columns:repeat(3,1fr); gap:3px 5px; }
+.set-acc-body { display:block; }
 .set-acc-body.collapsed { display:none !important; }
 
 /* AI Profile & Learning */
@@ -7538,6 +7617,14 @@ html.light .hub-section-header:hover {
 .set-ai-stat { font-size:0.6rem; color:var(--text-tertiary); background:var(--bg-primary); padding:2px 6px; border-radius:4px; white-space:nowrap; }
 .set-ai-stat-val { font-weight:600; color:var(--text-primary); margin-right:2px; }
 .set-empty { font-size:0.65rem; color:var(--text-tertiary); padding:6px 0; }
+
+/* Storage & privacy */
+.set-stor-item { display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:4px; background:var(--bg-primary); }
+.set-stor-body { flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.set-stor-key { font-size:0.66rem; color:var(--text-primary); word-break:break-all; }
+.set-stor-size { font-size:0.55rem; color:var(--text-tertiary); white-space:nowrap; }
+.set-stor-del { width:18px; height:18px; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:none; border-radius:3px; background:transparent; color:var(--text-tertiary); cursor:pointer; font-size:0.6rem; padding:0; }
+.set-stor-del:hover { background:color-mix(in srgb, var(--danger,#ef4444) 12%, transparent); color:var(--danger,#ef4444); }
 
 /* Link button (add account) */
 .set-link-btn {
@@ -9210,6 +9297,7 @@ html.light .hub-add-popup {
     top: 0 !important;
     left: 0 !important;
     transform: none !important;
+    z-index: 100000 !important;
   }
   .settings-body {
     flex-direction: column !important;
@@ -9463,4 +9551,138 @@ html.light .hub-add-popup {
 /* ─── Icon sizes ── */
 .sch-pm-chip-edit svg, .tag-col-edit svg { width: 10px; height: 10px; }
 .sch-pm-chip-del svg, .tag-col-del svg { width: 9px; height: 9px; }
+
+/* ═══════════════════════════════════════════════════════════
+   GALLERY CANVAS (freeform vision board, like hub bento canvas)
+   Images keep their natural aspect ratio; drag to move in edit
+   mode. Positions are absolute px (snapped to 20px grid).
+   ═══════════════════════════════════════════════════════════ */
+.gal-canvas-wrap {
+  overflow-x: auto;
+  margin-bottom: var(--space-6);
+}
+.gal-canvas {
+  position: relative;
+  width: 100%;
+  min-height: 420px;
+  display: block;
+}
+.gal-canvas .gal-item {
+  position: absolute;
+  width: auto;
+  height: auto;
+  aspect-ratio: auto;
+  animation: galItemIn 400ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.gal-canvas .gal-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
+}
+.gal-canvas .gal-item-placeholder {
+  display: flex;
+}
+
+/* Edit mode: grab cursor + block touch scrolling so drag works */
+html.edit-mode .gal-canvas .gal-item {
+  cursor: grab;
+  touch-action: none;
+}
+html.edit-mode .gal-canvas .gal-item:active {
+  cursor: grabbing;
+}
+
+/* Edit mode: visible snap grid (20px minor, 100px major — matches galSnap) */
+html.edit-mode .gal-canvas {
+  background-image:
+    linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(to right, rgba(255,255,255,0.11) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.11) 1px, transparent 1px);
+  background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
+  border: 1px dashed rgba(255,255,255,0.24);
+  border-radius: var(--radius-xl);
+  padding: 0;
+}
+html.light.edit-mode .gal-canvas {
+  background-image:
+    linear-gradient(to right, rgba(0,0,0,0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.06) 1px, transparent 1px),
+    linear-gradient(to right, rgba(0,0,0,0.13) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.13) 1px, transparent 1px);
+  border-color: rgba(0,0,0,0.28);
+}
+
+/* Edit mode: subtle outline so cards read as editable */
+html.edit-mode .gal-canvas .gal-item {
+  outline: 1px dashed rgba(255,255,255,0.4);
+  outline-offset: 2px;
+  transition: outline-color 0.2s ease, box-shadow 0.2s ease;
+}
+html.light.edit-mode .gal-canvas .gal-item {
+  outline-color: rgba(0,0,0,0.35);
+}
+html.edit-mode .gal-canvas .gal-item:hover {
+  outline-color: var(--accent);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18);
+}
+
+/* Dragging state (mirrors bento bubbles) */
+.gal-canvas .gal-item.dragging {
+  opacity: 0.95;
+  z-index: 9999;
+  transform: scale(1.03);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.30), 0 8px 24px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  transition: opacity 0.15s ease, box-shadow 0.2s ease, transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), left 0s, top 0s;
+  cursor: grabbing;
+  pointer-events: none;
+  user-select: none;
+  border-color: var(--accent);
+}
+
+/* Drop bounce (reuses bento keyframes) */
+.gal-canvas .gal-item.drop-bounce {
+  animation: bubbleDropBounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  z-index: 100;
+}
+
+/* Origin ghost while dragging */
+.gal-drag-origin {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--accent);
+  opacity: 0.35;
+  background: color-mix(in srgb, var(--accent) 4%, transparent);
+  animation: bubbleOriginPulse 1s ease-in-out infinite alternate;
+}
+
+/* Empty state sits inside the canvas normally */
+.gal-canvas .gal-empty {
+  grid-column: auto;
+}
+
+/* Hub-style plus/duplicate button on gallery cards (edit mode only) */
+.gal-canvas .gal-item .bento-bubble-btn {
+  top: 8px;
+  right: 34px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  padding: 6px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.edit-mode .gal-canvas .gal-item .bento-bubble-btn {
+  display: flex;
+}
+.gal-canvas .gal-item .bento-bubble-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  transform: scale(1.12);
+}
 

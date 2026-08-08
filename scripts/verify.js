@@ -1,5 +1,5 @@
 const fs = require('fs');
-['shared.js'].forEach(function(f) {
+['js/shared.js'].forEach(function(f) {
   try { new Function(fs.readFileSync(f,'utf8')); console.log(f+': JS OK'); }
   catch(e) { console.log(f+': ERROR: '+e.message.replace(/\n/g,' | ')); }
 });

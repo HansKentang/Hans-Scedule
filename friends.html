@@ -9,13 +9,13 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Havën">
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="assets/icon.svg">
   <title>Havën Schedule — Friends</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
   <style>
     /* ─── FRIENDS PAGE ──────────────────────────────── */
     .fr-hero {
@@ -237,6 +237,28 @@
     }
     .fr-item-status-dot.online { background: #10b981; }
     .fr-item-status-dot.offline { background: var(--text-tertiary); opacity: 0.4; }
+    .fr-item-stats {
+      display: flex;
+      gap: 14px;
+      margin-top: 6px;
+    }
+    .fr-stat {
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+      font-size: 0.55rem;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .fr-stat b {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .fr-stat em { font-style: normal; }
 
     .fr-item-actions {
       display: flex; gap: var(--space-1); flex-shrink: 0;
@@ -491,8 +513,6 @@
       <footer class="hub-minifooter hub-anim-in hub-anim-in-5">
         <span>Havën Schedule v1.0</span>
         <div class="hub-minifooter-actions">
-          <button id="exportBtn" class="btn btn-ghost">Export</button>
-          <button id="importBtn" class="btn btn-ghost">Import</button>
           <button id="focusToggleBtn" class="btn btn-ghost" title="Focus mode"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg> Focus</button>
         </div>
       </footer>
@@ -918,17 +938,17 @@
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
     }
   </script>
-  <script src="shared.js"></script>
-  <script src="settings.js"></script>
+  <script src="js/shared.js"></script>
+  <script src="js/settings.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
-  <script src="firestore.js"></script>
-  <script src="gsi.js"></script>
-  <script src="firestore-sync.js"></script>
-  <script src="chat-badge.js"></script>
-  <script src="friends.js"></script>
-  <script src="chat.js"></script>
+  <script src="js/firestore.js"></script>
+  <script src="js/gsi.js"></script>
+  <script src="js/firestore-sync.js"></script>
+  <script src="js/chat-badge.js"></script>
+  <script src="js/friends.js"></script>
+  <script src="js/chat.js"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
 
   <!-- ─── Spotify Settings Modal ──────────────── -->

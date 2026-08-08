@@ -358,6 +358,13 @@ function renderFriendList() {
             : '<span class="fr-pending-badge"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Pending</span>'
           ) +
         '</div>' +
+        (isAccepted && otherUser && otherUser.stats
+          ? '<div class="fr-item-stats">' +
+              '<span class="fr-stat"><b>' + (otherUser.stats.totalTasks || 0) + '</b><em>tasks</em></span>' +
+              '<span class="fr-stat"><b>' + (otherUser.stats.currentStreak || 0) + '</b><em>streak</em></span>' +
+              '<span class="fr-stat"><b>' + (otherUser.stats.completionRate || 0) + '%</b><em>done</em></span>' +
+            '</div>'
+          : '') +
       '</div>';
 
     // Actions
@@ -498,6 +505,20 @@ function init() {
   renderFriendCode();
   subscribeToFriends();
   setupPage();
+
+  // Ensure this user's profile + friend code exist in Firestore
+  var activeId = getActiveUserId();
+  var activeUser = (typeof localUsers !== 'undefined' && activeId)
+    ? localUsers.find(function(u) { return u.id === activeId; })
+    : null;
+  if (activeUser && typeof syncUserToFirestore === 'function') {
+    syncUserToFirestore({
+      id: activeUser.id,
+      name: activeUser.name,
+      picture: activeUser.picture || '',
+      _color: activeUser._color
+    });
+  }
 
   document.getElementById('focusToggleBtn')?.addEventListener('click', toggleFocusMode);
   document.getElementById('exportBtn')?.addEventListener('click', exportData);
