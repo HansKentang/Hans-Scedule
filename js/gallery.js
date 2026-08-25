@@ -263,10 +263,11 @@ function renderGallery() {
     const id = it.id;
     const url = getImage(id);
     const hasImg = !!url;
-    const style = 'left:' + (it.x || GAL_PAD) + 'px;top:' + (it.y || GAL_PAD) + 'px;width:' + (it.w || GAL_DEFAULT_W) + 'px;height:' + (it.h || GAL_DEFAULT_H) + 'px;';
+    const style = isEdit ? 'left:' + (it.x || GAL_PAD) + 'px;top:' + (it.y || GAL_PAD) + 'px;width:' + (it.w || GAL_DEFAULT_W) + 'px;height:' + (it.h || GAL_DEFAULT_H) + 'px;' : '';
     const handle = isEdit ? galDragHandle() : '';
     const dupBtn = isEdit && hasImg ? galDupButton(id) : '';
 
+    const captionText = it.title || id.replace('hub-image-', 'Image ');
     if (!hasImg) {
       html += `
         <div class="gal-item gal-item-placeholder" data-gallery-id="${id}" style="${style}">
@@ -279,7 +280,9 @@ function renderGallery() {
     } else {
       html += `
         <div class="gal-item" data-gallery-id="${id}" style="${style}">
+          <div class="gal-item-overlay"><button class="gal-save-btn" data-action="save" data-gallery-id="${id}">Save</button></div>
           <img data-image-id="${id}" src="${escapeHtml(url || '')}" alt="" loading="lazy">
+          <div class="gal-item-caption">${escapeHtml(captionText)}</div>
           <div class="gal-item-remove" data-action="remove" data-gallery-id="${id}" title="Remove image">×</div>
           ${dupBtn}
           ${handle}
@@ -313,6 +316,15 @@ function renderGallery() {
   canvas.querySelectorAll('.gal-item-placeholder').forEach(el => {
     el.addEventListener('click', function(e) {
       if (this.hasAttribute('data-suppress-click')) return;
+      const id = this.dataset.galleryId;
+      if (id) openImagePicker(id);
+    });
+  });
+
+  // Save buttons open the picker for that item
+  canvas.querySelectorAll('[data-action="save"]').forEach(el => {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
       const id = this.dataset.galleryId;
       if (id) openImagePicker(id);
     });
