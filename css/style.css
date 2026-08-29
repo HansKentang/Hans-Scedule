@@ -100,7 +100,6 @@
   --skeleton-shine: rgba(255,255,255,0.04);
   --touch-target: 44px;
   --card-inner-glow: inset 0 1px 3px rgba(255,255,255,0.04);
-  --card-hover-lift: translateY(-2px);
   --chip-active-inset: inset 0 1.5px 3px rgba(0,0,0,0.2);
 
   /* ─── Layout ─── */
@@ -197,7 +196,6 @@ html.light {
   --skeleton-shine: rgba(0,0,0,0.06);
   --touch-target: 44px;
   --card-inner-glow: inset 0 1px 3px rgba(255,255,255,0.6);
-  --card-hover-lift: translateY(-2px);
   --chip-active-inset: inset 0 1.5px 3px rgba(0,0,0,0.08);
 
   --black: #000000;
@@ -267,7 +265,6 @@ html.light ::-webkit-scrollbar-thumb { background: var(--outline); }
 }
 .glass-card:hover {
   border-color: rgba(180, 204, 188, 0.4);
-  transform: var(--card-hover-lift);
   box-shadow: var(--shadow-sm);
 }
 html.light .glass-card {
@@ -308,7 +305,6 @@ html.light .glass-card.dark-stat > div:last-child {
 }
 .card:hover {
   border-color: var(--border-color);
-  transform: var(--card-hover-lift);
   box-shadow: var(--shadow-sm);
 }
 .card-elevated {
@@ -322,7 +318,6 @@ html.light .glass-card.dark-stat > div:last-child {
 .card-elevated:hover {
   box-shadow: var(--shadow-md), var(--card-inner-glow);
   border-color: var(--border-color);
-  transform: var(--card-hover-lift);
 }
 .card-outlined {
   background: transparent;
@@ -333,7 +328,6 @@ html.light .glass-card.dark-stat > div:last-child {
 }
 .card-outlined:hover {
   border-color: var(--primary);
-  transform: var(--card-hover-lift);
 }
 .card-ghost {
   background: transparent;
@@ -361,7 +355,6 @@ html.light .glass-card.dark-stat > div:last-child {
 }
 .card-glass:hover {
   border-color: rgba(180, 204, 188, 0.4);
-  transform: var(--card-hover-lift);
   box-shadow: var(--shadow-md);
 }
 html.light .card-glass {
