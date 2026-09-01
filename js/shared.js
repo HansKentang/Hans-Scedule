@@ -1678,6 +1678,14 @@ function renderTutorialStep() {
   var step = tutorialState.steps[tutorialState.currentStep];
   if (!step) { endTutorial(); return; }
 
+  // Smooth transition between steps
+  if (tooltip) {
+    tooltip.classList.add('transitioning');
+    setTimeout(function() {
+      tooltip.classList.remove('transitioning');
+    }, 150);
+  }
+
   // Update step counter
   var stepEl = document.getElementById('tutorialStep');
   if (stepEl) stepEl.textContent = (tutorialState.currentStep + 1) + ' / ' + tutorialState.steps.length;
@@ -1688,11 +1696,14 @@ function renderTutorialStep() {
   if (titleEl) titleEl.textContent = step.title;
   if (descEl) descEl.innerHTML = step.desc;
 
-  // Update progress dots
+  // Update progress dots with past state
   var progressEl = document.getElementById('tutorialProgress');
   if (progressEl) {
     progressEl.innerHTML = tutorialState.steps.map(function(_, i) {
-      return '<span class="tutorial-progress-dot' + (i === tutorialState.currentStep ? ' active' : '') + '"></span>';
+      var cls = 'tutorial-progress-dot';
+      if (i === tutorialState.currentStep) cls += ' active';
+      else if (i < tutorialState.currentStep) cls += ' past';
+      return '<span class="' + cls + '"></span>';
     }).join('');
   }
 
@@ -1851,6 +1862,21 @@ document.addEventListener('click', function(e) {
     }
     if (typeof startTutorial === 'function') startTutorial(steps);
     return;
+  }
+});
+
+document.addEventListener('keydown', function(e) {
+  if (!tutorialState) return;
+  if (e.key === 'ArrowRight' || e.key === 'Enter') {
+    e.preventDefault();
+    var isLast = tutorialState.currentStep === tutorialState.steps.length - 1;
+    if (isLast) { endTutorial(); } else { tutorialState.currentStep++; renderTutorialStep(); }
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    if (tutorialState.currentStep > 0) { tutorialState.currentStep--; renderTutorialStep(); }
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    endTutorial();
   }
 });
 
@@ -7327,6 +7353,7 @@ function spOpenSettings() {
   const overlay = document.getElementById('spOverlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
+  requestAnimationFrame(() => overlay.classList.add('active'));
   spRenderList();
   const modalEmbed = document.getElementById('spModalEmbed');
   const active = spPlaylists.find(p => p.id === spActiveId);
@@ -7335,7 +7362,9 @@ function spOpenSettings() {
 
 function spCloseSettings() {
   const overlay = document.getElementById('spOverlay');
-  if (overlay) overlay.classList.add('hidden');
+  if (!overlay) return;
+  overlay.classList.remove('active');
+  setTimeout(() => overlay.classList.add('hidden'), 300);
 }
 
 function spAddPlaylist() {
