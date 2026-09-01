@@ -527,28 +527,34 @@
     }
     .auth-carousel-track {
       display: flex;
-      transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: transform 1.4s cubic-bezier(0.25, 1, 0.35, 1);
       will-change: transform;
-      transform-style: preserve-3d;
     }
     .auth-carousel-slide {
       flex: 0 0 100%;
       min-width: 0;
-      transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease;
+      transition: transform 1.2s cubic-bezier(0.25, 1, 0.35, 1), opacity 0.8s ease;
     }
     .auth-carousel-slide svg {
       width: 100%; height: auto;
       display: block;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      transition: transform 0.8s cubic-bezier(0.25, 1, 0.35, 1);
     }
     .auth-carousel-slide.active-slide {
       transform: scale(1) translateZ(0);
       opacity: 1;
     }
+    .auth-carousel-slide.active-slide svg {
+      transform: scale(1);
+    }
     .auth-carousel-slide.inactive-slide {
-      transform: scale(0.92) translateZ(-30px) rotateY(-2deg);
-      opacity: 0.4;
+      transform: scale(0.96) translateZ(-10px);
+      opacity: 0.5;
+    }
+    .auth-carousel-slide.inactive-slide svg {
+      transform: scale(0.98);
     }
 
 
@@ -605,7 +611,18 @@
       background: rgba(0,0,0,0.6);
     }
     .auth-carousel-dot:hover {
-      background: rgba(0,0,0,0.3);
+      background: rgba(0,0,0,0.35);
+    }
+    .auth-carousel-dot:active {
+      transform: scale(0.85);
+    }
+    .auth-carousel {
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: grab;
+    }
+    .auth-carousel:active {
+      cursor: grabbing;
     }
 
     /* Gradient overlay + quote at bottom */
@@ -1279,7 +1296,7 @@
         var currentSlide = 0;
         var autoInterval = null;
         var resetTimer = null;
-        var CAROUSEL_INTERVAL = 4000;
+        var CAROUSEL_INTERVAL = 5000;
         var REAL_SLIDE_COUNT = 6;
 
         function goToSlide(index, instant) {
@@ -1325,7 +1342,7 @@
             resetTimer = setTimeout(function() {
               resetTimer = null;
               goToSlide(0, true);
-            }, 800);
+            }, 1500);
           }
         }
 
@@ -1355,6 +1372,77 @@
             });
           });
 
+          // Swipe / Drag support
+          var _isDragging = false;
+          (function() {
+            var carousel = document.querySelector('.auth-carousel');
+            if (!carousel || !track) return;
+            var dragStartX = 0;
+            var dragStartY = 0;
+            var dragDelta = 0;
+            var baseOffset = 0;
+            var SWIPE_THRESHOLD = 50;
+            var VERTICAL_LOCK = 10;
+            var locked = false;
+            var directionLocked = false;
+
+            function getPointerX(e) {
+              return e.touches ? e.touches[0].clientX : e.clientX;
+            }
+            function getPointerY(e) {
+              return e.touches ? e.touches[0].clientY : e.clientY;
+            }
+            function onStart(e) {
+              if (e.touches && e.touches.length > 1) return;
+              _isDragging = true;
+              locked = false;
+              directionLocked = false;
+              dragStartX = getPointerX(e);
+              dragStartY = getPointerY(e);
+              dragDelta = 0;
+              baseOffset = currentSlide * 100;
+              track.style.transition = 'none';
+              if (autoInterval) { clearInterval(autoInterval); autoInterval = null; }
+            }
+            function onMove(e) {
+              if (!_isDragging) return;
+              var dx = getPointerX(e) - dragStartX;
+              var dy = getPointerY(e) - dragStartY;
+              if (!directionLocked) {
+                if (Math.abs(dx) > VERTICAL_LOCK || Math.abs(dy) > VERTICAL_LOCK) {
+                  directionLocked = true;
+                  locked = Math.abs(dy) > Math.abs(dx);
+                }
+              }
+              if (locked) return;
+              e.preventDefault();
+              dragDelta = dx;
+              var pct = dragDelta / carousel.offsetWidth * 100;
+              track.style.transform = 'translateX(-' + (baseOffset - pct) + '%)';
+            }
+            function onEnd() {
+              if (!_isDragging) return;
+              _isDragging = false;
+              if (locked) return;
+              track.style.transition = '';
+              if (dragDelta < -SWIPE_THRESHOLD && currentSlide < slideCount - 1) {
+                goToSlide(currentSlide + 1);
+              } else if (dragDelta > SWIPE_THRESHOLD && currentSlide > 0) {
+                goToSlide(currentSlide - 1);
+              } else {
+                goToSlide(currentSlide);
+              }
+              startAutoRotate();
+            }
+            carousel.addEventListener('mousedown', onStart);
+            carousel.addEventListener('touchstart', onStart, { passive: true });
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchend', onEnd);
+            carousel.addEventListener('dragstart', function(e) { e.preventDefault(); });
+          })();
+
           // Pause on hover
           var carousel = document.querySelector('.auth-carousel');
           if (carousel) {
@@ -1363,7 +1451,7 @@
               autoInterval = null;
             });
             carousel.addEventListener('mouseleave', function() {
-              startAutoRotate();
+              if (!_isDragging) startAutoRotate();
             });
           }
         }
