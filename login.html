@@ -151,11 +151,14 @@
       overflow: hidden;
       transition: transform 0.3s var(--bounce);
     }
+    .auth-brand:hover .auth-brand-icon {
+      transform: scale(1.1) rotate(-4deg);
+    }
     .auth-brand-icon img {
       width: 100%; height: 100%; object-fit: cover;
       display: block;
     }
-    .auth-brand:hover .auth-brand-icon { transform: scale(1.1) rotate(-4deg); }
+    .auth-brand-icon { text-decoration: none; color: inherit; cursor: pointer; }
     .auth-brand-text { display: flex; flex-direction: column; gap: 2px; }
     .auth-brand-name {
       font-size: clamp(0.92rem, 1.3vw, 1.12rem);
@@ -230,7 +233,8 @@
     }
     .auth-card:hover {
       border-color: var(--border-light);
-      box-shadow: 0 30px 70px -28px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07);
+      transform: translateY(-2px);
+      box-shadow: 0 32px 72px -28px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07);
     }
 
     /* ─── Footer ─── */
@@ -250,8 +254,14 @@
       align-items: center;
       gap: 6px;
       opacity: 0.85;
+      transition: opacity 0.2s, transform 0.2s var(--bounce);
     }
-    .auth-footer-item svg { flex-shrink: 0; opacity: 0.6; }
+    .auth-footer-item:hover {
+      opacity: 1;
+      transform: translateY(-1px);
+    }
+    .auth-footer-item svg { flex-shrink: 0; opacity: 0.6; transition: opacity 0.2s; }
+    .auth-footer-item:hover svg { opacity: 0.85; }
 
     /* ─── Form inputs area ─── */
     .auth-fields {
@@ -289,7 +299,6 @@
     }
     .auth-input:hover:not(:focus) {
       border-color: var(--border-light);
-      background: rgba(255,255,255,0.045);
     }
     .auth-input:focus {
       border-color: rgba(255,255,255,0.22);
@@ -332,20 +341,12 @@
       margin-top: clamp(2px, 0.5vh, 6px);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 16px -6px rgba(255,255,255,0.25);
     }
-    .auth-submit::before {
-      content: ''; position: absolute; top: 0; left: -80%;
-      width: 55%; height: 100%;
-      background: linear-gradient(105deg, transparent, rgba(0,0,0,0.10), transparent);
-      transform: skewX(-20deg);
-      transition: left 0.6s var(--smooth);
-      pointer-events: none;
-    }
-    .auth-submit:hover:not(:disabled)::before { left: 140%; }
     .auth-submit:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 28px -10px rgba(255,255,255,0.28), inset 0 1px 0 rgba(255,255,255,0.9);
+      opacity: 0.9;
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 24px -6px rgba(255,255,255,0.35);
     }
-    .auth-submit:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+    .auth-submit:active:not(:disabled) { transform: scale(0.96); }
     .auth-submit:disabled {
       opacity: 0.2;
       cursor: default;
@@ -396,25 +397,13 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
       transition: all 0.3s var(--bounce);
     }
-    .auth-google-btn::after {
-      content: ''; position: absolute; top: 0; left: -80%;
-      width: 55%; height: 100%;
-      background: linear-gradient(105deg, transparent, rgba(255,255,255,0.09), transparent);
-      transform: skewX(-20deg);
-      transition: left 0.7s var(--smooth);
-      pointer-events: none;
-    }
-    .auth-google-btn:hover::after { left: 140%; }
-    .auth-google-btn:hover {
-      border-color: rgba(255,255,255,0.22);
-      background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035));
-      color: var(--text);
+    .auth-google-btn:hover:not(.loading) {
+      border-color: var(--border-light);
       transform: translateY(-2px);
-      box-shadow: 0 12px 32px -14px rgba(255,255,255,0.22), inset 0 1px 0 rgba(255,255,255,0.09);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 24px -8px rgba(255,255,255,0.12);
     }
-    .auth-google-btn:active { transform: translateY(0) scale(0.98); }
-    .auth-google-btn img, .auth-google-btn svg { width: 19px; height: 19px; flex-shrink: 0; transition: transform 0.4s var(--bounce); }
-    .auth-google-btn:hover svg { transform: rotate(-8deg) scale(1.14); }
+    .auth-google-btn:active:not(.loading) { transform: scale(0.97); }
+    .auth-google-btn img, .auth-google-btn svg { width: 19px; height: 19px; flex-shrink: 0; }
     .auth-google-btn .auth-btn-label { transition: opacity 0.2s; }
     .auth-google-btn.loading { pointer-events: none; opacity: 0.85; }
     .auth-google-btn.loading .auth-btn-label { opacity: 0; }
@@ -424,8 +413,15 @@
       padding: clamp(10px, 1.5vh, 13px);
       border-radius: 10px;
     }
-    .auth-guest-btn svg { opacity: 0.6; }
-    .auth-guest-btn:hover { opacity: 1; }
+    .auth-guest-btn:hover:not(.loading) {
+      opacity: 1;
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+    .auth-guest-btn:active:not(.loading) { transform: scale(0.97); }
+    .auth-guest-btn svg { opacity: 0.6; transition: opacity 0.2s; }
+    .auth-guest-btn:hover:not(.loading) svg { opacity: 0.85; }
+
     .auth-google-caption {
       display: flex; align-items: center; justify-content: center; gap: 5px;
       font-size: 0.62rem;
@@ -485,21 +481,9 @@
       position: relative;
       transition: color 0.2s var(--smooth);
     }
-    .auth-toggle button::after {
-      content: '';
-      position: absolute; left: 4px; right: 4px; bottom: 0;
-      height: 1px;
-      background: var(--text-secondary);
-      transform: scaleX(0.3);
-      opacity: 0;
-      transition: all 0.3s var(--smooth);
-    }
     .auth-toggle button:hover {
       color: var(--text);
-    }
-    .auth-toggle button:hover::after {
-      transform: scaleX(1);
-      opacity: 1;
+      transform: translateY(-1px);
     }
 
     /* ─── Right Panel ─── */
@@ -535,6 +519,11 @@
       padding: 14px 14px 10px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05);
       perspective: 1000px;
+      transition: transform 0.3s var(--bounce), box-shadow 0.3s var(--bounce);
+    }
+    .auth-carousel:hover {
+      transform: scale(1.01);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
     }
     .auth-carousel-track {
       display: flex;
@@ -737,7 +726,7 @@
       <div class="auth-form-wrap">
         <!-- Brand -->
         <div class="auth-brand auth-reveal" style="--d:0.05s">
-          <div class="auth-brand-icon"><img src="assets/icon-192.png" alt="Havën"></div>
+          <a href="landing.html" class="auth-brand-icon"><img src="assets/icon-192.png" alt="Havën"></a>
           <div class="auth-brand-text">
             <span class="auth-brand-name">Havën</span>
             <span class="auth-brand-tagline">Your schedule, synced</span>
