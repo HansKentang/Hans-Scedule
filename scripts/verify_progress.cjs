@@ -9,10 +9,10 @@ while ((m = re.exec(h)) !== null) {
   if (ids[m[1]] === 2) dups.push(m[1]);
 }
 console.log(dups.length ? ('DUP IDS: ' + dups.join(',')) : 'no duplicate ids');
-const need = ['tagsBoardInner','boardView','timelineView','actTimeline','actLogList','activityChart','actChartLegend','actWeekLabel','actChartTotal','actWeekPrev','actWeekNext','boardTaskCount','tagsSummaryTotal','analyticsPeriodPills','statTasks','statTime','statDeep','statStudy','compRing','compRingPct','completionFill','compDone','compTotal','compPct','completionPeriod','streakDays','streakCurrent','streakBest','streakActive','pieChart','pieLegend','barChart','barLegend','trendChart','sleepAnalyticsDuration','sleepChart','sleepAnalyticsQuality','sleepQualityFill','analyticsTableBody','detailPeriodLabel','actHeroCount','accessHub','progress.js'];
+const need = ['tagsBoardInner','boardView','timelineView','actTimeline','actLogList','activityChart','actChartLegend','actWeekLabel','actChartTotal','actWeekPrev','actWeekNext','boardTaskCount','tagsSummaryTotal','analyticsPeriodPills','statTasks','statTime','statDeep','statStudy','compRing','compRingPct','completionFill','compDone','compTotal','compPct','completionPeriod','streakDays','streakCurrent','streakBest','streakActive','trendChart','sleepAnalyticsDuration','sleepChart','sleepAnalyticsQuality','sleepQualityFill','analyticsTableBody','detailPeriodLabel','actHeroCount','accessHub','progress.js'];
 const missing = need.filter(id => h.indexOf(id) === -1);
 console.log(missing.length ? ('MISSING: ' + missing.join(',')) : 'all required ids present');
-const order = ['actLogSection', 'analyticsPeriodPills', 'statTasks', 'pieChart', 'trendChart', 'sleepChart', 'analyticsTableBody', 'accessHub'];
+const order = ['actLogSection', 'analyticsPeriodPills', 'statTasks', 'compRing', 'trendChart', 'sleepChart', 'analyticsTableBody', 'accessHub'];
 let lastPos = -1, ok = true;
 for (const id of order) {
   const p = h.indexOf(id);

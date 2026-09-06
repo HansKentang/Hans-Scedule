@@ -668,6 +668,7 @@ function renderHubBento() {
   // Ensure images are loaded before rendering bubbles (only on first render)
   if (typeof state !== 'undefined' && !state.images && typeof loadImages === 'function') loadImages();
   _loadTimerStates();
+  _loadPomoStates();
   const grid = document.querySelector('.bento-grid');
   if (!grid) {
     console.warn('[hub] .bento-grid not found, skipping render');
@@ -929,9 +930,10 @@ function renderHubBento() {
         </div>`;
       case 'timer':
         var ts = _timerState(uid);
-        var tDisplay = _fmtTime(ts.elapsed);
-        var tStatus = ts.running ? 'running' : (ts.elapsed > 0 ? 'paused' : 'idle');
-        var presetsHtml = tStatus === 'idle' ? '<div class="timer-presets"><button class="timer-preset" data-timer-preset="60" data-timer-uid="' + uid + '">1m</button><button class="timer-preset" data-timer-preset="300" data-timer-uid="' + uid + '">5m</button><button class="timer-preset" data-timer-preset="900" data-timer-uid="' + uid + '">15m</button><button class="timer-preset" data-timer-preset="1800" data-timer-uid="' + uid + '">30m</button></div>' : '';
+        var tDisplay = ts.mode === 'countdown' ? _fmtTime(Math.max(0, ts.target - ts.elapsed)) : _fmtTime(ts.elapsed);
+        var tStatus = ts.running ? 'running' : (ts.target > 0 && ts.elapsed > 0 ? 'paused' : (ts.target > 0 ? 'ready' : 'idle'));
+        var presetsHtml = (tStatus === 'idle' || tStatus === 'ready') ? '<div class="timer-presets"><button class="timer-preset" data-timer-preset="60" data-timer-uid="' + uid + '">1m</button><button class="timer-preset" data-timer-preset="300" data-timer-uid="' + uid + '">5m</button><button class="timer-preset" data-timer-preset="900" data-timer-uid="' + uid + '">15m</button><button class="timer-preset" data-timer-preset="1800" data-timer-uid="' + uid + '">30m</button></div>' : '';
+        var modeLabel = ts.mode === 'countdown' ? 'SW' : 'TD';
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="timer-widget" data-timer-uid="${uid}">
@@ -939,6 +941,7 @@ function renderHubBento() {
             <div class="timer-display">${tDisplay}</div>
             <div class="timer-controls">
               <button class="timer-btn ${tStatus === 'running' ? 'timer-btn-active' : ''}" data-timer-action="toggle" data-timer-uid="${uid}">${ts.running ? 'Pause' : 'Start'}</button>
+              <button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="${uid}">${modeLabel}</button>
               <button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="${uid}">Reset</button>
             </div>
           </div>
@@ -1330,7 +1333,12 @@ function renderHubBento() {
         var puid = presetBtn.dataset.timerUid;
         if (!puid) return;
         var ps = _timerState(puid);
-        ps.elapsed = parseInt(presetBtn.dataset.timerPreset);
+        var presetSecs = parseInt(presetBtn.dataset.timerPreset);
+        ps.target = presetSecs;
+        ps.mode = 'countdown';
+        ps.elapsed = 0;
+        ps.running = false;
+        ps.startTs = null;
         _renderTimer(puid);
         _saveTimerStates();
         return;
@@ -1346,23 +1354,12 @@ function renderHubBento() {
           s.running = false;
           _timerClearTickIfIdle();
         } else {
+          if (s.mode === 'countdown' && s.elapsed >= s.target) {
+            s.elapsed = 0;
+          }
           s.startTs = Date.now();
           s.running = true;
-          if (!_timerIntervals._tick) {
-            var _tickSaveCounter = 0;
-            _timerIntervals._tick = setInterval(function() {
-              Object.keys(_timerIntervals).forEach(function(k) {
-                if (k === '_tick') return;
-                var ts = _timerIntervals[k];
-                if (ts.running && ts.startTs) {
-                  ts.elapsed = ts.elapsed + (Date.now() - ts.startTs) / 1000;
-                  ts.startTs = Date.now();
-                  _renderTimer(k);
-                }
-              });
-              if (++_tickSaveCounter % 25 === 0) _saveTimerStates();
-            }, 200);
-          }
+          _startTimerTick();
         }
         _renderTimer(uid);
         _saveTimerStates();
@@ -1413,6 +1410,7 @@ function renderHubBento() {
                 }
                 _renderPomo(k);
               });
+              _savePomoStates();
             }, 200);
           }
         }
@@ -1429,6 +1427,20 @@ function renderHubBento() {
           _advancePomoPhase(puid2);
         }
         _renderPomo(puid2);
+        return;
+      }
+      var modeBtn = e.target.closest('[data-timer-action="mode"]');
+      if (modeBtn) {
+        var muid = modeBtn.dataset.timerUid;
+        var ms = _timerState(muid);
+        if (!ms) return;
+        ms.mode = ms.mode === 'countdown' ? 'countup' : 'countdown';
+        ms.target = ms.mode === 'countdown' ? ms.target : 0;
+        ms.elapsed = 0;
+        ms.running = false;
+        ms.startTs = null;
+        _renderTimer(muid);
+        _saveTimerStates();
         return;
       }
     });
@@ -2553,7 +2565,7 @@ function findBentoGap(layout, bubbleW, bubbleH, gridWidth) {
 
 /* ─── Timer / Pomodoro helpers ────────────────── */
 function _timerState(uid) {
-  if (!_timerIntervals[uid]) _timerIntervals[uid] = { elapsed: 0, running: false, startTs: null };
+  if (!_timerIntervals[uid]) _timerIntervals[uid] = { elapsed: 0, running: false, startTs: null, target: 0, mode: 'countdown' };
   return _timerIntervals[uid];
 }
 function _pomoState(uid) {
@@ -2561,6 +2573,22 @@ function _pomoState(uid) {
   return _pomodoroState[uid];
 }
 function _playPomoAlert() {
+  if (typeof state !== 'undefined' && state.soundEnabled === false) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.5);
+  } catch(e) {}
+}
+function _playTimerAlert() {
   if (typeof state !== 'undefined' && state.soundEnabled === false) return;
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2626,12 +2654,17 @@ function _renderTimer(uid) {
   if (!el) return;
   var s = _timerIntervals[uid];
   if (!s) return;
-  el.querySelector('.timer-display').textContent = _fmtTime(s.elapsed);
+  var displaySecs = s.mode === 'countdown' ? Math.max(0, s.target - s.elapsed) : s.elapsed;
+  el.querySelector('.timer-display').textContent = _fmtTime(displaySecs);
   var btn = el.querySelector('[data-timer-action="toggle"]');
   if (btn) {
     btn.textContent = s.running ? 'Pause' : 'Start';
     btn.classList.toggle('timer-btn-active', s.running);
   }
+  var modeBtn = el.querySelector('[data-timer-action="mode"]');
+  if (modeBtn) modeBtn.textContent = s.mode === 'countdown' ? 'SW' : 'TD';
+  var presetsEl = el.querySelector('.timer-presets');
+  if (presetsEl) presetsEl.style.display = (!s.running && s.elapsed === 0) ? 'flex' : 'none';
 }
 
 function _saveTimerStates() {
@@ -2639,7 +2672,8 @@ function _saveTimerStates() {
     var data = {};
     for (var k in _timerIntervals) {
       if (k === '_tick') continue;
-      data[k] = { elapsed: _timerIntervals[k].elapsed, running: _timerIntervals[k].running, startTs: _timerIntervals[k].startTs };
+      var ts = _timerIntervals[k];
+      data[k] = { elapsed: ts.elapsed, running: ts.running, startTs: ts.startTs, target: ts.target, mode: ts.mode };
     }
     localStorage.setItem(TIMER_STATE_KEY, JSON.stringify(data));
   } catch(e) {}
@@ -2650,12 +2684,15 @@ function _loadTimerStates() {
     var data = JSON.parse(localStorage.getItem(TIMER_STATE_KEY));
     if (data) {
       for (var k in data) {
-        _timerIntervals[k] = data[k];
+        if (_timerIntervals[k]) continue;
+        var d = data[k];
+        _timerIntervals[k] = { elapsed: d.elapsed, running: d.running, startTs: d.startTs, target: d.target || 0, mode: d.mode || 'countdown' };
         if (_timerIntervals[k].running && _timerIntervals[k].startTs) {
           _timerIntervals[k].elapsed += (Date.now() - _timerIntervals[k].startTs) / 1000;
           _timerIntervals[k].startTs = Date.now();
         }
       }
+      _startTimerTick();
     }
   } catch(e) {}
 }
@@ -2670,6 +2707,30 @@ function _timerClearTickIfIdle() {
     delete _timerIntervals._tick;
   }
 }
+function _startTimerTick() {
+  if (_timerIntervals._tick) return;
+  _timerIntervals._tick = setInterval(function() {
+    Object.keys(_timerIntervals).forEach(function(k) {
+      if (k === '_tick') return;
+      var ts = _timerIntervals[k];
+      if (ts.running && ts.startTs) {
+        ts.elapsed = ts.elapsed + (Date.now() - ts.startTs) / 1000;
+        ts.startTs = Date.now();
+        if (ts.mode === 'countdown' && ts.elapsed >= ts.target) {
+          ts.elapsed = ts.target;
+          ts.running = false;
+          ts.startTs = null;
+          _playTimerAlert();
+          _renderTimer(k);
+          _timerClearTickIfIdle();
+          return;
+        }
+        _renderTimer(k);
+      }
+    });
+    _saveTimerStates();
+  }, 200);
+}
 function _pomoClearTickIfIdle() {
   var anyRunning = false;
   for (var k in _pomodoroState) {
@@ -2679,6 +2740,59 @@ function _pomoClearTickIfIdle() {
     clearInterval(_pomodoroState._tick);
     delete _pomodoroState._tick;
   }
+}
+function _savePomoStates() {
+  try {
+    var data = {};
+    for (var k in _pomodoroState) {
+      if (k === '_tick') continue;
+      var s = _pomodoroState[k];
+      data[k] = { phase: s.phase, remaining: s.remaining, total: s.total, running: s.running, startTs: s.startTs, cycle: s.cycle };
+    }
+    localStorage.setItem('hub-pomo-state', JSON.stringify(data));
+  } catch(e) {}
+}
+function _loadPomoStates() {
+  try {
+    var data = JSON.parse(localStorage.getItem('hub-pomo-state'));
+    if (data) {
+      for (var k in data) {
+        if (_pomodoroState[k]) continue;
+        var d = data[k];
+        _pomodoroState[k] = { phase: d.phase, remaining: d.remaining, total: d.total, running: d.running, startTs: d.startTs, cycle: d.cycle };
+        if (_pomodoroState[k].running && _pomodoroState[k].startTs) {
+          var elapsed = (Date.now() - _pomodoroState[k].startTs) / 1000;
+          _pomodoroState[k].remaining = Math.max(0, _pomodoroState[k].remaining - elapsed);
+          _pomodoroState[k].startTs = Date.now();
+        }
+      }
+      var anyRunning = false;
+      for (var k in _pomodoroState) {
+        if (k !== '_tick' && _pomodoroState[k].running) { anyRunning = true; break; }
+      }      if (anyRunning && !_pomodoroState._tick) {
+        _pomodoroState._tick = setInterval(function() {
+          Object.keys(_pomodoroState).forEach(function(k) {
+            if (k === '_tick') return;
+            var ps = _pomodoroState[k];
+            if (!ps.running || !ps.startTs) return;
+            var now = Date.now();
+            var elapsed = now - ps.startTs;
+            ps.startTs = now;
+            ps.remaining = Math.max(0, ps.remaining - elapsed / 1000);
+            if (ps.remaining <= 0) {
+              ps.running = false;
+              ps.startTs = null;
+              ps.remaining = 0;
+              _playPomoAlert();
+              _advancePomoPhase(k);
+            }
+            _renderPomo(k);
+          });
+          _savePomoStates();
+        }, 200);
+}
+    }
+  } catch(e) {}
 }
 
 /* ─── ADD popup (hide-popup style) ──────────── */

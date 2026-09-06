@@ -91,7 +91,7 @@ All pages share a common shell: `.hub-layout` (flex row) → `.hub-sidebar` (220
 ```
 hub        │ hero(220px) → bento canvas → sleep → gallery cards → footer
 schedule   │ hero(180px) → header+pills → time grid → FAB → pomodoro → footer
-progress │ hero → board(columns) / timeline ↔ chart + log → KPIs → completion+streak → pie+bar → trend → sleep → table
+progress │ hero → Activities(board/timeline, week pie+bars, log) → Analytics(filter, KPIs, completion+streak, trend, sleep, table)
 goals      │ hero → goal cards(grid) → vision board(3 imgs) → related tasks → footer
 finance    │ hero → income/expense KPIs → piggy+wallet → charts → table+form → intelligence
 gallery    │ hero → image grid → footer

@@ -2023,9 +2023,9 @@ function bindEvents() {
 let pomodoroInterval = null;
 
 function setPomodoroPreset(mins) {
-  document.querySelectorAll('.pomodoro-preset').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.pomodoro-preset[data-minutes="${mins}"]`)?.classList.add('active');
   if (!pomodoroState || (pomodoroState && !pomodoroState.isRunning && pomodoroState.elapsedSeconds === 0)) {
+    document.querySelectorAll('.pomodoro-preset').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.pomodoro-preset[data-minutes="${mins}"]`)?.classList.add('active');
     pomodoroState = createPomodoroSession(null, 'Focus Session', mins);
     if (!pomodoroState) return;
     pomodoroState.totalMinutes = mins;
@@ -2046,6 +2046,11 @@ function startPomodoro() {
   if (!pomodoroState) return;
   
   if (!pomodoroState.isRunning) {
+    const totalSeconds = pomodoroState.totalMinutes * 60;
+    if (pomodoroState.elapsedSeconds >= totalSeconds) {
+      pomodoroState.elapsedSeconds = 0;
+      pomodoroState.completedCycles = (pomodoroState.completedCycles || 0) + 1;
+    }
     pomodoroState.isRunning = true;
     pomodoroState.startedAt = Date.now() - (pomodoroState.elapsedSeconds || 0) * 1000;
     savePomodoroState();
@@ -2134,14 +2139,22 @@ function updatePomodoroDisplay() {
   
   // Completion check
   if (remaining <= 0 && pomodoroState.isRunning) {
-    pausePomodoro();
+    if (pomodoroState.startedAt) {
+      pomodoroState.elapsedSeconds = Math.floor((Date.now() - pomodoroState.startedAt) / 1000);
+    }
+    pomodoroState.isRunning = false;
+    if (pomodoroInterval) clearInterval(pomodoroInterval);
+    pomodoroInterval = null;
     pomodoroState.completedCycles = (pomodoroState.completedCycles || 0) + 1;
     savePomodoroState();
-    statusEl.textContent = '🎉 Session complete!';
+    updatePomodoroDisplay();
+    document.getElementById('accessMain')?.classList.remove('running');
+    const completeBtn = document.getElementById('pomodoroStartBtn');
+    if (completeBtn) completeBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start`;
+    document.getElementById('pomodoroStatus').textContent = '🎉 Session complete!';
     const iconEl2 = document.getElementById('pomodoroPeriodIcon');
     if (iconEl2) iconEl2.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     playPomodoroSound();
-    // Browser notification with vibration
     if (typeof _sendNotification === 'function') {
       _sendNotification('\uD83C\uDF89 Pomodoro Complete!', 'Time for a break!', { tag: 'pomodoro', vibratePattern: [200, 100, 200] });
     } else if ('Notification' in window && Notification.permission === 'granted' && state.notifications !== false) {
@@ -2203,15 +2216,6 @@ function initPomodoro() {
       const mins = parseInt(btn.dataset.minutes);
       if (!pomodoroState || (pomodoroState && !pomodoroState.isRunning && pomodoroState.elapsedSeconds === 0)) {
         setPomodoroPreset(mins);
-        if (pomodoroState && !pomodoroState.isRunning) {
-          pomodoroState.totalMinutes = mins;
-          savePomodoroState();
-          updatePomodoroDisplay();
-        }
-        // If no state yet, update time display directly
-        if (!pomodoroState) {
-          document.getElementById('pomodoroTime').textContent = `${String(mins).padStart(2, '0')}:00`;
-        }
       }
     });
   });
