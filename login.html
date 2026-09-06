@@ -667,21 +667,29 @@
       width: 100%;
       will-change: transform;
       transform: translate3d(0,0,0);
+      transition: transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
     .auth-carousel.is-animating .auth-carousel-track {
       pointer-events: none;
     }
+    .auth-carousel.is-animating .auth-carousel-track,
+    .auth-carousel.is-animating .auth-carousel-slide {
+      transition: none !important;
+    }
+    .auth-carousel.is-dragging .auth-carousel-track {
+      transition: none !important;
+    }
     .auth-carousel-slide {
-      flex: 0 0 100%;
+      flex: 0 0 60%;
       min-width: 0;
       transform-origin: center center;
       will-change: transform, opacity, filter;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
-      transform: translate3d(0,0,0) scale(0.93);
-      opacity: 0.4;
-      filter: blur(3px) brightness(0.82) saturate(0.85);
-      transition: transform 0.65s var(--smooth), opacity 0.65s var(--smooth), filter 0.65s var(--smooth);
+      transform: translate3d(0,0,0) scale(0.92);
+      opacity: 0.35;
+      filter: blur(3.5px) brightness(0.80) saturate(0.82);
+      transition: transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), filter 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
     }
     .auth-carousel.is-dragging .auth-carousel-slide {
       transition: none;
@@ -698,6 +706,7 @@
       transform: translate3d(0,0,0) scale(1);
       opacity: 1;
       filter: blur(0) brightness(1) saturate(1);
+      transition-duration: 0.7s;
     }
     .auth-carousel-slide.active-slide svg {
       box-shadow: 0 10px 32px rgba(0,0,0,0.4);
@@ -1566,13 +1575,20 @@
         var autoInterval = null;
         var animRaf = null;
         var CAROUSEL_INTERVAL = 5000;
-        var TRACK_DURATION = 780;
+        var TRACK_DURATION = 950;
         var REAL_SLIDE_COUNT = 6;
         var names = ['Schedule', 'Hub', 'Finance', 'Analytics', 'Goals', 'Activities'];
-        var reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        var SLIDE_PITCH = 60;
+        var reducedMotion = false;
+        function centerX(i) { return i * SLIDE_PITCH - (100 - SLIDE_PITCH) / 2; }
 
         function easeInOutQuint(t) {
+          t = Math.min(Math.max(t, 0), 1);
           return t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+        }
+
+        function easeInOutCubic(t) {
+          return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
         }
 
         function stopAnim() {
@@ -1593,14 +1609,15 @@
         }
 
         function updateDragFx(offsetPct) {
+          var viewCX = offsetPct + 50;
           allSlides.forEach(function(s, i) {
-            var dist = Math.abs(i * 100 - offsetPct) / 100;
+            var dist = Math.abs((i * SLIDE_PITCH + SLIDE_PITCH / 2) - viewCX) / SLIDE_PITCH;
             if (dist > 1.4) return;
-            var sc = 1 - Math.min(dist * 0.07, 0.12);
-            var op = 1 - Math.min(dist * 0.6, 0.6);
+            var sc = 1 - Math.min(dist * 0.12, 0.16);
+            var op = 1 - Math.min(dist * 0.65, 0.65);
             s.style.transform = 'translate3d(0,0,0) scale(' + sc.toFixed(3) + ')';
             s.style.opacity = op.toFixed(3);
-            s.style.filter = dist < 0.5 ? '' : 'blur(' + Math.min(dist * 3, 3).toFixed(1) + 'px) brightness(0.85) saturate(0.9)';
+            s.style.filter = dist < 0.5 ? '' : 'blur(' + Math.min(dist * 3.5, 3.5).toFixed(1) + 'px) brightness(0.82) saturate(0.88)';
           });
         }
 
@@ -1653,7 +1670,7 @@
         }
 
         function setTrack(xPct) {
-          track.style.transform = 'translate3d(-' + xPct + '%,0,0)';
+          track.style.transform = 'translate3d(' + (-xPct) + '%,0,0)';
         }
 
         function goToSlide(index, instant) {
@@ -1665,11 +1682,11 @@
           updateMeta(index);
 
           if (instant || reducedMotion || fromIndex === index) {
-            setTrack(index * 100);
+            setTrack(centerX(index));
             currentSlide = index;
             applySlideStates(index);
             if (index === slideCount - 1) {
-              setTrack(0);
+              setTrack(centerX(0));
               currentSlide = 0;
               applySlideStates(0);
               updateMeta(0);
@@ -1679,36 +1696,41 @@
 
           if (carouselEl) carouselEl.classList.add('is-animating');
           triggerSweep();
-          var dir = index > fromIndex ? 1 : -1;
-          if (fromIndex === slideCount - 1 && index === 0) dir = 1;
-          if (fromIndex === 0 && index === REAL_SLIDE_COUNT - 1) dir = -1;
-          allSlides[fromIndex].classList.add(dir > 0 ? 'exit-left' : 'enter-right');
-          allSlides[index].classList.add(dir > 0 ? 'enter-right' : 'exit-left');
+          
+          var fromX = centerX(fromIndex);
+          var toX = centerX(index);
+          
+          allSlides[fromIndex].classList.add(index > fromIndex ? 'exit-left' : 'enter-right');
+          allSlides[index].classList.add(index > fromIndex ? 'enter-right' : 'exit-left');
 
           var start = performance.now();
-          var fromX = fromIndex * 100;
-          var toX = index * 100;
           setTrack(fromX);
-
+          
           (function step(now) {
-            var p = Math.min((now - start) / TRACK_DURATION, 1);
-            var e = easeInOutQuint(p);
-            setTrack(fromX + (toX - fromX) * e);
-            updateDragFx(fromX + (toX - fromX) * e);
-            if (p < 1) {
+            var t = Math.min((now - start) / TRACK_DURATION, 1);
+            var e = easeInOutQuint(t);
+            var currentX = fromX + (toX - fromX) * e;
+            setTrack(currentX);
+            updateDragFx(currentX);
+            if (t < 1) {
               animRaf = requestAnimationFrame(step);
             } else {
               animRaf = null;
               currentSlide = index;
               applySlideStates(index);
               if (carouselEl) carouselEl.classList.remove('is-animating');
-              if (index === slideCount - 1) goToSlide(0, true);
+              if (index === slideCount - 1) {
+                setTimeout(function() { goToSlide(0, true); }, 40);
+              }
             }
           })(start);
         }
 
-        function nextSlide() { goToSlide(currentSlide + 1 >= slideCount ? 0 : currentSlide + 1); }
-        function prevSlide() { goToSlide(currentSlide - 1); }
+        function nextSlide() {
+          restartProgress();
+          goToSlide(currentSlide + 1 >= slideCount ? 0 : currentSlide + 1);
+        }
+        function prevSlide() { goToSlide(currentSlide - 1 < 0 ? REAL_SLIDE_COUNT - 1 : currentSlide - 1); }
 
         function startAutoRotate() {
           if (autoInterval) clearInterval(autoInterval);
@@ -1763,12 +1785,13 @@
             var lastX = 0;
             var lastT = 0;
             var baseOffset = 0;
-            var maxOffset = (slideCount - 1) * 100;
-            var SWIPE_THRESHOLD = 50;
-            var VELOCITY_THRESHOLD = 0.45;
-            var VERTICAL_LOCK = 10;
+            var maxOffset = centerX(slideCount - 1);
+            var SWIPE_THRESHOLD = 45;
+            var VELOCITY_THRESHOLD = 0.5;
+            var VERTICAL_LOCK = 12;
             var locked = false;
             var directionLocked = false;
+            var isAnimating = false;
 
             function getPointerX(e) {
               return e.touches ? e.touches[0].clientX : e.clientX;
@@ -1777,11 +1800,17 @@
               return e.touches ? e.touches[0].clientY : e.clientY;
             }
             function readOffset() {
-              var m = /translate3d\(-([\d.\-]+)%/.exec(track.style.transform) || /translateX\(-([\d.\-]+)%\)/.exec(track.style.transform);
-              return m ? parseFloat(m[1]) : currentSlide * 100;
+              var m = /translate3d\((-?[\d.]+)%/.exec(track.style.transform);
+              return m ? -parseFloat(m[1]) : centerX(currentSlide);
             }
             function onStart(e) {
               if (e.touches && e.touches.length > 1) return;
+              if (isAnimating) {
+                stopAnim();
+                track.style.transition = 'none';
+                track.offsetHeight;
+                track.style.transition = '';
+              }
               window.__carouselDragging = true;
               locked = false;
               directionLocked = false;
@@ -1813,17 +1842,26 @@
               if (locked) return;
               if (e.cancelable) e.preventDefault();
               var now = performance.now();
-              dragVel = 0.7 * dragVel + 0.3 * ((px - lastX) / Math.max(now - lastT, 1) * 16);
+              dragVel = 0.65 * dragVel + 0.35 * ((px - lastX) / Math.max(now - lastT, 1) * 16);
               lastX = px;
               lastT = now;
               dragDelta = dx;
               var pct = dragDelta / carousel.offsetWidth * 100;
               var offset = baseOffset - pct;
-              if (offset < 0) offset = offset * 0.35;
-              if (offset > maxOffset) offset = maxOffset + (offset - maxOffset) * 0.35;
+              
+              var nearestIndex = Math.round((offset + (100 - SLIDE_PITCH) / 2) / SLIDE_PITCH);
+              var nearestC = centerX(nearestIndex);
+              var diff = offset - nearestC;
+              var resistance = 0.3;
+              if (offset < centerX(0)) {
+                offset = nearestC + diff * resistance;
+              } else if (offset > maxOffset) {
+                offset = nearestC + diff * resistance;
+              }
+              
               setTrack(offset);
               updateDragFx(offset);
-              if (!reducedMotion) carousel.style.setProperty('--ry', Math.max(-6, Math.min(6, dragDelta / 28)) + 'deg');
+              if (!reducedMotion) carousel.style.setProperty('--ry', Math.max(-8, Math.min(8, dragDelta / 24)) + 'deg');
             }
             function onEnd() {
               if (!window.__carouselDragging) return;
@@ -1831,17 +1869,20 @@
               carousel.classList.remove('is-dragging');
               carousel.style.setProperty('--ry', '0deg');
               if (locked) { startAutoRotate(); return; }
-              var flick = Math.abs(dragVel) > VELOCITY_THRESHOLD * 16 / 16;
-              var passed = Math.abs(dragDelta) > SWIPE_THRESHOLD || (flick && Math.abs(dragDelta) > 18);
-              if (dragDelta < 0 && passed) {
-                if (currentSlide >= slideCount - 1) goToSlide(0);
-                else goToSlide(currentSlide + 1);
-              } else if (dragDelta > 0 && passed) {
-                if (currentSlide <= 0) goToSlide(REAL_SLIDE_COUNT - 1);
-                else goToSlide(currentSlide - 1);
-              } else {
-                goToSlide(currentSlide);
+              
+              var flick = Math.abs(dragVel) > VELOCITY_THRESHOLD;
+              var snapTarget = currentSlide;
+              var absDelta = Math.abs(dragDelta);
+              
+              if (dragDelta < 0 && (absDelta > SWIPE_THRESHOLD || (flick && absDelta > 15))) {
+                snapTarget = currentSlide >= slideCount - 1 ? 0 : currentSlide + 1;
+              } else if (dragDelta > 0 && (absDelta > SWIPE_THRESHOLD || (flick && absDelta > 15))) {
+                snapTarget = currentSlide <= 0 ? REAL_SLIDE_COUNT - 1 : currentSlide - 1;
               }
+              
+              isAnimating = true;
+              goToSlide(snapTarget);
+              isAnimating = false;
               startAutoRotate();
             }
             carousel.addEventListener('mousedown', onStart);
@@ -1854,6 +1895,7 @@
 
             if (!reducedMotion && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
               var tiltRaf = null;
+              var tiltTargetRX = 0, tiltTargetRY = 0, currentRX = 0, currentRY = 0;
               carousel.addEventListener('mousemove', function(e) {
                 if (window.__carouselDragging) return;
                 if (tiltRaf) return;
@@ -1862,13 +1904,25 @@
                   var r = carousel.getBoundingClientRect();
                   var nx = (e.clientX - r.left) / r.width - 0.5;
                   var ny = (e.clientY - r.top) / r.height - 0.5;
-                  carousel.style.setProperty('--ry', (-nx * 5).toFixed(2) + 'deg');
-                  carousel.style.setProperty('--rx', (ny * 5).toFixed(2) + 'deg');
+                  tiltTargetRY = (-nx * 6).toFixed(2);
+                  tiltTargetRX = (ny * 5).toFixed(2);
                 });
               });
+              function animateTilt() {
+                currentRX += (tiltTargetRX - currentRX) * 0.18;
+                currentRY += (tiltTargetRY - currentRY) * 0.18;
+                carousel.style.setProperty('--rx', currentRX.toFixed(2) + 'deg');
+                carousel.style.setProperty('--ry', currentRY.toFixed(2) + 'deg');
+                if (Math.abs(tiltTargetRX - currentRX) > 0.01 || Math.abs(tiltTargetRY - currentRY) > 0.01) {
+                  requestAnimationFrame(animateTilt);
+                }
+              }
+              carousel.addEventListener('mouseenter', function() {
+                if (!tiltRaf) animateTilt();
+              });
               carousel.addEventListener('mouseleave', function() {
-                carousel.style.setProperty('--rx', '0deg');
-                carousel.style.setProperty('--ry', '0deg');
+                tiltTargetRX = 0;
+                tiltTargetRY = 0;
               });
             }
           })();

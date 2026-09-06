@@ -541,10 +541,6 @@ function init() {
     item.addEventListener('click', closeFrSidebar);
   });
 
-  // Auto-trigger tutorial for new users
-  if (!hasSeenTutorial('friends') && typeof startTutorial === "function") {
-    try { setTimeout(function() { startTutorial(FRIENDS_TUTORIAL_STEPS); }, 600); } catch(e) {}
-  }
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

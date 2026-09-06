@@ -61,12 +61,15 @@ function renderAuthUI() {
   var activeId = getActiveUserId();
   var activeUser = localUsers.find(function(u) { return u.id === activeId; });
 
+  var guestProfile = isGuestMode();
   if (activeUser) {
     var initials = getInitials(activeUser.name);
     var color = activeUser._color || getColorForId(activeUser.id);
     var avatarHtml = activeUser.picture
       ? '<img class="gsi-avatar" src="' + activeUser.picture + '" alt="' + escapeHtml(activeUser.name) + '">'
-      : '<div class="gsi-avatar gsi-avatar-local" style="background:' + color + '"><span class="gsi-avatar-initials">' + escapeHtml(initials) + '</span></div>';
+      : (guestProfile
+        ? '<div class="gsi-avatar gsi-avatar-local" style="background:#fff"><span class="gsi-avatar-initials" style="color:#3f3f3a">G</span></div>'
+        : '<div class="gsi-avatar gsi-avatar-local" style="background:' + color + '"><span class="gsi-avatar-initials">' + escapeHtml(initials) + '</span></div>');
     var maxVisible = 3;
     var visibleUsers = localUsers.slice(0, maxVisible);
     var dropdownItems = visibleUsers.map(function(u) {
@@ -134,7 +137,7 @@ function renderAuthUI() {
   } else if (isGuestMode()) {
     container.innerHTML =
       '<div class="gsi-avatar-wrap" style="cursor:default">' +
-        '<div class="gsi-avatar gsi-avatar-local" style="background:var(--text-tertiary);opacity:0.5"><span class="gsi-avatar-initials" style="font-size:0.45rem">?</span></div>' +
+        '<div class="gsi-avatar gsi-avatar-local" style="background:#fff"><span class="gsi-avatar-initials" style="color:#3f3f3a">G</span></div>' +
         '<div class="gsi-avatar-name" style="opacity:0.5">Guest</div>' +
         '<div class="gsi-avatar-dropdown" id="gsiDropdown">' +
           '<div class="gsi-dd-item danger" id="gsiGuestSignOut">' +
@@ -536,7 +539,7 @@ function renderAccountSettings(el) {
   var avatarHtml = '';
   var connectedHtml = '';
   if (guest) {
-    avatarHtml = '<div class="set-avatar-initials" style="background:var(--text-tertiary);opacity:0.5">?</div>' +
+    avatarHtml = '<div class="set-avatar-initials" style="background:#fff;color:#3f3f3a">G</div>' +
       '<div class="set-avatar-info" style="flex:1">' +
       '<div class="set-acc-name" style="opacity:0.5;margin-bottom:4px">Guest</div>' +
       '</div>';
@@ -593,7 +596,7 @@ function renderAccountSettings(el) {
   }).join('');
 
   if (guest) {
-    listHtml += '<div class="set-acc-item"><div class="set-acc-initials" style="background:var(--text-tertiary);opacity:0.5">?</div><div class="set-acc-info"><div class="set-acc-name" style="opacity:0.5">Guest</div></div></div>';
+    listHtml += '<div class="set-acc-item"><div class="set-acc-initials" style="background:#fff;color:#3f3f3a">G</div><div class="set-acc-info"><div class="set-acc-name" style="opacity:0.5">Guest</div></div></div>';
   }
 
 

@@ -196,6 +196,9 @@ let gridDrag = null;
 // Resize state — handles task card bottom-edge resize
 let resizeState = null;
 
+// Task id of the card just placed by drag/drop (for a one-shot settle animation)
+let lastDroppedTaskId = null;
+
 // ─── PAGE CALLBACKS (called from shared.js) ─────────────────
 pageAfterTaskSave = () => { renderCalendar(); };
 pageAfterImport = () => { renderCalendar(); };
@@ -485,7 +488,87 @@ function renderMobileDayBar(weekStart, todayStr) {
   }
 }
 
-// ─── MONTH VIEW ────────────────────────────────────────────
+const MONTH_MISSIONS_KEY = 'haven-month-missions';
+
+function loadMonthMissions() {
+  try {
+    const raw = localStorage.getItem(MONTH_MISSIONS_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (e) { return {}; }
+}
+
+function saveMonthMissions(missions) {
+  try { localStorage.setItem(MONTH_MISSIONS_KEY, JSON.stringify(missions)); } catch (e) { /* ignore */ }
+}
+
+function getDayMission(ds) {
+  const missions = loadMonthMissions();
+  const v = missions[ds];
+  return typeof v === 'string' ? v : '';
+}
+
+function setDayMission(ds, text) {
+  const missions = loadMonthMissions();
+  const clean = (text || '').trim().slice(0, 120);
+  if (!clean) delete missions[ds];
+  else missions[ds] = clean;
+  saveMonthMissions(missions);
+}
+
+function deleteDayMission(ds) {
+  const missions = loadMonthMissions();
+  delete missions[ds];
+  saveMonthMissions(missions);
+}
+
+let _missionClickTimer = null;
+let _missionDblFired = false;
+
+function closeMissionEditor() {
+  dom.grid?.querySelectorAll('.month-mission-editor').forEach(el => el.remove());
+  dom.grid?.querySelectorAll('.month-mission-wrap.editing').forEach(el => el.classList.remove('editing'));
+}
+
+function openMissionEditor(cell, ds, existing) {
+  if (!cell) return;
+  closeMissionEditor();
+  const wrap = cell.querySelector('.month-mission-wrap');
+  if (!wrap) return;
+  wrap.classList.add('editing');
+  const editor = document.createElement('div');
+  editor.className = 'month-mission-editor';
+  editor.innerHTML = `<textarea maxlength="120" placeholder="Today\u2019s mission\u2026">${escapeHtml(existing || '')}</textarea>
+    <div class="month-mission-editor-row">
+      <button class="month-mission-save">Save</button>
+      <button class="month-mission-cancel">Cancel</button>
+      ${existing ? '<button class="month-mission-clear">Delete</button>' : ''}
+    </div>`;
+  wrap.innerHTML = '';
+  wrap.appendChild(editor);
+  const ta = editor.querySelector('textarea');
+  ta.focus();
+  ta.select();
+  const save = () => {
+    setDayMission(ds, ta.value);
+    renderMonthView();
+  };
+  editor.querySelector('.month-mission-save').addEventListener('click', (e) => { e.stopPropagation(); save(); });
+  editor.querySelector('.month-mission-cancel').addEventListener('click', (e) => { e.stopPropagation(); renderMonthView(); });
+  editor.querySelector('.month-mission-clear')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    deleteDayMission(ds);
+    renderMonthView();
+  });
+  ta.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); save(); }
+    if (e.key === 'Escape') renderMonthView();
+  });
+  ta.addEventListener('click', (e) => e.stopPropagation());
+  editor.addEventListener('click', (e) => e.stopPropagation());
+}
+
 function renderMonthView() {
   const now = new Date();
   const year = currentMonthDate.getFullYear();
@@ -493,80 +576,132 @@ function renderMonthView() {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   const startPad = firstDay.getDay();
-  const totalCells = startPad + lastDay.getDate();
-  const rows = Math.ceil(totalCells / 7);
+  const daysInMonth = lastDay.getDate();
+  const prevMonthLast = new Date(year, month, 0).getDate();
+  const rows = Math.ceil((startPad + daysInMonth) / 7);
+  const totalCells = rows * 7;
 
-  // Expand recurring tasks for this month
-  const monthStart = new Date(year, month, 0);
-  const monthEnd = new Date(year, month + 1, 1);
-  const allTasks = expandRecurringTasks(monthStart, monthEnd);
-
+  const missions = loadMonthMissions();
   const todayStr = formatDate(now);
   const title = firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   dom.weekLabel.textContent = title;
   if (dom.weekLabelHero) dom.weekLabelHero.textContent = title;
-  dom.taskCount.textContent = state.tasks.filter(t => !isWhiteboardTask(t)).length;
+
+  let visibleCount = 0;
+  for (const [ds] of Object.entries(missions)) {
+    const d = new Date(ds + 'T12:00:00');
+    if (d.getFullYear() === year && d.getMonth() === month && missions[ds]) visibleCount++;
+  }
+  if (dom.taskCount) dom.taskCount.textContent = visibleCount;
 
   dom.grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
-  dom.grid.style.gridTemplateRows = `auto repeat(${rows}, minmax(90px, 1fr))`;
+  dom.grid.style.gridTemplateRows = `auto repeat(${rows}, minmax(110px, 1fr))`;
   let html = '';
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   for (const dn of dayNames) {
-    html += `<div class="day-header" style="border-left:1px solid var(--border-subtle);background:var(--bg-secondary)">
-      <span class="day-name">${dn}</span></div>`;
+    html += `<div class="day-header month-head"><span class="day-name">${dn}</span></div>`;
   }
 
-  let dayCount = 1;
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < 7; c++) {
-      const idx = r * 7 + c;
-      if (idx < startPad || dayCount > lastDay.getDate()) {
-        html += `<div class="month-cell month-cell-empty"></div>`;
-        continue;
-      }
-      const d = new Date(year, month, dayCount);
-      const ds = formatDate(d);
-      const cls = ['month-cell'];
-      if (ds === todayStr) cls.push('month-today');
-      if (isWeekend(d)) cls.push('month-weekend');
-
-      // Gather tasks for this day (filter by tag, search, completed)
-      const dayTasks = allTasks.filter(t => t.date === ds && !isWhiteboardTask(t));
-      const filtered = dayTasks.filter(t => {
-        if (!state.showCompleted && t.completed) return false;
-        if (state.selectedTag && t.tag !== state.selectedTag) return false;
-        return true;
-      });
-      const count = filtered.length;
-
-      html += `<div class="${cls.join(' ')}" data-date="${ds}">
-        <span class="month-day-num">${dayCount}</span>
-        <div class="month-tasks">`;
-      // Show up to 3 mini task labels
-      for (let i = 0; i < Math.min(filtered.length, 3); i++) {
-        const t = filtered[i];
-        const meta = TAG_COLORS[t.tag] || TAG_COLORS.meeting;
-        const doneCls = t.completed ? 'month-task-done' : '';
-        html += `<div class="month-task ${doneCls}" style="--mtag:${meta.text}" title="${escapeHtml(t.title)}">${escapeHtml(t.title)}</div>`;
-      }
-      if (filtered.length > 3) {
-        html += `<div class="month-task-more">+${filtered.length - 3} more</div>`;
-      }
-      html += `</div></div>`;
-      dayCount++;
+  for (let idx = 0; idx < totalCells; idx++) {
+    let d, dayNum, adjacent = false;
+    if (idx < startPad) {
+      dayNum = prevMonthLast - startPad + 1 + idx;
+      d = new Date(year, month - 1, dayNum);
+      adjacent = true;
+    } else if (idx < startPad + daysInMonth) {
+      dayNum = idx - startPad + 1;
+      d = new Date(year, month, dayNum);
+    } else {
+      dayNum = idx - (startPad + daysInMonth) + 1;
+      d = new Date(year, month + 1, dayNum);
+      adjacent = true;
     }
+    const ds = formatDate(d);
+    const cls = ['month-cell', 'mission-cell'];
+    if (ds === todayStr) cls.push('month-today');
+    if (adjacent) cls.push('month-adjacent');
+    else if (isWeekend(d)) cls.push('month-weekend');
+
+    const mission = missions[ds] || '';
+    const missionHtml = mission
+      ? `<div class="month-mission" draggable="true" data-date="${ds}" title="${escapeHtml(mission)}"><span class="month-mission-text">${escapeHtml(mission)}</span><button class="month-mission-del" title="Delete">\u00d7</button></div>`
+      : '';
+    html += `<div class="${cls.join(' ')}" data-date="${ds}">
+      <div class="month-top"><span class="month-day-num">${dayNum}</span><button class="month-add-btn" title="Add mission">+</button></div>
+      <div class="month-mission-wrap">${missionHtml}</div>
+    </div>`;
   }
 
   dom.grid.innerHTML = html;
 
-  // Attach click handlers (dblclick navigates to week view)
-  dom.grid.querySelectorAll('.month-cell:not(.month-cell-empty)').forEach(cell => {
+  dom.grid.querySelectorAll('.mission-cell').forEach(cell => {
+    const ds = cell.dataset.date;
+    const wrap = cell.querySelector('.month-mission-wrap');
+    const addBtn = cell.querySelector('.month-add-btn');
+    const chip = cell.querySelector('.month-mission');
+
+    const requestEdit = () => {
+      if (cell.querySelector('.month-mission-editor')) return;
+      openMissionEditor(cell, ds, missions[ds] || '');
+    };
+    cell.addEventListener('click', (e) => {
+      if (e.target.closest('.month-mission-editor') || e.target.closest('.month-mission-del') || e.target.closest('.month-add-btn')) return;
+      if (_missionDblFired) return;
+      clearTimeout(_missionClickTimer);
+      _missionClickTimer = setTimeout(() => { if (!_missionDblFired) requestEdit(); }, 240);
+    });
     cell.addEventListener('dblclick', () => {
-      const date = cell.dataset.date;
-      const d = new Date(date + 'T12:00:00');
-      // Navigate to that week
+      _missionDblFired = true;
+      clearTimeout(_missionClickTimer);
+      closeMissionEditor();
+      const d = new Date(ds + 'T12:00:00');
       state.currentWeekStart = getMonday(d);
       switchView('week');
+      setTimeout(() => { _missionDblFired = false; }, 400);
+    });
+    addBtn?.addEventListener('click', (e) => { e.stopPropagation(); openMissionEditor(cell, ds, missions[ds] || ''); });
+
+    cell.querySelector('.month-mission-del')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteDayMission(ds);
+      renderMonthView();
+    });
+
+    if (chip) {
+      chip.addEventListener('click', (e) => {
+        if (e.target.closest('.month-mission-del')) return;
+        e.stopPropagation();
+        openMissionEditor(cell, ds, missions[ds] || '');
+      });
+      chip.addEventListener('dragstart', (e) => {
+        closeMissionEditor();
+        e.dataTransfer.setData('text/plain', ds);
+        e.dataTransfer.effectAllowed = 'move';
+        cell.classList.add('mission-drag-src');
+      });
+      chip.addEventListener('dragend', () => cell.classList.remove('mission-drag-src'));
+    }
+
+    cell.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer || ![...e.dataTransfer.types].includes('text/plain')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      cell.classList.add('mission-drop-hl');
+    });
+    cell.addEventListener('dragleave', () => cell.classList.remove('mission-drop-hl'));
+    cell.addEventListener('drop', (e) => {
+      e.preventDefault();
+      cell.classList.remove('mission-drop-hl');
+      const srcDs = e.dataTransfer.getData('text/plain');
+      if (!srcDs || srcDs === ds) return;
+      const all = loadMonthMissions();
+      const srcText = all[srcDs] || '';
+      const dstText = all[ds] || '';
+      if (!srcText) return;
+      if (dstText) { all[srcDs] = dstText; all[ds] = srcText; }
+      else { all[ds] = srcText; delete all[srcDs]; }
+      saveMonthMissions(all);
+      renderMonthView();
     });
   });
 
@@ -702,6 +837,8 @@ function formatCompactTime(start, end) {
   return s === e ? s : s + '\u2013' + e;
 }
 function renderTasks() {
+  const isFirstTaskRender = !dom.grid.dataset.calRendered;
+  dom.grid.dataset.calRendered = '1';
   $$('.calendar-task').forEach(el => el.remove());
   $$('.current-time-line').forEach(el => el.remove());
 
@@ -777,6 +914,8 @@ function renderTasks() {
 
       const meta = TAG_COLORS[task.tag] || TAG_COLORS.meeting;
       const cls = ['calendar-task', `tag-${task.tag}`];
+      if (isFirstTaskRender) cls.push('task-intro');
+      if (task.id === lastDroppedTaskId) cls.push('task-settle');
       if (task.completed) cls.push('completed');
       if (dur <= 60) cls.push('task-sm');
       if (task.priority) cls.push(`priority-${task.priority}`);
@@ -904,6 +1043,7 @@ function renderTasks() {
 
   // Show empty state if no tasks visible
   showGridEmptyState(filtered.length);
+  lastDroppedTaskId = null;
 }
 
 
@@ -952,9 +1092,6 @@ function startDrag(e, source) {
   // Prevent synthetic mousedown from touch event (double-dispatch protection)
   if (!isTouchEvent(e) && Date.now() - _lastTouchDragTime < 300) return;
   if (isTouchEvent(e)) { _lastTouchDragTime = Date.now(); e.preventDefault(); }
-
-  // Clean up any lingering bounce animations from previous drops
-  $$('.calendar-task.task-drop-bounce').forEach(el => el.classList.remove('task-drop-bounce'));
 
   const rect = source.getBoundingClientRect();
   const ghost = source.cloneNode(true);
@@ -1048,13 +1185,29 @@ function getDragHlColor() {
   return TAG_COLORS.meeting.text;
 }
 
+function magneticSnap(date, snap, excludeId) {
+  let best = snap, bestDist = 9, hit = false;
+  for (const task of state.tasks) {
+    if (task.id === excludeId || isWhiteboardTask(task) || task.completed) continue;
+    if (task.date !== date || !task.startTime) continue;
+    const edges = [gridTime(task.startTime), gridEndTime(task.startTime, task.endTime)];
+    for (const em of edges) {
+      if (isNaN(em)) continue;
+      const d = Math.abs(em - snap);
+      if (d < bestDist) { bestDist = d; best = em; hit = true; }
+    }
+  }
+  return { mins: best, snapped: hit };
+}
+
 // ─── DROP PREVIEW (single card-like ghost in the grid) ────
-function showDropPreview(col, spanStart, spanEnd, hlColor) {
+function showDropPreview(col, spanStart, spanEnd, hlColor, label, snapped) {
   let el = document.getElementById('dropTaskPreview');
   if (!el) {
     el = document.createElement('div');
     el.id = 'dropTaskPreview';
     el.className = 'drop-task-preview';
+    el.innerHTML = '<span class="drop-preview-time"></span>';
     col.appendChild(el);
   } else if (el.parentElement !== col) {
     col.appendChild(el);
@@ -1065,6 +1218,9 @@ function showDropPreview(col, spanStart, spanEnd, hlColor) {
   el.style.top = `${top}px`;
   el.style.height = `${Math.max(height, 4)}px`;
   el.style.setProperty('--hl-color', hlColor);
+  el.classList.toggle('snapped', !!snapped);
+  const lbl = el.querySelector('.drop-preview-time');
+  if (lbl) lbl.textContent = label || '';
 }
 
 function removeDropPreview() {
@@ -1127,7 +1283,9 @@ function onDragMove(e) {
     const actualHourHeight = colRect.height;
     const rawMinutes = (yOffset / actualHourHeight) * 60 + START_HOUR * 60;
     const clamped = Math.max(START_HOUR * 60, Math.min(rawMinutes, (START_HOUR + VISIBLE_HOURS) * 60 - SNAP_MINUTES));
-    const snap = roundToNearest(clamped, SNAP_MINUTES);
+    const base = roundToNearest(clamped, SNAP_MINUTES);
+    const mag = magneticSnap(matchedDate, base, gridDrag.taskId || null);
+    const snap = Math.max(START_HOUR * 60, Math.min(mag.mins, (START_HOUR + VISIBLE_HOURS) * 60 - SNAP_MINUTES));
 
     gridDrag.dropDate = matchedDate;
     gridDrag.dropTime = snap;
@@ -1143,10 +1301,11 @@ function onDragMove(e) {
     previewConflicts(matchedDate, spanStart, spanEnd, gridDrag.taskId || null);
     const dragTask = gridDrag.taskId ? getTask(gridDrag.taskId) : null;
     const hlColor = dragTask ? (TAG_COLORS[dragTask.tag] || TAG_COLORS.meeting).text : 'var(--accent)';
-    showDropPreview(refCol, spanStart, spanEnd, hlColor);
+    const rangeLabel = formatCompactTime(toTimeStr(spanStart), toTimeStr(spanEnd));
+    showDropPreview(refCol, spanStart, spanEnd, hlColor, rangeLabel, mag.snapped);
 
     // Show live time tooltip
-    showDragTooltip(e, snap, durMins);
+    showDragTooltip(e, snap, durMins, mag.snapped);
   } else {
     gridDrag.dropDate = null;
     gridDrag.dropTime = null;
@@ -1157,7 +1316,7 @@ function onDragMove(e) {
   }
 }
 
-function showDragTooltip(e, snap, durMins) {
+function showDragTooltip(e, snap, durMins, snapped) {
   let tip = document.getElementById('dragTimeTooltip');
   if (!tip) {
     tip = document.createElement('div');
@@ -1176,6 +1335,7 @@ function showDragTooltip(e, snap, durMins) {
     text += ` · ${dh}h${dm ? String(dm).padStart(2, '0') : ''}`;
   }
   tip.textContent = text;
+  tip.classList.toggle('snapped', !!snapped);
   const tipPos = getEventPos(e);
   tip.style.left = `${tipPos.x + 16}px`;
   tip.style.top = `${tipPos.y - 8}px`;
@@ -1218,9 +1378,6 @@ function onDragEnd() {
   document.removeEventListener('touchmove', onDragMove);
   document.removeEventListener('touchend', onDragEnd);
 
-  // Capture ghost rect BEFORE cleanup so FLIP can use it
-  const oldGhostRect = gridDrag.ghost ? gridDrag.ghost.getBoundingClientRect() : null;
-
   // Clean up dragging feedback
   if (gridDrag.source) gridDrag.source.classList.remove('dragging');
   if (gridDrag.ghost) gridDrag.ghost.remove();
@@ -1234,13 +1391,6 @@ function onDragEnd() {
     return;
   }
 
-  // FLIP: snapshot old task positions before any state changes
-  const oldRects = {};
-  document.querySelectorAll('.calendar-task[data-task-id]').forEach(el => {
-    const r = el.getBoundingClientRect();
-    oldRects[el.dataset.taskId] = { left: r.left, top: r.top, width: r.width, height: r.height };
-  });
-
   const endBoundary = (START_HOUR + VISIBLE_HOURS) * 60;
   const dur = gridDrag.type === 'quickadd' ? 60 : (gridDrag.dragEndM - gridDrag.dragStartM || gridDrag.duration || 60);
   const dropEndMins = Math.min(gridDrag.dropTime + dur, endBoundary);
@@ -1252,7 +1402,6 @@ function onDragEnd() {
   pushUndo(); // snapshot BEFORE changes
 
   const excludeId = gridDrag.taskId || null;
-  let bounceTaskId = gridDrag.type === 'reschedule' ? gridDrag.taskId : null;
   repelConflicts(gridDrag.dropDate, gridDrag.dropTime, dropEndMins, excludeId);
 
   if (gridDrag.type === 'reschedule') {
@@ -1263,80 +1412,24 @@ function onDragEnd() {
       task.date = gridDrag.dropDate;
       task.startTime = start;
       task.endTime = end;
+      lastDroppedTaskId = task.id;
     }
   } else if (gridDrag.type === 'quickadd') {
-    const newTask = createTask({
+    const created = createTask({
       title: gridDrag.title || QUICK_ADD_TITLES[gridDrag.tag] || 'New Task',
       date: gridDrag.dropDate,
       startTime: toTimeStr(gridDrag.dropTime),
       endTime: toTimeStr(dropEndMins),
       tag: gridDrag.tag,
     });
-    bounceTaskId = newTask.id;
-
+    if (created && created.id) lastDroppedTaskId = created.id;
   }
 
   saveState();
   pageAfterTaskSave = savedCallback;
   if (typeof pageAfterTaskSave === 'function') pageAfterTaskSave();
 
-  // FLIP: animate tasks from old positions to new positions
-  requestAnimationFrame(() => {
-    document.body.offsetHeight; // force layout
-    requestAnimationFrame(() => {
-      let moved = false;
-      document.querySelectorAll('.calendar-task[data-task-id]').forEach(el => {
-        const id = el.dataset.taskId;
-        const old = oldRects[id];
-        if (!old) return;
-        const r = el.getBoundingClientRect();
-        const dx = old.left - r.left;
-        const dy = old.top - r.top;
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-          moved = true;
-          el.style.transition = 'none';
-          el.style.transform = `translate(${dx}px, ${dy}px)`;
-          el.style.zIndex = '50';
-          requestAnimationFrame(() => {
-            el.style.transition = 'transform 400ms cubic-bezier(0.16, 1, 0.3, 1)';
-            el.style.transform = '';
-            setTimeout(() => {
-              el.style.transition = '';
-              el.style.zIndex = '';
-            }, 450);
-          });
-        }
-      });
-      // Also animate the ghost into the drop position if it was a dragged task
-      if (!moved && gridDrag && gridDrag.type === 'reschedule' && oldGhostRect && gridDrag.taskId) {
-        const el = document.querySelector(`.calendar-task[data-task-id="${gridDrag.taskId}"]`);
-        if (el) {
-          const r = el.getBoundingClientRect();
-          const dx = oldGhostRect.left - r.left;
-          const dy = oldGhostRect.top - r.top;
-          el.style.transition = 'none';
-          el.style.transform = `translate(${dx}px, ${dy}px)`;
-          el.style.zIndex = '50';
-          requestAnimationFrame(() => {
-            el.style.transition = 'transform 350ms cubic-bezier(0.16, 1, 0.3, 1)';
-            el.style.transform = '';
-            setTimeout(() => { el.style.transition = ''; el.style.zIndex = ''; }, 400);
-          });
-        }
-      }
-      // Drop bounce on the newly placed task
-      if (bounceTaskId) {
-        const bEl = document.querySelector(`.calendar-task[data-task-id="${bounceTaskId}"]`);
-        if (bEl) {
-          bEl.classList.add('task-drop-bounce');
-          setTimeout(() => bEl.classList.remove('task-drop-bounce'), 500);
-        }
-      }
-    });
-  });
-
-  // Defer cleanup until after async FLIP animation runs
-  requestAnimationFrame(() => { gridDrag = null; });
+  gridDrag = null;
 }
 
 // ─── REPEL: push conflicting tasks down on drop ────────────
@@ -1671,13 +1764,6 @@ function bindEvents() {
   // bcVisualsBtn handled via delegation in shared.js
   dom.helpOverlay?.addEventListener('click', hideHelpModal);
   dom.helpModalClose?.addEventListener('click', hideHelpModal);
-  // View Tutorial link
-  var tutLink = document.getElementById('helpViewTutorial');
-  if (tutLink) tutLink.addEventListener('click', function() {
-    hideHelpModal();
-    if (typeof startTutorial === "function") startTutorial(SCHEDULE_TUTORIAL_STEPS);
-  });
-
   // AI Chat
   dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
   dom.aiChatOverlay?.addEventListener('click', hideAIChat);
@@ -2377,12 +2463,6 @@ function renderSchTemplates() {
     return;
   }
   loadState();
-  // Auto-trigger tutorial for new users
-  if (!hasSeenTutorial('schedule') && typeof startTutorial === "function") {
-    try {
-      setTimeout(function() { startTutorial(SCHEDULE_TUTORIAL_STEPS); }, 300);
-    } catch(e) {}
-  }
   applyTheme();
   if (!state.currentWeekStart) {
     state.currentWeekStart = getMonday(new Date());

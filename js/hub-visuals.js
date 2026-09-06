@@ -140,7 +140,7 @@ function _onSectionTouchEnd(e) {
 
 
 function initHubLayout() {
-  const container = document.querySelector('.hub-layout');
+  const container = document.querySelector('.hub-main') || document.querySelector('.hub-layout');
   if (!container) return;
   if (container._initHubLayoutWired) return;
   container._initHubLayoutWired = true;
@@ -225,7 +225,7 @@ function onDrop(e) {
   if (!targetWrap || !dragSrcWrap || targetWrap === dragSrcWrap) return;
   targetWrap.classList.remove('hub-section-drag-over');
 
-  const container = document.querySelector('.hub-layout');
+  const container = dragSrcWrap.parentElement;
   if (!container) return;
 
   container.insertBefore(dragSrcWrap, targetWrap);
@@ -632,7 +632,7 @@ function applyHubVisibility() {
   const vis = loadHubVisibility();
   document.querySelectorAll('.hub-section-wrap').forEach(wrap => {
     const id = wrap.dataset.hubSection;
-    if (id === 'bento') return; // always show canvas
+    if (id === 'bento' || id === 'sleep') return; // always show canvas and sleep
     const hidden = vis[id] === false;
     wrap.classList.toggle('hidden-section', hidden);
     const toggle = wrap.querySelector('.hub-section-vis-toggle');
@@ -641,11 +641,17 @@ function applyHubVisibility() {
 }
 
 function toggleSectionVis(id) {
-  if (id === 'bento') return; // canvas can't be hidden
+  if (id === 'bento' || id === 'sleep') return; // canvas and sleep can't be hidden
   const vis = loadHubVisibility();
   vis[id] = vis[id] === false ? true : false;
   saveHubVisibility(vis);
   applyHubVisibility();
+}
+
+function resetSectionVisibility() {
+  localStorage.removeItem(HUB_VIS_KEY);
+  applyHubVisibility();
+  if (typeof showToast === 'function') showToast('Section visibility reset to defaults', 'success', 2000);
 }
 
 function renderHubGreeting() {
@@ -665,7 +671,27 @@ function renderHubBento() {
   if (typeof state !== 'undefined' && !state.images && typeof loadImages === 'function') loadImages();
   _loadTimerStates();
   const grid = document.querySelector('.bento-grid');
-  if (!grid) return;
+  if (!grid) {
+    console.warn('[hub] .bento-grid not found, skipping render');
+    return;
+  }
+  // Defensive: ensure hubContent exists and has all required fields
+  if (!hubContent) {
+    console.warn('[hub] hubContent is null/undefined, loading defaults');
+    hubContent = typeof loadHubContent === 'function' ? loadHubContent() : JSON.parse(JSON.stringify(HUB_DEFAULTS));
+  }
+  // Backfill any missing fields from HUB_DEFAULTS
+  const defaults = HUB_DEFAULTS;
+  if (!hubContent.bentoLayout || !hubContent.bentoLayout.length) hubContent.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
+  if (!hubContent.goals) hubContent.goals = [...defaults.goals];
+  if (!hubContent.priorities) hubContent.priorities = [...defaults.priorities];
+  if (!hubContent.quote) hubContent.quote = getQuoteOfTheWeek();
+  if (!hubContent.todos) hubContent.todos = defaults.todos.map(t => ({...t}));
+  if (!hubContent.habits) hubContent.habits = [...defaults.habits];
+  if (!hubContent.habitData) hubContent.habitData = {};
+  if (hubContent.notes === undefined) hubContent.notes = '';
+  if (!hubContent.links) hubContent.links = defaults.links.map(l => ({...l}));
+
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   hubContent.bentoLayout = layout;
   const isEdit = hubEditMode;
@@ -714,7 +740,7 @@ function renderHubBento() {
             <img data-image-id="${imgId}" src="${e(imgUrl || '')}" alt="" style="width:100%;height:100%;object-fit:${imgFit};display:${hasImg ? 'block' : 'none'}">
             <div class="bento-img-placeholder" style="display:${hasImg ? 'none' : 'flex'}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              <span>Use Visuals to add image</span>
+              <span>Use visual to add image</span>
             </div>
           </div>
         </div>`;
@@ -1249,6 +1275,15 @@ function renderHubBento() {
   } else if (!isEdit) {
     grid.style.minHeight = '400px';
     grid.insertAdjacentHTML('beforeend', '<div class="bento-empty-state"><div class="bento-empty-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="32" height="32" rx="4"/><line x1="24" y1="18" x2="24" y2="30"/><line x1="18" y1="24" x2="30" y2="24"/></svg></div><div class="bento-empty-title">Canvas is empty</div><div class="bento-empty-desc">Toggle edit mode and click <strong>Add Bubble</strong> to populate your canvas</div></div>');
+  }
+
+  // SAFETY: Ensure grid has content; if somehow empty, force default render
+  if (!grid.children.length) {
+    console.warn('[hub] renderHubBento produced empty grid, forcing default layout');
+    hubContent.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
+    // Re-render once with defaults
+    setTimeout(() => { if (typeof renderHubBento === 'function') renderHubBento(); }, 0);
+    return;
   }
 
   document.querySelectorAll('img[data-image-id]').forEach(el => {

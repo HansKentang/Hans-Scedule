@@ -951,9 +951,6 @@ function renderCounts() {
 // ─── INIT ──────────────────────────────────────────────────
 function init() {
   loadState();
-  if (!hasSeenTutorial('goals') && typeof startTutorial === "function") {
-    try { setTimeout(function() { startTutorial(GOALS_TUTORIAL_STEPS); }, 300); } catch(e) {}
-  }
   applyTheme();
   loadGoals();
 

@@ -1414,552 +1414,6 @@ function toggleMobileSidebar() {
 let pageAfterTaskSave = null;
 let pageAfterImport = null;
 
-
-// ─── ONBOARDING TUTORIAL ──────────────────────────────────
-const TUTORIAL_SEEN_KEY = 'haven-tutorial-seen';
-let tutorialState = null;
-
-// Hub tutorial steps
-const HUB_TUTORIAL_STEPS = [
-  {
-    title: 'Welcome to Haven',
-    desc: 'Your personal smart scheduler. This is the <strong>Hub</strong> — a flexible dashboard that puts everything you need right in front of you.',
-    selector: null
-  },
-  {
-    title: 'Sidebar Navigation',
-    desc: 'Jump between pages using the sidebar: <strong>Schedule</strong> for your calendar, <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, <strong>Finance</strong>, and <strong>Gallery</strong>. Each page is a different lens on your life.',
-    selector: '.hub-sidebar-nav'
-  },
-  {
-    title: 'Bento Canvas',
-    desc: 'The <strong>Bento Canvas</strong> is your personal command center. Drop in widgets — a clock, weather, Spotify, habit tracker, and more. Tap the + button to explore what fits your day.',
-    selector: '#hubAccessHub'
-  },
-  {
-    title: 'Sleep Tracking',
-    desc: 'Log your sleep each night and discover patterns. The <strong>Sleep section</strong> shows your 7-day average, consistency score, and a weekly timeline of your rest.',
-    selector: '.sleep-section'
-  },
-  {
-    title: 'Customize Everything',
-    desc: 'Tap any image to swap it out. Use the sidebar for <strong>Theme</strong> (dark or light), <strong>Settings</strong> (AI key, profile, colors), and <strong>Visuals</strong> (edit mode). Make it yours.',
-    selector: '.hub-footer-btns'
-  },
-  {
-    title: 'Good to Go!',
-    desc: 'You\'re all set. Head to the <strong>Schedule</strong> page to plan your week, or explore the other pages. Replay this tour anytime from the <strong>Help</strong> menu.',
-    selector: null
-  },
-];
-
-// Schedule tutorial steps
-const SCHEDULE_TUTORIAL_STEPS = [
-  {
-    title: 'Your Weekly Calendar',
-    desc: 'This is the <strong>Schedule</strong> page. Tasks appear as colorful cards on a grid that runs from 5 AM to 5 AM the next day. See your whole week at a glance.',
-    selector: null
-  },
-  {
-    title: 'Category Chips',
-    desc: 'These <strong>chips</strong> are your task categories — Deep Work, Meeting, Exercise, Study, Hobby, and any you add. Click one to see subcategories, then drag one onto the grid to create a task instantly.',
-    selector: '#schPillManager'
-  },
-  {
-    title: 'Quick Add Tasks',
-    desc: 'Press <kbd>Q</kbd> to add a task for the current time. Or drag a subcategory pill directly onto the grid — the fastest way to schedule.',
-    selector: '#calendarGrid'
-  },
-  {
-    title: 'Drag and Reschedule',
-    desc: 'Drag any task card to a new time. Other tasks <strong>shift automatically</strong> to avoid overlap. Resize a task by dragging its bottom edge.',
-    selector: '#calendarGrid'
-  },
-  {
-    title: 'Access Hub',
-    desc: 'The floating <strong>+</strong> button opens Focus Mode, AI Chat, Screenshot, and Copy Week. Press <kbd>F</kbd> to toggle Focus Mode anytime.',
-    selector: '#accessHub'
-  },
-  {
-    title: 'Pomodoro Timer',
-    desc: 'The built-in <strong>Pomodoro Timer</strong> helps you stay in flow. Choose from 5, 10, 25, or 50 minutes. Find it in the Quick Actions menu.',
-    selector: null
-  },
-  {
-    title: 'All Set!',
-    desc: 'You now know the essentials. Explore <strong>Activities</strong>, <strong>Analytics</strong>, <strong>Goals</strong>, and more. Replay this tour from the <strong>Help</strong> menu.',
-    selector: null
-  },
-];
-
-// Activities tutorial steps
-const ACTIVITIES_TUTORIAL_STEPS = [
-  {
-    title: 'Activities Overview',
-    desc: 'The <strong>Activities</strong> page shows your tasks in two ways: a <strong>Board</strong> with columns by category, and a <strong>Timeline</strong> that lists your day chronologically.',
-    selector: null
-  },
-  {
-    title: 'Weekly Activity Chart',
-    desc: 'The <strong>Activity Chart</strong> gives you a bird\'s-eye view of your week. Stacked bars show how each day breaks down by category. Use the arrows to move between weeks.',
-    selector: '#activityChartWrap'
-  },
-  {
-    title: 'Board View',
-    desc: 'Each <strong>column</strong> is a task category. Cards show title, time, and duration. Check off what\'s done or drag a card to a different column to change its category.',
-    selector: '#tagsBoard'
-  },
-  {
-    title: 'Timeline View',
-    desc: 'Switch to <strong>Timeline</strong> for a clean, chronological list of your day. Each entry shows time, duration, and a checkbox for quick completion.',
-    selector: null
-  },
-  {
-    title: 'Activity Log',
-    desc: 'The <strong>Activity Log</strong> records every task you complete. Undo anything by accident, or look back at what you\'ve done.',
-    selector: '#actLogSection'
-  },
-  {
-    title: 'All Set!',
-    desc: 'That covers Activities. Use <strong>Board</strong> for a broad view or <strong>Timeline</strong> for detailed day tracking. See what works best for you.',
-    selector: null
-  },
-];
-
-// Analytics tutorial steps
-const ANALYTICS_TUTORIAL_STEPS = [
-  {
-    title: 'Analytics Dashboard',
-    desc: 'The <strong>Analytics</strong> page turns your schedule into insights. Filter by <strong>Week</strong>, <strong>Month</strong>, or <strong>All</strong> time to zoom in or out.',
-    selector: null
-  },
-  {
-    title: 'KPI Cards',
-    desc: 'Four <strong>KPI cards</strong> show your top-level numbers: total tasks, time scheduled, deep work hours, and study hours. These update as you filter.',
-    selector: '.an-kpi-row'
-  },
-  {
-    title: 'Completion and Streak',
-    desc: 'The ring and bar chart show your <strong>completion rate</strong>. The <strong>streak chart</strong> tracks daily activity — keep the chain going day after day.',
-    selector: '.an-completion-row'
-  },
-  {
-    title: 'Charts and Trends',
-    desc: 'The <strong>pie chart</strong> shows how your time is distributed across categories. The <strong>trend chart</strong> tracks your progress over the last two weeks.',
-    selector: '.an-chart-grid'
-  },
-  {
-    title: 'Sleep Analytics',
-    desc: 'When you log sleep from the Hub, <strong>sleep duration and quality</strong> charts appear here alongside your productivity data.',
-    selector: '.an-sleep-row'
-  },
-  {
-    title: 'Day-by-Day Table',
-    desc: 'The <strong>Day-by-Day</strong> table gives you a detailed breakdown of each day: task count, total time, deep work, study, and more.',
-    selector: '.an-table-card'
-  },
-  {
-    title: 'That\'s Analytics!',
-    desc: 'Use Analytics to spot patterns, protect your streaks, and understand where your time actually goes. The more you schedule, the richer the data.',
-    selector: null
-  },
-];
-
-// Goals tutorial steps
-const GOALS_TUTORIAL_STEPS = [
-  {
-    title: 'Goals and Resolutions',
-    desc: 'The <strong>Goals</strong> page is where you define what matters. Create goals with sub-tasks, track progress with bars, and keep your vision front and center.',
-    selector: null
-  },
-  {
-    title: 'Goal Cards',
-    desc: 'Each <strong>goal card</strong> has a title, description, progress bar, and checkable sub-tasks. Tap the edit overlay in the top-right to rename, recolor, or delete a goal.',
-    selector: '#glBento'
-  },
-  {
-    title: 'Sub-Tasks',
-    desc: 'Check off <strong>sub-tasks</strong> and the progress bar updates automatically. Add more with the \"+ Add task\" button at the bottom of any card.',
-    selector: '#glBento'
-  },
-  {
-    title: 'Vision Board',
-    desc: 'The <strong>Vision Board</strong> holds three images that inspire you. Click a placeholder to upload an image or paste one from your gallery.',
-    selector: '#glVisionGrid'
-  },
-  {
-    title: 'Monthly Manifesto',
-    desc: 'Write a <strong>Monthly Manifesto</strong> — a personal statement of intention. Just click the text to start typing.',
-    selector: '.gl-manifesto'
-  },
-  {
-    title: 'Ready to Goal!',
-    desc: 'Create your first goal with the <strong>+ Add Goal</strong> button. Track your progress, visualize what drives you, and keep moving forward.',
-    selector: null
-  },
-];
-
-// Finance tutorial steps
-const FINANCE_TUTORIAL_STEPS = [
-  {
-    title: 'Finance Dashboard',
-    desc: 'The <strong>Finance</strong> page helps you take control of your money. Track income and expenses, manage savings, and understand your spending patterns at a glance.',
-    selector: null
-  },
-  {
-    title: 'Income and Expenses',
-    desc: 'KPI cards show your <strong>total income and expenses</strong> for the selected period. Use the tabs above — 7D, 30D, Month, All — to change the view.',
-    selector: '.fin-kpi-row'
-  },
-  {
-    title: 'Piggy Bank and Wallet',
-    desc: 'Track your <strong>Piggy Bank</strong> (savings) and <strong>Wallet</strong> (spending cash) separately. Add or subtract money and watch the balance trends over 30 days.',
-    selector: '.fin-savings-row'
-  },
-  {
-    title: 'Transaction Table and Form',
-    desc: 'Add transactions with the form on the right — pick type, category, amount, and date. Edit or delete any entry directly from the table on the left.',
-    selector: '.fin-panels'
-  },
-  {
-    title: 'Charts and Analysis',
-    desc: 'Category bars break down where your money goes. The daily chart shows income versus expenses over time — spot trends at a glance.',
-    selector: '.fin-charts'
-  },
-  {
-    title: 'Spending Intelligence',
-    desc: 'Go deeper with <strong>Spending Intelligence</strong>: Treemap, Month-over-Month, Heatmap, Cash Flow, and Top Merchants reveal your habits and patterns.',
-    selector: '.fin-adv-section'
-  },
-  {
-    title: 'Financially Aware!',
-    desc: 'Track regularly and you will unlock powerful insights into your spending. Your future self will thank you.',
-    selector: null
-  },
-];
-
-// Gallery tutorial steps
-const GALLERY_TUTORIAL_STEPS = [
-  {
-    title: 'Your Vision Board',
-    desc: 'The <strong>Gallery</strong> is your personal vision board — a collection of images, designs, and posters that inspire you. Everything you save here can be reused across Haven.',
-    selector: null
-  },
-  {
-    title: 'Image Canvas',
-    desc: 'Images sit on a <strong>canvas</strong> you can arrange freely. Click any card to swap out its image, or drag cards to reposition them in Edit Mode.',
-    selector: '#galGrid'
-  },
-  {
-    title: 'Column Layout',
-    desc: 'Switch between <strong>2, 3, or 4 columns</strong> to change how your board looks. The layout adapts instantly to the image sizes.',
-    selector: '#galColToggle'
-  },
-  {
-    title: 'Add Images',
-    desc: 'Press <strong>Add Image</strong> to open the picker and upload a file, paste an image, or drop in a URL. New images land right on your canvas.',
-    selector: '#galAddBtn'
-  },
-  {
-    title: 'Edit Mode',
-    desc: 'Tap the floating <strong>+</strong> button and choose <strong>Edit</strong> to rearrange your board freely. You can also edit any hero or canvas image from there.',
-    selector: '#accessHub'
-  },
-  {
-    title: 'Good to Go!',
-    desc: 'Keep your favorites close and use them across the app — vision boards, heroes, and more. Replay this tour anytime from the <strong>Help</strong> menu.',
-    selector: null
-  },
-];
-
-// Friends tutorial steps
-const FRIENDS_TUTORIAL_STEPS = [
-  {
-    title: 'Friends and Connections',
-    desc: 'The <strong>Friends</strong> page connects you with people who use Haven. Share progress, keep each other accountable, and chat right here.',
-    selector: null
-  },
-  {
-    title: 'Your Friend Code',
-    desc: 'Your unique <strong>friend code</strong> lives in this card — share it with friends so they can find you. Tap the copy button to grab it.',
-    selector: '.fr-code-card'
-  },
-  {
-    title: 'Add a Friend',
-    desc: 'Type a friend\'s code (like <em>haven-abc1234</em>) into the <strong>Add a Friend</strong> box and hit Add. They\'ll show up as pending until they accept.',
-    selector: '.fr-add-card'
-  },
-  {
-    title: 'Connections',
-    desc: 'Your <strong>connections</strong> are listed here with tabs for All, Pending, and Accepted. Click any friend to open a chat and see their recent progress.',
-    selector: '#frList'
-  },
-  {
-    title: 'Stay Motivated',
-    desc: 'That\'s Friends! Connect with people who lift you up and watch your progress together. Replay this tour anytime from the <strong>Help</strong> menu.',
-    selector: null
-  },
-];
-
-function hasSeenTutorial(page) {
-  var key = page ? TUTORIAL_SEEN_KEY + '-' + page : TUTORIAL_SEEN_KEY;
-  try {
-    if (localStorage.getItem(key) === '1') return true;
-    // Migrate from old global key to per-page key
-    if (page && localStorage.getItem(TUTORIAL_SEEN_KEY) === '1') {
-      try { localStorage.setItem(key, '1'); } catch (e) {}
-      return true;
-    }
-    return false;
-  } catch (e) { return false; }
-}
-function markTutorialSeen(page) {
-  var key = page ? TUTORIAL_SEEN_KEY + '-' + page : TUTORIAL_SEEN_KEY;
-  try { localStorage.setItem(key, '1'); } catch (e) {}
-}
-
-function startTutorial(steps) {
-  var overlay = document.getElementById('tutorialOverlay');
-  var spotlight = document.getElementById('tutorialSpotlight');
-  var tooltip = document.getElementById('tutorialTooltip');
-  if (!overlay || !tooltip) return;
-
-  tutorialState = {
-    steps: steps || HUB_TUTORIAL_STEPS,
-    currentStep: 0
-  };
-
-  renderTutorialStep();
-  overlay.classList.add('active');
-}
-
-function renderTutorialStep() {
-  if (!tutorialState) return;
-  var overlay = document.getElementById('tutorialOverlay');
-  var spotlight = document.getElementById('tutorialSpotlight');
-  var tooltip = document.getElementById('tutorialTooltip');
-  var step = tutorialState.steps[tutorialState.currentStep];
-  if (!step) { endTutorial(); return; }
-
-  // Smooth transition between steps
-  if (tooltip) {
-    tooltip.classList.add('transitioning');
-    setTimeout(function() {
-      tooltip.classList.remove('transitioning');
-    }, 150);
-  }
-
-  // Update step counter
-  var stepEl = document.getElementById('tutorialStep');
-  if (stepEl) stepEl.textContent = (tutorialState.currentStep + 1) + ' / ' + tutorialState.steps.length;
-
-  // Update title and desc
-  var titleEl = document.getElementById('tutorialTitle');
-  var descEl = document.getElementById('tutorialDesc');
-  if (titleEl) titleEl.textContent = step.title;
-  if (descEl) descEl.innerHTML = step.desc;
-
-  // Update progress dots with past state
-  var progressEl = document.getElementById('tutorialProgress');
-  if (progressEl) {
-    progressEl.innerHTML = tutorialState.steps.map(function(_, i) {
-      var cls = 'tutorial-progress-dot';
-      if (i === tutorialState.currentStep) cls += ' active';
-      else if (i < tutorialState.currentStep) cls += ' past';
-      return '<span class="' + cls + '"></span>';
-    }).join('');
-  }
-
-  // Handle spotlight positioning
-  if (step.selector) {
-    var target = document.querySelector(step.selector);
-    if (target) {
-      var rect = target.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0 || rect.bottom < 0 || rect.top > window.innerHeight) {
-        spotlight.classList.add('hidden');
-        spotlight.classList.remove('visible');
-      } else {
-        updateSpotlight(rect);
-      }
-    } else {
-      spotlight.classList.add('hidden');
-      spotlight.classList.remove('visible');
-    }
-  } else {
-    spotlight.classList.add('hidden');
-    spotlight.classList.remove('visible');
-  }
-
-  // Show/hide prev button
-  var prevBtn = document.getElementById('tutorialPrev');
-  if (prevBtn) prevBtn.classList.toggle('hidden', tutorialState.currentStep === 0);
-
-  // Update next button text
-  var nextBtn = document.getElementById('tutorialNext');
-  if (nextBtn) {
-    var isLast = tutorialState.currentStep === tutorialState.steps.length - 1;
-    nextBtn.innerHTML = isLast
-      ? 'Got it!'
-      : 'Next <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>';
-  }
-
-  // Position tooltip relative to spotlight or centered
-  var sel = step.selector;
-  requestAnimationFrame(function() {
-    positionTutorialTooltip(sel);
-    // Re-position after page animations settle
-    setTimeout(function() {
-      positionTutorialTooltip(sel);
-      // Re-read target rect in case CSS animations (slideUpSpring) have settled
-      if (sel) {
-        var t = document.querySelector(sel);
-        if (t) {
-          var r = t.getBoundingClientRect();
-          if (r.width > 0 && r.height > 0 && r.bottom >= 0 && r.top <= window.innerHeight) {
-            updateSpotlight(r);
-          }
-        }
-      }
-    }, 800);
-  });
-}
-
-function updateSpotlight(rect) {
-  var sp = document.getElementById('tutorialSpotlight');
-  if (!sp) return;
-  sp.classList.remove('hidden');
-  sp.classList.add('visible');
-  sp.style.left = (rect.left - 8) + 'px';
-  sp.style.top = (rect.top - 8) + 'px';
-  sp.style.width = (rect.width + 16) + 'px';
-  sp.style.height = (rect.height + 16) + 'px';
-}
-
-function positionTutorialTooltip(selector) {
-  var tooltip = document.getElementById('tutorialTooltip');
-  if (!tooltip) return;
-  var tw = tooltip.offsetWidth || 340;
-  var th = tooltip.offsetHeight || 300;
-  var vw = window.innerWidth;
-  var vh = window.innerHeight;
-  var g = 16;
-
-  if (selector) {
-    var target = document.querySelector(selector);
-    if (target) {
-      var rect = target.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0 && rect.bottom >= 0 && rect.top <= vh) {
-        var cx = rect.left + rect.width / 2;
-        var left = Math.max(g, Math.min(cx - tw / 2, vw - tw - g));
-
-        // Below the target (clamped to viewport)
-        var topPos = Math.max(g, Math.min(rect.bottom + g, vh - th - g));
-        // Above the target (clamped to viewport)
-        var bottomVal = Math.max(g, Math.min(vh - rect.top + g, vh - th - g));
-        // Pick the side that keeps the tooltip closer to the target
-        var distBelow = Math.abs(topPos - rect.bottom);
-        var distAbove = Math.abs(vh - bottomVal - th - rect.top);
-
-        if (distBelow <= distAbove) {
-          tooltip.style.left = left + 'px';
-          tooltip.style.top = topPos + 'px';
-          tooltip.style.bottom = 'auto';
-        } else {
-          tooltip.style.left = left + 'px';
-          tooltip.style.top = 'auto';
-          tooltip.style.bottom = bottomVal + 'px';
-        }
-        tooltip.style.transform = 'none';
-        return;
-      }
-    }
-  }
-
-  // Centered fallback
-  tooltip.style.left = Math.max(g, (vw - tw) / 2) + 'px';
-  tooltip.style.top = Math.max(g, Math.min((vh - th) / 2, vh - th - g)) + 'px';
-  tooltip.style.bottom = 'auto';
-  tooltip.style.transform = 'none';
-}
-
-// ─── TUTORIAL EVENT HANDLERS ──────────────────────────────
-document.addEventListener('click', function(e) {
-  var skipBtn = e.target.closest('#tutorialSkip');
-  var prevBtn = e.target.closest('#tutorialPrev');
-  var nextBtn = e.target.closest('#tutorialNext');
-  var viewTutBtn = e.target.closest('#helpViewTutorial');
-
-  if (skipBtn) {
-    endTutorial();
-    return;
-  }
-
-  if (prevBtn && tutorialState && tutorialState.currentStep > 0) {
-    tutorialState.currentStep--;
-    renderTutorialStep();
-    return;
-  }
-
-  if (nextBtn && tutorialState) {
-    var isLast = tutorialState.currentStep === tutorialState.steps.length - 1;
-    if (isLast) {
-      endTutorial();
-    } else {
-      tutorialState.currentStep++;
-      renderTutorialStep();
-    }
-    return;
-  }
-
-  if (viewTutBtn) {
-    if (typeof hideHelpModal === 'function') hideHelpModal();
-    var steps;
-    var page = window.location.pathname.split('/').pop() || 'index.html';
-    switch (page) {
-      case 'schedule.html': steps = SCHEDULE_TUTORIAL_STEPS; break;
-      case 'activities.html': steps = ACTIVITIES_TUTORIAL_STEPS; break;
-      case 'analytics.html': steps = ANALYTICS_TUTORIAL_STEPS; break;
-      case 'goals.html': steps = GOALS_TUTORIAL_STEPS; break;
-      case 'finance.html': steps = FINANCE_TUTORIAL_STEPS; break;
-      case 'gallery.html': steps = GALLERY_TUTORIAL_STEPS; break;
-      case 'friends.html': steps = FRIENDS_TUTORIAL_STEPS; break;
-      default: steps = HUB_TUTORIAL_STEPS; break;
-    }
-    if (typeof startTutorial === 'function') startTutorial(steps);
-    return;
-  }
-});
-
-document.addEventListener('keydown', function(e) {
-  if (!tutorialState) return;
-  if (e.key === 'ArrowRight' || e.key === 'Enter') {
-    e.preventDefault();
-    var isLast = tutorialState.currentStep === tutorialState.steps.length - 1;
-    if (isLast) { endTutorial(); } else { tutorialState.currentStep++; renderTutorialStep(); }
-  } else if (e.key === 'ArrowLeft') {
-    e.preventDefault();
-    if (tutorialState.currentStep > 0) { tutorialState.currentStep--; renderTutorialStep(); }
-  } else if (e.key === 'Escape') {
-    e.preventDefault();
-    endTutorial();
-  }
-});
-
-function endTutorial() {
-  var overlay = document.getElementById('tutorialOverlay');
-  var spotlight = document.getElementById('tutorialSpotlight');
-  if (overlay) overlay.classList.remove('active');
-  if (spotlight) {
-    spotlight.classList.add('hidden');
-    spotlight.classList.remove('visible');
-  }
-  tutorialState = null;
-  var _page = window.location.pathname.split('/').pop() || 'index.html';
-  var _pageName = _page.replace('.html', '');
-  if (_pageName === 'index') _pageName = 'hub';
-  markTutorialSeen(_pageName);
-}
-
 // ─── ACTIVE PRESET AUTO-APPLY (for new/guest users) ──
 function applyActivePresetIfNewUser() {
   // Only apply to new users who have no hub content yet
@@ -3378,13 +2832,11 @@ function applyImages() {
         var wrap = el.closest(".bento-img-wrap, .gl-vision-img-wrap");
         if (!wrap) {
           if (_isLanding) return;
-          // Heroes have designed empty states (gradient backgrounds) — skip the generic placeholder
-          if (_id.indexOf('-hero') > 0) return;
           var parent = el.parentElement;
           if (parent && !parent.querySelector(".img-empty-placeholder")) {
             var ph = document.createElement("div");
             ph.className = "img-empty-placeholder";
-            ph.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visuals to add images</span>';
+            ph.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visual to add image</span>';
             parent.insertBefore(ph, el);
           }
         } else {
@@ -5193,7 +4645,7 @@ function renderSidebarImages() {
       if (img.hidden) item.classList.add('hub-sidebar-image-hidden');
       item.dataset.imageId = img.id;
       const label = img.label || img.id;
-      item.innerHTML = (url ? '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' : '<div class="hub-sidebar-image-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;opacity:0.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visuals to add images</span></div>') +
+      item.innerHTML = (url ? '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' : '<div class="hub-sidebar-image-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;opacity:0.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visual to add image</span></div>') +
         '<span class="hub-sidebar-image-label">' + label + '</span>';
       // Click: in Visuals edit mode → image picker
       item.addEventListener('click', function() {
@@ -5577,24 +5029,10 @@ function openHubMenu() {
   if (t) t.addEventListener('click', function() { closeHubMenu(); if (typeof toggleTheme === 'function') toggleTheme(); });
   var s = document.getElementById('menuSettings');
   if (s) s.addEventListener('click', function() { closeHubMenu(); if (typeof openSettingsBubble === 'function') openSettingsBubble(); });
+  var rv = document.getElementById('menuResetVisibility');
+  if (rv) rv.addEventListener('click', function() { closeHubMenu(); if (typeof resetSectionVisibility === 'function') resetSectionVisibility(); });
   var h = document.getElementById('menuHelp');
   if (h) h.addEventListener('click', function() { closeHubMenu(); if (typeof showHelpModal === 'function') showHelpModal(); });
-  var tut = document.getElementById('menuTutorial');
-  if (tut) tut.addEventListener('click', function() {
-    closeHubMenu();
-    if (typeof startTutorial !== 'function') return;
-    var _page = window.location.pathname.split('/').pop() || 'index.html';
-    switch (_page) {
-      case 'schedule.html': startTutorial(SCHEDULE_TUTORIAL_STEPS); break;
-      case 'activities.html': startTutorial(ACTIVITIES_TUTORIAL_STEPS); break;
-      case 'analytics.html': startTutorial(ANALYTICS_TUTORIAL_STEPS); break;
-      case 'goals.html': startTutorial(GOALS_TUTORIAL_STEPS); break;
-      case 'finance.html': startTutorial(FINANCE_TUTORIAL_STEPS); break;
-      case 'gallery.html': startTutorial(GALLERY_TUTORIAL_STEPS); break;
-      case 'friends.html': startTutorial(FRIENDS_TUTORIAL_STEPS); break;
-      default: startTutorial(HUB_TUTORIAL_STEPS); break;
-    }
-  });
   var p = document.getElementById('menuProfile');
   if (p) p.addEventListener('click', function() { closeHubMenu(); if (typeof openSettingsBubble === 'function') openSettingsBubble(); });
   // Populate profile
@@ -5676,9 +5114,10 @@ document.addEventListener('click', function(e) {
   if (!state.editMode) return;
   if (document.documentElement.classList.contains('hub-edit')) return;
   let img = e.target.closest('img[data-image-id]');
-  // If click is on an overlay sibling (e.g. gradient div), check parent for hero img
-  if (!img && e.target.parentElement) {
-    img = e.target.parentElement.querySelector('img[data-image-id]');
+  if (!img) {
+    var scope = e.target.closest('.img-empty-placeholder');
+    scope = (scope && scope.parentElement) || e.target.parentElement;
+    if (scope) img = scope.querySelector('img[data-image-id]');
   }
   if (!img) return;
   openImagePicker(img.dataset.imageId);
@@ -7598,4 +7037,19 @@ function spOnKey(e) {
   });
   (document.body || document.documentElement).appendChild(b);
 })();
+
+function initLogoLoginRedirect() {
+  document.querySelectorAll('.hub-workspace-icon, .hub-workspace-name').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      window.location.href = 'login.html';
+    });
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initLogoLoginRedirect);
+} else {
+  initLogoLoginRedirect();
+}
 

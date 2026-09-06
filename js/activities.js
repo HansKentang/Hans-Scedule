@@ -1125,9 +1125,6 @@ function setupPage() {
 // --- INIT ------------------------------------------------------------------
 function init() {
   loadState();
-  if (!hasSeenTutorial('activities') && typeof startTutorial === "function") {
-    try { setTimeout(function() { startTutorial(ACTIVITIES_TUTORIAL_STEPS); }, 300); } catch(e) {}
-  }
   applyTheme();
   loadCompletionLog();
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
