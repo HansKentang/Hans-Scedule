@@ -1,6 +1,6 @@
 /* ============================================
-   Haven Schedule — Activities Page
-   Kanban Board + Timeline + Activity Log
+   Haven Schedule — Progress Page
+   Board + Timeline + Log + Analytics
    ============================================ */
 
 // --- VIEW STATE -------------------------------------------------------------
@@ -21,8 +21,8 @@ const actTimeline = document.getElementById('actTimeline');
 const actLogList = document.getElementById('actLogList');
 const actLogCount = document.getElementById('actLogCount');
 
-pageAfterTaskSave = () => { renderActivities(); };
-pageAfterImport = () => { renderActivities(); };
+pageAfterTaskSave = () => { renderActivities(); renderAnalytics(); };
+pageAfterImport = () => { renderActivities(); renderAnalytics(); };
 
 // --- ACTIVITY LOG STATE ----------------------------------------------------
 // Store completed_at timestamps per task in localStorage
@@ -882,66 +882,80 @@ function renderActivityChart() {
   }
 
   if (maxDayTotal === 0) {
-    chart.innerHTML = '';
+    chart.innerHTML = '<div class="act-chart-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><div class="act-chart-empty-title">Nothing scheduled</div><div class="act-chart-empty-sub">Add tasks in Schedule to see your week here</div></div>';
     if (totalEl) totalEl.textContent = 'No tasks this week';
     if (legendEl) legendEl.innerHTML = '';
     return;
   }
 
   const avgDaily = Math.round(grandTotal / 7);
-  const busiestIdx = dayData.reduce((best, d, i) => d.total > dayData[best].total ? i : best, 0);
 
-  let html = '';
+  const tagTotals = {};
+  for (const tag of tags) tagTotals[tag] = 0;
+  for (const dd of dayData) for (const tag of tags) tagTotals[tag] += dd.tagMins[tag] || 0;
+  const activeTags = tags.filter(t => tagTotals[t] > 0).sort((a, b) => tagTotals[b] - tagTotals[a]);
+
+  const R = 60, CIRC = 2 * Math.PI * R;
+  let acc = 0, segs = '';
+  for (const tag of activeTags) {
+    const frac = tagTotals[tag] / grandTotal;
+    const len = Math.max(frac * CIRC - 2.5, 1);
+    segs += `<circle class="act-pie-seg" data-tag="${tag}" cx="70" cy="70" r="${R}" fill="none" stroke-width="22" stroke-dasharray="${len} ${CIRC - len}" stroke-dashoffset="${-acc}" transform="rotate(-90 70 70)" data-mins="${tagTotals[tag]}" data-pct="${Math.round(frac * 100)}"><title>${TAG_LABELS[tag]}: ${formatDuration(tagTotals[tag])}</title></circle>`;
+    acc += frac * CIRC;
+  }
+  let bars = '';
   for (let i = 0; i < 7; i++) {
     const dd = dayData[i];
     const d = addDays(weekStart, i);
+    const h = maxDayTotal > 0 ? Math.max((dd.total / maxDayTotal) * 100, 6) : 6;
     const todayCls = dd.isToday ? ' today' : '';
-    const isBusiest = i === busiestIdx && dd.total > 0;
-    const barHeight = maxDayTotal > 0 ? Math.max((dd.total / maxDayTotal) * 100, 8) : 8;
-    const dayNum = d.getDate();
-
-    html += `<div class="act-chart-bar-col${todayCls}">`;
-    html += `<span class="act-chart-bar-val">${dd.total > 0 ? formatDuration(dd.total) : '—'}</span>`;
-
-    if (dd.total > 0) {
-      html += `<div class="act-chart-bar${isBusiest ? ' busiest' : ''}" style="height:${barHeight}%" title="${dayLabels[i]}: ${formatDuration(dd.total)}">`;
-      const sortedTags = [...tags].filter(tag => dd.tagMins[tag] > 0);
-      sortedTags.sort((a, b) => dd.tagMins[b] - dd.tagMins[a]);
-      for (const tag of sortedTags) {
-        const pct = (dd.tagMins[tag] / dd.total) * 100;
-        html += `<div class="act-chart-bar-segment" data-tag="${tag}" style="height:${pct}%" title="${TAG_LABELS[tag]}: ${formatDuration(dd.tagMins[tag])}"></div>`;
-      }
-      html += `</div>`;
-    } else {
-      html += `<div class="act-chart-bar-empty" style="height:${barHeight}%"></div>`;
+    const sortedTags = [...tags].filter(tag => dd.tagMins[tag] > 0);
+    sortedTags.sort((a, b) => dd.tagMins[b] - dd.tagMins[a]);
+    let segs = '';
+    for (const tag of sortedTags) {
+      const pct = (dd.tagMins[tag] / dd.total) * 100;
+      segs += `<div class="act-chart-bar-segment" data-tag="${tag}" style="height:${pct}%" title="${TAG_LABELS[tag]}: ${formatDuration(dd.tagMins[tag])}"></div>`;
     }
-
-    html += `<span class="act-chart-bar-label">${dayLabels[i]} <small>${dayNum}</small></span>`;
-    html += `</div>`;
+    bars += `<div class="act-chart-bar-col${todayCls}">` +
+      `<span class="act-chart-bar-val">${dd.total > 0 ? formatDuration(dd.total) : ''}</span>` +
+      (dd.total > 0
+        ? `<div class="act-chart-bar" style="height:${h}%" title="${dayLabels[i]}: ${formatDuration(dd.total)}">${segs}</div>`
+        : `<div class="act-chart-bar-empty"></div>`) +
+      `<span class="act-chart-bar-label">${dayLabels[i]} <small>${d.getDate()}</small></span></div>`;
   }
-  chart.innerHTML = html;
+  chart.innerHTML = `<div class="act-pie-wrap"><svg class="act-pie" viewBox="0 0 140 140" role="img" aria-label="Time by category">${segs}</svg><div class="act-pie-center"><span class="act-pie-total">${formatDuration(grandTotal)}</span><span class="act-pie-sub">this week</span></div></div><div class="act-daybars">${bars}</div>`;
 
   if (totalEl) totalEl.textContent = `${formatDuration(grandTotal)} total · avg ${formatDuration(avgDaily)}/day`;
 
   // Legend
   let legendHtml = '';
-  for (const tag of tags) {
-    const hasAny = dayData.some(dd => dd.tagMins[tag] > 0);
-    if (!hasAny) continue;
+  for (const tag of activeTags) {
+    const pct = Math.round((tagTotals[tag] / grandTotal) * 100);
     legendHtml += `<span class="act-chart-legend-item">
       <span class="act-chart-legend-dot" data-tag="${tag}"></span>
       ${TAG_LABELS[tag]}
+      <span class="act-chart-legend-val">${formatDuration(tagTotals[tag])} · ${pct}%</span>
     </span>`;
   }
   if (legendEl) legendEl.innerHTML = legendHtml;
 
   // ─── HOVER TOOLTIP ─────────────────────────────────
-  chart.querySelectorAll('.act-chart-bar-col').forEach(function(col, i) {
+  chart.querySelectorAll('.act-pie-seg').forEach(function(seg) {
+    seg.addEventListener('mouseenter', function(e) {
+      showPieTooltip(e, seg);
+    });
+    seg.addEventListener('mousemove', function(e) {
+      moveChartTooltip(e);
+    });
+    seg.addEventListener('mouseleave', function() {
+      hideChartTooltip();
+    });
+  });
+  chart.querySelectorAll('.act-daybars .act-chart-bar-col').forEach(function(col, i) {
     var dd = dayData[i];
     if (!dd || dd.total === 0) return;
     var colBar = col.querySelector('.act-chart-bar');
     if (!colBar) return;
-
     colBar.addEventListener('mouseenter', function(e) {
       showChartTooltip(e, dd, dayLabels[i]);
     });
@@ -1006,6 +1020,22 @@ function hideChartTooltip() {
     _chartTooltipEl.remove();
     _chartTooltipEl = null;
   }
+}
+
+function showPieTooltip(e, seg) {
+  hideChartTooltip();
+  var tag = seg.dataset.tag;
+  var mins = parseInt(seg.dataset.mins, 10) || 0;
+  var pct = seg.dataset.pct || 0;
+  var tip = document.createElement('div');
+  tip.className = 'act-chart-tooltip';
+  tip.innerHTML = '<div class="act-chart-tooltip-row">' +
+    '<span class="act-chart-tooltip-dot" style="background:' + (TAG_COLORS[tag] ? TAG_COLORS[tag].text : '#888') + '"></span>' +
+    '<span>' + ((typeof TAG_LABELS !== 'undefined' && TAG_LABELS[tag]) ? TAG_LABELS[tag] : tag) + '</span>' +
+    '<span class="val">' + formatDuration(mins) + ' (' + pct + '%)</span></div>';
+  document.body.appendChild(tip);
+  _chartTooltipEl = tip;
+  positionChartTooltip(e);
 }
 
 function updateView() {
@@ -1130,10 +1160,804 @@ function init() {
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
   weekOffset = 0;
   renderActivities();
+  renderAnalytics();
   setupPage();
   document.getElementById('exportBtn')?.addEventListener('click', exportData);
   document.getElementById('importBtn')?.addEventListener('click', () => { document.getElementById('importFileInput')?.click(); });
+  document.getElementById('analyticsPeriodPills')?.addEventListener('click', (e) => {
+    const pill = e.target.closest('.an-period-pill');
+    if (!pill) return;
+    document.querySelectorAll('.an-period-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    currentPeriod = pill.dataset.period;
+    renderAnalytics();
+  });
+  window.addEventListener('resize', renderAnalytics);
+  const _analyticsThemeObserver = new MutationObserver(() => { renderAnalytics(); });
+  _analyticsThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
+
+
+
+let currentPeriod = 'week';
+const pieCanvas = document.getElementById('pieChart');
+const barCanvas = document.getElementById('barChart');
+const trendCanvas = document.getElementById('trendChart');
+
+
+function getTagColorHex(tag) {
+  const c = cardColors[tag] || DEFAULT_TAG_COLORS[tag];
+  const isDark = document.documentElement.classList.contains('dark');
+  const bg = isDark ? darkenColor(c.light, 0.82) : lightenColor(c.light, 0.85);
+  const text = c.dark || lightenColor(c.light, 0.45);
+  return { bg, text: c.light, dark: darkenColor(c.light, 0.82) };
+}
+
+// ─── FILTERING ─────────────────────────────────────────────
+function getFilteredTasks() {
+  const period = currentPeriod;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  let startDate = null;
+
+  if (period === 'week') {
+    startDate = getMonday(today);
+  } else if (period === 'month') {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  return state.tasks.filter(t => {
+    if (isWhiteboardTask(t)) return false;
+    if (startDate) {
+      const d = new Date(t.date + 'T12:00:00');
+      if (d < startDate) return false;
+    }
+    return true;
+  });
+}
+
+function getTaskDuration(task) {
+  const start = parseTime(task.startTime);
+  const end = parseTime(task.endTime) || start + 60;
+  return Math.max(end - start, 15);
+}
+
+
+// ─── SUMMARY STATS ─────────────────────────────────────────
+function renderSummary(tasks) {
+  let totalMins = 0;
+  let deepMins = 0;
+  let studyMins = 0;
+  let taskCount = 0;
+  let completedCount = 0;
+
+  for (const t of tasks) {
+    if (t.completed) {
+      completedCount++;
+    } else {
+      taskCount++;
+      const dur = getTaskDuration(t);
+      totalMins += dur;
+      if (t.tag === 'deep-work') deepMins += dur;
+      if (t.tag === 'study') studyMins += dur;
+    }
+  }
+
+  const el = (id) => document.getElementById(id);
+  el('statTasks').textContent = taskCount;
+  el('statTime').textContent = formatHrs(totalMins);
+  el('statDeep').textContent = formatHrs(deepMins);
+  el('statStudy').textContent = formatHrs(studyMins);
+
+  // Sub text
+  el('statTasksSub').textContent = `${completedCount} completed`;
+  el('statTimeSub').textContent = 'scheduled';
+  el('statDeepSub').textContent = 'focus time';
+  el('statStudySub').textContent = 'learning';
+}
+
+// ─── COMPLETION RATE ───────────────────────────────────────
+function renderCompletion(tasks) {
+  const el = (id) => document.getElementById(id);
+  let completed = 0;
+  let total = tasks.length;
+
+  for (const t of tasks) {
+    if (t.completed) completed++;
+  }
+
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  el('compDone').textContent = completed;
+  el('compTotal').textContent = total;
+  el('compPct').textContent = `${pct}%`;
+  el('completionFill').style.width = `${pct}%`;
+  const ring = el('compRing');
+  if (ring) ring.style.background = `conic-gradient(var(--accent) ${pct}%, var(--bg-secondary) ${pct}%)`;
+  const ringPct = el('compRingPct');
+  if (ringPct) ringPct.textContent = `${pct}%`;
+
+  const period = currentPeriod;
+  const periodMap = { week: 'This Week', month: 'This Month', all: 'All Time' };
+  el('completionPeriod').textContent = periodMap[period] || 'All Time';
+}
+
+// ─── STREAK CARD ───────────────────────────────────────────
+function renderStreak(tasks) {
+  const el = (id) => document.getElementById(id);
+  const streakDaysEl = el('streakDays');
+
+  // Get last 7 days
+  const days = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push({
+      date: formatDate(d),
+      label: d.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0),
+      isToday: i === 0
+    });
+  }
+
+  // Check which days have tasks
+  const dayHasTasks = days.map(day => {
+    return tasks.some(t => t.date === day.date);
+  });
+
+  // Render day dots
+  streakDaysEl.innerHTML = days.map((day, i) => {
+    const classes = ['an-streak-day'];
+    if (dayHasTasks[i]) classes.push('active');
+    if (day.isToday) classes.push('today');
+    return `<div class="${classes.join(' ')}">${day.label}</div>`;
+  }).join('');
+
+  // Calculate streaks (scoped to the 7-day window shown)
+  let currentStreak = 0;
+  let bestStreak = 0;
+  let tempStreak = 0;
+  let daysActive = 0;
+
+  // Count from today backwards for current streak
+  for (let i = days.length - 1; i >= 0; i--) {
+    if (dayHasTasks[i]) {
+      currentStreak++;
+    } else {
+      break;
+    }
+  }
+
+  // Calculate best streak and total active days
+  for (let i = 0; i < days.length; i++) {
+    if (dayHasTasks[i]) {
+      tempStreak++;
+      daysActive++;
+      bestStreak = Math.max(bestStreak, tempStreak);
+    } else {
+      tempStreak = 0;
+    }
+  }
+
+  el('streakCurrent').textContent = currentStreak;
+  el('streakBest').textContent = bestStreak;
+  el('streakActive').textContent = daysActive;
+}
+
+// ─── PIE CHART ─────────────────────────────────────────────
+function renderPieChart(tasks) {
+  if (!pieCanvas) return;
+  const ctx = pieCanvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = pieCanvas.getBoundingClientRect();
+  pieCanvas.width = rect.width * dpr;
+  pieCanvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width;
+  const h = rect.height;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const tagMins = {};
+  for (const tag of TAG_ORDER) tagMins[tag] = 0;
+  for (const t of tasks) {
+    if (t.completed) continue;
+    tagMins[t.tag] = (tagMins[t.tag] || 0) + getTaskDuration(t);
+  }
+
+  const total = Object.values(tagMins).reduce((a, b) => a + b, 0);
+  if (total === 0) {
+    ctx.fillStyle = 'var(--text-tertiary)';
+    ctx.font = '13px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No data', w / 2, h / 2);
+    return;
+  }
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const cx = w * 0.35;
+  const cy = h / 2;
+  const r = Math.min(cx - 10, cy - 10, 80);
+
+  let startAngle = -Math.PI / 2;
+  const legend = [];
+
+  for (const tag of TAG_ORDER) {
+    const mins = tagMins[tag];
+    if (mins === 0) continue;
+    const pct = mins / total;
+    const endAngle = startAngle + pct * Math.PI * 2;
+    const color = getTagColorHex(tag).text;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+
+    // Separator
+    ctx.strokeStyle = isDark ? '#1a1a1e' : '#ffffff';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    legend.push({ tag, pct: Math.round(pct * 100), color });
+    startAngle = endAngle;
+  }
+
+  // Center hole
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.52, 0, Math.PI * 2);
+  ctx.fillStyle = isDark ? '#1a1a1e' : '#ffffff';
+  ctx.fill();
+
+  ctx.fillStyle = isDark ? '#fafafa' : '#0a0a0b';
+  ctx.font = 'bold 16px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(formatHrs(total), cx, cy);
+
+  // Legend
+  const legendEl = document.getElementById('pieLegend');
+  if (legendEl) {
+    legendEl.innerHTML = legend.map(l =>
+      `<span class="an-legend-item">
+        <span class="an-legend-dot" style="background:${l.color}"></span>
+        ${TAG_LABELS[l.tag]} (${l.pct}%)
+      </span>`
+    ).join('');
+  }
+}
+
+// ─── BAR CHART ─────────────────────────────────────────────
+function renderBarChart(tasks) {
+  if (!barCanvas) return;
+  const ctx = barCanvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = barCanvas.getBoundingClientRect();
+  barCanvas.width = rect.width * dpr;
+  barCanvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width;
+  const h = rect.height;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const textColor = isDark ? '#8a8a96' : '#6b6b78';
+  const gridColor = isDark ? '#23232a' : '#e8e8ee';
+
+  // Get last 7 days
+  const days = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push(formatDate(d));
+  }
+
+  // Aggregate per-day minutes by tag
+  const dayData = days.map(date => {
+    const dayTasks = tasks.filter(t => t.date === date && !t.completed);
+    const tags = {};
+    let total = 0;
+    for (const t of dayTasks) {
+      const dur = getTaskDuration(t);
+      tags[t.tag] = (tags[t.tag] || 0) + dur;
+      total += dur;
+    }
+    return { date, tags, total };
+  });
+
+  const maxTotal = Math.max(...dayData.map(d => d.total), 1);
+
+  const pad = { top: 15, bottom: 25, left: 5, right: 5 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+  const barW = chartW / days.length * 0.7;
+  const gap = chartW / days.length * 0.3;
+
+  // Grid lines
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (chartH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Bars
+  for (let i = 0; i < dayData.length; i++) {
+    const x = pad.left + (chartW / days.length) * i + gap / 2;
+
+    const sortedTags = [...TAG_ORDER].reverse();
+    const segs = [];
+    for (const tag of sortedTags) {
+      const mins = dayData[i].tags[tag] || 0;
+      if (mins === 0) continue;
+      segs.push({ tag, h: Math.max((mins / maxTotal) * chartH, 1) });
+    }
+
+    let yCursor = pad.top + chartH;
+    segs.forEach((s, idx) => {
+      const y = yCursor - s.h;
+      ctx.fillStyle = getTagColorHex(s.tag).text;
+      ctx.beginPath();
+      if (idx === segs.length - 1) ctx.roundRect(x, y, barW, s.h, [4, 4, 0, 0]);
+      else ctx.rect(x, y, barW, s.h);
+      ctx.fill();
+      yCursor = y;
+    });
+
+    // Date labels
+    const date = new Date(dayData[i].date + 'T12:00:00');
+    const label = date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2);
+    ctx.fillStyle = textColor;
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x + barW / 2, h - pad.bottom + 14);
+  }
+
+  // Legend
+  const legendEl = document.getElementById('barLegend');
+  if (legendEl) {
+    legendEl.innerHTML = TAG_ORDER.map(tag =>
+      `<span class="an-legend-item">
+        <span class="an-legend-dot" style="background:${getTagColorHex(tag).text}"></span>
+        ${TAG_LABELS[tag]}
+      </span>`
+    ).join('');
+  }
+}
+
+// ─── WEEKLY TREND CHART ────────────────────────────────────
+function renderTrendChart(tasks) {
+  if (!trendCanvas) return;
+  const ctx = trendCanvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = trendCanvas.getBoundingClientRect();
+  trendCanvas.width = rect.width * dpr;
+  trendCanvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width;
+  const h = rect.height;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const textColor = isDark ? '#8a8a96' : '#6b6b78';
+  const gridColor = isDark ? '#23232a' : '#e8e8ee';
+
+  // Get last 14 days for a better trend line
+  const days = [];
+  const now = new Date();
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push(formatDate(d));
+  }
+
+  // Count tasks per day
+  const dayCounts = days.map(date => {
+    return tasks.filter(t => t.date === date).length;
+  });
+
+  const maxCount = Math.max(...dayCounts, 1);
+
+  const pad = { top: 20, bottom: 30, left: 5, right: 5 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  // Grid lines
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (chartH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Draw line chart
+  const accentColor = isDark ? '#a5b4fc' : '#6366f1';
+  const gradientTop = isDark ? 'rgba(165, 180, 252, 0.22)' : 'rgba(99, 102, 241, 0.14)';
+  const gradientBottom = 'rgba(0, 0, 0, 0)';
+
+  const points = dayCounts.map((count, i) => ({
+    x: pad.left + (chartW / (days.length - 1)) * i,
+    y: pad.top + chartH - (count / maxCount) * chartH
+  }));
+
+  function traceSmooth(c, pts) {
+    c.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length - 1; i++) {
+      const mx = (pts[i].x + pts[i + 1].x) / 2;
+      const my = (pts[i].y + pts[i + 1].y) / 2;
+      c.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+    }
+    c.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+  }
+
+  // Fill area under curve
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, pad.top + chartH);
+  ctx.lineTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length - 1; i++) {
+    const mx = (points[i].x + points[i + 1].x) / 2;
+    const my = (points[i].y + points[i + 1].y) / 2;
+    ctx.quadraticCurveTo(points[i].x, points[i].y, mx, my);
+  }
+  ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
+  ctx.lineTo(points[points.length - 1].x, pad.top + chartH);
+  ctx.closePath();
+
+  const gradient = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+  gradient.addColorStop(0, gradientTop);
+  gradient.addColorStop(1, gradientBottom);
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Draw line
+  ctx.beginPath();
+  traceSmooth(ctx, points);
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Draw dots
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const isLast = i === points.length - 1;
+    if (isLast) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+      ctx.fillStyle = isDark ? 'rgba(165, 180, 252, 0.25)' : 'rgba(99, 102, 241, 0.18)';
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, isLast ? 4 : 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = accentColor;
+    ctx.fill();
+    ctx.strokeStyle = isDark ? '#1a1a1e' : '#ffffff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Date labels (every 3 days)
+  ctx.fillStyle = textColor;
+  ctx.font = '9px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < days.length; i += 3) {
+    const d = new Date(days[i] + 'T12:00:00');
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    ctx.fillText(label, points[i].x, h - pad.bottom + 14);
+  }
+}
+
+// ─── DAY-BY-DAY TABLE ──────────────────────────────────────
+function renderTable(tasks) {
+  const tbody = document.getElementById('analyticsTableBody');
+  if (!tbody) return;
+
+  // Group tasks by date
+  const dateMap = {};
+  for (const t of tasks) {
+    if (!dateMap[t.date]) dateMap[t.date] = [];
+    dateMap[t.date].push(t);
+  }
+
+  const sortedDates = Object.keys(dateMap).sort().reverse();
+  if (sortedDates.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-tertiary)">No data</td></tr>';
+    return;
+  }
+
+  let html = '';
+  for (const date of sortedDates.slice(0, 30)) {
+    const dayTasks = dateMap[date];
+    const activeTasks = dayTasks.filter(t => !t.completed);
+    let totalMins = 0;
+    let deepMins = 0;
+    let studyMins = 0;
+
+    for (const t of activeTasks) {
+      const dur = getTaskDuration(t);
+      totalMins += dur;
+      if (t.tag === 'deep-work') deepMins += dur;
+      if (t.tag === 'study') studyMins += dur;
+    }
+
+    const d = new Date(date + 'T12:00:00');
+    const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const otherMins = totalMins - deepMins - studyMins;
+
+    html += `<tr>
+      <td>${label}</td>
+      <td class="num">${activeTasks.length}</td>
+      <td class="num">${formatHrs(totalMins)}</td>
+      <td class="num">${formatHrs(deepMins)}</td>
+      <td class="num">${formatHrs(studyMins)}</td>
+      <td class="num">${formatHrs(otherMins)}</td>
+    </tr>`;
+  }
+  tbody.innerHTML = html;
+}
+
+
+// ─── SLEEP CHARTS ─────────────────────────────────────────
+const sleepCanvas = document.getElementById('sleepChart');
+
+function renderSleepAnalytics() {
+  const logs = loadSleepLogs();
+  const now = new Date();
+  const ws = getMonday(now);
+
+  // Get last 7 days
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    days.push(formatDate(d));
+  }
+
+  const weekLogs = [];
+  for (const ds of days) {
+    const log = getSleepLog(ds);
+    if (log) weekLogs.push(log);
+  }
+
+  // Duration stats
+  const durEl = document.getElementById('sleepAnalyticsDuration');
+  const durSubEl = document.getElementById('sleepAnalyticsDurationSub');
+  if (weekLogs.length > 0) {
+    const totalMins = weekLogs.reduce((s, l) => s + l.duration, 0);
+    const avgMins = Math.round(totalMins / weekLogs.length);
+    durEl.textContent = formatSleepMinutes(avgMins);
+    durSubEl.textContent = 'Average across ' + weekLogs.length + ' nights';
+
+    // Show target comparison
+    const targets = loadSleepTargets();
+    const targetDurEl = document.getElementById('sleepAnalyticsTarget');
+    if (targetDurEl) {
+      const diff = avgMins - targets.targetDuration;
+      if (Math.abs(diff) < 30) {
+        targetDurEl.textContent = 'On track with target (' + formatSleepMinutes(targets.targetDuration) + ')';
+        targetDurEl.style.color = '#10b981';
+      } else if (diff > 0) {
+        targetDurEl.textContent = '+' + formatSleepMinutes(diff) + ' over ' + formatSleepMinutes(targets.targetDuration) + ' target';
+        targetDurEl.style.color = '#10b981';
+      } else {
+        targetDurEl.textContent = formatSleepMinutes(Math.abs(diff)) + ' under ' + formatSleepMinutes(targets.targetDuration) + ' target';
+        targetDurEl.style.color = '#ef4444';
+      }
+    }
+  } else {
+    durEl.textContent = '—';
+    durSubEl.textContent = 'No sleep data';
+  }
+
+  // Consistency score
+  const consistencyEl = document.getElementById('sleepAnalyticsConsistency');
+  const consistencySubEl = document.getElementById('sleepAnalyticsConsistencySub');
+  if (consistencyEl) {
+    const consistency = getSleepConsistencyScore(logs);
+    if (consistency) {
+      consistencyEl.textContent = consistency.score;
+      if (consistencySubEl) {
+        consistencySubEl.textContent = 'Bedtime varies by ' + consistency.bedVariance + 'min, wake by ' + consistency.wakeVariance + 'min';
+      }
+    } else {
+      consistencyEl.textContent = '—';
+      if (consistencySubEl) consistencySubEl.textContent = 'Log 3+ nights to calculate';
+    }
+  }
+
+  // Sleep debt
+  const debtEl = document.getElementById('sleepAnalyticsDebt');
+  const debtSubEl = document.getElementById('sleepAnalyticsDebtSub');
+  if (debtEl) {
+    const targets = loadSleepTargets();
+    const debt = getSleepDebt(logs, targets);
+    if (debt.daysWithData > 0) {
+      const totalHours = Math.round(debt.totalDebt / 60 * 10) / 10;
+      const sign = totalHours > 0 ? '+' : '';
+      debtEl.textContent = sign + totalHours.toFixed(1) + 'h';
+      debtEl.style.color = totalHours > 1 ? '#10b981' : totalHours < -1 ? '#ef4444' : 'var(--text-primary)';
+      if (debtSubEl) debtSubEl.textContent = totalHours > 0 ? 'Surplus over 14 days' : totalHours < 0 ? 'Deficit over 14 days' : 'Balanced';
+    } else {
+      debtEl.textContent = '—';
+      if (debtSubEl) debtSubEl.textContent = 'No sleep data';
+    }
+  }
+
+  // Quality stats
+  const qEl = document.getElementById('sleepAnalyticsQuality');
+  const qSubEl = document.getElementById('sleepAnalyticsQualitySub');
+  const qFillEl = document.getElementById('sleepQualityFill');
+  const qScoreEl = document.getElementById('sleepQualityScore');
+  const logCountEl = document.getElementById('sleepLogCount');
+  const bestNightEl = document.getElementById('sleepBestNight');
+  if (weekLogs.length > 0) {
+    const avgQ = weekLogs.reduce((s, l) => s + l.quality, 0) / weekLogs.length;
+    qEl.textContent = avgQ.toFixed(1) + ' / 5';
+    qSubEl.textContent = 'Average sleep quality';
+    qFillEl.style.width = (avgQ / 5 * 100) + '%';
+    qScoreEl.textContent = avgQ.toFixed(1);
+    logCountEl.textContent = weekLogs.length;
+    const best = weekLogs.reduce((a, b) => a.quality > b.quality ? a : b, weekLogs[0]);
+    bestNightEl.textContent = best ? formatSleepMinutes(best.duration) : '—';
+  } else {
+    qEl.textContent = '—';
+    qSubEl.textContent = 'No sleep data';
+    qFillEl.style.width = '0%';
+    qScoreEl.textContent = '0';
+    logCountEl.textContent = '0';
+    bestNightEl.textContent = '—';
+  }
+
+  // Sleep chart
+  renderSleepChart(weekLogs, days);
+}
+
+function renderSleepChart(weekLogs, days) {
+  if (!sleepCanvas) return;
+  const ctx = sleepCanvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = sleepCanvas.getBoundingClientRect();
+  sleepCanvas.width = rect.width * dpr;
+  sleepCanvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  const w = rect.width;
+  const h = rect.height;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const isDark = document.documentElement.classList.contains('dark');
+  const textColor = isDark ? '#8a8a96' : '#6b6b78';
+  const gridColor = isDark ? '#23232a' : '#e8e8ee';
+  const accentColor = isDark ? '#a5b4fc' : '#6366f1';
+  const fillColor = isDark ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)';
+
+  // Build day data
+  const dayData = days.map((ds, i) => {
+    const log = weekLogs.find(l => l.date === ds);
+    return {
+      label: new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'narrow' }),
+      mins: log ? log.duration : 0,
+      quality: log ? log.quality : 0,
+      hasData: !!log
+    };
+  });
+
+  const maxMins = Math.max(...dayData.map(d => d.mins), 480);
+
+  const pad = { top: 10, bottom: 20, left: 5, right: 5 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  // Grid lines
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.top + (chartH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // Bars
+  const barW = Math.min(24, chartW / days.length * 0.55);
+  const gap = chartW / days.length;
+
+  for (let i = 0; i < dayData.length; i++) {
+    const d = dayData[i];
+    if (!d.hasData) continue;
+    const x = pad.left + gap * i + (gap - barW) / 2;
+    const barH = (d.mins / maxMins) * chartH;
+    const y = pad.top + chartH - barH;
+
+    // Bar with rounded top
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, barH, [2, 2, 0, 0]);
+    ctx.fillStyle = accentColor;
+    ctx.globalAlpha = 0.4 + (d.quality / 5) * 0.6;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Label
+    ctx.fillStyle = textColor;
+    ctx.font = '9px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.label, x + barW / 2, h - pad.bottom + 12);
+  }
+
+  // 8-hour reference line
+  const refY = pad.top + chartH - (480 / maxMins) * chartH;
+  ctx.strokeStyle = isDark ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.2)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  ctx.moveTo(pad.left, refY);
+  ctx.lineTo(w - pad.right, refY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // "8h" label
+  ctx.fillStyle = isDark ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.3)';
+  ctx.font = '8px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('8h', w - pad.right - 14, refY - 2);
+}
+
+// Add roundRect polyfill for canvas
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
+    const r = Array.isArray(radii) ? radii : [radii, radii, radii, radii];
+    const [tl, tr, br, bl] = r.map(v => Math.min(v || 0, Math.min(w, h) / 2));
+    this.moveTo(x + tl, y);
+    this.lineTo(x + w - tr, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + tr);
+    this.lineTo(x + w, y + h - br);
+    this.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+    this.lineTo(x + bl, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - bl);
+    this.lineTo(x, y + tl);
+    this.quadraticCurveTo(x, y, x + tl, y);
+    this.closePath();
+  };
+}
+
+// ─── MAIN RENDER ───────────────────────────────────────────
+function renderAnalytics() {
+  const tasks = getFilteredTasks();
+  renderSummary(tasks);
+  renderCompletion(tasks);
+  renderStreak(tasks);
+  renderPieChart(tasks);
+  renderBarChart(tasks);
+  renderTrendChart(tasks);
+  renderTable(tasks);
+  renderSleepAnalytics();
+
+  const labelEl = document.getElementById('detailPeriodLabel');
+  if (labelEl) {
+    const map = { week: 'This Week', month: 'This Month', all: 'All Time' };
+    labelEl.textContent = map[currentPeriod] || 'All Time';
+  }
+}
+

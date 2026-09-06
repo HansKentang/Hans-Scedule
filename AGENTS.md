@@ -5,8 +5,8 @@
 | Command | Description | Example |
 |---------|-------------|---------|
 | `help` | Show this list of available commands | `help` |
-| `layout [page]` | Show structured page diagram with sections, controls, and modals | `layout analytics` |
-| `layout all` | Show all 7 pages at a glance (hub, schedule, activities, analytics, goals, finance, gallery) | `layout all` |
+| `layout [page]` | Show structured page diagram with sections, controls, and modals | `layout progress` |
+| `layout all` | Show all 6 pages at a glance (hub, schedule, progress, goals, finance, gallery) | `layout all` |
 | `layout bubbles` | Show all bubble types (access hub, plus, bento, chat, AI, subcategory) | `layout bubbles` |
 | `layout widgets` | Show all 15 bento canvas widgets (clock, spotify, weather, habits, todos, etc.) | `layout widgets` |
 | `layout panels` | Show all panels/drawers (hub menu, AI chat, friend chat) | `layout panels` |
@@ -25,11 +25,12 @@
 | File | Role |
 |------|------|
 | `js/shared.js` | Core state, storage (localStorage + IndexedDB), helpers, AI |
+| `js/progress.js` | Progress page logic (merged board/timeline/log/chart + analytics dashboard) |
 | `js/schedule.js` | Schedule page logic: grid, tasks, drag/drop, focus |
 | `js/hub-visuals.js` | Bento canvas hub: bubbles, undo/redo, widgets |
 | `schedule.html` | Schedule page DOM + CSS |
 | `finance.html` | Finance page DOM + CSS |
-| `activities.html` | Activities page DOM + CSS |
+| `progress.html` | Progress page DOM (merged Activities + Analytics) |
 | `index.html` | Hub page DOM + CSS |
 
 ## Key Storage Keys
@@ -85,13 +86,12 @@
 
 All pages share a common shell: `.hub-layout` (flex row) → `.hub-sidebar` (220px, nav + Spotify + footer) + `.hub-main` (flex column, scrollable).
 
-### `layout all` — 7 Pages at a Glance
+### `layout all` — 6 Pages at a Glance
 
 ```
 hub        │ hero(220px) → bento canvas → sleep → gallery cards → footer
 schedule   │ hero(180px) → header+pills → time grid → FAB → pomodoro → footer
-activities │ hero → board(columns) / timeline ↔ chart + activity log
-analytics  │ hero → KPIs(4) → completion+streak → pie+bar charts → trend → sleep → table
+progress │ hero → board(columns) / timeline ↔ chart + log → KPIs → completion+streak → pie+bar → trend → sleep → table
 goals      │ hero → goal cards(grid) → vision board(3 imgs) → related tasks → footer
 finance    │ hero → income/expense KPIs → piggy+wallet → charts → table+form → intelligence
 gallery    │ hero → image grid → footer
@@ -194,7 +194,7 @@ gallery    │ hero → image grid → footer
 
 ---
 
-### `layout activities`
+### `layout progress` — activities half
 
 ```
 ┌────────────────────────────────────────────────────┐
@@ -239,7 +239,7 @@ gallery    │ hero → image grid → footer
 
 ---
 
-### `layout analytics`
+### `layout progress` — analytics half
 
 ```
 ┌────────────────────────────────────────────────────┐

@@ -3,7 +3,7 @@ const fs = require('fs');
   try { new Function(fs.readFileSync(f,'utf8')); console.log(f+': JS OK'); }
   catch(e) { console.log(f+': ERROR: '+e.message.replace(/\n/g,' | ')); }
 });
-['index.html','schedule.html','activities.html','analytics.html','goals.html','finance.html','gallery.html','friends.html'].forEach(function(f) {
+['index.html','schedule.html','progress.html','goals.html','finance.html','gallery.html','friends.html'].forEach(function(f) {
   var html = fs.readFileSync(f,'utf8');
   if (html.indexOf('<!DOCTYPE html>') === 0 && html.indexOf('</html>') > 0) {
     var matches = html.match(/data-i18n="[^"]*">/g);
