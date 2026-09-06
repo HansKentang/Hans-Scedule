@@ -24,6 +24,13 @@
     .gl-hero {
       position: relative; height: 200px; overflow: hidden;
     }
+    @keyframes kenBurns {
+      0% { transform: scale(1) translate(0, 0); }
+      25% { transform: scale(1.08) translate(-1%, -0.5%); }
+      50% { transform: scale(1.12) translate(0.5%, -1%); }
+      75% { transform: scale(1.06) translate(-0.5%, 0.5%); }
+      100% { transform: scale(1) translate(0, 0); }
+    }
     @keyframes glHeroBreath {
       0%, 100% { filter: brightness(1); }
       50% { filter: brightness(1.05); }
@@ -31,12 +38,11 @@
     .gl-hero-bg {
       width: 100%; height: 100%; object-fit: cover;
       opacity: 0.5;
-      transition: opacity 0.6s ease, transform 0.6s var(--curve);
-      animation: glHeroBreath 6s ease-in-out infinite;
+      transition: opacity 0.6s ease;
+      animation: kenBurns 20s ease-in-out infinite, glHeroBreath 6s ease-in-out infinite;
     }
     .gl-hero:hover .gl-hero-bg {
       opacity: 0.55;
-      transform: scale(1.02);
     }
     .gl-hero-overlay {
       position: absolute; inset: 0;
@@ -138,7 +144,7 @@
       transition: transform 400ms var(--curve);
     }
     .gal-actions-row .btn:hover svg {
-      transform: scale(1.15) rotate(90deg);
+      transform: scale(1.15);
     }
     #galAddBtn {
       border-color: color-mix(in srgb, var(--primary) 40%, var(--border-color));
@@ -148,9 +154,67 @@
       background: color-mix(in srgb, var(--primary) 10%, transparent);
       box-shadow: 0 4px 16px color-mix(in srgb, var(--primary) 12%, transparent);
     }
-    .gal-actions-row {
-      display: flex; gap: var(--space-2);
+    /* Column toggle */
+    .gal-col-toggle {
+      display: flex; gap: 4px; background: var(--surface-container); border-radius: 8px; padding: 3px;
     }
+    .gal-col-btn {
+      width: 28px; height: 28px; border-radius: 6px; border: none;
+      background: transparent; color: var(--text-primary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 600; font-family: var(--font-mono);
+      transition: all 0.2s ease; opacity: 0.5;
+    }
+    .gal-col-btn:hover { opacity: 0.8; }
+    .gal-col-btn.active {
+      background: var(--primary); color: var(--text-inverse); opacity: 1;
+    }
+    /* Lightbox */
+    .gal-lightbox {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.92);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .gal-lightbox.open { opacity: 1; visibility: visible; }
+    .gal-lightbox-img {
+      max-width: 90vw; max-height: 85vh;
+      border-radius: 8px; object-fit: contain;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      user-select: none; -webkit-user-select: none;
+    }
+    .gal-lightbox-close {
+      position: absolute; top: 16px; right: 16px;
+      width: 40px; height: 40px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.1); color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    .gal-lightbox-close:hover { background: rgba(255,255,255,0.2); transform: scale(1.1); }
+    .gal-lightbox-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 44px; height: 44px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.08); color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.2s;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    .gal-lightbox-nav:hover { background: rgba(255,255,255,0.18); transform: translateY(-50%) scale(1.1); }
+    .gal-lightbox-prev { left: 16px; }
+    .gal-lightbox-next { right: 16px; }
+    .gal-lightbox-info {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 16px; border-radius: 24px;
+      background: rgba(255,255,255,0.08); backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.7); font-size: 0.72rem; font-weight: 500;
+      white-space: nowrap;
+    }
+    .gal-lightbox-info .lb-counter { font-family: var(--font-mono); opacity: 0.5; }
 
     .gal-item {
       position: relative;
@@ -158,23 +222,35 @@
       overflow: hidden;
       background: var(--surface-container-low);
       cursor: pointer;
-      transition: transform 200ms ease, box-shadow 200ms ease;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
       break-inside: avoid;
       margin-bottom: 16px;
     }
     .gal-item:hover {
-      box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+      transform: translateY(-6px) scale(1.015);
+      box-shadow: 0 16px 40px -8px rgba(0,0,0,0.35), 0 4px 12px -2px rgba(0,0,0,0.2);
     }
     .gal-item:active {
-      transform: scale(0.98);
+      transform: translateY(-2px) scale(0.99);
       transition-duration: 80ms;
     }
     .gal-item img {
       width: 100%; height: auto;
       display: block;
       border-radius: 16px;
+      transition: filter 0.35s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .gal-item:hover img { filter: brightness(0.85); }
+    .gal-item:hover img { filter: brightness(0.85); transform: scale(1.03); }
+    /* Lazy load fade-in */
+    .gal-item img.lazy {
+      opacity: 0;
+      transform: scale(0.97);
+      transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), filter 0.35s ease;
+    }
+    .gal-item img.lazy.loaded {
+      opacity: 1;
+      transform: scale(1);
+    }
     .gal-item-overlay {
       position: absolute; inset: 0;
       display: flex; align-items: flex-start; justify-content: flex-end;
@@ -262,7 +338,7 @@
     }
     .gal-item-placeholder:hover svg {
       opacity: 0.7;
-      transform: scale(1.15) rotate(5deg);
+      transform: scale(1.15);
     }
     .gal-item-placeholder span {
       font-size: 0.75rem; font-weight: 500;
@@ -527,6 +603,11 @@
               <span class="gal-top-count" id="galCount">0 images</span>
             </div>
             <div class="gal-actions-row">
+              <div class="gal-col-toggle" id="galColToggle">
+                <button class="gal-col-btn" data-cols="2">2</button>
+                <button class="gal-col-btn active" data-cols="3">3</button>
+                <button class="gal-col-btn" data-cols="4">4</button>
+              </div>
               <button class="btn btn-ghost" id="galResetBtn" title="Reset all gallery images" style="display:none">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
                 Reset
@@ -573,10 +654,36 @@
     </button>
   </div>
 
+  <!-- ─── LIGHTBOX ────────────────────────────── -->
+  <div class="gal-lightbox" id="galLightbox">
+    <button class="gal-lightbox-close" id="lbClose" aria-label="Close">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    <button class="gal-lightbox-nav gal-lightbox-prev" id="lbPrev" aria-label="Previous">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <img class="gal-lightbox-img" id="lbImg" src="" alt="">
+    <button class="gal-lightbox-nav gal-lightbox-next" id="lbNext" aria-label="Next">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <div class="gal-lightbox-info">
+      <span class="lb-counter" id="lbCounter">1 / 6</span>
+    </div>
+  </div>
+
   <!-- ─── IMAGE PICKER ───────────────────────── -->
   <div id="imagePickerOverlay" class="image-picker-overlay hidden">
     <div class="image-picker-card" onclick="event.stopPropagation()">
-      <h3>Customize Image</h3>
+      <h3>
+        <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--accent-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </div>
+        Customize Image
+        <button class="settings-drawer-close" onclick="closeImagePicker()" aria-label="Close" style="margin-left:auto">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </h3>
+      <div style="flex:1;overflow-y:auto;padding:var(--space-5) var(--space-6) var(--space-6)">
       <img id="imagePickerPreview" class="image-picker-preview" src="" alt="">
       <div class="image-picker-pastezone" id="imagePickerPasteZone" tabindex="0" contenteditable="true" onpaste="handleImagePickerPaste(event)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
@@ -597,8 +704,9 @@
       </div>
       <div class="image-picker-actions">
         <button class="drawer-btn" onclick="closeImagePicker()" style="flex:1">Cancel</button>
-        <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1" data-i18n="gal.reset">Reset</button>
+        <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
         <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
+      </div>
       </div>
     </div>
   </div>
@@ -682,11 +790,20 @@
   </div>
 
   <!-- ─── HELP MODAL ───────────────────────────── -->
-  <div id="helpOverlay" class="overlay hidden"></div>
-  <div id="helpModal" class="modal modal-sm hidden" role="dialog" aria-label="Help and Shortcuts">
+  <div id="helpOverlay" class="hidden"></div>
+  <div id="helpModal" class="hidden" role="dialog" aria-label="Help and Shortcuts">
     <div class="modal-header">
-      <h3><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Help and Shortcuts</h3>
-      <button id="helpModalClose" class="btn btn-ghost modal-close" aria-label="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <h3>
+        <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--accent-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        Help and Shortcuts
+      </h3>
+      <button id="helpModalClose" class="modal-close" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
     <div class="modal-body">
       <div class="help-section">
@@ -747,11 +864,15 @@
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
     <div class="sp-modal">
       <div class="sp-modal-header">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
-        <h2>Playlists</h2>
-        <button class="sp-modal-close" onclick="spCloseSettings()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <h2>
+          <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--accent-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
+          </div>
+          Playlists
+          <button class="sp-modal-close" onclick="spCloseSettings()" style="margin-left:auto">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </h2>
       </div>
       <div class="sp-modal-body">
         <div class="sp-add-row">
@@ -765,6 +886,35 @@
           <iframe id="spModalEmbed" src="about:blank" allow="encrypted-media; autoplay" allowfullscreen></iframe>
         </div>
         <div class="sp-list" id="spList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── ONBOARDING TUTORIAL ──────────────────────────────── -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-spotlight hidden" id="tutorialSpotlight"></div>
+    <div class="tutorial-tooltip" id="tutorialTooltip">
+      <div class="tutorial-tooltip-header">
+        <div class="tutorial-tooltip-icon" id="tutorialIcon"></div>
+        <span class="tutorial-tooltip-step" id="tutorialStep"></span>
+      </div>
+      <div class="tutorial-tooltip-body">
+        <div class="tutorial-tooltip-title" id="tutorialTitle"></div>
+        <div class="tutorial-tooltip-desc" id="tutorialDesc"></div>
+      </div>
+      <div class="tutorial-tooltip-footer">
+        <button class="tutorial-btn tutorial-btn-skip" id="tutorialSkip">Skip</button>
+        <div class="tutorial-progress" id="tutorialProgress"></div>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="tutorial-btn tutorial-btn-prev hidden" id="tutorialPrev">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <button class="tutorial-btn tutorial-btn-next" id="tutorialNext">
+            Next
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -795,5 +945,149 @@
   </nav>
 
   <script>spInit();</script>
+
+  <!-- Gallery enhancements: lazy load, column toggle, lightbox -->
+  <script>
+    (function() {
+      // ─── Lazy Load ───
+      function initLazyLoad() {
+        var imgs = document.querySelectorAll('.gal-item img:not(.lazy-loaded)');
+        if (!imgs.length) return;
+        if ('IntersectionObserver' in window) {
+          var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(e) {
+              if (e.isIntersecting) {
+                var img = e.target;
+                img.classList.add('lazy', 'loaded');
+                obs.unobserve(img);
+              }
+            });
+          }, { rootMargin: '100px' });
+          imgs.forEach(function(img) { obs.observe(img); });
+        } else {
+          imgs.forEach(function(img) { img.classList.add('lazy', 'loaded'); });
+        }
+      }
+      initLazyLoad();
+      if (typeof MutationObserver !== 'undefined') {
+        var grid = document.getElementById('galGrid');
+        if (grid) {
+          new MutationObserver(function() { initLazyLoad(); }).observe(grid, { childList: true, subtree: true });
+        }
+      }
+
+      // ─── Column Toggle ───
+      var galColToggle = document.getElementById('galColToggle');
+      var galCanvas = document.querySelector('.gal-canvas');
+      if (galColToggle && galCanvas) {
+        var savedCols = parseInt(localStorage.getItem('gal-columns')) || 3;
+        galCanvas.style.columnCount = savedCols;
+        galColToggle.querySelectorAll('.gal-col-btn').forEach(function(btn) {
+          btn.classList.toggle('active', parseInt(btn.dataset.cols) === savedCols);
+          btn.addEventListener('click', function() {
+            var cols = parseInt(this.dataset.cols);
+            galCanvas.style.columnCount = cols;
+            galColToggle.querySelectorAll('.gal-col-btn').forEach(function(b) { b.classList.remove('active'); });
+            this.classList.add('active');
+            localStorage.setItem('gal-columns', cols);
+          });
+        });
+      }
+
+      // ─── Lightbox ───
+      var lightbox = document.getElementById('galLightbox');
+      var lbImg = document.getElementById('lbImg');
+      var lbCounter = document.getElementById('lbCounter');
+      var lbImages = [];
+      var lbIndex = 0;
+      var lbStartX = 0;
+      var lbDragging = false;
+
+      function collectImages() {
+        lbImages = [];
+        document.querySelectorAll('.gal-item img').forEach(function(img) {
+          if (img.src && img.src !== location.href) lbImages.push(img.src);
+        });
+      }
+
+      function openLightbox(index) {
+        collectImages();
+        if (!lbImages.length) return;
+        lbIndex = index;
+        updateLightbox();
+        lightbox.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeLightbox() {
+        lightbox.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+
+      function updateLightbox() {
+        if (!lbImages.length) return;
+        lbImg.src = lbImages[lbIndex];
+        lbCounter.textContent = (lbIndex + 1) + ' / ' + lbImages.length;
+      }
+
+      function lbNext() {
+        lbIndex = (lbIndex + 1) % lbImages.length;
+        updateLightbox();
+      }
+
+      function lbPrev() {
+        lbIndex = (lbIndex - 1 + lbImages.length) % lbImages.length;
+        updateLightbox();
+      }
+
+      // Click on gallery items to open lightbox
+      var galGrid = document.getElementById('galGrid');
+      if (galGrid) {
+        galGrid.addEventListener('click', function(e) {
+          var item = e.target.closest('.gal-item');
+          if (!item) return;
+          var img = item.querySelector('img');
+          if (!img || !img.src) return;
+          collectImages();
+          var idx = lbImages.indexOf(img.src);
+          if (idx === -1) idx = 0;
+          openLightbox(idx);
+        });
+      }
+
+      // Lightbox controls
+      if (lightbox) {
+        document.getElementById('lbClose').addEventListener('click', closeLightbox);
+        document.getElementById('lbPrev').addEventListener('click', lbPrev);
+        document.getElementById('lbNext').addEventListener('click', lbNext);
+        lightbox.addEventListener('click', function(e) {
+          if (e.target === lightbox) closeLightbox();
+        });
+        // Keyboard
+        document.addEventListener('keydown', function(e) {
+          if (!lightbox.classList.contains('open')) return;
+          if (e.key === 'Escape') closeLightbox();
+          if (e.key === 'ArrowLeft') lbPrev();
+          if (e.key === 'ArrowRight') lbNext();
+        });
+        // Swipe
+        lightbox.addEventListener('touchstart', function(e) {
+          lbStartX = e.touches[0].clientX;
+          lbDragging = true;
+        }, { passive: true });
+        lightbox.addEventListener('touchmove', function(e) {
+          if (!lbDragging) return;
+        }, { passive: true });
+        lightbox.addEventListener('touchend', function(e) {
+          if (!lbDragging) return;
+          lbDragging = false;
+          var dx = e.changedTouches[0].clientX - lbStartX;
+          if (Math.abs(dx) > 50) {
+            if (dx < 0) lbNext(); else lbPrev();
+          }
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

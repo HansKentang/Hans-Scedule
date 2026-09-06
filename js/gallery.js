@@ -753,6 +753,11 @@ function init() {
   document.getElementById('focusToggleBtn')?.addEventListener('click', toggleFocusMode);
 
   pageAfterImport = () => { renderGallery(); };
+
+  // Auto-trigger tutorial for new users
+  if (!hasSeenTutorial('gallery') && typeof startTutorial === "function") {
+    try { setTimeout(function() { startTutorial(GALLERY_TUTORIAL_STEPS); }, 500); } catch(e) {}
+  }
 }
 
 if (document.readyState === 'loading') {

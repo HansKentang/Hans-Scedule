@@ -95,6 +95,77 @@
       background: radial-gradient(circle, rgba(255,255,255,0.055) 0%, transparent 65%);
       animation: glowDrift2 20s ease-in-out infinite alternate;
     }
+
+    /* ─── Corner Shapes ─── */
+    .corner-shape {
+      position: absolute;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Top-left: quarter-circle arc */
+    .corner-tl {
+      top: -40px; left: -40px;
+      width: 140px; height: 140px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .corner-tl::before {
+      content: '';
+      position: absolute;
+      top: 20px; left: 20px;
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* Bottom-right: quarter-circle arc */
+    .corner-br {
+      bottom: -50px; right: -50px;
+      width: 160px; height: 160px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .corner-br::before {
+      content: '';
+      position: absolute;
+      top: 24px; left: 24px;
+      width: 112px; height: 112px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* Top-right: small diamond */
+    .corner-tr {
+      top: 32px; right: 32px;
+      width: 16px; height: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      transform: rotate(45deg);
+    }
+
+    /* Bottom-left: small diamond */
+    .corner-bl {
+      bottom: 32px; left: 32px;
+      width: 12px; height: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      transform: rotate(45deg);
+    }
+
+    /* Mid-left: thin line accent */
+    .corner-ml {
+      top: 50%; left: 0;
+      width: 40px; height: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
+      transform: translateY(-50%);
+    }
+
+    /* Mid-right: thin line accent */
+    .corner-mr {
+      top: 50%; right: 0;
+      width: 40px; height: 1px;
+      background: linear-gradient(270deg, rgba(255,255,255,0.1), transparent);
+      transform: translateY(-50%);
+    }
     @keyframes glowDrift1 {
       0% { transform: translate(0, 0) scale(1); }
       100% { transform: translate(44px, 32px) scale(1.18); }
@@ -152,7 +223,7 @@
       transition: transform 0.3s var(--bounce);
     }
     .auth-brand:hover .auth-brand-icon {
-      transform: scale(1.1) rotate(-4deg);
+      transform: scale(1.1);
     }
     .auth-brand-icon img {
       width: 100%; height: 100%; object-fit: cover;
@@ -505,7 +576,6 @@
       pointer-events: none;
     }
 
-    /* ─── Carousel ─── */
     .auth-carousel {
       position: relative;
       z-index: 1;
@@ -518,52 +588,147 @@
       border-radius: 16px;
       padding: 14px 14px 10px;
       box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05);
-      perspective: 1000px;
-      transition: transform 0.3s var(--bounce), box-shadow 0.3s var(--bounce);
+      perspective: 1400px;
+      overflow: hidden;
+      isolation: isolate;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: grab;
+      transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--cs, 1));
+      transition: transform 0.45s var(--smooth), box-shadow 0.45s var(--smooth), border-color 0.45s var(--smooth);
+      will-change: transform;
     }
     .auth-carousel:hover {
-      transform: scale(1.01);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+      --cs: 1.012;
+      box-shadow: 0 14px 44px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.07);
+      border-color: rgba(0,0,0,0.14);
+    }
+    .auth-carousel.is-dragging {
+      --cs: 0.995;
+      cursor: grabbing;
+      transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    }
+    .auth-carousel:active {
+      cursor: grabbing;
+    }
+    .auth-carousel::after {
+      content: '';
+      position: absolute;
+      inset: -40%;
+      z-index: 4;
+      background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,0.55) 50%, transparent 58%);
+      transform: translateX(-70%) skewX(-8deg);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .auth-carousel.sweep::after {
+      animation: carouselSweep 0.85s var(--smooth) both;
+    }
+    @keyframes carouselSweep {
+      0% { transform: translateX(-70%) skewX(-8deg); opacity: 0; }
+      15% { opacity: 1; }
+      100% { transform: translateX(70%) skewX(-8deg); opacity: 0; }
+    }
+    .auth-carousel-progress {
+      position: absolute;
+      top: 0; left: 14px; right: 14px;
+      height: 2px;
+      z-index: 5;
+      border-radius: 2px;
+      background: rgba(0,0,0,0.07);
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .auth-carousel-progress span {
+      display: block;
+      height: 100%;
+      width: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, rgba(0,0,0,0.45), rgba(0,0,0,0.75));
+      transform-origin: left center;
+      transform: scaleX(0);
+    }
+    .auth-carousel-progress.run span {
+      animation: carouselProgressFill 5s linear both;
+    }
+    .auth-carousel-progress.paused span {
+      animation-play-state: paused;
+    }
+    @keyframes carouselProgressFill {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+    .auth-carousel-viewport {
+      overflow: hidden;
+      border-radius: 10px;
     }
     .auth-carousel-track {
       display: flex;
-      transition: transform 1.4s cubic-bezier(0.25, 1, 0.35, 1);
+      width: 100%;
       will-change: transform;
+      transform: translate3d(0,0,0);
+    }
+    .auth-carousel.is-animating .auth-carousel-track {
+      pointer-events: none;
     }
     .auth-carousel-slide {
       flex: 0 0 100%;
       min-width: 0;
-      transition: transform 1.2s cubic-bezier(0.25, 1, 0.35, 1), opacity 0.8s ease;
+      transform-origin: center center;
+      will-change: transform, opacity, filter;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      transform: translate3d(0,0,0) scale(0.93);
+      opacity: 0.4;
+      filter: blur(3px) brightness(0.82) saturate(0.85);
+      transition: transform 0.65s var(--smooth), opacity 0.65s var(--smooth), filter 0.65s var(--smooth);
+    }
+    .auth-carousel.is-dragging .auth-carousel-slide {
+      transition: none;
     }
     .auth-carousel-slide svg {
       width: 100%; height: auto;
       display: block;
       border-radius: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      transition: transform 0.8s cubic-bezier(0.25, 1, 0.35, 1);
+      transform: translate3d(0,0,0) scale(1);
+      will-change: transform;
     }
     .auth-carousel-slide.active-slide {
-      transform: scale(1) translateZ(0);
+      transform: translate3d(0,0,0) scale(1);
       opacity: 1;
+      filter: blur(0) brightness(1) saturate(1);
     }
     .auth-carousel-slide.active-slide svg {
-      transform: scale(1);
+      box-shadow: 0 10px 32px rgba(0,0,0,0.4);
+      animation: slideInnerPop 0.7s var(--smooth) both;
+    }
+    @keyframes slideInnerPop {
+      0% { transform: scale(0.965) translateY(10px); }
+      60% { transform: scale(1.004) translateY(-2px); }
+      100% { transform: scale(1) translateY(0); }
     }
     .auth-carousel-slide.inactive-slide {
-      transform: scale(0.96) translateZ(-10px);
-      opacity: 0.5;
+      transform: translate3d(0,0,0) scale(0.93);
+      opacity: 0.4;
+      filter: blur(3px) brightness(0.82) saturate(0.85);
     }
     .auth-carousel-slide.inactive-slide svg {
-      transform: scale(0.98);
+      box-shadow: 0 4px 18px rgba(0,0,0,0.24);
+    }
+    .auth-carousel-slide.exit-left {
+      transform: translate3d(-26px,0,0) scale(0.9) rotateY(9deg);
+    }
+    .auth-carousel-slide.enter-right {
+      transform: translate3d(26px,0,0) scale(0.9) rotateY(-9deg);
     }
 
 
-    /* --- Carousel Label Strip --- */
     .auth-carousel-label {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 2px 8px;
+      padding: 2px 2px 8px;
       border-bottom: 1px solid rgba(0,0,0,0.04);
       margin-bottom: 8px;
     }
@@ -573,6 +738,15 @@
       color: rgba(0,0,0,0.35);
       letter-spacing: 0.08em;
       text-transform: uppercase;
+      display: inline-block;
+      min-width: 90px;
+    }
+    .auth-carousel-label-name.swap {
+      animation: labelSwap 0.5s var(--smooth) both;
+    }
+    @keyframes labelSwap {
+      0% { opacity: 0; transform: translateY(10px); filter: blur(5px); }
+      100% { opacity: 1; transform: translateY(0); filter: blur(0); }
     }
     .auth-carousel-label-name span {
       color: rgba(0,0,0,0.15);
@@ -582,48 +756,109 @@
       font-size: 0.55rem;
       color: rgba(0,0,0,0.12);
       font-family: var(--font-mono);
+      display: inline-block;
+      min-width: 32px;
+      text-align: right;
     }
-    /* Carousel dots */
+    .auth-carousel-label-index.swap {
+      animation: labelSwap 0.5s var(--smooth) both;
+    }
     .auth-carousel-dots {
       position: absolute;
-      bottom: 72px;
-      left: 0; right: 0;
-      z-index: 3;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 6;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
-      pointer-events: none;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(10,10,10,0.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+      pointer-events: auto;
     }
     .auth-carousel-dot {
+      position: relative;
       width: 6px; height: 6px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.15);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.28);
       border: none;
       cursor: pointer;
       padding: 0;
-      transition: all 0.3s var(--bounce);
-      pointer-events: auto;
+      overflow: hidden;
+      transition: width 0.45s var(--smooth), background 0.3s ease, transform 0.2s ease;
+    }
+    .auth-carousel-dot::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: #fff;
+      transform: scaleX(0);
+      transform-origin: left center;
     }
     .auth-carousel-dot.active {
-      width: 20px;
-      border-radius: 3px;
-      background: rgba(0,0,0,0.6);
+      width: 26px;
+      background: rgba(255,255,255,0.22);
+    }
+    .auth-carousel-dot.active::before {
+      animation: dotFill 5s linear both;
+    }
+    .auth-carousel-dots.paused .auth-carousel-dot.active::before {
+      animation-play-state: paused;
+    }
+    @keyframes dotFill {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
     }
     .auth-carousel-dot:hover {
-      background: rgba(0,0,0,0.35);
+      background: rgba(255,255,255,0.5);
+      transform: scale(1.12);
     }
     .auth-carousel-dot:active {
       transform: scale(0.85);
     }
-    .auth-carousel {
-      user-select: none;
-      -webkit-user-select: none;
-      cursor: grab;
+    .auth-carousel-arrow {
+      position: absolute;
+      top: 50%;
+      z-index: 6;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(10,10,10,0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(255,255,255,0.85);
+      font-size: 14px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(-50%) scale(0.85);
+      transition: opacity 0.3s ease, transform 0.3s var(--bounce), background 0.25s ease;
+      pointer-events: none;
     }
-    .auth-carousel:active {
-      cursor: grabbing;
+    .auth-carousel:hover .auth-carousel-arrow {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+      pointer-events: auto;
     }
+    .auth-carousel-arrow:hover {
+      background: rgba(10,10,10,0.75);
+      transform: translateY(-50%) scale(1.1);
+    }
+    .auth-carousel-arrow:active {
+      transform: translateY(-50%) scale(0.9);
+    }
+    .auth-carousel-prev { left: 22px; }
+    .auth-carousel-next { right: 22px; }
 
     /* Gradient overlay + quote at bottom */
     .auth-right-overlay {
@@ -732,6 +967,20 @@
       .auth-brand { margin-bottom: 2px; }
       .auth-footer { display: none; }
     }
+    @media (prefers-reduced-motion: reduce) {
+      .auth-carousel-track,
+      .auth-carousel-slide,
+      .auth-carousel-slide svg,
+      .auth-carousel,
+      .auth-carousel-dot,
+      .auth-carousel-progress span {
+        transition: none;
+        animation: none;
+      }
+      .auth-carousel::after {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -740,6 +989,15 @@
     <div class="auth-left">
       <div class="auth-glow auth-glow-1"></div>
       <div class="auth-glow auth-glow-2"></div>
+
+      <!-- Corner Shapes -->
+      <div class="corner-shape corner-tl"></div>
+      <div class="corner-shape corner-br"></div>
+      <div class="corner-shape corner-tr"></div>
+      <div class="corner-shape corner-bl"></div>
+      <div class="corner-shape corner-ml"></div>
+      <div class="corner-shape corner-mr"></div>
+
       <div class="auth-form-wrap">
         <!-- Brand -->
         <div class="auth-brand auth-reveal" style="--d:0.05s">
@@ -829,11 +1087,13 @@
     <!-- ═══════════ RIGHT: PREVIEW ═══════════ -->
     <div class="auth-right">
           <!-- Carousel Preview -->
-      <div class="auth-carousel">
+      <div class="auth-carousel" id="authCarousel">
+        <div class="auth-carousel-progress" id="carouselProgress"><span></span></div>
         <div class="auth-carousel-label">
           <span class="auth-carousel-label-name" id="carouselLabel">Schedule</span>
           <span class="auth-carousel-label-index" id="carouselIndex">1 / 6</span>
         </div>
+        <div class="auth-carousel-viewport">
         <div class="auth-carousel-track" id="carouselTrack">
 
           <!-- Slide 1: Schedule -->
@@ -1082,15 +1342,17 @@
           </div>
 
         </div>
-      </div>
-      <!-- Carousel dots -->
+        </div>
+        <button class="auth-carousel-arrow auth-carousel-prev" id="carouselPrev" aria-label="Previous">‹</button>
+        <button class="auth-carousel-arrow auth-carousel-next" id="carouselNext" aria-label="Next">›</button>
       <div class="auth-carousel-dots" id="carouselDots">
-        <button class="auth-carousel-dot active" data-index="0"></button>
-        <button class="auth-carousel-dot" data-index="1"></button>
-        <button class="auth-carousel-dot" data-index="2"></button>
-        <button class="auth-carousel-dot" data-index="3"></button>
-        <button class="auth-carousel-dot" data-index="4"></button>
-        <button class="auth-carousel-dot" data-index="5"></button>
+        <button class="auth-carousel-dot active" data-index="0" aria-label="Slide 1"></button>
+        <button class="auth-carousel-dot" data-index="1" aria-label="Slide 2"></button>
+        <button class="auth-carousel-dot" data-index="2" aria-label="Slide 3"></button>
+        <button class="auth-carousel-dot" data-index="3" aria-label="Slide 4"></button>
+        <button class="auth-carousel-dot" data-index="4" aria-label="Slide 5"></button>
+        <button class="auth-carousel-dot" data-index="5" aria-label="Slide 6"></button>
+      </div>
       </div>
       <!-- Floating badges (outside carousel) -->
       <div class="auth-float-badge auth-float-badge-1">
@@ -1289,99 +1551,221 @@
         }
 
 
-        // ─── Carousel Auto-Rotate ───
         var track = document.getElementById('carouselTrack');
+        var carouselEl = document.getElementById('authCarousel');
+        var allSlides = track ? Array.prototype.slice.call(track.children) : [];
         var dots = document.querySelectorAll('.auth-carousel-dot');
+        var dotsWrap = document.getElementById('carouselDots');
+        var progressWrap = document.getElementById('carouselProgress');
+        var labelEl = document.getElementById('carouselLabel');
+        var idxEl = document.getElementById('carouselIndex');
+        var prevBtn = document.getElementById('carouselPrev');
+        var nextBtn = document.getElementById('carouselNext');
         var slideCount = 7;
         var currentSlide = 0;
         var autoInterval = null;
-        var resetTimer = null;
+        var animRaf = null;
         var CAROUSEL_INTERVAL = 5000;
+        var TRACK_DURATION = 780;
         var REAL_SLIDE_COUNT = 6;
+        var names = ['Schedule', 'Hub', 'Finance', 'Analytics', 'Goals', 'Activities'];
+        var reducedMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-        function goToSlide(index, instant) {
-          if (index < 0) index = 0;
-          if (index >= slideCount) index = 0;
+        function easeInOutQuint(t) {
+          return t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+        }
 
-          // Clear any pending clone reset
-          if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; }
+        function stopAnim() {
+          if (animRaf) { cancelAnimationFrame(animRaf); animRaf = null; }
+          if (carouselEl) carouselEl.classList.remove('is-animating');
+        }
 
-          currentSlide = index;
-
-          if (instant) {
-            track.style.transition = 'none';
-            track.style.transform = 'translateX(-' + (index * 100) + '%)';
-            track.offsetHeight;
-            track.style.transition = '';
-          } else {
-            track.style.transform = 'translateX(-' + (index * 100) + '%)';
-          }
-
-          // Dots: use modulo for the clone
-          var dotIndex = index >= REAL_SLIDE_COUNT ? 0 : index;
-          dots.forEach(function(d, i) {
-            d.classList.toggle('active', i === dotIndex);
-          });
-
-          // Update label
-          var label = document.getElementById('carouselLabel');
-          var idxEl = document.getElementById('carouselIndex');
-          var names = ['Schedule', 'Hub', 'Finance', 'Analytics', 'Goals', 'Activities'];
-          if (label) label.textContent = names[dotIndex];
-          if (idxEl) idxEl.textContent = (dotIndex + 1) + ' / ' + REAL_SLIDE_COUNT;
-
-          // 3D effect
-          var allSlides = document.querySelectorAll('.auth-carousel-slide');
+        function applySlideStates(index) {
           allSlides.forEach(function(s, i) {
-            s.classList.toggle('active-slide', i === index);
-            s.classList.toggle('inactive-slide', i !== index);
+            var active = i === index;
+            s.classList.toggle('active-slide', active);
+            s.classList.toggle('inactive-slide', !active);
+            s.classList.remove('exit-left', 'enter-right');
+            s.style.transform = '';
+            s.style.opacity = '';
+            s.style.filter = '';
           });
+        }
 
-          // If on the clone (last slide), after transition silently jump to real first
-          if (index === slideCount - 1) {
-            resetTimer = setTimeout(function() {
-              resetTimer = null;
-              goToSlide(0, true);
-            }, 1500);
+        function updateDragFx(offsetPct) {
+          allSlides.forEach(function(s, i) {
+            var dist = Math.abs(i * 100 - offsetPct) / 100;
+            if (dist > 1.4) return;
+            var sc = 1 - Math.min(dist * 0.07, 0.12);
+            var op = 1 - Math.min(dist * 0.6, 0.6);
+            s.style.transform = 'translate3d(0,0,0) scale(' + sc.toFixed(3) + ')';
+            s.style.opacity = op.toFixed(3);
+            s.style.filter = dist < 0.5 ? '' : 'blur(' + Math.min(dist * 3, 3).toFixed(1) + 'px) brightness(0.85) saturate(0.9)';
+          });
+        }
+
+        function restartProgress() {
+          if (progressWrap) {
+            progressWrap.classList.remove('run');
+            void progressWrap.offsetWidth;
+            progressWrap.classList.remove('paused');
+            if (autoInterval) progressWrap.classList.add('run');
+          }
+          if (dotsWrap) {
+            dotsWrap.classList.remove('paused');
+            void dotsWrap.offsetWidth;
           }
         }
 
-        function nextSlide() { goToSlide(currentSlide + 1); }
+        function pauseProgress() {
+          if (progressWrap) progressWrap.classList.add('paused');
+          if (dotsWrap) dotsWrap.classList.add('paused');
+        }
+
+        function triggerSweep() {
+          if (!carouselEl || reducedMotion) return;
+          carouselEl.classList.remove('sweep');
+          void carouselEl.offsetWidth;
+          carouselEl.classList.add('sweep');
+        }
+
+        function updateMeta(index) {
+          var dotIndex = ((index % REAL_SLIDE_COUNT) + REAL_SLIDE_COUNT) % REAL_SLIDE_COUNT;
+          dots.forEach(function(d, i) {
+            d.classList.toggle('active', i === dotIndex);
+          });
+          if (dotsWrap) {
+            dotsWrap.classList.remove('paused');
+            void dotsWrap.offsetWidth;
+          }
+          if (labelEl) {
+            labelEl.textContent = names[dotIndex];
+            labelEl.classList.remove('swap');
+            void labelEl.offsetWidth;
+            labelEl.classList.add('swap');
+          }
+          if (idxEl) {
+            idxEl.textContent = (dotIndex + 1) + ' / ' + REAL_SLIDE_COUNT;
+            idxEl.classList.remove('swap');
+            void idxEl.offsetWidth;
+            idxEl.classList.add('swap');
+          }
+        }
+
+        function setTrack(xPct) {
+          track.style.transform = 'translate3d(-' + xPct + '%,0,0)';
+        }
+
+        function goToSlide(index, instant) {
+          if (index < 0) index = REAL_SLIDE_COUNT - 1;
+          if (index >= slideCount) index = 0;
+
+          var fromIndex = currentSlide;
+          stopAnim();
+          updateMeta(index);
+
+          if (instant || reducedMotion || fromIndex === index) {
+            setTrack(index * 100);
+            currentSlide = index;
+            applySlideStates(index);
+            if (index === slideCount - 1) {
+              setTrack(0);
+              currentSlide = 0;
+              applySlideStates(0);
+              updateMeta(0);
+            }
+            return;
+          }
+
+          if (carouselEl) carouselEl.classList.add('is-animating');
+          triggerSweep();
+          var dir = index > fromIndex ? 1 : -1;
+          if (fromIndex === slideCount - 1 && index === 0) dir = 1;
+          if (fromIndex === 0 && index === REAL_SLIDE_COUNT - 1) dir = -1;
+          allSlides[fromIndex].classList.add(dir > 0 ? 'exit-left' : 'enter-right');
+          allSlides[index].classList.add(dir > 0 ? 'enter-right' : 'exit-left');
+
+          var start = performance.now();
+          var fromX = fromIndex * 100;
+          var toX = index * 100;
+          setTrack(fromX);
+
+          (function step(now) {
+            var p = Math.min((now - start) / TRACK_DURATION, 1);
+            var e = easeInOutQuint(p);
+            setTrack(fromX + (toX - fromX) * e);
+            updateDragFx(fromX + (toX - fromX) * e);
+            if (p < 1) {
+              animRaf = requestAnimationFrame(step);
+            } else {
+              animRaf = null;
+              currentSlide = index;
+              applySlideStates(index);
+              if (carouselEl) carouselEl.classList.remove('is-animating');
+              if (index === slideCount - 1) goToSlide(0, true);
+            }
+          })(start);
+        }
+
+        function nextSlide() { goToSlide(currentSlide + 1 >= slideCount ? 0 : currentSlide + 1); }
+        function prevSlide() { goToSlide(currentSlide - 1); }
 
         function startAutoRotate() {
           if (autoInterval) clearInterval(autoInterval);
           autoInterval = setInterval(nextSlide, CAROUSEL_INTERVAL);
+          restartProgress();
         }
 
-        // Init
+        function pauseAuto() {
+          if (autoInterval) { clearInterval(autoInterval); autoInterval = null; }
+          stopAnim();
+          pauseProgress();
+        }
+
         if (track) {
-          // Clone first slide for seamless infinite loop
           var firstSlide = track.querySelector('.auth-carousel-slide');
           var clone = firstSlide.cloneNode(true);
           track.appendChild(clone);
+          allSlides = Array.prototype.slice.call(track.children);
 
-          goToSlide(0);
+          goToSlide(0, true);
           startAutoRotate();
 
-          // Dot clicks
           dots.forEach(function(dot) {
-            dot.addEventListener('click', function() {
-              var idx = parseInt(this.getAttribute('data-index'));
-              goToSlide(idx);
+            dot.addEventListener('click', function(ev) {
+              ev.stopPropagation();
+              pauseAuto();
+              goToSlide(parseInt(this.getAttribute('data-index'), 10));
               startAutoRotate();
             });
           });
+          if (prevBtn) prevBtn.addEventListener('click', function(ev) { ev.stopPropagation(); pauseAuto(); prevSlide(); startAutoRotate(); });
+          if (nextBtn) nextBtn.addEventListener('click', function(ev) { ev.stopPropagation(); pauseAuto(); nextSlide(); startAutoRotate(); });
 
-          // Swipe / Drag support
-          var _isDragging = false;
+          document.addEventListener('keydown', function(e) {
+            if (!carouselEl || !carouselEl.offsetParent) return;
+            if (e.key === 'ArrowRight') { pauseAuto(); nextSlide(); startAutoRotate(); }
+            else if (e.key === 'ArrowLeft') { pauseAuto(); prevSlide(); startAutoRotate(); }
+          });
+          document.addEventListener('visibilitychange', function() {
+            if (document.hidden) { if (autoInterval) { clearInterval(autoInterval); autoInterval = null; } pauseProgress(); }
+            else if (!autoInterval && !window.__carouselDragging) startAutoRotate();
+          });
+
+          window.__carouselDragging = false;
           (function() {
-            var carousel = document.querySelector('.auth-carousel');
+            var carousel = carouselEl || document.querySelector('.auth-carousel');
             if (!carousel || !track) return;
             var dragStartX = 0;
             var dragStartY = 0;
             var dragDelta = 0;
+            var dragVel = 0;
+            var lastX = 0;
+            var lastT = 0;
             var baseOffset = 0;
+            var maxOffset = (slideCount - 1) * 100;
             var SWIPE_THRESHOLD = 50;
+            var VELOCITY_THRESHOLD = 0.45;
             var VERTICAL_LOCK = 10;
             var locked = false;
             var directionLocked = false;
@@ -1392,43 +1776,69 @@
             function getPointerY(e) {
               return e.touches ? e.touches[0].clientY : e.clientY;
             }
+            function readOffset() {
+              var m = /translate3d\(-([\d.\-]+)%/.exec(track.style.transform) || /translateX\(-([\d.\-]+)%\)/.exec(track.style.transform);
+              return m ? parseFloat(m[1]) : currentSlide * 100;
+            }
             function onStart(e) {
               if (e.touches && e.touches.length > 1) return;
-              _isDragging = true;
+              window.__carouselDragging = true;
               locked = false;
               directionLocked = false;
               dragStartX = getPointerX(e);
               dragStartY = getPointerY(e);
+              lastX = dragStartX;
+              lastT = performance.now();
               dragDelta = 0;
-              baseOffset = currentSlide * 100;
-              track.style.transition = 'none';
+              dragVel = 0;
+              stopAnim();
+              baseOffset = readOffset();
+              carousel.classList.add('is-dragging');
               if (autoInterval) { clearInterval(autoInterval); autoInterval = null; }
+              pauseProgress();
             }
             function onMove(e) {
-              if (!_isDragging) return;
-              var dx = getPointerX(e) - dragStartX;
-              var dy = getPointerY(e) - dragStartY;
+              if (!window.__carouselDragging) return;
+              var px = getPointerX(e);
+              var py = getPointerY(e);
+              var dx = px - dragStartX;
+              var dy = py - dragStartY;
               if (!directionLocked) {
                 if (Math.abs(dx) > VERTICAL_LOCK || Math.abs(dy) > VERTICAL_LOCK) {
                   directionLocked = true;
                   locked = Math.abs(dy) > Math.abs(dx);
-                }
+                  if (locked) { window.__carouselDragging = false; carousel.classList.remove('is-dragging'); return; }
+                } else if (Math.abs(dx) < 3) return;
               }
               if (locked) return;
-              e.preventDefault();
+              if (e.cancelable) e.preventDefault();
+              var now = performance.now();
+              dragVel = 0.7 * dragVel + 0.3 * ((px - lastX) / Math.max(now - lastT, 1) * 16);
+              lastX = px;
+              lastT = now;
               dragDelta = dx;
               var pct = dragDelta / carousel.offsetWidth * 100;
-              track.style.transform = 'translateX(-' + (baseOffset - pct) + '%)';
+              var offset = baseOffset - pct;
+              if (offset < 0) offset = offset * 0.35;
+              if (offset > maxOffset) offset = maxOffset + (offset - maxOffset) * 0.35;
+              setTrack(offset);
+              updateDragFx(offset);
+              if (!reducedMotion) carousel.style.setProperty('--ry', Math.max(-6, Math.min(6, dragDelta / 28)) + 'deg');
             }
             function onEnd() {
-              if (!_isDragging) return;
-              _isDragging = false;
-              if (locked) return;
-              track.style.transition = '';
-              if (dragDelta < -SWIPE_THRESHOLD && currentSlide < slideCount - 1) {
-                goToSlide(currentSlide + 1);
-              } else if (dragDelta > SWIPE_THRESHOLD && currentSlide > 0) {
-                goToSlide(currentSlide - 1);
+              if (!window.__carouselDragging) return;
+              window.__carouselDragging = false;
+              carousel.classList.remove('is-dragging');
+              carousel.style.setProperty('--ry', '0deg');
+              if (locked) { startAutoRotate(); return; }
+              var flick = Math.abs(dragVel) > VELOCITY_THRESHOLD * 16 / 16;
+              var passed = Math.abs(dragDelta) > SWIPE_THRESHOLD || (flick && Math.abs(dragDelta) > 18);
+              if (dragDelta < 0 && passed) {
+                if (currentSlide >= slideCount - 1) goToSlide(0);
+                else goToSlide(currentSlide + 1);
+              } else if (dragDelta > 0 && passed) {
+                if (currentSlide <= 0) goToSlide(REAL_SLIDE_COUNT - 1);
+                else goToSlide(currentSlide - 1);
               } else {
                 goToSlide(currentSlide);
               }
@@ -1441,17 +1851,36 @@
             document.addEventListener('mouseup', onEnd);
             document.addEventListener('touchend', onEnd);
             carousel.addEventListener('dragstart', function(e) { e.preventDefault(); });
+
+            if (!reducedMotion && window.matchMedia && window.matchMedia('(pointer: fine)').matches) {
+              var tiltRaf = null;
+              carousel.addEventListener('mousemove', function(e) {
+                if (window.__carouselDragging) return;
+                if (tiltRaf) return;
+                tiltRaf = requestAnimationFrame(function() {
+                  tiltRaf = null;
+                  var r = carousel.getBoundingClientRect();
+                  var nx = (e.clientX - r.left) / r.width - 0.5;
+                  var ny = (e.clientY - r.top) / r.height - 0.5;
+                  carousel.style.setProperty('--ry', (-nx * 5).toFixed(2) + 'deg');
+                  carousel.style.setProperty('--rx', (ny * 5).toFixed(2) + 'deg');
+                });
+              });
+              carousel.addEventListener('mouseleave', function() {
+                carousel.style.setProperty('--rx', '0deg');
+                carousel.style.setProperty('--ry', '0deg');
+              });
+            }
           })();
 
-          // Pause on hover
-          var carousel = document.querySelector('.auth-carousel');
+          var carousel = carouselEl || document.querySelector('.auth-carousel');
           if (carousel) {
             carousel.addEventListener('mouseenter', function() {
-              if (autoInterval) clearInterval(autoInterval);
-              autoInterval = null;
+              if (dotsWrap) dotsWrap.classList.remove('paused');
+              if (progressWrap) progressWrap.classList.remove('paused');
             });
             carousel.addEventListener('mouseleave', function() {
-              if (!_isDragging) startAutoRotate();
+              if (!window.__carouselDragging && !autoInterval) startAutoRotate();
             });
           }
         }

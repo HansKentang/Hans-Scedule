@@ -1638,6 +1638,69 @@ const FINANCE_TUTORIAL_STEPS = [
   },
 ];
 
+// Gallery tutorial steps
+const GALLERY_TUTORIAL_STEPS = [
+  {
+    title: 'Your Vision Board',
+    desc: 'The <strong>Gallery</strong> is your personal vision board — a collection of images, designs, and posters that inspire you. Everything you save here can be reused across Haven.',
+    selector: null
+  },
+  {
+    title: 'Image Canvas',
+    desc: 'Images sit on a <strong>canvas</strong> you can arrange freely. Click any card to swap out its image, or drag cards to reposition them in Edit Mode.',
+    selector: '#galGrid'
+  },
+  {
+    title: 'Column Layout',
+    desc: 'Switch between <strong>2, 3, or 4 columns</strong> to change how your board looks. The layout adapts instantly to the image sizes.',
+    selector: '#galColToggle'
+  },
+  {
+    title: 'Add Images',
+    desc: 'Press <strong>Add Image</strong> to open the picker and upload a file, paste an image, or drop in a URL. New images land right on your canvas.',
+    selector: '#galAddBtn'
+  },
+  {
+    title: 'Edit Mode',
+    desc: 'Tap the floating <strong>+</strong> button and choose <strong>Edit</strong> to rearrange your board freely. You can also edit any hero or canvas image from there.',
+    selector: '#accessHub'
+  },
+  {
+    title: 'Good to Go!',
+    desc: 'Keep your favorites close and use them across the app — vision boards, heroes, and more. Replay this tour anytime from the <strong>Help</strong> menu.',
+    selector: null
+  },
+];
+
+// Friends tutorial steps
+const FRIENDS_TUTORIAL_STEPS = [
+  {
+    title: 'Friends and Connections',
+    desc: 'The <strong>Friends</strong> page connects you with people who use Haven. Share progress, keep each other accountable, and chat right here.',
+    selector: null
+  },
+  {
+    title: 'Your Friend Code',
+    desc: 'Your unique <strong>friend code</strong> lives in this card — share it with friends so they can find you. Tap the copy button to grab it.',
+    selector: '.fr-code-card'
+  },
+  {
+    title: 'Add a Friend',
+    desc: 'Type a friend\'s code (like <em>haven-abc1234</em>) into the <strong>Add a Friend</strong> box and hit Add. They\'ll show up as pending until they accept.',
+    selector: '.fr-add-card'
+  },
+  {
+    title: 'Connections',
+    desc: 'Your <strong>connections</strong> are listed here with tabs for All, Pending, and Accepted. Click any friend to open a chat and see their recent progress.',
+    selector: '#frList'
+  },
+  {
+    title: 'Stay Motivated',
+    desc: 'That\'s Friends! Connect with people who lift you up and watch your progress together. Replay this tour anytime from the <strong>Help</strong> menu.',
+    selector: null
+  },
+];
+
 function hasSeenTutorial(page) {
   var key = page ? TUTORIAL_SEEN_KEY + '-' + page : TUTORIAL_SEEN_KEY;
   try {
@@ -1858,6 +1921,8 @@ document.addEventListener('click', function(e) {
       case 'analytics.html': steps = ANALYTICS_TUTORIAL_STEPS; break;
       case 'goals.html': steps = GOALS_TUTORIAL_STEPS; break;
       case 'finance.html': steps = FINANCE_TUTORIAL_STEPS; break;
+      case 'gallery.html': steps = GALLERY_TUTORIAL_STEPS; break;
+      case 'friends.html': steps = FRIENDS_TUTORIAL_STEPS; break;
       default: steps = HUB_TUTORIAL_STEPS; break;
     }
     if (typeof startTutorial === 'function') startTutorial(steps);
@@ -5525,6 +5590,8 @@ function openHubMenu() {
       case 'analytics.html': startTutorial(ANALYTICS_TUTORIAL_STEPS); break;
       case 'goals.html': startTutorial(GOALS_TUTORIAL_STEPS); break;
       case 'finance.html': startTutorial(FINANCE_TUTORIAL_STEPS); break;
+      case 'gallery.html': startTutorial(GALLERY_TUTORIAL_STEPS); break;
+      case 'friends.html': startTutorial(FRIENDS_TUTORIAL_STEPS); break;
       default: startTutorial(HUB_TUTORIAL_STEPS); break;
     }
   });
@@ -7516,4 +7583,19 @@ function spOnKey(e) {
     if (overlay && !overlay.classList.contains('hidden')) spCloseSettings();
   }
 }
+
+(function() {
+  if (location.protocol !== 'file:') return;
+  if (!document.querySelector('.hub-layout')) return;
+  try { if (sessionStorage.getItem('haven-file-hint-dismissed') === '1') return; } catch (e) {}
+  var b = document.createElement('div');
+  b.className = 'file-mode-banner';
+  b.innerHTML = '<div class="file-mode-banner-text"><strong>Opened from file://</strong> — sign-in, Spotify, and cloud sync need a local server. Run <code>npm start</code> and open <code>http://localhost:8000</code> instead.</div>' +
+    '<button class="file-mode-banner-close" aria-label="Dismiss">✕</button>';
+  b.querySelector('.file-mode-banner-close').addEventListener('click', function() {
+    try { sessionStorage.setItem('haven-file-hint-dismissed', '1'); } catch (e) {}
+    b.remove();
+  });
+  (document.body || document.documentElement).appendChild(b);
+})();
 

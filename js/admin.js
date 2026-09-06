@@ -89,12 +89,9 @@
     try { return btoa(unescape(encodeURIComponent(s))); } catch(e) { return btoa(s); }
   }
 
-  function requireAuth() {
+  function verifyPassword(entered) {
     var storedPass;
     try { storedPass = localStorage.getItem(ADMIN_PASS_KEY) || ADMIN_PASS_DEFAULT; } catch(e) { storedPass = ADMIN_PASS_DEFAULT; }
-    if (_adminAuthed) return true;
-    var entered = prompt('Enter admin password:');
-    if (!entered) return false;
     try {
       if (_safeBtoa(entered) === storedPass) {
         _adminAuthed = true;
@@ -102,8 +99,25 @@
         return true;
       }
     } catch(e) {}
-    showError('Incorrect password');
     return false;
+  }
+
+  function showPwGate() {
+    var gate = $('pwGate');
+    if (gate) gate.classList.remove('hidden');
+  }
+
+  function hidePwGate() {
+    var gate = $('pwGate');
+    if (gate) gate.classList.add('hidden');
+  }
+
+  function shakePwGate() {
+    var card = document.querySelector('.pw-gate-card');
+    if (!card) return;
+    card.classList.remove('pw-gate-shake');
+    void card.offsetWidth;
+    card.classList.add('pw-gate-shake');
   }
 
   function openPasswordChangeModal() {
@@ -1125,16 +1139,53 @@
 
   /* ─── Init ───────────────────────────────────────────── */
   function init() {
-    if (!requireAuth()) {
-      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:var(--bg-primary);color:var(--text-secondary);font-size:0.9rem">Access denied. Refresh to try again.</div>';
-      return;
+    // Wire password gate
+    var gateForm = $('pwGateForm');
+    var gateInput = $('pwGateInput');
+    var gateBtn = $('pwGateBtn');
+    var gateError = $('pwGateError');
+
+    if (gateForm) {
+      gateForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var val = gateInput ? gateInput.value.trim() : '';
+        if (!val) {
+          if (gateError) gateError.textContent = 'Please enter a password';
+          shakePwGate();
+          return;
+        }
+        if (gateBtn) gateBtn.disabled = true;
+        if (gateError) gateError.textContent = '';
+
+        setTimeout(function() {
+          if (verifyPassword(val)) {
+            hidePwGate();
+            bootAdmin();
+          } else {
+            if (gateError) gateError.textContent = 'Incorrect password. Try again.';
+            shakePwGate();
+            if (gateInput) { gateInput.value = ''; gateInput.focus(); }
+            if (gateBtn) gateBtn.disabled = false;
+          }
+        }, 150);
+      });
     }
+
+    if (_adminAuthed) {
+      hidePwGate();
+      bootAdmin();
+    } else {
+      var bgFrame = $('pwGateBg');
+      if (bgFrame && document.referrer) {
+        try { bgFrame.src = document.referrer; } catch(e) {}
+      }
+      showPwGate();
+    }
+  }
+
+  function bootAdmin() {
     initTabs();
     switchTab('dashboard');
-
-    // Wire existing buttons
-    var btnDash = $('btnDashboard');
-    if (btnDash) btnDash.addEventListener('click', function() { switchTab('dashboard'); });
 
     // Hamburger menu
     var hamburger = $('hubHamburger');

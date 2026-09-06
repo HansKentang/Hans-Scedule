@@ -362,9 +362,114 @@
       .admin-tab { padding: 5px 7px; }
       .ad-table td, .ad-table th { padding: 4px 6px; font-size: 0.65rem; }
     }
+
+    /* ─── Password Gate ──────────────────────────────── */
+    .pw-gate {
+      position: fixed; inset: 0; z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      transition: opacity 250ms ease, visibility 250ms ease;
+    }
+    .pw-gate.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .pw-gate-bg {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      border: none; pointer-events: none;
+      filter: blur(20px) brightness(0.5);
+      transform: scale(1.1);
+    }
+    .pw-gate-card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 340px; padding: 36px 28px 28px;
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+      text-align: center;
+      transform: translateY(0);
+      transition: transform 250ms cubic-bezier(0.16,1,0.3,1);
+    }
+    .pw-gate.hidden .pw-gate-card { transform: translateY(12px); }
+    .pw-gate-icon {
+      width: 52px; height: 52px; margin: 0 auto 16px;
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent);
+    }
+    .pw-gate-title {
+      font-family: var(--font-serif); font-size: 1.15rem; font-weight: 500;
+      color: var(--text-primary); margin: 0 0 4px;
+    }
+    .pw-gate-sub {
+      font-size: 0.72rem; color: var(--text-tertiary); margin: 0 0 20px;
+    }
+    .pw-gate-input-wrap {
+      position: relative; margin-bottom: 12px;
+    }
+    .pw-gate-input {
+      width: 100%; box-sizing: border-box;
+      padding: 11px 14px 11px 38px;
+      border: 1px solid var(--border-color); border-radius: 10px;
+      background: var(--bg-primary); color: var(--text-primary);
+      font-size: 0.85rem; font-family: var(--font-family);
+      outline: none; transition: border-color var(--t-fast);
+    }
+    .pw-gate-input:focus { border-color: var(--accent); }
+    .pw-gate-input::placeholder { color: var(--text-tertiary); }
+    .pw-gate-input-icon {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--text-tertiary); pointer-events: none;
+    }
+    .pw-gate-btn {
+      width: 100%; padding: 11px 0;
+      border: none; border-radius: 10px;
+      background: var(--accent); color: var(--text-inverse);
+      font-size: 0.82rem; font-weight: 600; font-family: var(--font-family);
+      cursor: pointer; transition: opacity var(--t-fast);
+    }
+    .pw-gate-btn:hover { opacity: 0.85; }
+    .pw-gate-btn:disabled { opacity: 0.5; cursor: default; }
+    .pw-gate-error {
+      margin-top: 10px; font-size: 0.72rem; color: var(--danger, #ef4444);
+      min-height: 1em; transition: opacity 150ms;
+    }
+    .pw-gate-error:empty { opacity: 0; }
+    .pw-gate-shake { animation: pwShake 400ms ease; }
+    @keyframes pwShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-5px); }
+      80% { transform: translateX(5px); }
+    }
   </style>
 </head>
 <body>
+  <!-- Password Gate -->
+  <div class="pw-gate" id="pwGate">
+    <iframe class="pw-gate-bg" id="pwGateBg" sandbox="allow-same-origin"></iframe>
+    <div class="pw-gate-card">
+      <div class="pw-gate-icon">
+        <img src="assets/icon-192.png" alt="Havën" style="width:32px;height:32px;border-radius:8px">
+      </div>
+      <h2 class="pw-gate-title">Admin Access</h2>
+      <p class="pw-gate-sub">Enter the password to continue</p>
+      <form id="pwGateForm" autocomplete="off">
+        <div class="pw-gate-input-wrap">
+          <svg class="pw-gate-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+          <input type="password" class="pw-gate-input" id="pwGateInput" placeholder="Password" autofocus>
+        </div>
+        <button type="submit" class="pw-gate-btn" id="pwGateBtn">Unlock</button>
+      </form>
+      <div class="pw-gate-error" id="pwGateError"></div>
+    </div>
+  </div>
+
   <!-- Ambient background -->
   <div class="hub-ambient">
     <div class="hub-ambient-gradient"></div>
