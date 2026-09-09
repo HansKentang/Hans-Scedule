@@ -6859,7 +6859,6 @@ function spOpenSettings() {
   const overlay = document.getElementById('spOverlay');
   if (!overlay) return;
   overlay.classList.remove('hidden');
-  requestAnimationFrame(() => overlay.classList.add('active'));
   spRenderList();
   const modalEmbed = document.getElementById('spModalEmbed');
   const active = spPlaylists.find(p => p.id === spActiveId);
@@ -6868,9 +6867,7 @@ function spOpenSettings() {
 
 function spCloseSettings() {
   const overlay = document.getElementById('spOverlay');
-  if (!overlay) return;
-  overlay.classList.remove('active');
-  setTimeout(() => overlay.classList.add('hidden'), 300);
+  if (overlay) overlay.classList.add('hidden');
 }
 
 function spAddPlaylist() {
