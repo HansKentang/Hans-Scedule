@@ -48,7 +48,7 @@
     /* ─── Main Grid ─── */
     .auth-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 42fr 58fr;
       width: 100%; height: 100vh;
     }
 
@@ -58,7 +58,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: clamp(16px, 3vh, 40px) clamp(16px, 4vw, 48px);
+      padding: clamp(20px, 4vh, 48px) clamp(24px, 5vw, 56px);
       position: relative;
       overflow: hidden;
       animation: fadeIn 0.7s var(--smooth) both;
@@ -108,7 +108,7 @@
       top: -40px; left: -40px;
       width: 140px; height: 140px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.06);
     }
     .corner-tl::before {
       content: '';
@@ -116,7 +116,7 @@
       top: 20px; left: 20px;
       width: 100px; height: 100px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.04);
     }
 
     /* Bottom-right: quarter-circle arc */
@@ -124,7 +124,7 @@
       bottom: -50px; right: -50px;
       width: 160px; height: 160px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.05);
     }
     .corner-br::before {
       content: '';
@@ -132,7 +132,7 @@
       top: 24px; left: 24px;
       width: 112px; height: 112px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.03);
     }
 
     /* Top-right: small diamond */
@@ -198,10 +198,10 @@
 
     /* ─── Form Container ─── */
     .auth-form-wrap {
-      width: min(440px, 100%);
+      width: min(460px, 100%);
       display: flex;
       flex-direction: column;
-      gap: clamp(6px, 1vh, 12px);
+      gap: clamp(8px, 1.2vh, 14px);
       position: relative;
       z-index: 1;
     }
@@ -287,10 +287,10 @@
     .auth-card {
       position: relative;
       border: 1px solid var(--border);
-      border-radius: clamp(16px, 2.2vh, 20px);
-      background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015));
-      padding: clamp(18px, 2.6vh, 26px) clamp(18px, 2.4vw, 26px);
-      box-shadow: 0 24px 60px -28px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+      border-radius: clamp(16px, 2.2vh, 22px);
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      padding: clamp(20px, 2.8vh, 28px) clamp(20px, 2.6vw, 28px);
+      box-shadow: 0 24px 60px -28px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       transition: transform 0.4s var(--smooth), box-shadow 0.4s var(--smooth), border-color 0.4s var(--smooth);
@@ -352,16 +352,16 @@
     }
     .auth-input {
       width: 100%;
-      padding: clamp(11px, 1.8vh, 15px) clamp(12px, 2.5vw, 18px);
+      padding: clamp(12px, 2vh, 16px) clamp(14px, 2.8vw, 20px);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       background: rgba(255,255,255,0.03);
       color: var(--text);
       font-family: inherit;
-      font-size: clamp(0.85rem, 1.2vw, 0.98rem);
+      font-size: clamp(0.88rem, 1.2vw, 1rem);
       font-weight: 500;
       outline: none;
-      transition: all 0.25s var(--smooth);
+      transition: all 0.3s var(--smooth);
     }
     .auth-input::placeholder {
       color: var(--text-tertiary);
@@ -381,14 +381,16 @@
     .auth-input.invalid {
       border-color: rgba(255,120,110,0.65);
       box-shadow: 0 0 0 3px rgba(255,120,110,0.10);
-      animation: shake 0.4s var(--smooth);
+      animation: shake 0.45s var(--smooth);
     }
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
-      20% { transform: translateX(-6px); }
-      40% { transform: translateX(6px); }
-      60% { transform: translateX(-4px); }
-      80% { transform: translateX(4px); }
+      15% { transform: translateX(-5px); }
+      30% { transform: translateX(5px); }
+      45% { transform: translateX(-4px); }
+      60% { transform: translateX(4px); }
+      75% { transform: translateX(-2px); }
+      90% { transform: translateX(2px); }
     }
     .auth-label { transition: color 0.25s var(--smooth); }
     .auth-label.has-value { color: var(--text); }
@@ -398,18 +400,18 @@
       position: relative;
       overflow: hidden;
       width: 100%;
-      padding: clamp(11px, 2vh, 16px) clamp(14px, 3vw, 24px);
+      padding: clamp(12px, 2.2vh, 17px) clamp(16px, 3.2vw, 26px);
       border: none;
-      border-radius: 11px;
+      border-radius: 12px;
       background: linear-gradient(180deg, #ffffff, #e8e8e8);
       color: var(--bg);
       font-family: inherit;
-      font-size: clamp(0.82rem, 1.2vw, 0.95rem);
+      font-size: clamp(0.85rem, 1.2vw, 0.98rem);
       font-weight: 600;
       letter-spacing: 0.01em;
       cursor: pointer;
-      transition: all 0.25s var(--bounce);
-      margin-top: clamp(2px, 0.5vh, 6px);
+      transition: all 0.3s var(--bounce);
+      margin-top: clamp(4px, 0.6vh, 8px);
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 4px 16px -6px rgba(255,255,255,0.25);
     }
     .auth-submit:hover:not(:disabled) {
@@ -430,7 +432,7 @@
     .auth-divider {
       position: relative;
       text-align: center;
-      margin: clamp(4px, 0.6vh, 8px) 0 clamp(2px, 0.3vh, 4px);
+      margin: clamp(6px, 0.8vh, 10px) 0 clamp(4px, 0.5vh, 6px);
     }
     .auth-divider::after {
       content: ''; position: absolute; inset: 0; top: 50%;
@@ -453,13 +455,13 @@
     .auth-google-btn {
       position: relative;
       display: flex; align-items: center; justify-content: center; gap: clamp(8px, 1vw, 12px);
-      width: 100%; padding: clamp(12px, 1.7vh, 16px) clamp(12px, 2.5vw, 18px);
+      width: 100%; padding: clamp(13px, 1.9vh, 17px) clamp(14px, 2.8vw, 20px);
       border-radius: 12px;
       border: 1px solid var(--border);
       background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02));
       color: var(--text);
       font-family: inherit;
-      font-size: clamp(0.82rem, 1.1vw, 0.92rem);
+      font-size: clamp(0.85rem, 1.1vw, 0.95rem);
       font-weight: 500;
       cursor: pointer;
       overflow: hidden;
@@ -565,8 +567,18 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      background: #fff;
+      background: linear-gradient(180deg, #fafafa 0%, #f5f5f5 50%, #f0f0f0 100%);
       animation: fadeIn 0.6s var(--bounce) both 0.1s;
+    }
+    .auth-right::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 50% 40% at 50% 30%, rgba(0,0,0,0.02) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 70% 70%, rgba(0,0,0,0.015) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
     }
     .auth-right::before {
       content: ''; position: absolute; inset: 0;
@@ -579,15 +591,15 @@
     .auth-carousel {
       position: relative;
       z-index: 1;
-      width: 90%;
-      max-width: 520px;
+      width: 94%;
+      max-width: 680px;
       background: rgba(0,0,0,0.04);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(0,0,0,0.10);
-      border-radius: 16px;
-      padding: 14px 14px 10px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05);
+      border-radius: 20px;
+      padding: 18px 18px 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05);
       perspective: 1400px;
       overflow: hidden;
       isolation: isolate;
@@ -595,12 +607,17 @@
       -webkit-user-select: none;
       cursor: grab;
       transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--cs, 1));
-      transition: transform 0.45s var(--smooth), box-shadow 0.45s var(--smooth), border-color 0.45s var(--smooth);
+      transition: transform 0.5s var(--smooth), box-shadow 0.5s var(--smooth), border-color 0.5s var(--smooth);
       will-change: transform;
+      animation: carouselReveal 0.8s var(--smooth) both 0.3s;
+    }
+    @keyframes carouselReveal {
+      0% { opacity: 0; transform: perspective(1400px) scale(0.94) translateY(16px); }
+      100% { opacity: 1; transform: perspective(1400px) scale(1) translateY(0); }
     }
     .auth-carousel:hover {
-      --cs: 1.012;
-      box-shadow: 0 14px 44px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.07);
+      --cs: 1.015;
+      box-shadow: 0 18px 52px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07);
       border-color: rgba(0,0,0,0.14);
     }
     .auth-carousel.is-dragging {
@@ -622,17 +639,17 @@
       pointer-events: none;
     }
     .auth-carousel.sweep::after {
-      animation: carouselSweep 0.85s var(--smooth) both;
+      animation: carouselSweep 0.9s var(--smooth) both;
     }
     @keyframes carouselSweep {
       0% { transform: translateX(-70%) skewX(-8deg); opacity: 0; }
-      15% { opacity: 1; }
+      12% { opacity: 0.8; }
       100% { transform: translateX(70%) skewX(-8deg); opacity: 0; }
     }
     .auth-carousel-progress {
       position: absolute;
-      top: 0; left: 14px; right: 14px;
-      height: 2px;
+      top: 0; left: 18px; right: 18px;
+      height: 3px;
       z-index: 5;
       border-radius: 2px;
       background: rgba(0,0,0,0.07);
@@ -649,7 +666,7 @@
       transform: scaleX(0);
     }
     .auth-carousel-progress.run span {
-      animation: carouselProgressFill 5s linear both;
+      animation: carouselProgressFill 5s cubic-bezier(0.25, 1, 0.35, 1) both;
     }
     .auth-carousel-progress.paused span {
       animation-play-state: paused;
@@ -660,14 +677,14 @@
     }
     .auth-carousel-viewport {
       overflow: hidden;
-      border-radius: 10px;
+      border-radius: 12px;
     }
     .auth-carousel-track {
       display: flex;
       width: 100%;
       will-change: transform;
       transform: translate3d(0,0,0);
-      transition: transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+      transition: transform 0.75s cubic-bezier(0.25, 1, 0.35, 1);
     }
     .auth-carousel.is-animating .auth-carousel-track {
       pointer-events: none;
@@ -680,16 +697,18 @@
       transition: none !important;
     }
     .auth-carousel-slide {
-      flex: 0 0 60%;
+      flex: 0 0 68%;
       min-width: 0;
       transform-origin: center center;
       will-change: transform, opacity, filter;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
-      transform: translate3d(0,0,0) scale(0.92);
+      transform: translate3d(0,0,0) scale(0.93);
       opacity: 0.35;
-      filter: blur(3.5px) brightness(0.80) saturate(0.82);
-      transition: transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.65s cubic-bezier(0.22, 0.61, 0.36, 1), filter 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+      filter: brightness(0.82) saturate(0.85);
+      transition: transform 0.75s cubic-bezier(0.25, 1, 0.35, 1),
+                  opacity 0.75s cubic-bezier(0.25, 1, 0.35, 1),
+                  filter 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .auth-carousel.is-dragging .auth-carousel-slide {
       transition: none;
@@ -697,39 +716,41 @@
     .auth-carousel-slide svg {
       width: 100%; height: auto;
       display: block;
-      border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      border-radius: 14px;
+      box-shadow: 0 6px 28px rgba(0,0,0,0.35);
       transform: translate3d(0,0,0) scale(1);
       will-change: transform;
     }
     .auth-carousel-slide.active-slide {
       transform: translate3d(0,0,0) scale(1);
       opacity: 1;
-      filter: blur(0) brightness(1) saturate(1);
-      transition-duration: 0.7s;
+      filter: brightness(1) saturate(1);
+      transition: transform 0.8s cubic-bezier(0.25, 1, 0.35, 1),
+                  opacity 0.9s cubic-bezier(0.25, 1, 0.35, 1),
+                  filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .auth-carousel-slide.active-slide svg {
-      box-shadow: 0 10px 32px rgba(0,0,0,0.4);
-      animation: slideInnerPop 0.7s var(--smooth) both;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+      animation: slideInnerPop 0.9s var(--smooth) both;
     }
     @keyframes slideInnerPop {
-      0% { transform: scale(0.965) translateY(10px); }
-      60% { transform: scale(1.004) translateY(-2px); }
-      100% { transform: scale(1) translateY(0); }
+      0% { transform: scale(0.97) translateY(6px); opacity: 0.7; }
+      40% { transform: scale(1.002) translateY(-1px); opacity: 1; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
     }
     .auth-carousel-slide.inactive-slide {
-      transform: translate3d(0,0,0) scale(0.93);
+      transform: translate3d(0,0,0) scale(0.94);
       opacity: 0.4;
-      filter: blur(3px) brightness(0.82) saturate(0.85);
+      filter: brightness(0.82) saturate(0.85);
     }
     .auth-carousel-slide.inactive-slide svg {
       box-shadow: 0 4px 18px rgba(0,0,0,0.24);
     }
     .auth-carousel-slide.exit-left {
-      transform: translate3d(-26px,0,0) scale(0.9) rotateY(9deg);
+      transform: translate3d(-20px,0,0) scale(0.92) rotateY(6deg);
     }
     .auth-carousel-slide.enter-right {
-      transform: translate3d(26px,0,0) scale(0.9) rotateY(-9deg);
+      transform: translate3d(20px,0,0) scale(0.92) rotateY(-6deg);
     }
 
 
@@ -754,7 +775,7 @@
       animation: labelSwap 0.5s var(--smooth) both;
     }
     @keyframes labelSwap {
-      0% { opacity: 0; transform: translateY(10px); filter: blur(5px); }
+      0% { opacity: 0; transform: translateY(8px); filter: blur(4px); }
       100% { opacity: 1; transform: translateY(0); filter: blur(0); }
     }
     .auth-carousel-label-name span {
@@ -774,15 +795,15 @@
     }
     .auth-carousel-dots {
       position: absolute;
-      bottom: 18px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 6;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      padding: 7px 10px;
+      gap: 7px;
+      padding: 8px 12px;
       border-radius: 999px;
       background: rgba(10,10,10,0.55);
       backdrop-filter: blur(12px);
@@ -793,7 +814,7 @@
     }
     .auth-carousel-dot {
       position: relative;
-      width: 6px; height: 6px;
+      width: 7px; height: 7px;
       border-radius: 999px;
       background: rgba(255,255,255,0.28);
       border: none;
@@ -816,7 +837,7 @@
       background: rgba(255,255,255,0.22);
     }
     .auth-carousel-dot.active::before {
-      animation: dotFill 5s linear both;
+      animation: dotFill 5s cubic-bezier(0.25, 1, 0.35, 1) both;
     }
     .auth-carousel-dots.paused .auth-carousel-dot.active::before {
       animation-play-state: paused;
@@ -836,14 +857,14 @@
       position: absolute;
       top: 50%;
       z-index: 6;
-      width: 30px; height: 30px;
+      width: 36px; height: 36px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(10,10,10,0.5);
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(10,10,10,0.55);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       color: rgba(255,255,255,0.85);
-      font-size: 14px;
+      font-size: 16px;
       line-height: 1;
       display: flex;
       align-items: center;
@@ -866,24 +887,24 @@
     .auth-carousel-arrow:active {
       transform: translateY(-50%) scale(0.9);
     }
-    .auth-carousel-prev { left: 22px; }
-    .auth-carousel-next { right: 22px; }
+    .auth-carousel-prev { left: 26px; }
+    .auth-carousel-next { right: 26px; }
 
     /* Gradient overlay + quote at bottom */
     .auth-right-overlay {
       position: absolute;
       bottom: 0; left: 0; right: 0;
       z-index: 2;
-      padding: 48px 32px 24px;
-      background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.5) 100%);
+      padding: 56px 40px 28px;
+      background: linear-gradient(180deg, transparent 0%, rgba(245,245,245,0.85) 40%, rgba(240,240,240,0.95) 100%);
       text-align: center;
     }
     .auth-quote {
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 400;
-      color: rgba(0,0,0,0.5);
-      line-height: 1.5;
-      max-width: 380px;
+      color: rgba(0,0,0,0.45);
+      line-height: 1.6;
+      max-width: 420px;
       margin: 0 auto;
     }
     .auth-quote-cursor {
@@ -915,27 +936,27 @@
     .auth-float-badge {
       position: absolute;
       z-index: 5;
-      background: rgba(0,0,0,0.04);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(0,0,0,0.05);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 8px;
-      padding: 4px 8px;
+      border-radius: 10px;
+      padding: 5px 10px;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       pointer-events: none;
       opacity: 0;
       animation: badgeAppear 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards,
                  badgeDrift 6s ease-in-out infinite 1s;
     }
     @keyframes badgeAppear {
-      0% { opacity: 0; transform: translateY(8px) scale(0.95); }
+      0% { opacity: 0; transform: translateY(6px) scale(0.96); }
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     @keyframes badgeDrift {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-4px); }
+      50% { transform: translateY(-3px); }
     }
     .auth-float-badge svg {
       width: 10px; height: 10px;
@@ -1107,9 +1128,9 @@
 
           <!-- Slide 1: Schedule -->
           <div class="auth-carousel-slide active-slide">
-            <svg viewBox="0 0 480 340" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="480" height="340" rx="14" fill="#0a0a0a"/>
-              <rect x="0.5" y="0.5" width="479" height="339" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
+              <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
               <circle cx="18" cy="15" r="3" fill="rgba(255,255,255,0.12)"/><circle cx="30" cy="15" r="3" fill="rgba(255,255,255,0.08)"/><circle cx="42" cy="15" r="3" fill="rgba(255,255,255,0.06)"/>
               <text x="240" y="19" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="8" font-weight="600" fill="rgba(255,255,255,0.2)" letter-spacing="0.08em">SCHEDULE</text>
@@ -1134,30 +1155,30 @@
               <rect x="414" y="100" width="74" height="18" rx="3" fill="rgba(255,255,255,0.06)"/><rect x="414" y="100" width="3" height="18" rx="1.5" fill="rgba(255,255,255,0.15)"/><text x="422" y="113" font-family="'Hanken Grotesk',sans-serif" font-size="6" fill="rgba(255,255,255,0.3)">Run</text>
               <rect x="414" y="160" width="74" height="22" rx="3" fill="rgba(255,255,255,0.10)"/><rect x="414" y="160" width="3" height="22" rx="1.5" fill="rgba(255,255,255,0.25)"/><text x="422" y="175" font-family="'Hanken Grotesk',sans-serif" font-size="6" fill="rgba(255,255,255,0.35)">Read</text>
               <!-- Bottom bar -->
-              <rect x="24" y="220" width="432" height="1" fill="rgba(255,255,255,0.04)"/>
-              <rect x="24" y="230" width="432" height="26" rx="5" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
-              <circle cx="40" cy="243" r="3" fill="rgba(255,255,255,0.3)"/>
-              <text x="48" y="246" font-family="'Hanken Grotesk',sans-serif" font-size="7" font-weight="600" fill="rgba(255,255,255,0.5)">8 tasks today</text>
-              <text x="168" y="246" font-family="'Hanken Grotesk',sans-serif" font-size="6" fill="rgba(255,255,255,0.25)">3 deep work</text>
-              <text x="262" y="246" font-family="'Hanken Grotesk',sans-serif" font-size="6" fill="rgba(255,255,255,0.25)">2 meetings</text>
+              <rect x="24" y="280" width="432" height="1" fill="rgba(255,255,255,0.04)"/>
+              <rect x="24" y="290" width="432" height="26" rx="5" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <circle cx="40" cy="303" r="3" fill="rgba(255,255,255,0.3)"/>
+              <text x="48" y="306" font-family="'Hanken Grotesk',sans-serif" font-size="7" font-weight="600" fill="rgba(255,255,255,0.5)">8 tasks today</text>
+              <text x="168" y="306" font-family="'Hanken Grotesk',sans-serif" font-size="6" fill="rgba(255,255,255,0.25)">3 deep work</text>
+              <text x="262" y="306" font-family="'Hanken Grotesk',sans-serif" font-size="6" fill="rgba(255,255,255,0.25)">2 meetings</text>
               <!-- Tag chips -->
-              <rect x="24" y="270" width="70" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="32" y="281" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Deep Work</text>
-              <rect x="100" y="270" width="60" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="108" y="281" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Meeting</text>
-              <rect x="166" y="270" width="58" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="174" y="281" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Study</text>
-              <rect x="230" y="270" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="238" y="281" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Hobby</text>
+              <rect x="24" y="330" width="70" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="32" y="341" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Deep Work</text>
+              <rect x="100" y="330" width="60" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="108" y="341" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Meeting</text>
+              <rect x="166" y="330" width="58" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="174" y="341" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Study</text>
+              <rect x="230" y="330" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="238" y="341" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Hobby</text>
             </svg>
           </div>
 
           <!-- Slide 2: Hub -->
           <div class="auth-carousel-slide inactive-slide">
-            <svg viewBox="0 0 480 340" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="480" height="340" rx="14" fill="#0a0a0a"/>
-              <rect x="0.5" y="0.5" width="479" height="339" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
+              <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
               <circle cx="18" cy="15" r="3" fill="rgba(255,255,255,0.12)"/><circle cx="30" cy="15" r="3" fill="rgba(255,255,255,0.08)"/><circle cx="42" cy="15" r="3" fill="rgba(255,255,255,0.06)"/>
               <text x="240" y="19" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="8" font-weight="600" fill="rgba(255,255,255,0.2)" letter-spacing="0.08em">HUB</text>
               <!-- Sidebar block -->
-              <rect x="12" y="52" width="36" height="276" rx="5" fill="rgba(255,255,255,0.02)"/>
+              <rect x="12" y="52" width="36" height="330" rx="5" fill="rgba(255,255,255,0.02)"/>
               <rect x="18" y="64" width="24" height="24" rx="4" fill="rgba(255,255,255,0.06)"/>
               <rect x="18" y="96" width="24" height="24" rx="4" fill="rgba(255,255,255,0.04)"/>
               <rect x="18" y="128" width="24" height="24" rx="4" fill="rgba(255,255,255,0.10)"/>
@@ -1179,21 +1200,21 @@
               <rect x="212" y="178" width="96" height="4" rx="2" fill="rgba(255,255,255,0.05)"/><rect x="212" y="178" width="72" height="4" rx="2" fill="rgba(255,255,255,0.15)"/>
               <rect x="212" y="192" width="96" height="4" rx="2" fill="rgba(255,255,255,0.05)"/><rect x="212" y="192" width="48" height="4" rx="2" fill="rgba(255,255,255,0.12)"/>
               <!-- Stats bubble -->
-              <rect x="60" y="236" width="264" height="24" rx="5" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
-              <circle cx="76" cy="248" r="3" fill="rgba(255,255,255,0.3)"/>
-              <text x="84" y="251" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="600" fill="rgba(255,255,255,0.45)">24 tasks this week</text>
-              <circle cx="190" cy="248" r="2" fill="rgba(255,255,255,0.15)"/>
-              <text x="196" y="251" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">18h logged</text>
-              <circle cx="266" cy="248" r="2" fill="rgba(255,255,255,0.12)"/>
-              <text x="272" y="251" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">7d streak</text>
+              <rect x="60" y="290" width="264" height="24" rx="5" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <circle cx="76" cy="302" r="3" fill="rgba(255,255,255,0.3)"/>
+              <text x="84" y="305" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="600" fill="rgba(255,255,255,0.45)">24 tasks this week</text>
+              <circle cx="190" cy="302" r="2" fill="rgba(255,255,255,0.15)"/>
+              <text x="196" y="305" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">18h logged</text>
+              <circle cx="266" cy="302" r="2" fill="rgba(255,255,255,0.12)"/>
+              <text x="272" y="305" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">7d streak</text>
             </svg>
           </div>
 
           <!-- Slide 3: Finance -->
           <div class="auth-carousel-slide">
-            <svg viewBox="0 0 480 340" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="480" height="340" rx="14" fill="#0a0a0a"/>
-              <rect x="0.5" y="0.5" width="479" height="339" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
+              <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
               <circle cx="18" cy="15" r="3" fill="rgba(255,255,255,0.12)"/><circle cx="30" cy="15" r="3" fill="rgba(255,255,255,0.08)"/><circle cx="42" cy="15" r="3" fill="rgba(255,255,255,0.06)"/>
               <text x="240" y="19" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="8" font-weight="600" fill="rgba(255,255,255,0.2)" letter-spacing="0.08em">FINANCE</text>
@@ -1212,25 +1233,25 @@
               <text x="186" y="140" font-family="'Hanken Grotesk',sans-serif" font-size="6" fill="rgba(255,255,255,0.2)" letter-spacing="0.04em">PIGGY BANK</text>
               <text x="186" y="162" font-family="'Space Grotesk',monospace" font-size="11" font-weight="600" fill="rgba(255,255,255,0.5)">$1,370</text>
               <!-- Chart -->
-              <rect x="24" y="200" width="432" height="56" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="24" y="200" width="432" height="72" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
               <text x="40" y="218" font-family="'Hanken Grotesk',sans-serif" font-size="6" fill="rgba(255,255,255,0.2)" letter-spacing="0.04em">DAILY BALANCE</text>
-              <rect x="50" y="228" width="16" height="16" rx="2" fill="rgba(255,255,255,0.08)"/><rect x="74" y="220" width="16" height="24" rx="2" fill="rgba(255,255,255,0.12)"/>
-              <rect x="98" y="232" width="16" height="12" rx="2" fill="rgba(255,255,255,0.06)"/><rect x="122" y="216" width="16" height="28" rx="2" fill="rgba(255,255,255,0.10)"/>
-              <rect x="146" y="224" width="16" height="20" rx="2" fill="rgba(255,255,255,0.08)"/><rect x="170" y="210" width="16" height="34" rx="2" fill="rgba(255,255,255,0.14)"/>
-              <rect x="194" y="226" width="16" height="18" rx="2" fill="rgba(255,255,255,0.06)"/><rect x="218" y="222" width="16" height="22" rx="2" fill="rgba(255,255,255,0.08)"/>
+              <rect x="50" y="236" width="16" height="16" rx="2" fill="rgba(255,255,255,0.08)"/><rect x="74" y="228" width="16" height="24" rx="2" fill="rgba(255,255,255,0.12)"/>
+              <rect x="98" y="240" width="16" height="12" rx="2" fill="rgba(255,255,255,0.06)"/><rect x="122" y="224" width="16" height="28" rx="2" fill="rgba(255,255,255,0.10)"/>
+              <rect x="146" y="232" width="16" height="20" rx="2" fill="rgba(255,255,255,0.08)"/><rect x="170" y="218" width="16" height="34" rx="2" fill="rgba(255,255,255,0.14)"/>
+              <rect x="194" y="234" width="16" height="18" rx="2" fill="rgba(255,255,255,0.06)"/><rect x="218" y="230" width="16" height="22" rx="2" fill="rgba(255,255,255,0.08)"/>
               <!-- Categories -->
-              <rect x="24" y="268" width="80" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="32" y="279" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Housing</text>
-              <rect x="110" y="268" width="66" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="118" y="279" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Food</text>
-              <rect x="182" y="268" width="58" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="190" y="279" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Health</text>
-              <rect x="246" y="268" width="74" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="254" y="279" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Transport</text>
+              <rect x="24" y="290" width="80" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="32" y="301" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Housing</text>
+              <rect x="110" y="290" width="66" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="118" y="301" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Food</text>
+              <rect x="182" y="290" width="58" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="190" y="301" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Health</text>
+              <rect x="246" y="290" width="74" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="254" y="301" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Transport</text>
             </svg>
           </div>
 
           <!-- Slide 4: Analytics -->
           <div class="auth-carousel-slide">
-            <svg viewBox="0 0 480 340" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="480" height="340" rx="14" fill="#0a0a0a"/>
-              <rect x="0.5" y="0.5" width="479" height="339" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
+              <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
               <circle cx="18" cy="15" r="3" fill="rgba(255,255,255,0.12)"/><circle cx="30" cy="15" r="3" fill="rgba(255,255,255,0.08)"/><circle cx="42" cy="15" r="3" fill="rgba(255,255,255,0.06)"/>
               <text x="240" y="19" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="8" font-weight="600" fill="rgba(255,255,255,0.2)" letter-spacing="0.08em">ANALYTICS</text>
@@ -1248,105 +1269,105 @@
               <text x="376" y="72" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.2)">DEEP</text>
               <text x="376" y="90" font-family="'Space Grotesk',monospace" font-size="13" font-weight="600" fill="rgba(255,255,255,0.55)">8h</text>
               <!-- Bar chart -->
-              <rect x="24" y="114" width="432" height="100" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="24" y="114" width="432" height="120" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
               <text x="40" y="134" font-family="'Hanken Grotesk',sans-serif" font-size="6" fill="rgba(255,255,255,0.2)" letter-spacing="0.04em">WEEKLY BREAKDOWN</text>
-              <rect x="50" y="150" width="30" height="48" rx="3" fill="rgba(255,255,255,0.14)"/>
-              <rect x="90" y="130" width="30" height="68" rx="3" fill="rgba(255,255,255,0.10)"/>
-              <rect x="130" y="160" width="30" height="38" rx="3" fill="rgba(255,255,255,0.18)"/>
-              <rect x="170" y="140" width="30" height="58" rx="3" fill="rgba(255,255,255,0.12)"/>
-              <rect x="210" y="155" width="30" height="43" rx="3" fill="rgba(255,255,255,0.15)"/>
-              <rect x="250" y="165" width="30" height="33" rx="3" fill="rgba(255,255,255,0.08)"/>
-              <rect x="290" y="145" width="30" height="53" rx="3" fill="rgba(255,255,255,0.13)"/>
-              <text x="65" y="212" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Mon</text>
-              <text x="105" y="212" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Tue</text>
-              <text x="145" y="212" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Wed</text>
-              <text x="185" y="212" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Thu</text>
-              <text x="225" y="212" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Fri</text>
+              <rect x="50" y="150" width="30" height="68" rx="3" fill="rgba(255,255,255,0.14)"/>
+              <rect x="90" y="130" width="30" height="88" rx="3" fill="rgba(255,255,255,0.10)"/>
+              <rect x="130" y="160" width="30" height="58" rx="3" fill="rgba(255,255,255,0.18)"/>
+              <rect x="170" y="140" width="30" height="78" rx="3" fill="rgba(255,255,255,0.12)"/>
+              <rect x="210" y="155" width="30" height="63" rx="3" fill="rgba(255,255,255,0.15)"/>
+              <rect x="250" y="165" width="30" height="53" rx="3" fill="rgba(255,255,255,0.08)"/>
+              <rect x="290" y="145" width="30" height="73" rx="3" fill="rgba(255,255,255,0.13)"/>
+              <text x="65" y="240" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Mon</text>
+              <text x="105" y="240" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Tue</text>
+              <text x="145" y="240" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Wed</text>
+              <text x="185" y="240" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Thu</text>
+              <text x="225" y="240" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.12)">Fri</text>
               <!-- Tags -->
-              <rect x="24" y="230" width="60" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="32" y="241" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Weekly</text>
-              <rect x="90" y="230" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="98" y="241" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Monthly</text>
-              <rect x="152" y="230" width="44" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="160" y="241" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">All</text>
+              <rect x="24" y="252" width="60" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="32" y="263" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Weekly</text>
+              <rect x="90" y="252" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="98" y="263" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Monthly</text>
+              <rect x="152" y="252" width="44" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="160" y="263" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">All</text>
             </svg>
           </div>
 
           <!-- Slide 5: Goals -->
           <div class="auth-carousel-slide">
-            <svg viewBox="0 0 480 340" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="480" height="340" rx="14" fill="#0a0a0a"/>
-              <rect x="0.5" y="0.5" width="479" height="339" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
+              <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
               <circle cx="18" cy="15" r="3" fill="rgba(255,255,255,0.12)"/><circle cx="30" cy="15" r="3" fill="rgba(255,255,255,0.08)"/><circle cx="42" cy="15" r="3" fill="rgba(255,255,255,0.06)"/>
               <text x="240" y="19" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="8" font-weight="600" fill="rgba(255,255,255,0.2)" letter-spacing="0.08em">GOALS</text>
               <!-- Goal cards -->
-              <rect x="24" y="56" width="208" height="68" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="24" y="56" width="208" height="80" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
               <rect x="36" y="68" width="14" height="14" rx="4" fill="rgba(255,255,255,0.08)"/><text x="56" y="79" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="500" fill="rgba(255,255,255,0.3)">Learn TypeScript</text>
               <rect x="36" y="90" width="180" height="4" rx="2" fill="rgba(255,255,255,0.05)"/><rect x="36" y="90" width="153" height="4" rx="2" fill="rgba(255,255,255,0.18)"/>
               <text x="180" y="100" font-family="'Space Grotesk',monospace" font-size="5" fill="rgba(255,255,255,0.2)">85%</text>
-              <rect x="36" y="104" width="14" height="14" rx="4" fill="rgba(255,255,255,0.06)"/><text x="56" y="115" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="500" fill="rgba(255,255,255,0.3)">Read 12 Books</text>
-              <rect x="36" y="126" width="180" height="4" rx="2" fill="rgba(255,255,255,0.05)"/><rect x="36" y="126" width="99" height="4" rx="2" fill="rgba(255,255,255,0.12)"/>
-              <text x="180" y="136" font-family="'Space Grotesk',monospace" font-size="5" fill="rgba(255,255,255,0.2)">55%</text>
-              <rect x="24" y="136" width="208" height="68" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
-              <rect x="248" y="56" width="208" height="68" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="36" y="108" width="14" height="14" rx="4" fill="rgba(255,255,255,0.06)"/><text x="56" y="119" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="500" fill="rgba(255,255,255,0.3)">Read 12 Books</text>
+              <rect x="36" y="130" width="180" height="4" rx="2" fill="rgba(255,255,255,0.05)"/><rect x="36" y="130" width="99" height="4" rx="2" fill="rgba(255,255,255,0.12)"/>
+              <text x="180" y="140" font-family="'Space Grotesk',monospace" font-size="5" fill="rgba(255,255,255,0.2)">55%</text>
+              <rect x="24" y="148" width="208" height="80" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="248" y="56" width="208" height="80" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
               <text x="260" y="76" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="500" fill="rgba(255,255,255,0.3)">Run a Marathon</text>
               <rect x="260" y="84" width="180" height="4" rx="2" fill="rgba(255,255,255,0.05)"/><rect x="260" y="84" width="54" height="4" rx="2" fill="rgba(255,255,255,0.10)"/>
               <text x="404" y="94" font-family="'Space Grotesk',monospace" font-size="5" fill="rgba(255,255,255,0.2)">30%</text>
               <rect x="260" y="104" width="14" height="14" rx="4" fill="rgba(255,255,255,0.08)"/><text x="280" y="115" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="500" fill="rgba(255,255,255,0.3)">Save $5,000</text>
               <rect x="260" y="126" width="180" height="4" rx="2" fill="rgba(255,255,255,0.05)"/><rect x="260" y="126" width="108" height="4" rx="2" fill="rgba(255,255,255,0.14)"/>
               <text x="404" y="136" font-family="'Space Grotesk',monospace" font-size="5" fill="rgba(255,255,255,0.2)">60%</text>
-              <rect x="248" y="136" width="208" height="68" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="248" y="148" width="208" height="80" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
               <!-- Vision board preview -->
-              <rect x="24" y="218" width="432" height="40" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
-              <rect x="36" y="228" width="56" height="20" rx="3" fill="rgba(255,255,255,0.04)"/>
-              <rect x="100" y="228" width="56" height="20" rx="3" fill="rgba(255,255,255,0.03)"/>
-              <rect x="164" y="228" width="56" height="20" rx="3" fill="rgba(255,255,255,0.04)"/>
-              <text x="260" y="243" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.2)">Vision Board</text>
+              <rect x="24" y="244" width="432" height="48" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="36" y="254" width="56" height="28" rx="3" fill="rgba(255,255,255,0.04)"/>
+              <rect x="100" y="254" width="56" height="28" rx="3" fill="rgba(255,255,255,0.03)"/>
+              <rect x="164" y="254" width="56" height="28" rx="3" fill="rgba(255,255,255,0.04)"/>
+              <text x="260" y="273" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.2)">Vision Board</text>
               <!-- Tags -->
-              <rect x="24" y="272" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="32" y="283" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Yearly</text>
-              <rect x="86" y="272" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="94" y="283" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Monthly</text>
-              <rect x="148" y="272" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="156" y="283" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Weekly</text>
+              <rect x="24" y="308" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="32" y="319" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Yearly</text>
+              <rect x="86" y="308" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="94" y="319" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Monthly</text>
+              <rect x="148" y="308" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="156" y="319" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Weekly</text>
             </svg>
           </div>
 
           <!-- Slide 6: Activities -->
           <div class="auth-carousel-slide">
-            <svg viewBox="0 0 480 340" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="480" height="340" rx="14" fill="#0a0a0a"/>
-              <rect x="0.5" y="0.5" width="479" height="339" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
+              <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
               <circle cx="18" cy="15" r="3" fill="rgba(255,255,255,0.12)"/><circle cx="30" cy="15" r="3" fill="rgba(255,255,255,0.08)"/><circle cx="42" cy="15" r="3" fill="rgba(255,255,255,0.06)"/>
               <text x="240" y="19" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="8" font-weight="600" fill="rgba(255,255,255,0.2)" letter-spacing="0.08em">ACTIVITIES</text>
               <!-- Board columns -->
-              <rect x="20" y="52" width="140" height="206" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="20" y="52" width="140" height="260" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
               <text x="90" y="72" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="600" fill="rgba(255,255,255,0.2)" letter-spacing="0.06em">DEEP WORK</text>
-              <rect x="32" y="80" width="116" height="32" rx="4" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
-              <text x="44" y="95" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.35)">Design sprint</text>
-              <text x="44" y="104" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">2h</text>
-              <rect x="32" y="120" width="116" height="32" rx="4" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
-              <text x="44" y="135" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.35)">Code review</text>
-              <text x="44" y="144" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">1.5h</text>
-              <rect x="32" y="160" width="116" height="32" rx="4" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
-              <text x="44" y="175" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.35)">Research</text>
-              <text x="44" y="184" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">1h</text>
-              <rect x="170" y="52" width="140" height="206" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="32" y="80" width="116" height="36" rx="4" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+              <text x="44" y="97" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.35)">Design sprint</text>
+              <text x="44" y="108" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">2h</text>
+              <rect x="32" y="124" width="116" height="36" rx="4" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+              <text x="44" y="141" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.35)">Code review</text>
+              <text x="44" y="152" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">1.5h</text>
+              <rect x="32" y="168" width="116" height="36" rx="4" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>
+              <text x="44" y="185" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.35)">Research</text>
+              <text x="44" y="196" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">1h</text>
+              <rect x="170" y="52" width="140" height="260" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
               <text x="240" y="72" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="600" fill="rgba(255,255,255,0.2)" letter-spacing="0.06em">MEETINGS</text>
-              <rect x="182" y="80" width="116" height="32" rx="4" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
-              <text x="194" y="95" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.3)">Standup</text>
-              <text x="194" y="104" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">30m</text>
-              <rect x="182" y="120" width="116" height="32" rx="4" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
-              <text x="194" y="135" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.3)">1:1</text>
-              <text x="194" y="144" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">30m</text>
-              <rect x="320" y="52" width="140" height="206" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <rect x="182" y="80" width="116" height="36" rx="4" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+              <text x="194" y="97" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.3)">Standup</text>
+              <text x="194" y="108" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">30m</text>
+              <rect x="182" y="124" width="116" height="36" rx="4" fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/>
+              <text x="194" y="141" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.3)">1:1</text>
+              <text x="194" y="152" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">30m</text>
+              <rect x="320" y="52" width="140" height="260" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
               <text x="390" y="72" text-anchor="middle" font-family="'Hanken Grotesk',sans-serif" font-size="6" font-weight="600" fill="rgba(255,255,255,0.2)" letter-spacing="0.06em">HEALTH</text>
-              <rect x="332" y="80" width="116" height="32" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
-              <text x="344" y="95" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.3)">Run</text>
-              <text x="344" y="104" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">5k</text>
-              <rect x="332" y="120" width="116" height="32" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
-              <text x="344" y="135" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.3)">Gym</text>
-              <text x="344" y="144" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">1h</text>
+              <rect x="332" y="80" width="116" height="36" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <text x="344" y="97" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.3)">Run</text>
+              <text x="344" y="108" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">5k</text>
+              <rect x="332" y="124" width="116" height="36" rx="4" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <text x="344" y="141" font-family="'Hanken Grotesk',sans-serif" font-size="5" fill="rgba(255,255,255,0.3)">Gym</text>
+              <text x="344" y="152" font-family="'Hanken Grotesk',sans-serif" font-size="4.5" fill="rgba(255,255,255,0.15)">1h</text>
               <!-- Activity log -->
-              <rect x="20" y="272" width="440" height="20" rx="4" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
-              <circle cx="36" cy="282" r="3" fill="rgba(255,255,255,0.15)"/>
-              <text x="44" y="285" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Completed today: 6 activities · 5h 30m total</text>
+              <rect x="20" y="326" width="440" height="24" rx="4" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+              <circle cx="36" cy="338" r="3" fill="rgba(255,255,255,0.15)"/>
+              <text x="44" y="341" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Completed today: 6 activities · 5h 30m total</text>
             </svg>
           </div>
 
@@ -1570,16 +1591,17 @@
         var idxEl = document.getElementById('carouselIndex');
         var prevBtn = document.getElementById('carouselPrev');
         var nextBtn = document.getElementById('carouselNext');
-        var slideCount = 7;
+        var slideCount = 6;
         var currentSlide = 0;
         var autoInterval = null;
         var animRaf = null;
         var CAROUSEL_INTERVAL = 5000;
-        var TRACK_DURATION = 950;
+        var TRACK_DURATION = 1100;
         var REAL_SLIDE_COUNT = 6;
         var names = ['Schedule', 'Hub', 'Finance', 'Analytics', 'Goals', 'Activities'];
-        var SLIDE_PITCH = 60;
+        var SLIDE_PITCH = 68;
         var reducedMotion = false;
+        var carouselDirection = 1;
         function centerX(i) { return i * SLIDE_PITCH - (100 - SLIDE_PITCH) / 2; }
 
         function easeInOutQuint(t) {
@@ -1674,8 +1696,8 @@
         }
 
         function goToSlide(index, instant) {
-          if (index < 0) index = REAL_SLIDE_COUNT - 1;
-          if (index >= slideCount) index = 0;
+          if (index < 0) index = 0;
+          if (index >= REAL_SLIDE_COUNT) index = REAL_SLIDE_COUNT - 1;
 
           var fromIndex = currentSlide;
           stopAnim();
@@ -1685,12 +1707,6 @@
             setTrack(centerX(index));
             currentSlide = index;
             applySlideStates(index);
-            if (index === slideCount - 1) {
-              setTrack(centerX(0));
-              currentSlide = 0;
-              applySlideStates(0);
-              updateMeta(0);
-            }
             return;
           }
 
@@ -1719,18 +1735,37 @@
               currentSlide = index;
               applySlideStates(index);
               if (carouselEl) carouselEl.classList.remove('is-animating');
-              if (index === slideCount - 1) {
-                setTimeout(function() { goToSlide(0, true); }, 40);
-              }
             }
           })(start);
         }
 
         function nextSlide() {
           restartProgress();
-          goToSlide(currentSlide + 1 >= slideCount ? 0 : currentSlide + 1);
+          var next = currentSlide + carouselDirection;
+          if (next >= REAL_SLIDE_COUNT || next < 0) {
+            carouselDirection *= -1;
+            next = currentSlide + carouselDirection;
+          }
+          goToSlide(next);
         }
-        function prevSlide() { goToSlide(currentSlide - 1 < 0 ? REAL_SLIDE_COUNT - 1 : currentSlide - 1); }
+        function prevSlide() {
+          var prev = currentSlide - carouselDirection;
+          if (prev < 0 || prev >= REAL_SLIDE_COUNT) {
+            carouselDirection *= -1;
+            prev = currentSlide + carouselDirection;
+          }
+          goToSlide(prev);
+        }
+
+        function manualNext() {
+          restartProgress();
+          goToSlide(Math.min(currentSlide + 1, REAL_SLIDE_COUNT - 1));
+          carouselDirection = currentSlide >= REAL_SLIDE_COUNT - 1 ? -1 : 1;
+        }
+        function manualPrev() {
+          goToSlide(Math.max(currentSlide - 1, 0));
+          carouselDirection = currentSlide <= 0 ? 1 : -1;
+        }
 
         function startAutoRotate() {
           if (autoInterval) clearInterval(autoInterval);
@@ -1745,9 +1780,6 @@
         }
 
         if (track) {
-          var firstSlide = track.querySelector('.auth-carousel-slide');
-          var clone = firstSlide.cloneNode(true);
-          track.appendChild(clone);
           allSlides = Array.prototype.slice.call(track.children);
 
           goToSlide(0, true);
@@ -1761,13 +1793,13 @@
               startAutoRotate();
             });
           });
-          if (prevBtn) prevBtn.addEventListener('click', function(ev) { ev.stopPropagation(); pauseAuto(); prevSlide(); startAutoRotate(); });
-          if (nextBtn) nextBtn.addEventListener('click', function(ev) { ev.stopPropagation(); pauseAuto(); nextSlide(); startAutoRotate(); });
+          if (prevBtn) prevBtn.addEventListener('click', function(ev) { ev.stopPropagation(); pauseAuto(); manualPrev(); startAutoRotate(); });
+          if (nextBtn) nextBtn.addEventListener('click', function(ev) { ev.stopPropagation(); pauseAuto(); manualNext(); startAutoRotate(); });
 
           document.addEventListener('keydown', function(e) {
             if (!carouselEl || !carouselEl.offsetParent) return;
-            if (e.key === 'ArrowRight') { pauseAuto(); nextSlide(); startAutoRotate(); }
-            else if (e.key === 'ArrowLeft') { pauseAuto(); prevSlide(); startAutoRotate(); }
+            if (e.key === 'ArrowRight') { pauseAuto(); manualNext(); startAutoRotate(); }
+            else if (e.key === 'ArrowLeft') { pauseAuto(); manualPrev(); startAutoRotate(); }
           });
           document.addEventListener('visibilitychange', function() {
             if (document.hidden) { if (autoInterval) { clearInterval(autoInterval); autoInterval = null; } pauseProgress(); }
@@ -1785,9 +1817,9 @@
             var lastX = 0;
             var lastT = 0;
             var baseOffset = 0;
-            var maxOffset = centerX(slideCount - 1);
-            var SWIPE_THRESHOLD = 45;
-            var VELOCITY_THRESHOLD = 0.5;
+            var maxOffset = centerX(REAL_SLIDE_COUNT - 1);
+            var SWIPE_THRESHOLD = 40;
+            var VELOCITY_THRESHOLD = 0.4;
             var VERTICAL_LOCK = 12;
             var locked = false;
             var directionLocked = false;
@@ -1861,7 +1893,7 @@
               
               setTrack(offset);
               updateDragFx(offset);
-              if (!reducedMotion) carousel.style.setProperty('--ry', Math.max(-8, Math.min(8, dragDelta / 24)) + 'deg');
+              if (!reducedMotion) carousel.style.setProperty('--ry', Math.max(-5, Math.min(5, dragDelta / 30)) + 'deg');
             }
             function onEnd() {
               if (!window.__carouselDragging) return;
@@ -1875,9 +1907,11 @@
               var absDelta = Math.abs(dragDelta);
               
               if (dragDelta < 0 && (absDelta > SWIPE_THRESHOLD || (flick && absDelta > 15))) {
-                snapTarget = currentSlide >= slideCount - 1 ? 0 : currentSlide + 1;
+                snapTarget = Math.min(currentSlide + 1, REAL_SLIDE_COUNT - 1);
+                carouselDirection = 1;
               } else if (dragDelta > 0 && (absDelta > SWIPE_THRESHOLD || (flick && absDelta > 15))) {
-                snapTarget = currentSlide <= 0 ? REAL_SLIDE_COUNT - 1 : currentSlide - 1;
+                snapTarget = Math.max(currentSlide - 1, 0);
+                carouselDirection = -1;
               }
               
               isAnimating = true;
@@ -1904,13 +1938,13 @@
                   var r = carousel.getBoundingClientRect();
                   var nx = (e.clientX - r.left) / r.width - 0.5;
                   var ny = (e.clientY - r.top) / r.height - 0.5;
-                  tiltTargetRY = (-nx * 6).toFixed(2);
-                  tiltTargetRX = (ny * 5).toFixed(2);
+                  tiltTargetRY = (-nx * 5).toFixed(2);
+                  tiltTargetRX = (ny * 4).toFixed(2);
                 });
               });
               function animateTilt() {
-                currentRX += (tiltTargetRX - currentRX) * 0.18;
-                currentRY += (tiltTargetRY - currentRY) * 0.18;
+                currentRX += (tiltTargetRX - currentRX) * 0.12;
+                currentRY += (tiltTargetRY - currentRY) * 0.12;
                 carousel.style.setProperty('--rx', currentRX.toFixed(2) + 'deg');
                 carousel.style.setProperty('--ry', currentRY.toFixed(2) + 'deg');
                 if (Math.abs(tiltTargetRX - currentRX) > 0.01 || Math.abs(tiltTargetRY - currentRY) > 0.01) {

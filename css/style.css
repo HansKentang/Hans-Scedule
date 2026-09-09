@@ -8540,6 +8540,194 @@ html.light .hub-add-popup {
 .gsi-dd-divider { height: 1px; background: var(--border-subtle); margin: 3px 0; }
 .gsi-dd-item svg { flex-shrink: 0; }
 
+/* ─── ACCOUNT POPUP (centered card) ─────────────────── */
+.accpop-overlay {
+  position: fixed; inset: 0; z-index: 10005;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.accpop-overlay.open { opacity: 1; }
+.accpop-card {
+  width: 340px; max-width: calc(100vw - 32px);
+  max-height: min(560px, calc(100vh - 48px));
+  background: var(--bg-elevated, var(--bg-primary));
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.94) translateY(10px);
+  opacity: 0;
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
+}
+.accpop-overlay.open .accpop-card { transform: scale(1) translateY(0); opacity: 1; }
+.accpop-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.accpop-header-info { flex: 1; min-width: 0; }
+.accpop-header-name {
+  font-size: 0.95rem; font-weight: 600; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.accpop-header-sub { font-size: 0.7rem; color: var(--text-tertiary); margin-top: 1px; }
+.accpop-close, .accpop-back {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border: none; border-radius: 8px;
+  background: transparent; color: var(--text-tertiary);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s, color 0.12s;
+}
+.accpop-close:hover, .accpop-back:hover { background: var(--accent-soft); color: var(--text-primary); }
+.accpop-list {
+  padding: 8px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.accpop-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.accpop-item:hover { background: var(--accent-soft); }
+.accpop-item.active { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.accpop-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.accpop-acc-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  object-fit: cover;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 600; color: #fff;
+}
+.accpop-acc-avatar-lg { width: 44px; height: 44px; font-size: 0.9rem; }
+.accpop-item-info { flex: 1; min-width: 0; }
+.accpop-item-name {
+  font-size: 0.82rem; font-weight: 500; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.accpop-item-sub { font-size: 0.68rem; color: var(--text-tertiary); margin-top: 1px; }
+.accpop-check { color: var(--accent); flex-shrink: 0; }
+.accpop-item-remove {
+  width: 24px; height: 24px; flex-shrink: 0;
+  border: none; border-radius: 50%;
+  background: transparent; color: var(--text-tertiary);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0.55; transition: all 0.12s;
+}
+.accpop-item-remove:hover { opacity: 1; background: color-mix(in srgb, #ef4444 12%, transparent); color: #ef4444; }
+.accpop-actions {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 12px 8px;
+  flex-shrink: 0;
+}
+.accpop-add-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px;
+  border: none; border-radius: 12px;
+  background: transparent; color: var(--text-primary);
+  font-size: 0.82rem; font-weight: 500; font-family: inherit;
+  cursor: pointer; transition: background 0.12s;
+}
+.accpop-add-btn:hover { background: var(--accent-soft); }
+.accpop-add-plus {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  border: 1px dashed var(--border-color);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+}
+.accpop-google-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--border-color); border-radius: 12px;
+  background: transparent; color: var(--text-primary);
+  font-size: 0.8rem; font-weight: 500; font-family: inherit;
+  cursor: pointer; transition: background 0.12s, border-color 0.12s;
+}
+.accpop-google-btn:hover { background: var(--accent-soft); border-color: var(--text-tertiary); }
+.accpop-google-btn svg { width: 16px; height: 16px; flex-shrink: 0; margin-left: 9px; }
+.accpop-guest-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px;
+  border: none; border-radius: 12px;
+  background: transparent; color: var(--text-secondary);
+  font-size: 0.8rem; font-weight: 500; font-family: inherit;
+  cursor: pointer; transition: background 0.12s, color 0.12s;
+}
+.accpop-guest-btn:hover { background: var(--accent-soft); color: var(--text-primary); }
+.accpop-guest-btn svg { flex-shrink: 0; margin-left: 9px; }
+.accpop-guest-exit { color: var(--danger, #ef4444); }
+.accpop-guest-exit:hover { background: color-mix(in srgb, var(--danger, #ef4444) 8%, transparent); color: var(--danger, #ef4444); }
+.accpop-footer {
+  padding: 8px 18px 12px;
+  font-size: 0.62rem; color: var(--text-tertiary);
+  text-align: center; flex-shrink: 0;
+}
+
+/* Add account form view */
+.accpop-form { display: flex; flex-direction: column; padding: 16px 18px 18px; }
+.accpop-label { font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.accpop-input {
+  height: 38px; padding: 0 12px;
+  border: 1px solid var(--border-color); border-radius: 10px;
+  background: var(--bg-primary); color: var(--text-primary);
+  font-size: 0.85rem; font-family: inherit;
+  outline: none; transition: border-color 0.12s;
+}
+.accpop-input:focus { border-color: var(--accent); }
+.accpop-primary-btn {
+  margin-top: 12px; height: 38px;
+  border: none; border-radius: 10px;
+  background: var(--accent); color: var(--text-inverse, #fff);
+  font-size: 0.82rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: filter 0.12s, opacity 0.12s;
+}
+.accpop-primary-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.accpop-primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.accpop-or {
+  display: flex; align-items: center; gap: 10px;
+  margin: 14px 0;
+  color: var(--text-tertiary); font-size: 0.65rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.accpop-or::before, .accpop-or::after { content: ''; flex: 1; height: 1px; background: var(--border-subtle); }
+
+/* Confirm remove view */
+.accpop-confirm { display: flex; flex-direction: column; align-items: center; padding: 20px 18px 18px; text-align: center; }
+.accpop-confirm-name { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin-top: 10px; }
+.accpop-confirm-sub { font-size: 0.7rem; color: var(--text-tertiary); margin-top: 2px; }
+.accpop-confirm-warn {
+  margin-top: 12px; padding: 10px 12px;
+  background: color-mix(in srgb, #ef4444 8%, transparent);
+  border: 1px solid color-mix(in srgb, #ef4444 25%, transparent);
+  border-radius: 10px;
+  font-size: 0.75rem; color: var(--text-secondary); line-height: 1.45;
+}
+.accpop-confirm-warn strong { color: var(--text-primary); }
+.accpop-confirm-btns { display: flex; gap: 8px; margin-top: 16px; width: 100%; }
+.accpop-cancel-btn {
+  flex: 1; height: 36px;
+  border: 1px solid var(--border-color); border-radius: 10px;
+  background: transparent; color: var(--text-primary);
+  font-size: 0.8rem; font-weight: 500; font-family: inherit;
+  cursor: pointer; transition: background 0.12s;
+}
+.accpop-cancel-btn:hover { background: var(--accent-soft); }
+.accpop-danger-btn {
+  flex: 1; height: 36px;
+  border: none; border-radius: 10px;
+  background: var(--danger, #ef4444); color: #fff;
+  font-size: 0.8rem; font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: filter 0.12s;
+}
+.accpop-danger-btn:hover { filter: brightness(1.08); }
+
 
 
 /* ════════════════════════════════════════════════════════════

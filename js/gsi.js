@@ -17,6 +17,29 @@ var authInitialized = false;
 
 function loadUsers() {
   try { localUsers = JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || '[]'); } catch (e) { localUsers = []; }
+  var guests = localUsers.filter(function(u) { return u && u.name === 'Guest'; });
+  if (guests.length <= 1) return;
+  var activeId = getActiveUserId();
+  var keep = guests.find(function(u) { return u.id === activeId; }) || guests[0];
+  var removed = false;
+  localUsers = localUsers.filter(function(u) {
+    if (u && u.name === 'Guest' && u !== keep) {
+      var prefix = u.id + ':';
+      for (var i = 0; i < __origLS.length; i++) {
+        var key = __origLS.key(i);
+        if (key && key.indexOf(prefix) === 0) __origLS.removeItem(key);
+      }
+      removed = true;
+      return false;
+    }
+    return true;
+  });
+  if (removed) {
+    saveUsers();
+    if (activeId && !localUsers.some(function(u) { return u.id === activeId; })) {
+      setActiveUserId(keep.id);
+    }
+  }
 }
 
 function saveUsers() {
@@ -70,105 +93,306 @@ function renderAuthUI() {
       : (guestProfile
         ? '<div class="gsi-avatar gsi-avatar-local" style="background:#fff"><span class="gsi-avatar-initials" style="color:#3f3f3a">G</span></div>'
         : '<div class="gsi-avatar gsi-avatar-local" style="background:' + color + '"><span class="gsi-avatar-initials">' + escapeHtml(initials) + '</span></div>');
-    var maxVisible = 3;
-    var visibleUsers = localUsers.slice(0, maxVisible);
-    var dropdownItems = visibleUsers.map(function(u) {
-      var i2 = getInitials(u.name);
-      var c2 = u._color || getColorForId(u.id);
-      var icon = u.picture
-        ? '<img class="gsi-dd-avatar" src="' + u.picture + '" alt="">'
-        : '<span class="gsi-dd-initials" style="background:' + c2 + '">' + escapeHtml(i2) + '</span>';
-      return '<div class="gsi-dd-item' + (u.id === activeId ? ' active' : '') + '" data-gsi-switch="' + u.id + '">' +
-        icon + '<span class="gsi-dd-name">' + escapeHtml(u.name) + '</span></div>';
-    }).join('');
-    var extraCount = localUsers.length - maxVisible;
-    if (extraCount > 0) {
-      dropdownItems +=
-        '<div class="gsi-dd-item" id="gsiViewAllAccounts"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>View all accounts &rarr;</span></div>';
-    }
-
     container.innerHTML =
-      '<div class="gsi-avatar-wrap">' + avatarHtml +
+      '<div class="gsi-avatar-wrap" id="gsiAvatarWrap">' + avatarHtml +
         '<div class="gsi-avatar-name">' + escapeHtml(activeUser.name) + '</div>' +
-        '<div class="gsi-avatar-dropdown" id="gsiDropdown">' +
-          dropdownItems +
-          '<div class="gsi-dd-divider"></div>' +
-          (localUsers.length < maxVisible ? '<div class="gsi-dd-item" id="gsiAddAccountBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Add account</span></div>' : '') +
-          '<div class="gsi-dd-item danger" id="gsiSignOutBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Remove profile</span></div>' +
-        '</div></div>';
-
-    var avatar = container.querySelector('.gsi-avatar, .gsi-avatar-local');
-    var dropdown = container.querySelector('#gsiDropdown');
-    avatar.addEventListener('click', function(e) {
+      '</div>';
+    container.querySelector('#gsiAvatarWrap').addEventListener('click', function(e) {
       e.stopPropagation();
-      dropdown.classList.toggle('open');
+      openAccountPopup();
     });
-    dropdown.querySelectorAll('[data-gsi-switch]').forEach(function(el) {
-      el.addEventListener('click', function() { switchAccount(el.dataset.gsiSwitch); });
-    });
-    var addBtn = container.querySelector('#gsiAddAccountBtn');
-    if (addBtn) {
-      addBtn.addEventListener('click', function(e) {
-        e.stopPropagation(); dropdown.classList.remove('open');
-        gsiSignIn();
-      });
-    }
-    var viewAllBtn = container.querySelector('#gsiViewAllAccounts');
-    if (viewAllBtn) {
-      viewAllBtn.addEventListener('click', function(e) {
-        e.stopPropagation(); dropdown.classList.remove('open');
-        if (typeof openSettingsBubble === 'function') {
-          settingsPanelActiveCategory = 'account';
-          openSettingsBubble();
-        }
-      });
-    }
-    container.querySelector('#gsiSignOutBtn').addEventListener('click', function(e) {
-      e.stopPropagation(); dropdown.classList.remove('open');
-      removeProfile(activeId);
-    });
-    var existing = document._gsiOutsideClick;
-    if (existing) document.removeEventListener('click', existing);
-    document._gsiOutsideClick = function(e) {
-      var dd = document.getElementById('gsiDropdown');
-      if (dd && !dd.contains(e.target) && !e.target.closest('.gsi-avatar') && !e.target.closest('.gsi-avatar-local')) dd.classList.remove('open');
-    };
-    document.addEventListener('click', document._gsiOutsideClick);
   } else if (isGuestMode()) {
     container.innerHTML =
-      '<div class="gsi-avatar-wrap" style="cursor:default">' +
+      '<div class="gsi-avatar-wrap" id="gsiAvatarWrap" style="cursor:default">' +
         '<div class="gsi-avatar gsi-avatar-local" style="background:#fff"><span class="gsi-avatar-initials" style="color:#3f3f3a">G</span></div>' +
         '<div class="gsi-avatar-name" style="opacity:0.5">Guest</div>' +
-        '<div class="gsi-avatar-dropdown" id="gsiDropdown">' +
-          '<div class="gsi-dd-item danger" id="gsiGuestSignOut">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
-            '<span>Sign out</span>' +
-          '</div>' +
-        '</div></div>';
-    var avatar = container.querySelector('.gsi-avatar-local');
-    var dropdown = container.querySelector('#gsiDropdown');
-    avatar.addEventListener('click', function(e) {
+      '</div>';
+    container.querySelector('#gsiAvatarWrap').addEventListener('click', function(e) {
       e.stopPropagation();
-      dropdown.classList.toggle('open');
+      openAccountPopup();
     });
-    container.querySelector('#gsiGuestSignOut').addEventListener('click', function(e) {
-      e.stopPropagation(); dropdown.classList.remove('open');
-      guestSignOut();
-    });
-    var existing = document._gsiOutsideClick;
-    if (existing) document.removeEventListener('click', existing);
-    document._gsiOutsideClick = function(e) {
-      var dd = document.getElementById('gsiDropdown');
-      if (dd && !dd.contains(e.target) && !e.target.closest('.gsi-avatar-local')) dd.classList.remove('open');
-    };
-    document.addEventListener('click', document._gsiOutsideClick);
   } else {
     container.innerHTML =
       '<div class="gsi-signin-wrap"><div id="gsiButton" class="gsi-signin-btn">' +
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
         '<span>Create profile</span></div></div>';
-    container.querySelector('#gsiButton').addEventListener('click', gsiSignIn);
+    container.querySelector('#gsiButton').addEventListener('click', openAccountPopup);
   }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ACCOUNT POPUP — centered card for switching / adding /
+   removing profiles, Google sign-in, and guest sessions
+   ════════════════════════════════════════════════════════════ */
+var _accPopup = null;
+var _accPopupView = 'list';
+var _accPopupRemoveId = null;
+
+function openAccountPopup() {
+  if (_accPopup) { closeAccountPopup(); return; }
+  _accPopupView = 'list';
+  _accPopupRemoveId = null;
+
+  var overlay = document.createElement('div');
+  overlay.className = 'accpop-overlay';
+  overlay.id = 'accPopupOverlay';
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeAccountPopup(); });
+
+  var card = document.createElement('div');
+  card.className = 'accpop-card';
+  card.id = 'accPopupCard';
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  _accPopup = overlay;
+
+  renderAccountPopup();
+  requestAnimationFrame(function() { overlay.classList.add('open'); });
+
+  document.addEventListener('keydown', _accPopupKeyHandler);
+}
+
+function _accPopupKeyHandler(e) {
+  if (e.key === 'Escape') closeAccountPopup();
+}
+
+function closeAccountPopup() {
+  if (!_accPopup) return;
+  var el = _accPopup;
+  _accPopup = null;
+  el.classList.remove('open');
+  setTimeout(function() { el.remove(); }, 180);
+  document.removeEventListener('keydown', _accPopupKeyHandler);
+}
+
+function _accPopupGo(view, removeId) {
+  _accPopupView = view;
+  _accPopupRemoveId = removeId || null;
+  renderAccountPopup();
+}
+
+function renderAccountPopup() {
+  var card = document.getElementById('accPopupCard');
+  if (!card) return;
+  var activeId = getActiveUserId();
+  var activeUser = localUsers.find(function(u) { return u.id === activeId; });
+  var guest = isGuestMode();
+  var hasFirebase = false;
+  try { hasFirebase = typeof firebase !== 'undefined' && typeof firebase.auth === 'function' && firebase.apps && firebase.apps.length > 0; } catch (e) {}
+
+  if (_accPopupView === 'add') {
+    _accPopupRenderAdd(card);
+    return;
+  }
+  if (_accPopupView === 'confirm-remove') {
+    _accPopupRenderConfirmRemove(card);
+    return;
+  }
+
+  var html = '';
+
+  // Header: active account identity
+  html += '<div class="accpop-header">';
+  if (activeUser) {
+    var init = getInitials(activeUser.name);
+    var col = activeUser._color || getColorForId(activeUser.id);
+    html += activeUser.picture
+      ? '<img class="accpop-acc-avatar accpop-acc-avatar-lg" src="' + escapeHtml(activeUser.picture) + '" alt="">'
+      : '<div class="accpop-acc-avatar accpop-acc-avatar-lg" style="background:' + col + '">' + escapeHtml(init) + '</div>';
+    html += '<div class="accpop-header-info">' +
+      '<div class="accpop-header-name">' + escapeHtml(activeUser.name) + '</div>' +
+      (activeUser.email ? '<div class="accpop-header-sub">' + escapeHtml(activeUser.email) + '</div>' : '<div class="accpop-header-sub">Current account</div>') +
+      '</div>';
+  } else if (guest) {
+    html += '<div class="accpop-acc-avatar accpop-acc-avatar-lg" style="background:#fff;color:#3f3f3a">G</div>' +
+      '<div class="accpop-header-info">' +
+      '<div class="accpop-header-name">Guest</div>' +
+      '<div class="accpop-header-sub">Temporary session</div>' +
+      '</div>';
+  } else {
+    html += '<div class="accpop-header-info"><div class="accpop-header-name">Accounts</div>' +
+      '<div class="accpop-header-sub">Choose an account</div></div>';
+  }
+  html +=
+    '<button class="accpop-close" id="accPopClose" title="Close">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+    '</button>';
+  html += '</div>';
+
+  // Account list
+  if (localUsers.length > 0) {
+    html += '<div class="accpop-list">';
+    localUsers.forEach(function(u) {
+      var isActive = u.id === activeId;
+      var i2 = getInitials(u.name);
+      var c2 = u._color || getColorForId(u.id);
+      var av = u.picture
+        ? '<img class="accpop-acc-avatar" src="' + escapeHtml(u.picture) + '" alt="">'
+        : '<div class="accpop-acc-avatar" style="background:' + c2 + '">' + escapeHtml(i2) + '</div>';
+      html += '<div class="accpop-item' + (isActive ? ' active' : '') + '" data-accpop-switch="' + u.id + '" role="button" tabindex="0">' +
+        av +
+        '<div class="accpop-item-info">' +
+          '<div class="accpop-item-name">' + escapeHtml(u.name) + '</div>' +
+          (u.email ? '<div class="accpop-item-sub">' + escapeHtml(u.email) + '</div>' : '') +
+        '</div>' +
+        (isActive
+          ? '<svg class="accpop-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+          : '<button class="accpop-item-remove" data-accpop-remove="' + u.id + '" title="Remove account">' +
+              '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+            '</button>') +
+        '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Actions
+  html += '<div class="accpop-actions">';
+  html +=
+    '<button class="accpop-add-btn" id="accPopAdd">' +
+      '<span class="accpop-add-plus">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+      '</span>' +
+      '<span>Add account</span>' +
+    '</button>';
+  if (!guest) {
+    html +=
+      '<button class="accpop-google-btn" id="accPopGoogle">' +
+        '<svg viewBox="0 0 48 48" fill="none"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg>' +
+        '<span>Sign in with Google</span>' +
+      '</button>';
+  }
+  if (!guest && hasFirebase) {
+    html +=
+      '<button class="accpop-guest-btn" id="accPopGuest">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+        '<span>Continue as guest</span>' +
+      '</button>';
+  }
+  if (guest) {
+    html +=
+      '<button class="accpop-guest-btn accpop-guest-exit" id="accPopGuestExit">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>' +
+        '<span>Exit guest session</span>' +
+      '</button>';
+  }
+  html += '</div>';
+
+  html += '<div class="accpop-footer">Manage your accounts on this device</div>';
+
+  card.innerHTML = html;
+
+  // Wire events
+  card.querySelector('#accPopClose').addEventListener('click', closeAccountPopup);
+  card.querySelectorAll('[data-accpop-switch]').forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      if (e.target.closest('[data-accpop-remove]')) return;
+      var id = el.dataset.accpopSwitch;
+      if (id !== activeId) {
+        closeAccountPopup();
+        switchAccount(id);
+      } else {
+        closeAccountPopup();
+      }
+    });
+  });
+  card.querySelectorAll('[data-accpop-remove]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      _accPopupGo('confirm-remove', btn.dataset.accpopRemove);
+    });
+  });
+  card.querySelector('#accPopAdd').addEventListener('click', function() { _accPopupGo('add'); });
+  var gBtn = card.querySelector('#accPopGoogle');
+  if (gBtn) gBtn.addEventListener('click', function() { closeAccountPopup(); location.href = 'login.html'; });
+  var guestBtn = card.querySelector('#accPopGuest');
+  if (guestBtn) guestBtn.addEventListener('click', function() { closeAccountPopup(); location.href = 'login.html'; });
+  var guestExitBtn = card.querySelector('#accPopGuestExit');
+  if (guestExitBtn) guestExitBtn.addEventListener('click', function() { closeAccountPopup(); guestSignOut(); });
+}
+
+function _accPopupRenderAdd(card) {
+  var html =
+    '<div class="accpop-header">' +
+      '<div class="accpop-header-info">' +
+        '<div class="accpop-header-name">Add account</div>' +
+        '<div class="accpop-header-sub">Create a local profile on this device</div>' +
+      '</div>' +
+      '<button class="accpop-back" id="accPopBack" title="Back">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>' +
+      '</button>' +
+    '</div>' +
+    '<div class="accpop-form">' +
+      '<label class="accpop-label" for="accPopName">Profile name</label>' +
+      '<input class="accpop-input" id="accPopName" type="text" placeholder="e.g. Alex" maxlength="30" spellcheck="false" autocomplete="off">' +
+      '<button class="accpop-primary-btn" id="accPopCreate" disabled>Create profile</button>' +
+      '<div class="accpop-or"><span>or</span></div>' +
+      '<button class="accpop-google-btn" id="accPopGoogleFull">' +
+        '<svg viewBox="0 0 48 48" fill="none"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg>' +
+        '<span>Sign in with Google instead</span>' +
+      '</button>' +
+    '</div>';
+  card.innerHTML = html;
+
+  card.querySelector('#accPopBack').addEventListener('click', function() { _accPopupGo('list'); });
+  var input = card.querySelector('#accPopName');
+  var createBtn = card.querySelector('#accPopCreate');
+  input.addEventListener('input', function() { createBtn.disabled = !input.value.trim(); });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !createBtn.disabled) createBtn.click();
+  });
+  createBtn.addEventListener('click', function() {
+    var name = input.value.trim();
+    if (!name) return;
+    createLocalProfile(name);
+  });
+  card.querySelector('#accPopGoogleFull').addEventListener('click', function() {
+    closeAccountPopup();
+    location.href = 'login.html';
+  });
+  requestAnimationFrame(function() { input.focus(); });
+}
+
+function _accPopupRenderConfirmRemove(card) {
+  var user = localUsers.find(function(u) { return u.id === _accPopupRemoveId; });
+  if (!user) { _accPopupGo('list'); return; }
+  var activeId = getActiveUserId();
+  var isActive = user.id === activeId;
+  var remaining = localUsers.filter(function(u) { return u.id !== user.id; });
+  var i2 = getInitials(user.name);
+  var c2 = user._color || getColorForId(user.id);
+  var av = user.picture
+    ? '<img class="accpop-acc-avatar accpop-acc-avatar-lg" src="' + escapeHtml(user.picture) + '" alt="">'
+    : '<div class="accpop-acc-avatar accpop-acc-avatar-lg" style="background:' + c2 + '">' + escapeHtml(i2) + '</div>';
+
+  var html =
+    '<div class="accpop-header">' +
+      '<div class="accpop-header-info">' +
+        '<div class="accpop-header-name">Remove account?</div>' +
+        '<div class="accpop-header-sub">This cannot be undone</div>' +
+      '</div>' +
+      '<button class="accpop-back" id="accPopBack" title="Back">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>' +
+      '</button>' +
+    '</div>' +
+    '<div class="accpop-confirm">' +
+      av +
+      '<div class="accpop-confirm-name">' + escapeHtml(user.name) + '</div>' +
+      (user.email ? '<div class="accpop-confirm-sub">' + escapeHtml(user.email) + '</div>' : '') +
+      '<div class="accpop-confirm-warn">All data for this profile on this device will be deleted' +
+      (isActive && remaining.length > 0 ? ' and you will be switched to <strong>' + escapeHtml(remaining[0].name) + '</strong>' : '') +
+      '.</div>' +
+      '<div class="accpop-confirm-btns">' +
+        '<button class="accpop-cancel-btn" id="accPopCancel">Cancel</button>' +
+        '<button class="accpop-danger-btn" id="accPopConfirmRemove">Remove account</button>' +
+      '</div>' +
+    '</div>';
+  card.innerHTML = html;
+
+  card.querySelector('#accPopBack').addEventListener('click', function() { _accPopupGo('list'); });
+  card.querySelector('#accPopCancel').addEventListener('click', function() { _accPopupGo('list'); });
+  card.querySelector('#accPopConfirmRemove').addEventListener('click', function() {
+    closeAccountPopup();
+    performRemoveProfile(user.id);
+  });
 }
 
 function gsiSignIn() {
@@ -182,6 +406,21 @@ function guestSignOut() {
       firebase.auth().signOut().catch(function() {});
     }
   } catch (e) {}
+  var others = localUsers.filter(function(u) { return u.name !== 'Guest'; });
+  if (others.length > 0) {
+    switchAccount(others[0].id);
+    return;
+  }
+  var activeId = getActiveUserId();
+  var activeUser = localUsers.find(function(u) { return u.id === activeId; });
+  if (activeUser && activeUser.name === 'Guest') {
+    localUsers = localUsers.filter(function(u) { return u.id !== activeId; });
+    saveUsers();
+    setActiveUserId(null);
+    if (typeof state !== 'undefined') state.currentUserId = null;
+    location.href = 'login.html';
+    return;
+  }
   location.href = 'login.html';
 }
 
@@ -193,6 +432,18 @@ function guestSignOut() {
 function createLocalProfile(name) {
   if (!name || !name.trim()) return;
   name = name.trim();
+  if (name === 'Guest') {
+    var existingGuest = localUsers.find(function(u) { return u.name === 'Guest'; });
+    if (existingGuest) {
+      recordDeviceAccess(existingGuest);
+      setActiveUserId(existingGuest.id);
+      if (typeof state !== 'undefined') state.currentUserId = existingGuest.id;
+      renderAuthUI();
+      if (isLoginPage()) location.href = 'index.html';
+      else location.reload();
+      return;
+    }
+  }
   var user = { id: generateId(), name: name, _color: getColorForId(generateId()) };
   recordDeviceAccess(user);
   localUsers.push(user);
@@ -218,11 +469,24 @@ function switchAccount(id) {
 function removeProfile(id) {
   var user = localUsers.find(function(u) { return u.id === id; });
   if (!user) return;
-  if (!confirm('Remove "' + user.name + '" and all their data?')) return;
+  var isActive = getActiveUserId() === id;
+  var remaining = localUsers.filter(function(u) { return u.id !== id; });
+  var msg = 'Remove "' + user.name + '" and all their data?';
+  if (isActive && remaining.length > 0) msg += '\n\nYou will be switched to "' + remaining[0].name + '".';
+  if (!confirm(msg)) return;
+  performRemoveProfile(id);
+}
+
+function performRemoveProfile(id) {
+  var user = localUsers.find(function(u) { return u.id === id; });
+  if (!user) return;
+  var isActive = getActiveUserId() === id;
   // Sign out of Firebase Auth if this was a Google-authenticated user
-  if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
-    firebase.auth().signOut().catch(function() {});
-  }
+  try {
+    if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function' && firebase.apps && firebase.apps.length) {
+      firebase.auth().signOut().catch(function() {});
+    }
+  } catch (e) {}
   var prefix = user.id + ':';
   for (var i = 0; i < __origLS.length; i++) {
     var key = __origLS.key(i);
@@ -230,19 +494,27 @@ function removeProfile(id) {
   }
   localUsers = localUsers.filter(function(u) { return u.id !== id; });
   saveUsers();
-  var active = getActiveUserId();
-  if (active === id) {
+  if (isActive) {
     if (localUsers.length > 0) {
-      setActiveUserId(localUsers[0].id);
-      if (typeof state !== 'undefined') state.currentUserId = localUsers[0].id;
+      var next = localUsers[0];
+      setActiveUserId(next.id);
+      if (typeof state !== 'undefined') state.currentUserId = next.id;
     } else {
       setActiveUserId(null);
       if (typeof state !== 'undefined') state.currentUserId = null;
+      try { sessionStorage.removeItem('haven-guest'); } catch (e) {}
     }
   }
   renderAuthUI();
-  showToast('Profile removed', 'info', 1500);
-  location.reload();
+  if (isActive && localUsers.length > 0) {
+    showToast('Switched to ' + localUsers[0].name, 'info', 1500);
+    setTimeout(function() { location.reload(); }, 700);
+  } else if (isActive) {
+    location.href = 'login.html';
+  } else {
+    showToast('Profile removed', 'info', 1500);
+    setTimeout(function() { location.reload(); }, 700);
+  }
 }
 
 function migrateExistingData(id) {
