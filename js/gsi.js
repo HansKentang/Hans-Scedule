@@ -253,13 +253,11 @@ function renderAccountPopup() {
       '</span>' +
       '<span>Add account</span>' +
     '</button>';
-  if (!guest) {
-    html +=
-      '<button class="accpop-google-btn" id="accPopGoogle">' +
-        '<svg viewBox="0 0 48 48" fill="none"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg>' +
-        '<span>Sign in with Google</span>' +
-      '</button>';
-  }
+  html +=
+    '<button class="accpop-google-btn" id="accPopGoogle">' +
+      '<svg viewBox="0 0 48 48" fill="none"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg>' +
+      '<span>' + (guest ? 'Sign in with Google (keep guest data)' : 'Sign in with Google') + '</span>' +
+    '</button>';
   if (!guest && hasFirebase) {
     html +=
       '<button class="accpop-guest-btn" id="accPopGuest">' +
@@ -302,7 +300,7 @@ function renderAccountPopup() {
   });
   card.querySelector('#accPopAdd').addEventListener('click', function() { _accPopupGo('add'); });
   var gBtn = card.querySelector('#accPopGoogle');
-  if (gBtn) gBtn.addEventListener('click', function() { closeAccountPopup(); location.href = 'login.html'; });
+  if (gBtn) gBtn.addEventListener('click', function() { closeAccountPopup(); gsiSignIn(); });
   var guestBtn = card.querySelector('#accPopGuest');
   if (guestBtn) guestBtn.addEventListener('click', function() { closeAccountPopup(); location.href = 'login.html'; });
   var guestExitBtn = card.querySelector('#accPopGuestExit');
@@ -346,7 +344,7 @@ function _accPopupRenderAdd(card) {
   });
   card.querySelector('#accPopGoogleFull').addEventListener('click', function() {
     closeAccountPopup();
-    location.href = 'login.html';
+    gsiSignIn();
   });
   requestAnimationFrame(function() { input.focus(); });
 }
@@ -396,7 +394,223 @@ function _accPopupRenderConfirmRemove(card) {
 }
 
 function gsiSignIn() {
-  location.href = 'login.html';
+  if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') {
+    showToast('Firebase SDK not loaded. Refresh the page.', 'error');
+    return;
+  }
+  if (!firebase.apps.length && typeof FIREBASE_CONFIG !== 'undefined') {
+    firebase.initializeApp(FIREBASE_CONFIG);
+  }
+  var provider = new firebase.auth.GoogleAuthProvider();
+  provider.addScope('profile');
+  provider.addScope('email');
+  firebase.auth().signInWithPopup(provider).then(function(result) {
+    var user = result.user;
+    if (!user) return;
+    var gdata = {
+      name: user.displayName || '',
+      email: user.email || '',
+      picture: user.photoURL || '',
+      googleId: user.uid || ''
+    };
+    completeGoogleSignIn(gdata);
+  }).catch(function(error) {
+    if (error.code === 'auth/popup-closed-by-user') return;
+    if (error.code === 'auth/unauthorized-domain') {
+      showToast('Domain not authorized. Add this domain in Firebase Console \u2192 Authentication \u2192 Settings \u2192 Authorized domains.', 'error', 4000);
+      return;
+    }
+    console.error('Google sign-in error:', error);
+    showToast('Google sign-in failed: ' + (error.message || 'unknown error'), 'error');
+  });
+}
+
+// Entry point for Google sign-in flows that already have the profile payload
+// (login page, local-auth popup). Normalizes and delegates to the shared path.
+function googleSignIn(gdata) {
+  if (!gdata || !gdata.googleId) {
+    showToast('Google sign-in failed: missing account id', 'error');
+    return;
+  }
+  completeGoogleSignIn({
+    name: gdata.name || '',
+    email: gdata.email || '',
+    picture: gdata.picture || '',
+    googleId: gdata.googleId
+  });
+}
+
+// Shared finish for every Google sign-in. Creates or reuses the Google-backed
+// account, then activates it. While in a guest session, the guest's data is
+// bled into the account first (account's own data wins on conflicts).
+function completeGoogleSignIn(gdata) {
+  var finish = function(targetId) {
+    setActiveUserId(targetId);
+    if (typeof state !== 'undefined') state.currentUserId = targetId;
+    renderAuthUI();
+    location.reload();
+  };
+  var existing = localUsers.find(function(u) { return u.googleId === gdata.googleId; });
+  if (existing) {
+    if (isGuestMode()) {
+      recordDeviceAccess(existing);
+      bleedGuestDataInto(existing.id).then(function() { finish(existing.id); }).catch(function() { finish(existing.id); });
+    } else {
+      switchAccount(existing.id);
+    }
+    return;
+  }
+  var newUser = {
+    id: generateId(),
+    name: gdata.name || (gdata.email ? gdata.email.split('@')[0] : 'Google User'),
+    email: gdata.email || '',
+    picture: gdata.picture || '',
+    googleId: gdata.googleId,
+    _color: getColorForId(generateId())
+  };
+  migrateExistingData(newUser.id);
+  recordDeviceAccess(newUser);
+  localUsers.push(newUser);
+  saveUsers();
+  if (isGuestMode()) {
+    bleedGuestDataInto(newUser.id).then(function() { finish(newUser.id); }).catch(function() { finish(newUser.id); });
+  } else {
+    finish(newUser.id);
+  }
+}
+
+function _openImageDBByName(dbName) {
+  return new Promise(function(resolve, reject) {
+    var req = indexedDB.open(dbName, 1);
+    req.onupgradeneeded = function(e) {
+      var db = e.target.result;
+      if (!db.objectStoreNames.contains('images')) db.createObjectStore('images');
+    };
+    req.onsuccess = function(e) { resolve(e.target.result); };
+    req.onerror = function(e) { reject(e.target.error); };
+  });
+}
+
+function _deleteImageDBByName(dbName) {
+  try { indexedDB.deleteDatabase(dbName); } catch (e) {}
+}
+
+// Copy guest image entries the target account does not have yet, then remove
+// the guest's image database so no blob storage stays behind.
+function _bleedGuestImages(srcDbName, targetId) {
+  return new Promise(function(resolve) {
+    if (!srcDbName || !targetId) { resolve(); return; }
+    var srcName = srcDbName;
+    var dstName = 'haven-images-' + targetId;
+    var src = null, dst = null;
+    _openImageDBByName(srcName).then(function(db) {
+      src = db;
+      return _openImageDBByName(dstName);
+    }).then(function(db) {
+      dst = db;
+      return new Promise(function(res2, rej2) {
+        var tx = src.transaction('images', 'readonly');
+        var store = tx.objectStore('images');
+        var req = store.openCursor();
+        var copied = 0;
+        req.onsuccess = function(e) {
+          var cursor = e.target.result;
+          if (!cursor) { res2(copied); return; }
+          var putTx = dst.transaction('images', 'readwrite');
+          var dstStore = putTx.objectStore('images');
+          var getReq = dstStore.get(cursor.key);
+          getReq.onsuccess = function() {
+            if (getReq.result === undefined || getReq.result === null) {
+              dstStore.put(cursor.value, cursor.key);
+              copied++;
+            }
+          };
+          putTx.oncomplete = function() { cursor.continue(); };
+          putTx.onerror = function() { cursor.continue(); };
+        };
+        req.onerror = function() { res2(copied); };
+      });
+    }).then(function() {
+      try { if (src) src.close(); } catch (e) {}
+      try { if (dst) dst.close(); } catch (e) {}
+      _deleteImageDBByName(srcName);
+      resolve();
+    }).catch(function() {
+      try { if (src) src.close(); } catch (e) {}
+      try { if (dst) dst.close(); } catch (e) {}
+      resolve();
+    });
+  });
+}
+
+// Move the active guest's data into the target account's namespace. The guest
+// session is temporary, so its data follows into the account the guest signed
+// in with. The account's own existing values always win: only keys the account
+// does not have yet are filled from the guest. The guest profile (or raw
+// session keys when the guest had no profile), its image database, and the
+// guest flag are removed afterwards so nothing stays shared.
+function bleedGuestDataInto(targetId) {
+  return new Promise(function(resolve) {
+    if (!targetId || !isGuestMode()) { resolve(); return; }
+    var activeId = getActiveUserId();
+    var guestUser = activeId ? localUsers.find(function(u) { return u.id === activeId && u.name === 'Guest'; }) : null;
+    var targetPrefix = targetId + ':';
+    var moved = 0;
+    var keys = [];
+    var guestPrefix = null;
+    if (guestUser) {
+      guestPrefix = guestUser.id + ':';
+      for (var i = 0; i < __origLS.length; i++) {
+        var key = __origLS.key(i);
+        if (key && key.indexOf(guestPrefix) === 0) keys.push(key);
+      }
+    } else {
+      for (var j = 0; j < __origLS.length; j++) {
+        var rawKey = __origLS.key(j);
+        if (rawKey && rawKey.indexOf('haven-') === 0 && rawKey.indexOf(':') === -1 &&
+            rawKey.indexOf('haven-gsi-') !== 0 && rawKey !== 'haven-gsi-migrated' &&
+            rawKey !== 'haven-device-id' && rawKey !== 'haven-device-label' &&
+            rawKey !== 'haven-admin-password' && rawKey !== 'haven-guest-default-template') {
+          keys.push(rawKey);
+        }
+      }
+    }
+    for (var k = 0; k < keys.length; k++) {
+      var shortKey = guestPrefix ? keys[k].slice(guestPrefix.length) : keys[k];
+      if (shortKey.indexOf('haven-gsi-') === 0 || shortKey === 'haven-gsi-migrated') continue;
+      if (shortKey === 'haven-synced-at' || shortKey === 'haven-device-id' || shortKey === 'haven-device-label') continue;
+      if (shortKey === 'haven-admin-password' || shortKey === 'haven-guest-default-template') continue;
+      var existingVal = __origLS.getItem(targetPrefix + shortKey);
+      if (existingVal === null || existingVal === undefined) {
+        var val = __origLS.getItem(keys[k]);
+        if (val !== null && val !== undefined) {
+          __origLS.setItem(targetPrefix + shortKey, val);
+          moved++;
+        }
+      }
+      __origLS.removeItem(keys[k]);
+    }
+
+    var finishLS = function() {
+      if (guestUser) {
+        localUsers = localUsers.filter(function(u) { return u.id !== guestUser.id; });
+        saveUsers();
+      }
+      try { sessionStorage.removeItem('haven-guest'); } catch (e) {}
+      try {
+        if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function' && firebase.apps && firebase.apps.length) {
+          firebase.auth().signOut().catch(function() {});
+        }
+      } catch (e) {}
+      if (moved > 0 && typeof showToast === 'function') {
+        showToast('Guest data moved to your account (' + moved + ' items)', 'info', 3000);
+      }
+      resolve();
+    };
+
+    var guestImgDb = guestUser ? ('haven-images-' + guestUser.id) : (activeId ? ('haven-images-' + activeId) : 'haven-images');
+    _bleedGuestImages(guestImgDb, targetId).then(finishLS).catch(finishLS);
+  });
 }
 
 function guestSignOut() {
@@ -445,6 +659,7 @@ function createLocalProfile(name) {
     }
   }
   var user = { id: generateId(), name: name, _color: getColorForId(generateId()) };
+  migrateExistingData(user.id);
   recordDeviceAccess(user);
   localUsers.push(user);
   saveUsers();
@@ -492,6 +707,7 @@ function performRemoveProfile(id) {
     var key = __origLS.key(i);
     if (key && key.indexOf(prefix) === 0) __origLS.removeItem(key);
   }
+  _deleteImageDBByName('haven-images-' + user.id);
   localUsers = localUsers.filter(function(u) { return u.id !== id; });
   saveUsers();
   if (isActive) {
@@ -519,13 +735,19 @@ function performRemoveProfile(id) {
 
 function migrateExistingData(id) {
   var prefix = id + ':';
+  try { if (__origLS.getItem('haven-gsi-migrated') === '1') return; } catch (e) { return; }
+  var keys = [];
   for (var i = 0; i < __origLS.length; i++) {
     var key = __origLS.key(i);
-    if (key && key.indexOf('haven-') === 0 && key.indexOf('haven-gsi-') !== 0 && key.indexOf(prefix) !== 0) {
-      var val = __origLS.getItem(key);
-      if (val) __origLS.setItem(prefix + key, val);
+    if (key && key.indexOf('haven-') === 0 && key.indexOf('haven-gsi-') !== 0 && key.indexOf(prefix) !== 0 && key.indexOf(':') === -1) {
+      keys.push(key);
     }
   }
+  for (var j = 0; j < keys.length; j++) {
+    var val = __origLS.getItem(keys[j]);
+    if (val) __origLS.setItem(prefix + keys[j], val);
+  }
+  try { __origLS.setItem('haven-gsi-migrated', '1'); } catch (e) {}
 }
 
 function initGSI() {

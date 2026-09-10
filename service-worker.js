@@ -1,5 +1,5 @@
 /* Havën Schedule — Service Worker v2.0 */
-const CACHE = 'haven-schedule-v5';
+const CACHE = 'haven-schedule-v6';
 const URLS = [
   '/',
   '/index.html',
@@ -11,7 +11,11 @@ const URLS = [
   '/goals.html',
   '/friends.html',
   '/login.html',
+  '/privacy.html',
+  '/terms.html',
+  '/support.html',
   '/css/style.css',
+  '/css/legal.css',
   '/js/shared.js',
   '/js/schedule.js',
   '/js/progress.js',

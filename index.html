@@ -24,7 +24,9 @@
   })();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <link rel="stylesheet" href="css/style.css">
   <style>
     /* All page CSS consolidated in style.css */
@@ -401,7 +403,9 @@
             <span>Visuals</span>
           </button>
           <span id="syncStatusDot" class="sync-dot" title="Sync status"></span>
-
+        </div>
+        <div class="sidebar-legal">
+          <a href="privacy.html">Privacy</a><span>·</span><a href="terms.html">Terms</a><span>·</span><a href="support.html">Support</a>
         </div>
       </div>
     </aside>
@@ -704,6 +708,8 @@
   </script>
   <script src="js/shared.js"></script>
   <script src="js/settings.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
   <script src="js/gsi.js"></script>
   <script src="js/firestore-sync.js"></script>
 
@@ -1004,7 +1010,7 @@ function init() {
   </script>
 
   <!-- Sleep Log Modal -->
-  <div id="sleepLogOverlay" class="sleep-log-overlay hidden" onclick="closeSleepLogModal()"></div>
+  <div id="sleepLogOverlay" class="sleep-log-overlay hidden" onclick="closeSleepLogModal()">
     <div id="sleepLogModal" class="sleep-log-modal hidden">
     <div class="sleep-log-modal-header">
       <div style="display:flex;align-items:center;gap:var(--space-3)">
@@ -1075,6 +1081,7 @@ function init() {
         <button class="btn btn-outline" onclick="closeSleepLogModal()">Cancel</button>
         <button class="btn btn-primary" id="sleepSaveBtn" onclick="handleSleepLogSave()">Save</button>
       </div>
+    </div>
     </div>
     </div>
   </div>
@@ -1685,16 +1692,14 @@ function init() {
       }
       overlay.classList.remove('hidden');
       modal.classList.remove('hidden');
-      requestAnimationFrame(function() { overlay.classList.add('active'); modal.classList.add('active'); });
       previewSleepDuration();
     }
     function closeSleepLogModal() {
       var overlay = document.getElementById('sleepLogOverlay');
       var modal = document.getElementById('sleepLogModal');
       if (!overlay || !modal) return;
-      overlay.classList.remove('active');
-      modal.classList.remove('active');
-      setTimeout(function() { overlay.classList.add('hidden'); modal.classList.add('hidden'); }, 300);
+      overlay.classList.add('hidden');
+      modal.classList.add('hidden');
       sleepLogEditId = null;
     }
     function handleSleepLogSave() {

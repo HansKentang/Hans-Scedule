@@ -12,7 +12,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Hanken+Grotesk:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -493,6 +493,407 @@
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-20px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── 3D Laptop Showcase ─── */
+    .laptop-showcase {
+      padding: 100px 0 80px;
+      position: relative;
+    }
+    .laptop-scene {
+      perspective: 1400px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 550px;
+      position: relative;
+    }
+    .laptop {
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(8deg) rotateY(-15deg);
+      transition: transform 0.1s ease-out;
+      will-change: transform;
+    }
+    /* Base: sits at Z=0, flat on desk */
+    .laptop-base {
+      position: relative;
+      width: 560px;
+      height: 28px;
+      background: linear-gradient(155deg, #161616 0%, #0a0a0a 100%);
+      border-radius: 0 0 10px 10px;
+      box-shadow: 
+        0 8px 32px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.03),
+        inset 0 -1px 0 rgba(255,255,255,0.02);
+      overflow: hidden;
+    }
+    .laptop-keyboard {
+      position: absolute;
+      inset: 0;
+      padding: 5px 16px 3px;
+      display: grid;
+      grid-template-columns: repeat(14, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      gap: 2px;
+      pointer-events: none;
+    }
+    .laptop-keyboard .key {
+      background: linear-gradient(180deg, #1e1e1e 0%, #141414 100%);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 3px;
+      box-shadow: 
+        inset 0 1px 0 rgba(255,255,255,0.02),
+        0 1px 2px rgba(0,0,0,0.4);
+    }
+    .laptop-keyboard .key.wide-1_5 { grid-column: span 2; }
+    .laptop-keyboard .key.wide-2 { grid-column: span 3; }
+    .laptop-keyboard .key.wide-2_5 { grid-column: span 4; }
+    .laptop-keyboard .key.wide-6 { grid-column: span 8; }
+    .laptop-keyboard .key.wide-7 { grid-column: span 9; }
+    .laptop-touchpad {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 68px;
+      background: linear-gradient(180deg, #1a1a1a 0%, #101010 100%);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 6px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    }
+    .laptop-base::before {
+      content: '';
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      z-index: 1;
+    }
+    /* Screen: hinged at base's top edge (Y=0), rotates UP to ~95° */
+    .laptop-screen-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 560px;
+      height: 350px;
+      transform-origin: 0 0 0;  /* hinge at top-left-back corner */
+      transform: translateY(-350px) rotateX(-95deg);  /* pull up then rotate */
+    }
+    .laptop-screen {
+      width: 100%;
+      height: 100%;
+      background: #0a0a0a;
+      border-radius: 10px 10px 0 0;
+      box-shadow: 
+        0 -30px 80px rgba(0,0,0,0.7),
+        inset 0 1px 0 rgba(255,255,255,0.04),
+        0 0 60px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-bottom: none;
+      overflow: hidden;
+    }
+    .laptop-screen::before {
+      content: '';
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 4px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 2px;
+      z-index: 10;
+    }
+    .laptop-screen::after {
+      content: '';
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      z-index: 10;
+    }
+    .screen-content {
+      position: absolute;
+      inset: 0;
+      padding: 52px 36px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .screen-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+    .screen-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .screen-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+    }
+    .screen-dot:first-child { background: rgba(255,95,86,0.6); }
+    .screen-dot:nth-child(2) { background: rgba(255,189,46,0.6); }
+    .screen-dot:nth-child(3) { background: rgba(39,201,63,0.6); }
+    .screen-title {
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.25);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .screen-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      grid-template-rows: 24px 1fr;
+      gap: 8px;
+      position: relative;
+    }
+    .screen-sidebar {
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 12px;
+    }
+    .sidebar-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .sidebar-btn svg {
+      width: 18px;
+      height: 18px;
+      color: rgba(255,255,255,0.3);
+    }
+    .sidebar-btn.active {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .sidebar-btn.active svg { color: #fff; }
+    .screen-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+    }
+    .screen-week {
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.05em;
+    }
+    .screen-view-toggle {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 6px;
+      padding: 2px;
+    }
+    .view-btn {
+      padding: 4px 10px;
+      font-size: 0.55rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.3);
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: default;
+    }
+    .view-btn.active {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .screen-calendar {
+      grid-column: 2;
+      grid-row: 2;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      flex: 1;
+    }
+    .calendar-day {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .day-label {
+      font-size: 0.45rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.2);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      text-align: center;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .day-slot {
+      height: 24px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+    .day-task {
+      position: relative;
+      margin-top: -27px;
+      height: 22px;
+      border-radius: 3px;
+      padding: 0 6px;
+      font-size: 0.45rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .task-dw { background: rgba(255,255,255,0.15); border-left: 2px solid rgba(255,255,255,0.5); }
+    .task-mt { background: rgba(255,255,255,0.1); border-left: 2px solid rgba(255,255,255,0.4); }
+    .task-ex { background: rgba(255,255,255,0.08); border-left: 2px solid rgba(255,255,255,0.3); }
+    .task-st { background: rgba(255,255,255,0.12); border-left: 2px solid rgba(255,255,255,0.45); }
+    .screen-stats {
+      display: flex;
+      gap: 12px;
+      padding: 12px 4px 0;
+      border-top: 1px solid rgba(255,255,255,0.04);
+      margin-top: auto;
+    }
+    .stat-box {
+      flex: 1;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .stat-box-value {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+    }
+    .stat-box-label {
+      font-size: 0.5rem;
+      color: rgba(255,255,255,0.25);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+    }
+    .laptop-reflection {
+      position: absolute;
+      bottom: -40px;
+      left: 50%;
+      transform: translateX(-50%) scaleX(1) scaleY(0.3);
+      width: 560px;
+      height: 350px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, transparent 70%);
+      border-radius: 10px 10px 0 0;
+      filter: blur(8px);
+      pointer-events: none;
+      opacity: 0.4;
+    }
+    .laptop-shadow {
+      position: absolute;
+      bottom: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 480px;
+      height: 40px;
+      background: radial-gradient(ellipse, rgba(0,0,0,0.4) 0%, transparent 70%);
+      filter: blur(12px);
+      pointer-events: none;
+    }
+    .showcase-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 40px;
+      padding: 0 24px;
+    }
+    .control-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.25s var(--bounce);
+    }
+    .control-btn:hover {
+      background: var(--bg-card);
+      border-color: var(--border-light);
+      transform: scale(1.1);
+    }
+    .control-btn svg {
+      width: 20px;
+      height: 20px;
+      color: var(--text-secondary);
+    }
+    .control-btn:hover svg { color: var(--text); }
+    .view-indicators {
+      display: flex;
+      gap: 8px;
+    }
+    .view-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.3s var(--bounce);
+      cursor: pointer;
+    }
+    .view-indicator.active {
+      background: var(--text);
+      transform: scale(1.3);
+    }
+    .view-indicator:hover { background: var(--text-tertiary); }
+
+    @keyframes laptopFloat {
+      0%, 100% { transform: translateY(0) rotateX(8deg) rotateY(-15deg); }
+      50% { transform: translateY(-12px) rotateX(10deg) rotateY(-15deg); }
+    }
+    @keyframes screenGlow {
+      0%, 100% { box-shadow: 0 -20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04); }
+      50% { box-shadow: 0 -20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 40px rgba(255,255,255,0.02); }
+    }
+
+    .laptop.animating {
+      animation: laptopFloat 6s ease-in-out infinite;
+    }
+    .laptop-screen.animating {
+      animation: screenGlow 4s ease-in-out infinite;
     }
 
     /* ─── Stats Bar ─── */
@@ -1020,6 +1421,175 @@
       </div>
     </section>
 
+    <section class="laptop-showcase" id="laptop-showcase">
+      <div class="container">
+        <div class="section-header reveal" style="margin-bottom: 40px;">
+          <div class="section-tag">Interactive Preview</div>
+          <h2 class="section-title">Experience Havën in 3D.</h2>
+          <p class="section-sub">Drag to rotate the laptop. Hover to pause animation. Click views to switch screens.</p>
+        </div>
+        <div class="laptop-scene" id="laptopScene">
+          <div class="laptop" id="laptop">
+            <div class="laptop-base">
+              <div class="laptop-keyboard">
+                <div class="key wide-1_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-2"></div>
+                <div class="key wide-1_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-2"></div>
+                <div class="key wide-2_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-2_5"></div>
+                <div class="key wide-2_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-7"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-2_5"></div>
+                <div class="key wide-1_5"></div><div class="key wide-1_5"></div><div class="key wide-6"></div><div class="key wide-1_5"></div><div class="key wide-1_5"></div><div class="key wide-1_5"></div>
+              </div>
+              <div class="laptop-touchpad"></div>
+            </div>
+            <div class="laptop-screen-wrapper">
+              <div class="laptop-screen" id="laptopScreen">
+                <div class="screen-content">
+                <div class="screen-header">
+                  <div class="screen-dots">
+                    <span class="screen-dot"></span>
+                    <span class="screen-dot"></span>
+                    <span class="screen-dot"></span>
+                  </div>
+                  <span class="screen-title">SCHEDULE</span>
+                </div>
+                <div class="screen-grid">
+                  <div class="screen-sidebar">
+                    <button class="sidebar-btn active" aria-label="Hub" title="Hub">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    </button>
+                    <button class="sidebar-btn" aria-label="Schedule" title="Schedule">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    </button>
+                    <button class="sidebar-btn" aria-label="Activities" title="Activities">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                    </button>
+                    <button class="sidebar-btn" aria-label="Analytics" title="Analytics">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    </button>
+                    <button class="sidebar-btn" aria-label="Goals" title="Goals">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </button>
+                    <button class="sidebar-btn" aria-label="Finance" title="Finance">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                    </button>
+                  </div>
+                  <div class="screen-header-row">
+                    <span class="screen-week">Week of Jun 16</span>
+                    <div class="screen-view-toggle">
+                      <span class="view-btn active">Week</span>
+                      <span class="view-btn">Month</span>
+                      <span class="view-btn">Agenda</span>
+                    </div>
+                  </div>
+                  <div class="screen-calendar">
+                    <div class="calendar-days">
+                      <div class="calendar-day">
+                        <span class="day-label">Mon</span>
+                        <div class="day-slot"></div>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-dw">Design Review</div>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-mt">Team Sync</div>
+                        <div class="day-slot"></div>
+                      </div>
+                      <div class="calendar-day">
+                        <span class="day-label">Tue</span>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-mt">Standup</div>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-dw">Deep Work</div>
+                        <div class="day-slot"></div>
+                      </div>
+                      <div class="calendar-day">
+                        <span class="day-label">Wed</span>
+                        <div class="day-task task-dw">Research</div>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-ex">Gym</div>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-st">Study</div>
+                        <div class="day-slot"></div>
+                      </div>
+                      <div class="calendar-day">
+                        <span class="day-label">Thu</span>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-mt">1:1</div>
+                        <div class="day-slot"></div>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-dw">Code</div>
+                      </div>
+                      <div class="calendar-day">
+                        <span class="day-label">Fri</span>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-ex">Run</div>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-st">Read</div>
+                        <div class="day-slot"></div>
+                      </div>
+                      <div class="calendar-day">
+                        <span class="day-label">Sat</span>
+                        <div class="day-slot"></div>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-ex">Hike</div>
+                        <div class="day-slot"></div>
+                        <div class="day-slot"></div>
+                      </div>
+                      <div class="calendar-day">
+                        <span class="day-label">Sun</span>
+                        <div class="day-slot"></div>
+                        <div class="day-slot"></div>
+                        <div class="day-task task-st">Plan Week</div>
+                        <div class="day-slot"></div>
+                        <div class="day-slot"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="screen-stats">
+                  <div class="stat-box">
+                    <div class="stat-box-value">12</div>
+                    <div class="stat-box-label">Tasks</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-box-value">8.5h</div>
+                    <div class="stat-box-label">Scheduled</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-box-value">3</div>
+                    <div class="stat-box-label">Deep Work</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-box-value">2</div>
+                    <div class="stat-box-label">Meetings</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="laptop-reflection"></div>
+          </div>
+          <div class="laptop-shadow"></div>
+        </div>
+        <div class="showcase-controls reveal">
+          <button class="control-btn" id="viewSchedule" aria-label="Schedule view" title="Schedule">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </button>
+          <button class="control-btn" id="viewAnalytics" aria-label="Analytics view" title="Analytics">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </button>
+          <button class="control-btn" id="viewGoals" aria-label="Goals view" title="Goals">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </button>
+          <button class="control-btn" id="viewFinance" aria-label="Finance view" title="Finance">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+          </button>
+          <div class="view-indicators">
+            <span class="view-indicator active" data-view="schedule"></span>
+            <span class="view-indicator" data-view="analytics"></span>
+            <span class="view-indicator" data-view="goals"></span>
+            <span class="view-indicator" data-view="finance"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <div class="container">
       <div class="stats-bar">
         <div class="stat-item">
@@ -1254,6 +1824,9 @@
         <div class="footer-inner">
           <span>&copy; 2026 Havën Schedule</span>
           <div class="footer-links">
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="support.html">Support</a>
             <a href="login.html">Sign In</a>
           </div>
         </div>
@@ -1338,6 +1911,462 @@
         });
       });
 
+      // ─── 3D Laptop Showcase ───
+      (function() {
+        var laptop = document.getElementById('laptop');
+        var scene = document.getElementById('laptopScene');
+        var screen = document.getElementById('laptopScreen');
+        var viewBtns = document.querySelectorAll('.control-btn[id^="view"]');
+        var indicators = document.querySelectorAll('.view-indicator');
+        var sidebarBtns = document.querySelectorAll('.sidebar-btn');
+        
+        var targetRotationX = 8;
+        var targetRotationY = -15;
+        var currentRotationX = 8;
+        var currentRotationY = -15;
+        var isHovering = false;
+        var isDragging = false;
+        var lastMouseX = 0;
+        var lastMouseY = 0;
+        var animationId = null;
+        var currentView = 'schedule';
+        var viewData = {
+          schedule: {
+            title: 'SCHEDULE',
+            sidebarActive: 1,
+            gridHTML: getScheduleGrid()
+          },
+          analytics: {
+            title: 'ANALYTICS',
+            sidebarActive: 3,
+            gridHTML: getAnalyticsGrid()
+          },
+          goals: {
+            title: 'GOALS',
+            sidebarActive: 4,
+            gridHTML: getGoalsGrid()
+          },
+          finance: {
+            title: 'FINANCE',
+            sidebarActive: 5,
+            gridHTML: getFinanceGrid()
+          }
+        };
+
+        function getScheduleGrid() {
+          return `
+            <div class="screen-header-row">
+              <span class="screen-week">Week of Jun 16</span>
+              <div class="screen-view-toggle">
+                <span class="view-btn active">Week</span>
+                <span class="view-btn">Month</span>
+                <span class="view-btn">Agenda</span>
+              </div>
+            </div>
+            <div class="screen-calendar">
+              <div class="calendar-days">
+                <div class="calendar-day">
+                  <span class="day-label">Mon</span>
+                  <div class="day-slot"></div>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-dw">Design Review</div>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-mt">Team Sync</div>
+                  <div class="day-slot"></div>
+                </div>
+                <div class="calendar-day">
+                  <span class="day-label">Tue</span>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-mt">Standup</div>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-dw">Deep Work</div>
+                  <div class="day-slot"></div>
+                </div>
+                <div class="calendar-day">
+                  <span class="day-label">Wed</span>
+                  <div class="day-task task-dw">Research</div>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-ex">Gym</div>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-st">Study</div>
+                  <div class="day-slot"></div>
+                </div>
+                <div class="calendar-day">
+                  <span class="day-label">Thu</span>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-mt">1:1</div>
+                  <div class="day-slot"></div>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-dw">Code</div>
+                </div>
+                <div class="calendar-day">
+                  <span class="day-label">Fri</span>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-ex">Run</div>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-st">Read</div>
+                  <div class="day-slot"></div>
+                </div>
+                <div class="calendar-day">
+                  <span class="day-label">Sat</span>
+                  <div class="day-slot"></div>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-ex">Hike</div>
+                  <div class="day-slot"></div>
+                  <div class="day-slot"></div>
+                </div>
+                <div class="calendar-day">
+                  <span class="day-label">Sun</span>
+                  <div class="day-slot"></div>
+                  <div class="day-slot"></div>
+                  <div class="day-task task-st">Plan Week</div>
+                  <div class="day-slot"></div>
+                  <div class="day-slot"></div>
+                </div>
+              </div>
+            </div>
+            <div class="screen-stats">
+              <div class="stat-box"><div class="stat-box-value">12</div><div class="stat-box-label">Tasks</div></div>
+              <div class="stat-box"><div class="stat-box-value">8.5h</div><div class="stat-box-label">Scheduled</div></div>
+              <div class="stat-box"><div class="stat-box-value">3</div><div class="stat-box-label">Deep Work</div></div>
+              <div class="stat-box"><div class="stat-box-value">2</div><div class="stat-box-label">Meetings</div></div>
+            </div>
+          `;
+        }
+
+        function getAnalyticsGrid() {
+          return `
+            <div class="screen-header-row">
+              <span class="screen-week">This Week</span>
+              <div class="screen-view-toggle">
+                <span class="view-btn active">Week</span>
+                <span class="view-btn">Month</span>
+                <span class="view-btn">Year</span>
+              </div>
+            </div>
+            <div class="screen-calendar" style="display: flex; flex-direction: column; gap: 16px;">
+              <div class="sc-analytics-stats" style="display: flex; gap: 8px; padding: 0 4px;">
+                <div class="sc-analytics-stat" style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);">
+                  <div class="sc-analytics-stat-value" style="font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.9);">24</div>
+                  <div class="sc-analytics-stat-label" style="font-size: 0.45rem; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.04em;">Tasks</div>
+                </div>
+                <div class="sc-analytics-stat" style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);">
+                  <div class="sc-analytics-stat-value" style="font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.9);">18h</div>
+                  <div class="sc-analytics-stat-label" style="font-size: 0.45rem; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.04em;">Logged</div>
+                </div>
+                <div class="sc-analytics-stat" style="flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);">
+                  <div class="sc-analytics-stat-value" style="font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.9);">7d</div>
+                  <div class="sc-analytics-stat-label" style="font-size: 0.45rem; color: rgba(255,255,255,0.25); text-transform: uppercase; letter-spacing: 0.04em;">Streak</div>
+                </div>
+              </div>
+              <div class="sc-analytics-chart" style="display: flex; align-items: flex-end; gap: 6px; height: 120px; padding: 0 4px; border-top: 1px solid rgba(255,255,255,0.04); margin-top: 8px;">
+                <div class="sc-analytics-bar" style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.18); height: 70%;"></div>
+                <div class="sc-analytics-bar" style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.12); height: 95%;"></div>
+                <div class="sc-analytics-bar" style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.22); height: 45%;"></div>
+                <div class="sc-analytics-bar" style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.1); height: 80%;"></div>
+                <div class="sc-analytics-bar" style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.16); height: 60%;"></div>
+                <div class="sc-analytics-bar" style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.2); height: 85%;"></div>
+                <div class="sc-analytics-bar" style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.14); height: 50%;"></div>
+              </div>
+            </div>
+            <div class="screen-stats">
+              <div class="stat-box"><div class="stat-box-value">84%</div><div class="stat-box-label">Completion</div></div>
+              <div class="stat-box"><div class="stat-box-value">7d</div><div class="stat-box-label">Streak</div></div>
+              <div class="stat-box"><div class="stat-box-value">4.2h</div><div class="stat-box-label">Avg/Day</div></div>
+              <div class="stat-box"><div class="stat-box-value">3</div><div class="stat-box-label">Categories</div></div>
+            </div>
+          `;
+        }
+
+        function getGoalsGrid() {
+          return `
+            <div class="screen-header-row">
+              <span class="screen-week">Active Goals</span>
+              <div class="screen-view-toggle">
+                <span class="view-btn active">Active</span>
+                <span class="view-btn">Completed</span>
+                <span class="view-btn">Archived</span>
+              </div>
+            </div>
+            <div class="screen-calendar" style="display: flex; flex-direction: column; gap: 12px; padding: 0 4px;">
+              <div class="sc-goal-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;">
+                <div class="sc-goal-check done" style="width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;"></div>
+                <div class="sc-goal-info" style="flex: 1; min-width: 0;">
+                  <div class="sc-goal-name" style="font-size: 0.65rem; font-weight: 500; color: rgba(255,255,255,0.7); margin-bottom: 4px;">Learn TypeScript</div>
+                  <div class="sc-goal-track" style="height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden;">
+                    <div class="sc-goal-fill wide" style="height: 100%; border-radius: 3px; background: rgba(255,255,255,0.2); width: 85%;"></div>
+                  </div>
+                </div>
+                <span class="sc-goal-pct" style="font-size: 0.55rem; color: rgba(255,255,255,0.3); font-family: var(--font-mono);">85%</span>
+              </div>
+              <div class="sc-goal-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;">
+                <div class="sc-goal-check" style="width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;"></div>
+                <div class="sc-goal-info" style="flex: 1; min-width: 0;">
+                  <div class="sc-goal-name" style="font-size: 0.65rem; font-weight: 500; color: rgba(255,255,255,0.7); margin-bottom: 4px;">Run a Marathon</div>
+                  <div class="sc-goal-track" style="height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden;">
+                    <div class="sc-goal-fill med" style="height: 100%; border-radius: 3px; background: rgba(255,255,255,0.2); width: 55%;"></div>
+                  </div>
+                </div>
+                <span class="sc-goal-pct" style="font-size: 0.55rem; color: rgba(255,255,255,0.3); font-family: var(--font-mono);">55%</span>
+              </div>
+              <div class="sc-goal-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;">
+                <div class="sc-goal-check" style="width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;"></div>
+                <div class="sc-goal-info" style="flex: 1; min-width: 0;">
+                  <div class="sc-goal-name" style="font-size: 0.65rem; font-weight: 500; color: rgba(255,255,255,0.7); margin-bottom: 4px;">Build Side Project</div>
+                  <div class="sc-goal-track" style="height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden;">
+                    <div class="sc-goal-fill narrow" style="height: 100%; border-radius: 3px; background: rgba(255,255,255,0.2); width: 30%;"></div>
+                  </div>
+                </div>
+                <span class="sc-goal-pct" style="font-size: 0.55rem; color: rgba(255,255,255,0.3); font-family: var(--font-mono);">30%</span>
+              </div>
+              <div class="sc-goal-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px;">
+                <div class="sc-goal-check" style="width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; border: 2px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center;"></div>
+                <div class="sc-goal-info" style="flex: 1; min-width: 0;">
+                  <div class="sc-goal-name" style="font-size: 0.65rem; font-weight: 500; color: rgba(255,255,255,0.7); margin-bottom: 4px;">Read 24 Books</div>
+                  <div class="sc-goal-track" style="height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden;">
+                    <div class="sc-goal-fill narrow" style="height: 100%; border-radius: 3px; background: rgba(255,255,255,0.2); width: 42%;"></div>
+                  </div>
+                </div>
+                <span class="sc-goal-pct" style="font-size: 0.55rem; color: rgba(255,255,255,0.3); font-family: var(--font-mono);">42%</span>
+              </div>
+            </div>
+            <div class="screen-stats">
+              <div class="stat-box"><div class="stat-box-value">4</div><div class="stat-box-label">Active</div></div>
+              <div class="stat-box"><div class="stat-box-value">53%</div><div class="stat-box-label">Avg Progress</div></div>
+              <div class="stat-box"><div class="stat-box-value">2</div><div class="stat-box-label">Completed</div></div>
+              <div class="stat-box"><div class="stat-box-value">12</div><div class="stat-box-label">Sub-tasks</div></div>
+            </div>
+          `;
+        }
+
+        function getFinanceGrid() {
+          return `
+            <div class="screen-header-row">
+              <span class="screen-week">This Month</span>
+              <div class="screen-view-toggle">
+                <span class="view-btn active">Month</span>
+                <span class="view-btn">Quarter</span>
+                <span class="view-btn">Year</span>
+              </div>
+            </div>
+            <div class="screen-calendar" style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 4px;">
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 16px; text-align: center;">
+                  <div style="font-size: 0.5rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Income</div>
+                  <div style="font-size: 1.1rem; font-weight: 700; color: #4ade80;">$4,250</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 16px; text-align: center;">
+                  <div style="font-size: 0.5rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">Expenses</div>
+                  <div style="font-size: 1.1rem; font-weight: 700; color: #f87171;">$2,180</div>
+                </div>
+              </div>
+              <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 16px;">
+                <div style="font-size: 0.5rem; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px;">Balance</div>
+                <div style="font-size: 1.4rem; font-weight: 700; color: #fff;">$2,070</div>
+                <div style="font-size: 0.55rem; color: #4ade80; margin-top: 4px;">+$1,240 vs last month</div>
+              </div>
+              <div style="display: flex; align-items: flex-end; gap: 6px; height: 80px; padding: 0 4px; border-top: 1px solid rgba(255,255,255,0.04);">
+                <div style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(74,222,128,0.3); height: 65%;"></div>
+                <div style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(74,222,128,0.2); height: 45%;"></div>
+                <div style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(74,222,128,0.35); height: 70%;"></div>
+                <div style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(74,222,128,0.15); height: 40%;"></div>
+                <div style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(74,222,128,0.25); height: 55%;"></div>
+                <div style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(74,222,128,0.3); height: 60%;"></div>
+                <div style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(74,222,128,0.2); height: 50%;"></div>
+              </div>
+            </div>
+            <div class="screen-stats">
+              <div class="stat-box"><div class="stat-box-value">$2,070</div><div class="stat-box-label">Balance</div></div>
+              <div class="stat-box"><div class="stat-box-value">48%</div><div class="stat-box-label">Savings Rate</div></div>
+              <div class="stat-box"><div class="stat-box-value">$4,250</div><div class="stat-box-label">Income</div></div>
+              <div class="stat-box"><div class="stat-box-value">$2,180</div><div class="stat-box-label">Expenses</div></div>
+            </div>
+          `;
+        }
+
+        function switchView(view) {
+          currentView = view;
+          var data = viewData[view];
+          
+          // Update screen title
+          var titleEl = screen.querySelector('.screen-title');
+          if (titleEl) titleEl.textContent = data.title;
+          
+          // Update sidebar active state
+          sidebarBtns.forEach(function(btn, i) {
+            btn.classList.toggle('active', i === data.sidebarActive);
+          });
+          
+          // Update grid content with transition
+          var grid = screen.querySelector('.screen-grid');
+          if (grid) {
+            grid.style.opacity = '0';
+            grid.style.transform = 'translateY(10px)';
+            setTimeout(function() {
+              grid.innerHTML = data.gridHTML;
+              grid.style.opacity = '1';
+              grid.style.transform = 'translateY(0)';
+            }, 150);
+          }
+          
+          // Update indicators
+          indicators.forEach(function(ind, i) {
+            var views = ['schedule', 'analytics', 'goals', 'finance'];
+            ind.classList.toggle('active', views[i] === view);
+          });
+          
+          // Update control buttons
+          viewBtns.forEach(function(btn) {
+            btn.classList.toggle('active', btn.id === 'view' + view.charAt(0).toUpperCase() + view.slice(1));
+          });
+        }
+
+        function animate() {
+          // Smooth rotation interpolation
+          currentRotationX += (targetRotationX - currentRotationX) * 0.1;
+          currentRotationY += (targetRotationY - currentRotationY) * 0.1;
+          
+          laptop.style.transform = 'rotateX(' + currentRotationX + 'deg) rotateY(' + currentRotationY + 'deg)';
+          
+          animationId = requestAnimationFrame(animate);
+        }
+
+        function startAnimation() {
+          if (!animationId) animate();
+        }
+
+        function stopAnimation() {
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+          }
+        }
+
+        // Mouse parallax on scene
+        scene.addEventListener('mousemove', function(e) {
+          if (isHovering && !isDragging) {
+            var rect = scene.getBoundingClientRect();
+            var centerX = rect.left + rect.width / 2;
+            var centerY = rect.top + rect.height / 2;
+            var deltaX = (e.clientX - centerX) / (rect.width / 2);
+            var deltaY = (e.clientY - centerY) / (rect.height / 2);
+            
+            targetRotationY = -15 + deltaX * 25;
+            targetRotationX = 8 - deltaY * 15;
+          }
+        });
+
+        scene.addEventListener('mouseenter', function() {
+          isHovering = true;
+          laptop.classList.remove('animating');
+          screen.classList.remove('animating');
+        });
+
+        scene.addEventListener('mouseleave', function() {
+          isHovering = false;
+          isDragging = false;
+          targetRotationX = 8;
+          targetRotationY = -15;
+          laptop.classList.add('animating');
+          screen.classList.add('animating');
+        });
+
+        // Drag to rotate
+        scene.addEventListener('mousedown', function(e) {
+          isDragging = true;
+          lastMouseX = e.clientX;
+          lastMouseY = e.clientY;
+          laptop.classList.remove('animating');
+          screen.classList.remove('animating');
+          e.preventDefault();
+        });
+
+        window.addEventListener('mousemove', function(e) {
+          if (isDragging) {
+            var deltaX = e.clientX - lastMouseX;
+            var deltaY = e.clientY - lastMouseY;
+            targetRotationY += deltaX * 0.5;
+            targetRotationX -= deltaY * 0.3;
+            
+            // Clamp rotation
+            targetRotationX = Math.max(-20, Math.min(35, targetRotationX));
+            targetRotationY = Math.max(-60, Math.min(20, targetRotationY));
+            
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+          }
+        });
+
+        window.addEventListener('mouseup', function() {
+          isDragging = false;
+        });
+
+        // Touch support
+        scene.addEventListener('touchstart', function(e) {
+          isDragging = true;
+          lastMouseX = e.touches[0].clientX;
+          lastMouseY = e.touches[0].clientY;
+          laptop.classList.remove('animating');
+          screen.classList.remove('animating');
+        }, { passive: true });
+
+        scene.addEventListener('touchmove', function(e) {
+          if (isDragging) {
+            var deltaX = e.touches[0].clientX - lastMouseX;
+            var deltaY = e.touches[0].clientY - lastMouseY;
+            targetRotationY += deltaX * 0.5;
+            targetRotationX -= deltaY * 0.3;
+            targetRotationX = Math.max(-40, Math.min(20, targetRotationX));
+            targetRotationY = Math.max(-60, Math.min(20, targetRotationY));
+            lastMouseX = e.touches[0].clientX;
+            lastMouseY = e.touches[0].clientY;
+          }
+        }, { passive: true });
+
+        scene.addEventListener('touchend', function() {
+          isDragging = false;
+        });
+
+        // View switching
+        viewBtns.forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            var view = this.id.replace('view', '').toLowerCase();
+            switchView(view);
+          });
+        });
+
+        indicators.forEach(function(ind) {
+          ind.addEventListener('click', function() {
+            switchView(this.dataset.view);
+          });
+        });
+
+        sidebarBtns.forEach(function(btn, i) {
+          btn.addEventListener('click', function() {
+            var views = ['schedule', 'analytics', 'goals', 'finance'];
+            if (views[i]) switchView(views[i]);
+          });
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            var views = ['schedule', 'analytics', 'goals', 'finance'];
+            var currentIndex = views.indexOf(currentView);
+            var newIndex = (currentIndex + (e.key === 'ArrowRight' ? 1 : -1) + 4) % 4;
+            switchView(views[newIndex]);
+          }
+        });
+
+        // Start animation loop
+        startAnimation();
+
+        // Pause animation when tab is hidden
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) stopAnimation();
+          else startAnimation();
+        });
+      })();
 
     })();
   </script>

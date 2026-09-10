@@ -20,6 +20,19 @@ function snapSpotifyHeight(v) {
 const HUB_LAYOUT_KEY = 'haven-schedule-hub-layout';
 const HUB_BENTO_KEY = 'haven-hub-bento';
 const HUB_EDIT_KEY = 'haven-hub-edit';
+const CLOCK_STYLES_KEY = 'haven-clock-styles';
+const CLOCK_STYLE_LIST = ['digital','analog','minimal','flip','split'];
+let _clockStyles = {};
+try { _clockStyles = JSON.parse(localStorage.getItem(CLOCK_STYLES_KEY) || '{}'); } catch(e) {}
+function _getClockStyle(uid) { return _clockStyles[uid] || 'digital'; }
+function _setClockStyle(uid, style) { _clockStyles[uid] = style; try { localStorage.setItem(CLOCK_STYLES_KEY, JSON.stringify(_clockStyles)); } catch(e) {} }
+
+const WEATHER_STYLES_KEY = 'haven-weather-styles';
+const WEATHER_STYLE_LIST = ['compact','hero','minimal','forecast','card'];
+let _weatherStyles = {};
+try { _weatherStyles = JSON.parse(localStorage.getItem(WEATHER_STYLES_KEY) || '{}'); } catch(e) {}
+function _getWeatherStyle(uid) { return _weatherStyles[uid] || 'compact'; }
+function _setWeatherStyle(uid, style) { _weatherStyles[uid] = style; try { localStorage.setItem(WEATHER_STYLES_KEY, JSON.stringify(_weatherStyles)); } catch(e) {} }
 const HUB_VIS_KEY = 'haven-hub-visibility';
 const HUB_CONTENT_KEY = 'haven-hub-content';
 const TIMER_STATE_KEY = 'hub-timer-state';
@@ -704,13 +717,17 @@ function renderHubBento() {
       ? `<div class="bento-resize-edge" data-resize-axis="e" data-resize-bubble="${uid}"></div><div class="bento-resize-edge" data-resize-axis="s" data-resize-bubble="${uid}"></div><div class="bento-resize-handle" data-resize-axis="se" data-resize-bubble="${uid}"></div>`
       : '';
     const editUI = isEdit
-      ? `<div class="bento-bubble-handle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><circle cx="8" cy="6" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg></div>
-         <button class="bento-bubble-btn" data-duplicate-bubble="${uid}" title="Duplicate" style="right:34px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="10" height="10" rx="1"/><path d="M4 14V5a1 1 0 0 1 1-1h9"/></svg></button>
-         <button class="bento-bubble-remove" data-remove-bubble="${uid}">×</button>${resizeHandle}`
+      ? `<div class="bento-toolbar">
+           <button class="bento-tool-btn bento-tool-move" data-move-bubble="${uid}" title="Drag to move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg></button>
+           <button class="bento-tool-btn" data-duplicate-bubble="${uid}" title="Duplicate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+         </div>
+         ${type === 'clock' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-clock-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'weather' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-weather-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         <button class="bento-tool-btn bento-tool-delete bento-tool-delete-right" data-remove-bubble="${uid}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
     const clampH = Math.min(h, MAX_CANVAS_HEIGHT - clampY);
-    const dimStyle = `left:${x}px;top:${clampY}px;width:${w}px;height:${clampH}px;overflow:auto`;
+    const dimStyle = `left:${x}px;top:${clampY}px;width:${w}px;height:${clampH}px;overflow:hidden`;
 
     switch (type) {
       case 'goals':
@@ -869,16 +886,70 @@ function renderHubBento() {
         const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
         const dateStr = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
-          ${editUI}
-          <div class="clock-face" data-clock-uid="${uid}">
+        const clockStyle = _getClockStyle(uid);
+        const hourNum = now.getHours();
+        const minNum = now.getMinutes();
+        const secNum = now.getSeconds();
+        let clockFaceHTML = '';
+        if (clockStyle === 'analog') {
+          const hourDeg = (hourNum % 12) * 30 + minNum * 0.5;
+          const minDeg = minNum * 6;
+          const secDeg = secNum * 6;
+          clockFaceHTML = `<div class="clock-face clock-analog" data-clock-uid="${uid}" data-clock-style="analog">
+            <svg class="clock-analog-svg" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="47" fill="none" stroke="var(--border-color)" stroke-width="0.8"/>
+              <circle cx="50" cy="50" r="44" fill="none" stroke="var(--border-subtle)" stroke-width="0.3"/>
+              ${[0,30,60,90,120,150,180,210,240,270,300,330].map(function(d){var r=44;var x=50+r*Math.sin(d*Math.PI/180);var y=50-r*Math.cos(d*Math.PI/180);return '<line x1="'+(50+40*Math.sin(d*Math.PI/180))+'" y1="'+(50-40*Math.cos(d*Math.PI/180))+'" x2="'+x+'" y2="'+y+'" stroke="var(--text-tertiary)" stroke-width="'+(d%90===0?'1.2':'0.5')+'" stroke-linecap="round"/>'}).join('')}
+              <line x1="50" y1="50" x2="50" y2="22" stroke="var(--text-primary)" stroke-width="2.5" stroke-linecap="round" class="clock-hour-hand" style="transform:rotate(${hourDeg}deg);transform-origin:50px 50px"/>
+              <line x1="50" y1="50" x2="50" y2="14" stroke="var(--text-primary)" stroke-width="1.5" stroke-linecap="round" class="clock-min-hand" style="transform:rotate(${minDeg}deg);transform-origin:50px 50px"/>
+              <line x1="50" y1="58" x2="50" y2="10" stroke="var(--accent)" stroke-width="0.7" stroke-linecap="round" class="clock-sec-hand" style="transform:rotate(${secDeg}deg);transform-origin:50px 50px"/>
+              <circle cx="50" cy="50" r="3" fill="var(--accent)"/>
+              <circle cx="50" cy="50" r="1.2" fill="var(--bg-primary)"/>
+            </svg>
+            <span class="clock-date">${dateStr}</span>
+          </div>`;
+        } else if (clockStyle === 'minimal') {
+          clockFaceHTML = `<div class="clock-face clock-minimal" data-clock-uid="${uid}" data-clock-style="minimal">
+            <div class="clock-minimal-time"><span class="clock-minimal-h">${hh}</span><span class="clock-minimal-col">:</span><span class="clock-minimal-m">${mm}</span></div>
+            <span class="clock-date">${dateStr}</span>
+          </div>`;
+        } else if (clockStyle === 'flip') {
+          clockFaceHTML = `<div class="clock-face clock-flip" data-clock-uid="${uid}" data-clock-style="flip">
+            <div class="clock-flip-row">
+              <div class="clock-flip-card"><div class="clock-flip-inner"><span class="clock-flip-val">${hh}</span></div></div>
+              <span class="clock-flip-colon">:</span>
+              <div class="clock-flip-card"><div class="clock-flip-inner"><span class="clock-flip-val">${mm}</span></div></div>
+              <span class="clock-flip-sep"></span>
+              <div class="clock-flip-card clock-flip-sm"><div class="clock-flip-inner"><span class="clock-flip-val">${ss}</span></div></div>
+            </div>
+            <span class="clock-date">${dateStr}</span>
+          </div>`;
+        } else if (clockStyle === 'split') {
+          clockFaceHTML = `<div class="clock-face clock-split" data-clock-uid="${uid}" data-clock-style="split">
+            <div class="clock-split-row">
+              <div class="clock-split-block"><span class="clock-split-num">${hh}</span><span class="clock-split-lbl">HRS</span></div>
+              <span class="clock-split-dots">:</span>
+              <div class="clock-split-block"><span class="clock-split-num">${mm}</span><span class="clock-split-lbl">MIN</span></div>
+              <span class="clock-split-dots">:</span>
+              <div class="clock-split-block"><span class="clock-split-num clock-split-sec-num">${ss}</span><span class="clock-split-lbl">SEC</span></div>
+            </div>
+            <span class="clock-date">${dateStr}</span>
+          </div>`;
+        } else {
+          clockFaceHTML = `<div class="clock-face clock-digital" data-clock-uid="${uid}" data-clock-style="digital">
             <div class="clock-row"><span class="clock-time">${hh}:${mm}</span><span class="clock-seconds">${ss}</span></div>
             <span class="clock-date">${dateStr}</span>
-          </div>
+          </div>`;
+        }
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Clock</span></div>
+          ${clockFaceHTML}
         </div>`;
       case 'weather':
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 116.71-9h1.79a4.5 4.5 0 110 9z"/></svg><span>Weather</span></div>
           <div class="weather-widget" data-weather-uid="${uid}">
             <div class="weather-loading">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -932,13 +1003,25 @@ function renderHubBento() {
         var ts = _timerState(uid);
         var tDisplay = ts.mode === 'countdown' ? _fmtTime(Math.max(0, ts.target - ts.elapsed)) : _fmtTime(ts.elapsed);
         var tStatus = ts.running ? 'running' : (ts.target > 0 && ts.elapsed > 0 ? 'paused' : (ts.target > 0 ? 'ready' : 'idle'));
-        var presetsHtml = (tStatus === 'idle' || tStatus === 'ready') ? '<div class="timer-presets"><button class="timer-preset" data-timer-preset="60" data-timer-uid="' + uid + '">1m</button><button class="timer-preset" data-timer-preset="300" data-timer-uid="' + uid + '">5m</button><button class="timer-preset" data-timer-preset="900" data-timer-uid="' + uid + '">15m</button><button class="timer-preset" data-timer-preset="1800" data-timer-uid="' + uid + '">30m</button></div>' : '';
+        var presetsHtml = (tStatus === 'idle' || tStatus === 'ready') ? '<div class="timer-presets"><button class="timer-preset" data-timer-preset="60" data-timer-uid="' + uid + '">1m</button><button class="timer-preset" data-timer-preset="300" data-timer-uid="' + uid + '">5m</button><button class="timer-preset" data-timer-preset="900" data-timer-uid="' + uid + '">15m</button><button class="timer-preset" data-timer-preset="1800" data-timer-uid="' + uid + '">30m</button><button class="timer-preset" data-timer-preset="3600" data-timer-uid="' + uid + '">1h</button></div>' : '';
         var modeLabel = ts.mode === 'countdown' ? 'SW' : 'TD';
+        var tFrac = (ts.mode === 'countdown' && ts.target > 0) ? Math.max(0, Math.min(1, ts.elapsed / ts.target)) : 0;
+        var tOffset = 326.73 - 326.73 * tFrac;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Timer</span></div>
           <div class="timer-widget" data-timer-uid="${uid}">
             ${presetsHtml}
-            <div class="timer-display">${tDisplay}</div>
+            <div class="timer-ring">
+              <svg viewBox="0 0 120 120">
+                <circle class="timer-ring-bg" cx="60" cy="60" r="52"/>
+                <circle class="timer-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="${tOffset}"/>
+              </svg>
+              <div class="timer-ring-text">
+                <span class="timer-display">${tDisplay}</span>
+                <span class="timer-mode-label">${ts.mode === 'countdown' ? (ts.target > 0 ? 'countdown' : 'set a preset') : 'stopwatch'}</span>
+              </div>
+            </div>
             <div class="timer-controls">
               <button class="timer-btn ${tStatus === 'running' ? 'timer-btn-active' : ''}" data-timer-action="toggle" data-timer-uid="${uid}">${ts.running ? 'Pause' : 'Start'}</button>
               <button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="${uid}">${modeLabel}</button>
@@ -954,13 +1037,18 @@ function renderHubBento() {
         var pPhase = phaseLabels[ps.phase] || 'Focus';
         var pCycles = ps.cycle + 1;
         var pRunning = ps.running;
+        var pDone = (ps.phase !== 'focus' && ps.cycle % 4 === 0 && ps.cycle > 0) ? 4 : ps.cycle % 4;
+        var pDots = '';
+        for (var pdi = 0; pdi < 4; pdi++) pDots += '<span class="pomo-dot' + (pdi < pDone ? ' pomo-dot-on' : '') + '"></span>';
+        var pOffset = 326.73 - (326.73 * pct / 100);
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="pomo-widget" data-pomo-uid="${uid}">
-            <div class="pomo-header"><span class="pomo-phase">${pPhase}</span><span class="pomo-cycle">#${pCycles}</span></div>
-            <div class="pomo-ring"><svg viewBox="0 0 120 120"><circle class="pomo-ring-bg" cx="60" cy="60" r="52"/><circle class="pomo-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="${326.73 - (326.73 * pct / 100)}"/></svg><span class="pomo-time">${pDisplay}</span></div>
+            <div class="pomo-header"><span class="pomo-phase">${pPhase}</span><span class="pomo-dots">${pDots}</span></div>
+            <div class="pomo-ring pomo-ring-${ps.phase}"><svg viewBox="0 0 120 120"><circle class="pomo-ring-bg" cx="60" cy="60" r="52"/><circle class="pomo-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="${pOffset}"/></svg><span class="pomo-time">${pDisplay}</span></div>
             <div class="pomo-controls">
               <button class="timer-btn ${pRunning ? 'timer-btn-active' : ''}" data-pomo-action="toggle" data-pomo-uid="${uid}">${pRunning ? 'Pause' : 'Start'}</button>
+              <button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="${uid}">Reset</button>
               <button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="${uid}">Skip</button>
             </div>
           </div>
@@ -1017,68 +1105,74 @@ function renderHubBento() {
         var _fr24Coords = null;
         try { _fr24Coords = localStorage.getItem('haven-fr24-' + uid) || ''; } catch(e) {}
         if (_fr24Coords) {
-          var frUrl = 'https://www.flightradar24.com/simple?lat=' + _fr24Coords.split(',')[0] + '&lon=' + _fr24Coords.split(',')[1] + '&zoom=6';
+          var parts = _fr24Coords.split(',');
+          var fLat = parseFloat(parts[0]) || 51.5;
+          var fLon = parseFloat(parts[1]) || -0.12;
+          var mapId = 'fr24-map-' + uid;
           return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
             ${editUI}
-            <div class="fr24-widget">
-              <iframe src="${e(frUrl)}" frameborder="0" allowtransparency="true" loading="lazy" style="display:block;width:100%;height:100%;border:none"></iframe>
+            <div class="fr24-widget" id="${mapId}" data-fr24-lat="${fLat}" data-fr24-lon="${fLon}">
+              <div class="fr24-status"><span class="fr24-status-dot"></span><span class="fr24-status-text">Connecting...</span></div>
             </div>
           </div>`;
         } else {
           return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px dashed var(--border-color)">
             ${editUI}
             <div class="embed-empty" data-embed-type="flightradar" data-embed-uid="${uid}">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;opacity:0.3"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/><circle cx="12" cy="12" r="3"/><path d="M2 12h20"/></svg>
-              <span>Set flight radar location</span>
-              <button class="embed-setup-btn" data-embed-setup="flightradar" data-embed-uid="${uid}">Configure</button>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;opacity:0.3"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>
+              <span>Flight Tracker</span>
+              <button class="embed-setup-btn" data-embed-setup="flightradar" data-embed-uid="${uid}">Set Location</button>
             </div>
           </div>`;
         }
       case 'sleep-score':
         var _sleepLogs = []; try { _sleepLogs = JSON.parse(localStorage.getItem('haven-schedule-sleep') || '[]'); } catch(e) {}
         var _sleepTargets = {targetDuration:480}; try { _sleepTargets = JSON.parse(localStorage.getItem('haven-schedule-sleep-targets') || '{}'); } catch(e) {}
-        var _recentLogs = _sleepLogs.slice(-14);
-        var _lastLog = _recentLogs[_recentLogs.length - 1] || null;
-        var _lastDur = _lastLog ? (function(){ var b=_lastLog.bedtime.split(':').map(Number), w=_lastLog.wakeTime.split(':').map(Number); var bm=b[0]*60+b[1], wm=w[0]*60+w[1]; return wm <= bm ? wm+1440-bm : wm-bm; })() : 0;
-        var _lastQual = _lastLog ? _lastLog.quality : 0;
-        var _avgDur = _recentLogs.length ? Math.round(_recentLogs.reduce(function(s,l){ var b=l.bedtime.split(':').map(Number), w=l.wakeTime.split(':').map(Number); var bm=b[0]*60+b[1], wm=w[0]*60+w[1]; return s + (wm <= bm ? wm+1440-bm : wm-bm); },0) / _recentLogs.length) : 0;
-        var _avgQual = _recentLogs.length ? (_recentLogs.reduce(function(s,l){return s+l.quality;},0) / _recentLogs.length).toFixed(1) : '—';
+        var _weekLogs = _sleepWeekLogs();
+        var _loggedWeek = _weekLogs.filter(function(w) { return w.log; });
+        var _lastEntry = _loggedWeek.length ? _loggedWeek[_loggedWeek.length - 1].log : (_sleepLogs.length ? _sleepLogs[_sleepLogs.length - 1] : null);
+        var _lastDur = _lastEntry ? (function(){ var b=_lastEntry.bedtime.split(':').map(Number), w=_lastEntry.wakeTime.split(':').map(Number); var bm=b[0]*60+b[1], wm=w[0]*60+w[1]; return wm <= bm ? wm+1440-bm : wm-bm; })() : 0;
+        var _lastQual = _lastEntry ? _lastEntry.quality : 0;
+        var _durArr = _loggedWeek.map(function(w) { var l=w.log; var b=l.bedtime.split(':').map(Number), w2=l.wakeTime.split(':').map(Number); var bm=b[0]*60+b[1], wm=w2[0]*60+w2[1]; return wm <= bm ? wm+1440-bm : wm-bm; });
+        var _avgDur = _durArr.length ? Math.round(_durArr.reduce(function(s,d){ return s+d; },0) / _durArr.length) : 0;
+        var _avgQual = _loggedWeek.length ? (_loggedWeek.reduce(function(s,w){return s+(w.log.quality||0);},0) / _loggedWeek.length).toFixed(1) : '—';
         var _target = _sleepTargets.targetDuration || 480;
-        var _durPct = _target > 0 ? Math.min(100, Math.round((_avgDur / _target) * 100)) : 0;
-        var _qualStars = _lastQual ? new Array(Math.min(5,_lastQual)).fill('★').join('') + new Array(5-Math.min(5,_lastQual)).fill('☆').join('') : '';
+        var _score = _sleepScoreCalc(_sleepLogs, _weekLogs, _target);
+        var _consist = (typeof getSleepConsistencyScore === 'function') ? getSleepConsistencyScore(_sleepLogs) : null;
+        var _consistTxt = _consist ? (_consist.score >= 80 ? 'very consistent' : _consist.score >= 60 ? 'good rhythm' : _consist.score >= 40 ? 'some variation' : 'irregular') : '';
         var _circ = 2 * Math.PI * 15.5;
-        var _offset = _circ - (_durPct / 100) * _circ;
+        var _pct = _score != null ? _score : 0;
+        var _offset = _circ - (_pct / 100) * _circ;
         var _durStr = _lastDur ? (_lastDur >= 60 ? Math.floor(_lastDur/60)+'h '+_lastDur%60+'m' : _lastDur+'m') : '—';
+        var _scoreColor = _score == null ? 'var(--border-color)' : _score >= 70 ? '#10b981' : _score >= 40 ? '#f59e0b' : '#ef4444';
+        var _bars = _weekLogs.map(function(w) {
+          var pct = w.log && w.log.duration ? Math.min(1, w.log.duration / (w.log.duration > 0 ? Math.max(_target, 1) : 480)) : 0;
+          var fill = pct * 34;
+          var cls = 'ss-bar' + (w.log && w.log.duration >= _target ? ' ss-bar-hit' : '') + (w.ds === formatDate(new Date()) ? ' ss-bar-today' : '');
+          return '<div class="' + cls + '"><svg viewBox="0 0 6 36"><rect class="bg" x="0.5" y="1" width="5" height="34" rx="2.5"/><rect class="fill" x="0.5" y="' + (35 - fill) + '" width="5" height="' + fill + '" rx="2.5"/></svg><span>' + w.dow + '</span></div>';
+        }).join('');
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="ss-widget">
-            <div class="ss-ring-col">
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span>Sleep</span></div>
+          <div class="ss-widget" data-ss-open="1" title="Log sleep">
+            <div class="ss-top">
               <div class="ss-ring">
                 <svg viewBox="0 0 36 36">
                   <circle class="bg" cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-color)" stroke-width="2.5"></circle>
-                  <circle class="fill" cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="${_circ}" stroke-dashoffset="${_offset}" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
+                  <circle class="fill" cx="18" cy="18" r="15.5" fill="none" stroke="${_scoreColor}" stroke-width="2.5" stroke-dasharray="${_circ}" stroke-dashoffset="${_offset}" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
                 </svg>
-                <div class="ss-ring-val">${_durPct}%</div>
+                <div class="ss-ring-val">${_score != null ? _score : '—'}</div>
               </div>
-              <div class="ss-ring-label">avg vs target</div>
+              <div class="ss-top-meta">
+                <span class="ss-ring-label">sleep score</span>
+                <span class="ss-score-note">${_score == null ? 'log 3+ nights this week' : (_durStr + ' last night')}${_consistTxt ? ' · ' + _consistTxt : ''}</span>
+              </div>
             </div>
-            <div class="ss-stats">
-              <div class="ss-row">
-                <span class="ss-stat-val">${_durStr}</span>
-                <span class="ss-stat-lbl">last night</span>
-              </div>
-              <div class="ss-row ss-row-qual">
-                <span class="ss-stars">${_qualStars || '—'}</span>
-                <span class="ss-stat-lbl">quality</span>
-              </div>
-              <div class="ss-row">
-                <span class="ss-stat-val">${_avgDur >= 60 ? Math.floor(_avgDur/60)+'h '+_avgDur%60+'m' : _avgDur+'m'}</span>
-                <span class="ss-stat-lbl">7-day avg</span>
-              </div>
-              <div class="ss-row">
-                <span class="ss-stat-val">${_avgQual}</span>
-                <span class="ss-stat-lbl">/5 avg quality</span>
-              </div>
+            <div class="ss-bars">${_bars}</div>
+            <div class="ss-foot">
+              <span class="ss-foot-item"><b>${_avgDur >= 60 ? Math.floor(_avgDur/60)+'h '+_avgDur%60+'m' : _avgDur+'m'}</b> avg</span>
+              <span class="ss-foot-item"><b>${_avgQual}</b> /5 quality</span>
+              <button class="ss-log-btn" data-ss-log title="Log sleep">Log</button>
             </div>
           </div>
         </div>`;
@@ -1088,6 +1182,12 @@ function renderHubBento() {
         </div>`;
     }
   }
+
+  // Clean up existing Leaflet maps before re-rendering
+  grid.querySelectorAll('.fr24-widget').forEach(function(el) {
+    if (el._flightInterval) clearInterval(el._flightInterval);
+    if (el._leafletMap) { el._leafletMap.remove(); el._leafletMap = null; }
+  });
 
   const visible = layout.filter(i => !i.hidden);
   visible.forEach(item => {
@@ -1102,6 +1202,79 @@ function renderHubBento() {
       console.warn('Bento bubble render error:', item.t, e);
     }
   });
+
+  // Initialize Leaflet flight radar maps
+  if (typeof L !== 'undefined') {
+    var _fr24Proxies = [
+      function(u) { return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(u); },
+      function(u) { return 'https://corsproxy.io/?' + encodeURIComponent(u); },
+      function(u) { return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); }
+    ];
+    grid.querySelectorAll('.fr24-widget[data-fr24-lat]').forEach(function(el) {
+      if (el._leafletMap) return;
+      var lat = parseFloat(el.dataset.fr24Lat) || 51.5;
+      var lon = parseFloat(el.dataset.fr24Lon) || -0.12;
+      var map = L.map(el, { zoomControl: false, attributionControl: false, maxZoom: 12, minZoom: 3 }).setView([lat, lon], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 12 }).addTo(map);
+      el._leafletMap = map;
+      el._flightMarkers = [];
+      el._fr24ProxyIdx = 0;
+      el._fr24ConsecutiveFails = 0;
+      var statusEl = el.querySelector('.fr24-status-text');
+      var statusDot = el.querySelector('.fr24-status-dot');
+      var airportIcon = L.divIcon({ className: 'fr24-airport-icon', html: '<div style="width:8px;height:8px;background:#00ff88;border-radius:50%;border:2px solid rgba(0,255,136,0.3);box-shadow:0 0 12px #00ff88,0 0 24px rgba(0,255,136,0.3)"></div>', iconSize: [8, 8], iconAnchor: [4, 4] });
+      L.marker([lat, lon], { icon: airportIcon }).addTo(map);
+      function setStatus(text, state) {
+        if (statusEl) statusEl.textContent = text;
+        if (statusDot) statusDot.className = 'fr24-status-dot fr24-status-' + state;
+      }
+      function fetchFlights() {
+        var bounds = map.getBounds();
+        var pad = 1;
+        var url = 'https://opensky-network.org/api/states/all?lamin=' + (bounds.getSouth() - pad) + '&lamax=' + (bounds.getNorth() + pad) + '&lomin=' + (bounds.getWest() - pad) + '&lomax=' + (bounds.getEast() + pad);
+        var proxyFn = _fr24Proxies[el._fr24ProxyIdx % _fr24Proxies.length];
+        fetch(proxyFn(url), { signal: AbortSignal.timeout(8000) })
+          .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+          .then(function(data) {
+            if (!data || !data.states) { setStatus('No data', 'warn'); return; }
+            el._fr24ConsecutiveFails = 0;
+            el._flightMarkers.forEach(function(m) { map.removeLayer(m); });
+            el._flightMarkers = [];
+            data.states.forEach(function(s) {
+              var nlat = s[6], nlon = s[5], callsign = (s[1] || '').trim();
+              if (nlat == null || nlon == null) return;
+              var heading = s[10] || 0;
+              var alt = s[13] ? Math.round(s[13] * 3.28084) : 0;
+              var spd = s[12] ? Math.round(s[12] * 3.6) : 0;
+              var trail = alt > 30000 ? '#ff3366' : alt > 15000 ? '#ffaa00' : '#00ff88';
+              var icon = L.divIcon({ className: 'fr24-plane-icon', html: '<svg viewBox="0 0 24 24" fill="' + trail + '" style="width:12px;height:12px;transform:rotate(' + heading + 'deg);filter:drop-shadow(0 0 3px ' + trail + ')"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>', iconSize: [12, 12], iconAnchor: [6, 6] });
+              var marker = L.marker([nlat, nlon], { icon: icon }).addTo(map);
+              var tip = callsign || 'UNK';
+              if (alt) tip += ' · ' + alt.toLocaleString() + ' ft';
+              if (spd) tip += ' · ' + spd + ' km/h';
+              marker.bindTooltip(tip, { direction: 'top', offset: [0, -6], className: 'fr24-tooltip' });
+              el._flightMarkers.push(marker);
+            });
+            var count = el._flightMarkers.length;
+            setStatus(count + ' plane' + (count !== 1 ? 's' : ''), 'ok');
+          })
+          .catch(function() {
+            el._fr24ConsecutiveFails++;
+            if (el._fr24ConsecutiveFails >= 2) {
+              el._fr24ProxyIdx = (el._fr24ProxyIdx + 1) % _fr24Proxies.length;
+              el._fr24ConsecutiveFails = 0;
+            }
+            setStatus('Offline', 'err');
+          });
+      }
+      setStatus('Loading...', 'loading');
+      fetchFlights();
+      el._flightInterval = setInterval(fetchFlights, 15000);
+      map.on('moveend', fetchFlights);
+      map.on('zoomend', fetchFlights);
+      setTimeout(function() { map.invalidateSize(); fetchFlights(); }, 300);
+    });
+  }
 
   // Wire remove-bubble buttons directly (fires in target phase, not bubbled)
   grid.querySelectorAll('[data-remove-bubble]').forEach(function(btn) {
@@ -1149,6 +1322,32 @@ function renderHubBento() {
     });
   });
 
+  // Wire clock style toggle buttons
+  grid.querySelectorAll('[data-clock-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.clockStyleToggle;
+      var cur = _getClockStyle(uid);
+      var idx = CLOCK_STYLE_LIST.indexOf(cur);
+      var next = CLOCK_STYLE_LIST[(idx + 1) % CLOCK_STYLE_LIST.length];
+      _setClockStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  // Wire weather style toggle buttons
+  grid.querySelectorAll('[data-weather-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.weatherStyleToggle;
+      var cur = _getWeatherStyle(uid);
+      var idx = WEATHER_STYLE_LIST.indexOf(cur);
+      var next = WEATHER_STYLE_LIST[(idx + 1) % WEATHER_STYLE_LIST.length];
+      _setWeatherStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
   if (isEdit) {
     // Done Editing button (fixed bottom)
     var doneBtn = document.createElement('button');
@@ -1176,7 +1375,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], .bento-bubble-handle, .bento-bubble-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -1187,7 +1386,7 @@ function renderHubBento() {
       var editable = e.target.closest('[contenteditable]');
       if (editable) return; // allow default paste menu
       // Handles/buttons area -> snap preset menu handles this, skip bubble menu
-      if (e.target.closest('.bento-bubble-handle, .bento-bubble-remove, .bento-bubble-btn')) return;
+      if (e.target.closest('.bento-toolbar, .bento-tool-btn')) return;
       var bubble = e.target.closest('.bento-bubble');
       if (!bubble) { e.preventDefault(); return; }
       e.preventDefault();
@@ -1417,6 +1616,23 @@ function renderHubBento() {
         _renderPomo(puid);
         return;
       }
+      var pomoReset = e.target.closest('[data-pomo-action="reset"]');
+      if (pomoReset) {
+        var puidR = pomoReset.dataset.pomoUid;
+        var psR = _pomodoroState[puidR];
+        if (psR) {
+          psR.running = false;
+          psR.startTs = null;
+          psR.phase = 'focus';
+          psR.total = 1500;
+          psR.remaining = 1500;
+          psR.cycle = 0;
+        }
+        _pomoClearTickIfIdle();
+        _renderPomo(puidR);
+        _savePomoStates();
+        return;
+      }
       var pomoSkip = e.target.closest('[data-pomo-action="skip"]');
       if (pomoSkip) {
         var puid2 = pomoSkip.dataset.pomoUid;
@@ -1426,7 +1642,19 @@ function renderHubBento() {
           ps2.startTs = null;
           _advancePomoPhase(puid2);
         }
+        _pomoClearTickIfIdle();
         _renderPomo(puid2);
+        _savePomoStates();
+        return;
+      }
+      var ssLogBtn = e.target.closest('[data-ss-log]');
+      if (ssLogBtn) {
+        if (typeof openSleepLogModal === 'function') openSleepLogModal();
+        return;
+      }
+      var ssWidget = e.target.closest('.ss-widget[data-ss-open]');
+      if (ssWidget && !hubEditMode && !e.target.closest('[data-ss-log]')) {
+        if (typeof openSleepLogModal === 'function') openSleepLogModal();
         return;
       }
       var modeBtn = e.target.closest('[data-timer-action="mode"]');
@@ -1450,7 +1678,6 @@ function renderHubBento() {
   const clockFaces = grid.querySelectorAll('.clock-face[data-clock-uid]');
   if (clockFaces.length > 0) {
     if (_clockInterval) {
-      // Interval already running, no need to restart
     } else {
       var _calMonthCheck = -1;
       _clockInterval = setInterval(function() {
@@ -1462,14 +1689,49 @@ function renderHubBento() {
       const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
       const dateStr = days[n.getDay()] + ', ' + months[n.getMonth()] + ' ' + n.getDate();
       document.querySelectorAll('.clock-face[data-clock-uid]').forEach(function(el) {
-        const timeEl = el.querySelector('.clock-time');
-        const secEl = el.querySelector('.clock-seconds');
-        const dateEl = el.querySelector('.clock-date');
-        if (timeEl) timeEl.textContent = hh + ':' + mm;
-        if (secEl) secEl.textContent = ss;
-        if (dateEl) dateEl.textContent = dateStr;
+        var style = el.dataset.clockStyle || 'digital';
+        if (style === 'analog') {
+          var h = n.getHours(), m = n.getMinutes(), s = n.getSeconds();
+          var hourDeg = (h % 12) * 30 + m * 0.5;
+          var minDeg = m * 6;
+          var secDeg = s * 6;
+          var hh2 = el.querySelector('.clock-hour-hand');
+          var mm2 = el.querySelector('.clock-min-hand');
+          var ss2 = el.querySelector('.clock-sec-hand');
+          if (hh2) hh2.style.transform = 'rotate(' + hourDeg + 'deg)';
+          if (mm2) mm2.style.transform = 'rotate(' + minDeg + 'deg)';
+          if (ss2) ss2.style.transform = 'rotate(' + secDeg + 'deg)';
+          var dateEl = el.querySelector('.clock-date');
+          if (dateEl) dateEl.textContent = dateStr;
+        } else if (style === 'minimal') {
+          var hEl = el.querySelector('.clock-minimal-h');
+          var mEl = el.querySelector('.clock-minimal-m');
+          if (hEl) hEl.textContent = hh;
+          if (mEl) mEl.textContent = mm;
+          var dateEl = el.querySelector('.clock-date');
+          if (dateEl) dateEl.textContent = dateStr;
+        } else if (style === 'flip') {
+          el.querySelectorAll('.clock-flip-val').forEach(function(span, i) {
+            span.textContent = i === 0 ? hh : i === 1 ? mm : ss;
+          });
+          var dateEl = el.querySelector('.clock-date');
+          if (dateEl) dateEl.textContent = dateStr;
+        } else if (style === 'split') {
+          var nums = el.querySelectorAll('.clock-split-num');
+          if (nums[0]) nums[0].textContent = hh;
+          if (nums[1]) nums[1].textContent = mm;
+          if (nums[2]) nums[2].textContent = ss;
+          var dateEl = el.querySelector('.clock-date');
+          if (dateEl) dateEl.textContent = dateStr;
+        } else {
+          var timeEl = el.querySelector('.clock-time');
+          var secEl = el.querySelector('.clock-seconds');
+          var dateEl = el.querySelector('.clock-date');
+          if (timeEl) timeEl.textContent = hh + ':' + mm;
+          if (secEl) secEl.textContent = ss;
+          if (dateEl) dateEl.textContent = dateStr;
+        }
       });
-      // Auto-refresh calendar when month changes
       var cm = n.getMonth() + n.getFullYear() * 12;
       if (_calMonthCheck >= 0 && _calMonthCheck !== cm && grid.querySelector('.cal-nav')) {
         renderHubBento();
@@ -1665,9 +1927,10 @@ function setupBubbleDragDrop() {
   grid.addEventListener('mousedown', function(e) {
     // Drag can only be initiated from the 6-dots handle
     if (isTouchEvent(e)) return;
-    var dragZone = e.target.closest('.bento-bubble-handle');
+    var dragZone = e.target.closest('.bento-tool-move');
     if (!dragZone) return;
     e.preventDefault();
+    // Check if touch or mouse drag
     // Double-click on handle cancels any pending/active drag and un-holds the widget
     var now = Date.now();
     if (now - _handleLastClickTime < 400) {
@@ -1676,8 +1939,8 @@ function setupBubbleDragDrop() {
       return;
     }
     _handleLastClickTime = now;
-    // Don't start drag if clicking interactive elements inside the zone
-    if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-duplicate-bubble], .bento-resize-edge')) return;
+    // Don't start drag if clicking interactive elements inside the zone (but allow the move button itself)
+    if (!dragZone.contains(e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn'))) return;
     const bubble = dragZone.closest('.bento-bubble');
     if (!bubble) return;
     var gr = grid.getBoundingClientRect();
@@ -1733,9 +1996,10 @@ function setupBubbleDragDrop() {
 
   // Touch drag start on handle
   grid.addEventListener('touchstart', function(e) {
-    var dragZone = e.target.closest('.bento-bubble-handle');
+    var dragZone = e.target.closest('.bento-tool-move');
     if (!dragZone) return;
-    if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn, .bento-bubble-btn, .bento-bubble-remove, [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-cal-nav], [data-quote-shuffle], [data-duplicate-bubble], .bento-resize-edge')) return;
+    // Only block drag from other interactive elements, not the move button itself
+    if (!dragZone.contains(e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], .w-add-btn, .hub-edit-item-btn'))) return;
     const bubble = dragZone.closest('.bento-bubble');
     if (!bubble) return;
     e.preventDefault();
@@ -2234,8 +2498,67 @@ function bubbleTypeIcon(t) {
   return icons[t] || '';
 }
 
+function _wmoKind(code) {
+  if (code === 0 || code === 1) return 'clear';
+  if (code === 2) return 'partly';
+  if (code === 3) return 'cloudy';
+  if (code === 45 || code === 48) return 'fog';
+  if (code >= 51 && code <= 57) return 'drizzle';
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return 'rain';
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow';
+  if (code >= 95) return 'storm';
+  return 'cloudy';
+}
+function _wIconSmall(kind, isDay) {
+  var a = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"';
+  if (kind === 'clear') return isDay
+    ? '<svg ' + a + '><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.9" y1="4.9" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.1" y2="19.1"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.9" y1="19.1" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.1" y2="4.9"/></svg>'
+    : '<svg ' + a + '><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>';
+  if (kind === 'partly') return '<svg ' + a + '><circle cx="7" cy="7" r="2.5"/><path d="M7 2v1.5M2 7h1.5M3.5 3.5l1 1"/><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>';
+  if (kind === 'fog') return '<svg ' + a + '><line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="16" x2="21" y2="16"/></svg>';
+  if (kind === 'drizzle') return '<svg ' + a + '><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="8" y1="16" x2="8" y2="17.5"/><line x1="12" y1="16" x2="12" y2="17.5"/><line x1="16" y1="16" x2="16" y2="17.5"/></svg>';
+  if (kind === 'rain') return '<svg ' + a + '><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="8" y1="16" x2="8" y2="19"/><line x1="12" y1="16" x2="12" y2="19"/><line x1="16" y1="16" x2="16" y2="19"/></svg>';
+  if (kind === 'snow') return '<svg ' + a + '><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="8" y1="16" x2="8" y2="17"/><line x1="12" y1="17" x2="12" y2="18"/><line x1="16" y1="16" x2="16" y2="17"/></svg>';
+  if (kind === 'storm') return '<svg ' + a + '><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="13 11 10 15 13 15 11 19"/></svg>';
+  return '<svg ' + a + '><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>';
+}
+function _sleepWeekLogs() {
+  var logs = (typeof loadSleepLogs === 'function') ? loadSleepLogs() : [];
+  var now = new Date();
+  var dow = (now.getDay() + 6) % 7;
+  var week = [];
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow + i);
+    var ds = formatDate(d);
+    week.push({ ds: ds, dow: ['S','M','T','W','T','F','S'][d.getDay()], log: logs.find(function(l) { return l.date === ds; }) || null });
+  }
+  return week;
+}
+function _sleepScoreCalc(allLogs, week, targetDur) {
+  if (!allLogs || allLogs.length < 3) return null;
+  var active = week.filter(function(w) { return w.log; }).map(function(w) { return w.log; });
+  if (active.length === 0) return null;
+  var durData = active.filter(function(l) { return l.duration; });
+  var durScore = 0;
+  if (durData.length > 0) {
+    var avg = durData.reduce(function(s, l) { return s + l.duration; }, 0) / durData.length;
+    durScore = Math.max(0, 40 - Math.abs(avg - targetDur) * 0.15);
+  }
+  var qData = active.filter(function(l) { return l.quality; });
+  var qScore = 0;
+  if (qData.length > 0) qScore = (qData.reduce(function(s, l) { return s + l.quality; }, 0) / qData.length / 5) * 30;
+  var cScore = 0;
+  if (typeof getSleepConsistencyScore === 'function') {
+    var c = getSleepConsistencyScore(allLogs);
+    if (c) cScore = (c.score / 100) * 30;
+  }
+  return Math.round(durScore + qScore + cScore);
+}
+
 /* ─── Weather widget updater ────────────────── */
 function updateWeatherWidget(widget, data) {
+  var uid = widget.dataset.weatherUid || '';
+  var wStyle = (typeof _getWeatherStyle === 'function') ? _getWeatherStyle(uid) : 'compact';
   var codes = {
     0:'Clear',1:'Clear',2:'Cloudy',3:'Overcast',
     45:'Foggy',48:'Foggy',
@@ -2256,10 +2579,52 @@ function updateWeatherWidget(widget, data) {
     'Showers':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg>',
     'Storm':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="13 7 9 13 13 13 11 19"/></svg>'
   };
+  var iconsLg = {
+    'Clear':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>',
+    'Cloudy':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
+    'Overcast':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
+    'Foggy':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="21" y2="6"/></svg>',
+    'Drizzle':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><line x1="8" y1="16" x2="8" y2="18"/><line x1="12" y1="16" x2="12" y2="18"/><line x1="16" y1="16" x2="16" y2="18"/></svg>',
+    'Rain':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><line x1="8" y1="16" x2="8" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/><line x1="16" y1="16" x2="16" y2="20"/></svg>',
+    'Snow':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><line x1="8" y1="19" x2="8" y2="21"/><line x1="12" y1="19" x2="12" y2="21"/><line x1="16" y1="19" x2="16" y2="21"/></svg>',
+    'Showers':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg>',
+    'Storm':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><polyline points="13 7 9 13 13 13 11 19"/></svg>'
+  };
+  if (!data || data.temp == null) {
+    widget.innerHTML = '<div class="weather-error"><span>Weather unavailable</span></div>';
+    return;
+  }
   var cond = codes[data.code] || 'Clear';
   var icon = icons[cond] || icons['Clear'];
+  var iconLg = iconsLg[cond] || iconsLg['Clear'];
+  var feelsHtml = typeof data.feels === 'number' ? '<span class="weather-feels">feels ' + Math.round(data.feels) + '&deg;</span>' : '';
+  var hiloHtml = (typeof data.hi === 'number' && typeof data.lo === 'number') ? '<span class="weather-hilo"><b>H</b> ' + Math.round(data.hi) + '&deg; <b>L</b> ' + Math.round(data.lo) + '&deg;</span>' : '';
   var windHtml = data.wind ? '<span class="weather-wind">' + Math.round(data.wind) + ' km/h</span>' : '';
-  widget.innerHTML = '<div class="weather-main">' + icon + '<span class="weather-temp">' + Math.round(data.temp) + '&deg;</span></div><div class="weather-cond">' + cond + windHtml + '<button class="weather-refresh" data-weather-refresh title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button></div>';
+  var refreshBtn = '<button class="weather-refresh" data-weather-refresh title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>';
+  var strip = '';
+  if (data.hourly && data.hourly.length) {
+    strip = '<div class="weather-hours">' + data.hourly.map(function(h, i) {
+      var hd = new Date(h.t);
+      var hr = hd.getHours();
+      var lbl = i === 0 ? 'Now' : (hr === 0 ? '12a' : hr === 12 ? '12p' : hr < 12 ? hr + 'a' : (hr - 12) + 'p');
+      return '<div class="weather-hour"><span class="wh-t">' + lbl + '</span>' + _wIconSmall(_wmoKind(h.code), h.day) + '<span class="wh-v">' + Math.round(h.temp) + '&deg;</span></div>';
+    }).join('') + '</div>';
+  }
+
+  if (wStyle === 'hero') {
+    widget.innerHTML = '<div class="wh-hero">' + iconLg + '<span class="wh-hero-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-hero-cond">' + cond + '</span>' + feelsHtml + '<div class="wh-hero-meta">' + hiloHtml + windHtml + refreshBtn + '</div></div>';
+  } else if (wStyle === 'minimal') {
+    widget.innerHTML = '<div class="wh-minimal"><span class="wh-min-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-min-cond">' + cond + '</span>' + feelsHtml + refreshBtn + '</div>';
+  } else if (wStyle === 'forecast') {
+    widget.innerHTML = '<div class="wh-forecast-head"><span class="wh-forecast-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-forecast-cond">' + cond + '</span>' + hiloHtml + refreshBtn + '</div>' + strip;
+  } else if (wStyle === 'card') {
+    widget.innerHTML = '<div class="wh-card">' + icon + '<div class="wh-card-info"><span class="wh-card-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-card-cond">' + cond + '</span>' + feelsHtml + '</div><div class="wh-card-hilo">' + hiloHtml + windHtml + '</div>' + refreshBtn + '</div>' + strip;
+  } else {
+    widget.innerHTML = '<div class="weather-main">' + icon + '<span class="weather-temp">' + Math.round(data.temp) + '&deg;</span></div>'
+      + '<div class="weather-cond">' + cond + feelsHtml + '</div>'
+      + '<div class="weather-meta">' + hiloHtml + windHtml + refreshBtn + '</div>'
+      + strip;
+  }
 }
 
 function _fetchWeather(grid) {
@@ -2280,14 +2645,42 @@ function _fetchWeather(grid) {
         weatherWidgets.forEach(function(w) { updateWeatherWidget(w, cached.data); });
         return;
       }
-      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&timezone=auto';
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&current=temperature_2m,apparent_temperature,is_day,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=2';
       fetch(url).then(function(r) { return r.json(); }).then(function(data) {
-        if (!data || !data.current_weather) return;
+        if (!data || (!data.current && !data.current_weather)) return;
+        var cur = data.current || {};
+        var legacy = data.current_weather || {};
         var wd = {
-          temp: data.current_weather.temperature,
-          code: data.current_weather.weathercode,
-          wind: data.current_weather.windspeed
+          temp: cur.temperature_2m != null ? cur.temperature_2m : legacy.temperature,
+          code: cur.weather_code != null ? cur.weather_code : legacy.weathercode,
+          wind: cur.wind_speed_10m != null ? cur.wind_speed_10m : legacy.windspeed,
+          feels: cur.apparent_temperature,
+          isDay: cur.is_day === undefined ? true : cur.is_day === 1
         };
+        if (wd.temp == null && wd.code == null) return;
+        if (data.daily && data.daily.temperature_2m_max && data.daily.temperature_2m_max.length) {
+          wd.hi = data.daily.temperature_2m_max[0];
+          wd.lo = data.daily.temperature_2m_min[0];
+        }
+        if (data.hourly && data.hourly.time && data.hourly.temperature_2m) {
+          var pad = function(x) { return String(x).padStart(2, '0'); };
+          var n = new Date();
+          var stamp = n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate()) + 'T' + pad(n.getHours()) + ':00';
+          var idx = data.hourly.time.indexOf(stamp);
+          if (idx === -1) {
+            for (var ti = 0; ti < data.hourly.time.length; ti++) {
+              if (new Date(data.hourly.time[ti]) >= n) { idx = ti; break; }
+            }
+          }
+          if (idx !== -1) {
+            var wcodes = data.hourly.weather_code || data.hourly.weathercode || [];
+            wd.hourly = [];
+            for (var k = idx; k < Math.min(idx + 7, data.hourly.time.length); k++) {
+              var hd = new Date(data.hourly.time[k]);
+              wd.hourly.push({ t: data.hourly.time[k], temp: data.hourly.temperature_2m[k], code: wcodes[k], day: hd.getHours() >= 6 && hd.getHours() < 20 });
+            }
+          }
+        }
         _weatherLastData = wd;
         try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: wd})); } catch(e) {}
         weatherWidgets.forEach(function(w) { updateWeatherWidget(w, wd); });
@@ -2341,7 +2734,7 @@ function openEmbedSetup(type, uid) {
     '<div class="embed-settings-body">' +
       (type === 'strava'
         ? '<div class="embed-settings-field"><label>Paste a Strava activity URL</label><input class="embed-settings-input" id="embedStravaInput" placeholder="https://www.strava.com/activities/123456789"></div><p class="embed-settings-hint">Only public activities can be embedded.</p>'
-        : '<div class="embed-settings-field"><label>Latitude</label><input class="embed-settings-input" id="embedFr24Lat" placeholder="51.5" value="51.5"></div><div class="embed-settings-field"><label>Longitude</label><input class="embed-settings-input" id="embedFr24Lon" placeholder="-0.12" value="-0.12"></div><p class="embed-settings-hint">Enter coordinates for the center of the flight radar map.</p>') +
+        : '<div class="embed-settings-field"><label>Location</label><select class="embed-settings-input" id="embedFr24Preset"><option value="51.5,-0.12">London (LHR)</option><option value="40.6413,-73.7781">New York (JFK)</option><option value="33.9425,-118.408">Los Angeles (LAX)</option><option value="35.5494,139.7798">Tokyo (NRT)</option><option value="25.2532,55.3657">Dubai (DXB)</option><option value="48.3538,11.7861">Munich (MUC)</option><option value="1.3644,103.9915">Singapore (SIN)</option><option value="52.5597,13.2877">Berlin (BER)</option><option value="-33.9461,151.177">Sydney (SYD)</option><option value="custom">Custom coordinates...</option></select></div><div class="embed-settings-field" id="embedFr24CustomFields" style="display:none"><label>Latitude</label><input class="embed-settings-input" id="embedFr24Lat" placeholder="51.5"><label>Longitude</label><input class="embed-settings-input" id="embedFr24Lon" placeholder="-0.12"></div><p class="embed-settings-hint">Choose an airport or enter custom coordinates.</p>') +
     '</div>' +
     '<div class="embed-settings-footer"><button class="embed-settings-save" data-embed-save="' + type + '" data-embed-uid="' + uid + '">Save</button></div>' +
   '</div>';
@@ -2358,6 +2751,13 @@ function openEmbedSetup(type, uid) {
     }
   });
   setTimeout(function() { overlay.querySelector('.embed-settings-input')?.focus(); }, 100);
+  var presetSelect = overlay.querySelector('#embedFr24Preset');
+  var customFields = overlay.querySelector('#embedFr24CustomFields');
+  if (presetSelect && customFields) {
+    presetSelect.addEventListener('change', function() {
+      customFields.style.display = this.value === 'custom' ? 'flex' : 'none';
+    });
+  }
 }
 
 function saveEmbedSettings(type, uid) {
@@ -2369,11 +2769,19 @@ function saveEmbedSettings(type, uid) {
     if (!match) { showToast('Could not find activity ID in URL', 'error', 2500); return; }
     try { localStorage.setItem('haven-strava-' + uid, match[1]); } catch(e) {}
   } else if (type === 'flightradar') {
-    var lat = document.getElementById('embedFr24Lat');
-    var lon = document.getElementById('embedFr24Lon');
-    if (!lat || !lon) return;
-    var latVal = parseFloat(lat.value.trim());
-    var lonVal = parseFloat(lon.value.trim());
+    var presetSelect = document.getElementById('embedFr24Preset');
+    var latVal, lonVal;
+    if (presetSelect && presetSelect.value !== 'custom') {
+      var coords = presetSelect.value.split(',');
+      latVal = parseFloat(coords[0]);
+      lonVal = parseFloat(coords[1]);
+    } else {
+      var lat = document.getElementById('embedFr24Lat');
+      var lon = document.getElementById('embedFr24Lon');
+      if (!lat || !lon) return;
+      latVal = parseFloat(lat.value.trim());
+      lonVal = parseFloat(lon.value.trim());
+    }
     if (isNaN(latVal) || isNaN(lonVal) || latVal < -90 || latVal > 90 || lonVal < -180 || lonVal > 180) {
       showToast('Enter valid coordinates', 'error', 2500); return;
     }
@@ -2624,6 +3032,7 @@ function _advancePomoPhase(uid) {
   s.startTs = null;
 }
 function _fmtTime(seconds) {
+  seconds = Math.max(0, Math.floor(seconds));
   var h = Math.floor(seconds / 3600);
   var m = Math.floor((seconds % 3600) / 60);
   var sec = seconds % 60;
@@ -2640,7 +3049,13 @@ function _renderPomo(uid) {
   var pRunning = s.running;
   el.querySelector('.pomo-time').textContent = _fmtTime(s.remaining);
   el.querySelector('.pomo-phase').textContent = phaseLabels[s.phase] || 'Focus';
-  el.querySelector('.pomo-cycle').textContent = '#' + (s.cycle + 1);
+  var ring = el.querySelector('.pomo-ring');
+  if (ring) {
+    ring.classList.remove('pomo-ring-focus', 'pomo-ring-short', 'pomo-ring-long');
+    ring.classList.add('pomo-ring-' + s.phase);
+  }
+  var pDone = (s.phase !== 'focus' && s.cycle % 4 === 0 && s.cycle > 0) ? 4 : s.cycle % 4;
+  el.querySelectorAll('.pomo-dot').forEach(function(d, i) { d.classList.toggle('pomo-dot-on', i < pDone); });
   var fg = el.querySelector('.pomo-ring-fg');
   if (fg) fg.style.strokeDashoffset = 326.73 - (326.73 * pct / 100);
   var btn = el.querySelector('[data-pomo-action="toggle"]');
@@ -2656,6 +3071,15 @@ function _renderTimer(uid) {
   if (!s) return;
   var displaySecs = s.mode === 'countdown' ? Math.max(0, s.target - s.elapsed) : s.elapsed;
   el.querySelector('.timer-display').textContent = _fmtTime(displaySecs);
+  var ring = el.querySelector('.timer-ring');
+  if (ring) ring.classList.toggle('timer-done', s.mode === 'countdown' && s.target > 0 && s.elapsed >= s.target && !s.running);
+  var modeLabel = el.querySelector('.timer-mode-label');
+  if (modeLabel) modeLabel.textContent = s.mode === 'countdown' ? (s.target > 0 ? (s.running ? 'running' : s.elapsed > 0 ? 'paused' : 'countdown') : 'set a preset') : 'stopwatch';
+  var fg = el.querySelector('.timer-ring-fg');
+  if (fg) {
+    var frac = (s.mode === 'countdown' && s.target > 0) ? Math.max(0, Math.min(1, s.elapsed / s.target)) : 0;
+    fg.style.strokeDashoffset = 326.73 - 326.73 * frac;
+  }
   var btn = el.querySelector('[data-timer-action="toggle"]');
   if (btn) {
     btn.textContent = s.running ? 'Pause' : 'Start';
@@ -3231,7 +3655,7 @@ function setupHubEditEvents() {
 
   // Snap-presets submenu on right-click of bubble handle/button area in edit mode
   document.querySelector('.bento-grid')?.addEventListener('contextmenu', function(e) {
-    var handle = e.target.closest('.bento-bubble-handle, .bento-bubble-remove, .bento-bubble-btn');
+    var handle = e.target.closest('.bento-toolbar, .bento-tool-btn');
     if (!handle || !hubEditMode) return;
     e.preventDefault();
     var bubble = handle.closest('.bento-bubble');
@@ -3551,8 +3975,11 @@ function _snapshotBubblePreview(el, type) {
   var lines = [];
   try {
     if (type === 'clock') {
-      var t = el.querySelector('.clock-time'); var d = el.querySelector('.clock-date');
+      var t = el.querySelector('.clock-time') || el.querySelector('.clock-flip-val') || el.querySelector('.clock-minimal-h');
+      var d = el.querySelector('.clock-date');
+      var s = el.querySelector('.clock-split-num');
       if (t) lines.push(t.textContent.trim().replace(/\s+/g,' '));
+      else if (s) lines.push(s.textContent.trim() + ':' + (el.querySelectorAll('.clock-split-num')[1]?.textContent || ''));
       if (d) lines.push(d.textContent.trim().replace(/\s+/g,' '));
     } else if (type === 'weather') {
       var tmp = el.querySelector('.w-temp'); var cd = el.querySelector('.w-cond'); var lc = el.querySelector('.w-loc');
@@ -3588,9 +4015,10 @@ function _snapshotBubblePreview(el, type) {
       var pr = el.querySelector('[class*="pct"], [class*="num"]');
       if (pr) lines.push(pr.textContent.trim().replace(/\s+/g,' '));
     } else if (type === 'sleep-score') {
-      var rv = el.querySelector('.ss-ring-val'); var sv = el.querySelector('.ss-stat-val');
-      if (rv) lines.push(rv.textContent.trim().replace(/\s+/g,' '));
-      if (sv) lines.push(sv.textContent.trim().replace(/\s+/g,' '));
+      var rv = el.querySelector('.ss-ring-val');
+      var sn = el.querySelector('.ss-score-note');
+      if (rv) lines.push('Score: ' + rv.textContent.trim().replace(/\s+/g,' '));
+      if (sn) lines.push(sn.textContent.trim().replace(/\s+/g,' '));
     } else if (type === 'strava' || type === 'flightradar') {
       lines.push('Embedded content');
     } else if (type === 'images') {

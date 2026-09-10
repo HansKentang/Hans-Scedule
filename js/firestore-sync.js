@@ -219,24 +219,42 @@ function pushToCloud() {
       _version: 1
     };
 
-    // Collect all haven-* keys from localStorage
-    for (var i = 0; i < localStorage.length; i++) {
-      var key = localStorage.key(i);
-      if (key && key.indexOf('haven-') === 0) {
-        // Skip gallery images (too large — stored in IndexedDB)
-        if (key.indexOf('haven-image-') === 0 || key.indexOf('hub-image-') === 0) continue;
-        // Skip auth-related keys
-        if (key.indexOf('haven-gsi-') === 0) continue;
-        // Skip device ID (per-device)
-        if (key === 'haven-device-id' || key === 'haven-device-label') continue;
-        // Skip sync metadata
-        if (key === 'haven-synced-at') continue;
+    // Collect this account's haven-* keys from localStorage.
+    // Keys are stored per-account as '{userId}:haven-...', so iterate the raw
+    // store and strip the active prefix; reading through the wrapped
+    // localStorage would double-prefix and return nulls.
+    var prefix = state.currentUserId ? state.currentUserId + ':' : '';
+    var rawLength = (typeof __origLS !== 'undefined' && __origLS.length !== undefined) ? __origLS.length : localStorage.length;
+    var rawKeyAt = function(i) {
+      return (typeof __origLS !== 'undefined' && __origLS.key) ? __origLS.key(i) : localStorage.key(i);
+    };
+    var rawGet = function(k) {
+      return (typeof __origLS !== 'undefined' && __origLS.getItem) ? __origLS.getItem(k) : localStorage.getItem(k);
+    };
 
-        try {
-          data[key] = JSON.parse(localStorage.getItem(key));
-        } catch (e) {
-          data[key] = localStorage.getItem(key);
-        }
+    for (var i = 0; i < rawLength; i++) {
+      var key = rawKeyAt(i);
+      if (!key) continue;
+      if (prefix) {
+        if (key.indexOf(prefix) !== 0) continue;
+        key = key.slice(prefix.length);
+      } else if (key.indexOf(':') !== -1) {
+        continue;
+      }
+      if (key.indexOf('haven-') !== 0) continue;
+      // Skip gallery images (too large — stored in IndexedDB)
+      if (key.indexOf('haven-image-') === 0 || key.indexOf('hub-image-') === 0) continue;
+      // Skip auth-related keys
+      if (key.indexOf('haven-gsi-') === 0) continue;
+      // Skip device ID (per-device)
+      if (key === 'haven-device-id' || key === 'haven-device-label') continue;
+      // Skip sync metadata
+      if (key === 'haven-synced-at') continue;
+
+      try {
+        data[key] = JSON.parse(rawGet(prefix + key));
+      } catch (e) {
+        data[key] = rawGet(prefix + key);
       }
     }
 
@@ -418,12 +436,25 @@ function syncUserStatsToFirestore() {
 }
 
 // ─── Watch for data changes via localStorage proxy ───────
-function onDataChanged(key) {
+function onDataChanged(rawKey) {
   if (!SYNC_ENABLED || !state.currentUserId) return;
   // Ignore changes triggered by sync itself
   if (SYNC_PULLING) return;
+  if (!rawKey) return;
+
+  // rawKey is the physical store key, which may carry the per-account prefix.
+  // Normalize to the app-level key before filtering.
+  var prefix = state.currentUserId ? state.currentUserId + ':' : '';
+  var key = rawKey;
+  if (prefix) {
+    if (key.indexOf(prefix) !== 0) return;
+    key = key.slice(prefix.length);
+  } else if (key.indexOf(':') !== -1) {
+    return;
+  }
+
   // Ignore non-haven keys and metadata
-  if (!key || key.indexOf('haven-') !== 0) return;
+  if (key.indexOf('haven-') !== 0) return;
   if (key === 'haven-synced-at') return;
   if (key.indexOf('haven-gsi-') === 0) return;
   if (key.indexOf('haven-image-') === 0 || key.indexOf('hub-image-') === 0) return;
@@ -460,8 +491,7 @@ function onDataChanged(key) {
     origRemoveItem(key);
     onDataChanged(key);
   };
-  localStorage.removeItem.__patched = true;
-})();
+  localStorage.removeItem.__patched = true;})();
 
 // ─── Sync status indicator ───────────────────────────────
 function setSyncStatus(status) {

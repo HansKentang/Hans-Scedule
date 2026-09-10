@@ -6,6 +6,7 @@
 // --- VIEW STATE -------------------------------------------------------------
 let activitiesView = 'board'; // 'board' | 'timeline'
 let weekOffset = 0; // 0 = current week, -1 = last week, +1 = next week
+let actSearchInput = null;
 function getActivitiesWeekStart() {
   const today = new Date();
   return addDays(getMonday(today), weekOffset * 7);
@@ -173,15 +174,13 @@ function renderTags() {
     }
   }
 
-  const totalAll = Object.values(tagData).reduce((s, d) => s + d.totalMinutes, 0) || 1;
-
   let html = '';
   let grandTotal = 0;
   const todayStr = formatDate(new Date());
 
   for (const tag of TAG_ORDER) {
     const d = tagData[tag];
-    const pct = Math.round((d.totalMinutes / totalAll) * 100);
+    const pct = d.count > 0 ? Math.round((d.completed / d.count) * 100) : 0;
     grandTotal += d.count;
 
     const isBuiltin = BUILTIN_TAGS.includes(tag);
@@ -206,7 +205,7 @@ function renderTags() {
           <div class="lbl">Done / ${d.count}</div>
         </div>
       </div>
-      <div class="tag-column-progress">
+      <div class="tag-column-progress" title="${pct}% complete">
         <div class="fill" style="width:${pct}%"></div>
       </div>
       <div class="tag-column-tasks" data-tag="${tag}">
@@ -1109,30 +1108,25 @@ function setupPage() {
     }
   });
 
-  // Access Hub (FAB)
-  document.getElementById('accessMain')?.addEventListener('click', toggleAccessHub);
-  document.getElementById('actAccessExport')?.addEventListener('click', () => {
-    toggleAccessHub();
-    exportData();
-  });
-  document.getElementById('actAccessAIChat')?.addEventListener('click', () => {
-    toggleAccessHub();
-    if (typeof showAIChat === 'function') showAIChat();
-  });
-  document.addEventListener('click', (e) => {
-    const hub = document.getElementById('accessHub');
-    if (hub && !hub.contains(e.target)) {
-      document.getElementById('accessItems')?.classList.remove('open');
-      document.getElementById('accessMain')?.classList.remove('open');
-    }
-  });
-
   // View toggle
   document.querySelectorAll('.act-view-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       switchActivitiesView(btn.dataset.view);
     });
   });
+
+  // Search filter (board + timeline)
+  actSearchInput = document.getElementById('actSearchInput');
+  if (actSearchInput) {
+    actSearchInput.addEventListener('input', () => {
+      const q = actSearchInput.value.trim().toLowerCase();
+      document.querySelectorAll('.tag-col-task, .act-timeline-task').forEach(el => {
+        const title = el.querySelector('.tct-title-text, .act-tl-title');
+        const match = !q || (title && title.textContent.toLowerCase().includes(q));
+        el.style.display = match ? '' : 'none';
+      });
+    });
+  }
 
   // Keyboard shortcut: N for new task
   document.addEventListener('keydown', (e) => {
@@ -1172,6 +1166,7 @@ function init() {
     currentPeriod = pill.dataset.period;
     renderAnalytics();
   });
+  setupTrendHover();
   window.addEventListener('resize', renderAnalytics);
   const _analyticsThemeObserver = new MutationObserver(() => { renderAnalytics(); });
   _analyticsThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
@@ -1183,8 +1178,6 @@ else init();
 
 
 let currentPeriod = 'week';
-const pieCanvas = document.getElementById('pieChart');
-const barCanvas = document.getElementById('barChart');
 const trendCanvas = document.getElementById('trendChart');
 
 
@@ -1227,62 +1220,95 @@ function getTaskDuration(task) {
 
 
 // ─── SUMMARY STATS ─────────────────────────────────────────
+function getPeriodStartDate(period, refDate) {
+  const now = refDate ? new Date(refDate) : new Date();
+  if (period === 'week') return getMonday(now);
+  if (period === 'month') return new Date(now.getFullYear(), now.getMonth(), 1);
+  return null;
+}
+
+function getPreviousPeriodTasks(period) {
+  if (period === 'all') return [];
+  const now = new Date();
+  const start = getPeriodStartDate(period);
+  let prevStart;
+  let prevEnd;
+  if (period === 'week') {
+    prevStart = addDays(start, -7);
+    prevEnd = addDays(start, -1);
+  } else {
+    prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    prevEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+  }
+  prevEnd.setHours(23, 59, 59, 999);
+  return state.tasks.filter(t => {
+    if (isWhiteboardTask(t)) return false;
+    const d = new Date(t.date + 'T12:00:00');
+    return d >= prevStart && d <= prevEnd;
+  });
+}
+
+function setKpiTrend(elId, current, previous) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (!previous || currentPeriod === 'all') {
+    el.className = 'an-kpi-trend flat';
+    el.textContent = '';
+    return;
+  }
+  if (previous === 0) {
+    el.className = 'an-kpi-trend flat';
+    el.textContent = 'new';
+    return;
+  }
+  const pct = Math.round(((current - previous) / previous) * 100);
+  if (pct === 0) {
+    el.className = 'an-kpi-trend flat';
+    el.textContent = '=';
+  } else {
+    el.className = 'an-kpi-trend ' + (pct > 0 ? 'up' : 'down');
+    el.textContent = (pct > 0 ? '+' : '') + pct + '%';
+  }
+}
+
 function renderSummary(tasks) {
+  const el = (id) => document.getElementById(id);
   let totalMins = 0;
-  let deepMins = 0;
-  let studyMins = 0;
-  let taskCount = 0;
-  let completedCount = 0;
+  let doneCount = 0;
 
   for (const t of tasks) {
-    if (t.completed) {
-      completedCount++;
-    } else {
-      taskCount++;
-      const dur = getTaskDuration(t);
-      totalMins += dur;
-      if (t.tag === 'deep-work') deepMins += dur;
-      if (t.tag === 'study') studyMins += dur;
-    }
+    totalMins += getTaskDuration(t);
+    if (t.completed) doneCount++;
   }
 
-  const el = (id) => document.getElementById(id);
-  el('statTasks').textContent = taskCount;
   el('statTime').textContent = formatHrs(totalMins);
-  el('statDeep').textContent = formatHrs(deepMins);
-  el('statStudy').textContent = formatHrs(studyMins);
 
-  // Sub text
-  el('statTasksSub').textContent = `${completedCount} completed`;
-  el('statTimeSub').textContent = 'scheduled';
-  el('statDeepSub').textContent = 'focus time';
-  el('statStudySub').textContent = 'learning';
+  const sub = el('statTasksSub');
+  if (sub) sub.textContent = `${doneCount} done of ${tasks.length}`;
+
+  const prev = getPreviousPeriodTasks(currentPeriod);
+  const sumMins = (list) => list.reduce((s, t) => s + getTaskDuration(t), 0);
+  setKpiTrend('statTimeTrend', totalMins, sumMins(prev));
 }
 
 // ─── COMPLETION RATE ───────────────────────────────────────
 function renderCompletion(tasks) {
   const el = (id) => document.getElementById(id);
   let completed = 0;
-  let total = tasks.length;
-
   for (const t of tasks) {
     if (t.completed) completed++;
   }
 
+  const total = tasks.length;
   const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   el('compDone').textContent = completed;
   el('compTotal').textContent = total;
-  el('compPct').textContent = `${pct}%`;
   el('completionFill').style.width = `${pct}%`;
   const ring = el('compRing');
   if (ring) ring.style.background = `conic-gradient(var(--accent) ${pct}%, var(--bg-secondary) ${pct}%)`;
   const ringPct = el('compRingPct');
   if (ringPct) ringPct.textContent = `${pct}%`;
-
-  const period = currentPeriod;
-  const periodMap = { week: 'This Week', month: 'This Month', all: 'All Time' };
-  el('completionPeriod').textContent = periodMap[period] || 'All Time';
 }
 
 // ─── STREAK CARD ───────────────────────────────────────────
@@ -1344,326 +1370,225 @@ function renderStreak(tasks) {
 
   el('streakCurrent').textContent = currentStreak;
   el('streakBest').textContent = bestStreak;
-  el('streakActive').textContent = daysActive;
+  const activeEl = el('streakActive');
+  if (activeEl) activeEl.textContent = daysActive;
 }
 
-// ─── PIE CHART ─────────────────────────────────────────────
-function renderPieChart(tasks) {
-  if (!pieCanvas) return;
-  const ctx = pieCanvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const rect = pieCanvas.getBoundingClientRect();
-  pieCanvas.width = rect.width * dpr;
-  pieCanvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
-  const w = rect.width;
-  const h = rect.height;
+// ─── CHART THEME HELPERS ──────────────────────────────────
+function chartFont(size, weight) {
+  return `${weight ? weight + ' ' : ''}${size}px "Hanken Grotesk", Inter, sans-serif`;
+}
 
-  ctx.clearRect(0, 0, w, h);
-
-  const tagMins = {};
-  for (const tag of TAG_ORDER) tagMins[tag] = 0;
-  for (const t of tasks) {
-    if (t.completed) continue;
-    tagMins[t.tag] = (tagMins[t.tag] || 0) + getTaskDuration(t);
-  }
-
-  const total = Object.values(tagMins).reduce((a, b) => a + b, 0);
-  if (total === 0) {
-    ctx.fillStyle = 'var(--text-tertiary)';
-    ctx.font = '13px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('No data', w / 2, h / 2);
-    return;
-  }
-
+function chartTheme() {
   const isDark = document.documentElement.classList.contains('dark');
-  const cx = w * 0.35;
-  const cy = h / 2;
-  const r = Math.min(cx - 10, cy - 10, 80);
-
-  let startAngle = -Math.PI / 2;
-  const legend = [];
-
-  for (const tag of TAG_ORDER) {
-    const mins = tagMins[tag];
-    if (mins === 0) continue;
-    const pct = mins / total;
-    const endAngle = startAngle + pct * Math.PI * 2;
-    const color = getTagColorHex(tag).text;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, startAngle, endAngle);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-
-    // Separator
-    ctx.strokeStyle = isDark ? '#1a1a1e' : '#ffffff';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    legend.push({ tag, pct: Math.round(pct * 100), color });
-    startAngle = endAngle;
-  }
-
-  // Center hole
-  ctx.beginPath();
-  ctx.arc(cx, cy, r * 0.52, 0, Math.PI * 2);
-  ctx.fillStyle = isDark ? '#1a1a1e' : '#ffffff';
-  ctx.fill();
-
-  ctx.fillStyle = isDark ? '#fafafa' : '#0a0a0b';
-  ctx.font = 'bold 16px Inter, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(formatHrs(total), cx, cy);
-
-  // Legend
-  const legendEl = document.getElementById('pieLegend');
-  if (legendEl) {
-    legendEl.innerHTML = legend.map(l =>
-      `<span class="an-legend-item">
-        <span class="an-legend-dot" style="background:${l.color}"></span>
-        ${TAG_LABELS[l.tag]} (${l.pct}%)
-      </span>`
-    ).join('');
-  }
+  return {
+    isDark,
+    textColor: isDark ? '#8a8a96' : '#6b6b78',
+    gridColor: isDark ? '#23232a' : '#e8e8ee',
+    holeColor: isDark ? '#1a1a1e' : '#ffffff',
+    labelColor: isDark ? '#fafafa' : '#0a0a0b',
+    accent: isDark ? '#a5b4fc' : '#6366f1'
+  };
 }
 
-// ─── BAR CHART ─────────────────────────────────────────────
-function renderBarChart(tasks) {
-  if (!barCanvas) return;
-  const ctx = barCanvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const rect = barCanvas.getBoundingClientRect();
-  barCanvas.width = rect.width * dpr;
-  barCanvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
-  const w = rect.width;
-  const h = rect.height;
-
-  ctx.clearRect(0, 0, w, h);
-
-  const isDark = document.documentElement.classList.contains('dark');
-  const textColor = isDark ? '#8a8a96' : '#6b6b78';
-  const gridColor = isDark ? '#23232a' : '#e8e8ee';
-
-  // Get last 7 days
-  const days = [];
-  const now = new Date();
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    days.push(formatDate(d));
-  }
-
-  // Aggregate per-day minutes by tag
-  const dayData = days.map(date => {
-    const dayTasks = tasks.filter(t => t.date === date && !t.completed);
-    const tags = {};
-    let total = 0;
-    for (const t of dayTasks) {
-      const dur = getTaskDuration(t);
-      tags[t.tag] = (tags[t.tag] || 0) + dur;
-      total += dur;
-    }
-    return { date, tags, total };
-  });
-
-  const maxTotal = Math.max(...dayData.map(d => d.total), 1);
-
-  const pad = { top: 15, bottom: 25, left: 5, right: 5 };
-  const chartW = w - pad.left - pad.right;
-  const chartH = h - pad.top - pad.bottom;
-  const barW = chartW / days.length * 0.7;
-  const gap = chartW / days.length * 0.3;
-
-  // Grid lines
-  ctx.strokeStyle = gridColor;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([2, 4]);
-  for (let i = 0; i <= 4; i++) {
-    const y = pad.top + (chartH / 4) * i;
-    ctx.beginPath();
-    ctx.moveTo(pad.left, y);
-    ctx.lineTo(w - pad.right, y);
-    ctx.stroke();
-  }
-  ctx.setLineDash([]);
-
-  // Bars
-  for (let i = 0; i < dayData.length; i++) {
-    const x = pad.left + (chartW / days.length) * i + gap / 2;
-
-    const sortedTags = [...TAG_ORDER].reverse();
-    const segs = [];
-    for (const tag of sortedTags) {
-      const mins = dayData[i].tags[tag] || 0;
-      if (mins === 0) continue;
-      segs.push({ tag, h: Math.max((mins / maxTotal) * chartH, 1) });
-    }
-
-    let yCursor = pad.top + chartH;
-    segs.forEach((s, idx) => {
-      const y = yCursor - s.h;
-      ctx.fillStyle = getTagColorHex(s.tag).text;
-      ctx.beginPath();
-      if (idx === segs.length - 1) ctx.roundRect(x, y, barW, s.h, [4, 4, 0, 0]);
-      else ctx.rect(x, y, barW, s.h);
-      ctx.fill();
-      yCursor = y;
-    });
-
-    // Date labels
-    const date = new Date(dayData[i].date + 'T12:00:00');
-    const label = date.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2);
-    ctx.fillStyle = textColor;
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(label, x + barW / 2, h - pad.bottom + 14);
-  }
-
-  // Legend
-  const legendEl = document.getElementById('barLegend');
-  if (legendEl) {
-    legendEl.innerHTML = TAG_ORDER.map(tag =>
-      `<span class="an-legend-item">
-        <span class="an-legend-dot" style="background:${getTagColorHex(tag).text}"></span>
-        ${TAG_LABELS[tag]}
-      </span>`
-    ).join('');
-  }
-}
-
-// ─── WEEKLY TREND CHART ────────────────────────────────────
+// ─── TREND LINE GRAPH ─────────────────────────────────────
 function renderTrendChart(tasks) {
   if (!trendCanvas) return;
   const ctx = trendCanvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const rect = trendCanvas.getBoundingClientRect();
+  if (rect.width === 0) return;
   trendCanvas.width = rect.width * dpr;
   trendCanvas.height = rect.height * dpr;
   ctx.scale(dpr, dpr);
   const w = rect.width;
   const h = rect.height;
+  trendCanvas.__trendData = null;
 
   ctx.clearRect(0, 0, w, h);
 
-  const isDark = document.documentElement.classList.contains('dark');
-  const textColor = isDark ? '#8a8a96' : '#6b6b78';
-  const gridColor = isDark ? '#23232a' : '#e8e8ee';
+  const theme = chartTheme();
+  const accent = theme.accent;
 
-  // Get last 14 days for a better trend line
+  // Last 30 days, scheduled time per day in minutes
   const days = [];
   const now = new Date();
-  for (let i = 13; i >= 0; i--) {
+  for (let i = 29; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     days.push(formatDate(d));
   }
-
-  // Count tasks per day
-  const dayCounts = days.map(date => {
-    return tasks.filter(t => t.date === date).length;
+  const dayMins = days.map(date => {
+    let total = 0;
+    for (const t of tasks) {
+      if (t.date === date) total += getTaskDuration(t);
+    }
+    return total;
   });
 
-  const maxCount = Math.max(...dayCounts, 1);
+  // Empty state
+  if (dayMins.every(m => m === 0)) {
+    ctx.fillStyle = theme.textColor;
+    ctx.font = chartFont(12);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('No scheduled time in the last 30 days', w / 2, h / 2);
+    return;
+  }
 
-  const pad = { top: 20, bottom: 30, left: 5, right: 5 };
+  // Y scale in hours, nice ceiling of 1/2/4/6/8/10/12
+  const maxHours = Math.max(...dayMins) / 60;
+  const steps = [2, 4, 6, 8, 10, 12];
+  let topHours = steps.find(s => maxHours <= s) || Math.ceil(maxHours);
+  const niceMax = topHours * 60;
+
+  const pad = { top: 14, right: 12, bottom: 26, left: 34 };
   const chartW = w - pad.left - pad.right;
   const chartH = h - pad.top - pad.bottom;
+  const xAt = i => pad.left + (chartW / (days.length - 1)) * i;
+  const yAt = mins => pad.top + chartH - (Math.min(mins, niceMax) / niceMax) * chartH;
 
-  // Grid lines
-  ctx.strokeStyle = gridColor;
-  ctx.lineWidth = 1;
-  ctx.setLineDash([2, 4]);
-  for (let i = 0; i <= 4; i++) {
-    const y = pad.top + (chartH / 4) * i;
+  // Horizontal gridlines with hour labels on the left
+  const hstep = topHours % 3 === 0 ? topHours / 3 : 2;
+  ctx.font = chartFont(9);
+  ctx.textBaseline = 'middle';
+  for (let hrs = 0; hrs <= topHours; hrs += hstep) {
+    const y = yAt(hrs * 60);
+    ctx.strokeStyle = theme.gridColor;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 4]);
     ctx.beginPath();
     ctx.moveTo(pad.left, y);
     ctx.lineTo(w - pad.right, y);
     ctx.stroke();
-  }
-  ctx.setLineDash([]);
-
-  // Draw line chart
-  const accentColor = isDark ? '#a5b4fc' : '#6366f1';
-  const gradientTop = isDark ? 'rgba(165, 180, 252, 0.22)' : 'rgba(99, 102, 241, 0.14)';
-  const gradientBottom = 'rgba(0, 0, 0, 0)';
-
-  const points = dayCounts.map((count, i) => ({
-    x: pad.left + (chartW / (days.length - 1)) * i,
-    y: pad.top + chartH - (count / maxCount) * chartH
-  }));
-
-  function traceSmooth(c, pts) {
-    c.moveTo(pts[0].x, pts[0].y);
-    for (let i = 1; i < pts.length - 1; i++) {
-      const mx = (pts[i].x + pts[i + 1].x) / 2;
-      const my = (pts[i].y + pts[i + 1].y) / 2;
-      c.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
-    }
-    c.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+    ctx.setLineDash([]);
+    ctx.fillStyle = theme.textColor;
+    ctx.textAlign = 'right';
+    ctx.fillText(hrs + 'h', pad.left - 6, y);
   }
 
-  // Fill area under curve
+  // Average scheduled time (dashed line + label)
+  const activeMins = dayMins.filter(m => m > 0);
+  const avgMins = activeMins.reduce((a, b) => a + b, 0) / activeMins.length;
+  const avgY = yAt(avgMins);
+  ctx.strokeStyle = theme.textColor;
+  ctx.globalAlpha = 0.45;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 4]);
   ctx.beginPath();
-  ctx.moveTo(points[0].x, pad.top + chartH);
-  ctx.lineTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length - 1; i++) {
-    const mx = (points[i].x + points[i + 1].x) / 2;
-    const my = (points[i].y + points[i + 1].y) / 2;
-    ctx.quadraticCurveTo(points[i].x, points[i].y, mx, my);
-  }
-  ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y);
-  ctx.lineTo(points[points.length - 1].x, pad.top + chartH);
-  ctx.closePath();
+  ctx.moveTo(pad.left, avgY);
+  ctx.lineTo(w - pad.right, avgY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+  ctx.font = chartFont(9, 'bold');
+  ctx.textAlign = 'left';
+  ctx.fillStyle = theme.textColor;
+  ctx.fillText('avg ' + formatDuration(Math.round(avgMins)), pad.left + 4, avgY - 7);
 
-  const gradient = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
-  gradient.addColorStop(0, gradientTop);
-  gradient.addColorStop(1, gradientBottom);
-  ctx.fillStyle = gradient;
+  // Area fill under the line
+  const pts = dayMins.map((m, i) => ({ x: xAt(i), y: yAt(m) }));
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+  grad.addColorStop(0, theme.isDark ? 'rgba(165, 180, 252, 0.20)' : 'rgba(99, 102, 241, 0.15)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pad.top + chartH);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length - 1].x, pad.top + chartH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
   ctx.fill();
 
-  // Draw line
+  // Straight segments line — reads exactly, no smoothing distortion
   ctx.beginPath();
-  traceSmooth(ctx, points);
-  ctx.strokeStyle = accentColor;
-  ctx.lineWidth = 2.5;
+  pts.forEach((p, i) => (i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
   ctx.stroke();
 
-  // Draw dots
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i];
-    const isLast = i === points.length - 1;
-    if (isLast) {
+  // Dots — today emphasized
+  pts.forEach((p, i) => {
+    const isToday = i === pts.length - 1;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, isToday ? 3.5 : 2, 0, Math.PI * 2);
+    ctx.fillStyle = accent;
+    ctx.fill();
+    if (isToday) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
-      ctx.fillStyle = isDark ? 'rgba(165, 180, 252, 0.25)' : 'rgba(99, 102, 241, 0.18)';
+      ctx.fillStyle = theme.isDark ? 'rgba(165, 180, 252, 0.25)' : 'rgba(99, 102, 241, 0.18)';
       ctx.fill();
     }
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, isLast ? 4 : 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = accentColor;
-    ctx.fill();
-    ctx.strokeStyle = isDark ? '#1a1a1e' : '#ffffff';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  }
+  });
 
-  // Date labels (every 3 days)
-  ctx.fillStyle = textColor;
-  ctx.font = '9px Inter, sans-serif';
+  // X labels — first, today, and every 7th day between
+  ctx.font = chartFont(9);
+  ctx.fillStyle = theme.textColor;
   ctx.textAlign = 'center';
-  for (let i = 0; i < days.length; i += 3) {
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('30d ago', pts[0].x, h - 8);
+  for (let i = 7; i < days.length - 1; i += 7) {
     const d = new Date(days[i] + 'T12:00:00');
-    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    ctx.fillText(label, points[i].x, h - pad.bottom + 14);
+    ctx.fillText(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), pts[i].x, h - 8);
   }
+  ctx.font = chartFont(9, 'bold');
+  ctx.fillText('Today', pts[pts.length - 1].x, h - 8);
+
+  // Hover crosshair + tooltip (points stored for hit testing)
+  trendCanvas.__trendData = { pts, dayMins, days, pad, chartW, chartH, theme };
+}
+
+function hideTrendHover() {
+  if (trendCanvas && trendCanvas.__hoverMarker) {
+    trendCanvas.__hoverMarker.remove();
+    trendCanvas.__hoverMarker = null;
+  }
+  hideChartTooltip();
+}
+
+function moveTrendHover(e) {
+  const canvas = trendCanvas;
+  const data = canvas && canvas.__trendData;
+  if (!data) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  let best = 0;
+  for (let i = 1; i < data.pts.length; i++) {
+    if (Math.abs(data.pts[i].x - x) < Math.abs(data.pts[best].x - x)) best = i;
+  }
+  const p = data.pts[best];
+  const date = new Date(data.days[best] + 'T12:00:00');
+  const label = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+  hideChartTooltip();
+  const tip = document.createElement('div');
+  tip.className = 'act-chart-tooltip an-trend-tip';
+  tip.innerHTML = '<div class="act-chart-tooltip-title">' + label + '</div>' +
+    '<div class="act-chart-tooltip-row"><span class="act-chart-tooltip-dot" style="background:' + data.theme.accent + '"></span>' +
+    '<span>Scheduled</span><span class="val">' + formatDuration(data.dayMins[best]) + '</span></div>' +
+    (data.dayMins[best] === 0 ? '<div class="act-chart-tooltip-row" style="opacity:0.6"><span></span><span>Nothing planned</span></div>' : '');
+  document.body.appendChild(tip);
+  _chartTooltipEl = tip;
+
+  if (!canvas.__hoverMarker) {
+    const marker = document.createElement('div');
+    marker.style.cssText = 'position:absolute;top:0;bottom:0;width:1px;background:var(--border-color);pointer-events:none';
+    canvas.parentNode.style.position = 'relative';
+    canvas.parentNode.appendChild(marker);
+    canvas.__hoverMarker = marker;
+  }
+  canvas.__hoverMarker.style.left = (canvas.offsetLeft + p.x) + 'px';
+  canvas.__hoverMarker.style.display = 'block';
+
+  positionChartTooltip(e);
+}
+
+function setupTrendHover() {
+  if (!trendCanvas) return;
+  trendCanvas.addEventListener('mousemove', moveTrendHover);
+  trendCanvas.addEventListener('mouseleave', hideTrendHover);
 }
 
 // ─── DAY-BY-DAY TABLE ──────────────────────────────────────
@@ -1680,7 +1605,7 @@ function renderTable(tasks) {
 
   const sortedDates = Object.keys(dateMap).sort().reverse();
   if (sortedDates.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-tertiary)">No data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-tertiary)">No data</td></tr>';
     return;
   }
 
@@ -1688,6 +1613,7 @@ function renderTable(tasks) {
   for (const date of sortedDates.slice(0, 30)) {
     const dayTasks = dateMap[date];
     const activeTasks = dayTasks.filter(t => !t.completed);
+    const doneCount = dayTasks.length - activeTasks.length;
     let totalMins = 0;
     let deepMins = 0;
     let studyMins = 0;
@@ -1702,10 +1628,14 @@ function renderTable(tasks) {
     const d = new Date(date + 'T12:00:00');
     const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const otherMins = totalMins - deepMins - studyMins;
+    const rowColor = totalMins > 0
+      ? getTagColorHex(deepMins >= studyMins ? 'deep-work' : 'study').text
+      : 'transparent';
 
-    html += `<tr>
+    html += `<tr style="--row-accent:${rowColor}">
       <td>${label}</td>
       <td class="num">${activeTasks.length}</td>
+      <td class="num">${doneCount ? doneCount : '–'}</td>
       <td class="num">${formatHrs(totalMins)}</td>
       <td class="num">${formatHrs(deepMins)}</td>
       <td class="num">${formatHrs(studyMins)}</td>
@@ -1720,9 +1650,7 @@ function renderTable(tasks) {
 const sleepCanvas = document.getElementById('sleepChart');
 
 function renderSleepAnalytics() {
-  const logs = loadSleepLogs();
   const now = new Date();
-  const ws = getMonday(now);
 
   // Get last 7 days
   const days = [];
@@ -1746,85 +1674,34 @@ function renderSleepAnalytics() {
     const avgMins = Math.round(totalMins / weekLogs.length);
     durEl.textContent = formatSleepMinutes(avgMins);
     durSubEl.textContent = 'Average across ' + weekLogs.length + ' nights';
-
-    // Show target comparison
-    const targets = loadSleepTargets();
-    const targetDurEl = document.getElementById('sleepAnalyticsTarget');
-    if (targetDurEl) {
-      const diff = avgMins - targets.targetDuration;
-      if (Math.abs(diff) < 30) {
-        targetDurEl.textContent = 'On track with target (' + formatSleepMinutes(targets.targetDuration) + ')';
-        targetDurEl.style.color = '#10b981';
-      } else if (diff > 0) {
-        targetDurEl.textContent = '+' + formatSleepMinutes(diff) + ' over ' + formatSleepMinutes(targets.targetDuration) + ' target';
-        targetDurEl.style.color = '#10b981';
-      } else {
-        targetDurEl.textContent = formatSleepMinutes(Math.abs(diff)) + ' under ' + formatSleepMinutes(targets.targetDuration) + ' target';
-        targetDurEl.style.color = '#ef4444';
-      }
-    }
   } else {
     durEl.textContent = '—';
     durSubEl.textContent = 'No sleep data';
   }
 
-  // Consistency score
-  const consistencyEl = document.getElementById('sleepAnalyticsConsistency');
-  const consistencySubEl = document.getElementById('sleepAnalyticsConsistencySub');
-  if (consistencyEl) {
-    const consistency = getSleepConsistencyScore(logs);
-    if (consistency) {
-      consistencyEl.textContent = consistency.score;
-      if (consistencySubEl) {
-        consistencySubEl.textContent = 'Bedtime varies by ' + consistency.bedVariance + 'min, wake by ' + consistency.wakeVariance + 'min';
-      }
-    } else {
-      consistencyEl.textContent = '—';
-      if (consistencySubEl) consistencySubEl.textContent = 'Log 3+ nights to calculate';
-    }
-  }
-
-  // Sleep debt
-  const debtEl = document.getElementById('sleepAnalyticsDebt');
-  const debtSubEl = document.getElementById('sleepAnalyticsDebtSub');
-  if (debtEl) {
-    const targets = loadSleepTargets();
-    const debt = getSleepDebt(logs, targets);
-    if (debt.daysWithData > 0) {
-      const totalHours = Math.round(debt.totalDebt / 60 * 10) / 10;
-      const sign = totalHours > 0 ? '+' : '';
-      debtEl.textContent = sign + totalHours.toFixed(1) + 'h';
-      debtEl.style.color = totalHours > 1 ? '#10b981' : totalHours < -1 ? '#ef4444' : 'var(--text-primary)';
-      if (debtSubEl) debtSubEl.textContent = totalHours > 0 ? 'Surplus over 14 days' : totalHours < 0 ? 'Deficit over 14 days' : 'Balanced';
-    } else {
-      debtEl.textContent = '—';
-      if (debtSubEl) debtSubEl.textContent = 'No sleep data';
-    }
-  }
-
-  // Quality stats
+  // Quality stats + per-night dots
   const qEl = document.getElementById('sleepAnalyticsQuality');
   const qSubEl = document.getElementById('sleepAnalyticsQualitySub');
-  const qFillEl = document.getElementById('sleepQualityFill');
-  const qScoreEl = document.getElementById('sleepQualityScore');
-  const logCountEl = document.getElementById('sleepLogCount');
-  const bestNightEl = document.getElementById('sleepBestNight');
+  const dotsEl = document.getElementById('qualityDots');
   if (weekLogs.length > 0) {
     const avgQ = weekLogs.reduce((s, l) => s + l.quality, 0) / weekLogs.length;
     qEl.textContent = avgQ.toFixed(1) + ' / 5';
     qSubEl.textContent = 'Average sleep quality';
-    qFillEl.style.width = (avgQ / 5 * 100) + '%';
-    qScoreEl.textContent = avgQ.toFixed(1);
-    logCountEl.textContent = weekLogs.length;
-    const best = weekLogs.reduce((a, b) => a.quality > b.quality ? a : b, weekLogs[0]);
-    bestNightEl.textContent = best ? formatSleepMinutes(best.duration) : '—';
   } else {
     qEl.textContent = '—';
     qSubEl.textContent = 'No sleep data';
-    qFillEl.style.width = '0%';
-    qScoreEl.textContent = '0';
-    logCountEl.textContent = '0';
-    bestNightEl.textContent = '—';
+  }
+  if (dotsEl) {
+    dotsEl.innerHTML = days.map(ds => {
+      const log = getSleepLog(ds);
+      const q = log ? log.quality : 0;
+      const label = new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'narrow' });
+      const color = log
+        ? 'color-mix(in srgb, var(--accent) ' + Math.round((q / 5) * 100) + '%, var(--bg-secondary))'
+        : '';
+      return '<div class="an-quality-dot" title="' + label + (log ? ': ' + q + '/5 · ' + formatSleepMinutes(log.duration) : ': no log') + '">' +
+        '<i style="' + (color ? 'background:' + color : '') + '"></i><span>' + label + '</span></div>';
+    }).join('');
   }
 
   // Sleep chart
@@ -1844,11 +1721,11 @@ function renderSleepChart(weekLogs, days) {
 
   ctx.clearRect(0, 0, w, h);
 
-  const isDark = document.documentElement.classList.contains('dark');
-  const textColor = isDark ? '#8a8a96' : '#6b6b78';
-  const gridColor = isDark ? '#23232a' : '#e8e8ee';
-  const accentColor = isDark ? '#a5b4fc' : '#6366f1';
-  const fillColor = isDark ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.1)';
+  const theme = chartTheme();
+  const isDark = theme.isDark;
+  const textColor = theme.textColor;
+  const gridColor = theme.gridColor;
+  const accentColor = theme.accent;
 
   // Build day data
   const dayData = days.map((ds, i) => {
@@ -1901,7 +1778,7 @@ function renderSleepChart(weekLogs, days) {
 
     // Label
     ctx.fillStyle = textColor;
-    ctx.font = '9px Inter, sans-serif';
+    ctx.font = chartFont(9);
     ctx.textAlign = 'center';
     ctx.fillText(d.label, x + barW / 2, h - pad.bottom + 12);
   }
@@ -1919,7 +1796,7 @@ function renderSleepChart(weekLogs, days) {
 
   // "8h" label
   ctx.fillStyle = isDark ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.3)';
-  ctx.font = '8px Inter, sans-serif';
+  ctx.font = chartFont(8);
   ctx.textAlign = 'left';
   ctx.fillText('8h', w - pad.right - 14, refY - 2);
 }
@@ -1948,9 +1825,7 @@ function renderAnalytics() {
   renderSummary(tasks);
   renderCompletion(tasks);
   renderStreak(tasks);
-  renderPieChart(tasks);
-  renderBarChart(tasks);
-  renderTrendChart(tasks);
+  renderTrendChart(state.tasks.filter(t => !isWhiteboardTask(t)));
   renderTable(tasks);
   renderSleepAnalytics();
 

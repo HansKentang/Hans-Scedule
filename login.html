@@ -15,7 +15,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Hanken+Grotesk:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -434,6 +434,21 @@
       text-align: center;
       margin: clamp(6px, 0.8vh, 10px) 0 clamp(4px, 0.5vh, 6px);
     }
+    .auth-legal {
+      margin: clamp(10px, 1.4vh, 16px) 0 0;
+      font-size: 0.66rem;
+      line-height: 1.6;
+      color: var(--text-tertiary);
+      text-align: center;
+    }
+    .auth-legal a {
+      color: var(--text-secondary);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: var(--border-light);
+      transition: color 0.2s, text-decoration-color 0.2s;
+    }
+    .auth-legal a:hover { color: var(--text); text-decoration-color: var(--text-secondary); }
     .auth-divider::after {
       content: ''; position: absolute; inset: 0; top: 50%;
       z-index: 0;
@@ -567,7 +582,7 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
-      background: linear-gradient(180deg, #fafafa 0%, #f5f5f5 50%, #f0f0f0 100%);
+      background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 40%, #e8e8e8 100%);
       animation: fadeIn 0.6s var(--bounce) both 0.1s;
     }
     .auth-right::after {
@@ -587,104 +602,66 @@
         radial-gradient(ellipse 30% 20% at 80% 20%, rgba(0,0,0,0.015) 0%, transparent 50%);
       pointer-events: none;
     }
+    .auth-right-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,0,0,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.018) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      z-index: 0;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(0,0,0,0.5) 0%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, rgba(0,0,0,0.5) 0%, transparent 70%);
+    }
 
     .auth-carousel {
       position: relative;
       z-index: 1;
-      width: 94%;
-      max-width: 680px;
-      background: rgba(0,0,0,0.04);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(0,0,0,0.10);
-      border-radius: 20px;
-      padding: 18px 18px 14px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05);
+      width: 96%;
+      max-width: 900px;
+      padding: 22px 0;
       perspective: 1400px;
-      overflow: hidden;
+      overflow: visible;
       isolation: isolate;
       user-select: none;
       -webkit-user-select: none;
       cursor: grab;
       transform: perspective(1400px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--cs, 1));
-      transition: transform 0.5s var(--smooth), box-shadow 0.5s var(--smooth), border-color 0.5s var(--smooth);
+      transition: transform 0.5s var(--smooth);
       will-change: transform;
-      animation: carouselReveal 0.8s var(--smooth) both 0.3s;
+      animation: carouselReveal 1s var(--smooth) both 0.3s;
     }
     @keyframes carouselReveal {
-      0% { opacity: 0; transform: perspective(1400px) scale(0.94) translateY(16px); }
-      100% { opacity: 1; transform: perspective(1400px) scale(1) translateY(0); }
+      0% { opacity: 0; transform: perspective(1400px) scale(0.85) rotateX(8deg) translateY(30px); }
+      60% { opacity: 1; transform: perspective(1400px) scale(1.02) rotateX(-1deg) translateY(-4px); }
+      100% { opacity: 1; transform: perspective(1400px) scale(1) rotateX(0deg) translateY(0); }
     }
-    .auth-carousel:hover {
-      --cs: 1.015;
-      box-shadow: 0 18px 52px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07);
-      border-color: rgba(0,0,0,0.14);
+    @keyframes activeFloat {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1.03); }
+      50% { transform: translate3d(0, -4px, 0) scale(1.03); }
+    }
+    .auth-carousel-slide.active-slide svg {
+      animation: slideInnerPop 0.9s var(--smooth) both, activeFloat 4s ease-in-out infinite 1s;
     }
     .auth-carousel.is-dragging {
-      --cs: 0.995;
       cursor: grabbing;
-      transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+      transition: transform 0.2s ease-out;
     }
     .auth-carousel:active {
       cursor: grabbing;
     }
-    .auth-carousel::after {
-      content: '';
-      position: absolute;
-      inset: -40%;
-      z-index: 4;
-      background: linear-gradient(105deg, transparent 42%, rgba(255,255,255,0.55) 50%, transparent 58%);
-      transform: translateX(-70%) skewX(-8deg);
-      opacity: 0;
-      pointer-events: none;
-    }
-    .auth-carousel.sweep::after {
-      animation: carouselSweep 0.9s var(--smooth) both;
-    }
-    @keyframes carouselSweep {
-      0% { transform: translateX(-70%) skewX(-8deg); opacity: 0; }
-      12% { opacity: 0.8; }
-      100% { transform: translateX(70%) skewX(-8deg); opacity: 0; }
-    }
-    .auth-carousel-progress {
-      position: absolute;
-      top: 0; left: 18px; right: 18px;
-      height: 3px;
-      z-index: 5;
-      border-radius: 2px;
-      background: rgba(0,0,0,0.07);
-      overflow: hidden;
-      pointer-events: none;
-    }
-    .auth-carousel-progress span {
-      display: block;
-      height: 100%;
-      width: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, rgba(0,0,0,0.45), rgba(0,0,0,0.75));
-      transform-origin: left center;
-      transform: scaleX(0);
-    }
-    .auth-carousel-progress.run span {
-      animation: carouselProgressFill 5s cubic-bezier(0.25, 1, 0.35, 1) both;
-    }
-    .auth-carousel-progress.paused span {
-      animation-play-state: paused;
-    }
-    @keyframes carouselProgressFill {
-      from { transform: scaleX(0); }
-      to { transform: scaleX(1); }
-    }
     .auth-carousel-viewport {
-      overflow: hidden;
-      border-radius: 12px;
+      position: relative;
+      aspect-ratio: 2.1;
+      transform-style: preserve-3d;
     }
     .auth-carousel-track {
-      display: flex;
-      width: 100%;
+      position: absolute;
+      inset: 0;
       will-change: transform;
-      transform: translate3d(0,0,0);
-      transition: transform 0.75s cubic-bezier(0.25, 1, 0.35, 1);
+      transform-style: preserve-3d;
+      contain: layout style;
     }
     .auth-carousel.is-animating .auth-carousel-track {
       pointer-events: none;
@@ -697,18 +674,19 @@
       transition: none !important;
     }
     .auth-carousel-slide {
-      flex: 0 0 68%;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 44%;
       min-width: 0;
-      transform-origin: center center;
-      will-change: transform, opacity, filter;
+      box-sizing: border-box;
+      will-change: transform, opacity;
       backface-visibility: hidden;
       -webkit-backface-visibility: hidden;
-      transform: translate3d(0,0,0) scale(0.93);
+      contain: layout style;
       opacity: 0.35;
-      filter: brightness(0.82) saturate(0.85);
-      transition: transform 0.75s cubic-bezier(0.25, 1, 0.35, 1),
-                  opacity 0.75s cubic-bezier(0.25, 1, 0.35, 1),
-                  filter 1s cubic-bezier(0.16, 1, 0.3, 1);
+      filter: brightness(0.78) saturate(0.8) blur(1px);
+      transition: opacity 0.6s ease, filter 0.6s ease;
     }
     .auth-carousel.is-dragging .auth-carousel-slide {
       transition: none;
@@ -716,187 +694,97 @@
     .auth-carousel-slide svg {
       width: 100%; height: auto;
       display: block;
-      border-radius: 14px;
-      box-shadow: 0 6px 28px rgba(0,0,0,0.35);
-      transform: translate3d(0,0,0) scale(1);
-      will-change: transform;
+      border-radius: 0;
+      box-shadow: none;
+      transform: translate3d(0,0,0);
+      transition: box-shadow 0.6s ease;
+    }
+    .laptop-frame {
+      position: relative;
+      background: linear-gradient(180deg, #1a1a1a 0%, #111 100%);
+      border-radius: 12px 12px 0 0;
+      padding: 8px 8px 0 8px;
+      box-shadow:
+        0 2px 8px rgba(0,0,0,0.3),
+        0 8px 24px rgba(0,0,0,0.35),
+        inset 0 1px 0 rgba(255,255,255,0.06);
+      transition: box-shadow 0.6s ease;
+    }
+    .laptop-screen {
+      position: relative;
+      border-radius: 4px 4px 0 0;
+      overflow: hidden;
+      background: #000;
+      line-height: 0;
+    }
+    .laptop-screen svg {
+      width: 100%; height: auto;
+      display: block;
+    }
+    .laptop-bezel-top {
+      height: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+    .laptop-webcam {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #2a2a2a 40%, #1a1a1a 100%);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+    }
+    .laptop-base {
+      height: 10px;
+      background: linear-gradient(180deg, #1a1a1a, #222);
+      border-radius: 0 0 4px 4px;
+      position: relative;
+    }
+    .laptop-base::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 40px; height: 3px;
+      border-radius: 0 0 3px 3px;
+      background: #333;
+    }
+    .laptop-hinge {
+      height: 3px;
+      background: linear-gradient(180deg, #0d0d0d, #1a1a1a);
+    }
+    .auth-carousel-slide.active-slide .laptop-frame {
+      box-shadow:
+        0 4px 12px rgba(0,0,0,0.4),
+        0 16px 48px rgba(0,0,0,0.5),
+        0 32px 80px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .auth-carousel-slide.inactive-slide .laptop-frame {
+      box-shadow:
+        0 2px 6px rgba(0,0,0,0.25),
+        0 6px 16px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.04);
     }
     .auth-carousel-slide.active-slide {
-      transform: translate3d(0,0,0) scale(1);
       opacity: 1;
-      filter: brightness(1) saturate(1);
-      transition: transform 0.8s cubic-bezier(0.25, 1, 0.35, 1),
-                  opacity 0.9s cubic-bezier(0.25, 1, 0.35, 1),
-                  filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .auth-carousel-slide.active-slide svg {
-      box-shadow: 0 12px 36px rgba(0,0,0,0.4);
-      animation: slideInnerPop 0.9s var(--smooth) both;
+      filter: brightness(1) saturate(1.05) blur(0px);
     }
     @keyframes slideInnerPop {
       0% { transform: scale(0.97) translateY(6px); opacity: 0.7; }
-      40% { transform: scale(1.002) translateY(-1px); opacity: 1; }
-      100% { transform: scale(1) translateY(0); opacity: 1; }
-    }
-    .auth-carousel-slide.inactive-slide {
-      transform: translate3d(0,0,0) scale(0.94);
-      opacity: 0.4;
-      filter: brightness(0.82) saturate(0.85);
-    }
-    .auth-carousel-slide.inactive-slide svg {
-      box-shadow: 0 4px 18px rgba(0,0,0,0.24);
-    }
-    .auth-carousel-slide.exit-left {
-      transform: translate3d(-20px,0,0) scale(0.92) rotateY(6deg);
-    }
-    .auth-carousel-slide.enter-right {
-      transform: translate3d(20px,0,0) scale(0.92) rotateY(-6deg);
+      40% { transform: scale(1.035) translateY(-2px); opacity: 1; }
+      100% { transform: scale(1.03) translateY(0); opacity: 1; }
     }
 
 
-    .auth-carousel-label {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 2px 2px 8px;
-      border-bottom: 1px solid rgba(0,0,0,0.04);
-      margin-bottom: 8px;
-    }
-    .auth-carousel-label-name {
-      font-size: 0.6rem;
-      font-weight: 600;
-      color: rgba(0,0,0,0.35);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      display: inline-block;
-      min-width: 90px;
-    }
-    .auth-carousel-label-name.swap {
-      animation: labelSwap 0.5s var(--smooth) both;
-    }
-    @keyframes labelSwap {
-      0% { opacity: 0; transform: translateY(8px); filter: blur(4px); }
-      100% { opacity: 1; transform: translateY(0); filter: blur(0); }
-    }
-    .auth-carousel-label-name span {
-      color: rgba(0,0,0,0.15);
-      font-weight: 400;
-    }
-    .auth-carousel-label-index {
-      font-size: 0.55rem;
-      color: rgba(0,0,0,0.12);
-      font-family: var(--font-mono);
-      display: inline-block;
-      min-width: 32px;
-      text-align: right;
-    }
-    .auth-carousel-label-index.swap {
-      animation: labelSwap 0.5s var(--smooth) both;
-    }
-    .auth-carousel-dots {
-      position: absolute;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 6;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(10,10,10,0.55);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.14);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-      pointer-events: auto;
-    }
-    .auth-carousel-dot {
-      position: relative;
-      width: 7px; height: 7px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.28);
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      overflow: hidden;
-      transition: width 0.45s var(--smooth), background 0.3s ease, transform 0.2s ease;
-    }
-    .auth-carousel-dot::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      background: #fff;
-      transform: scaleX(0);
-      transform-origin: left center;
-    }
-    .auth-carousel-dot.active {
-      width: 26px;
-      background: rgba(255,255,255,0.22);
-    }
-    .auth-carousel-dot.active::before {
-      animation: dotFill 5s cubic-bezier(0.25, 1, 0.35, 1) both;
-    }
-    .auth-carousel-dots.paused .auth-carousel-dot.active::before {
-      animation-play-state: paused;
-    }
-    @keyframes dotFill {
-      from { transform: scaleX(0); }
-      to { transform: scaleX(1); }
-    }
-    .auth-carousel-dot:hover {
-      background: rgba(255,255,255,0.5);
-      transform: scale(1.12);
-    }
-    .auth-carousel-dot:active {
-      transform: scale(0.85);
-    }
-    .auth-carousel-arrow {
-      position: absolute;
-      top: 50%;
-      z-index: 6;
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(10,10,10,0.55);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      color: rgba(255,255,255,0.85);
-      font-size: 16px;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      opacity: 0;
-      transform: translateY(-50%) scale(0.85);
-      transition: opacity 0.3s ease, transform 0.3s var(--bounce), background 0.25s ease;
-      pointer-events: none;
-    }
-    .auth-carousel:hover .auth-carousel-arrow {
-      opacity: 1;
-      transform: translateY(-50%) scale(1);
-      pointer-events: auto;
-    }
-    .auth-carousel-arrow:hover {
-      background: rgba(10,10,10,0.75);
-      transform: translateY(-50%) scale(1.1);
-    }
-    .auth-carousel-arrow:active {
-      transform: translateY(-50%) scale(0.9);
-    }
-    .auth-carousel-prev { left: 26px; }
-    .auth-carousel-next { right: 26px; }
 
     /* Gradient overlay + quote at bottom */
     .auth-right-overlay {
       position: absolute;
       bottom: 0; left: 0; right: 0;
       z-index: 2;
-      padding: 56px 40px 28px;
-      background: linear-gradient(180deg, transparent 0%, rgba(245,245,245,0.85) 40%, rgba(240,240,240,0.95) 100%);
+      padding: 64px 40px 32px;
+      background: linear-gradient(180deg, transparent 0%, rgba(245,245,245,0.6) 30%, rgba(240,240,240,0.92) 70%, rgba(240,240,240,1) 100%);
       text-align: center;
     }
     .auth-quote {
@@ -932,51 +820,103 @@
       font-weight: 400;
     }
 
-    /* --- Floating Badges --- */
-    .auth-float-badge {
+    /* ─── Carousel Arrows ─── */
+    .carousel-arrow {
       position: absolute;
-      z-index: 5;
-      background: rgba(0,0,0,0.05);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
       border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 10px;
-      padding: 5px 10px;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: rgba(0,0,0,0.5);
+      cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 5px;
-      pointer-events: none;
+      justify-content: center;
+      transition: all 0.3s var(--smooth);
       opacity: 0;
-      animation: badgeAppear 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-                 badgeDrift 6s ease-in-out infinite 1s;
+      animation: fadeIn 0.6s var(--smooth) both 0.8s;
     }
-    @keyframes badgeAppear {
-      0% { opacity: 0; transform: translateY(6px) scale(0.96); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
+    .carousel-arrow:hover {
+      background: rgba(255,255,255,0.95);
+      border-color: rgba(0,0,0,0.12);
+      color: rgba(0,0,0,0.8);
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     }
-    @keyframes badgeDrift {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-3px); }
+    .carousel-arrow:active {
+      transform: translateY(-50%) scale(0.95);
     }
-    .auth-float-badge svg {
-      width: 10px; height: 10px;
-      color: rgba(0,0,0,0.35);
+    .carousel-arrow-left { left: 12px; }
+    .carousel-arrow-right { right: 12px; }
+
+    /* ─── Carousel Dots ─── */
+    .carousel-dots {
+      position: absolute;
+      bottom: 148px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(0,0,0,0.04);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      opacity: 0;
+      animation: fadeIn 0.6s var(--smooth) both 0.9s;
     }
-    .auth-float-badge span {
-      font-size: 0.5rem;
-      color: rgba(0,0,0,0.35);
-      font-weight: 500;
-      letter-spacing: 0.03em;
+    .carousel-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0,0,0,0.15);
+      cursor: pointer;
+      padding: 0;
+      transition: all 0.4s var(--smooth);
     }
-    .auth-float-badge-1 {
-      top: 10%; right: 7%;
-      animation-delay: 1.5s, 0.5s;
+    .carousel-dot:hover {
+      background: rgba(0,0,0,0.3);
+      transform: scale(1.3);
     }
-    .auth-float-badge-2 {
-      bottom: 24%; left: 6%;
-      animation-delay: 2s, 1.2s;
+    .carousel-dot.active {
+      width: 20px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.45);
     }
 
+    /* ─── Reflection ─── */
+    .auth-carousel-slide.active-slide .laptop-screen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 4px 4px 0 0;
+      background: linear-gradient(
+        105deg,
+        transparent 40%,
+        rgba(255,255,255,0.08) 45%,
+        rgba(255,255,255,0.14) 50%,
+        rgba(255,255,255,0.08) 55%,
+        transparent 60%
+      );
+      background-size: 250% 100%;
+      background-position: 200% 0;
+      animation: lightSweep 4s ease-in-out infinite 1.5s;
+      pointer-events: none;
+      z-index: 1;
+    }
+    @keyframes lightSweep {
+      0%, 70%, 100% { background-position: 200% 0; }
+      35% { background-position: -50% 0; }
+    }
 
     /* ─── Responsive ─── */
     @media (max-width: 820px) {
@@ -987,7 +927,6 @@
     @media (max-width: 440px) {
       .auth-left { padding: clamp(12px, 3vw, 20px); }
     }
-    /* Safety net for very short viewports */
     @media (max-height: 640px) {
       .auth-heading { font-size: 1.2rem; }
       .auth-eyebrow { margin-bottom: 4px; }
@@ -996,19 +935,25 @@
       .auth-fields { gap: 6px; }
       .auth-brand { margin-bottom: 2px; }
       .auth-footer { display: none; }
+      .carousel-dots { bottom: 120px; }
+      .carousel-arrow { width: 32px; height: 32px; }
+      .carousel-arrow svg { width: 14px; height: 14px; }
     }
     @media (prefers-reduced-motion: reduce) {
       .auth-carousel-track,
       .auth-carousel-slide,
       .auth-carousel-slide svg,
       .auth-carousel,
-      .auth-carousel-dot,
-      .auth-carousel-progress span {
+      .carousel-arrow,
+      .carousel-dots {
         transition: none;
         animation: none;
       }
-      .auth-carousel::after {
-        display: none;
+      .auth-carousel-slide.active-slide svg {
+        animation: none;
+      }
+      .auth-carousel-slide.active-slide .laptop-screen::before {
+        animation: none;
       }
     }
   </style>
@@ -1092,6 +1037,13 @@
               <span class="auth-btn-label">Continue as Guest</span>
               <span class="spinner"></span>
             </button>
+
+            <p class="auth-legal">
+              By continuing, you agree to our
+              <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a>
+              and
+              <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+            </p>
           </div>
         </div>
 
@@ -1116,19 +1068,18 @@
 
     <!-- ═══════════ RIGHT: PREVIEW ═══════════ -->
     <div class="auth-right">
+      <div class="auth-right-grid"></div>
           <!-- Carousel Preview -->
       <div class="auth-carousel" id="authCarousel">
-        <div class="auth-carousel-progress" id="carouselProgress"><span></span></div>
-        <div class="auth-carousel-label">
-          <span class="auth-carousel-label-name" id="carouselLabel">Schedule</span>
-          <span class="auth-carousel-label-index" id="carouselIndex">1 / 6</span>
-        </div>
         <div class="auth-carousel-viewport">
         <div class="auth-carousel-track" id="carouselTrack">
 
           <!-- Slide 1: Schedule -->
           <div class="auth-carousel-slide active-slide">
-            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div class="laptop-frame">
+              <div class="laptop-bezel-top"><div class="laptop-webcam"></div></div>
+              <div class="laptop-screen">
+                <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
               <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
@@ -1167,11 +1118,18 @@
               <rect x="166" y="330" width="58" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="174" y="341" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Study</text>
               <rect x="230" y="330" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="238" y="341" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Hobby</text>
             </svg>
+              </div>
+              <div class="laptop-hinge"></div>
+              <div class="laptop-base"></div>
+            </div>
           </div>
 
           <!-- Slide 2: Hub -->
           <div class="auth-carousel-slide inactive-slide">
-            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div class="laptop-frame">
+              <div class="laptop-bezel-top"><div class="laptop-webcam"></div></div>
+              <div class="laptop-screen">
+                <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
               <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
@@ -1208,11 +1166,18 @@
               <circle cx="266" cy="302" r="2" fill="rgba(255,255,255,0.12)"/>
               <text x="272" y="305" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">7d streak</text>
             </svg>
+              </div>
+              <div class="laptop-hinge"></div>
+              <div class="laptop-base"></div>
+            </div>
           </div>
 
           <!-- Slide 3: Finance -->
           <div class="auth-carousel-slide">
-            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div class="laptop-frame">
+              <div class="laptop-bezel-top"><div class="laptop-webcam"></div></div>
+              <div class="laptop-screen">
+                <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
               <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
@@ -1245,11 +1210,18 @@
               <rect x="182" y="290" width="58" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="190" y="301" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Health</text>
               <rect x="246" y="290" width="74" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="254" y="301" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Transport</text>
             </svg>
+              </div>
+              <div class="laptop-hinge"></div>
+              <div class="laptop-base"></div>
+            </div>
           </div>
 
           <!-- Slide 4: Analytics -->
           <div class="auth-carousel-slide">
-            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div class="laptop-frame">
+              <div class="laptop-bezel-top"><div class="laptop-webcam"></div></div>
+              <div class="laptop-screen">
+                <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
               <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
@@ -1288,11 +1260,18 @@
               <rect x="90" y="252" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="98" y="263" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Monthly</text>
               <rect x="152" y="252" width="44" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="160" y="263" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">All</text>
             </svg>
+              </div>
+              <div class="laptop-hinge"></div>
+              <div class="laptop-base"></div>
+            </div>
           </div>
 
           <!-- Slide 5: Goals -->
           <div class="auth-carousel-slide">
-            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div class="laptop-frame">
+              <div class="laptop-bezel-top"><div class="laptop-webcam"></div></div>
+              <div class="laptop-screen">
+                <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
               <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
@@ -1326,11 +1305,18 @@
               <rect x="86" y="308" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="94" y="319" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Monthly</text>
               <rect x="148" y="308" width="56" height="16" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/><text x="156" y="319" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Weekly</text>
             </svg>
+              </div>
+              <div class="laptop-hinge"></div>
+              <div class="laptop-base"></div>
+            </div>
           </div>
 
           <!-- Slide 6: Activities -->
           <div class="auth-carousel-slide">
-            <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div class="laptop-frame">
+              <div class="laptop-bezel-top"><div class="laptop-webcam"></div></div>
+              <div class="laptop-screen">
+                <svg viewBox="0 0 480 400" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="480" height="400" rx="14" fill="#0a0a0a"/>
               <rect x="0.5" y="0.5" width="479" height="399" rx="13.5" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
               <rect x="0" y="0" width="480" height="38" rx="14" fill="rgba(255,255,255,0.03)"/>
@@ -1369,30 +1355,33 @@
               <circle cx="36" cy="338" r="3" fill="rgba(255,255,255,0.15)"/>
               <text x="44" y="341" font-family="'Hanken Grotesk',sans-serif" font-size="5.5" fill="rgba(255,255,255,0.25)">Completed today: 6 activities · 5h 30m total</text>
             </svg>
+              </div>
+              <div class="laptop-hinge"></div>
+              <div class="laptop-base"></div>
+            </div>
           </div>
 
         </div>
         </div>
-        <button class="auth-carousel-arrow auth-carousel-prev" id="carouselPrev" aria-label="Previous">‹</button>
-        <button class="auth-carousel-arrow auth-carousel-next" id="carouselNext" aria-label="Next">›</button>
-      <div class="auth-carousel-dots" id="carouselDots">
-        <button class="auth-carousel-dot active" data-index="0" aria-label="Slide 1"></button>
-        <button class="auth-carousel-dot" data-index="1" aria-label="Slide 2"></button>
-        <button class="auth-carousel-dot" data-index="2" aria-label="Slide 3"></button>
-        <button class="auth-carousel-dot" data-index="3" aria-label="Slide 4"></button>
-        <button class="auth-carousel-dot" data-index="4" aria-label="Slide 5"></button>
-        <button class="auth-carousel-dot" data-index="5" aria-label="Slide 6"></button>
       </div>
+      <!-- Navigation Arrows -->
+      <button class="carousel-arrow carousel-arrow-left" id="carouselPrev" aria-label="Previous slide">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="carousel-arrow carousel-arrow-right" id="carouselNext" aria-label="Next slide">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <!-- Dot Navigation -->
+      <div class="carousel-dots" id="carouselDots">
+        <button class="carousel-dot active" data-index="0" aria-label="Go to slide 1"></button>
+        <button class="carousel-dot" data-index="1" aria-label="Go to slide 2"></button>
+        <button class="carousel-dot" data-index="2" aria-label="Go to slide 3"></button>
+        <button class="carousel-dot" data-index="3" aria-label="Go to slide 4"></button>
+        <button class="carousel-dot" data-index="4" aria-label="Go to slide 5"></button>
+        <button class="carousel-dot" data-index="5" aria-label="Go to slide 6"></button>
       </div>
-      <!-- Floating badges (outside carousel) -->
-      <div class="auth-float-badge auth-float-badge-1">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        <span>5 active</span>
-      </div>
-      <div class="auth-float-badge auth-float-badge-2">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span>24h tracked</span>
-      </div>
+
       <!-- Gradient Overlay + Quote -->
       <div class="auth-right-overlay">
         <p class="auth-quote">
@@ -1584,25 +1573,51 @@
         var track = document.getElementById('carouselTrack');
         var carouselEl = document.getElementById('authCarousel');
         var allSlides = track ? Array.prototype.slice.call(track.children) : [];
-        var dots = document.querySelectorAll('.auth-carousel-dot');
-        var dotsWrap = document.getElementById('carouselDots');
-        var progressWrap = document.getElementById('carouselProgress');
-        var labelEl = document.getElementById('carouselLabel');
-        var idxEl = document.getElementById('carouselIndex');
-        var prevBtn = document.getElementById('carouselPrev');
-        var nextBtn = document.getElementById('carouselNext');
-        var slideCount = 6;
         var currentSlide = 0;
         var autoInterval = null;
         var animRaf = null;
-        var CAROUSEL_INTERVAL = 5000;
+        var CAROUSEL_INTERVAL = 8000;
         var TRACK_DURATION = 1100;
         var REAL_SLIDE_COUNT = 6;
-        var names = ['Schedule', 'Hub', 'Finance', 'Analytics', 'Goals', 'Activities'];
-        var SLIDE_PITCH = 68;
+        var STEP = 360 / REAL_SLIDE_COUNT;
+        var SLIDE_W = 0.44;
+        var drumRadius = 0;
+        var currentAngle = 0;
         var reducedMotion = false;
-        var carouselDirection = 1;
-        function centerX(i) { return i * SLIDE_PITCH - (100 - SLIDE_PITCH) / 2; }
+        function normalizeIndex(i) { return ((i % REAL_SLIDE_COUNT) + REAL_SLIDE_COUNT) % REAL_SLIDE_COUNT; }
+        function computeRadius() {
+          var w = (carouselEl ? carouselEl.clientWidth : 600) * SLIDE_W;
+          drumRadius = (w / 2) / Math.tan(Math.PI / REAL_SLIDE_COUNT);
+        }
+        function positionSlides() {
+          computeRadius();
+          allSlides.forEach(function(s, i) {
+            s.style.transform = 'translate(-50%,-50%) rotateY(' + (i * STEP) + 'deg) translateZ(' + drumRadius.toFixed(1) + 'px)';
+          });
+        }
+        function setDrum(angleDeg) {
+          currentAngle = angleDeg;
+          track.style.transform = 'rotateY(' + angleDeg.toFixed(2) + 'deg)';
+        }
+        function angleDelta(i, angle) {
+          var d = (i * STEP + angle) % 360;
+          if (d > 180) d -= 360;
+          if (d < -180) d += 360;
+          return d;
+        }
+        function applyDrumFx(angle) {
+          allSlides.forEach(function(s, i) {
+            var t = Math.min(Math.abs(angleDelta(i, angle)) / STEP, 1);
+            s.style.opacity = (1 - t * 0.55).toFixed(3);
+            s.style.filter = t < 0.4 ? '' : 'brightness(' + (1 - t * 0.15).toFixed(3) + ') saturate(' + (1 - t * 0.1).toFixed(3) + ')';
+          });
+        }
+        function shortestAngleDelta(from, to) {
+          var d = (to - from) % 360;
+          if (d > 180) d -= 360;
+          if (d < -180) d += 360;
+          return d;
+        }
 
         function easeInOutQuint(t) {
           t = Math.min(Math.max(t, 0), 1);
@@ -1619,121 +1634,63 @@
         }
 
         function applySlideStates(index) {
+          var phys = normalizeIndex(index);
           allSlides.forEach(function(s, i) {
-            var active = i === index;
+            var active = i === phys;
             s.classList.toggle('active-slide', active);
             s.classList.toggle('inactive-slide', !active);
-            s.classList.remove('exit-left', 'enter-right');
-            s.style.transform = '';
-            s.style.opacity = '';
-            s.style.filter = '';
           });
+          applyDrumFx(currentAngle);
+          syncDots(phys);
         }
 
-        function updateDragFx(offsetPct) {
-          var viewCX = offsetPct + 50;
-          allSlides.forEach(function(s, i) {
-            var dist = Math.abs((i * SLIDE_PITCH + SLIDE_PITCH / 2) - viewCX) / SLIDE_PITCH;
-            if (dist > 1.4) return;
-            var sc = 1 - Math.min(dist * 0.12, 0.16);
-            var op = 1 - Math.min(dist * 0.65, 0.65);
-            s.style.transform = 'translate3d(0,0,0) scale(' + sc.toFixed(3) + ')';
-            s.style.opacity = op.toFixed(3);
-            s.style.filter = dist < 0.5 ? '' : 'blur(' + Math.min(dist * 3.5, 3.5).toFixed(1) + 'px) brightness(0.82) saturate(0.88)';
-          });
-        }
-
-        function restartProgress() {
-          if (progressWrap) {
-            progressWrap.classList.remove('run');
-            void progressWrap.offsetWidth;
-            progressWrap.classList.remove('paused');
-            if (autoInterval) progressWrap.classList.add('run');
-          }
-          if (dotsWrap) {
-            dotsWrap.classList.remove('paused');
-            void dotsWrap.offsetWidth;
-          }
-        }
-
-        function pauseProgress() {
-          if (progressWrap) progressWrap.classList.add('paused');
-          if (dotsWrap) dotsWrap.classList.add('paused');
-        }
-
-        function triggerSweep() {
-          if (!carouselEl || reducedMotion) return;
-          carouselEl.classList.remove('sweep');
-          void carouselEl.offsetWidth;
-          carouselEl.classList.add('sweep');
-        }
-
-        function updateMeta(index) {
-          var dotIndex = ((index % REAL_SLIDE_COUNT) + REAL_SLIDE_COUNT) % REAL_SLIDE_COUNT;
+        function syncDots(phys) {
+          var dots = document.querySelectorAll('.carousel-dot');
           dots.forEach(function(d, i) {
-            d.classList.toggle('active', i === dotIndex);
+            d.classList.toggle('active', i === phys);
           });
-          if (dotsWrap) {
-            dotsWrap.classList.remove('paused');
-            void dotsWrap.offsetWidth;
-          }
-          if (labelEl) {
-            labelEl.textContent = names[dotIndex];
-            labelEl.classList.remove('swap');
-            void labelEl.offsetWidth;
-            labelEl.classList.add('swap');
-          }
-          if (idxEl) {
-            idxEl.textContent = (dotIndex + 1) + ' / ' + REAL_SLIDE_COUNT;
-            idxEl.classList.remove('swap');
-            void idxEl.offsetWidth;
-            idxEl.classList.add('swap');
-          }
         }
 
-        function setTrack(xPct) {
-          track.style.transform = 'translate3d(' + (-xPct) + '%,0,0)';
-        }
+        function restartProgress() {}
+        function pauseProgress() {}
 
         function goToSlide(index, instant) {
-          if (index < 0) index = 0;
-          if (index >= REAL_SLIDE_COUNT) index = REAL_SLIDE_COUNT - 1;
-
-          var fromIndex = currentSlide;
           stopAnim();
-          updateMeta(index);
 
-          if (instant || reducedMotion || fromIndex === index) {
-            setTrack(centerX(index));
-            currentSlide = index;
-            applySlideStates(index);
+          if (instant || reducedMotion) {
+            currentSlide = normalizeIndex(index);
+            setDrum(-currentSlide * STEP);
+            applySlideStates(currentSlide);
             return;
           }
 
           if (carouselEl) carouselEl.classList.add('is-animating');
-          triggerSweep();
-          
-          var fromX = centerX(fromIndex);
-          var toX = centerX(index);
-          
-          allSlides[fromIndex].classList.add(index > fromIndex ? 'exit-left' : 'enter-right');
-          allSlides[index].classList.add(index > fromIndex ? 'enter-right' : 'exit-left');
 
+          var fromAngle = currentAngle;
+          var toAngle = fromAngle + shortestAngleDelta(fromAngle, -index * STEP);
+          if (Math.abs(toAngle - fromAngle) < 0.01) {
+            currentSlide = normalizeIndex(index);
+            setDrum(-currentSlide * STEP);
+            applyDrumFx(currentAngle);
+            applySlideStates(currentSlide);
+            return;
+          }
           var start = performance.now();
-          setTrack(fromX);
-          
+
           (function step(now) {
             var t = Math.min((now - start) / TRACK_DURATION, 1);
             var e = easeInOutQuint(t);
-            var currentX = fromX + (toX - fromX) * e;
-            setTrack(currentX);
-            updateDragFx(currentX);
+            var a = fromAngle + (toAngle - fromAngle) * e;
+            setDrum(a);
+            applyDrumFx(a);
             if (t < 1) {
               animRaf = requestAnimationFrame(step);
             } else {
               animRaf = null;
-              currentSlide = index;
-              applySlideStates(index);
+              currentSlide = normalizeIndex(index);
+              setDrum(-currentSlide * STEP);
+              applyDrumFx(currentAngle);
+              applySlideStates(currentSlide);
               if (carouselEl) carouselEl.classList.remove('is-animating');
             }
           })(start);
@@ -1741,30 +1698,18 @@
 
         function nextSlide() {
           restartProgress();
-          var next = currentSlide + carouselDirection;
-          if (next >= REAL_SLIDE_COUNT || next < 0) {
-            carouselDirection *= -1;
-            next = currentSlide + carouselDirection;
-          }
-          goToSlide(next);
+          goToSlide(currentSlide + 1);
         }
         function prevSlide() {
-          var prev = currentSlide - carouselDirection;
-          if (prev < 0 || prev >= REAL_SLIDE_COUNT) {
-            carouselDirection *= -1;
-            prev = currentSlide + carouselDirection;
-          }
-          goToSlide(prev);
+          goToSlide(currentSlide - 1);
         }
 
         function manualNext() {
           restartProgress();
-          goToSlide(Math.min(currentSlide + 1, REAL_SLIDE_COUNT - 1));
-          carouselDirection = currentSlide >= REAL_SLIDE_COUNT - 1 ? -1 : 1;
+          goToSlide(currentSlide + 1);
         }
         function manualPrev() {
-          goToSlide(Math.max(currentSlide - 1, 0));
-          carouselDirection = currentSlide <= 0 ? 1 : -1;
+          goToSlide(currentSlide - 1);
         }
 
         function startAutoRotate() {
@@ -1781,20 +1726,11 @@
 
         if (track) {
           allSlides = Array.prototype.slice.call(track.children);
+          positionSlides();
+          window.addEventListener('resize', positionSlides);
 
           goToSlide(0, true);
           startAutoRotate();
-
-          dots.forEach(function(dot) {
-            dot.addEventListener('click', function(ev) {
-              ev.stopPropagation();
-              pauseAuto();
-              goToSlide(parseInt(this.getAttribute('data-index'), 10));
-              startAutoRotate();
-            });
-          });
-          if (prevBtn) prevBtn.addEventListener('click', function(ev) { ev.stopPropagation(); pauseAuto(); manualPrev(); startAutoRotate(); });
-          if (nextBtn) nextBtn.addEventListener('click', function(ev) { ev.stopPropagation(); pauseAuto(); manualNext(); startAutoRotate(); });
 
           document.addEventListener('keydown', function(e) {
             if (!carouselEl || !carouselEl.offsetParent) return;
@@ -1816,8 +1752,7 @@
             var dragVel = 0;
             var lastX = 0;
             var lastT = 0;
-            var baseOffset = 0;
-            var maxOffset = centerX(REAL_SLIDE_COUNT - 1);
+            var baseAngle = 0;
             var SWIPE_THRESHOLD = 40;
             var VELOCITY_THRESHOLD = 0.4;
             var VERTICAL_LOCK = 12;
@@ -1830,10 +1765,6 @@
             }
             function getPointerY(e) {
               return e.touches ? e.touches[0].clientY : e.clientY;
-            }
-            function readOffset() {
-              var m = /translate3d\((-?[\d.]+)%/.exec(track.style.transform);
-              return m ? -parseFloat(m[1]) : centerX(currentSlide);
             }
             function onStart(e) {
               if (e.touches && e.touches.length > 1) return;
@@ -1853,7 +1784,7 @@
               dragDelta = 0;
               dragVel = 0;
               stopAnim();
-              baseOffset = readOffset();
+              baseAngle = currentAngle;
               carousel.classList.add('is-dragging');
               if (autoInterval) { clearInterval(autoInterval); autoInterval = null; }
               pauseProgress();
@@ -1878,21 +1809,11 @@
               lastX = px;
               lastT = now;
               dragDelta = dx;
-              var pct = dragDelta / carousel.offsetWidth * 100;
-              var offset = baseOffset - pct;
-              
-              var nearestIndex = Math.round((offset + (100 - SLIDE_PITCH) / 2) / SLIDE_PITCH);
-              var nearestC = centerX(nearestIndex);
-              var diff = offset - nearestC;
-              var resistance = 0.3;
-              if (offset < centerX(0)) {
-                offset = nearestC + diff * resistance;
-              } else if (offset > maxOffset) {
-                offset = nearestC + diff * resistance;
-              }
-              
-              setTrack(offset);
-              updateDragFx(offset);
+              var slideW = carousel.clientWidth * SLIDE_W;
+              var angle = baseAngle + (dx / slideW) * STEP;
+
+              setDrum(angle);
+              applyDrumFx(angle);
               if (!reducedMotion) carousel.style.setProperty('--ry', Math.max(-5, Math.min(5, dragDelta / 30)) + 'deg');
             }
             function onEnd() {
@@ -1907,11 +1828,9 @@
               var absDelta = Math.abs(dragDelta);
               
               if (dragDelta < 0 && (absDelta > SWIPE_THRESHOLD || (flick && absDelta > 15))) {
-                snapTarget = Math.min(currentSlide + 1, REAL_SLIDE_COUNT - 1);
-                carouselDirection = 1;
+                snapTarget = currentSlide + 1;
               } else if (dragDelta > 0 && (absDelta > SWIPE_THRESHOLD || (flick && absDelta > 15))) {
-                snapTarget = Math.max(currentSlide - 1, 0);
-                carouselDirection = -1;
+                snapTarget = currentSlide - 1;
               }
               
               isAnimating = true;
@@ -1963,12 +1882,28 @@
 
           var carousel = carouselEl || document.querySelector('.auth-carousel');
           if (carousel) {
-            carousel.addEventListener('mouseenter', function() {
-              if (dotsWrap) dotsWrap.classList.remove('paused');
-              if (progressWrap) progressWrap.classList.remove('paused');
-            });
             carousel.addEventListener('mouseleave', function() {
               if (!window.__carouselDragging && !autoInterval) startAutoRotate();
+            });
+          }
+
+          // ─── Arrow buttons ───
+          var prevBtn = document.getElementById('carouselPrev');
+          var nextBtn = document.getElementById('carouselNext');
+          if (prevBtn) prevBtn.addEventListener('click', function() { pauseAuto(); manualPrev(); startAutoRotate(); });
+          if (nextBtn) nextBtn.addEventListener('click', function() { pauseAuto(); manualNext(); startAutoRotate(); });
+
+          // ─── Dot navigation ───
+          var dotsContainer = document.getElementById('carouselDots');
+          if (dotsContainer) {
+            dotsContainer.addEventListener('click', function(e) {
+              var dot = e.target.closest('.carousel-dot');
+              if (!dot) return;
+              var idx = parseInt(dot.dataset.index, 10);
+              if (isNaN(idx)) return;
+              pauseAuto();
+              goToSlide(idx);
+              startAutoRotate();
             });
           }
         }

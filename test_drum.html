@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<body>
+<pre id="out">pending</pre>
+<iframe id="f" src="login.html" style="width:1400px;height:900px"></iframe>
+<script>
+  var out = document.getElementById('out');
+  var lines = [];
+  setTimeout(function() {
+    var doc = document.getElementById('f').contentDocument;
+    var win = document.getElementById('f').contentWindow;
+    var tr = doc.getElementById('carouselTrack');
+    lines.push('errors: ' + (win.__errs ? win.__errs.join(' | ') : 'none captured'));
+    lines.push('__carouselDragging: ' + doc.defaultView.__carouselDragging);
+    lines.push('track: ' + (tr ? tr.style.transform : 'none'));
+    out.textContent = lines.join('\n');
+  }, 2000);
+</script>
+<script>
+  document.getElementById('f').addEventListener('load', function() {
+    var win = document.getElementById('f').contentWindow;
+    win.__errs = [];
+    win.addEventListener('error', function(e) {
+      win.__errs.push((e.message || 'unknown') + ' @' + (e.filename || '') + ':' + e.lineno);
+    });
+    win.addEventListener('unhandledrejection', function(e) {
+      win.__errs.push('rejection: ' + (e.reason && e.reason.message || e.reason));
+    });
+  });
+</script>
+</body>
+</html>

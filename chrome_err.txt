@@ -1,0 +1,2 @@
+[14156:18976:0909/221646.118:ERROR:components\headless\command_handler\headless_command_handler.cc:266] Failed to write file shot_drum_0.png: Access is denied. (0x5)
+[7316:17100:0909/221647.779:ERROR:components\headless\command_handler\headless_command_handler.cc:266] Failed to write file shot_drum_1.png: Access is denied. (0x5)
