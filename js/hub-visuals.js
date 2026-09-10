@@ -723,6 +723,7 @@ function renderHubBento() {
          </div>
          ${type === 'clock' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-clock-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
          ${type === 'weather' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-weather-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'headlines' ? '<select class="bento-tool-btn bento-tool-style bento-tool-delete-right bento-headlines-select" data-headlines-source="' + uid + '" title="News source" style="right:34px">' + Object.keys(_HL_SOURCES).map(function(sk) { return '<option value="' + sk + '"' + (sk === _getHeadlineSource() ? ' selected' : '') + '>' + _HL_SOURCES[sk].name + '</option>'; }).join('') + '</select>' : ''}
          <button class="bento-tool-btn bento-tool-delete bento-tool-delete-right" data-remove-bubble="${uid}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
@@ -1176,6 +1177,20 @@ function renderHubBento() {
             </div>
           </div>
         </div>`;
+      case 'headlines': {
+        const hlSource = _getHeadlineSource();
+        const hlItems = _hlCache && _hlCache.source === hlSource ? _hlCache.items : null;
+        const hlList = hlItems ? hlItems.slice(0, 5).map(function(hl) {
+          return '<a class="hl-item" href="' + escapeHtml(_hlSafeLink(hl.link, hlSource)) + '" target="_blank" rel="noopener"><span class="hl-item-title">' + escapeHtml(hl.title) + '</span></a>';
+        }).join('') : '';
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg><span>Headlines</span></div>
+          <div class="headlines-widget" data-headlines-uid="${uid}">
+            ${hlList ? '<div class="hl-source-line"><span class="hl-source-name">' + _hlSourceName(hlSource) + '</span>' + (_hlFresh() ? '<span class="hl-stamp">' + new Date(_hlCache.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + '</span>' : '') + '<button class="weather-refresh" data-headlines-refresh title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button></div><div class="hl-list">' + hlList + '</div>' : '<div class="hl-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Fetching headlines...</span></div>'}
+          </div>
+        </div>`;
+      }
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
           <div style="text-align:center;color:var(--text-tertiary);font-size:0.75rem">Unknown bubble</div>
@@ -1222,7 +1237,7 @@ function renderHubBento() {
       el._fr24ConsecutiveFails = 0;
       var statusEl = el.querySelector('.fr24-status-text');
       var statusDot = el.querySelector('.fr24-status-dot');
-      var airportIcon = L.divIcon({ className: 'fr24-airport-icon', html: '<div style="width:8px;height:8px;background:#00ff88;border-radius:50%;border:2px solid rgba(0,255,136,0.3);box-shadow:0 0 12px #00ff88,0 0 24px rgba(0,255,136,0.3)"></div>', iconSize: [8, 8], iconAnchor: [4, 4] });
+      var airportIcon = L.divIcon({ className: 'fr24-airport-icon', html: '<div style="width:8px;height:8px;background:#fff;border-radius:50%;border:2px solid rgba(255,255,255,0.2);box-shadow:0 0 12px rgba(255,255,255,0.6),0 0 24px rgba(255,255,255,0.2)"></div>', iconSize: [8, 8], iconAnchor: [4, 4] });
       L.marker([lat, lon], { icon: airportIcon }).addTo(map);
       function setStatus(text, state) {
         if (statusEl) statusEl.textContent = text;
@@ -1246,7 +1261,7 @@ function renderHubBento() {
               var heading = s[10] || 0;
               var alt = s[13] ? Math.round(s[13] * 3.28084) : 0;
               var spd = s[12] ? Math.round(s[12] * 3.6) : 0;
-              var trail = alt > 30000 ? '#ff3366' : alt > 15000 ? '#ffaa00' : '#00ff88';
+              var trail = alt > 30000 ? '#fff' : alt > 15000 ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.35)';
               var icon = L.divIcon({ className: 'fr24-plane-icon', html: '<svg viewBox="0 0 24 24" fill="' + trail + '" style="width:12px;height:12px;transform:rotate(' + heading + 'deg);filter:drop-shadow(0 0 3px ' + trail + ')"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>', iconSize: [12, 12], iconAnchor: [6, 6] });
               var marker = L.marker([nlat, nlon], { icon: icon }).addTo(map);
               var tip = callsign || 'UNK';
@@ -1375,7 +1390,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -1520,6 +1535,11 @@ function renderHubBento() {
       var weatherRefreshBtn = e.target.closest('[data-weather-refresh]');
       if (weatherRefreshBtn) {
         refreshWeather();
+        return;
+      }
+      var headlinesRefreshBtn = e.target.closest('[data-headlines-refresh]');
+      if (headlinesRefreshBtn) {
+        refreshHeadlines();
         return;
       }
       var embedSetup = e.target.closest('[data-embed-setup]');
@@ -1743,6 +1763,18 @@ function renderHubBento() {
 
   // ─── Weather fetcher (runs at most once) ──────
   _fetchWeather(grid);
+
+  // ─── Headlines fetcher ────────────────────────
+  _fetchHeadlines(grid);
+
+  // Wire headlines source selects (edit mode only, re-created each render)
+  grid.querySelectorAll('[data-headlines-source]').forEach(function(sel) {
+    sel.addEventListener('click', function(e) { e.stopPropagation(); });
+    sel.addEventListener('change', function() {
+      _setHeadlineSource(sel.value);
+      renderHubBento();
+    });
+  });
 
   // ─── Progress auto-refresh ─────────────────────
   if (grid.querySelector('.prog-chart')) {
@@ -2493,7 +2525,8 @@ function bubbleTypeIcon(t) {
     spotify: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>',
     strava: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2L21 12l-5.5 0L10 2z"/><path d="M10.5 12L6 2l-5.5 0L6 12z"/></svg>',
     flightradar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/><circle cx="12" cy="12" r="3"/><path d="M2 12h20"/></svg>',
-    'sleep-score': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a9 9 0 1 0-9-9 9 9 0 0 0 9 9z"/><path d="M4 12a8 8 0 0 1 8-8"/><path d="M17 14.5a6.5 6.5 0 0 1-6-6.5"/></svg>'
+    'sleep-score': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a9 9 0 1 0-9-9 9 9 0 0 0 9 9z"/><path d="M4 12a8 8 0 0 1 8-8"/><path d="M17 14.5a6.5 6.5 0 0 1-6-6.5"/></svg>',
+    headlines: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>'
   };
   return icons[t] || '';
 }
@@ -2718,6 +2751,150 @@ function refreshWeather() {
       w.innerHTML = '<div class="weather-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Fetching weather...</span></div>';
     });
     _fetchWeather(grid);
+  }
+}
+
+/* ─── Headlines widget ─────────────────────── */
+const _HL_SOURCES = {
+  bbc: { name: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+  nytimes: { name: 'NY Times', url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml' },
+  theguardian: { name: 'The Guardian', url: 'https://www.theguardian.com/world/rss' },
+  npr: { name: 'NPR News', url: 'https://feeds.npr.org/1001/rss.xml' },
+  aljazeera: { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' }
+};
+let _hlCache = null;
+let _hlFetching = false;
+
+function _hlSourceName(key) { return (_HL_SOURCES[key] && _HL_SOURCES[key].name) || 'News'; }
+function _hlFresh() { return !!(_hlCache && Date.now() - _hlCache.ts < 900000); }
+function _getHeadlineSource() {
+  try { return localStorage.getItem('haven-headlines-source') || 'bbc'; } catch(e) { return 'bbc'; }
+}
+function _setHeadlineSource(key) {
+  try { localStorage.setItem('haven-headlines-source', key); } catch(e) {}
+  _hlCache = null;
+}
+function _headlinesCacheKey() { return 'hub-headlines-' + _getHeadlineSource(); }
+function _stripCdata(s) { return String(s || '').replace(/^<!\[CDATA\[/, '').replace(/\]\]>$/, '').trim(); }
+function _hlSafeLink(link, sourceKey) {
+  var lk = String(link || '').replace(/"/g, '').replace(/<[^>]*>/g, '').trim();
+  if (!/^https?:\/\//i.test(lk)) lk = (_HL_SOURCES[sourceKey] && _HL_SOURCES[sourceKey].url) || '#';
+  return lk;
+}
+
+function _parseRssHeadlines(xmlText, sourceKey) {
+  var doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+  if (doc.querySelector('parsererror')) return null;
+  var nodes = Array.from(doc.querySelectorAll('item > title'));
+  if (!nodes.length) nodes = Array.from(doc.querySelectorAll('entry > title'));
+  var linkNodes = Array.from(doc.querySelectorAll('item > link'));
+  if (!linkNodes.length) linkNodes = Array.from(doc.querySelectorAll('entry > link'));
+  var out = [];
+  for (var i = 0; i < nodes.length && out.length < 5; i++) {
+    var title = _stripCdata(nodes[i].textContent).replace(/\s+/g, ' ');
+    if (!title) continue;
+    var link = '';
+    if (linkNodes[i]) {
+      link = _stripCdata(linkNodes[i].textContent || '');
+      if (!link) { var href = linkNodes[i].getAttribute && linkNodes[i].getAttribute('href'); if (href) link = href; }
+    }
+    if (!link) link = (_HL_SOURCES[sourceKey] && _HL_SOURCES[sourceKey].url) || '#';
+    out.push({ title: title, link: link });
+  }
+  return out.length ? out : null;
+}
+
+function updateHeadlinesWidget(widget, items, sourceKey) {
+  if (!widget) return;
+  if (!items || !items.length) {
+    widget.innerHTML = '<div class="hl-error"><span>No headlines available</span></div>';
+    return;
+  }
+  var stamp = _hlCache ? new Date(_hlCache.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+  var refreshSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>';
+  var b = '<div class="hl-source-line"><span class="hl-source-name">' + _hlSourceName(sourceKey) + '</span><span class="hl-stamp">' + stamp + '</span><button class="weather-refresh" data-headlines-refresh title="Refresh">' + refreshSvg + '</button></div><div class="hl-list">';
+  items.slice(0, 5).forEach(function(hl) {
+    var t = String(hl.title || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    if (t.length > 90) t = t.slice(0, 88) + '...';
+    b += '<a class="hl-item" href="' + escapeHtml(_hlSafeLink(hl.link, sourceKey)) + '" target="_blank" rel="noopener"><span class="hl-item-title">' + escapeHtml(t) + '</span></a>';
+  });
+  b += '</div>';
+  widget.innerHTML = b;
+}
+
+function _fetchHeadlines(grid) {
+  var widgets = grid.querySelectorAll('.headlines-widget[data-headlines-uid]');
+  if (widgets.length === 0) return;
+  var source = _getHeadlineSource();
+  if (_hlCache && _hlCache.source === source && _hlFresh()) {
+    widgets.forEach(function(w) { updateHeadlinesWidget(w, _hlCache.items, source); });
+    return;
+  }
+  var cached = null;
+  try { cached = JSON.parse(localStorage.getItem(_headlinesCacheKey())); } catch(e) {}
+  if (cached && cached.ts && Date.now() - cached.ts < 900000 && cached.items && cached.items.length) {
+    _hlCache = cached;
+    widgets.forEach(function(w) { updateHeadlinesWidget(w, cached.items, source); });
+    return;
+  }
+  if (_hlFetching) return;
+  _hlFetching = true;
+  var cfg = _HL_SOURCES[source] || _HL_SOURCES.bbc;
+  var apply = function(items) {
+    if (_getHeadlineSource() !== source) return;
+    _hlCache = { ts: Date.now(), source: source, items: items };
+    try { localStorage.setItem(_headlinesCacheKey(), JSON.stringify(_hlCache)); } catch(e) {}
+    _hlFetching = false;
+    var g2 = document.querySelector('.bento-grid');
+    if (g2) g2.querySelectorAll('.headlines-widget[data-headlines-uid]').forEach(function(w) { updateHeadlinesWidget(w, items, source); });
+  };
+  var fail = function() {
+    _hlFetching = false;
+    var g3 = document.querySelector('.bento-grid');
+    if (g3) g3.querySelectorAll('.headlines-widget[data-headlines-uid]').forEach(function(w) {
+      w.innerHTML = '<div class="hl-error"><span>Could not load headlines</span></div>';
+    });
+  };
+  var jsonUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(cfg.url);
+  fetch(jsonUrl, { signal: AbortSignal.timeout(12000) })
+    .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(data) {
+      if (!data || data.status !== 'ok' || !data.items || !data.items.length) throw new Error('empty');
+      var items = data.items.slice(0, 5).map(function(it) {
+        return { title: _stripCdata(it.title).replace(/\s+/g, ' '), link: _hlSafeLink(it.link, source) };
+      }).filter(function(it) { return it.title; });
+      if (!items.length) throw new Error('empty');
+      apply(items);
+    })
+    .catch(function() {
+      var xmlUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(cfg.url);
+      fetch(xmlUrl, { signal: AbortSignal.timeout(12000) })
+        .then(function(r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+        .then(function(xmlText) {
+          var items = _parseRssHeadlines(xmlText, source);
+          if (!items) throw new Error('parse');
+          apply(items);
+        })
+        .catch(fail);
+    });
+}
+
+function refreshHeadlines() {
+  _hlCache = null;
+  try {
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('hub-headlines-') === 0) keys.push(k);
+    }
+    keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
+  } catch(e) {}
+  var grid = document.querySelector('.bento-grid');
+  if (grid) {
+    grid.querySelectorAll('.headlines-widget').forEach(function(w) {
+      w.innerHTML = '<div class="hl-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Fetching headlines...</span></div>';
+    });
+    _fetchHeadlines(grid);
   }
 }
 
@@ -3233,11 +3410,11 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score' };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines' };
   var categories = [
     { name:'Productivity', short:'Prod', types:['goals','priorities','todos','habits','progress'] },
     { name:'Media', short:'Media', types:['spotify','strava','flightradar','images'] },
-    { name:'Utilities', short:'Utils', types:['clock','weather','calendar','timer','pomodoro','sleep-score'] },
+    { name:'Utilities', short:'Utils', types:['clock','weather','calendar','timer','pomodoro','sleep-score','headlines'] },
     { name:'Content', short:'Content', types:['quote','notes','links'] }
   ];
   function applyFilters() {
@@ -3362,7 +3539,7 @@ function initBubbleDockDrag(dock) {
       weather:{w:280,h:240},calendar:{w:280,h:300},timer:{w:280,h:180},
       pomodoro:{w:280,h:180},spotify:{w:280,h:420},strava:{w:280,h:420},
       flightradar:{w:280,h:420},quote:{w:280,h:220},notes:{w:280,h:240},
-      links:{w:280,h:240},images:{w:280,h:210},'sleep-score':{w:280,h:280}
+      links:{w:280,h:240},images:{w:280,h:210},'sleep-score':{w:280,h:280},headlines:{w:280,h:260}
     };
     var d = defSizes[type] || {w:280,h:280};
     var maxGW = 140, maxGH = 150;
@@ -4019,6 +4196,10 @@ function _snapshotBubblePreview(el, type) {
       var sn = el.querySelector('.ss-score-note');
       if (rv) lines.push('Score: ' + rv.textContent.trim().replace(/\s+/g,' '));
       if (sn) lines.push(sn.textContent.trim().replace(/\s+/g,' '));
+    } else if (type === 'headlines') {
+      var hlTitles = el.querySelectorAll('.hl-item-title');
+      hlTitles.forEach(function(ht) { var txt = ht.textContent.trim().replace(/\s+/g,' '); if (txt) lines.push(txt); });
+      if (!lines.length) lines.push('No headlines');
     } else if (type === 'strava' || type === 'flightradar') {
       lines.push('Embedded content');
     } else if (type === 'images') {
@@ -4032,7 +4213,7 @@ var _snapshotColors = {
   goals:'#bdbdbd', priorities:'#b0b0b0', todos:'#a3a3a3', habits:'#979797',
   progress:'#8a8a8a', clock:'#bdbdbd', weather:'#b0b0b0', calendar:'#a3a3a3',
   timer:'#979797', pomodoro:'#8a8a8a', spotify:'#c7c7c7', strava:'#9a9a9a',
-  flightradar:'#8d8d8d', 'sleep-score':'#b5b5b5', quote:'#a8a8a8', notes:'#9c9c9c',
+  flightradar:'#8d8d8d', 'sleep-score':'#b5b5b5', quote:'#a8a8a8', notes:'#9c9c9c', headlines:'#ababab',
   links:'#909090', images:'#c2c2c2'
 };
 

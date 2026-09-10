@@ -5124,14 +5124,48 @@ document.addEventListener('click', function(e) {
 });
 
 // ─── TASK MODAL ────────────────────────────────────────────
-function selectTagPill(tag) {
-  document.querySelectorAll('.tf-tag').forEach(b => b.classList.remove('active'));
-  const pill = document.querySelector(`.tf-tag[data-tag="${tag}"]`);
-  if (pill) pill.classList.add('active');
-  if (dom.taskTag) dom.taskTag.value = tag;
-  const meta = TAG_COLORS[tag] || TAG_COLORS.meeting;
-  const icon = document.getElementById('taskModalIcon');
-  if (icon) icon.style.color = meta.text;
+function setDropdownValue(triggerId, menuId, value) {
+  const menu = document.getElementById(menuId);
+  if (!menu) return;
+  menu.querySelectorAll('.tm-dropdown-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.value === value);
+    if (item.dataset.value === value) {
+      const label = document.querySelector(`#${triggerId} .tm-dropdown-label`);
+      if (label) label.textContent = item.textContent;
+    }
+  });
+  const hidden = menu.closest('.tm-field')?.querySelector('select');
+  if (hidden) hidden.value = value;
+}
+
+function initTaskDropdowns() {
+  ['tmRepeatDropdown', 'tmReminderDropdown'].forEach(id => {
+    const dd = document.getElementById(id);
+    if (!dd) return;
+    const trigger = dd.querySelector('.tm-dropdown-trigger');
+    const menu = dd.querySelector('.tm-dropdown-menu');
+    if (!trigger || !menu) return;
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.tm-dropdown.open').forEach(other => { if (other !== dd) other.classList.remove('open'); });
+      dd.classList.toggle('open');
+    });
+    menu.querySelectorAll('.tm-dropdown-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const val = item.dataset.value;
+        menu.querySelectorAll('.tm-dropdown-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        const label = trigger.querySelector('.tm-dropdown-label');
+        if (label) label.textContent = item.textContent;
+        const hidden = dd.closest('.tm-field')?.querySelector('select');
+        if (hidden) hidden.value = val;
+        dd.classList.remove('open');
+      });
+    });
+  });
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.tm-dropdown.open').forEach(dd => dd.classList.remove('open'));
+  });
 }
 
 function openNewTaskModal(date, startMins) {
@@ -5145,10 +5179,11 @@ function openNewTaskModal(date, startMins) {
   dom.taskDate.value = date || formatDate(new Date());
   dom.taskStart.value = toTimeStr(sr);
   dom.taskEnd.value = toTimeStr(sr + 60);
-  selectTagPill('meeting');
   dom.taskNotes.value = '';
   if (dom.taskRepeat) dom.taskRepeat.value = 'none';
   if (dom.taskReminder) dom.taskReminder.value = '0';
+  setDropdownValue('tmRepeatTrigger', 'tmRepeatMenu', 'none');
+  setDropdownValue('tmReminderTrigger', 'tmReminderMenu', '0');
   dom.taskDeleteBtn.classList.add('hidden');
   document.getElementById('taskModalId').textContent = '';
   updatePriorityUI();
@@ -5167,10 +5202,13 @@ function openTaskModal(id) {
   dom.taskDate.value = task.date || formatDate(new Date());
   dom.taskStart.value = task.startTime;
   dom.taskEnd.value = task.endTime;
-  selectTagPill(task.tag);
   dom.taskNotes.value = task.notes || '';
-  if (dom.taskRepeat) dom.taskRepeat.value = task.repeat ? task.repeat.type : 'none';
-  if (dom.taskReminder) dom.taskReminder.value = String(task.reminder || '0');
+  const repeatVal = task.repeat ? task.repeat.type : 'none';
+  const reminderVal = String(task.reminder || '0');
+  if (dom.taskRepeat) dom.taskRepeat.value = repeatVal;
+  if (dom.taskReminder) dom.taskReminder.value = reminderVal;
+  setDropdownValue('tmRepeatTrigger', 'tmRepeatMenu', repeatVal);
+  setDropdownValue('tmReminderTrigger', 'tmReminderMenu', reminderVal);
   dom.taskDeleteBtn.classList.remove('hidden');
   document.getElementById('taskModalId').textContent = `#${id.slice(0, 6)}`;
   updatePriorityUI();
@@ -5180,7 +5218,7 @@ function openTaskModal(id) {
 function updatePriorityUI() {
   const group = document.getElementById('prioritySelectGroup');
   if (!group) return;
-  group.querySelectorAll('.tf-pr').forEach(o => {
+  group.querySelectorAll('.tm-pr').forEach(o => {
     o.classList.toggle('active', parseInt(o.dataset.priority) === (state._selectedPriority || 3));
   });
 }
@@ -5211,14 +5249,12 @@ function hideTaskModal() {
 
 function handleTaskFormSubmit(e) {
   e.preventDefault();
-  const activePill = document.querySelector('.tf-tag.active');
-  const tag = activePill ? activePill.dataset.tag : 'meeting';
   const data = {
     title: dom.taskTitle.value.trim(),
     date: dom.taskDate.value,
     startTime: dom.taskStart.value,
     endTime: dom.taskEnd.value,
-    tag: tag,
+    tag: state.editingTask ? (getTask(state.editingTask)?.tag || 'meeting') : 'meeting',
     notes: dom.taskNotes.value.trim(),
     priority: state._selectedPriority || 3,
   };

@@ -230,6 +230,8 @@ function switchView(view) {
   currentView = view;
   state.currentView = view;
   $$('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  const pillMgr = document.getElementById('schPillManager');
+  if (pillMgr) pillMgr.style.display = view === 'month' ? 'none' : '';
   renderCalendar();
   saveState();
 }
@@ -1704,16 +1706,11 @@ document.addEventListener('keydown', (e) => {
 
 // ─── EVENT BINDING ─────────────────────────────────────────
 function initPrioritySelect() {
-  document.querySelectorAll('#prioritySelectGroup .tf-pr').forEach(btn => {
+  document.querySelectorAll('#prioritySelectGroup .tm-pr').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('#prioritySelectGroup .tf-pr').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#prioritySelectGroup .tm-pr').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-    });
-  });
-  document.querySelectorAll('#taskTagPills .tf-tag').forEach(pill => {
-    pill.addEventListener('click', () => {
-      document.querySelectorAll('#taskTagPills .tf-tag').forEach(b => b.classList.remove('active'));
-      pill.classList.add('active');
+      state._selectedPriority = parseInt(btn.dataset.priority) || 3;
     });
   });
 }
@@ -1728,17 +1725,6 @@ function bindEvents() {
   dom.taskModalClose?.addEventListener('click', hideTaskModal);
   dom.taskCancelBtn?.addEventListener('click', hideTaskModal);
   dom.taskForm?.addEventListener('submit', handleTaskFormSubmit);
-  dom.taskTag = document.getElementById('taskTag');
-  document.querySelectorAll('.tf-tag').forEach(pill => {
-    pill.addEventListener('click', () => {
-      document.querySelectorAll('.tf-tag').forEach(b => b.classList.remove('active'));
-      pill.classList.add('active');
-      if (dom.taskTag) dom.taskTag.value = pill.dataset.tag;
-      const meta = TAG_COLORS[pill.dataset.tag] || TAG_COLORS.meeting;
-      const icon = document.getElementById('taskModalIcon');
-      if (icon) icon.style.color = meta.text;
-    });
-  });
   dom.taskDeleteBtn?.addEventListener('click', handleTaskDelete);
   // Title character count
   dom.taskTitle?.addEventListener('input', () => {
@@ -1773,7 +1759,6 @@ function bindEvents() {
 
   // Access Hub
   document.getElementById('accessMain')?.addEventListener('click', toggleAccessHub);
-  document.getElementById('accessFocusMode')?.addEventListener('click', () => { toggleAccessHub(); toggleFocusMode(); showToast('🎯 Focus mode ' + (focusModeActive ? 'activated' : 'deactivated'), 'info', 2000); });
   document.getElementById('accessAIChat')?.addEventListener('click', () => { toggleAccessHub(); if (typeof showAIChat === 'function') showAIChat(); });
   document.getElementById('accessScreenshot')?.addEventListener('click', () => { toggleAccessHub(); setTimeout(captureWeekScreenshot, 200); });
   document.getElementById('accessCopyWeek')?.addEventListener('click', () => { toggleAccessHub(); copyWeekToNext(); });
@@ -1791,8 +1776,9 @@ function bindEvents() {
   initPomodoro();
 
   // Quick idea bindings
-  // Init priority select + task modal tag pills
+  // Init priority select + task modal dropdowns
   initPrioritySelect();
+  initTaskDropdowns();
 
   renderSchTemplates();
 
@@ -1859,19 +1845,8 @@ function bindEvents() {
     }
   });
 
-  // Load focus mode
-  loadFocusMode();
-
   // Apply access hub customization
   applyAccessHubConfig();
-  // F key to toggle focus mode (only when not in modals or input fields)
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !state.taskModalOpen && !state.settingsDrawerOpen && !state.helpModalOpen && !e.target.closest('input, textarea, select')) {
-      e.preventDefault();
-      toggleFocusMode();
-      showToast('🎯 Focus mode ' + (focusModeActive ? 'activated' : 'deactivated'), 'info', 2000);
-    }
-  });
 
 
   // Schedule-specific menu handlers
@@ -1888,7 +1863,6 @@ function bindEvents() {
     { id: 'new-task', label: 'New Task', icon: '+', color: 'var(--accent)' },
     { id: 'today', label: 'Go to Today', icon: '◎', color: 'var(--text-primary)' },
     { id: 'pomodoro', label: 'Pomodoro', icon: '◉', color: 'var(--text-primary)' },
-    { id: 'focus', label: 'Focus Mode', icon: '⊙', color: 'var(--text-primary)' },
   ];
 
   function loadPlusConfig() {
@@ -1931,10 +1905,6 @@ function bindEvents() {
       case 'pomodoro':
         var p = document.getElementById('pomodoroCard');
         if (p) { p.classList.remove('hidden'); p.classList.toggle('collapsed'); }
-        break;
-      case 'focus':
-        var f = document.getElementById('accessFocusMode');
-        if (f) f.click();
         break;
     }
   }
@@ -2479,6 +2449,8 @@ function renderSchTemplates() {
     currentMonthDate = new Date(state.currentMonthDate);
   }
   $$('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === currentView));
+  const pillMgr = document.getElementById('schPillManager');
+  if (pillMgr) pillMgr.style.display = currentView === 'month' ? 'none' : '';
   renderCalendar();
   bindEvents();
   updateApiStatus();

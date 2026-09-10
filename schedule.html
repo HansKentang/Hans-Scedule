@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,17 +7,17 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Havën">
+  <meta name="apple-mobile-web-app-title" content="Hav�n">
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
-  <title>Havën Schedule — Schedule</title>
+  <title>Hav�n Schedule � Schedule</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
     <style>
-    /* ─── SCHEDULE: IMMERSIVE CALENDAR ───────────────────── */
+    /* --- SCHEDULE: IMMERSIVE CALENDAR --------------------- */
     /* Mini week overview */
     .sch-mini-week { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border-color); }
     .sch-mini-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-primary); margin-bottom: var(--space-2); opacity: 0.6; }
@@ -36,7 +36,7 @@
     }
     .sch-mini-day.today.has-tasks::after { background: var(--text-inverse); background: contrast-color(var(--accent)); }
 
-    /* Calendar header — thin breadcrumb style */
+    /* Calendar header � thin breadcrumb style */
     .sch-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: var(--space-2) var(--space-5);
@@ -61,7 +61,7 @@
     .sch-holiday-badge:active { transform: scale(0.95); }
     .sch-holiday-badge:focus-visible { box-shadow: var(--focus-ring); }
     .sch-api-badge #taskCount { font-weight: 600; color: var(--text-primary); font-size: 0.68rem; }
-    /* active = holiday mode on — keep neutral, accent only on hover */
+    /* active = holiday mode on � keep neutral, accent only on hover */
 
     /* Calendar container */
     #calendarContainer { flex: 1; overflow: auto; position: relative; display: flex; flex-direction: column; }
@@ -71,7 +71,7 @@
       position: relative; min-width: fit-content; flex: 1; min-height: 0;
     }
 
-    /* ─── PILL MANAGER (colorful chip row + dropdown) ──── */
+    /* --- PILL MANAGER (colorful chip row + dropdown) ---- */
     .sch-pill-manager {
       padding: 4px var(--space-4);
       border-bottom: 1px solid var(--border-color);
@@ -170,7 +170,7 @@
     }
     .sch-pm-add-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     
-    /* ─── INLINE SUBCATEGORY BAR (below pill manager) ── */
+    /* --- INLINE SUBCATEGORY BAR (below pill manager) -- */
     .sch-sc-bar {
       padding: 5px var(--space-3);
       border-bottom: 1px solid var(--border-color);
@@ -270,7 +270,7 @@
     }
     .tpl-add-input-error { border-color: #e04040 !important; }
 
-    /* ─── ADD CATEGORY BUBBLE ── */
+    /* --- ADD CATEGORY BUBBLE -- */
     .cat-add-popup {
       position: fixed; z-index: 60;
       width: 224px;
@@ -353,7 +353,7 @@
 
 
 
-    /* ─── HAMBURGER MENU POPUP ──────────────────────────── */
+    /* --- HAMBURGER MENU POPUP ---------------------------- */
     .sch-menu-popup {
       position: absolute; left: 0; top: calc(100% + 4px);
       width: 200px; background: var(--bg-primary);
@@ -377,7 +377,7 @@
     .sch-menu-item:hover svg { color: var(--text-secondary); }
     .sch-menu-item.active svg { color: var(--accent); }
 
-    /* ─── MOBILE HAMBURGER ───────────────────────────────── */
+    /* --- MOBILE HAMBURGER --------------------------------- */
     .sch-hamburger {
       display: none; width: 32px; height: 32px; border: none; background: none;
       color: var(--text-secondary); cursor: pointer; border-radius: var(--radius-sm);
@@ -387,7 +387,7 @@
     .sch-hamburger:hover { background: var(--accent-soft); color: var(--text-primary); }
     .sch-hamburger svg { width: 18px; height: 18px; }
 
-    /* ─── RESPONSIVE ─────────────────────────────────────── */
+    /* --- RESPONSIVE --------------------------------------- */
     @media (max-width: 767px) {
       .hub-sidebar { width: 56px; min-width: 56px; }
       .hub-snav-item .snav-label,
@@ -461,14 +461,14 @@
       .sch-sc-bar-add-input:focus { width: 120px; }
       .sch-sc-bar-add-btn { width: 24px; height: 24px; }
 
-      /* Calendar grid mobile — single-day view with hidden overflow */
+      /* Calendar grid mobile � single-day view with hidden overflow */
       #calendarContainer { overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 
       /* Filters bar mobile */
 
     }
     @media (max-width: 480px) {
-      /* ─── HERO COMPACT ── */
+      /* --- HERO COMPACT -- */
       .hub-main > section:first-child { height: 100px !important; }
       .hub-main > section:first-child h1 { font-size: 22px !important; }
       .hub-main > section:first-child > div:last-child { padding: 0 12px !important; }
@@ -476,7 +476,7 @@
       /* Allow hero to scroll away on mobile */
       #calendarContainer { flex: none; min-height: 80dvh; }
 
-      /* ─── HEADER EXTRA COMPACT ── */
+      /* --- HEADER EXTRA COMPACT -- */
       .sch-header { padding: var(--space-1) var(--space-2) !important; gap: var(--space-1); min-height: 38px; flex-wrap: wrap; }
       .sch-header-left { gap: var(--space-1); }
       .sch-header-left h2 { font-size: 0.7rem; }
@@ -489,17 +489,17 @@
       #todayBtn { font-size: 0.65rem; padding: 1px 6px; }
       #weekLabel { font-size: 0.72rem; }
 
-      /* ─── VIEW TOGGLE COMPACT ── */
+      /* --- VIEW TOGGLE COMPACT -- */
       .sch-header-center { width: 100%; order: 3; justify-content: flex-start; }
 
-      /* ─── PILL MANAGER EXTRA COMPACT ── */
+      /* --- PILL MANAGER EXTRA COMPACT -- */
       .sch-pill-manager { padding: 2px var(--space-2); gap: 2px; min-height: 24px; }
       .sch-pm-chip { font-size: 0.52rem; padding: 3px 7px 3px 5px; gap: 3px; min-height: 28px; }
       .sch-pm-chip-dot { width: 5px; height: 5px; }
       .sch-pm-chip-count { font-size: 0.42rem; padding: 0 3px; }
       .sch-pm-add-chip { width: 22px; height: 22px; font-size: 0.8rem; }
 
-      /* ─── SUBCATEGORY BAR COMPACT ── */
+      /* --- SUBCATEGORY BAR COMPACT -- */
       .sch-sc-bar { padding: 3px var(--space-2); gap: 3px; }
       .sch-sc-bar-pill { font-size: 0.55rem; padding: 3px 7px 3px 5px; gap: 3px; }
       .sch-sc-bar-pill .sc-name { max-width: 60px; }
@@ -507,10 +507,10 @@
       .sch-sc-bar-add-input:focus { width: 90px; }
       .sch-sc-bar-add-btn { width: 20px; height: 20px; }
 
-      /* ─── BOTTOM NAV SAFE AREA ── */
+      /* --- BOTTOM NAV SAFE AREA -- */
       .hub-main { padding-bottom: 56px; }
     }
-    /* ─── MOBILE DAY VIEW ────────────────────────────────── */
+    /* --- MOBILE DAY VIEW ---------------------------------- */
     .sch-mobile-day-bar {
       display: none;
       gap: 3px;
@@ -604,7 +604,7 @@
       .day-header.time-axis-header { display: none; }
     }
 
-    /* ─── MOBILE ADD-TASK FAB ──────────────────────────────── */
+    /* --- MOBILE ADD-TASK FAB -------------------------------- */
     .mobile-add-fab {
       position: fixed;
       z-index: 999;
@@ -649,15 +649,15 @@
       .mobile-add-fab svg { width: 18px; height: 18px; }
     }
 
-    /* ─── All page CSS consolidated in style.css ─── */
+    /* --- All page CSS consolidated in style.css --- */
   </style>
 </head>
 <body>
   <div class="hub-layout">
-    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────────── -->
+    <!-- --- SIDEBAR OVERLAY (mobile) --------------------- -->
     <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
 
-    <!-- ─── HAMBURGER SIDE PANEL ─────────────────────── -->
+    <!-- --- HAMBURGER SIDE PANEL ----------------------- -->
     <div class="hub-menu-overlay" id="hubMenuOverlay"></div>
     <div class="hub-menu-panel hidden" id="hubMenuPanel">
       <div class="hub-menu-panel-header">
@@ -698,11 +698,11 @@
       </div>
     </div>
 
-    <!-- ─── SIDEBAR (Hub workspace) ────────────────────── -->
+    <!-- --- SIDEBAR (Hub workspace) ---------------------- -->
     <aside class="hub-sidebar" role="navigation" aria-label="Sidebar" id="hubSidebar">
       <div class="hub-workspace">
-        <a href="login.html" class="hub-workspace-link"><div class="hub-workspace-icon"><img src="assets/icon-192.png" alt="Havën"></div>
-        <span class="hub-workspace-name">Havën</span></a>
+        <a href="login.html" class="hub-workspace-link"><div class="hub-workspace-icon"><img src="assets/icon-192.png" alt="Hav�n"></div>
+        <span class="hub-workspace-name">Hav�n</span></a>
         <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
         <button class="hub-hamburger" aria-label="Menu">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -759,7 +759,7 @@
       </div>
 
       <div class="hub-sidebar-images"></div>
-      <!-- ─── SPOTIFY EMBED ───────────────────────── -->
+      <!-- --- SPOTIFY EMBED ------------------------- -->
       <div class="sp-sidebar" id="spSidebar">
         <div class="sp-header" onclick="spToggleSection()">
           <button class="sp-toggle-btn" onclick="event.stopPropagation();spToggleSection()" title="Toggle player">
@@ -799,20 +799,20 @@
         <div class="hub-footer-btns">
           <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
           <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg><span>Theme</span></button>
-          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
+          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode � tap any image to change">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             <span>Visuals</span>
           </button>
         </div>
         <div class="sidebar-legal">
-          <a href="privacy.html">Privacy</a><span>·</span><a href="terms.html">Terms</a><span>·</span><a href="support.html">Support</a>
+          <a href="privacy.html">Privacy</a><span>�</span><a href="terms.html">Terms</a><span>�</span><a href="support.html">Support</a>
         </div>
       </div>
     </aside>
 
     <!-- Main calendar -->
     <div class="hub-main" role="main">
-      <!-- ─── SCHEDULE HERO BANNER ────────────────────────── -->
+      <!-- --- SCHEDULE HERO BANNER -------------------------- -->
       <section class="page-hero" style="position:relative;height:180px;overflow:hidden">
         <img data-image-id="schedule-hero" src="" alt=""
              style="width:100%;height:100%;object-fit:cover;opacity:0.7"
@@ -885,7 +885,7 @@
         </div>
       </header>
 
-      <!-- Pill Manager: category chips → subcategory bubble -->
+      <!-- Pill Manager: category chips ? subcategory bubble -->
       <div class="sch-pill-manager hub-anim-in hub-anim-in-2" id="schPillManager">
         <div id="pmChips"><!-- Populated by JS --></div>
         <button class="sch-pm-add-chip" id="catAddBtn" title="Add category">
@@ -937,12 +937,6 @@
       <!-- Access Hub (Accessibility menu) -->
       <div class="access-hub hub-anim-in hub-anim-in-5" id="accessHub">
         <div class="access-items" id="accessItems">
-          <button class="access-item" id="accessFocusMode" data-action="focusMode" title="Focus Mode">
-            <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
-            </span>
-            <span class="access-item-label" data-i18n="sch.focus">Focus</span>
-          </button>
           <button class="access-item" id="accessAIChat" data-action="aiChat" title="Open AI assistant">
             <span class="access-item-icon" style="background:#fff;color:var(--text-primary)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
@@ -1017,133 +1011,125 @@
 
     <div id="taskOverlay" class="hidden">
     <div id="taskModal" class="hidden" role="dialog" aria-label="Task Details">
-      <div class="modal-header">
-        <div class="modal-header-left">
-          <span class="modal-header-icon" id="taskModalIcon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-          </span>
-          <h3 id="taskModalTitle">New Task</h3>
+      <div class="tm-header">
+        <div class="tm-header-left">
+          <div class="tm-icon" id="taskModalIcon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <div class="tm-header-text">
+            <h3 id="taskModalTitle">New Task</h3>
+            <span class="tm-task-id" id="taskModalId"></span>
+          </div>
         </div>
-        <div class="modal-header-actions">
-          <span class="modal-task-id" id="taskModalId"></span>
-          <button id="taskModalClose" class="modal-close-btn" aria-label="Close">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
+        <button id="taskModalClose" class="tm-close" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-      <div class="modal-body">
+      <div class="tm-body">
         <form id="taskForm">
-          <!-- Title -->
-          <div class="tf-group tf-title-group">
-            <input type="text" id="taskTitle" class="tf-title-input" placeholder="What are you working on?" autocomplete="off">
-            <div class="tf-title-char" id="taskTitleChar"></div>
+          <div class="tm-field">
+            <input type="text" id="taskTitle" class="tm-title-input" placeholder="Task title" autocomplete="off">
+            <div class="tm-title-char" id="taskTitleChar"></div>
           </div>
 
-          <!-- Tags as pills -->
-          <div class="tf-group">
-            <label class="tf-label">Category</label>
-            <div class="tf-tags" id="taskTagPills">
-              <button type="button" class="tf-tag" data-tag="deep-work" style="--tag-c:var(--tag-deep-work-text);--tag-b:var(--tag-deep-work-bg)">Deep Work</button>
-              <button type="button" class="tf-tag active" data-tag="meeting" style="--tag-c:var(--tag-meeting-text);--tag-b:var(--tag-meeting-bg)">Meeting</button>
-              <button type="button" class="tf-tag" data-tag="exercise" style="--tag-c:var(--tag-exercise-text);--tag-b:var(--tag-exercise-bg)">Exercise</button>
-              <button type="button" class="tf-tag" data-tag="study" style="--tag-c:var(--tag-study-text);--tag-b:var(--tag-study-bg)">Study</button>
-              <button type="button" class="tf-tag" data-tag="hobby" style="--tag-c:var(--tag-hobby-text);--tag-b:var(--tag-hobby-bg)">Hobby</button>
-            </div>
-            <select id="taskTag" class="tf-hidden-select" style="display:none"></select>
-          </div>
-
-          <!-- Date + Time + Priority + Repeat grid -->
-          <div class="tf-group">
-            <div class="task-grid">
-              <div class="task-grid-cell">
-                <div class="tf-row tf-row-2">
-                  <div class="tf-field">
-                    <label class="tf-label">Date</label>
-                    <div class="tf-input-wrap">
-                      <svg class="tf-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                      <input type="date" id="taskDate" class="tf-input">
-                    </div>
-                  </div>
-                  <div class="tf-field">
-                    <label class="tf-label">Start</label>
-                    <div class="tf-input-wrap">
-                      <svg class="tf-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                      <input type="time" id="taskStart" class="tf-input" value="09:00">
-                    </div>
-                  </div>
-                </div>
+          <div class="tm-row tm-row-3">
+            <div class="tm-field">
+              <div class="tm-input-wrap">
+                <svg class="tm-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <input type="date" id="taskDate" class="tm-input">
               </div>
-              <div class="task-grid-cell">
-                <div class="tf-row tf-row-2">
-                  <div class="tf-field">
-                    <label class="tf-label">End</label>
-                    <div class="tf-input-wrap">
-                      <svg class="tf-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                      <input type="time" id="taskEnd" class="tf-input" value="10:00">
-                    </div>
-                  </div>
-                  <div class="tf-field">
-                    <label class="tf-label">Priority</label>
-                    <div class="tf-priority tf-priority-compact" id="prioritySelectGroup">
-                      <button type="button" class="tf-pr" data-priority="1" style="--pr-c:#ef4444">Urgent</button>
-                      <button type="button" class="tf-pr" data-priority="2" style="--pr-c:#f59e0b">High</button>
-                      <button type="button" class="tf-pr active" data-priority="3" style="--pr-c:#6366f1">Medium</button>
-                      <button type="button" class="tf-pr" data-priority="4" style="--pr-c:#6b7280">Low</button>
-                    </div>
-                  </div>
-                </div>
+            </div>
+            <div class="tm-field">
+              <div class="tm-input-wrap">
+                <svg class="tm-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <input type="time" id="taskStart" class="tm-input" value="09:00">
+              </div>
+            </div>
+            <div class="tm-field">
+              <div class="tm-input-wrap">
+                <svg class="tm-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <input type="time" id="taskEnd" class="tm-input" value="10:00">
               </div>
             </div>
           </div>
 
-          <!-- Repeat + Reminder row -->
-          <div class="tf-group">
-            <div class="tf-row tf-row-2">
-              <div class="tf-field">
-                <label class="tf-label">Repeat</label>
-                <div class="tf-input-wrap tf-select-wrap">
-                  <select id="taskRepeat" class="tf-input">
-                    <option value="none">No repeat</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekdays">Weekdays</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </div>
-              </div>
-              <div class="tf-field">
-                <label class="tf-label">Reminder</label>
-                <div class="tf-input-wrap tf-select-wrap">
-                  <select id="taskReminder" class="tf-input">
-                    <option value="0">None</option>
-                    <option value="5">5 min before</option>
-                    <option value="15">15 min before</option>
-                    <option value="30">30 min before</option>
-                    <option value="60">1 hour before</option>
-                    <option value="1440">1 day before</option>
-                  </select>
-                </div>
-              </div>
+          <div class="tm-section">
+            <div class="tm-section-label">Priority</div>
+            <div class="tm-priority" id="prioritySelectGroup">
+              <button type="button" class="tm-pr" data-priority="1" style="--pr-c:#ef4444">Urgent</button>
+              <button type="button" class="tm-pr" data-priority="2" style="--pr-c:#f59e0b">High</button>
+              <button type="button" class="tm-pr active" data-priority="3" style="--pr-c:#818cf8">Medium</button>
+              <button type="button" class="tm-pr" data-priority="4" style="--pr-c:#6b7280">Low</button>
             </div>
           </div>
 
-          <!-- Notes -->
-          <div class="tf-group">
-            <label class="tf-label">Notes <span class="tf-label-opt">optional</span></label>
-            <textarea id="taskNotes" class="tf-textarea" rows="3" placeholder="Add details, links, or context..."></textarea>
+          <div class="tm-row tm-row-2">
+            <div class="tm-field">
+              <div class="tm-section-label">Repeat</div>
+              <div class="tm-dropdown" id="tmRepeatDropdown">
+                <div class="tm-dropdown-trigger" id="tmRepeatTrigger">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+                  <span class="tm-dropdown-label">No repeat</span>
+                  <svg class="tm-dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tm-dropdown-menu" id="tmRepeatMenu">
+                  <div class="tm-dropdown-item active" data-value="none">No repeat</div>
+                  <div class="tm-dropdown-item" data-value="daily">Daily</div>
+                  <div class="tm-dropdown-item" data-value="weekdays">Weekdays</div>
+                  <div class="tm-dropdown-item" data-value="weekly">Weekly</div>
+                  <div class="tm-dropdown-item" data-value="monthly">Monthly</div>
+                </div>
+              </div>
+              <select id="taskRepeat" class="tm-hidden-select">
+                <option value="none">No repeat</option>
+                <option value="daily">Daily</option>
+                <option value="weekdays">Weekdays</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div class="tm-field">
+              <div class="tm-section-label">Reminder</div>
+              <div class="tm-dropdown" id="tmReminderDropdown">
+                <div class="tm-dropdown-trigger" id="tmReminderTrigger">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                  <span class="tm-dropdown-label">None</span>
+                  <svg class="tm-dropdown-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="tm-dropdown-menu" id="tmReminderMenu">
+                  <div class="tm-dropdown-item active" data-value="0">None</div>
+                  <div class="tm-dropdown-item" data-value="5">5 min before</div>
+                  <div class="tm-dropdown-item" data-value="15">15 min before</div>
+                  <div class="tm-dropdown-item" data-value="30">30 min before</div>
+                  <div class="tm-dropdown-item" data-value="60">1 hour before</div>
+                  <div class="tm-dropdown-item" data-value="1440">1 day before</div>
+                </div>
+              </div>
+              <select id="taskReminder" class="tm-hidden-select">
+                <option value="0">None</option>
+                <option value="5">5 min before</option>
+                <option value="15">15 min before</option>
+                <option value="30">30 min before</option>
+                <option value="60">1 hour before</option>
+                <option value="1440">1 day before</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Footer actions -->
-          <div class="tf-footer">
-            <button type="button" id="taskDeleteBtn" class="tf-btn tf-btn-danger hidden">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-              Delete
+          <div class="tm-field">
+            <div class="tm-input-wrap tm-textarea-wrap">
+              <textarea id="taskNotes" class="tm-textarea" rows="2" placeholder="Add notes..."></textarea>
+            </div>
+          </div>
+
+          <div class="tm-footer">
+            <button type="button" id="taskDeleteBtn" class="tm-btn tm-btn-danger hidden">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
             </button>
-            <div class="tf-footer-right">
-
-              <button type="button" id="taskCancelBtn" class="tf-btn tf-btn-ghost" data-i18n="sch.cancel">Cancel</button>
-              <button type="submit" id="taskSaveBtn" class="tf-btn tf-btn-primary">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            <div class="tm-footer-right">
+              <button type="button" id="taskCancelBtn" class="tm-btn tm-btn-ghost">Cancel</button>
+              <button type="submit" id="taskSaveBtn" class="tm-btn tm-btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                 Save
               </button>
             </div>
@@ -1152,9 +1138,7 @@
       </div>
     </div>
     </div>
-
-
-    <div id="helpOverlay" class="hidden"></div>
+<div id="helpOverlay" class="hidden"></div>
     <div id="helpModal" class="hidden" role="dialog" aria-label="Help and Shortcuts">
       <div class="modal-header">
         <h3>
@@ -1185,11 +1169,7 @@
           <div class="help-tips" id="helpTipsGrid">
             <div class="help-tip">
               <span class="help-tip-icon"></span>
-              <div class="help-tip-text">Press <kbd>F</kbd> to toggle Focus Mode — hides sidebar and reduces clutter</div>
-            </div>
-            <div class="help-tip">
-              <span class="help-tip-icon"></span>
-              <div class="help-tip-text">Drag tasks on the calendar to reschedule — other tasks shift to avoid conflicts</div>
+              <div class="help-tip-text">Drag tasks on the calendar to reschedule - other tasks shift to avoid conflicts</div>
             </div>
             <div class="help-tip">
               <span class="help-tip-icon"></span>
@@ -1203,7 +1183,7 @@
     <!-- Undo Toast -->
     <div id="undoToast" class="undo-toast hidden">
       <span id="undoToastMsg">Action undone</span>
-      <button id="undoToastClose" class="btn btn-ghost" style="font-size:0.72rem;padding:2px 6px">✕</button>
+      <button id="undoToastClose" class="btn btn-ghost" style="font-size:0.72rem;padding:2px 6px">?</button>
     </div>
 
     <!-- Image Picker -->
@@ -1461,7 +1441,7 @@
   <script src="js/firestore-sync.js"></script>
   <script src="js/schedule.js"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
-  <!-- ─── Spotify Settings Modal ──────────────── -->
+  <!-- --- Spotify Settings Modal ---------------- -->
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
     <div class="sp-modal">
       <div class="sp-modal-header">
@@ -1491,7 +1471,7 @@
 
 
 
-  <!-- ─── BOTTOM NAV (mobile) ──────────────────────────────── -->
+  <!-- --- BOTTOM NAV (mobile) -------------------------------- -->
   <nav class="hub-bottom-nav" aria-label="Main navigation">
     <div class="hub-bottom-nav-inner">
       <a href="index.html" class="hub-bottom-nav-item" data-nav="hub">
