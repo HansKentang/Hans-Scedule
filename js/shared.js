@@ -275,7 +275,7 @@ function getSleepDebt(logs, targets) {
 // ─── SLEEP INSIGHTS ───────────────────────────────────────────
 function generateSleepInsights(logs) {
   const insights = [];
-  if (logs.length < 3) return [{ icon: '💤', text: 'Log at least 3 nights to see sleep insights.' }];
+  if (logs.length < 3) return [{ icon: '☾', text: 'Log at least 3 nights to see sleep insights.' }];
 
   // Sort logs by date (most recent first)
   const sorted = [...logs].sort((a, b) => a.date.localeCompare(b.date));
@@ -294,7 +294,7 @@ function generateSleepInsights(logs) {
       const hqTime = toTimeStr(Math.round(hqAvg));
       const lqTime = toTimeStr(Math.round(lqAvg));
       insights.push({
-        icon: '🌙',
+        icon: '☾',
         text: `You sleep better when you go to bed around ${formatTimeAMPM(hqTime)} vs ${formatTimeAMPM(lqTime)}.`
       });
     }
@@ -321,7 +321,7 @@ function generateSleepInsights(logs) {
   }
   if (bestBucket) {
     insights.push({
-      icon: '⏰',
+      icon: '◷',
       text: `Your optimal sleep duration seems to be around ${formatSleepMinutes(bestBucket)} — your highest quality nights.`
     });
   }
@@ -331,12 +331,12 @@ function generateSleepInsights(logs) {
   if (consistency && consistency.nightsLogged >= 5) {
     if (consistency.score >= 80) {
       insights.push({
-        icon: '🌟',
+        icon: '★',
         text: `Great consistency! Your bedtime varies by only ~${consistency.bedVariance}min.`
       });
     } else if (consistency.score < 50) {
       insights.push({
-        icon: '📊',
+        icon: '▦',
         text: `Your bedtime varies by ~${consistency.bedVariance}min. A regular wind-down routine can improve sleep quality.`
       });
     }
@@ -357,7 +357,7 @@ function generateSleepInsights(logs) {
     const weAvg = weekendLogs.reduce((s, l) => s + l.duration, 0) / weekendLogs.length;
     if (Math.abs(wdAvg - weAvg) >= 60) {
       insights.push({
-        icon: '📅',
+        icon: '▤',
         text: `You sleep ${formatSleepMinutes(Math.round(Math.abs(wdAvg - weAvg)))} ${weAvg > wdAvg ? 'more' : 'less'} on weekends vs weekdays.`
       });
     }
@@ -373,7 +373,7 @@ function generateSleepInsights(logs) {
     const diff = Math.round(avgLast - avgFirst);
     if (Math.abs(diff) >= 30) {
       insights.push({
-        icon: diff > 0 ? '📈' : '📉',
+        icon: diff > 0 ? '▲' : '▼',
         text: `Your sleep duration has ${diff > 0 ? 'increased' : 'decreased'} by ~${formatSleepMinutes(Math.abs(diff))} over the last week.`
       });
     }
@@ -388,7 +388,7 @@ function generateSleepInsights(logs) {
       const lqAvg = lowDur.reduce((s, l) => s + l.quality, 0) / lowDur.length;
       if (hqAvg - lqAvg >= 1) {
         insights.push({
-          icon: '💪',
+          icon: '◆',
           text: `Nights with 7h+ sleep score ${(hqAvg - lqAvg).toFixed(1)} points higher in quality than shorter nights.`
         });
       }
@@ -396,7 +396,7 @@ function generateSleepInsights(logs) {
   }
 
   if (insights.length === 0) {
-    insights.push({ icon: '📝', text: 'Keep logging to receive personalized sleep insights!' });
+    insights.push({ icon: '✎', text: 'Keep logging to receive personalized sleep insights!' });
   }
 
   return insights.slice(0, 5); // Max 5 insights
@@ -4222,7 +4222,7 @@ function toggleEditMode() {
   }
   
   if (state.editMode) {
-    showToast('🖊️ Edit mode ON — tap any image to customize', 'info', 2500);
+    showToast('✎ Edit mode ON — tap any image to customize', 'info', 2500);
   } else {
     showToast('Edit mode OFF', 'info', 1500);
   }
@@ -5535,7 +5535,7 @@ function updateFileBadge() {
     badge.className = 'ai-file-badge';
     dom.aiChatInputWrapper?.parentElement?.insertBefore(badge, dom.aiChatInputWrapper);
   }
-  const icon = attachedFile.isImage ? '📷' : '📄';
+  const icon = attachedFile.isImage ? '▣' : '□';
   const thumbnailHtml = attachedFile.isImage
     ? `<img class="ai-file-thumbnail" src="${attachedFile.data}" alt="${escapeHtml(attachedFile.name)}">`
     : '';
@@ -5645,21 +5645,21 @@ function executeActions(actions, responseText) {
         if (slot) {
           data.startTime = slot.startTime;
           data.endTime = slot.endTime;
-          actionSummary.push(`⚠️ ${escapeHtml(data.title)} shifted to ${slot.startTime}–${slot.endTime} (avoids conflict with "${escapeHtml(conflict.title)}")`);
+          actionSummary.push(`▲ ${escapeHtml(data.title)} shifted to ${slot.startTime}–${slot.endTime} (avoids conflict with "${escapeHtml(conflict.title)}")`);
         }
       }
       const task = createTask(data);
       createdTaskIds.push(task.id);
       const meta = getTagMeta(data.tag || 'meeting');
-      actionSummary.push(`📌 <strong>${escapeHtml(data.title)}</strong> <span style="color:${meta.text}">${data.startTime}–${data.endTime}</span> on ${data.date}`);
+      actionSummary.push(`● <strong>${escapeHtml(data.title)}</strong> <span style="color:${meta.text}">${data.startTime}–${data.endTime}</span> on ${data.date}`);
     } else if (action.type === 'updateTask' && action.data.id) {
       updateTask(action.data.id, action.data.changes);
-      actionSummary.push(`✏️ Updated: <strong>${escapeHtml(action.data.changes.title || 'task')}</strong>`);
+      actionSummary.push(`✎ Updated: <strong>${escapeHtml(action.data.changes.title || 'task')}</strong>`);
       actionsModified = true;
     } else if (action.type === 'deleteTask' && action.data.id) {
       const t = getTask(action.data.id);
       deleteTask(action.data.id);
-      actionSummary.push(`🗑️ Deleted: <strong>${escapeHtml(t?.title || 'task')}</strong>`);
+      actionSummary.push(`✕ Deleted: <strong>${escapeHtml(t?.title || 'task')}</strong>`);
       actionsModified = true;
     } else if (action.type === 'clearAllTasks') {
       pushUndo();
@@ -5667,7 +5667,7 @@ function executeActions(actions, responseText) {
       state.tasks = state.tasks.filter(isWhiteboardTask);
       saveState();
       const count = before - state.tasks.length;
-      actionSummary.push(`🧹 Cleared <strong>${count}</strong> task${count !== 1 ? 's' : ''} from the schedule`);
+      actionSummary.push(`⊘ Cleared <strong>${count}</strong> task${count !== 1 ? 's' : ''} from the schedule`);
       actionsModified = true;
     } else if (action.type === 'clearDate') {
       pushUndo();
@@ -5676,14 +5676,14 @@ function executeActions(actions, responseText) {
       const ids = new Set(toRemove.map(t => t.id));
       state.tasks = state.tasks.filter(t => !ids.has(t.id));
       saveState();
-      actionSummary.push(`🧹 Cleared <strong>${toRemove.length}</strong> task${toRemove.length !== 1 ? 's' : ''} on ${date}`);
+      actionSummary.push(`⊘ Cleared <strong>${toRemove.length}</strong> task${toRemove.length !== 1 ? 's' : ''} on ${date}`);
       actionsModified = true;
     } else if (action.type === 'clearCompletedTasks') {
       pushUndo();
       const before = state.tasks.filter(t => t.completed).length;
       state.tasks = state.tasks.filter(t => !t.completed);
       saveState();
-      actionSummary.push(`🧹 Removed <strong>${before}</strong> completed task${before !== 1 ? 's' : ''}`);
+      actionSummary.push(`⊘ Removed <strong>${before}</strong> completed task${before !== 1 ? 's' : ''}`);
       actionsModified = true;
     } else if (action.type === 'deleteTasksByTag') {
       pushUndo();
@@ -5693,7 +5693,7 @@ function executeActions(actions, responseText) {
       state.tasks = state.tasks.filter(t => !ids.has(t.id));
       saveState();
       const label = TAG_LABELS[tag] || tag;
-      actionSummary.push(`🧹 Deleted <strong>${toRemove.length}</strong> ${label} task${toRemove.length !== 1 ? 's' : ''}`);
+      actionSummary.push(`⊘ Deleted <strong>${toRemove.length}</strong> ${label} task${toRemove.length !== 1 ? 's' : ''}`);
       actionsModified = true;
     } else if (action.type === 'deleteTasksByQuery') {
       pushUndo();
@@ -5702,14 +5702,14 @@ function executeActions(actions, responseText) {
       const ids = new Set(toRemove.map(t => t.id));
       state.tasks = state.tasks.filter(t => !ids.has(t.id));
       saveState();
-      actionSummary.push(`🧹 Deleted <strong>${toRemove.length}</strong> task${toRemove.length !== 1 ? 's' : ''} matching "${escapeHtml(action.data.query)}"`);
+      actionSummary.push(`⊘ Deleted <strong>${toRemove.length}</strong> task${toRemove.length !== 1 ? 's' : ''} matching "${escapeHtml(action.data.query)}"`);
       actionsModified = true;
     } else if (action.type === 'rememberFact') {
       var key = action.data.key;
       var fact = action.data.fact;
       if (key && fact) {
         storeMemory(key, fact, 'ai');
-        actionSummary.push(`🧠 Noted: ${escapeHtml(key)} — ${escapeHtml(fact)}`);
+        actionSummary.push(`◇ Noted: ${escapeHtml(key)} — ${escapeHtml(fact)}`);
       }
     }
   }
@@ -5722,10 +5722,10 @@ function executeActions(actions, responseText) {
 
   const taskCount = createdTaskIds.length;
   if (taskCount > 0) {
-    showToast(`✅ Added <strong>${taskCount}</strong> task${taskCount > 1 ? 's' : ''} to the calendar`, 'success', 3000);
+    showToast(`✓ Added <strong>${taskCount}</strong> task${taskCount > 1 ? 's' : ''} to the calendar`, 'success', 3000);
     setTimeout(() => { flashTaskOnGrid(createdTaskIds[0]); }, 400);
   } else if (actionsModified) {
-    showToast('✅ Schedule updated', 'success', 2000);
+    showToast('✓ Schedule updated', 'success', 2000);
   }
 
   return responseHtml;
@@ -5770,14 +5770,14 @@ function sendAIMessage() {
           const meta = getTagMeta(a.data.tag || 'meeting');
           return `<span style="color:${meta.text}">●</span> <strong>${escapeHtml(a.data.title)}</strong> — ${a.data.date} ${a.data.startTime}–${a.data.endTime} <em style="color:var(--text-tertiary)">(${a.data.tag})</em>`;
         }
-        if (a.type === 'clearAllTasks') return `🧹 Clear entire schedule`;
-        if (a.type === 'clearDate') return `🧹 Clear tasks on ${a.data.date}`;
-        if (a.type === 'clearCompletedTasks') return `🧹 Remove all completed tasks`;
-        if (a.type === 'deleteTasksByTag') return `🧹 Delete all ${a.data.tag} tasks`;
-        if (a.type === 'deleteTasksByQuery') return `🧹 Delete tasks matching "${escapeHtml(a.data.query)}"`;
-        if (a.type === 'updateTask') return `✏️ Update task ${a.data.id}`;
-        if (a.type === 'deleteTask') return `🗑️ Delete task ${a.data.id}`;
-        return `⚡ ${a.type}`;
+        if (a.type === 'clearAllTasks') return `⊘ Clear entire schedule`;
+        if (a.type === 'clearDate') return `⊘ Clear tasks on ${a.data.date}`;
+        if (a.type === 'clearCompletedTasks') return `⊘ Remove all completed tasks`;
+        if (a.type === 'deleteTasksByTag') return `⊘ Delete all ${a.data.tag} tasks`;
+        if (a.type === 'deleteTasksByQuery') return `⊘ Delete tasks matching "${escapeHtml(a.data.query)}"`;
+        if (a.type === 'updateTask') return `✎ Update task ${a.data.id}`;
+        if (a.type === 'deleteTask') return `✕ Delete task ${a.data.id}`;
+        return `» ${a.type}`;
       }).join('<br>');
 
       const planHtml = `${response.text}
@@ -5800,10 +5800,10 @@ function sendAIMessage() {
         const resultHtml = executeActions(response.actions, response.text);
         msgEl.querySelector('.ai-bubble').innerHTML = resultHtml;
         trackPlanResult(true);
-        showToast('✅ Plan executed', 'success', 2000);
+        showToast('✓ Plan executed', 'success', 2000);
       });
       msgEl.querySelector('.ai-plan-cancel')?.addEventListener('click', () => {
-        msgEl.querySelector('.ai-bubble').innerHTML = response.text + '\n\n<em style="color:var(--text-tertiary)">✖ Plan cancelled</em>';
+        msgEl.querySelector('.ai-bubble').innerHTML = response.text + '\n\n<em style="color:var(--text-tertiary)">✕ Plan cancelled</em>';
         trackPlanResult(false);
         showToast('Plan cancelled', 'info', 2000);
       });
@@ -5819,8 +5819,8 @@ function sendAIMessage() {
     const pLabel = PROVIDER_LABELS[state.apiProvider] || 'Groq';
     const isRateLimit = msg.includes('429') || msg.includes('Rate limited');
     const displayMsg = isRateLimit
-      ? `❌ Rate limited. ${pLabel} API is temporarily overloaded.`
-      : `❌ Error: ${escapeHtml(msg)}. Check your API key in Settings.`;
+      ? `✕ Rate limited. ${pLabel} API is temporarily overloaded.`
+      : `✕ Error: ${escapeHtml(msg)}. Check your API key in Settings.`;
     appendAIMessage('system', displayMsg + `<br><br><button class="btn btn-outline ai-retry-btn" style="font-size:0.74rem;padding:3px 12px">Retry</button>`);
     // Wire up retry button
     const msgs = dom.aiChatMessages;
@@ -6802,11 +6802,13 @@ let spCollapsed = false;
 
 function spInit() {
   spLoadState();
+  spCollapsed = false;
+  localStorage.setItem(SP_COLLAPSED_KEY, '');
   spRenderSidebar();
   spRenderList();
   spUpdateNav();
   var el = document.getElementById('spSidebar');
-  if (el && spCollapsed) el.classList.add('collapsed');
+  if (el) el.classList.remove('collapsed');
   document.addEventListener('keydown', spOnKey);
 }
 
@@ -6885,10 +6887,10 @@ function spUpdateNav() {
 }
 
 function spToggleSection(force) {
-  spCollapsed = force !== undefined ? force : !spCollapsed;
-  localStorage.setItem(SP_COLLAPSED_KEY, spCollapsed ? '1' : '');
+  spCollapsed = false;
+  localStorage.setItem(SP_COLLAPSED_KEY, '');
   const sidebar = document.getElementById('spSidebar');
-  if (sidebar) sidebar.classList.toggle('collapsed', spCollapsed);
+  if (sidebar) sidebar.classList.remove('collapsed');
 }
 
 function spOpenSettings() {

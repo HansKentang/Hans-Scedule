@@ -614,7 +614,7 @@
 
     // Clear all
     html += '<div class="ad-dash-card half"><div class="ad-dash-label">Clear App Data</div>';
-    html += '<div class="ad-dash-sub" style="margin-bottom:8px">⚠️ Only clears Havën-related keys (keeps other apps)</div>';
+    html += '<div class="ad-dash-sub" style="margin-bottom:8px">▲ Only clears Havën-related keys (keeps other apps)</div>';
     html += '<button class="admin-btn small danger" onclick="window._adClearAppData()">Clear App Data</button>';
     html += '</div>';
 

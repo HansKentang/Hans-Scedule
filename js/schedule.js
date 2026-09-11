@@ -776,7 +776,7 @@ function renderAgendaView() {
       for (const task of tasks) {
         const meta = TAG_COLORS[task.tag] || TAG_COLORS.meeting;
         const doneCls = task.completed ? 'agenda-task-done' : '';
-        const repeatIcon = task.repeat && task.repeat.type !== 'none' ? ' 🔄' : '';
+        const repeatIcon = task.repeat && task.repeat.type !== 'none' ? ' ⟳' : '';
         html += `<div class="agenda-task ${doneCls}" data-task-id="${task.id}">
           <div class="agenda-task-time">
             <span class="agenda-task-start">${formatTimeRange(task.startTime, task.endTime)}</span>
@@ -2121,7 +2121,7 @@ function updatePomodoroDisplay() {
     document.getElementById('accessMain')?.classList.remove('running');
     const completeBtn = document.getElementById('pomodoroStartBtn');
     if (completeBtn) completeBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start`;
-    document.getElementById('pomodoroStatus').textContent = '🎉 Session complete!';
+    document.getElementById('pomodoroStatus').textContent = '● Session complete!';
     const iconEl2 = document.getElementById('pomodoroPeriodIcon');
     if (iconEl2) iconEl2.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     playPomodoroSound();

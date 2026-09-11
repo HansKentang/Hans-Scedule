@@ -399,7 +399,7 @@
             <span>Settings</span>
           </button>
           <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
             <span>Visuals</span>
           </button>
           <span id="syncStatusDot" class="sync-dot" title="Sync status"></span>
@@ -442,11 +442,11 @@
         <!-- Hub Visuals FAB -->
         <div class="access-hub" id="hubAccessHub">
           <div class="access-items" id="hubAccessItems">
-            <button class="access-item" id="hubFabCustomize" title="Customize">
+            <button class="access-item" id="hubFabCustomize" title="Customize layout">
               <span class="access-item-icon" style="background:color-mix(in srgb, var(--text-primary) 12%, transparent);color:var(--text-primary)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
               </span>
-              <span class="access-item-label">Customize</span>
+              <span class="access-item-label">Layout</span>
             </button>
             <button class="access-item" id="hubFabSnapshot" title="Share snapshot of your hub">
               <span class="access-item-icon" style="background:color-mix(in srgb, var(--text-primary) 12%, transparent);color:var(--text-primary)">
@@ -1011,78 +1011,72 @@ function init() {
 
   <!-- Sleep Log Modal -->
   <div id="sleepLogOverlay" class="sleep-log-overlay hidden" onclick="closeSleepLogModal()">
-    <div id="sleepLogModal" class="sleep-log-modal hidden">
-    <div class="sleep-log-modal-header">
-      <div style="display:flex;align-items:center;gap:var(--space-3)">
-        <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--accent-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-          </svg>
+    <div id="sleepLogModal" class="sleep-log-modal hidden" onclick="event.stopPropagation()">
+      <div class="sleep-log-modal-header">
+        <div class="sleep-log-header-left">
+          <div class="sleep-log-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+            </svg>
+          </div>
+          <h3>Log Sleep</h3>
         </div>
-        <h3>Log Sleep</h3>
+        <button class="sleep-log-modal-close" onclick="closeSleepLogModal()" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-      <button class="sleep-log-modal-close" onclick="closeSleepLogModal()" aria-label="Close">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="sleep-log-modal-body">
-    <div class="sleep-log-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="sleepDate">Date</label>
-          <input type="date" id="sleepDate" class="form-input">
-        </div>
-        <div class="form-group">
-          <label for="sleepQuality">Quality</label>
-          <div class="sleep-quality-select" id="sleepQualitySelect">
-            <button class="sleep-quality-opt q1" data-quality="1">1</button>
-            <button class="sleep-quality-opt q2" data-quality="2">2</button>
-            <button class="sleep-quality-opt q3 active" data-quality="3">3</button>
-            <button class="sleep-quality-opt q4" data-quality="4">4</button>
-            <button class="sleep-quality-opt q5" data-quality="5">5</button>
+      <div class="sleep-log-modal-body">
+        <div class="sleep-log-form">
+          <div class="form-group">
+            <label for="sleepDate">Date</label>
+            <input type="date" id="sleepDate" class="form-input sleep-input">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="sleepBedtime">Bedtime</label>
+              <input type="time" id="sleepBedtime" class="form-input sleep-input" value="23:00" oninput="previewSleepDuration()">
+            </div>
+            <div class="form-group">
+              <label for="sleepWakeTime">Wake Time</label>
+              <input type="time" id="sleepWakeTime" class="form-input sleep-input" value="07:00" oninput="previewSleepDuration()">
+            </div>
+          </div>
+          <div class="s-dur-preview" id="sDurPreview">
+            <span class="s-dur-preview-icon">&#9200;</span>
+            <span class="s-dur-preview-text">Duration: <strong id="sDurPreviewVal">8h 00m</strong></span>
+          </div>
+          <div class="form-group">
+            <label>Sleep Quality</label>
+            <div class="sleep-quality-slider-wrap">
+              <span class="sq-label">Poor</span>
+              <input type="range" id="sleepQuality" min="1" max="5" value="3" class="sleep-quality-slider" oninput="onQualitySlider(this.value)">
+              <span class="sq-label">Great</span>
+            </div>
+            <div class="sleep-quality-display" id="sleepQualityDisplay">
+              <span class="sq-emoji">&#128564;</span>
+              <span class="sq-text">Okay</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>How did you feel?</label>
+            <div class="sleep-mood-chips" id="sleepMoodChips">
+              <button class="sleep-mood-chip" data-mood="restful">Restful</button>
+              <button class="sleep-mood-chip" data-mood="restless">Restless</button>
+              <button class="sleep-mood-chip" data-mood="dreams">Dreams</button>
+              <button class="sleep-mood-chip" data-mood="tired">Woke Tired</button>
+              <button class="sleep-mood-chip" data-mood="insomnia">Insomnia</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="sleepNotes">Notes (optional)</label>
+            <textarea id="sleepNotes" class="form-input sleep-input sleep-notes-input" rows="2" placeholder="How was your sleep?"></textarea>
+          </div>
+          <div class="sleep-log-actions">
+            <button class="btn btn-outline sleep-btn-cancel" onclick="closeSleepLogModal()">Cancel</button>
+            <button class="btn btn-primary sleep-btn-save" id="sleepSaveBtn" onclick="handleSleepLogSave()">Save</button>
           </div>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="sleepBedtime">Bedtime</label>
-          <input type="time" id="sleepBedtime" class="form-input" value="23:00" oninput="previewSleepDuration()">
-        </div>
-        <div class="form-group">
-          <label for="sleepWakeTime">Wake Time</label>
-          <input type="time" id="sleepWakeTime" class="form-input" value="07:00" oninput="previewSleepDuration()">
-        </div>
-      </div>
-
-      <!-- Auto-calculated duration preview -->
-      <div class="s-dur-preview" id="sDurPreview">
-        <span class="s-dur-preview-icon">&#9200;</span>
-        <span class="s-dur-preview-text">Duration: <strong id="sDurPreviewVal">8h 00m</strong></span>
-      </div>
-
-      <!-- Mood chips (compact) -->
-      <div class="form-group">
-        <label>How did you feel?</label>
-        <div class="sleep-mood-chips" id="sleepMoodChips">
-          <button class="sleep-mood-chip" data-mood="restful">Restful</button>
-          <button class="sleep-mood-chip" data-mood="restless">Restless</button>
-          <button class="sleep-mood-chip" data-mood="dreams">Dreams</button>
-          <button class="sleep-mood-chip" data-mood="tired">Woke Tired</button>
-          <button class="sleep-mood-chip" data-mood="nightmare">Nightmare</button>
-          <button class="sleep-mood-chip" data-mood="insomnia">Insomnia</button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="sleepNotes">Notes (optional)</label>
-        <input type="text" id="sleepNotes" class="form-input" placeholder="How was your sleep?">
-      </div>
-      <div class="sleep-log-actions">
-        <button class="btn btn-outline" onclick="closeSleepLogModal()">Cancel</button>
-        <button class="btn btn-primary" id="sleepSaveBtn" onclick="handleSleepLogSave()">Save</button>
-      </div>
-    </div>
-    </div>
     </div>
   </div>
 
@@ -1648,7 +1642,8 @@ function init() {
       document.getElementById('sleepWakeTime').value = log.wakeTime;
       document.getElementById('sleepNotes').value = log.notes || '';
       sleepSelectedQuality = log.quality;
-      document.querySelectorAll('.sleep-quality-opt').forEach(function(o) { o.classList.toggle('active', parseInt(o.dataset.quality) === log.quality); });
+      var slider = document.getElementById('sleepQuality');
+      if (slider) { slider.value = log.quality; onQualitySlider(log.quality); }
       resetSleepModalChips();
       if (log.mood && Array.isArray(log.mood)) {
         log.mood.forEach(function(m) { var chip = document.querySelector('.sleep-mood-chip[data-mood="' + m + '"]'); if (chip) chip.classList.add('active'); });
@@ -1677,6 +1672,16 @@ function init() {
       var chips = document.querySelectorAll('.sleep-mood-chip.active');
       return Array.from(chips).map(function(c) { return c.dataset.mood; });
     }
+    var sleepQualityEmojis = ['&#128564;', '&#128528;', '&#128564;', '&#128522;', '&#128525;'];
+    var sleepQualityLabels = ['Poor', 'Fair', 'Okay', 'Good', 'Great'];
+    function onQualitySlider(val) {
+      sleepSelectedQuality = parseInt(val);
+      var display = document.getElementById('sleepQualityDisplay');
+      if (display) {
+        display.querySelector('.sq-emoji').innerHTML = sleepQualityEmojis[sleepSelectedQuality - 1];
+        display.querySelector('.sq-text').textContent = sleepQualityLabels[sleepSelectedQuality - 1];
+      }
+    }
     function openSleepLogModal() {
       var overlay = document.getElementById('sleepLogOverlay');
       var modal = document.getElementById('sleepLogModal');
@@ -1688,7 +1693,8 @@ function init() {
         document.getElementById('sleepWakeTime').value = '07:00';
         document.getElementById('sleepNotes').value = '';
         sleepSelectedQuality = 3;
-        document.querySelectorAll('.sleep-quality-opt').forEach(function(o) { o.classList.toggle('active', o.dataset.quality == 3); });
+        var slider = document.getElementById('sleepQuality');
+        if (slider) { slider.value = 3; onQualitySlider(3); }
       }
       overlay.classList.remove('hidden');
       modal.classList.remove('hidden');
@@ -1708,6 +1714,8 @@ function init() {
       var wakeTime = document.getElementById('sleepWakeTime').value;
       var notes = document.getElementById('sleepNotes').value.trim();
       var mood = getSelectedMoods();
+      var slider = document.getElementById('sleepQuality');
+      if (slider) sleepSelectedQuality = parseInt(slider.value);
       if (sleepLogEditId) {
         updateSleepLog(sleepLogEditId, { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
         sleepLogEditId = null;
@@ -1723,11 +1731,6 @@ function init() {
 
     // ── Modal chip toggles ──
     document.addEventListener('click', function(e) {
-      var qualityOpt = e.target.closest('.sleep-quality-opt');
-      if (qualityOpt) {
-        sleepSelectedQuality = parseInt(qualityOpt.dataset.quality);
-        document.querySelectorAll('.sleep-quality-opt').forEach(function(o) { o.classList.toggle('active', parseInt(o.dataset.quality) === sleepSelectedQuality); });
-      }
       var moodChip = e.target.closest('.sleep-mood-chip');
       if (moodChip) moodChip.classList.toggle('active');
     });

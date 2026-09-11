@@ -499,43 +499,75 @@
     .laptop-showcase {
       padding: 100px 0 80px;
       position: relative;
+      overflow: hidden;
     }
     .laptop-scene {
-      perspective: 1400px;
+      perspective: 1600px;
+      perspective-origin: 50% 32%;
       display: flex;
       justify-content: center;
-      align-items: center;
-      min-height: 550px;
+      align-items: flex-end;
+      min-height: 600px;
       position: relative;
+      cursor: grab;
+      touch-action: pan-y;
     }
+    .laptop-scene:active { cursor: grabbing; }
+    .laptop-scene { user-select: none; -webkit-user-select: none; }
     .laptop {
       position: relative;
+      width: 560px;
+      height: 360px;
+      margin: 0 auto 120px;
       transform-style: preserve-3d;
-      transform: rotateX(8deg) rotateY(-15deg);
-      transition: transform 0.1s ease-out;
+      transform: rotateX(12deg) rotateY(-20deg) scale(var(--laptop-scale, 1));
       will-change: transform;
     }
-    /* Base: sits at Z=0, flat on desk */
+    .laptop-shadow {
+      position: absolute;
+      top: 356px;
+      left: -50px;
+      right: -50px;
+      height: 360px;
+      transform-origin: 50% 0;
+      transform: rotateX(90deg) translateZ(-1px);
+      background: radial-gradient(ellipse at 50% 10%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 42%, transparent 72%);
+      pointer-events: none;
+    }
     .laptop-base {
-      position: relative;
+      position: absolute;
+      top: 360px;
+      left: 0;
       width: 560px;
-      height: 28px;
-      background: linear-gradient(155deg, #161616 0%, #0a0a0a 100%);
-      border-radius: 0 0 10px 10px;
-      box-shadow: 
-        0 8px 32px rgba(0,0,0,0.6),
-        inset 0 1px 0 rgba(255,255,255,0.03),
+      height: 300px;
+      transform-origin: 50% 0;
+      transform: rotateX(90deg);
+      background: linear-gradient(180deg, #181818 0%, #101010 55%, #060606 100%);
+      border-radius: 12px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.05),
         inset 0 -1px 0 rgba(255,255,255,0.02);
-      overflow: hidden;
+    }
+    .laptop-base::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 10px;
+      background: linear-gradient(180deg, #0b0b0b 0%, #020202 100%);
+      border-radius: 0 0 12px 12px;
     }
     .laptop-keyboard {
       position: absolute;
-      inset: 0;
-      padding: 5px 16px 3px;
+      top: 22px;
+      left: 32px;
+      right: 32px;
+      height: 158px;
       display: grid;
       grid-template-columns: repeat(14, 1fr);
       grid-template-rows: repeat(5, 1fr);
-      gap: 2px;
+      gap: 3px;
       pointer-events: none;
     }
     .laptop-keyboard .key {
@@ -549,45 +581,46 @@
     .laptop-keyboard .key.wide-1_5 { grid-column: span 2; }
     .laptop-keyboard .key.wide-2 { grid-column: span 3; }
     .laptop-keyboard .key.wide-2_5 { grid-column: span 4; }
-    .laptop-keyboard .key.wide-6 { grid-column: span 8; }
-    .laptop-keyboard .key.wide-7 { grid-column: span 9; }
+    .laptop-keyboard .key.wide-3 { grid-column: span 6; }
     .laptop-touchpad {
       position: absolute;
-      bottom: 8px;
+      top: 198px;
       left: 50%;
       transform: translateX(-50%);
-      width: 120px;
-      height: 68px;
-      background: linear-gradient(180deg, #1a1a1a 0%, #101010 100%);
-      border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 6px;
+      width: 140px;
+      height: 76px;
+      background: linear-gradient(180deg, #151515 0%, #0d0d0d 100%);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
     }
     .laptop-base::before {
       content: '';
       position: absolute;
-      top: 5px;
+      bottom: 10px;
       left: 50%;
       transform: translateX(-50%);
       width: 140px;
       height: 4px;
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.08);
       border-radius: 2px;
-      z-index: 1;
     }
-    /* Screen: hinged at base's top edge (Y=0), rotates UP to ~95° */
-    .laptop-screen-wrapper {
+    .laptop-hinge {
+      position: absolute;
+      top: 354px;
+      left: 16px;
+      right: 16px;
+      height: 14px;
+      background: linear-gradient(180deg, #242424 0%, #0a0a0a 70%, #000 100%);
+      border-radius: 0 0 10px 10px;
+      transform: translateZ(2px);
+    }
+    .laptop-screen {
       position: absolute;
       top: 0;
       left: 0;
       width: 560px;
-      height: 350px;
-      transform-origin: 0 0 0;  /* hinge at top-left-back corner */
-      transform: translateY(-350px) rotateX(-95deg);  /* pull up then rotate */
-    }
-    .laptop-screen {
-      width: 100%;
-      height: 100%;
+      height: 360px;
       background: #0a0a0a;
       border-radius: 10px 10px 0 0;
       box-shadow: 
@@ -624,10 +657,10 @@
     .screen-content {
       position: absolute;
       inset: 0;
-      padding: 52px 36px 28px;
+      padding: 42px 30px 20px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 14px;
     }
     .screen-header {
       display: flex;
@@ -662,6 +695,17 @@
       grid-template-rows: 24px 1fr;
       gap: 8px;
       position: relative;
+      min-height: 0;
+    }
+    .screen-main {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      min-height: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease;
     }
     .screen-sidebar {
       grid-row: 1 / 3;
@@ -726,11 +770,11 @@
       color: #fff;
     }
     .screen-calendar {
-      grid-column: 2;
-      grid-row: 2;
+      flex: 1;
       display: flex;
       flex-direction: column;
       gap: 4px;
+      min-height: 0;
     }
     .calendar-days {
       display: grid;
@@ -805,30 +849,7 @@
       letter-spacing: 0.05em;
       margin-top: 4px;
     }
-    .laptop-reflection {
-      position: absolute;
-      bottom: -40px;
-      left: 50%;
-      transform: translateX(-50%) scaleX(1) scaleY(0.3);
-      width: 560px;
-      height: 350px;
-      background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, transparent 70%);
-      border-radius: 10px 10px 0 0;
-      filter: blur(8px);
-      pointer-events: none;
-      opacity: 0.4;
-    }
-    .laptop-shadow {
-      position: absolute;
-      bottom: -60px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 480px;
-      height: 40px;
-      background: radial-gradient(ellipse, rgba(0,0,0,0.4) 0%, transparent 70%);
-      filter: blur(12px);
-      pointer-events: none;
-    }
+
     .showcase-controls {
       display: flex;
       align-items: center;
@@ -881,20 +902,25 @@
     .view-indicator:hover { background: var(--text-tertiary); }
 
     @keyframes laptopFloat {
-      0%, 100% { transform: translateY(0) rotateX(8deg) rotateY(-15deg); }
-      50% { transform: translateY(-12px) rotateX(10deg) rotateY(-15deg); }
+      0%, 100% { transform: translateY(0) rotateX(12deg) rotateY(-20deg) scale(var(--laptop-scale, 1)); }
+      50% { transform: translateY(-12px) rotateX(14deg) rotateY(-20deg) scale(var(--laptop-scale, 1)); }
     }
     @keyframes screenGlow {
-      0%, 100% { box-shadow: 0 -20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04); }
-      50% { box-shadow: 0 -20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04), 0 0 40px rgba(255,255,255,0.02); }
+      0%, 100% { box-shadow: 0 -20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05); }
+      50% { box-shadow: 0 -20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 44px rgba(140,160,255,0.05); }
     }
 
     .laptop.animating {
-      animation: laptopFloat 6s ease-in-out infinite;
+      animation: laptopFloat 7s ease-in-out infinite;
     }
     .laptop-screen.animating {
       animation: screenGlow 4s ease-in-out infinite;
     }
+    .control-btn.active {
+      background: var(--bg-card);
+      border-color: var(--border-light);
+    }
+    .control-btn.active svg { color: var(--text); }
 
     /* ─── Stats Bar ─── */
     .stats-bar {
@@ -1262,8 +1288,12 @@
       .hero-float-card { display: none; }
       .hero-deco-badge { display: none; }
       .bg-orb { opacity: 0.15; }
+      .laptop { --laptop-scale: 0.6; margin-bottom: 50px; }
+      .laptop-scene { min-height: 440px; }
     }
     @media (max-width: 480px) {
+      .laptop { --laptop-scale: 0.45; }
+      .laptop-scene { min-height: 350px; }
       .hero-actions { flex-direction: column; align-items: stretch; }
       .hero-cta, .hero-guest { justify-content: center; }
       .cta-actions { flex-direction: column; align-items: stretch; }
@@ -1432,16 +1462,15 @@
           <div class="laptop" id="laptop">
             <div class="laptop-base">
               <div class="laptop-keyboard">
-                <div class="key wide-1_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-2"></div>
-                <div class="key wide-1_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-2"></div>
-                <div class="key wide-2_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-2_5"></div>
-                <div class="key wide-2_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-7"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-2_5"></div>
-                <div class="key wide-1_5"></div><div class="key wide-1_5"></div><div class="key wide-6"></div><div class="key wide-1_5"></div><div class="key wide-1_5"></div><div class="key wide-1_5"></div>
+                <div class="key wide-1_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                <div class="key wide-1_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                <div class="key wide-2_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key"></div>
+                <div class="key wide-2_5"></div><div class="key"></div><div class="key"></div><div class="key"></div><div class="key wide-3"></div><div class="key"></div>
+                <div class="key wide-1_5"></div><div class="key wide-1_5"></div><div class="key wide-3"></div><div class="key wide-1_5"></div><div class="key wide-1_5"></div>
               </div>
               <div class="laptop-touchpad"></div>
             </div>
-            <div class="laptop-screen-wrapper">
-              <div class="laptop-screen" id="laptopScreen">
+            <div class="laptop-screen" id="laptopScreen">
                 <div class="screen-content">
                 <div class="screen-header">
                   <div class="screen-dots">
@@ -1453,26 +1482,27 @@
                 </div>
                 <div class="screen-grid">
                   <div class="screen-sidebar">
-                    <button class="sidebar-btn active" aria-label="Hub" title="Hub">
+                    <button class="sidebar-btn" aria-label="Hub" title="Hub">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
                     </button>
-                    <button class="sidebar-btn" aria-label="Schedule" title="Schedule">
+                    <button class="sidebar-btn active" data-view="schedule" aria-label="Schedule" title="Schedule">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                     </button>
                     <button class="sidebar-btn" aria-label="Activities" title="Activities">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
                     </button>
-                    <button class="sidebar-btn" aria-label="Analytics" title="Analytics">
+                    <button class="sidebar-btn" data-view="analytics" aria-label="Analytics" title="Analytics">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                     </button>
-                    <button class="sidebar-btn" aria-label="Goals" title="Goals">
+                    <button class="sidebar-btn" data-view="goals" aria-label="Goals" title="Goals">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     </button>
-                    <button class="sidebar-btn" aria-label="Finance" title="Finance">
+                    <button class="sidebar-btn" data-view="finance" aria-label="Finance" title="Finance">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
                     </button>
                   </div>
-                  <div class="screen-header-row">
+                  <div class="screen-main">
+                    <div class="screen-header-row">
                     <span class="screen-week">Week of Jun 16</span>
                     <div class="screen-view-toggle">
                       <span class="view-btn active">Week</span>
@@ -1543,6 +1573,7 @@
                     </div>
                   </div>
                 </div>
+                </div>
                 <div class="screen-stats">
                   <div class="stat-box">
                     <div class="stat-box-value">12</div>
@@ -1561,12 +1592,11 @@
                     <div class="stat-box-label">Meetings</div>
                   </div>
                 </div>
-              </div>
+                </div>
             </div>
-            </div>
-            <div class="laptop-reflection"></div>
+            <div class="laptop-hinge"></div>
+            <div class="laptop-shadow"></div>
           </div>
-          <div class="laptop-shadow"></div>
         </div>
         <div class="showcase-controls reveal">
           <button class="control-btn" id="viewSchedule" aria-label="Schedule view" title="Schedule">
@@ -1921,10 +1951,10 @@
         var indicators = document.querySelectorAll('.view-indicator');
         var sidebarBtns = document.querySelectorAll('.sidebar-btn');
         
-        var targetRotationX = 8;
-        var targetRotationY = -15;
-        var currentRotationX = 8;
-        var currentRotationY = -15;
+        var targetRotationX = 12;
+        var targetRotationY = -20;
+        var currentRotationX = 12;
+        var currentRotationY = -20;
         var isHovering = false;
         var isDragging = false;
         var lastMouseX = 0;
@@ -1935,26 +1965,30 @@
           schedule: {
             title: 'SCHEDULE',
             sidebarActive: 1,
-            gridHTML: getScheduleGrid()
+            mainHTML: getScheduleMain(),
+            statsHTML: getScheduleStats()
           },
           analytics: {
             title: 'ANALYTICS',
             sidebarActive: 3,
-            gridHTML: getAnalyticsGrid()
+            mainHTML: getAnalyticsMain(),
+            statsHTML: getAnalyticsStats()
           },
           goals: {
             title: 'GOALS',
             sidebarActive: 4,
-            gridHTML: getGoalsGrid()
+            mainHTML: getGoalsMain(),
+            statsHTML: getGoalsStats()
           },
           finance: {
             title: 'FINANCE',
             sidebarActive: 5,
-            gridHTML: getFinanceGrid()
+            mainHTML: getFinanceMain(),
+            statsHTML: getFinanceStats()
           }
         };
 
-        function getScheduleGrid() {
+        function getScheduleMain() {
           return `
             <div class="screen-header-row">
               <span class="screen-week">Week of Jun 16</span>
@@ -2026,16 +2060,19 @@
                 </div>
               </div>
             </div>
-            <div class="screen-stats">
-              <div class="stat-box"><div class="stat-box-value">12</div><div class="stat-box-label">Tasks</div></div>
-              <div class="stat-box"><div class="stat-box-value">8.5h</div><div class="stat-box-label">Scheduled</div></div>
-              <div class="stat-box"><div class="stat-box-value">3</div><div class="stat-box-label">Deep Work</div></div>
-              <div class="stat-box"><div class="stat-box-value">2</div><div class="stat-box-label">Meetings</div></div>
-            </div>
           `;
         }
 
-        function getAnalyticsGrid() {
+        function getScheduleStats() {
+          return `
+            <div class="stat-box"><div class="stat-box-value">12</div><div class="stat-box-label">Tasks</div></div>
+            <div class="stat-box"><div class="stat-box-value">8.5h</div><div class="stat-box-label">Scheduled</div></div>
+            <div class="stat-box"><div class="stat-box-value">3</div><div class="stat-box-label">Deep Work</div></div>
+            <div class="stat-box"><div class="stat-box-value">2</div><div class="stat-box-label">Meetings</div></div>
+          `;
+        }
+
+        function getAnalyticsMain() {
           return `
             <div class="screen-header-row">
               <span class="screen-week">This Week</span>
@@ -2070,16 +2107,19 @@
                 <div class="sc-analytics-bar" style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,0.14); height: 50%;"></div>
               </div>
             </div>
-            <div class="screen-stats">
-              <div class="stat-box"><div class="stat-box-value">84%</div><div class="stat-box-label">Completion</div></div>
-              <div class="stat-box"><div class="stat-box-value">7d</div><div class="stat-box-label">Streak</div></div>
-              <div class="stat-box"><div class="stat-box-value">4.2h</div><div class="stat-box-label">Avg/Day</div></div>
-              <div class="stat-box"><div class="stat-box-value">3</div><div class="stat-box-label">Categories</div></div>
-            </div>
           `;
         }
 
-        function getGoalsGrid() {
+        function getAnalyticsStats() {
+          return `
+            <div class="stat-box"><div class="stat-box-value">84%</div><div class="stat-box-label">Completion</div></div>
+            <div class="stat-box"><div class="stat-box-value">7d</div><div class="stat-box-label">Streak</div></div>
+            <div class="stat-box"><div class="stat-box-value">4.2h</div><div class="stat-box-label">Avg/Day</div></div>
+            <div class="stat-box"><div class="stat-box-value">3</div><div class="stat-box-label">Categories</div></div>
+          `;
+        }
+
+        function getGoalsMain() {
           return `
             <div class="screen-header-row">
               <span class="screen-week">Active Goals</span>
@@ -2131,16 +2171,19 @@
                 <span class="sc-goal-pct" style="font-size: 0.55rem; color: rgba(255,255,255,0.3); font-family: var(--font-mono);">42%</span>
               </div>
             </div>
-            <div class="screen-stats">
-              <div class="stat-box"><div class="stat-box-value">4</div><div class="stat-box-label">Active</div></div>
-              <div class="stat-box"><div class="stat-box-value">53%</div><div class="stat-box-label">Avg Progress</div></div>
-              <div class="stat-box"><div class="stat-box-value">2</div><div class="stat-box-label">Completed</div></div>
-              <div class="stat-box"><div class="stat-box-value">12</div><div class="stat-box-label">Sub-tasks</div></div>
-            </div>
           `;
         }
 
-        function getFinanceGrid() {
+        function getGoalsStats() {
+          return `
+            <div class="stat-box"><div class="stat-box-value">4</div><div class="stat-box-label">Active</div></div>
+            <div class="stat-box"><div class="stat-box-value">53%</div><div class="stat-box-label">Avg Progress</div></div>
+            <div class="stat-box"><div class="stat-box-value">2</div><div class="stat-box-label">Completed</div></div>
+            <div class="stat-box"><div class="stat-box-value">12</div><div class="stat-box-label">Sub-tasks</div></div>
+          `;
+        }
+
+        function getFinanceMain() {
           return `
             <div class="screen-header-row">
               <span class="screen-week">This Month</span>
@@ -2176,12 +2219,15 @@
                 <div style="flex: 1; border-radius: 3px 3px 0 0; background: rgba(74,222,128,0.2); height: 50%;"></div>
               </div>
             </div>
-            <div class="screen-stats">
-              <div class="stat-box"><div class="stat-box-value">$2,070</div><div class="stat-box-label">Balance</div></div>
-              <div class="stat-box"><div class="stat-box-value">48%</div><div class="stat-box-label">Savings Rate</div></div>
-              <div class="stat-box"><div class="stat-box-value">$4,250</div><div class="stat-box-label">Income</div></div>
-              <div class="stat-box"><div class="stat-box-value">$2,180</div><div class="stat-box-label">Expenses</div></div>
-            </div>
+          `;
+        }
+
+        function getFinanceStats() {
+          return `
+            <div class="stat-box"><div class="stat-box-value">$2,070</div><div class="stat-box-label">Balance</div></div>
+            <div class="stat-box"><div class="stat-box-value">48%</div><div class="stat-box-label">Savings Rate</div></div>
+            <div class="stat-box"><div class="stat-box-value">$4,250</div><div class="stat-box-label">Income</div></div>
+            <div class="stat-box"><div class="stat-box-value">$2,180</div><div class="stat-box-label">Expenses</div></div>
           `;
         }
 
@@ -2198,15 +2244,16 @@
             btn.classList.toggle('active', i === data.sidebarActive);
           });
           
-          // Update grid content with transition
-          var grid = screen.querySelector('.screen-grid');
-          if (grid) {
-            grid.style.opacity = '0';
-            grid.style.transform = 'translateY(10px)';
+          var mainEl = screen.querySelector('.screen-main');
+          var statsEl = screen.querySelector('.screen-stats');
+          if (mainEl) {
+            mainEl.style.opacity = '0';
+            mainEl.style.transform = 'translateY(10px)';
             setTimeout(function() {
-              grid.innerHTML = data.gridHTML;
-              grid.style.opacity = '1';
-              grid.style.transform = 'translateY(0)';
+              mainEl.innerHTML = data.mainHTML;
+              if (statsEl) statsEl.innerHTML = data.statsHTML;
+              mainEl.style.opacity = '1';
+              mainEl.style.transform = 'translateY(0)';
             }, 150);
           }
           
@@ -2227,7 +2274,7 @@
           currentRotationX += (targetRotationX - currentRotationX) * 0.1;
           currentRotationY += (targetRotationY - currentRotationY) * 0.1;
           
-          laptop.style.transform = 'rotateX(' + currentRotationX + 'deg) rotateY(' + currentRotationY + 'deg)';
+          laptop.style.transform = 'rotateX(' + currentRotationX + 'deg) rotateY(' + currentRotationY + 'deg) scale(var(--laptop-scale, 1))';
           
           animationId = requestAnimationFrame(animate);
         }
@@ -2252,8 +2299,8 @@
             var deltaX = (e.clientX - centerX) / (rect.width / 2);
             var deltaY = (e.clientY - centerY) / (rect.height / 2);
             
-            targetRotationY = -15 + deltaX * 25;
-            targetRotationX = 8 - deltaY * 15;
+            targetRotationY = -20 + deltaX * 25;
+            targetRotationX = 12 - deltaY * 15;
           }
         });
 
@@ -2266,8 +2313,8 @@
         scene.addEventListener('mouseleave', function() {
           isHovering = false;
           isDragging = false;
-          targetRotationX = 8;
-          targetRotationY = -15;
+          targetRotationX = 12;
+          targetRotationY = -20;
           laptop.classList.add('animating');
           screen.classList.add('animating');
         });
@@ -2290,8 +2337,8 @@
             targetRotationX -= deltaY * 0.3;
             
             // Clamp rotation
-            targetRotationX = Math.max(-20, Math.min(35, targetRotationX));
-            targetRotationY = Math.max(-60, Math.min(20, targetRotationY));
+            targetRotationX = Math.max(-15, Math.min(40, targetRotationX));
+            targetRotationY = Math.max(-70, Math.min(25, targetRotationY));
             
             lastMouseX = e.clientX;
             lastMouseY = e.clientY;
@@ -2317,8 +2364,8 @@
             var deltaY = e.touches[0].clientY - lastMouseY;
             targetRotationY += deltaX * 0.5;
             targetRotationX -= deltaY * 0.3;
-            targetRotationX = Math.max(-40, Math.min(20, targetRotationX));
-            targetRotationY = Math.max(-60, Math.min(20, targetRotationY));
+            targetRotationX = Math.max(-25, Math.min(30, targetRotationX));
+            targetRotationY = Math.max(-70, Math.min(25, targetRotationY));
             lastMouseX = e.touches[0].clientX;
             lastMouseY = e.touches[0].clientY;
           }
@@ -2342,10 +2389,10 @@
           });
         });
 
-        sidebarBtns.forEach(function(btn, i) {
+        sidebarBtns.forEach(function(btn) {
           btn.addEventListener('click', function() {
-            var views = ['schedule', 'analytics', 'goals', 'finance'];
-            if (views[i]) switchView(views[i]);
+            var v = this.getAttribute('data-view');
+            if (v) switchView(v);
           });
         });
 
