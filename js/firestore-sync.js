@@ -543,7 +543,7 @@ function reSync() {
       var origLSSet = __origLS.setItem;
       var origLSRemove = __origLS.removeItem;
       __origLS.setItem = function(key, value) {
-        origLSSet(key, value);
+        try { origLSSet(key, value); } catch(e) { return; }
         onDataChanged(key);
       };
       __origLS.removeItem = function(key) {

@@ -748,8 +748,9 @@ function migrateExistingData(id) {
     }
   }
   for (var j = 0; j < keys.length; j++) {
+    if (keys[j].indexOf('image') !== -1) continue; // skip image data from migration
     var val = __origLS.getItem(keys[j]);
-    if (val) __origLS.setItem(prefix + keys[j], val);
+    try { if (val) __origLS.setItem(prefix + keys[j], val); } catch (e) {}
   }
   try { __origLS.setItem('haven-gsi-migrated', '1'); } catch (e) {}
 }

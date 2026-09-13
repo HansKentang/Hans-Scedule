@@ -991,7 +991,7 @@
 
         <!-- Form Card -->
         <div class="auth-card auth-reveal" style="--d:0.32s">
-          <div class="auth-fields">
+          <form id="authForm" class="auth-fields" onsubmit="return false">
             <div class="auth-input-group" id="loginNameGroup" style="display:none">
               <label class="auth-label" for="loginNameInput">Your name</label>
               <input class="auth-input" id="loginNameInput" type="text" placeholder="e.g. Alex" autocomplete="name" spellcheck="false" maxlength="30">
@@ -1040,15 +1040,15 @@
             </button>
 
             <p class="auth-legal">
-              By continuing, you agree to our
-              <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a>
-              and
-              <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
-            </p>
-          </div>
-        </div>
+               By continuing, you agree to our
+               <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a>
+               and
+               <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
+             </p>
+           </div>
+         </form>
 
-        <!-- Toggle -->
+         <!-- Toggle -->
         <p class="auth-toggle auth-reveal" id="authToggle" style="--d:0.5s">
           Don't have an account? <button id="authToggleBtn">Sign up</button>
         </p>
