@@ -537,7 +537,8 @@ const CUSTOM_CATEGORIES_KEY = 'haven-schedule-categories';
 function loadCustomCategories() {
   try {
     const data = localStorage.getItem(CUSTOM_CATEGORIES_KEY);
-    return data ? JSON.parse(data) : [];
+    const parsed = data ? JSON.parse(data) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) { return []; }
 }
 
@@ -545,27 +546,117 @@ function saveCustomCategories(cats) {
   try { localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(cats)); } catch (e) { }
 }
 
-function addCustomCategory(label, color) {
+function normalizeCategoryOptions(options) {
+  const source = options && typeof options === 'object' ? options : {};
+  const rawStart = typeof source.defaultStart === 'string' ? source.defaultStart : '09:00';
+  const startMatch = rawStart.match(/^(\d{1,2}):(\d{2})$/);
+  const startMinutes = startMatch ? Number(startMatch[1]) * 60 + Number(startMatch[2]) : 9 * 60;
+  const validStart = startMinutes >= 0 && startMinutes < 24 * 60;
+  const rawDuration = Number(source.duration);
+  const duration = Number.isFinite(rawDuration) ? Math.round(rawDuration / 5) * 5 : 60;
+  const subcategories = Array.isArray(source.subcategories)
+    ? source.subcategories
+      .map(item => String(item || '').trim().slice(0, 40))
+      .filter(Boolean)
+      .filter((item, idx, list) => list.findIndex(value => value.toLowerCase() === item.toLowerCase()) === idx)
+      .slice(0, 20)
+    : [];
+  return {
+    defaultStart: validStart ? toTimeStr(startMinutes) : '09:00',
+    duration: Math.min(480, Math.max(5, duration || 60)),
+    subcategories,
+  };
+}
+
+function getCategoryColor(tag) {
+  const custom = loadCustomCategories().find(cat => cat.id === tag);
+  if (custom && /^#[0-9a-f]{6}$/i.test(custom.color || '')) return custom.color;
+  const customTag = loadCustomTags().find(cat => cat.id === tag);
+  if (customTag && /^#[0-9a-f]{6}$/i.test(customTag.color || '')) return customTag.color;
+  const card = cardColors[tag] || DEFAULT_TAG_COLORS[tag];
+  return card?.light || '#6366f1';
+}
+
+const BUILTIN_CATEGORY_DEFAULTS = {
+  'deep-work': { defaultStart: '09:00', duration: 120 },
+  'meeting': { defaultStart: '09:00', duration: 30 },
+  'exercise': { defaultStart: '09:00', duration: 60 },
+  'study': { defaultStart: '09:00', duration: 60 },
+  'hobby': { defaultStart: '09:00', duration: 60 },
+};
+
+function getCategoryDefaults(tag) {
+  const category = loadCustomCategories().find(cat => cat.id === tag);
+  const options = normalizeCategoryOptions(category || BUILTIN_CATEGORY_DEFAULTS[tag] || {});
+  return { defaultStart: options.defaultStart, duration: options.duration };
+}
+
+function makeUniqueCategoryLabel(label, existing) {
+  const base = (label || 'Untitled').trim().slice(0, 40) || 'Untitled';
+  const labels = new Set(existing.map(cat => String(cat.label || '').toLowerCase()));
+  if (!labels.has(base.toLowerCase())) return base;
+  let index = 2;
+  let candidate = `${base} copy`;
+  while (labels.has(candidate.toLowerCase())) {
+    index += 1;
+    candidate = `${base} copy ${index}`;
+  }
+  return candidate;
+}
+
+function addCustomCategory(label, color, options) {
+  const categoryOptions = normalizeCategoryOptions(options);
   const cats = loadCustomCategories();
   const id = 'cat-' + uid();
-  cats.push({ id, label, color });
+  const cleanLabel = (label || '').trim().slice(0, 40) || 'Untitled';
+  const cleanColor = /^#[0-9a-f]{6}$/i.test(color || '') ? color : '#6366f1';
+  cats.push({
+    id,
+    label: cleanLabel,
+    color: cleanColor,
+    defaultStart: categoryOptions.defaultStart,
+    duration: categoryOptions.duration,
+  });
   saveCustomCategories(cats);
-  // Mirror to custom tags for activities compatibility
   const customTags = loadCustomTags();
   if (!customTags.find(ct => ct.id === id)) {
-    customTags.push({ id, name: label, color });
+    customTags.push({ id, name: cleanLabel, color: cleanColor });
     saveCustomTags(customTags);
   }
   TAG_ORDER.push(id);
-  TAG_LABELS[id] = label;
-  TAG_COLORS[id] = { text: color, bg: lightenColor(color, 0.85) };
-  cardColors[id] = { light: color, dark: lightenColor(color, 0.45) };
+  TAG_LABELS[id] = cleanLabel;
+  TAG_COLORS[id] = { text: cleanColor, bg: lightenColor(cleanColor, 0.85) };
+  cardColors[id] = { light: cleanColor, dark: lightenColor(cleanColor, 0.45) };
   saveCardColors(cardColors);
   injectCustomTagStyles();
   const subs = loadSubcategories();
-  subs[id] = [];
+  subs[id] = categoryOptions.subcategories;
   saveSubcategories(subs);
   return id;
+}
+
+function duplicateCustomCategory(sourceId, label) {
+  const custom = loadCustomCategories().find(cat => cat.id === sourceId);
+  const sourceTag = custom
+    || loadCustomTags().find(cat => cat.id === sourceId)
+    || (TAG_ORDER.includes(sourceId) ? {
+      id: sourceId,
+      label: TAG_LABELS[sourceId] || sourceId,
+      color: getCategoryColor(sourceId),
+      ...getCategoryDefaults(sourceId),
+    } : null);
+  if (!sourceTag) return null;
+  const sourceLabel = sourceTag.label || sourceTag.name || 'Category';
+  const sourceColor = custom?.color || getCategoryColor(sourceId);
+  const sourceSubs = loadSubcategories()[sourceId] || [];
+  const requestedLabel = (label || '').trim();
+  const cats = loadCustomCategories();
+  const cleanLabel = makeUniqueCategoryLabel(requestedLabel || `${sourceLabel} copy`, cats);
+  return addCustomCategory(cleanLabel, sourceColor, {
+    defaultStart: sourceTag.defaultStart,
+    duration: sourceTag.duration,
+    subcategories: sourceSubs,
+  });
 }
 
 function removeCustomCategory(id) {
@@ -1537,6 +1628,8 @@ let state = {
   ambientEffects: true,
   monochrome: true,
   soundEnabled: true,
+  chimeSound: 'success',
+  chimeVolume: 0.3,
   notifications: true,
   vibrate: true,
   toastDuration: 4000,
@@ -1547,6 +1640,76 @@ let state = {
   currentUserId: null,
   localUsers: [],
 };
+
+// ─── CHIME SOUNDS ───────────────────────────────────
+var CHIME_SOUNDS = {
+  classic:      { label: 'Classic Bell',  file: 'sounds/chime-classic.mp3' },
+  modern:       { label: 'Modern Ping',   file: 'sounds/chime-modern.mp3' },
+  notif:        { label: 'Notification',  file: 'sounds/chime-notif.mp3' },
+  notif_klick:  { label: 'Notif Klick',   file: 'sounds/chime-notif_klick.mp3' },
+  notif_bim:    { label: 'Notif Bim',     file: 'sounds/chime-notif_bim.mp3' },
+  notif_good:   { label: 'Notif Good',    file: 'sounds/chime-notif_good.mp3' },
+  click:        { label: 'UI Click',      file: 'sounds/chime-click.mp3' },
+  level_done:   { label: 'Level Done',    file: 'sounds/chime-level_done.mp3' },
+  success:      { label: 'Success',       file: 'sounds/chime-success.mp3' },
+  phone:        { label: 'Phone Chime',   file: 'sounds/chime-phone.mp3' },
+  soft:         { label: 'Soft Ding',     file: 'sounds/chime-soft.mp3' },
+  triple:       { label: 'Triple Ping',   file: 'sounds/chime-triple.mp3' }
+};
+
+function getChimeFile() {
+  var s = CHIME_SOUNDS[state.chimeSound];
+  return (s && s.file) || CHIME_SOUNDS.elegant.file;
+}
+
+function playChime() {
+  if (state.soundEnabled === false) return;
+  try {
+    if (!playChime._audio || playChime._file !== getChimeFile()) {
+      playChime._audio = new Audio(getChimeFile());
+      playChime._file = getChimeFile();
+    }
+    playChime._audio.volume = state.chimeVolume;
+    playChime._audio.currentTime = 0;
+    var pr = playChime._audio.play();
+    if (pr && pr.catch) pr.catch(function() {});
+  } catch(e) {}
+}
+
+var _lockCompletionFlash = false;
+function playCompletionChime(phase) {
+  playChime();
+  if (state.notifications !== false && 'Notification' in window && Notification.permission === 'granted') {
+    try {
+      var icon = '/favicon.ico';
+      var duration = phase === 'break' ? '00:05' : '00:25';
+      var title = phase === 'break'
+        ? '\u2728 Break time'
+        : '\u2705 Session complete';
+      var body = phase === 'break'
+        ? 'Great work. Time for a short pause.'
+        : ('Focus session finished. ' + duration + ' done.');
+      new Notification(title, { body: body, icon: icon, tag: 'haven-pomo-complete' });
+    } catch(e) {}
+  }
+  var flashText = phase === 'break' ? 'Break time' : 'Session complete!';
+  if (_lockCompletionFlash) return;
+  _lockCompletionFlash = true;
+  if (typeof setTitleMode === 'function' && typeof setTitle === 'function') {
+    try {
+      setTitleMode('marquee');
+      setTitle(flashText);
+      setTimeout(function() {
+        _lockCompletionFlash = false;
+        try { setTitleMode('taskcount'); } catch(e) {}
+      }, 2200);
+    } catch(e) {
+      _lockCompletionFlash = false;
+    }
+  } else {
+    _lockCompletionFlash = false;
+  }
+}
 
 // ─── GSI STORAGE PREFIX ──────────────────────────────
 function getStoragePrefix() {
@@ -2495,6 +2658,19 @@ function toTimeStr(minutes) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+function minutesToTime(minutes) { return toTimeStr(minutes); }
+
+function actualHourHeight() {
+  const slot = document.querySelector('#calendarGrid .hour-slot');
+  if (slot) {
+    const h = slot.getBoundingClientRect().height;
+    if (h > 10) return h;
+  }
+  const css = getComputedStyle(document.documentElement).getPropertyValue('--hour-height');
+  const n = parseInt(css, 10);
+  return Number.isFinite(n) && n > 0 ? n : 60;
+}
+
 function roundToNearest(minutes, snap) {
   return Math.round(minutes / snap) * snap;
 }
@@ -2591,6 +2767,8 @@ function saveState() {
       ambientEffects: state.ambientEffects,
       monochrome: state.monochrome,
       soundEnabled: state.soundEnabled,
+      chimeSound: state.chimeSound,
+      chimeVolume: state.chimeVolume,
       notifications: state.notifications,
       vibrate: state.vibrate,
       toastDuration: state.toastDuration,
@@ -2628,6 +2806,12 @@ function loadState() {
       state.ambientEffects = s.ambientEffects !== false;
       state.monochrome = s.monochrome !== false;
       state.soundEnabled = s.soundEnabled !== false;
+      state.chimeSound = CHIME_SOUNDS[s.chimeSound] ? s.chimeSound : 'success';
+      if (typeof s.chimeVolume === 'number' && isFinite(s.chimeVolume)) {
+        state.chimeVolume = Math.max(0, Math.min(1, s.chimeVolume));
+      } else {
+        state.chimeVolume = 0.5;
+      }
       state.notifications = s.notifications !== false;
       state.vibrate = s.vibrate !== false;
       state.toastDuration = ([2000, 4000, 6000].indexOf(s.toastDuration) !== -1) ? s.toastDuration : 4000;
@@ -3636,7 +3820,9 @@ function importData(e) {
 function exportHubSettings() {
   var data = { version: 1, exportedAt: new Date().toISOString() };
   var keys = [
-    'haven-hub-content', 'haven-hub-visibility', 'haven-schedule-hub-layout',
+    'haven-hub-content', 'haven-hub-bento', 'haven-hub-visibility', 'haven-schedule-hub-layout',
+    'haven-hub-content-mobile', 'haven-hub-bento-mobile', 'haven-hub-visibility-mobile', 'haven-schedule-hub-layout-mobile',
+    'haven-hub-mode',
     'haven-schedule-settings', 'haven-schedule-categories', 'haven-custom-tags',
     'haven-card-colors', 'haven-subcategories', 'haven-renamed-labels'
   ];
@@ -3676,7 +3862,9 @@ function importHubSettings(e) {
     try {
       var data = JSON.parse(ev.target.result);
       var keys = [
-        'haven-hub-content', 'haven-hub-visibility', 'haven-schedule-hub-layout',
+        'haven-hub-content', 'haven-hub-bento', 'haven-hub-visibility', 'haven-schedule-hub-layout',
+        'haven-hub-content-mobile', 'haven-hub-bento-mobile', 'haven-hub-visibility-mobile', 'haven-schedule-hub-layout-mobile',
+        'haven-hub-mode',
         'haven-schedule-settings', 'haven-schedule-categories', 'haven-custom-tags',
         'haven-card-colors', 'haven-subcategories', 'haven-renamed-labels'
       ];
@@ -3692,7 +3880,9 @@ function importHubSettings(e) {
       }
       if (typeof loadState === 'function') try { loadState(); } catch(e) {}
       if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
+      if (typeof initHubMode === 'function') try { initHubMode(); } catch(e) {}
       if (typeof renderHubBento === 'function') try { renderHubBento(); } catch(e) {}
+      if (typeof renderMobileDashboard === 'function' && typeof hubMode !== 'undefined' && hubMode === 'mobile') try { renderMobileDashboard(); } catch(e) {}
       showToast('Hub settings imported successfully', 'success');
     } catch(err) {
       alert('Invalid file: ' + err.message);
@@ -5168,17 +5358,18 @@ function initTaskDropdowns() {
   });
 }
 
-function openNewTaskModal(date, startMins) {
+function openNewTaskModal(date, startMins, opts) {
   if (!dom.taskForm) return;
   state.editingTask = null;
   state._selectedPriority = 3;
+  if (opts && opts.tag && TAG_ORDER.includes(opts.tag)) state.lastQuickTag = opts.tag;
   const sr = roundToNearest(startMins, SNAP_MINUTES);
   dom.taskModalTitle.textContent = 'New Task';
-  dom.taskTitle.value = '';
+  dom.taskTitle.value = (opts && opts.title) || '';
   dom.taskTitle.dispatchEvent(new Event('input'));
   dom.taskDate.value = date || formatDate(new Date());
-  dom.taskStart.value = toTimeStr(sr);
-  dom.taskEnd.value = toTimeStr(sr + 60);
+  dom.taskStart.value = (opts && opts.start) || toTimeStr(sr);
+  dom.taskEnd.value = (opts && opts.end) || toTimeStr(sr + 60);
   dom.taskNotes.value = '';
   if (dom.taskRepeat) dom.taskRepeat.value = 'none';
   if (dom.taskReminder) dom.taskReminder.value = '0';
@@ -5249,12 +5440,13 @@ function hideTaskModal() {
 
 function handleTaskFormSubmit(e) {
   e.preventDefault();
+  const fallbackTag = state.lastQuickTag && TAG_ORDER.includes(state.lastQuickTag) ? state.lastQuickTag : (state.selectedTag || 'meeting');
   const data = {
     title: dom.taskTitle.value.trim(),
     date: dom.taskDate.value,
     startTime: dom.taskStart.value,
     endTime: dom.taskEnd.value,
-    tag: state.editingTask ? (getTask(state.editingTask)?.tag || 'meeting') : 'meeting',
+    tag: state.editingTask ? (getTask(state.editingTask)?.tag || 'meeting') : fallbackTag,
     notes: dom.taskNotes.value.trim(),
     priority: state._selectedPriority || 3,
   };
@@ -6797,18 +6989,18 @@ const SP_COLLAPSED_KEY = 'haven-spotify-collapsed';
 
 let spPlaylists = [];
 let spActiveId = null;
-let spIsPlaying = false;
 let spCollapsed = false;
 
 function spInit() {
   spLoadState();
-  spCollapsed = false;
-  localStorage.setItem(SP_COLLAPSED_KEY, '');
   spRenderSidebar();
   spRenderList();
   spUpdateNav();
   var el = document.getElementById('spSidebar');
-  if (el) el.classList.remove('collapsed');
+  if (el) {
+    if (spCollapsed) el.classList.add('collapsed');
+    else el.classList.remove('collapsed');
+  }
   document.addEventListener('keydown', spOnKey);
 }
 
@@ -6828,7 +7020,7 @@ function spSaveActive() {
   else localStorage.removeItem(SP_ACTIVE_KEY);
 }
 
-function spRenderSidebar() {
+function spRenderSidebar(forceReload) {
   const empty = document.getElementById('spEmpty');
   const wrap = document.getElementById('spEmbedWrap');
   const embed = document.getElementById('spEmbed');
@@ -6836,9 +7028,10 @@ function spRenderSidebar() {
   if (!empty || !wrap || !embed) return;
   const active = spPlaylists.find(p => p.id === spActiveId);
   if (active) {
+    const targetSrc = active.embedUrl || 'https://open.spotify.com/embed/playlist/' + active.id + '?utm_source=generator';
     empty.style.display = 'none';
     wrap.style.display = 'block';
-    embed.src = active.embedUrl || 'https://open.spotify.com/embed/playlist/' + active.id + '?utm_source=generator';
+    if (forceReload || embed.src !== targetSrc) embed.src = targetSrc;
     if (controls) controls.style.display = 'flex';
   } else {
     empty.style.display = 'flex';
@@ -6863,14 +7056,6 @@ function spSideNav(dir) {
   idx = (idx + dir + spPlaylists.length) % spPlaylists.length;
   spActiveId = spPlaylists[idx].id;
   spSaveActive();
-  spIsPlaying = false;
-  const btn = document.getElementById('spPlayBtn');
-  if (btn) {
-    const playIcon = btn.querySelector('.sp-play-icon');
-    const pauseIcon = btn.querySelector('.sp-pause-icon');
-    if (playIcon) playIcon.style.display = '';
-    if (pauseIcon) pauseIcon.style.display = 'none';
-  }
   spRenderSidebar();
   spRenderList();
   spUpdateNav();
@@ -6886,11 +7071,14 @@ function spUpdateNav() {
   if (next) next.style.display = spPlaylists.length > 1 ? '' : 'none';
 }
 
-function spToggleSection(force) {
-  spCollapsed = false;
-  localStorage.setItem(SP_COLLAPSED_KEY, '');
+function spToggleSection() {
+  spCollapsed = !spCollapsed;
+  localStorage.setItem(SP_COLLAPSED_KEY, spCollapsed ? '1' : '');
   const sidebar = document.getElementById('spSidebar');
-  if (sidebar) sidebar.classList.remove('collapsed');
+  if (sidebar) {
+    if (spCollapsed) sidebar.classList.add('collapsed');
+    else sidebar.classList.remove('collapsed');
+  }
 }
 
 function spOpenSettings() {
@@ -6951,14 +7139,6 @@ function spAddPlaylist() {
 function spPlayPlaylist(id) {
   spActiveId = id;
   spSaveActive();
-  spIsPlaying = false;
-  const btn = document.getElementById('spPlayBtn');
-  if (btn) {
-    const playIcon = btn.querySelector('.sp-play-icon');
-    const pauseIcon = btn.querySelector('.sp-pause-icon');
-    if (playIcon) playIcon.style.display = '';
-    if (pauseIcon) pauseIcon.style.display = 'none';
-  }
   const modalEmbed = document.getElementById('spModalEmbed');
   const playlist = spPlaylists.find(p => p.id === id);
   if (modalEmbed && playlist) modalEmbed.src = playlist.embedUrl || 'https://open.spotify.com/embed/playlist/' + playlist.id + '?utm_source=generator';

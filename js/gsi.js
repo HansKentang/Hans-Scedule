@@ -276,6 +276,8 @@ function renderAccountPopup() {
 
   html += '<div class="accpop-footer">Manage your accounts on this device</div>';
 
+  html += '<button class="accpop-remove-all" id="accPopRemoveAll">Remove all accounts</button>';
+
   card.innerHTML = html;
 
   // Wire events
@@ -303,6 +305,8 @@ function renderAccountPopup() {
   if (gBtn) gBtn.addEventListener('click', function() { closeAccountPopup(); gsiSignIn(); });
   var guestBtn = card.querySelector('#accPopGuest');
   if (guestBtn) guestBtn.addEventListener('click', function() { closeAccountPopup(); location.href = 'login.html'; });
+  var removeAllBtn = card.querySelector('#accPopRemoveAll');
+  if (removeAllBtn) removeAllBtn.addEventListener('click', function(e) { e.stopPropagation(); removeAllProfiles(); });
   var guestExitBtn = card.querySelector('#accPopGuestExit');
   if (guestExitBtn) guestExitBtn.addEventListener('click', function() { closeAccountPopup(); guestSignOut(); });
 }
@@ -748,6 +752,37 @@ function migrateExistingData(id) {
     if (val) __origLS.setItem(prefix + keys[j], val);
   }
   try { __origLS.setItem('haven-gsi-migrated', '1'); } catch (e) {}
+}
+
+function removeAllProfiles() {
+  if (!confirm('Remove ALL accounts and data from this device?\n\nThis cannot be undone.')) return;
+  try {
+    if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function' && firebase.apps && firebase.apps.length) {
+      firebase.auth().signOut().catch(function() {});
+    }
+  } catch (e) {}
+  localUsers.forEach(function(u) {
+    var prefix = u.id + ':';
+    var keysToRemove = [];
+    for (var i = 0; i < __origLS.length; i++) {
+      var key = __origLS.key(i);
+      if (key && key.indexOf(prefix) === 0) keysToRemove.push(key);
+    }
+    for (var j = 0; j < keysToRemove.length; j++) __origLS.removeItem(keysToRemove[j]);
+    try { _deleteImageDBByName('haven-images-' + u.id); } catch(e) {}
+  });
+  localUsers = [];
+  saveUsers();
+  try { localStorage.removeItem(AUTH_ACTIVE_KEY); } catch (e) {}
+  try { sessionStorage.removeItem('haven-guest'); } catch (e) {}
+  try { localStorage.removeItem('haven-hub-mode'); } catch (e) {}
+  try { localStorage.removeItem('haven-gsi-migrated'); } catch (e) {}
+  if (typeof state !== 'undefined') {
+    state.currentUserId = null;
+    state.localUsers = [];
+  }
+  closeAccountPopup();
+  location.href = 'login.html';
 }
 
 function initGSI() {
@@ -1523,6 +1558,43 @@ function renderBehaviorSettings(el) {
 }
 
 function renderSoundSettings(el) {
+  var chimeCategories = [
+    { name:'Bells', keys:['classic','dingdong','elegant','jingle','phone'] },
+    { name:'Notifications', keys:['notif','notif_klick','notif_bim','notif_good'] },
+    { name:'UI', keys:['click','soft','triple','warp'] },
+    { name:'Achievement', keys:['modern','success','level_done'] }
+  ];
+  var favorites = [];
+  try { favorites = JSON.parse(localStorage.getItem('haven-chime-favorites') || '[]'); } catch(e) {}
+
+  function chimeChip(k) {
+    var c = CHIME_SOUNDS[k];
+    if (!c) return '';
+    var active = (state.chimeSound || 'success') === k;
+    var isFav = favorites.indexOf(k) !== -1;
+    return '<button class="ch-btn' + (active ? ' ch-btn-on' : '') + '" data-chime="' + k + '" style="display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border:1px solid var(--border-subtle);background:var(--bg-secondary);border-radius:6px;font-size:.78rem;color:var(--text-primary);cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+      (active ? '\u2713 ' : '') +
+      '<span>' + c.label + '</span>' +
+    '</button>';
+  }
+
+  var chimeHtml = chimeCategories.map(function(cat) {
+    var chips = cat.keys.map(chimeChip).join('');
+    return '<div class="ch-cat"><div class="ch-cat-label">' + cat.name + '</div><div class="ch-cat-grid">' + chips + '</div></div>';
+  }).join('');
+
+  var favHtml = '';
+  if (favorites.length > 0) {
+    var favChips = favorites.filter(function(k) { return CHIME_SOUNDS[k]; }).map(chimeChip).join('');
+    if (favChips) favHtml = '<div class="ch-cat"><div class="ch-cat-label">Favorites</div><div class="ch-cat-grid">' + favChips + '</div></div>';
+  }
+
+  var vol = typeof state.chimeVolume === 'number' && isFinite(state.chimeVolume) ? Math.max(0, Math.min(1, state.chimeVolume)) : 0.5;
+  var volPct = Math.round(vol * 100);
+  var volIcon = vol === 0 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>' :
+                 vol < 0.5 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>' :
+                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+
   el.innerHTML =
     '<h3>Sound & Feedback</h3>' +
     '<div class="set-desc">Audio, notifications, and vibration</div>' +
@@ -1531,6 +1603,30 @@ function renderSoundSettings(el) {
         '<div class="set-row-left"><div class="set-row-label">Pomodoro sound</div><div class="set-row-desc">Play a chime when a timer completes</div></div>' +
         '<button class="set-toggle' + (state.soundEnabled !== false ? ' on' : '') + '" id="setSoundToggle"></button>' +
       '</div>' +
+    '</div>' +
+
+    '<div class="set-group" style="margin-top:10px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+        '<div class="set-row-label">Completion chime</div>' +
+        '<button id="chimeTestAll" class="ch-test-all" title="Test all sounds">Test All</button>' +
+      '</div>' +
+      '<div id="chimePicker" class="chime-picker">' + favHtml + chimeHtml + '</div>' +
+    '</div>' +
+
+    '<div class="set-group" style="margin-top:10px">' +
+      '<div class="set-row" style="border:none">' +
+        '<div class="set-row-left"><div class="set-row-label">Volume</div></div>' +
+        '<div class="ch-vol-wrap">' +
+          '<span class="ch-vol-icon" id="chVolIcon">' + volIcon + '</span>' +
+          '<div class="ch-vol-bar-wrap"><div class="ch-vol-bar" id="chVolBar" style="width:' + volPct + '%"></div></div>' +
+          '<span class="ch-vol-val" id="setChimeVolumeVal">' + volPct + '%</span>' +
+        '</div>' +
+      '</div>' +
+      '<input type="range" id="setChimeVolume" min="0" max="1" step="0.01" value="' + vol.toFixed(2) + '" style="width:100%;margin-top:4px;accent-color:var(--accent)">' +
+      '<div class="ch-active-label" id="setChimeName">' + (CHIME_SOUNDS[state.chimeSound] ? CHIME_SOUNDS[state.chimeSound].label : 'Success') + '</div>' +
+    '</div>' +
+
+    '<div class="set-group" style="margin-top:10px">' +
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">Browser notifications</div><div class="set-row-desc">Reminders for tasks and timers</div></div>' +
         '<button class="set-toggle' + (state.notifications !== false ? ' on' : '') + '" id="setNotifToggle"></button>' +
@@ -1550,6 +1646,89 @@ function renderSoundSettings(el) {
     this.classList.toggle('on', state.soundEnabled);
     saveState();
   });
+
+  var chimePreview = new Audio();
+  var _testAllTimer = null;
+
+  function playPreview(k, cb) {
+    if (!CHIME_SOUNDS[k]) return;
+    chimePreview.src = CHIME_SOUNDS[k].file;
+    chimePreview.volume = state.chimeVolume;
+    chimePreview.currentTime = 0;
+    var pr = chimePreview.play();
+    if (pr && pr.catch) pr.catch(function() {});
+    if (cb) chimePreview.onended = cb;
+  }
+
+  function selectChime(key) {
+    if (!CHIME_SOUNDS[key]) return;
+    state.chimeSound = key;
+    document.querySelectorAll('.ch-btn').forEach(function(b) {
+      b.classList.remove('ch-btn-on');
+      var txt = b.getAttribute('data-chime');
+      b.textContent = CHIME_SOUNDS[txt] ? CHIME_SOUNDS[txt].label : txt;
+    });
+    var btn = document.querySelector('.ch-btn[data-chime="' + key + '"]');
+    if (btn) {
+      btn.classList.add('ch-btn-on');
+      btn.textContent = '\u2713 ' + CHIME_SOUNDS[key].label;
+    }
+    saveState();
+    playChime();
+    var nameEl = document.getElementById('setChimeName');
+    if (nameEl) nameEl.textContent = CHIME_SOUNDS[key].label;
+  }
+
+  document.getElementById('chimePicker').addEventListener('click', function(e) {
+    var btn = e.target.closest('.ch-btn');
+    if (!btn) return;
+    var key = btn.getAttribute('data-chime');
+    if (!key) return;
+    playPreview(key);
+    selectChime(key);
+  });
+
+  var testAllBtn = document.getElementById('chimeTestAll');
+  if (testAllBtn) {
+    testAllBtn.addEventListener('click', function() {
+      if (_testAllTimer) { clearInterval(_testAllTimer); _testAllTimer = null; testAllBtn.textContent = 'Test All'; return; }
+      var allKeys = [];
+      chimeCategories.forEach(function(cat) { cat.keys.forEach(function(k) { allKeys.push(k); }); });
+      var i = 0;
+      testAllBtn.textContent = 'Stop';
+      function playNext() {
+        if (i >= allKeys.length) { _testAllTimer = null; testAllBtn.textContent = 'Test All'; return; }
+        var card = document.querySelector('.ch-btn[data-chime="' + allKeys[i] + '"]');
+        if (card) { card.classList.add('ch-testing'); setTimeout(function() { card.classList.remove('ch-testing'); }, 600); }
+        playPreview(allKeys[i], function() { i++; playNext(); });
+      }
+      playNext();
+    });
+  }
+
+  var volEl = document.getElementById('setChimeVolume');
+  var volValEl = document.getElementById('setChimeVolumeVal');
+  var volBar = document.getElementById('chVolBar');
+  var volIconEl = document.getElementById('chVolIcon');
+  function updateVolIcon(v) {
+    if (!volIconEl) return;
+    volIconEl.innerHTML = v === 0 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>' :
+      v < 0.5 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>' :
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+  }
+  if (volEl) {
+    volEl.addEventListener('input', function() {
+      var v = parseFloat(this.value);
+      if (!isFinite(v)) { v = 0.5; }
+      v = Math.max(0, Math.min(1, v));
+      state.chimeVolume = v;
+      if (volValEl) volValEl.textContent = Math.round(v * 100) + '%';
+      if (volBar) volBar.style.width = Math.round(v * 100) + '%';
+      updateVolIcon(v);
+      saveState();
+    });
+  }
+
   document.getElementById('setNotifToggle').addEventListener('click', function() {
     state.notifications = !(state.notifications !== false);
     this.classList.toggle('on', state.notifications);

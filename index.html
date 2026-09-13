@@ -22,6 +22,15 @@
       window.location.replace('landing.html');
     }
   })();</script>
+  <script>// Detect hub mode (desktop/mobile) and set body class before CSS loads to prevent flash
+  (function(){
+    var mode = null;
+    try { mode = localStorage.getItem('haven-hub-mode'); } catch(e) {}
+    if (mode !== 'desktop' && mode !== 'mobile') {
+      mode = window.innerWidth < 768 ? 'mobile' : 'desktop';
+    }
+    document.documentElement.classList.add('hub-mode-' + mode);
+  })();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
@@ -32,217 +41,216 @@
     /* All page CSS consolidated in style.css */
   </style>
   <style>
-    /* ─── Mobile Dashboard (hidden on desktop, shown on mobile) ── */
+    /* ─── Desktop: mobile dashboard hidden; Mobile Mode: shows card dashboard ── */
     .hub-mobile-dash { display: none; }
-    @media (max-width: 767px) {
-      .hub-mobile-dash {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding: 0 12px 12px;
-        animation: slideUp 300ms var(--curve);
-      }
-      .hub-mobile-dash .hmd-card {
-        background: var(--surface-container);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-lg);
-        padding: 12px 14px;
-      }
-      .hub-mobile-dash .hmd-card-header {
-        display: flex; align-items: center; gap: 6px;
-        font-size: 0.68rem; font-weight: 600;
-        text-transform: uppercase; letter-spacing: 0.04em;
-        color: var(--text-primary); margin-bottom: 8px;
-      }
-      .hub-mobile-dash .hmd-card-header svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.6; }
-      .hub-mobile-dash .hmd-kpis { display: flex; gap: 6px; }
-      .hub-mobile-dash .hmd-kpi {
-        flex: 1; text-align: center; padding: 6px 4px;
-        border-radius: var(--radius-md); background: var(--surface-container-high);
-      }
-      .hub-mobile-dash .hmd-kpi-val {
-        font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
-        font-variant-numeric: tabular-nums;
-      }
-      .hub-mobile-dash .hmd-kpi-lbl {
-        font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.04em;
-        color: var(--text-primary); margin-top: 1px;
-      }
-      .hub-mobile-dash .hmd-task-item {
-        display: flex; align-items: center; gap: 8px; padding: 6px 0;
-        border-bottom: 1px solid var(--border-subtle); min-height: 32px;
-      }
-      .hub-mobile-dash .hmd-task-item:last-child { border-bottom: none; }
-      .hub-mobile-dash .hmd-task-check {
-        width: 16px; height: 16px; border-radius: 50%;
-        border: 1.5px solid var(--border-color); flex-shrink: 0; cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        transition: all var(--t-fast);
-      }
-      .hub-mobile-dash .hmd-task-check.done { background: var(--accent); border-color: var(--accent); }
-      .hub-mobile-dash .hmd-task-check.done svg { width: 9px; height: 9px; color: var(--text-inverse); }
-      .hub-mobile-dash .hmd-task-title {
-        flex: 1; font-size: 0.78rem; color: var(--text-primary);
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      }
-      .hub-mobile-dash .hmd-task-title.done { text-decoration: line-through; opacity: 0.5; }
-      .hub-mobile-dash .hmd-task-tag {
-        font-size: 0.55rem; font-weight: 600; padding: 1px 5px;
-        border-radius: 3px; text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0;
-      }
-      .hub-mobile-dash .hmd-goal-row {
-        display: flex; align-items: center; gap: 8px; padding: 4px 0;
-      }
-      .hub-mobile-dash .hmd-goal-num {
-        width: 18px; height: 18px; border-radius: 50%;
-        background: var(--accent-soft); color: var(--accent);
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.6rem; font-weight: 600; flex-shrink: 0;
-      }
-      .hub-mobile-dash .hmd-goal-text {
-        flex: 1; font-size: 0.75rem; color: var(--text-secondary);
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      }
-      .hub-mobile-dash .hmd-streak {
-        display: flex; align-items: center; gap: 10px; padding: 4px 0;
-      }
-      .hub-mobile-dash .hmd-streak-fire { font-size: 1.4rem; line-height: 1; }
-      .hub-mobile-dash .hmd-streak-val {
-        font-size: 1.6rem; font-weight: 700; color: var(--text-primary);
-        font-variant-numeric: tabular-nums; line-height: 1;
-      }
-      .hub-mobile-dash .hmd-streak-lbl { font-size: 0.65rem; color: var(--text-primary); }
-      .hub-mobile-dash .hmd-todo-scroll {
-        display: flex; gap: 6px; overflow-x: auto;
-        -webkit-overflow-scrolling: touch; padding-bottom: 4px;
-      }
-      .hub-mobile-dash .hmd-todo-scroll::-webkit-scrollbar { height: 2px; }
-      .hub-mobile-dash .hmd-todo-chip {
-        flex-shrink: 0; display: flex; align-items: center; gap: 5px;
-        padding: 5px 10px; border-radius: var(--radius-full);
-        background: var(--surface-container-high); border: 1px solid var(--border-color);
-        font-size: 0.7rem; color: var(--text-secondary); white-space: nowrap; cursor: pointer;
-        transition: all var(--t-fast); max-width: 200px;
-      }
-      .hub-mobile-dash .hmd-todo-chip:active { transform: scale(0.96); }
-      .hub-mobile-dash .hmd-todo-chip.done { opacity: 0.5; text-decoration: line-through; }
-      .hub-mobile-dash .hmd-todo-chip .hmd-todo-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-      .hub-mobile-dash .hmd-time { display: flex; align-items: center; gap: 10px; }
-      .hub-mobile-dash .hmd-time-digits {
-        font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums;
-        font-family: var(--font-mono); color: var(--text-primary); line-height: 1;
-      }
-      .hub-mobile-dash .hmd-time-date { font-size: 0.6rem; color: var(--text-primary); line-height: 1.3; }
-      .hub-mobile-dash .hmd-links { display: flex; flex-wrap: wrap; gap: 6px; }
-      .hub-mobile-dash .hmd-link-btn {
-        display: flex; align-items: center; gap: 4px; padding: 4px 10px;
-        border-radius: var(--radius-full); background: var(--surface-container-high);
-        border: 1px solid var(--border-color); font-size: 0.68rem;
-        color: var(--text-secondary); text-decoration: none; transition: all var(--t-fast);
-      }
-      .hub-mobile-dash .hmd-link-btn:active { transform: scale(0.96); }
-      .hub-mobile-dash .hmd-quick-add { display: flex; gap: 6px; }
-      .hub-mobile-dash .hmd-quick-add input {
-        flex: 1; padding: 8px 10px; border: 1px solid var(--border-color);
-        border-radius: var(--radius-md); background: var(--surface-container-high);
-        color: var(--text-primary); font-size: 0.78rem; font-family: var(--font-family);
-        outline: none; min-width: 0;
-      }
-      .hub-mobile-dash .hmd-quick-add input:focus { border-color: var(--accent); }
-      .hub-mobile-dash .hmd-quick-add input::placeholder { color: var(--text-tertiary); }
-      .hub-mobile-dash .hmd-quick-add button {
-        padding: 8px 14px; border-radius: var(--radius-md);
-        background: var(--accent); color: var(--text-inverse);
-        border: none; font-size: 0.78rem; font-weight: 500; cursor: pointer; white-space: nowrap;
-      }
-      .hub-mobile-dash .hmd-quick-add button:active { transform: scale(0.96); }
-      .hub-mobile-dash .hmd-ai-brief {
-        display: flex; align-items: flex-start; gap: 8px;
-      }
-      .hub-mobile-dash .hmd-ai-avatar {
-        width: 28px; height: 28px; border-radius: 50%;
-        background: var(--accent-soft); color: var(--accent);
-        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      }
-      .hub-mobile-dash .hmd-ai-msg {
-        flex: 1; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;
-      }
-      .hub-mobile-dash .hmd-ai-msg strong { color: var(--text-primary); }        .hub-mobile-dash .hmd-empty {
-        text-align: center; padding: 20px 10px;
-        font-size: 0.78rem; color: var(--text-primary);
-      }
+    .hub-mode-mobile .hub-mobile-dash {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0 12px 12px;
+      animation: slideUp 300ms var(--curve);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-card {
+      background: var(--surface-container);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-card-header {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 0.68rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-primary); margin-bottom: 8px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-card-header svg { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.6; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-kpis { display: flex; gap: 6px; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-kpi {
+      flex: 1; text-align: center; padding: 6px 4px;
+      border-radius: var(--radius-md); background: var(--surface-container-high);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-kpi-val {
+      font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-kpi-lbl {
+      font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-primary); margin-top: 1px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-task-item {
+      display: flex; align-items: center; gap: 8px; padding: 6px 0;
+      border-bottom: 1px solid var(--border-subtle); min-height: 32px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-task-item:last-child { border-bottom: none; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-task-check {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 1.5px solid var(--border-color); flex-shrink: 0; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--t-fast);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-task-check.done { background: var(--accent); border-color: var(--accent); }
+    .hub-mode-mobile .hub-mobile-dash .hmd-task-check.done svg { width: 9px; height: 9px; color: var(--text-inverse); }
+    .hub-mode-mobile .hub-mobile-dash .hmd-task-title {
+      flex: 1; font-size: 0.78rem; color: var(--text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-task-title.done { text-decoration: line-through; opacity: 0.5; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-task-tag {
+      font-size: 0.55rem; font-weight: 600; padding: 1px 5px;
+      border-radius: 3px; text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-goal-row {
+      display: flex; align-items: center; gap: 8px; padding: 4px 0;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-goal-num {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--accent-soft); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; font-weight: 600; flex-shrink: 0;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-goal-text {
+      flex: 1; font-size: 0.75rem; color: var(--text-secondary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-streak {
+      display: flex; align-items: center; gap: 10px; padding: 4px 0;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-streak-fire { font-size: 1.4rem; line-height: 1; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-streak-val {
+      font-size: 1.6rem; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-streak-lbl { font-size: 0.65rem; color: var(--text-primary); }
+    .hub-mode-mobile .hub-mobile-dash .hmd-todo-scroll {
+      display: flex; gap: 6px; overflow-x: auto;
+      -webkit-overflow-scrolling: touch; padding-bottom: 4px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-todo-scroll::-webkit-scrollbar { height: 2px; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-todo-chip {
+      flex-shrink: 0; display: flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: var(--radius-full);
+      background: var(--surface-container-high); border: 1px solid var(--border-color);
+      font-size: 0.7rem; color: var(--text-secondary); white-space: nowrap; cursor: pointer;
+      transition: all var(--t-fast); max-width: 200px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-todo-chip:active { transform: scale(0.96); }
+    .hub-mode-mobile .hub-mobile-dash .hmd-todo-chip.done { opacity: 0.5; text-decoration: line-through; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-todo-chip .hmd-todo-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-time { display: flex; align-items: center; gap: 10px; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-time-digits {
+      font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums;
+      font-family: var(--font-mono); color: var(--text-primary); line-height: 1;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-time-date { font-size: 0.6rem; color: var(--text-primary); line-height: 1.3; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-links { display: flex; flex-wrap: wrap; gap: 6px; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-link-btn {
+      display: flex; align-items: center; gap: 4px; padding: 4px 10px;
+      border-radius: var(--radius-full); background: var(--surface-container-high);
+      border: 1px solid var(--border-color); font-size: 0.68rem;
+      color: var(--text-secondary); text-decoration: none; transition: all var(--t-fast);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-link-btn:active { transform: scale(0.96); }
+    .hub-mode-mobile .hub-mobile-dash .hmd-quick-add { display: flex; gap: 6px; }
+    .hub-mode-mobile .hub-mobile-dash .hmd-quick-add input {
+      flex: 1; padding: 8px 10px; border: 1px solid var(--border-color);
+      border-radius: var(--radius-md); background: var(--surface-container-high);
+      color: var(--text-primary); font-size: 0.78rem; font-family: var(--font-family);
+      outline: none; min-width: 0;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-quick-add input:focus { border-color: var(--accent); }
+    .hub-mode-mobile .hub-mobile-dash .hmd-quick-add input::placeholder { color: var(--text-tertiary); }
+    .hub-mode-mobile .hub-mobile-dash .hmd-quick-add button {
+      padding: 8px 14px; border-radius: var(--radius-md);
+      background: var(--accent); color: var(--text-inverse);
+      border: none; font-size: 0.78rem; font-weight: 500; cursor: pointer; white-space: nowrap;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-quick-add button:active { transform: scale(0.96); }
+    .hub-mode-mobile .hub-mobile-dash .hmd-ai-brief {
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-ai-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent-soft); color: var(--accent);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-ai-msg {
+      flex: 1; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-ai-msg strong { color: var(--text-primary); }
+    .hub-mode-mobile .hub-mobile-dash .hmd-empty {
+      text-align: center; padding: 20px 10px;
+      font-size: 0.78rem; color: var(--text-primary);
+    }
 
-      /* ── Sleep Card ── */
-      .hub-mobile-dash .hmd-sleep-top {
-        display: flex; align-items: center; gap: 10px;
-      }
-      .hub-mobile-dash .hmd-sleep-ring {
-        width: 48px; height: 48px; flex-shrink: 0;
-        position: relative;
-      }
-      .hub-mobile-dash .hmd-sleep-ring svg {
-        width: 48px; height: 48px;
-        transform: rotate(-90deg);
-      }
-      .hub-mobile-dash .hmd-sleep-ring svg circle {
-        fill: none; stroke-width: 3;
-      }
-      .hub-mobile-dash .hmd-sleep-ring svg circle.bg {
-        stroke: var(--border-color);
-      }
-      .hub-mobile-dash .hmd-sleep-ring svg circle.fill {
-        stroke: var(--accent);
-        stroke-dasharray: 125.6;
-        stroke-dashoffset: 125.6;
-        transition: stroke-dashoffset 600ms ease;
-      }
-      .hub-mobile-dash .hmd-sleep-val-overlay {
-        position: absolute; inset: 0;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.75rem; font-weight: 700; color: var(--text-primary);
-      }
-      .hub-mobile-dash .hmd-sleep-last {
-        flex: 1; min-width: 0;
-      }
-      .hub-mobile-dash .hmd-sleep-last-dur {
-        font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
-        font-variant-numeric: tabular-nums;
-      }
-      .hub-mobile-dash .hmd-sleep-last-label {
-        font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.04em;
-        color: var(--text-tertiary);
-      }
-      .hub-mobile-dash .hmd-sleep-last-time {
-        font-size: 0.65rem; color: var(--text-secondary); margin-top: 1px;
-      }
-      .hub-mobile-dash .hmd-sleep-stars {
-        display: flex; gap: 1px; margin-top: 2px;
-      }
-      .hub-mobile-dash .hmd-sleep-stars .s-star {
-        font-size: 0.7rem; color: var(--border-color);
-      }
-      .hub-mobile-dash .hmd-sleep-stars .s-star.s-star-on {
-        color: #f59e0b;
-      }
-      .hub-mobile-dash .hmd-sleep-metrics {
-        display: flex; gap: 6px; margin-top: 8px;
-      }
-      .hub-mobile-dash .hmd-sleep-metric {
-        flex: 1; text-align: center;
-        padding: 4px 2px; border-radius: var(--radius-sm);
-        background: var(--surface-container-high);
-      }
-      .hub-mobile-dash .hmd-sleep-metric-val {
-        font-size: 0.85rem; font-weight: 700; color: var(--text-primary);
-        font-variant-numeric: tabular-nums;
-      }
-      .hub-mobile-dash .hmd-sleep-metric-lbl {
-        font-size: 0.5rem; text-transform: uppercase; letter-spacing: 0.04em;
-        color: var(--text-tertiary);
-      }
-      .hub-mobile-dash .hmd-sleep-metric-sub {
-        font-size: 0.5rem; color: var(--text-secondary);
-      }
+    /* ── Sleep Card ── */
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-top {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-ring {
+      width: 48px; height: 48px; flex-shrink: 0;
+      position: relative;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-ring svg {
+      width: 48px; height: 48px;
+      transform: rotate(-90deg);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-ring svg circle {
+      fill: none; stroke-width: 3;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-ring svg circle.bg {
+      stroke: var(--border-color);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-ring svg circle.fill {
+      stroke: var(--accent);
+      stroke-dasharray: 125.6;
+      stroke-dashoffset: 125.6;
+      transition: stroke-dashoffset 600ms ease;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-val-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; color: var(--text-primary);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-last {
+      flex: 1; min-width: 0;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-last-dur {
+      font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-last-label {
+      font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-tertiary);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-last-time {
+      font-size: 0.65rem; color: var(--text-secondary); margin-top: 1px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-stars {
+      display: flex; gap: 1px; margin-top: 2px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-stars .s-star {
+      font-size: 0.7rem; color: var(--border-color);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-stars .s-star.s-star-on {
+      color: #f59e0b;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-metrics {
+      display: flex; gap: 6px; margin-top: 8px;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-metric {
+      flex: 1; text-align: center;
+      padding: 4px 2px; border-radius: var(--radius-sm);
+      background: var(--surface-container-high);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-metric-val {
+      font-size: 0.85rem; font-weight: 700; color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-metric-lbl {
+      font-size: 0.5rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-tertiary);
+    }
+    .hub-mode-mobile .hub-mobile-dash .hmd-sleep-metric-sub {
+      font-size: 0.5rem; color: var(--text-secondary);
     }
   </style>
 </head>
@@ -425,16 +433,19 @@
                   <span id="hubDateLine"></span>
                 </div>
               </div>
-              <div style="display:flex;gap:var(--space-2);align-items:center;flex-shrink:0">
-                <div class="glass-card dark-stat" style="padding:4px 12px;border-radius:var(--radius-md);text-align:center">
-                  <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;line-height:1.2"><span class="stat-value" id="statTodayBlock" data-target="0">0</span></div>
-                  <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;margin-top:1px">TODAY</div>
-                </div>
-                <div class="glass-card dark-stat" style="padding:4px 12px;border-radius:var(--radius-md);text-align:center">
-                  <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;line-height:1.2"><span class="stat-value" id="statWeek" data-target="0">0</span></div>
-                  <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;margin-top:1px">WEEK</div>
-                </div>
-              </div>
+               <div style="display:flex;gap:var(--space-2);align-items:center;flex-shrink:0">
+                 <div class="glass-card dark-stat" style="padding:4px 12px;border-radius:var(--radius-md);text-align:center">
+                   <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;line-height:1.2"><span class="stat-value" id="statTodayBlock" data-target="0">0</span></div>
+                   <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;margin-top:1px">TODAY</div>
+                 </div>
+                 <div class="glass-card dark-stat" style="padding:4px 12px;border-radius:var(--radius-md);text-align:center">
+                   <div style="font-family:var(--font-serif);font-size:1.4rem;font-weight:500;line-height:1.2"><span class="stat-value" id="statWeek" data-target="0">0</span></div>
+                   <div style="font-size:0.55rem;text-transform:uppercase;letter-spacing:0.08em;margin-top:1px">WEEK</div>
+                 </div>
+                  <button id="hubModeToggle" class="btn btn-ghost" style="padding:4px 10px;border-radius:var(--radius-md);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.06em" title="Switch between desktop and mobile layout">
+                    <span class="hub-mode-label">Mobile View</span>
+                  </button>
+               </div>
             </div>
           </div>
         </section>
@@ -497,9 +508,7 @@
                   </svg>
                   Sleep
                 </h3>
-                <div class="sleep-header-actions">
-                  <button class="btn btn-outline" onclick="openSleepLogModal()" style="font-size:0.72rem;padding:var(--space-1) var(--space-3)" data-i18n="sleep.log">+ Log Sleep</button>
-                </div>
+                <button class="btn btn-outline" onclick="openSleepLogModal()" style="font-size:0.72rem;padding:var(--space-1) var(--space-3)" data-i18n="sleep.log">+ Log Sleep</button>
               </div>
 
               <!-- Tabs -->
@@ -747,7 +756,7 @@
       // Calculate streak from completions
       var streak = 0;
       try {
-        var comp = JSON.parse(localStorage.getItem('haven-activity-completions') || '[]');
+        var comp = JSON.parse(localStorage.getItem('haven-activities-completions') || '[]');
         var dates = {};
         comp.forEach(function(c) {
           if (c.completedAt) {
@@ -914,23 +923,23 @@
       }
     };
 
-    function updateHub() {
-      const all = state.tasks.filter(t => !isWhiteboardTask(t));
-      const now = new Date();
-      const ws = getMonday(now);
-      const we = addDays(ws, 7);
-      const weekTasks = all.filter(t => { const d = new Date(t.date + 'T12:00:00'); return d >= ws && d < we; });
-      const todayStr = formatDate(now);
-      const todayTasks = all.filter(t => t.date === todayStr);
+     function updateHub() {
+       const all = state.tasks.filter(t => !isWhiteboardTask(t));
+       const now = new Date();
+       const ws = getMonday(now);
+       const we = addDays(ws, 7);
+       const weekTasks = all.filter(t => { const d = new Date(t.date + 'T12:00:00'); return d >= ws && d < we; });
+       const todayStr = formatDate(now);
+       const todayTasks = all.filter(t => t.date === todayStr);
 
-      const weekTasksEl = document.getElementById('hubWeekTasks');
-      if (weekTasksEl) weekTasksEl.textContent = weekTasks.length + ' this week';
-      const totalTasksEl = document.getElementById('hubTotalTasks');
-      if (totalTasksEl) totalTasksEl.textContent = all.length + ' total';
+       const weekTasksEl = document.getElementById('hubWeekTasks');
+       if (weekTasksEl) weekTasksEl.textContent = weekTasks.length + ' this week';
+       const totalTasksEl = document.getElementById('hubTotalTasks');
+       if (totalTasksEl) totalTasksEl.textContent = all.length + ' total';
 
-      if (typeof renderSleepHub === 'function') renderSleepHub();
-      renderMobileDashboard();
-    }
+       if (typeof renderSleepHub === 'function') renderSleepHub();
+       if (hubMode === 'mobile') { renderMobileDashboard(); }
+     }
 
 
     // ─── QUICK ADD ───────────────────────────────────────
@@ -945,6 +954,7 @@
     // ════════════════════════════════════════════════════════════
 
 function init() {
+      initHubMode();
       loadState();
       hubContent = loadHubContent();
       // SAFETY: Ensure hubContent is always valid
@@ -958,10 +968,11 @@ function init() {
       const bentoWrap = document.querySelector('.hub-section-wrap[data-hub-section="bento"]');
       if (bentoWrap) bentoWrap.classList.remove('hidden-section');
       try {
-        const vis = JSON.parse(localStorage.getItem(HUB_VIS_KEY) || '{}');
+        const vk = _visKey();
+        const vis = JSON.parse(localStorage.getItem(vk) || '{}');
         if (vis.bento === false) {
           delete vis.bento;
-          localStorage.setItem(HUB_VIS_KEY, JSON.stringify(vis));
+          localStorage.setItem(vk, JSON.stringify(vis));
         }
       } catch {} 
       document.querySelectorAll('img[data-image-id]').forEach(el => {
@@ -980,6 +991,8 @@ function init() {
       document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
       document.getElementById('focusToggleBtn')?.addEventListener('click', toggleFocusMode);
       dom.aiChatBtn?.addEventListener('click', openSettingsBubble);
+      document.getElementById('hubModeToggle')?.addEventListener('click', function() { switchHubMode(); });
+      window.addEventListener('resize', _onHubModeResize);
 
       updateModelOptions();
 
@@ -993,9 +1006,14 @@ function init() {
 
       initHubLayout();
       initHubEditMode();
-      try { renderHubBento(); } catch(e) { console.error('renderHubBento error:', e); }
-      try { renderMobileDashboard(); } catch(e) { console.error('renderMobileDashboard error:', e); }
-      setInterval(renderMobileDashboard, 60000); // Update clock every minute
+      if (hubMode === 'desktop') {
+        try { renderHubBento(); } catch(e) { console.error('renderHubBento error:', e); }
+      } else {
+        try { renderMobileDashboard(); } catch(e) { console.error('renderMobileDashboard error:', e); }
+      }
+      setInterval(function() {
+        if (hubMode === 'mobile') renderMobileDashboard();
+      }, 60000); // Update clock every minute
 
       // Save hub content when leaving the page
       window.addEventListener('beforeunload', function() {
@@ -1010,91 +1028,84 @@ function init() {
   </script>
 
   <!-- Sleep Log Modal -->
-  <div id="sleepLogOverlay" class="sleep-log-overlay hidden" onclick="closeSleepLogModal()">
-    <div id="sleepLogModal" class="sleep-log-modal hidden" onclick="event.stopPropagation()">
-      <div class="sleep-log-modal-header">
-        <div class="sleep-log-header-left">
-          <div class="sleep-log-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div id="sleepLogOverlay" class="sl-overlay hidden" onclick="if(event.target===this)closeSleepLogModal()">
+    <div id="sleepLogModal" class="sl-modal" onclick="event.stopPropagation()">
+      <div class="sl-header">
+        <div class="sl-header-left">
+          <div class="sl-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
             </svg>
           </div>
           <h3>Log Sleep</h3>
         </div>
-        <button class="sleep-log-modal-close" onclick="closeSleepLogModal()" aria-label="Close">
+        <button class="sl-close" onclick="closeSleepLogModal()" aria-label="Close">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <div class="sleep-log-modal-body">
-        <div class="sleep-log-form">
-          <div class="form-group">
-            <label for="sleepDate">Date</label>
-            <input type="date" id="sleepDate" class="form-input sleep-input">
+      <div class="sl-body">
+        <div class="sl-field">
+          <label for="sleepDate">Date</label>
+          <input type="date" id="sleepDate" class="sl-input">
+        </div>
+        <div class="sl-row-2">
+          <div class="sl-field">
+            <label for="sleepBedtime">Bedtime</label>
+            <input type="time" id="sleepBedtime" class="sl-input" value="23:00" oninput="previewSleepDuration()">
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="sleepBedtime">Bedtime</label>
-              <input type="time" id="sleepBedtime" class="form-input sleep-input" value="23:00" oninput="previewSleepDuration()">
-            </div>
-            <div class="form-group">
-              <label for="sleepWakeTime">Wake Time</label>
-              <input type="time" id="sleepWakeTime" class="form-input sleep-input" value="07:00" oninput="previewSleepDuration()">
-            </div>
-          </div>
-          <div class="s-dur-preview" id="sDurPreview">
-            <span class="s-dur-preview-icon">&#9200;</span>
-            <span class="s-dur-preview-text">Duration: <strong id="sDurPreviewVal">8h 00m</strong></span>
-          </div>
-          <div class="form-group">
-            <label>Sleep Quality</label>
-            <div class="sleep-quality-slider-wrap">
-              <span class="sq-label">Poor</span>
-              <input type="range" id="sleepQuality" min="1" max="5" value="3" class="sleep-quality-slider" oninput="onQualitySlider(this.value)">
-              <span class="sq-label">Great</span>
-            </div>
-            <div class="sleep-quality-display" id="sleepQualityDisplay">
-              <span class="sq-emoji">&#128564;</span>
-              <span class="sq-text">Okay</span>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>How did you feel?</label>
-            <div class="sleep-mood-chips" id="sleepMoodChips">
-              <button class="sleep-mood-chip" data-mood="restful">Restful</button>
-              <button class="sleep-mood-chip" data-mood="restless">Restless</button>
-              <button class="sleep-mood-chip" data-mood="dreams">Dreams</button>
-              <button class="sleep-mood-chip" data-mood="tired">Woke Tired</button>
-              <button class="sleep-mood-chip" data-mood="insomnia">Insomnia</button>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="sleepNotes">Notes (optional)</label>
-            <textarea id="sleepNotes" class="form-input sleep-input sleep-notes-input" rows="2" placeholder="How was your sleep?"></textarea>
-          </div>
-          <div class="sleep-log-actions">
-            <button class="btn btn-outline sleep-btn-cancel" onclick="closeSleepLogModal()">Cancel</button>
-            <button class="btn btn-primary sleep-btn-save" id="sleepSaveBtn" onclick="handleSleepLogSave()">Save</button>
+          <div class="sl-field">
+            <label for="sleepWakeTime">Wake Time</label>
+            <input type="time" id="sleepWakeTime" class="sl-input" value="07:00" oninput="previewSleepDuration()">
           </div>
         </div>
+        <div class="sl-dur-preview" id="sDurPreview">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>Duration: <strong id="sDurPreviewVal">8h 00m</strong></span>
+        </div>
+        <div class="sl-field">
+          <label>Sleep Quality</label>
+          <div class="sl-quality-row">
+            <span class="sl-q-label">Poor</span>
+            <input type="range" id="sleepQuality" min="1" max="5" value="3" class="sl-quality-slider" oninput="onQualitySlider(this.value)">
+            <span class="sl-q-label">Great</span>
+          </div>
+          <div class="sl-quality-display" id="sleepQualityDisplay">
+            <span class="sl-q-emoji">&#128564;</span>
+            <span class="sl-q-text">Okay</span>
+          </div>
+        </div>
+        <div class="sl-field">
+          <label>How did you feel?</label>
+          <div class="sl-mood-chips" id="sleepMoodChips">
+            <button class="sl-mood-chip" data-mood="restful">Restful</button>
+            <button class="sl-mood-chip" data-mood="restless">Restless</button>
+            <button class="sl-mood-chip" data-mood="dreams">Dreams</button>
+            <button class="sl-mood-chip" data-mood="tired">Woke Tired</button>
+            <button class="sl-mood-chip" data-mood="insomnia">Insomnia</button>
+          </div>
+        </div>
+        <div class="sl-field">
+          <label for="sleepNotes">Notes <span class="sl-label-hint">(optional)</span></label>
+          <textarea id="sleepNotes" class="sl-input sl-textarea" rows="2" placeholder="How was your sleep?"></textarea>
+        </div>
+      </div>
+      <div class="sl-footer">
+        <button class="sl-btn sl-btn-cancel" onclick="closeSleepLogModal()">Cancel</button>
+        <button class="sl-btn sl-btn-save" onclick="handleSleepLogSave()">Save</button>
       </div>
     </div>
   </div>
+  <script>
+    (function() {
+      var d = new Date();
+      var ds = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+      var el = document.getElementById('sleepDate');
+      if (el) el.value = ds;
+    })();
+  </script>
 
   <script>
     // ─── SLEEP TRACKING (Hub) ───────────────────────────
-    let sleepSelectedQuality = 3;
-    let sleepLogEditId = null;
-
-    function previewSleepDuration() {
-      var bt = document.getElementById('sleepBedtime').value;
-      var wt = document.getElementById('sleepWakeTime').value;
-      var el = document.getElementById('sDurPreviewVal');
-      var preview = document.getElementById('sDurPreview');
-      if (!bt || !wt || !el || !preview) return;
-      var dur = calculateSleepDuration(bt, wt);
-      el.textContent = formatSleepMinutes(dur);
-      preview.style.opacity = '1';
-    }
 
     function getWeekLogs(now) {
       var logs = [];
@@ -1632,25 +1643,6 @@ function init() {
       showToast('Sleep log deleted', 'info', 1500);
     }
 
-    function editSleepLog(id) {
-      var logs = loadSleepLogs();
-      var log = logs.find(function(l) { return l.id === id; });
-      if (!log) return;
-      sleepLogEditId = id;
-      document.getElementById('sleepDate').value = log.date;
-      document.getElementById('sleepBedtime').value = log.bedtime;
-      document.getElementById('sleepWakeTime').value = log.wakeTime;
-      document.getElementById('sleepNotes').value = log.notes || '';
-      sleepSelectedQuality = log.quality;
-      var slider = document.getElementById('sleepQuality');
-      if (slider) { slider.value = log.quality; onQualitySlider(log.quality); }
-      resetSleepModalChips();
-      if (log.mood && Array.isArray(log.mood)) {
-        log.mood.forEach(function(m) { var chip = document.querySelector('.sleep-mood-chip[data-mood="' + m + '"]'); if (chip) chip.classList.add('active'); });
-      }
-      openSleepLogModal();
-    }
-
     // ── Insights ──
     function renderSleepInsights(logs) {
       var container = document.getElementById('sleepInsightsGrid');
@@ -1664,61 +1656,81 @@ function init() {
       container.innerHTML = html;
     }
 
-    // ── Modal ──
-    function resetSleepModalChips() {
-      document.querySelectorAll('.sleep-mood-chip').forEach(function(c) { c.classList.remove('active'); });
-    }
-    function getSelectedMoods() {
-      var chips = document.querySelectorAll('.sleep-mood-chip.active');
-      return Array.from(chips).map(function(c) { return c.dataset.mood; });
-    }
-    var sleepQualityEmojis = ['&#128564;', '&#128528;', '&#128564;', '&#128522;', '&#128525;'];
+    // ── Sleep Log Modal ──
+    var sleepSelectedQuality = 3;
+    var sleepLogEditId = null;
+    var sleepQualityEmojis = ['\uD83D\uDE34', '\uD83D\uDE0C', '\uD83D\uDE34', '\uD83D\uDE0A', '\uD83D\uDE0D'];
     var sleepQualityLabels = ['Poor', 'Fair', 'Okay', 'Good', 'Great'];
-    function onQualitySlider(val) {
-      sleepSelectedQuality = parseInt(val);
-      var display = document.getElementById('sleepQualityDisplay');
-      if (display) {
-        display.querySelector('.sq-emoji').innerHTML = sleepQualityEmojis[sleepSelectedQuality - 1];
-        display.querySelector('.sq-text').textContent = sleepQualityLabels[sleepSelectedQuality - 1];
-      }
-    }
+
     function openSleepLogModal() {
       var overlay = document.getElementById('sleepLogOverlay');
       var modal = document.getElementById('sleepLogModal');
       if (!overlay || !modal) return;
-      resetSleepModalChips();
-      if (!sleepLogEditId) {
-        document.getElementById('sleepDate').value = formatDate(new Date());
-        document.getElementById('sleepBedtime').value = '23:00';
-        document.getElementById('sleepWakeTime').value = '07:00';
-        document.getElementById('sleepNotes').value = '';
-        sleepSelectedQuality = 3;
-        var slider = document.getElementById('sleepQuality');
-        if (slider) { slider.value = 3; onQualitySlider(3); }
-      }
+      sleepLogEditId = null;
+      sleepSelectedQuality = 3;
+      var dEl = document.getElementById('sleepDate');
+      if (dEl) { var now = new Date(); dEl.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0'); }
+      var btEl = document.getElementById('sleepBedtime');
+      if (btEl) btEl.value = '23:00';
+      var wtEl = document.getElementById('sleepWakeTime');
+      if (wtEl) wtEl.value = '07:00';
+      var notesEl = document.getElementById('sleepNotes');
+      if (notesEl) notesEl.value = '';
+      document.querySelectorAll('.sl-mood-chip').forEach(function(c) { c.classList.remove('active'); });
+      var slider = document.getElementById('sleepQuality');
+      if (slider) slider.value = 3;
+      onQualitySlider(3);
+      previewSleepDuration();
       overlay.classList.remove('hidden');
       modal.classList.remove('hidden');
-      previewSleepDuration();
     }
+
     function closeSleepLogModal() {
       var overlay = document.getElementById('sleepLogOverlay');
       var modal = document.getElementById('sleepLogModal');
-      if (!overlay || !modal) return;
-      overlay.classList.add('hidden');
-      modal.classList.add('hidden');
+      if (overlay) overlay.classList.add('hidden');
+      if (modal) modal.classList.add('hidden');
       sleepLogEditId = null;
     }
+
+    function editSleepLog(id) {
+      var logs = loadSleepLogs();
+      var log = logs.find(function(l) { return l.id === id; });
+      if (!log) return;
+      sleepLogEditId = id;
+      var dEl = document.getElementById('sleepDate');
+      if (dEl) dEl.value = log.date;
+      var btEl = document.getElementById('sleepBedtime');
+      if (btEl) btEl.value = log.bedtime;
+      var wtEl = document.getElementById('sleepWakeTime');
+      if (wtEl) wtEl.value = log.wakeTime;
+      var notesEl = document.getElementById('sleepNotes');
+      if (notesEl) notesEl.value = log.notes || '';
+      sleepSelectedQuality = log.quality;
+      var slider = document.getElementById('sleepQuality');
+      if (slider) slider.value = log.quality;
+      onQualitySlider(log.quality);
+      document.querySelectorAll('.sl-mood-chip').forEach(function(c) {
+        c.classList.toggle('active', log.mood && log.mood.indexOf(c.dataset.mood) !== -1);
+      });
+      previewSleepDuration();
+      var overlay = document.getElementById('sleepLogOverlay');
+      var modal = document.getElementById('sleepLogModal');
+      if (overlay) overlay.classList.remove('hidden');
+      if (modal) modal.classList.remove('hidden');
+    }
+
     function handleSleepLogSave() {
       var date = document.getElementById('sleepDate').value;
       var bedtime = document.getElementById('sleepBedtime').value;
       var wakeTime = document.getElementById('sleepWakeTime').value;
       var notes = document.getElementById('sleepNotes').value.trim();
-      var mood = getSelectedMoods();
+      var mood = [];
+      document.querySelectorAll('.sl-mood-chip.active').forEach(function(c) { mood.push(c.dataset.mood); });
       var slider = document.getElementById('sleepQuality');
       if (slider) sleepSelectedQuality = parseInt(slider.value);
       if (sleepLogEditId) {
         updateSleepLog(sleepLogEditId, { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
-        sleepLogEditId = null;
       } else {
         var existing = getSleepLog(date);
         if (existing) updateSleepLog(existing.id, { bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
@@ -1729,20 +1741,30 @@ function init() {
       showToast('Sleep saved for ' + date, 'success', 2000);
     }
 
-    // ── Modal chip toggles ──
-    document.addEventListener('click', function(e) {
-      var moodChip = e.target.closest('.sleep-mood-chip');
-      if (moodChip) moodChip.classList.toggle('active');
-    });
-  </script>
-
-  <script>
-    // Initialize sleep tracking on the hub
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', renderSleepHub);
-    } else {
-      renderSleepHub();
+    function onQualitySlider(val) {
+      sleepSelectedQuality = parseInt(val);
+      var emojiSpan = document.querySelector('#sleepQualityDisplay .sl-q-emoji');
+      var textSpan = document.querySelector('#sleepQualityDisplay .sl-q-text');
+      if (emojiSpan) emojiSpan.textContent = sleepQualityEmojis[sleepSelectedQuality - 1];
+      if (textSpan) textSpan.textContent = sleepQualityLabels[sleepSelectedQuality - 1];
     }
+
+    function previewSleepDuration() {
+      var bt = document.getElementById('sleepBedtime');
+      var wt = document.getElementById('sleepWakeTime');
+      var el = document.getElementById('sDurPreviewVal');
+      if (!bt || !wt || !el) return;
+      var dur = calculateSleepDuration(bt.value, wt.value);
+      el.textContent = formatSleepMinutes(dur);
+    }
+
+    document.getElementById('sleepLogOverlay').addEventListener('click', function(e) {
+      if (e.target === this) closeSleepLogModal();
+    });
+    document.addEventListener('click', function(e) {
+      var chip = e.target.closest('.sl-mood-chip');
+      if (chip) chip.classList.toggle('active');
+    });
   </script>
 
   <!-- Image Picker -->

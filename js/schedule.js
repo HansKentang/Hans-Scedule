@@ -198,9 +198,51 @@ let resizeState = null;
 
 // Task id of the card just placed by drag/drop (for a one-shot settle animation)
 let lastDroppedTaskId = null;
+let weekSelected = new Set();
+let weekFocusedId = null;
+let weekPrefs = { workHours: false, hideDone: false, didAutoScroll: false };
+try {
+  const p = JSON.parse(localStorage.getItem('haven-week-prefs') || '{}');
+  if (p.workHours) weekPrefs.workHours = true;
+  if (p.hideDone) weekPrefs.hideDone = true;
+} catch (e) {}
+function saveWeekPrefs() {
+  try { localStorage.setItem('haven-week-prefs', JSON.stringify({ workHours: weekPrefs.workHours, hideDone: weekPrefs.hideDone })); } catch (e) {}
+}
+function getTagDur(tag) {
+  try {
+    const m = JSON.parse(localStorage.getItem('haven-tag-durations') || '{}');
+    return m[tag] || 60;
+  } catch (e) { return 60; }
+}
+function setTagDur(tag, mins) {
+  try {
+    const m = JSON.parse(localStorage.getItem('haven-tag-durations') || '{}');
+    m[tag] = mins;
+    localStorage.setItem('haven-tag-durations', JSON.stringify(m));
+  } catch (e) {}
+}
+function fmtDur(mins) {
+  if (mins <= 0) return '';
+  if (mins < 60) return mins + 'm';
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return m ? h + 'h ' + m + 'm' : h + 'h';
+}
+function slotAddBtnHTML(dateStr, mins) {
+  return '<button class="slot-add" data-slot-add="' + dateStr + '|' + mins + '" title="Add task">+</button>';
+}
 
 // ─── PAGE CALLBACKS (called from shared.js) ─────────────────
-pageAfterTaskSave = () => { renderCalendar(); };
+pageAfterTaskSave = () => {
+  try {
+    const ed = state.editingTask ? getTask(state.editingTask) : null;
+    if (ed && ed.tag && ed.startTime && ed.endTime) {
+      const d = parseTime(ed.endTime) - parseTime(ed.startTime);
+      if (d > 0) setTagDur(ed.tag, d);
+    }
+  } catch (e) {}
+  renderCalendar();
+};
 pageAfterImport = () => { renderCalendar(); };
 
 // ─── API STATUS ────────────────────────────────────────────
@@ -300,20 +342,49 @@ function renderWeekView() {
   let html = '';
   const visibleDays = state.showWeekends ? days : days.filter(d => !isWeekend(d));
   const colCount = visibleDays.length;
+  const workOnly = weekPrefs.workHours;
+  const hStart = workOnly ? 7 : START_HOUR;
+  const hEnd = workOnly ? 21 : START_HOUR + VISIBLE_HOURS;
   dom.grid.style.gridTemplateColumns = `var(--time-axis-width) repeat(${colCount}, 1fr)`;
   dom.grid.style.gridTemplateRows = '';
+
+  const dayStats = {};
+  for (const day of visibleDays) {
+    const ds = formatDate(day);
+    const dt = state.tasks.filter(t => t.date === ds && !isWhiteboardTask(t));
+    let mins = 0, done = 0, overlaps = 0;
+    for (const t of dt) {
+      if (!t.startTime || !t.endTime) continue;
+      const d = parseTime(t.endTime) - parseTime(t.startTime);
+      if (d > 0) mins += d;
+      if (t.completed) done++;
+    }
+    const timed = dt.filter(t => t.startTime && t.endTime && !t.completed);
+    for (let i = 0; i < timed.length; i++) {
+      for (let j = i + 1; j < timed.length; j++) {
+        const a = timed[i], b = timed[j];
+        if (parseTime(a.startTime) < parseTime(b.endTime) && parseTime(b.startTime) < parseTime(a.endTime)) overlaps++;
+      }
+    }
+    dayStats[ds] = { count: dt.length, mins, done, overlaps };
+  }
 
   html += '<div class="day-header time-axis-header"></div>';
   for (const day of visibleDays) {
     const cls = ['day-header'];
     if (isToday(day)) cls.push('today');
     if (isWeekend(day)) cls.push('weekend');
-    html += `<div class="${cls.join(' ')}" data-date="${formatDate(day)}">
+    const ds = formatDate(day);
+    const st = dayStats[ds] || { count: 0, mins: 0, overlaps: 0 };
+    if (st.overlaps >= 2 || st.mins > 480) cls.push('day-crowded');
+    const tot = st.mins > 0 ? fmtDur(st.mins) : (st.count ? st.count + ' task' + (st.count > 1 ? 's' : '') : '');
+    html += `<div class="${cls.join(' ')}" data-date="${ds}">
       <span class="day-name">${getDayName(day, true)}</span>
-      <span class="day-number">${day.getDate()}</span></div>`;
+      <span class="day-number">${day.getDate()}</span>
+      ${tot ? `<span class="day-total">${tot}</span>` : ''}</div>`;
   }
 
-  for (let h = START_HOUR; h < START_HOUR + VISIBLE_HOURS; h++) {
+  for (let h = hStart; h < hEnd; h++) {
     const h24 = h % 24;
     const disp = h24 % 12 === 0 ? 12 : h24 % 12;
     const ampm = h24 < 12 ? 'AM' : 'PM';
@@ -326,13 +397,14 @@ function renderWeekView() {
       if (isToday(day)) cls.push('today-column');
       if (h % 2 !== 0) cls.push('hour-alt');
       html += `<div class="${cls.join(' ')}" data-date="${formatDate(day)}" data-time="${timeMins}" data-hour="${h}">
-        <span class="half-hour-line"></span></div>`;
+        <span class="half-hour-line"></span>${slotAddBtnHTML(formatDate(day), timeMins)}</div>`;
     }
   }
 
   dom.grid.innerHTML = html;
   renderTasks();
   renderCurrentTime();
+  renderWeekExtras(days);
 
   const firstDay = days[0];
   const lastDay = days[6];
@@ -376,9 +448,18 @@ function renderMobileDayView() {
   const headerCls = ['day-header'];
   if (isToday(activeDay)) headerCls.push('today');
   if (isWeekend(activeDay)) headerCls.push('weekend');
+  const mdt = state.tasks.filter(t => t.date === mobileDayDate && !isWhiteboardTask(t));
+  let mMins = 0;
+  for (const t of mdt) {
+    if (!t.startTime || !t.endTime) continue;
+    const d = parseTime(t.endTime) - parseTime(t.startTime);
+    if (d > 0) mMins += d;
+  }
+  const mTot = mMins > 0 ? fmtDur(mMins) : (mdt.length ? mdt.length + ' tasks' : '');
   html += `<div class="${headerCls.join(' ')}" data-date="${mobileDayDate}">
     <span class="day-name">${getDayName(activeDay, false)}</span>
     <span class="day-number">${activeDay.getDate()}</span>
+    ${mTot ? `<span class="day-total">${mTot}</span>` : ''}
   </div>`;
 
   // Time slots
@@ -492,11 +573,337 @@ function renderMobileDayBar(weekStart, todayStr) {
 
 const MONTH_MISSIONS_KEY = 'haven-month-missions';
 
+function renderWeekExtras(days) {
+  try { renderUnscheduledTray(); } catch (e) {}
+  try { renderWeekProgress(days); } catch (e) {}
+  try { updateWeekToolbar(); } catch (e) {}
+  try { bindSlotCreate(); } catch (e) {}
+  try { bindWeekKeys(); } catch (e) {}
+  if (!weekPrefs.didAutoScroll) {
+    setTimeout(scrollToNow, 120);
+  }
+}
+
+function renderUnscheduledTray() {
+  const tray = document.getElementById('unschedTray');
+  const wrap = document.getElementById('unschedChips');
+  const count = document.getElementById('unschedCount');
+  if (!tray || !wrap) return;
+  const all = state.tasks.filter(t => isWhiteboardTask(t));
+  const list = all.slice(0, 20);
+  if (!list.length) { tray.classList.remove('has-items'); wrap.innerHTML = ''; return; }
+  tray.classList.add('has-items');
+  if (count) count.textContent = all.length;
+  wrap.innerHTML = '';
+  for (const t of list) {
+    const chip = document.createElement('div');
+    chip.className = 'unsched-chip';
+    chip.draggable = true;
+    chip.dataset.taskId = t.id;
+    const label = document.createElement('span');
+    label.textContent = t.title || 'Untitled';
+    const btn = document.createElement('button');
+    btn.textContent = 'Schedule';
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const now = new Date();
+      openNewTaskModal(formatDate(now), roundToNearest(now.getHours() * 60 + now.getMinutes(), SNAP_MINUTES), { title: t.title, tag: t.tag });
+    });
+    chip.appendChild(label);
+    chip.appendChild(btn);
+    chip.addEventListener('dragstart', (ev) => {
+      ev.stopPropagation();
+      try { ev.dataTransfer.setData('text/plain', t.id); } catch (err) {}
+      startDrag(ev, null, { unschedTask: t, chipEl: chip });
+    });
+    wrap.appendChild(chip);
+  }
+}
+
+function renderWeekProgress(days) {
+  const bar = document.getElementById('weekProgress');
+  if (!bar) return;
+  if (currentView !== 'week') { bar.classList.remove('show'); return; }
+  const set = new Set(days.map(formatDate));
+  const wt = state.tasks.filter(t => set.has(t.date) && !isWhiteboardTask(t));
+  const done = wt.filter(t => t.completed).length;
+  let mins = 0, doneMins = 0;
+  for (const t of wt) {
+    if (!t.startTime || !t.endTime) continue;
+    const d = parseTime(t.endTime) - parseTime(t.startTime);
+    if (d > 0) { mins += d; if (t.completed) doneMins += d; }
+  }
+  bar.classList.add('show');
+  const pct = wt.length ? Math.round(done / wt.length * 100) : 0;
+  const fill = document.getElementById('wpFill');
+  const txt = document.getElementById('wpText');
+  const tm = document.getElementById('wpTime');
+  if (fill) fill.style.width = pct + '%';
+  if (txt) txt.textContent = done + '/' + wt.length + ' done (' + pct + '%)';
+  if (tm) tm.textContent = mins ? fmtDur(doneMins) + ' / ' + fmtDur(mins) : '';
+}
+
+function updateWeekToolbar() {
+  const wh = document.getElementById('workHoursBtn');
+  const hd = document.getElementById('hideDoneBtn');
+  if (wh) wh.classList.toggle('active', !!weekPrefs.workHours);
+  if (hd) hd.classList.toggle('active', !!weekPrefs.hideDone);
+  updateBulkBar();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  if (!bar) return;
+  const n = weekSelected.size;
+  bar.classList.toggle('show', n > 0);
+  const c = document.getElementById('bulkCount');
+  if (c) c.textContent = n + ' selected';
+  document.querySelectorAll('.calendar-task.task-selected').forEach(el => {
+    if (!weekSelected.has(el.dataset.taskId)) el.classList.remove('task-selected');
+  });
+  weekSelected.forEach(id => {
+    const el = document.querySelector('.calendar-task[data-task-id="' + id + '"]');
+    if (el) el.classList.add('task-selected');
+  });
+}
+
+function clearWeekSelection() {
+  weekSelected.clear();
+  updateBulkBar();
+}
+
+function toggleWeekSelect(id, el) {
+  if (weekSelected.has(id)) weekSelected.delete(id);
+  else weekSelected.add(id);
+  if (el) el.classList.toggle('task-selected', weekSelected.has(id));
+  updateBulkBar();
+}
+
+function scrollToNow() {
+  const cont = dom.container;
+  if (!cont || !dom.grid) return;
+  weekPrefs.didAutoScroll = true;
+  const line = dom.grid.querySelector('.current-time-line');
+  if (line) {
+    cont.scrollTop = Math.max(0, line.offsetTop - cont.clientHeight / 3);
+    return;
+  }
+  const now = new Date();
+  const mins = now.getHours() * 60 + now.getMinutes();
+  const h = weekPrefs.workHours ? Math.max(7, Math.min(21, Math.floor(mins / 60))) : Math.floor(mins / 60);
+  const slot = dom.grid.querySelector('.day-column[data-hour="' + h + '"]');
+  if (slot) cont.scrollTop = Math.max(0, slot.offsetTop - cont.clientHeight / 3);
+}
+
+function showTaskCtx(x, y, taskId) {
+  hideTaskCtx();
+  const menu = document.createElement('div');
+  menu.id = 'taskCtxMenu';
+  menu.innerHTML = '<button data-a="edit">Edit</button><button data-a="dup">Duplicate</button><button data-a="done">Toggle done</button><button data-a="today">Move to today</button><button data-a="tomorrow">Move to tomorrow</button><button data-a="del" class="danger">Delete</button>';
+  document.body.appendChild(menu);
+  menu.style.left = Math.min(window.innerWidth - 180, x) + 'px';
+  menu.style.top = Math.min(window.innerHeight - 220, y) + 'px';
+  menu.classList.add('show');
+  menu.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const t = getTask(taskId);
+    hideTaskCtx();
+    if (!t) return;
+    const a = b.dataset.a;
+    if (a === 'edit') openTaskModal(taskId);
+    else if (a === 'dup') duplicateTask(taskId);
+    else if (a === 'done') updateTask(taskId, { completed: !t.completed });
+    else if (a === 'today') updateTask(taskId, { date: formatDate(new Date()) });
+    else if (a === 'tomorrow') { const n = new Date(); n.setDate(n.getDate() + 1); updateTask(taskId, { date: formatDate(n) }); }
+    else if (a === 'del') deleteTask(taskId);
+  });
+  setTimeout(() => document.addEventListener('click', hideTaskCtx, { once: true }), 0);
+}
+
+function hideTaskCtx() {
+  document.getElementById('taskCtxMenu')?.remove();
+}
+
+function duplicateTask(taskId) {
+  const t = getTask(taskId);
+  if (!t) return;
+  const ids = weekSelected.size > 1 && weekSelected.has(taskId) ? Array.from(weekSelected) : [taskId];
+  pushUndo();
+  for (const id of ids) {
+    const s = getTask(id);
+    if (!s) continue;
+    const mins = s.startTime && s.endTime ? parseTime(s.endTime) - parseTime(s.startTime) : 60;
+    const dur = mins > 0 ? mins : 60;
+    const base = parseTime(s.endTime || s.startTime) || 0;
+    const endM = Math.min(base + dur, 24 * 60);
+    const startM = s.endTime && base + dur <= 24 * 60 ? base : Math.max(0, endM - dur);
+    const copy = {
+      id: uid(), title: s.title + ' (copy)', tag: s.tag, subcategory: s.subcategory || '',
+      date: s.date, startTime: minutesToTime(startM), endTime: minutesToTime(endM),
+      notes: s.notes || '', priority: s.priority || 0, completed: false
+    };
+    state.tasks.push(copy);
+    lastDroppedTaskId = copy.id;
+  }
+  saveState();
+  renderCalendar();
+}
+
+function cancelGridDrag() {
+  if (!gridDrag || !gridDrag.active) return;
+  gridDrag.dragGhost?.remove();
+  gridDrag.dropPreview?.remove();
+  gridDrag.timeTooltip?.remove();
+  gridDrag.deltaHighlight?.remove();
+  gridDrag.active = false;
+  gridDrag = null;
+}
+
+function moveFocused(mins) {
+  if (!weekFocusedId) return;
+  const t = getTask(weekFocusedId);
+  if (!t || !t.startTime || !t.endTime) return;
+  const a = parseTime(t.startTime) + mins, b = parseTime(t.endTime) + mins;
+  if (a < 0 || b > 24 * 60) return;
+  updateTask(weekFocusedId, { startTime: minutesToTime(a), endTime: minutesToTime(b) });
+}
+
+function bindSlotCreate() {
+  dom.grid.querySelectorAll('[data-slot-add]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const parts = (btn.dataset.slotAdd || '').split('|');
+      openNewTaskModal(parts[0], roundToNearest(Number(parts[1] || 0) + 15, SNAP_MINUTES));
+    });
+  });
+  if (dom.grid.dataset.createBound) return;
+  dom.grid.dataset.createBound = '1';
+  let cDrag = null;
+  const posToMins = (col, clientY) => {
+    const r = col.getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (clientY - r.top) / Math.max(1, r.height)));
+    return Number(col.dataset.time || 0) + frac * 60;
+  };
+  dom.grid.addEventListener('mousedown', (e) => {
+    if (currentView !== 'week' || isMobileLayout()) return;
+    if (e.button !== 0) return;
+    const col = e.target.closest('.day-column.hour-slot');
+    if (!col || e.target.closest('.calendar-task') || e.target.closest('.slot-add')) return;
+    const startM = roundToNearest(posToMins(col, e.clientY), SNAP_MINUTES);
+    cDrag = { col, date: col.dataset.date, startM, curM: startM, el: null, moved: false };
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!cDrag) return;
+    cDrag.moved = true;
+    const cols = Array.from(dom.grid.querySelectorAll('.day-column.hour-slot[data-date="' + cDrag.date + '"]'));
+    let best = cDrag.col, bestDist = Infinity;
+    for (const c of cols) {
+      const r = c.getBoundingClientRect();
+      const d = e.clientY < r.top ? r.top - e.clientY : (e.clientY > r.bottom ? e.clientY - r.bottom : 0);
+      if (d < bestDist) { bestDist = d; best = c; }
+    }
+    cDrag.col = best;
+    cDrag.curM = roundToNearest(posToMins(best, e.clientY), SNAP_MINUTES);
+    const a = Math.min(cDrag.startM, cDrag.curM), b = Math.max(cDrag.startM, cDrag.curM) + SNAP_MINUTES;
+    if (!cDrag.el) {
+      cDrag.el = document.createElement('div');
+      cDrag.el.className = 'create-drag-preview';
+      cDrag.el.innerHTML = '<span></span>';
+    }
+    if (cDrag.el.parentNode !== best) best.appendChild(cDrag.el);
+    const px = actualHourHeight();
+    cDrag.el.style.top = ((a - Number(best.dataset.time || 0)) / 60 * px) + 'px';
+    cDrag.el.style.height = Math.max(18, (b - a) / 60 * px) + 'px';
+    cDrag.el.querySelector('span').textContent = formatCompactTime(minutesToTime(a), minutesToTime(b));
+    best.classList.add('slot-hover');
+  });
+  document.addEventListener('mouseup', (e) => {
+    if (!cDrag) return;
+    const d = cDrag;
+    cDrag = null;
+    document.querySelectorAll('.hour-slot.slot-hover').forEach(s => s.classList.remove('slot-hover'));
+    if (d.el) d.el.remove();
+    if (e.target.closest && e.target.closest('.slot-add')) return;
+    const a = Math.min(d.startM, d.curM), b = Math.max(d.startM, d.curM) + SNAP_MINUTES;
+    if (!d.moved || b - a <= SNAP_MINUTES) { openNewTaskModal(d.date, a); return; }
+    openNewTaskModal(d.date, a, { start: minutesToTime(a), end: minutesToTime(b) });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && gridDrag && gridDrag.active) { try { cancelGridDrag(); } catch (err) {} }
+    if (e.key === 'Escape' && cDrag) { if (cDrag.el) cDrag.el.remove(); cDrag = null; }
+    if (e.key === 'Escape' && weekSelected.size) clearWeekSelection();
+    hideTaskCtx();
+  });
+}
+
+function bindWeekKeys() {
+  if (document.body.dataset.weekKeysBound) return;
+  document.body.dataset.weekKeysBound = '1';
+  document.addEventListener('keydown', (e) => {
+    const tag = (e.target.tagName || '').toUpperCase();
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
+    if (currentView !== 'week' || state.taskModalOpen) return;
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd' && weekFocusedId) {
+      e.preventDefault();
+      duplicateTask(weekFocusedId);
+      return;
+    }
+    if (!weekFocusedId) return;
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveFocused((e.key === 'ArrowUp' ? -1 : 1) * (e.shiftKey ? 60 : 15));
+    } else if (e.key === 'Enter' || e.key.toLowerCase() === 'e') {
+      e.preventDefault();
+      openTaskModal(weekFocusedId);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      deleteTask(weekFocusedId);
+      weekFocusedId = null;
+    }
+  });
+  document.getElementById('nowBtn')?.addEventListener('click', scrollToNow);
+  document.getElementById('workHoursBtn')?.addEventListener('click', () => {
+    weekPrefs.workHours = !weekPrefs.workHours;
+    saveWeekPrefs();
+    renderCalendar();
+  });
+  document.getElementById('hideDoneBtn')?.addEventListener('click', () => {
+    weekPrefs.hideDone = !weekPrefs.hideDone;
+    saveWeekPrefs();
+    renderCalendar();
+  });
+  document.getElementById('bulkDone')?.addEventListener('click', () => {
+    pushUndo();
+    weekSelected.forEach(id => { const t = getTask(id); if (t) t.completed = true; });
+    saveState(); renderCalendar();
+  });
+  document.getElementById('bulkDelete')?.addEventListener('click', () => {
+    pushUndo();
+    state.tasks = state.tasks.filter(t => !weekSelected.has(t.id));
+    weekSelected.clear();
+    saveState(); renderCalendar();
+  });
+  document.getElementById('bulkDup')?.addEventListener('click', () => {
+    const first = Array.from(weekSelected)[0];
+    if (first) duplicateTask(first);
+    weekSelected.clear();
+    updateBulkBar();
+  });
+  document.getElementById('bulkClear')?.addEventListener('click', clearWeekSelection);
+}
+
 function loadMonthMissions() {
   try {
     const raw = localStorage.getItem(MONTH_MISSIONS_KEY);
     const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    if (!parsed || typeof parsed !== 'object') return {};
+    for (const k of Object.keys(parsed)) {
+      if (typeof parsed[k] === 'string') parsed[k] = [parsed[k]];
+      if (!Array.isArray(parsed[k])) delete parsed[k];
+    }
+    return parsed;
   } catch (e) { return {}; }
 }
 
@@ -504,23 +911,49 @@ function saveMonthMissions(missions) {
   try { localStorage.setItem(MONTH_MISSIONS_KEY, JSON.stringify(missions)); } catch (e) { /* ignore */ }
 }
 
-function getDayMission(ds) {
-  const missions = loadMonthMissions();
-  const v = missions[ds];
-  return typeof v === 'string' ? v : '';
+function getDayMissions(ds) {
+  const v = loadMonthMissions()[ds];
+  return Array.isArray(v) ? v : [];
 }
 
-function setDayMission(ds, text) {
-  const missions = loadMonthMissions();
+function addDayMission(ds, text) {
   const clean = (text || '').trim().slice(0, 120);
-  if (!clean) delete missions[ds];
-  else missions[ds] = clean;
+  if (!clean) return;
+  const missions = loadMonthMissions();
+  if (!Array.isArray(missions[ds])) missions[ds] = [];
+  missions[ds].push(clean);
   saveMonthMissions(missions);
 }
 
-function deleteDayMission(ds) {
+function updateDayMission(ds, idx, text) {
+  const clean = (text || '').trim().slice(0, 120);
   const missions = loadMonthMissions();
-  delete missions[ds];
+  if (!Array.isArray(missions[ds])) return;
+  if (clean) missions[ds][idx] = clean;
+  else missions[ds].splice(idx, 1);
+  if (!missions[ds].length) delete missions[ds];
+  saveMonthMissions(missions);
+}
+
+function deleteDayMission(ds, idx) {
+  const missions = loadMonthMissions();
+  if (!Array.isArray(missions[ds])) return;
+  missions[ds].splice(idx, 1);
+  if (!missions[ds].length) delete missions[ds];
+  saveMonthMissions(missions);
+}
+
+function moveMonthMission(srcDs, srcIdx, dstDs, dstIdx) {
+  if (srcDs === dstDs && srcIdx === dstIdx) return;
+  const missions = loadMonthMissions();
+  const src = missions[srcDs];
+  if (!Array.isArray(src) || !src[srcIdx]) return;
+  const [item] = src.splice(srcIdx, 1);
+  if (!src.length) delete missions[srcDs];
+  if (!Array.isArray(missions[dstDs])) missions[dstDs] = [];
+  const insertAt = Math.max(0, Math.min(dstIdx == null ? missions[dstDs].length : dstIdx, missions[dstDs].length));
+  missions[dstDs].splice(insertAt, 0, item);
+  if (!missions[dstDs].length) delete missions[dstDs];
   saveMonthMissions(missions);
 }
 
@@ -532,34 +965,35 @@ function closeMissionEditor() {
   dom.grid?.querySelectorAll('.month-mission-wrap.editing').forEach(el => el.classList.remove('editing'));
 }
 
-function openMissionEditor(cell, ds, existing) {
+function openMissionEditor(cell, ds, existing, idx) {
   if (!cell) return;
   closeMissionEditor();
   const wrap = cell.querySelector('.month-mission-wrap');
   if (!wrap) return;
   wrap.classList.add('editing');
+  const isEdit = typeof idx === 'number' && idx >= 0;
   const editor = document.createElement('div');
   editor.className = 'month-mission-editor';
   editor.innerHTML = `<textarea maxlength="120" placeholder="Today\u2019s mission\u2026">${escapeHtml(existing || '')}</textarea>
     <div class="month-mission-editor-row">
       <button class="month-mission-save">Save</button>
       <button class="month-mission-cancel">Cancel</button>
-      ${existing ? '<button class="month-mission-clear">Delete</button>' : ''}
+      ${isEdit ? '<button class="month-mission-clear">Delete</button>' : ''}
     </div>`;
-  wrap.innerHTML = '';
   wrap.appendChild(editor);
   const ta = editor.querySelector('textarea');
   ta.focus();
   ta.select();
   const save = () => {
-    setDayMission(ds, ta.value);
+    if (isEdit) updateDayMission(ds, idx, ta.value);
+    else addDayMission(ds, ta.value);
     renderMonthView();
   };
   editor.querySelector('.month-mission-save').addEventListener('click', (e) => { e.stopPropagation(); save(); });
   editor.querySelector('.month-mission-cancel').addEventListener('click', (e) => { e.stopPropagation(); renderMonthView(); });
   editor.querySelector('.month-mission-clear')?.addEventListener('click', (e) => {
     e.stopPropagation();
-    deleteDayMission(ds);
+    deleteDayMission(ds, idx);
     renderMonthView();
   });
   ta.addEventListener('keydown', (e) => {
@@ -590,9 +1024,9 @@ function renderMonthView() {
   if (dom.weekLabelHero) dom.weekLabelHero.textContent = title;
 
   let visibleCount = 0;
-  for (const [ds] of Object.entries(missions)) {
+  for (const [ds, list] of Object.entries(missions)) {
     const d = new Date(ds + 'T12:00:00');
-    if (d.getFullYear() === year && d.getMonth() === month && missions[ds]) visibleCount++;
+    if (d.getFullYear() === year && d.getMonth() === month && Array.isArray(list)) visibleCount += list.length;
   }
   if (dom.taskCount) dom.taskCount.textContent = visibleCount;
 
@@ -624,10 +1058,11 @@ function renderMonthView() {
     if (adjacent) cls.push('month-adjacent');
     else if (isWeekend(d)) cls.push('month-weekend');
 
-    const mission = missions[ds] || '';
-    const missionHtml = mission
-      ? `<div class="month-mission" draggable="true" data-date="${ds}" title="${escapeHtml(mission)}"><span class="month-mission-text">${escapeHtml(mission)}</span><button class="month-mission-del" title="Delete">\u00d7</button></div>`
-      : '';
+    const dayMissions = getDayMissions(ds);
+    const compact = dayMissions.length > 3;
+    const missionHtml = dayMissions
+      .map((m, i) => `<div class="month-mission${compact ? ' month-mission-compact' : ''}" draggable="true" data-date="${ds}" data-idx="${i}" title="${escapeHtml(m)}"><span class="month-mission-text">${escapeHtml(m)}</span><button class="month-mission-del" title="Delete">\u00d7</button></div>`)
+      .join('');
     html += `<div class="${cls.join(' ')}" data-date="${ds}">
       <div class="month-top"><span class="month-day-num">${dayNum}</span><button class="month-add-btn" title="Add mission">+</button></div>
       <div class="month-mission-wrap">${missionHtml}</div>
@@ -638,19 +1073,15 @@ function renderMonthView() {
 
   dom.grid.querySelectorAll('.mission-cell').forEach(cell => {
     const ds = cell.dataset.date;
-    const wrap = cell.querySelector('.month-mission-wrap');
     const addBtn = cell.querySelector('.month-add-btn');
-    const chip = cell.querySelector('.month-mission');
 
-    const requestEdit = () => {
-      if (cell.querySelector('.month-mission-editor')) return;
-      openMissionEditor(cell, ds, missions[ds] || '');
-    };
+    addBtn?.addEventListener('click', (e) => { e.stopPropagation(); openMissionEditor(cell, ds, ''); });
+
     cell.addEventListener('click', (e) => {
-      if (e.target.closest('.month-mission-editor') || e.target.closest('.month-mission-del') || e.target.closest('.month-add-btn')) return;
+      if (e.target.closest('.month-mission-editor') || e.target.closest('.month-mission-del') || e.target.closest('.month-add-btn') || e.target.closest('.month-mission')) return;
       if (_missionDblFired) return;
       clearTimeout(_missionClickTimer);
-      _missionClickTimer = setTimeout(() => { if (!_missionDblFired) requestEdit(); }, 240);
+      _missionClickTimer = setTimeout(() => { if (!_missionDblFired) openMissionEditor(cell, ds, ''); }, 240);
     });
     cell.addEventListener('dblclick', () => {
       _missionDblFired = true;
@@ -661,28 +1092,33 @@ function renderMonthView() {
       switchView('week');
       setTimeout(() => { _missionDblFired = false; }, 400);
     });
-    addBtn?.addEventListener('click', (e) => { e.stopPropagation(); openMissionEditor(cell, ds, missions[ds] || ''); });
 
-    cell.querySelector('.month-mission-del')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteDayMission(ds);
-      renderMonthView();
-    });
+    cell.querySelectorAll('.month-mission').forEach(chip => {
+      const idx = parseInt(chip.dataset.idx, 10);
 
-    if (chip) {
+      chip.querySelector('.month-mission-del')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteDayMission(ds, idx);
+        renderMonthView();
+      });
+
       chip.addEventListener('click', (e) => {
         if (e.target.closest('.month-mission-del')) return;
         e.stopPropagation();
-        openMissionEditor(cell, ds, missions[ds] || '');
+        openMissionEditor(cell, ds, getDayMissions(ds)[idx] || '', idx);
       });
+
       chip.addEventListener('dragstart', (e) => {
         closeMissionEditor();
-        e.dataTransfer.setData('text/plain', ds);
+        e.dataTransfer.setData('text/plain', `${ds}|${idx}`);
         e.dataTransfer.effectAllowed = 'move';
-        cell.classList.add('mission-drag-src');
+        chip.classList.add('mission-drag-src');
       });
-      chip.addEventListener('dragend', () => cell.classList.remove('mission-drag-src'));
-    }
+      chip.addEventListener('dragend', () => {
+        chip.classList.remove('mission-drag-src');
+        dom.grid?.querySelectorAll('.mission-drop-hl').forEach(el => el.classList.remove('mission-drop-hl'));
+      });
+    });
 
     cell.addEventListener('dragover', (e) => {
       if (!e.dataTransfer || ![...e.dataTransfer.types].includes('text/plain')) return;
@@ -690,19 +1126,23 @@ function renderMonthView() {
       e.dataTransfer.dropEffect = 'move';
       cell.classList.add('mission-drop-hl');
     });
-    cell.addEventListener('dragleave', () => cell.classList.remove('mission-drop-hl'));
+    cell.addEventListener('dragleave', (e) => {
+      if (!cell.contains(e.relatedTarget)) cell.classList.remove('mission-drop-hl');
+    });
     cell.addEventListener('drop', (e) => {
       e.preventDefault();
       cell.classList.remove('mission-drop-hl');
-      const srcDs = e.dataTransfer.getData('text/plain');
-      if (!srcDs || srcDs === ds) return;
-      const all = loadMonthMissions();
-      const srcText = all[srcDs] || '';
-      const dstText = all[ds] || '';
-      if (!srcText) return;
-      if (dstText) { all[srcDs] = dstText; all[ds] = srcText; }
-      else { all[ds] = srcText; delete all[srcDs]; }
-      saveMonthMissions(all);
+      const raw = e.dataTransfer.getData('text/plain');
+      if (!raw || !raw.includes('|')) return;
+      const [srcDs, idxStr] = raw.split('|');
+      const srcIdx = parseInt(idxStr, 10);
+      if (!srcDs || isNaN(srcIdx)) return;
+      const dayList = getDayMissions(ds);
+      const overChip = e.target.closest('.month-mission');
+      const targetIdx = overChip && overChip.dataset.date === ds
+        ? parseInt(overChip.dataset.idx, 10)
+        : dayList.length;
+      moveMonthMission(srcDs, srcIdx, ds, targetIdx);
       renderMonthView();
     });
   });
@@ -849,9 +1289,24 @@ function renderTasks() {
   const ws = state.currentWeekStart;
   const we = addDays(ws, 7);
   const expanded = expandRecurringTasks(ws, we);
+  let weekNextUpId = null;
+  try {
+    const now = new Date();
+    const ts = formatDate(now);
+    const nm = now.getHours() * 60 + now.getMinutes();
+    let best = Infinity;
+    for (const t of expanded) {
+      if (t.completed || isWhiteboardTask(t) || !t.startTime || !t.date) continue;
+      if (t.date < ts) continue;
+      const sm = parseTime(t.startTime);
+      const score = t.date === ts ? (sm >= nm ? sm - nm : Infinity) : (new Date(t.date + 'T12:00:00') - new Date(ts + 'T12:00:00')) / 60000 + sm;
+      if (score < best) { best = score; weekNextUpId = t.id; }
+    }
+  } catch (e) {}
 
   const filtered = expanded.filter(t => {
     if (isWhiteboardTask(t)) return false;
+    if (weekPrefs.hideDone && t.completed) return false;
     if (!state.showCompleted && t.completed) return false;
     if (state.selectedTag && t.tag !== state.selectedTag) return false;
     return true;
@@ -919,7 +1374,9 @@ function renderTasks() {
       if (isFirstTaskRender) cls.push('task-intro');
       if (task.id === lastDroppedTaskId) cls.push('task-settle');
       if (task.completed) cls.push('completed');
-      if (dur <= 60) cls.push('task-sm');
+      if (dur <= 30) cls.push('task-xs');
+      else if (dur <= 60) cls.push('task-sm');
+      if (weekSelected.has(task.id)) cls.push('task-selected');
       if (task.priority) cls.push(`priority-${task.priority}`);
 
       const el = document.createElement('div');
@@ -959,10 +1416,27 @@ function renderTasks() {
         <div class="task-resize-handle" data-task-id="${task.id}" title="Drag to resize"></div>`;
 
       const resolvedId = resolveTaskId(task.id);
+      const tStart = task.startTime ? parseTime(task.startTime) : null;
+      const tEnd = task.endTime ? parseTime(task.endTime) : null;
+      const todayStr = formatDate(new Date());
+      const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+      if (task.date === todayStr && tStart != null && tEnd != null && !task.completed) {
+        if (nowMins >= tStart && nowMins < tEnd) el.classList.add('task-now');
+        if (tEnd <= nowMins) el.classList.add('task-past');
+      } else if (task.date < todayStr && !task.completed) {
+        el.classList.add('task-past');
+      }
+      if (task.id === weekNextUpId) el.classList.add('task-next');
       el.addEventListener('mousedown', (e) => {
         if (e.target.closest('[data-toggle-complete]')) return;
         if (e.target.closest('.task-resize-handle')) return;
         if (e.target.closest('.task-title')) return;
+        weekFocusedId = resolvedId;
+        if (e.shiftKey) {
+          e.stopPropagation();
+          toggleWeekSelect(task.id, el);
+          return;
+        }
         e.stopPropagation();
         startDrag(e, el);
       });
@@ -970,12 +1444,19 @@ function renderTasks() {
         if (e.target.closest('[data-toggle-complete]')) return;
         if (e.target.closest('.task-resize-handle')) return;
         if (e.target.closest('.task-title')) return;
+        weekFocusedId = resolvedId;
         e.stopPropagation();
         startDrag(e, el);
       }, { passive: false });
       el.addEventListener('dblclick', (e) => {
         if (e.target.closest('.task-title')) return;
         e.stopPropagation(); openTaskModal(resolvedId);
+      });
+      el.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        weekFocusedId = resolvedId;
+        showTaskCtx(e.clientX, e.clientY, task.id);
       });
       el.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1089,32 +1570,47 @@ const QUICK_ADD_TITLES = {
 // ─── UNIFIED DRAG AND DROP ────────────────────────────────
 // One handler for all: task-reschedule, whiteboard→grid, quick-add→grid
 var _lastTouchDragTime = 0;
-function startDrag(e, source) {
+function startDrag(e, source, preset) {
   if (e.button !== 0 && !isTouchEvent(e)) return;
   // Prevent synthetic mousedown from touch event (double-dispatch protection)
   if (!isTouchEvent(e) && Date.now() - _lastTouchDragTime < 300) return;
   if (isTouchEvent(e)) { _lastTouchDragTime = Date.now(); e.preventDefault(); }
 
-  const rect = source.getBoundingClientRect();
-  const ghost = source.cloneNode(true);
-  ghost.classList.add('grid-drag-ghost');
-  ghost.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;`;
+  const presetTask = preset && preset.unschedTask ? preset.unschedTask : null;
+  const rect = presetTask && preset.chipEl ? preset.chipEl.getBoundingClientRect() : source.getBoundingClientRect();
+  const ghost = document.createElement('div');
+  ghost.className = 'grid-drag-ghost calendar-task';
+  ghost.textContent = presetTask ? (presetTask.title || 'New Task') : (source.textContent || '').slice(0, 40);
+  ghost.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${Math.max(rect.width, 120)}px;position:fixed;`;
   document.body.appendChild(ghost);
 
   const dragPos = getEventPos(e);
   gridDrag = {
     type: 'task',
-    source,
+    source: source || (preset && preset.chipEl) || null,
     ghost,
     offX: dragPos.x - rect.left,
     offY: dragPos.y - rect.top,
     dropDate: null,
     dropTime: null,
     moved: false,
+    active: true,
   };
 
+  // If dragging an unscheduled chip, convert to a real task on drop
+  if (presetTask) {
+    gridDrag.type = 'unsched';
+    gridDrag.taskId = presetTask.id;
+    const mins = presetTask.startTime && presetTask.endTime ? parseTime(presetTask.endTime) - parseTime(presetTask.startTime) : 60;
+    gridDrag.duration = mins > 0 ? mins : 60;
+    gridDrag.dragStartM = 0;
+    gridDrag.dragEndM = gridDrag.duration;
+    gridDrag.title = presetTask.title;
+    gridDrag.tag = presetTask.tag;
+  }
+
   // If dragging an existing task, store original values
-  const taskEl = source.closest('.calendar-task');
+  const taskEl = source ? source.closest('.calendar-task') : null;
   if (taskEl && taskEl.dataset.taskId) {
     const task = getTask(taskEl.dataset.taskId);
     if (task) {
@@ -1128,11 +1624,11 @@ function startDrag(e, source) {
   }
 
   // If dragging a subcategory pill, use its tag + subcategory name as title
-  const scPill = source.closest('.sch-sc-pill, .sch-sc-bar-pill');
+  const scPill = source ? source.closest('.sch-sc-pill, .sch-sc-bar-pill') : null;
   if (scPill && scPill.dataset.tag) {
     gridDrag.type = 'quickadd';
     gridDrag.tag = scPill.dataset.tag;
-    gridDrag.duration = 60;
+    gridDrag.duration = getTagDur(scPill.dataset.tag);
     gridDrag.title = scPill.dataset.scName || '';
     ghost.innerHTML = gridDrag.title || QUICK_ADD_TITLES[scPill.dataset.tag] || 'New Task';
   }
@@ -1149,8 +1645,7 @@ function startDrag(e, source) {
 
   if (ghostTag) {
     const meta = TAG_COLORS[ghostTag] || TAG_COLORS.meeting;
-    // Quick-add ghost: white card with plain 'New Task'
-    if (gridDrag.type === 'quickadd') {
+    if (gridDrag.type === 'quickadd' || gridDrag.type === 'unsched') {
       ghost.style.background = '#fff';
       ghost.style.color = '#333';
       ghost.style.border = '2px solid var(--border-color)';
@@ -1167,7 +1662,7 @@ function startDrag(e, source) {
   }
 
   // Add visual drag feedback to source
-  source.classList.add('dragging');
+  if (source) source.classList.add('dragging');
 
   document.body.style.cursor = 'grabbing';
   document.addEventListener('mousemove', onDragMove);
@@ -1258,6 +1753,16 @@ function onDragMove(e) {
   ghost.style.left = `${pos.x - offX}px`;
   ghost.style.top = `${pos.y - offY}px`;
 
+  // Auto-scroll grid near edges
+  try {
+    const cont = dom.container;
+    if (cont) {
+      const r = cont.getBoundingClientRect();
+      if (pos.y < r.top + 60) cont.scrollTop -= 8;
+      else if (pos.y > r.bottom - 60) cont.scrollTop += 8;
+    }
+  } catch (err) {}
+
   // Find which date column the cursor is over by checking X position
   const dayCols = dom.grid.querySelectorAll('.day-column');
   let matchedDate = null;
@@ -1283,11 +1788,14 @@ function onDragMove(e) {
     const colRect = refCol.getBoundingClientRect();
     const yOffset = getEventPos(e).y - colRect.top;
     const actualHourHeight = colRect.height;
-    const rawMinutes = (yOffset / actualHourHeight) * 60 + START_HOUR * 60;
-    const clamped = Math.max(START_HOUR * 60, Math.min(rawMinutes, (START_HOUR + VISIBLE_HOURS) * 60 - SNAP_MINUTES));
+    const rawMinutes = (yOffset / actualHourHeight) * 60 + Number(refCol.dataset.time || START_HOUR * 60);
+    const baseMin = Number(refCol.dataset.time || 0);
+    const clampLo = Math.max(baseMin, START_HOUR * 60);
+    const clampHi = Math.min(baseMin + 60, (START_HOUR + VISIBLE_HOURS) * 60) - SNAP_MINUTES;
+    const clamped = Math.max(clampLo, Math.min(rawMinutes, clampHi));
     const base = roundToNearest(clamped, SNAP_MINUTES);
     const mag = magneticSnap(matchedDate, base, gridDrag.taskId || null);
-    const snap = Math.max(START_HOUR * 60, Math.min(mag.mins, (START_HOUR + VISIBLE_HOURS) * 60 - SNAP_MINUTES));
+    const snap = Math.max(clampLo, Math.min(mag.mins, clampHi));
 
     gridDrag.dropDate = matchedDate;
     gridDrag.dropTime = snap;
@@ -1307,7 +1815,8 @@ function onDragMove(e) {
     showDropPreview(refCol, spanStart, spanEnd, hlColor, rangeLabel, mag.snapped);
 
     // Show live time tooltip
-    showDragTooltip(e, snap, durMins, mag.snapped);
+    const dayLabel = new Date(matchedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' });
+    showDragTooltip(e, snap, durMins, mag.snapped, dayLabel + ' ' + formatCompactTime(toTimeStr(spanStart), toTimeStr(spanEnd)));
   } else {
     gridDrag.dropDate = null;
     gridDrag.dropTime = null;
@@ -1318,7 +1827,7 @@ function onDragMove(e) {
   }
 }
 
-function showDragTooltip(e, snap, durMins, snapped) {
+function showDragTooltip(e, snap, durMins, snapped, fullLabel) {
   let tip = document.getElementById('dragTimeTooltip');
   if (!tip) {
     tip = document.createElement('div');
@@ -1326,6 +1835,8 @@ function showDragTooltip(e, snap, durMins, snapped) {
     tip.className = 'drag-time-tooltip';
     document.body.appendChild(tip);
   }
+  if (fullLabel) { tip.textContent = fullLabel; }
+  else {
   const h = Math.floor(snap / 60);
   const m = snap % 60;
   const ampm = (h % 24) < 12 ? 'AM' : 'PM';
@@ -1337,6 +1848,7 @@ function showDragTooltip(e, snap, durMins, snapped) {
     text += ` · ${dh}h${dm ? String(dm).padStart(2, '0') : ''}`;
   }
   tip.textContent = text;
+  }
   tip.classList.toggle('snapped', !!snapped);
   const tipPos = getEventPos(e);
   tip.style.left = `${tipPos.x + 16}px`;
@@ -1394,8 +1906,9 @@ function onDragEnd() {
   }
 
   const endBoundary = (START_HOUR + VISIBLE_HOURS) * 60;
-  const dur = gridDrag.type === 'quickadd' ? 60 : (gridDrag.dragEndM - gridDrag.dragStartM || gridDrag.duration || 60);
-  const dropEndMins = Math.min(gridDrag.dropTime + dur, endBoundary);
+  const rawDur = gridDrag.type === 'quickadd' || gridDrag.type === 'unsched' ? (gridDrag.duration || 60) : (gridDrag.dragEndM - gridDrag.dragStartM || gridDrag.duration || 60);
+  const dur = Math.min(rawDur, endBoundary - gridDrag.dropTime);
+  const dropEndMins = gridDrag.dropTime + dur;
 
   // Apply all state changes without triggering re-render mid-way
   const savedCallback = pageAfterTaskSave;
@@ -1425,6 +1938,14 @@ function onDragEnd() {
       tag: gridDrag.tag,
     });
     if (created && created.id) lastDroppedTaskId = created.id;
+  } else if (gridDrag.type === 'unsched') {
+    const task = getTask(gridDrag.taskId);
+    if (task) {
+      task.date = gridDrag.dropDate;
+      task.startTime = toTimeStr(gridDrag.dropTime);
+      task.endTime = toTimeStr(dropEndMins);
+      lastDroppedTaskId = task.id;
+    }
   }
 
   saveState();
@@ -1665,16 +2186,13 @@ function goNext() {
 
 // ─── AUTO-SCROLL ──────────────────────────────────────────
 function scrollToCurrentTime() {
-  // Restore saved scroll position, or scroll to current time
-  if (state.savedScrollPosition && dom.container) {
+  if (state.savedScrollPosition && dom.container && !weekPrefs.didAutoScroll) {
     dom.container.scrollTop = state.savedScrollPosition;
+    weekPrefs.didAutoScroll = true;
     return;
   }
-  const now = new Date();
-  const mins = now.getHours() * 60 + now.getMinutes();
-  const actualHH = dom.grid ? (dom.grid.querySelector('.day-column') ? dom.grid.querySelector('.day-column').getBoundingClientRect().height : HOUR_HEIGHT) : HOUR_HEIGHT;
-  const scrollTarget = ((mins - START_HOUR * 60) / 60) * actualHH - 100;
-  if (scrollTarget > 0 && dom.container) dom.container.scrollTop = scrollTarget;
+  weekPrefs.didAutoScroll = true;
+  scrollToNow();
 }
 
 // Save scroll position with debounce
@@ -1782,21 +2300,139 @@ function bindEvents() {
 
   renderSchTemplates();
 
-  // ─── Add Category bubble + swatches ──
+  const CATEGORY_PRESETS = {
+    focus: ['Deep Work', 'Planning', 'Review', 'Admin'],
+    meetings: ['Standup', '1:1', 'Client Call', 'Brainstorm', 'Review'],
+    fitness: ['Warmup', 'Workout', 'Cardio', 'Stretching', 'Recovery'],
+    study: ['Reading', 'Practice', 'Revision', 'Notes', 'Exam Prep'],
+    creative: ['Brainstorm', 'Draft', 'Design', 'Edit', 'Publish'],
+  };
+
   let selectedCatColor = '#6366f1';
   const catAddBtn = document.getElementById('catAddBtn');
+  const catAddOverlay = document.getElementById('catAddOverlay');
   const catAddPopup = document.getElementById('catAddPopup');
   const catAddInput = document.getElementById('catAddInput');
+  const catAddSubcategories = document.getElementById('catAddSubcategories');
   const catAddColor = document.getElementById('catColorPicker');
   const catAddSave = document.getElementById('catAddSave');
   const catAddCancel = document.getElementById('catAddCancel');
+  const catAddClose = document.getElementById('catAddClose');
   const catAddSwatches = document.getElementById('catAddSwatches');
+  const catAddPresets = document.getElementById('catAddPresets');
+  const catAddStartTime = document.getElementById('catAddStartTime');
+  const catAddDuration = document.getElementById('catAddDuration');
+  const catAddDuplicate = document.getElementById('catAddDuplicate');
+  const catAddDuplicateBtn = document.getElementById('catAddDuplicateBtn');
+  const catAddError = document.getElementById('catAddError');
+  const catPreviewName = document.getElementById('catPreviewName');
+  const catPreviewTime = document.getElementById('catPreviewTime');
+  const catPreviewDuration = document.getElementById('catPreviewDuration');
+  const catPreviewSubs = document.getElementById('catPreviewSubs');
+
+  function normalizeCatStartTime(value) {
+    const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return '09:00';
+    const minutes = Number(match[1]) * 60 + Number(match[2]);
+    return minutes >= 0 && minutes < 1440 ? toTimeStr(minutes) : '09:00';
+  }
+
+  function normalizeCatDuration(value) {
+    const duration = Number(value);
+    if (!Number.isFinite(duration)) return 60;
+    return Math.min(480, Math.max(5, Math.round(duration / 5) * 5 || 60));
+  }
+
+  function readCatSubcategories() {
+    const seen = new Set();
+    return String(catAddSubcategories?.value || '')
+      .split(/\r?\n/)
+      .map(value => value.trim().slice(0, 40))
+      .filter(Boolean)
+      .filter(value => {
+        const key = value.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 20);
+  }
+
+  function updateCatPreview() {
+    const name = catAddInput?.value.trim();
+    const startTime = normalizeCatStartTime(catAddStartTime?.value);
+    const duration = normalizeCatDuration(catAddDuration?.value);
+    const subcategories = readCatSubcategories();
+    if (catPreviewName) catPreviewName.textContent = name || 'New category';
+    if (catPreviewTime) catPreviewTime.textContent = formatTimeAMPM(startTime);
+    if (catPreviewDuration) catPreviewDuration.textContent = formatDuration(duration);
+    if (catPreviewSubs) {
+      catPreviewSubs.innerHTML = subcategories.length
+        ? subcategories.map(value => `<span>${escapeHtml(value)}</span>`).join('')
+        : '<span class="cat-add-preview-empty">No subcategories yet</span>';
+    }
+  }
 
   function setCatAddColor(color) {
-    selectedCatColor = color;
-    catAddColor.value = color;
-    catAddSwatches?.querySelectorAll('.cat-add-swatch').forEach(b => b.classList.toggle('active', b.dataset.color === color));
-    catAddPopup?.style.setProperty('--accent', color);
+    selectedCatColor = /^#[0-9a-f]{6}$/i.test(color || '') ? color : '#6366f1';
+    if (catAddColor) catAddColor.value = selectedCatColor;
+    catAddSwatches?.querySelectorAll('.cat-add-swatch').forEach(button => {
+      button.classList.toggle('active', button.dataset.color === selectedCatColor);
+    });
+    catAddPopup?.style.setProperty('--accent', selectedCatColor);
+    updateCatPreview();
+  }
+
+  function populateCatDuplicateSelect() {
+    if (!catAddDuplicate) return;
+    const current = catAddDuplicate.value;
+    const tags = [...new Set(TAG_ORDER)];
+    catAddDuplicate.innerHTML = '<option value="">Choose a category...</option>' + tags.map(tag =>
+      `<option value="${escapeHtml(tag)}">${escapeHtml(TAG_LABELS[tag] || tag)}</option>`
+    ).join('');
+    catAddDuplicate.value = tags.includes(current) ? current : '';
+  }
+
+  function loadCatTemplate(tag) {
+    const category = loadCustomCategories().find(item => item.id === tag);
+    const label = category?.label || TAG_LABELS[tag] || tag;
+    const color = category?.color || getCategoryColor(tag);
+    const defaults = getCategoryDefaults(tag);
+    const subcategories = loadSubcategories()[tag] || [];
+    if (catAddInput) catAddInput.value = `${label} copy`;
+    if (catAddSubcategories) catAddSubcategories.value = subcategories.join('\n');
+    if (catAddStartTime) catAddStartTime.value = defaults.defaultStart;
+    if (catAddDuration) catAddDuration.value = defaults.duration;
+    setCatAddColor(color);
+    catAddError.textContent = '';
+    updateCatPreview();
+  }
+
+  function resetCatAddForm() {
+    if (catAddInput) catAddInput.value = '';
+    if (catAddSubcategories) catAddSubcategories.value = '';
+    if (catAddStartTime) catAddStartTime.value = '09:00';
+    if (catAddDuration) catAddDuration.value = '60';
+    if (catAddDuplicate) catAddDuplicate.value = '';
+    if (catAddError) catAddError.textContent = '';
+    setCatAddColor('#6366f1');
+  }
+
+  function closeCatAddPopup() {
+    catAddOverlay?.classList.remove('active');
+    catAddPopup?.classList.add('hidden');
+    catAddBtn?.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  function openCatAddPopup() {
+    populateCatDuplicateSelect();
+    resetCatAddForm();
+    catAddPopup?.classList.remove('hidden');
+    catAddOverlay?.classList.add('active');
+    catAddBtn?.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => catAddInput?.focus(), 60);
   }
 
   catAddSwatches?.addEventListener('click', (e) => {
@@ -1805,44 +2441,73 @@ function bindEvents() {
   });
 
   catAddColor?.addEventListener('input', () => setCatAddColor(catAddColor.value));
+  catAddInput?.addEventListener('input', updateCatPreview);
+  catAddSubcategories?.addEventListener('input', updateCatPreview);
+  catAddStartTime?.addEventListener('input', updateCatPreview);
+  catAddDuration?.addEventListener('input', updateCatPreview);
 
-  function closeCatAddPopup() {
-    catAddPopup?.classList.add('hidden');
-  }
+  catAddPresets?.addEventListener('click', (e) => {
+    const preset = e.target.closest('.cat-add-preset');
+    if (!preset || !catAddSubcategories) return;
+    catAddSubcategories.value = (CATEGORY_PRESETS[preset.dataset.preset] || []).join('\n');
+    catAddPresets.querySelectorAll('.cat-add-preset').forEach(button => button.classList.toggle('active', button === preset));
+    updateCatPreview();
+  });
+
+  catAddDuplicateBtn?.addEventListener('click', () => {
+    const sourceTag = catAddDuplicate?.value;
+    if (!sourceTag) {
+      if (catAddError) catAddError.textContent = 'Choose a category to duplicate.';
+      catAddDuplicate?.focus();
+      return;
+    }
+    loadCatTemplate(sourceTag);
+  });
 
   catAddBtn?.addEventListener('click', (e) => {
-    const rect = catAddBtn.getBoundingClientRect();
-    const pw = 224;
-    catAddPopup.style.left = Math.min(rect.left, window.innerWidth - pw - 12) + 'px';
-    catAddPopup.style.top = (rect.bottom + 8) + 'px';
-    catAddPopup.classList.toggle('hidden');
-    if (!catAddPopup.classList.contains('hidden')) {
-      catAddInput.value = '';
-      setCatAddColor('#6366f1');
-      catAddInput.focus();
-    }
+    e.stopPropagation();
+    if (catAddPopup?.classList.contains('hidden')) openCatAddPopup();
+    else closeCatAddPopup();
   });
+
+  catAddClose?.addEventListener('click', closeCatAddPopup);
+  catAddCancel?.addEventListener('click', closeCatAddPopup);
 
   catAddInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); catAddSave?.click(); }
     if (e.key === 'Escape') closeCatAddPopup();
   });
 
-  catAddSave?.addEventListener('click', () => {
-    const name = catAddInput.value.trim();
-    if (!name) return;
-    addCustomCategory(name, selectedCatColor);
-    renderSchTemplates();
-    closeCatAddPopup();
-    showToast(`Category "${name}" added`, 'success', 2000);
+  catAddPopup?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.stopPropagation(); closeCatAddPopup(); }
   });
 
-  catAddCancel?.addEventListener('click', closeCatAddPopup);
+  catAddOverlay?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { e.stopPropagation(); closeCatAddPopup(); }
+  });
 
-  document.addEventListener('click', (e) => {
-    if (!catAddPopup?.classList.contains('hidden') && !catAddPopup.contains(e.target) && e.target !== catAddBtn && !catAddBtn?.contains(e.target)) {
-      closeCatAddPopup();
+  catAddSave?.addEventListener('click', () => {
+    const name = catAddInput?.value.trim();
+    if (!name) {
+      if (catAddError) catAddError.textContent = 'Enter a category name.';
+      catAddInput?.focus();
+      return;
     }
+    const startTime = normalizeCatStartTime(catAddStartTime?.value);
+    const duration = normalizeCatDuration(catAddDuration?.value);
+    const subcategories = readCatSubcategories();
+    addCustomCategory(name, selectedCatColor, {
+      defaultStart: startTime,
+      duration,
+      subcategories,
+    });
+    renderSchTemplates();
+    closeCatAddPopup();
+    showToast(`Category "${escapeHtml(name)}" added`, 'success', 2000);
+  });
+
+  catAddOverlay?.addEventListener('click', (e) => {
+    if (e.target === catAddOverlay) closeCatAddPopup();
   });
 
   // Apply access hub customization
@@ -2125,7 +2790,9 @@ function updatePomodoroDisplay() {
     const iconEl2 = document.getElementById('pomodoroPeriodIcon');
     if (iconEl2) iconEl2.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
     playPomodoroSound();
-    if (typeof _sendNotification === 'function') {
+    if (typeof playCompletionChime === 'function') {
+      playCompletionChime('focus');
+    } else if (typeof _sendNotification === 'function') {
       _sendNotification('\uD83C\uDF89 Pomodoro Complete!', 'Time for a break!', { tag: 'pomodoro', vibratePattern: [200, 100, 200] });
     } else if ('Notification' in window && Notification.permission === 'granted' && state.notifications !== false) {
       try { new Notification('\uD83C\uDF89 Pomodoro Complete!', { body: 'Time for a break!' }); if (state.vibrate !== false && navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch(e) {}
@@ -2142,6 +2809,7 @@ function updateRingProgress(pct) {
 }
 
 function playPomodoroSound() {
+  if (typeof playChime === 'function') { playChime(); return; }
   if (state.soundEnabled === false) return;
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();

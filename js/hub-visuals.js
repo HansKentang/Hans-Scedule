@@ -33,14 +33,257 @@ let _weatherStyles = {};
 try { _weatherStyles = JSON.parse(localStorage.getItem(WEATHER_STYLES_KEY) || '{}'); } catch(e) {}
 function _getWeatherStyle(uid) { return _weatherStyles[uid] || 'compact'; }
 function _setWeatherStyle(uid, style) { _weatherStyles[uid] = style; try { localStorage.setItem(WEATHER_STYLES_KEY, JSON.stringify(_weatherStyles)); } catch(e) {} }
+
+const SLEEP_STYLES_KEY = 'haven-sleep-styles';
+const SLEEP_STYLE_LIST = ['default','detailed','minimal','timeline'];
+let _sleepStyles = {};
+try { _sleepStyles = JSON.parse(localStorage.getItem(SLEEP_STYLES_KEY) || '{}'); } catch(e) {}
+function _getSleepStyle(uid) { return _sleepStyles[uid] || 'default'; }
+function _setSleepStyle(uid, style) { _sleepStyles[uid] = style; try { localStorage.setItem(SLEEP_STYLES_KEY, JSON.stringify(_sleepStyles)); } catch(e) {} }
+
+const EXPENSE_STYLES_KEY = 'haven-expense-styles';
+const EXPENSE_STYLE_LIST = ['default','breakdown','trend'];
+let _expenseStyles = {};
+try { _expenseStyles = JSON.parse(localStorage.getItem(EXPENSE_STYLES_KEY) || '{}'); } catch(e) {}
+function _getExpenseStyle(uid) { return _expenseStyles[uid] || 'default'; }
+function _setExpenseStyle(uid, style) { _expenseStyles[uid] = style; try { localStorage.setItem(EXPENSE_STYLES_KEY, JSON.stringify(_expenseStyles)); } catch(e) {} }
+
+const HEADLINES_STYLES_KEY = 'haven-headlines-styles';
+const HEADLINES_STYLE_LIST = ['default','compact','full'];
+let _headlinesStyles = {};
+try { _headlinesStyles = JSON.parse(localStorage.getItem(HEADLINES_STYLES_KEY) || '{}'); } catch(e) {}
+function _getHeadlinesStyle(uid) { return _headlinesStyles[uid] || 'default'; }
+function _setHeadlinesStyle(uid, style) { _headlinesStyles[uid] = style; try { localStorage.setItem(HEADLINES_STYLES_KEY, JSON.stringify(_headlinesStyles)); } catch(e) {} }
+
+const CAL_STYLES_KEY = 'haven-cal-styles';
+const CAL_STYLE_LIST = ['default','compact','list'];
+let _calStyles = {};
+try { _calStyles = JSON.parse(localStorage.getItem(CAL_STYLES_KEY) || '{}'); } catch(e) {}
+function _getCalStyle(uid) { return _calStyles[uid] || 'default'; }
+function _setCalStyle(uid, style) { _calStyles[uid] = style; try { localStorage.setItem(CAL_STYLES_KEY, JSON.stringify(_calStyles)); } catch(e) {} }
+
+const TODOS_STYLES_KEY = 'haven-todos-styles';
+const TODOS_STYLE_LIST = ['default','compact','progress'];
+let _todosStyles = {};
+try { _todosStyles = JSON.parse(localStorage.getItem(TODOS_STYLES_KEY) || '{}'); } catch(e) {}
+function _getTodosStyle(uid) { return _todosStyles[uid] || 'default'; }
+function _setTodosStyle(uid, style) { _todosStyles[uid] = style; try { localStorage.setItem(TODOS_STYLES_KEY, JSON.stringify(_todosStyles)); } catch(e) {} }
+
+const HABITS_STYLES_KEY = 'haven-habits-styles';
+const HABITS_STYLE_LIST = ['default','list','minimal'];
+let _habitsStyles = {};
+try { _habitsStyles = JSON.parse(localStorage.getItem(HABITS_STYLES_KEY) || '{}'); } catch(e) {}
+function _getHabitsStyle(uid) { return _habitsStyles[uid] || 'default'; }
+function _setHabitsStyle(uid, style) { _habitsStyles[uid] = style; try { localStorage.setItem(HABITS_STYLES_KEY, JSON.stringify(_habitsStyles)); } catch(e) {} }
+
+const MOOD_STYLES_KEY = 'haven-mood-styles';
+const MOOD_STYLE_LIST = ['default','minimal','chart'];
+let _moodStyles = {};
+try { _moodStyles = JSON.parse(localStorage.getItem(MOOD_STYLES_KEY) || '{}'); } catch(e) {}
+function _getMoodStyle(uid) { return _moodStyles[uid] || 'default'; }
+function _setMoodStyle(uid, style) { _moodStyles[uid] = style; try { localStorage.setItem(MOOD_STYLES_KEY, JSON.stringify(_moodStyles)); } catch(e) {} }
+
+const WATER_STYLES_KEY = 'haven-water-styles';
+const WATER_STYLE_LIST = ['default','minimal','detailed'];
+let _waterStyles = {};
+try { _waterStyles = JSON.parse(localStorage.getItem(WATER_STYLES_KEY) || '{}'); } catch(e) {}
+function _getWaterStyle(uid) { return _waterStyles[uid] || 'default'; }
+function _setWaterStyle(uid, style) { _waterStyles[uid] = style; try { localStorage.setItem(WATER_STYLES_KEY, JSON.stringify(_waterStyles)); } catch(e) {} }
+
+const TIMER_STYLES_KEY = 'haven-timer-styles';
+const TIMER_STYLE_LIST = ['default','digital','bar'];
+let _timerStyles = {};
+try { _timerStyles = JSON.parse(localStorage.getItem(TIMER_STYLES_KEY) || '{}'); } catch(e) {}
+function _getTimerStyle(uid) { return _timerStyles[uid] || 'default'; }
+function _setTimerStyle(uid, style) { _timerStyles[uid] = style; try { localStorage.setItem(TIMER_STYLES_KEY, JSON.stringify(_timerStyles)); } catch(e) {} }
+
+const POMO_STYLES_KEY = 'haven-pomo-styles';
+const POMO_STYLE_LIST = ['default','minimal','classic'];
+let _pomoStyles = {};
+try { _pomoStyles = JSON.parse(localStorage.getItem(POMO_STYLES_KEY) || '{}'); } catch(e) {}
+function _getPomoStyle(uid) { return _pomoStyles[uid] || 'default'; }
+function _setPomoStyle(uid, style) { _pomoStyles[uid] = style; try { localStorage.setItem(POMO_STYLES_KEY, JSON.stringify(_pomoStyles)); } catch(e) {} }
+
+const NOTES_STYLES_KEY = 'haven-notes-styles';
+const NOTES_STYLE_LIST = ['default','lined','minimal'];
+let _notesStyles = {};
+try { _notesStyles = JSON.parse(localStorage.getItem(NOTES_STYLES_KEY) || '{}'); } catch(e) {}
+function _getNotesStyle(uid) { return _notesStyles[uid] || 'default'; }
+function _setNotesStyle(uid, style) { _notesStyles[uid] = style; try { localStorage.setItem(NOTES_STYLES_KEY, JSON.stringify(_notesStyles)); } catch(e) {} }
+
+const LINKS_STYLES_KEY = 'haven-links-styles';
+const LINKS_STYLE_LIST = ['default','compact','grid'];
+let _linksStyles = {};
+try { _linksStyles = JSON.parse(localStorage.getItem(LINKS_STYLES_KEY) || '{}'); } catch(e) {}
+function _getLinksStyle(uid) { return _linksStyles[uid] || 'default'; }
+function _setLinksStyle(uid, style) { _linksStyles[uid] = style; try { localStorage.setItem(LINKS_STYLES_KEY, JSON.stringify(_linksStyles)); } catch(e) {} }
+
+const QUOTE_STYLES_KEY = 'haven-quote-styles';
+const QUOTE_STYLE_LIST = ['default','boxed','minimal'];
+let _quoteStyles = {};
+try { _quoteStyles = JSON.parse(localStorage.getItem(QUOTE_STYLES_KEY) || '{}'); } catch(e) {}
+function _getQuoteStyle(uid) { return _quoteStyles[uid] || 'default'; }
+function _setQuoteStyle(uid, style) { _quoteStyles[uid] = style; try { localStorage.setItem(QUOTE_STYLES_KEY, JSON.stringify(_quoteStyles)); } catch(e) {} }
+
+const CD_STYLES_KEY = 'haven-cd-styles';
+const CD_STYLE_LIST = ['default','cards','minimal'];
+let _cdStyles = {};
+try { _cdStyles = JSON.parse(localStorage.getItem(CD_STYLES_KEY) || '{}'); } catch(e) {}
+function _getCdStyle(uid) { return _cdStyles[uid] || 'default'; }
+function _setCdStyle(uid, style) { _cdStyles[uid] = style; try { localStorage.setItem(CD_STYLES_KEY, JSON.stringify(_cdStyles)); } catch(e) {} }
+
+const PRI_STYLES_KEY = 'haven-pri-styles';
+const PRI_STYLE_LIST = ['default','compact','numbered'];
+let _priStyles = {};
+try { _priStyles = JSON.parse(localStorage.getItem(PRI_STYLES_KEY) || '{}'); } catch(e) {}
+function _getPriStyle(uid) { return _priStyles[uid] || 'default'; }
+function _setPriStyle(uid, style) { _priStyles[uid] = style; try { localStorage.setItem(PRI_STYLES_KEY, JSON.stringify(_priStyles)); } catch(e) {} }
+
+const PROG_STYLES_KEY = 'haven-prog-styles';
+const PROG_STYLE_LIST = ['default','stats','minimal'];
+let _progStyles = {};
+try { _progStyles = JSON.parse(localStorage.getItem(PROG_STYLES_KEY) || '{}'); } catch(e) {}
+function _getProgStyle(uid) { return _progStyles[uid] || 'default'; }
+function _setProgStyle(uid, style) { _progStyles[uid] = style; try { localStorage.setItem(PROG_STYLES_KEY, JSON.stringify(_progStyles)); } catch(e) {} }
+
+const GOALS_STYLES_KEY = 'haven-goals-styles';
+const GOALS_STYLE_LIST = ['default','compact','numbered'];
+let _goalsStyles = {};
+try { _goalsStyles = JSON.parse(localStorage.getItem(GOALS_STYLES_KEY) || '{}'); } catch(e) {}
+function _getGoalsStyle(uid) { return _goalsStyles[uid] || 'default'; }
+function _setGoalsStyle(uid, style) { _goalsStyles[uid] = style; try { localStorage.setItem(GOALS_STYLES_KEY, JSON.stringify(_goalsStyles)); } catch(e) {} }
+
+const IMG_STYLES_KEY = 'haven-img-styles';
+const IMG_STYLE_LIST = ['default','rounded','minimal'];
+let _imgStyles = {};
+try { _imgStyles = JSON.parse(localStorage.getItem(IMG_STYLES_KEY) || '{}'); } catch(e) {}
+function _getImgStyle(uid) { return _imgStyles[uid] || 'default'; }
+function _setImgStyle(uid, style) { _imgStyles[uid] = style; try { localStorage.setItem(IMG_STYLES_KEY, JSON.stringify(_imgStyles)); } catch(e) {} }
+
+const TEXT_STYLES_KEY = 'haven-text-styles';
+const TEXT_STYLE_LIST = ['sans','serif','mono','mono thin','cursive','rounded','georgia','arial','times','courier','verdana','consolas','fira','roboto','poppins'];
+let _textStyles = {};
+try { _textStyles = JSON.parse(localStorage.getItem(TEXT_STYLES_KEY) || '{}'); } catch(e) {}
+function _getTextStyle(uid) { return _textStyles[uid] || 'sans'; }
+function _setTextStyle(uid, style) { _textStyles[uid] = style; try { localStorage.setItem(TEXT_STYLES_KEY, JSON.stringify(_textStyles)); } catch(e) {} }
+
 const HUB_VIS_KEY = 'haven-hub-visibility';
 const HUB_CONTENT_KEY = 'haven-hub-content';
+const HUB_MODE_KEY = 'haven-hub-mode';
+const HUB_CONTENT_MOBILE_KEY = 'haven-hub-content-mobile';
+const HUB_BENTO_MOBILE_KEY = 'haven-hub-bento-mobile';
+const HUB_VIS_MOBILE_KEY = 'haven-hub-visibility-mobile';
+const HUB_LAYOUT_MOBILE_KEY = 'haven-schedule-hub-layout-mobile';
 const TIMER_STATE_KEY = 'hub-timer-state';
 const GUEST_TEMPLATE_KEY = 'haven-guest-default-template';
 
 const MAX_CANVAS_HEIGHT = 10000;
 let hubEditMode = false;
 try { hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true'; } catch (e) { /* ignore */ }
+let hubMode = 'desktop';
+function detectHubMode() {
+  return window.innerWidth < 768 ? 'mobile' : 'desktop';
+}
+function getHubMode() {
+  if (window.innerWidth >= 768) return 'desktop';
+  try {
+    var saved = localStorage.getItem(HUB_MODE_KEY);
+    if (saved === 'desktop' || saved === 'mobile') return saved;
+  } catch(e) {}
+  return detectHubMode();
+}
+function _contentKey() { return hubMode === 'mobile' ? HUB_CONTENT_MOBILE_KEY : HUB_CONTENT_KEY; }
+function _bentoKey() { return hubMode === 'mobile' ? HUB_BENTO_MOBILE_KEY : HUB_BENTO_KEY; }
+function _visKey() { return hubMode === 'mobile' ? HUB_VIS_MOBILE_KEY : HUB_VIS_KEY; }
+function _layoutKey() { return hubMode === 'mobile' ? HUB_LAYOUT_MOBILE_KEY : HUB_LAYOUT_KEY; }
+
+let _hubModeLocked = false;
+function initHubMode() {
+  if (window.innerWidth >= 768) {
+    hubMode = 'desktop';
+    _hubModeLocked = false;
+  } else {
+    var saved = null;
+    try { saved = localStorage.getItem(HUB_MODE_KEY); } catch(e) {}
+    if (saved === 'desktop' || saved === 'mobile') {
+      hubMode = saved;
+      _hubModeLocked = detectHubMode() !== saved;
+    } else {
+      hubMode = detectHubMode();
+      _hubModeLocked = false;
+    }
+  }
+  applyModeVisibility();
+  updateHubModeToggle();
+}
+function applyModeVisibility() {
+  var isMobile = hubMode === 'mobile';
+  var html = document.documentElement;
+  if (isMobile) {
+    html.classList.add('hub-mode-mobile');
+    html.classList.remove('hub-mode-desktop');
+  } else {
+    html.classList.add('hub-mode-desktop');
+    html.classList.remove('hub-mode-mobile');
+  }
+
+  var bentoWrap = document.querySelector('.hub-section-wrap[data-hub-section="bento"]');
+  var mobileDash = document.getElementById('hubMobileDash');
+  var accessHub = document.getElementById('hubAccessHub');
+  if (isMobile) {
+    if (bentoWrap) { bentoWrap.style.display = 'none'; bentoWrap.style.visibility = 'hidden'; }
+    if (mobileDash) mobileDash.style.display = 'flex';
+    if (accessHub) accessHub.style.display = 'none';
+  } else {
+    if (bentoWrap) { bentoWrap.style.display = ''; bentoWrap.style.visibility = ''; }
+    if (mobileDash) mobileDash.style.display = 'none';
+    if (accessHub) accessHub.style.display = '';
+  }
+}
+function updateHubModeToggle() {
+  var btn = document.getElementById('hubModeToggle');
+  if (!btn) return;
+  if (window.innerWidth >= 768) { btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  var span = btn.querySelector('.hub-mode-label') || btn;
+  var isMobile = hubMode === 'mobile';
+  span.textContent = isMobile ? 'Desktop View' : 'Mobile View';
+  btn.title = isMobile ? 'Switch to desktop layout' : 'Switch to mobile layout';
+}
+function switchHubMode(mode, manual) {
+  if (window.innerWidth >= 768) mode = 'desktop';
+  if (!mode) mode = hubMode === 'mobile' ? 'desktop' : 'mobile';
+  if (mode === hubMode) { applyModeVisibility(); updateHubModeToggle(); return; }
+  if (hubContent) saveHubContent();
+  hubMode = mode;
+  if (manual !== false) {
+    _hubModeLocked = detectHubMode() !== mode;
+    try { localStorage.setItem(HUB_MODE_KEY, mode); } catch(e) {}
+  }
+  hubContent = loadHubContent();
+  applyModeVisibility();
+  updateHubModeToggle();
+  if (hubMode === 'desktop') {
+    try { applyHubEditMode(); } catch(e) { console.error('applyHubEditMode error:', e); }
+    try { renderHubBento(); } catch(e) { console.error('renderHubBento error:', e); }
+  } else {
+    try { renderMobileDashboard(); } catch(e) { console.error('renderMobileDashboard error:', e); }
+  }
+  if (typeof renderSleepHub === 'function') renderSleepHub();
+  if (typeof renderHubGreeting === 'function') renderHubGreeting();
+}
+function _onHubModeResize() {
+  if (window.innerWidth >= 768) { hubMode = 'desktop'; return; }
+  if (_hubModeLocked) return;
+  if (!_hubModeResizeTO) {
+      _hubModeResizeTO = setTimeout(function() {
+      _hubModeResizeTO = null;
+      var newMode = detectHubMode();
+      if (newMode !== hubMode) switchHubMode(newMode, false);
+    }, 100);
+  }
+}
+let _hubModeResizeTO = null;
 let _bentoUidCounter = 0;
 let _clockInterval = null;
 let _timerIntervals = {};
@@ -191,13 +434,13 @@ function initHubLayout() {
 
 function loadHubLayout() {
   try {
-    const raw = localStorage.getItem(HUB_LAYOUT_KEY);
+    const raw = localStorage.getItem(_layoutKey());
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
 function saveHubLayout(order) {
-  localStorage.setItem(HUB_LAYOUT_KEY, JSON.stringify(order));
+  localStorage.setItem(_layoutKey(), JSON.stringify(order));
 }
 
 let dragSrcWrap = null;
@@ -269,6 +512,24 @@ function normalizeBentoLayout(layout, parent) {
         norm.h = snap(420);
       } else if (norm.t === 'sleep-score') {
         norm.h = snap(280);
+      } else if (norm.t === 'water') {
+        norm.h = snap(180);
+      } else if (norm.t === 'mood') {
+        norm.h = snap(200);
+      } else if (norm.t === 'countdown') {
+        norm.h = snap(280);
+      } else if (norm.t === 'clock') {
+        norm.h = snap(160);
+      } else if (norm.t === 'calendar') {
+        norm.h = snap(300);
+      } else if (norm.t === 'timer' || norm.t === 'pomodoro') {
+        norm.h = snap(180);
+      } else if (norm.t === 'weather' || norm.t === 'headlines') {
+        norm.h = snap(260);
+      } else if (norm.t === 'expense') {
+        norm.h = snap(320);
+      } else if (norm.t === 'text') {
+        norm.h = snap(160);
       } else {
         norm.h = snap(280);
       }
@@ -430,6 +691,10 @@ const HUB_DEFAULTS = {
 
   notes: '',
   links: [{ label: 'GitHub', url: 'https://github.com' }, { label: 'Reddit', url: 'https://reddit.com' }],
+  water: { goal: 8, logged: 0, date: new Date().toISOString().slice(0,10) },
+  mood: { today: null, history: {} },
+  countdown: [{ label: 'New Year', date: '2027-01-01' }, { label: 'Summer', date: '2026-06-21' }],
+  expense: { entries: [], balance: 0 },
   gallery: [
     { label: 'Schedule', desc: 'Time-blocking grid with drag & drop, AI scheduling, and week/month/agenda views.', href: 'schedule.html', icon: 'calendar', color: 'var(--tag-deep-work-text)', bg: 'var(--tag-deep-work-bg)' },
     { label: 'Progress', desc: 'Board, timeline, log, and charts tracking what you do and how you are doing.', href: 'progress.html', icon: 'chart', color: 'var(--tag-hobby-text)', bg: 'var(--tag-hobby-bg)' },
@@ -443,13 +708,14 @@ let hubContent = null;
 
 function loadHubContent() {
   const defaults = HUB_DEFAULTS;
+  const ck = _contentKey();
   try {
-    const raw = localStorage.getItem(HUB_CONTENT_KEY);
+    const raw = localStorage.getItem(ck);
     if (raw) {
       const hc = JSON.parse(raw);
       var _bentoLayout = hc.bentoLayout;
       try {
-        var _bl = localStorage.getItem(HUB_BENTO_KEY);
+        var _bl = localStorage.getItem(_bentoKey());
         if (_bl) { _bentoLayout = JSON.parse(_bl); }
       } catch(e) {}
       hc.bentoLayout = normalizeBentoLayout(_bentoLayout, hc).filter(i => i.t !== 'text');
@@ -506,10 +772,11 @@ function saveHubContent() {
   if (!hubContent) return;
   var _hadImages = hubContent._images;
   delete hubContent._images;
+  const ck = _contentKey();
   try {
-    var ok = safeSetItem(HUB_CONTENT_KEY, JSON.stringify(hubContent));
+    var ok = safeSetItem(ck, JSON.stringify(hubContent));
     if (hubContent.bentoLayout) {
-      try { localStorage.setItem(HUB_BENTO_KEY, JSON.stringify(hubContent.bentoLayout)); } catch(e) {}
+      try { localStorage.setItem(_bentoKey(), JSON.stringify(hubContent.bentoLayout)); } catch(e) {}
     }
     if (!ok) {
       console.warn('[img] saveHubContent: SAVE FAILED (quota)');
@@ -546,14 +813,14 @@ function saveAsGuestDefault() {
 
 function loadHubVisibility() {
   try {
-    const raw = localStorage.getItem(HUB_VIS_KEY);
+    const raw = localStorage.getItem(_visKey());
     if (raw) return JSON.parse(raw);
   } catch {}
   return {};
 }
 
 function saveHubVisibility(vis) {
-  try { safeSetItem(HUB_VIS_KEY, JSON.stringify(vis)); } catch {}
+  try { safeSetItem(_visKey(), JSON.stringify(vis)); } catch {}
 }
 
 /* ─── Edit mode ────────────────────────────── */
@@ -660,7 +927,7 @@ function toggleSectionVis(id) {
 }
 
 function resetSectionVisibility() {
-  localStorage.removeItem(HUB_VIS_KEY);
+  localStorage.removeItem(_visKey());
   applyHubVisibility();
   if (typeof showToast === 'function') showToast('Section visibility reset to defaults', 'success', 2000);
 }
@@ -677,6 +944,32 @@ function renderHubGreeting() {
 }
 
 /* ─── Bento render ─────────────────────────── */
+function _fitTextWidgets() {
+  document.querySelectorAll('.bento-bubble[data-bubble]').forEach(function(bubble) {
+    var uid = bubble.getAttribute('data-bubble');
+    var item = (hubContent && hubContent.bentoLayout) ? hubContent.bentoLayout.find(function(i) { return i.uid === uid; }) : null;
+    if (!item || item.t !== 'text') return;
+    var content = bubble.querySelector('.w-text-content');
+    if (!content) return;
+    var wrap = bubble.querySelector('.w-text-wrap');
+    if (!wrap) return;
+    content.style.fontSize = '';
+    var ww = wrap.clientWidth;
+    var wh = wrap.clientHeight;
+    if (ww < 10 || wh < 10) return;
+    var txt = (content.textContent || '').trim();
+    if (!txt) return;
+    var lines = txt.split(/\n/);
+    var maxLineLen = 0;
+    lines.forEach(function(l) { if (l.length > maxLineLen) maxLineLen = l.length; });
+    var charW = ww / Math.max(maxLineLen, 1);
+    var lineH = wh / Math.max(lines.length, 1);
+    var fs = Math.min(charW * 0.95, lineH * 0.85);
+    fs = Math.max(8, Math.min(fs, wh * 0.9));
+    content.style.fontSize = fs + 'px';
+    content.style.lineHeight = '1.1';
+  });
+}
 function renderHubBento() {
   // Ensure images are loaded before rendering bubbles (only on first render)
   if (typeof state !== 'undefined' && !state.images && typeof loadImages === 'function') loadImages();
@@ -687,6 +980,7 @@ function renderHubBento() {
     console.warn('[hub] .bento-grid not found, skipping render');
     return;
   }
+  if (hubMode === 'mobile') return;
   // Defensive: ensure hubContent exists and has all required fields
   if (!hubContent) {
     console.warn('[hub] hubContent is null/undefined, loading defaults');
@@ -703,6 +997,10 @@ function renderHubBento() {
   if (!hubContent.habitData) hubContent.habitData = {};
   if (hubContent.notes === undefined) hubContent.notes = '';
   if (!hubContent.links) hubContent.links = defaults.links.map(l => ({...l}));
+  if (!hubContent.water) hubContent.water = {...defaults.water};
+  if (!hubContent.mood) hubContent.mood = { today:null, history:{} };
+  if (!hubContent.countdown) hubContent.countdown = defaults.countdown.map(c => ({...c}));
+  if (!hubContent.expense) hubContent.expense = { entries:[], balance:0 };
 
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   hubContent.bentoLayout = layout;
@@ -723,7 +1021,25 @@ function renderHubBento() {
          </div>
          ${type === 'clock' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-clock-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
          ${type === 'weather' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-weather-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'headlines' ? '<select class="bento-tool-btn bento-tool-style bento-tool-delete-right bento-headlines-select" data-headlines-source="' + uid + '" title="News source" style="right:34px">' + Object.keys(_HL_SOURCES).map(function(sk) { return '<option value="' + sk + '"' + (sk === _getHeadlineSource() ? ' selected' : '') + '>' + _HL_SOURCES[sk].name + '</option>'; }).join('') + '</select>' : ''}
+         ${type === 'sleep-score' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-sleep-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'expense' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-expense-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'headlines' ? '<select class="bento-tool-btn bento-tool-style bento-tool-delete-right bento-headlines-select" data-headlines-source="' + uid + '" title="News source" style="right:40px">' + Object.keys(_HL_SOURCES).map(function(sk) { return '<option value="' + sk + '"' + (sk === _getHeadlineSource() ? ' selected' : '') + '>' + _HL_SOURCES[sk].name + '</option>'; }).join('') + '</select>' : ''}
+         ${type === 'calendar' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-cal-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'todos' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-todos-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'habits' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-habits-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'mood' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-mood-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'water' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-water-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'timer' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-timer-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'pomodoro' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-pomo-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'notes' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-notes-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'links' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-links-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'quote' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-quote-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'countdown' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-cd-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'priorities' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-pri-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'progress' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-prog-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'goals' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-goals-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'images' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-img-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+         ${type === 'text' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-text-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
          <button class="bento-tool-btn bento-tool-delete bento-tool-delete-right" data-remove-bubble="${uid}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
@@ -731,154 +1047,207 @@ function renderHubBento() {
     const dimStyle = `left:${x}px;top:${clampY}px;width:${w}px;height:${clampH}px;overflow:hidden`;
 
     switch (type) {
-      case 'goals':
+      case 'goals': {
+        var _goalsStyle = _getGoalsStyle(uid);
+        var _goalsList = '';
+        if (_goalsStyle === 'compact') {
+          _goalsList = '<div class="w-list w-list-compact">' + hubContent.goals.map(function(g, i) {
+            return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-item-num w-item-num-sm">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button></div>';
+        } else if (_goalsStyle === 'numbered') {
+          _goalsList = '<div class="w-list w-list-numbered">' + hubContent.goals.map(function(g, i) {
+            var pct = Math.min(100, Math.round(((i + 1) / hubContent.goals.length) * 100));
+            return '<div class="w-item w-item-numbered" data-idx="' + i + '"><span class="w-goal-num-bg">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button></div>';
+        } else {
+          _goalsList = '<div class="w-list">' + hubContent.goals.map(function(g, i) {
+            return '<div class="w-item" data-idx="' + i + '"><span class="w-item-num">' + (i+1) + '</span><span class="w-item-text' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button></div>';
+        }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>Goals</span></div>
-          <div class="w-list">
-            ${hubContent.goals.map((g, i) =>
-              `<div class="w-item" data-idx="${i}">
-                <span class="w-item-num">${i+1}</span>
-                <span class="w-item-text${isEdit ? ' hub-editable' : ''}" contenteditable="${isEdit}" data-edit="goals" data-idx="${i}">${e(g)}</span>
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="goals" data-idx="${i}">×</button>` : ''}
-              </div>`
-            ).join('')}
-            <button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button>
-          </div>
+          ${_goalsList}
         </div>`;
-      case 'images':
+      }
+      case 'images': {
         const imgId = item.imageId || 'hub-tulips';
         const imgUrl = getImage(imgId);
         const imgFit = 'cover';
         const hasImg = !!imgUrl;
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:var(--gutter);border:1px solid var(--border-color);background:var(--surface-container)">
+        var _imgStyle = _getImgStyle(uid);
+        var _imgRadius = '0px';
+        var _imgOverlay = '';
+        if (_imgStyle === 'rounded') { _imgRadius = '16px'; }
+        if (_imgStyle === 'minimal') { _imgOverlay = '<div class="bento-img-overlay-minimal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>'; }
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:var(--gutter);border:1px solid var(--border-color);background:var(--surface-container);border-radius:${_imgRadius}">
           ${editUI}
-          <div class="bento-img-wrap" style="width:100%;height:100%" data-img-picker="${imgId}">
-            <img data-image-id="${imgId}" src="${e(imgUrl || '')}" alt="" style="width:100%;height:100%;object-fit:${imgFit};display:${hasImg ? 'block' : 'none'}">
+          <div class="bento-img-wrap" style="width:100%;height:100%;border-radius:${_imgRadius}" data-img-picker="${imgId}">
+            <img data-image-id="${imgId}" src="${e(imgUrl || '')}" alt="" style="width:100%;height:100%;object-fit:${imgFit};display:${hasImg ? 'block' : 'none'};border-radius:${_imgRadius}">
             <div class="bento-img-placeholder" style="display:${hasImg ? 'none' : 'flex'}">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               <span>Use visual to add image</span>
             </div>
+            ${_imgOverlay}
           </div>
         </div>`;
-      case 'priorities':
+      }
+      case 'priorities': {
         const priColors = ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6'];
+        var _priStyle = _getPriStyle(uid);
+        var _priList = '';
+        if (_priStyle === 'compact') {
+          _priList = '<div class="w-list w-list-compact">' + hubContent.priorities.map(function(p, i) {
+            return '<div class="w-item w-item-compact" data-idx="' + i + '"><span class="w-pri-dot" style="background:' + priColors[i % priColors.length] + '"></span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button></div>';
+        } else if (_priStyle === 'numbered') {
+          _priList = '<div class="w-list">' + hubContent.priorities.map(function(p, i) {
+            return '<div class="w-item w-item-card" data-idx="' + i + '"><span class="w-pri-badge" style="background:' + priColors[i % priColors.length] + '">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button></div>';
+        } else {
+          _priList = '<div class="w-list">' + hubContent.priorities.map(function(p, i) {
+            return '<div class="w-item w-item-card" data-idx="' + i + '"><span class="w-pri-dot" style="background:' + priColors[i % priColors.length] + '"></span><span class="w-item-text' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button></div>';
+        }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Priorities</span></div>
-          <div class="w-list">
-            ${hubContent.priorities.map((p, i) =>
-              `<div class="w-item w-item-card" data-idx="${i}">
-                <span class="w-pri-dot" style="background:${priColors[i % priColors.length]}"></span>
-                <span class="w-item-text${isEdit ? ' hub-editable' : ''}" contenteditable="${isEdit}" data-edit="priorities" data-idx="${i}">${e(p)}</span>
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="priorities" data-idx="${i}">×</button>` : ''}
-              </div>`
-            ).join('')}
-            <button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button>
-          </div>
+          ${_priList}
         </div>`;
-      case 'quote':
+      }
+      case 'quote': {
         const q = hubContent.quote;
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-lowest);padding:var(--gutter);border:1px solid var(--border-color)">
+        var _quoteStyle = _getQuoteStyle(uid);
+        var _quoteBg = 'var(--surface-container-lowest)';
+        var _quoteClass = 'w-quote-content';
+        var _quoteBar = '<div class="w-quote-bar"></div>';
+        if (_quoteStyle === 'boxed') { _quoteBg = 'var(--surface-container)'; _quoteClass = 'w-quote-content w-quote-boxed'; _quoteBar = ''; }
+        if (_quoteStyle === 'minimal') { _quoteClass = 'w-quote-content w-quote-minimal'; _quoteBar = '<div class="w-quote-bar w-quote-bar-min"></div>'; }
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:${_quoteBg};padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg><span>Quote</span><button class="w-shuffle-btn" data-quote-shuffle title="Random quote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg></button></div>
-          <div class="w-quote-content">
-            <span class="w-quote-mark">\u201C</span>
+          <div class="${_quoteClass}">
+            ${_quoteStyle !== 'minimal' ? '<span class="w-quote-mark">\u201C</span>' : ''}
             <div class="w-quote-text${isEdit ? ' hub-editable' : ''}" contenteditable="${isEdit}">${e(q.text)}</div>
           </div>
-          ${q.author ? `<div class="w-quote-attribution">&mdash; ${e(q.author)}</div>` : ''}
-          <div class="w-quote-bar"></div>
+          ${q.author ? '<div class="w-quote-attribution">&mdash; ' + e(q.author) + '</div>' : ''}
+          ${_quoteBar}
         </div>`;
-      case 'todos':
+      }
+      case 'todos': {
+        var _todosStyle = _getTodosStyle(uid);
+        var _todosDone = hubContent.todos.filter(function(t) { return t.done; }).length;
+        var _todosTotal = hubContent.todos.length;
+        var _todosItems = '';
+        if (_todosStyle === 'progress') {
+          var _progPct = _todosTotal ? Math.round((_todosDone / _todosTotal) * 100) : 0;
+          _todosItems = '<div class="w-todos-progress"><div class="w-todos-prog-bar"><div class="w-todos-prog-fill" style="width:' + _progPct + '%"></div></div><span class="w-todos-prog-text">' + _todosDone + '/' + _todosTotal + ' done (' + _progPct + '%)</span></div>' + hubContent.todos.map(function(t, i) {
+            return '<div class="w-item' + (t.done ? ' w-item-done' : '') + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
+          }).join('');
+        } else if (_todosStyle === 'compact') {
+          _todosItems = hubContent.todos.map(function(t, i) {
+            return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box w-todo-box-sm ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
+          }).join('');
+        } else {
+          _todosItems = hubContent.todos.map(function(t, i) {
+            return '<div class="w-item" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
+          }).join('');
+        }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>To Do's</span></div>
-          <div class="w-list">
-            ${hubContent.todos.map((t, i) =>
-              `<div class="w-item" data-idx="${i}">
-                ${isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : ''}
-                <span class="w-todo-box ${t.done ? 'w-todo-checked' : ''}">
-                  ${t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
-                </span>
-                <span class="w-item-text ${t.done ? 'w-todo-done' : ''}${isEdit ? ' hub-editable' : ''}" contenteditable="${isEdit}" data-edit="todos" data-idx="${i}">${e(t.text)}</span>
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="todos" data-idx="${i}">×</button>` : ''}
-              </div>`
-            ).join('')}
-            <button class="w-add-btn" data-add="todos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to-do</button>
-          </div>
+          <div class="w-list">${_todosItems}<button class="w-add-btn" data-add="todos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to-do</button></div>
         </div>`;
-      case 'habits':
+      }
+      case 'habits': {
         const todayKey = new Date().toISOString().slice(0,10);
         const habitDone = hubContent.habitData?.[todayKey] || {};
+        var _habitsStyle = _getHabitsStyle(uid);
+        var _habitsBody = '';
+        if (_habitsStyle === 'list') {
+          _habitsBody = '<div class="w-habit-list">' + hubContent.habits.map(function(h, i) {
+            var checked = habitDone[i] ? ' w-habit-checked' : '';
+            return '<div class="w-habit-row" data-idx="' + i + '"><span class="w-habit-check' + checked + '" data-habit-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="w-habit-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="habits" data-idx="' + i + '">' + e(h) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="habits" data-idx="' + i + '">×</button>' : '') + '</div>';
+          }).join('') + '</div>';
+        } else if (_habitsStyle === 'minimal') {
+          _habitsBody = '<div class="w-habit-minimal">' + hubContent.habits.map(function(h, i) {
+            var checked = habitDone[i] ? ' w-habit-checked' : '';
+            return '<div class="w-habit-min-item' + checked + '" data-habit-toggle="' + i + '" title="' + e(h) + '">' + e(h.slice(0, 3)) + '</div>';
+          }).join('') + '</div>';
+        } else {
+          _habitsBody = '<div class="w-habit-grid">' + hubContent.habits.map(function(h, i) {
+            var checked = habitDone[i] ? ' w-habit-checked' : '';
+            return '<div class="w-habit-chip" data-idx="' + i + '"><span class="w-habit-check' + checked + '" data-habit-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="habits" data-idx="' + i + '">' + e(h) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="habits" data-idx="' + i + '">×</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add habit</button></div>';
+        }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Habits</span></div>
-          <div class="w-habit-grid">
-            ${hubContent.habits.map((h, i) => {
-              const checked = habitDone[i] ? ' w-habit-checked' : '';
-              return `<div class="w-habit-chip" data-idx="${i}">
-                <span class="w-habit-check${checked}" data-habit-toggle="${i}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                <span class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-edit="habits" data-idx="${i}">${e(h)}</span>
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="habits" data-idx="${i}">×</button>` : ''}
-              </div>`;
-            }).join('')}
-            <button class="w-add-btn" data-add="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add habit</button>
-          </div>
+          ${_habitsBody}
         </div>`;
-      case 'notes':
+      }
+      case 'notes': {
+        var _notesStyle = _getNotesStyle(uid);
+        var _notesClass = 'w-notes-wrap';
+        if (_notesStyle === 'lined') _notesClass = 'w-notes-wrap w-notes-lined';
+        if (_notesStyle === 'minimal') _notesClass = 'w-notes-wrap w-notes-minimal';
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Notes</span></div>
-          <div class="w-notes-wrap">
+          <div class="${_notesClass}">
             <div class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-save="notes">${e(hubContent.notes || '')}</div>
           </div>
         </div>`;
-      case 'links':
+      }
+      case 'links': {
+        var _linksStyle = _getLinksStyle(uid);
+        var _linksList = '';
+        if (_linksStyle === 'compact') {
+          _linksList = '<div class="w-list w-list-compact">' + hubContent.links.map(function(l, i) {
+            return '<div class="w-item w-item-compact" data-idx="' + i + '"><span class="w-link-icon-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="links-label" data-idx="' + i + '">' + e(l.label) + '</span><a href="' + e(l.url) + '" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="links" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button></div>';
+        } else if (_linksStyle === 'grid') {
+          _linksList = '<div class="w-links-grid">' + hubContent.links.map(function(l, i) {
+            return '<div class="w-link-card-grid" data-idx="' + i + '"><div class="w-link-icon-grid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div><span class="w-link-label-grid ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="links-label" data-idx="' + i + '">' + e(l.label) + '</span><a href="' + e(l.url) + '" target="_blank" rel="noopener" class="w-link-url-grid">' + e(l.url.slice(0, 30)) + '</a>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="links" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+          }).join('') + '</div><button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button>';
+        } else {
+          _linksList = '<div class="w-list">' + hubContent.links.map(function(l, i) {
+            return '<div class="w-link-card" data-idx="' + i + '"><div class="w-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="links-label" data-idx="' + i + '" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">' + e(l.label) + '</span><span style="display:flex;align-items:center;gap:4px"><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="links-url" data-idx="' + i + '" style="font-size:0.65rem;color:var(--text-tertiary);flex:1">' + e(l.url) + '</span><a href="' + e(l.url) + '" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></span></div>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="links" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button></div>';
+        }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg><span>Links</span></div>
-          <div class="w-list">
-            ${hubContent.links.map((l, i) =>
-              `<div class="w-link-card" data-idx="${i}">
-                <div class="w-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div>
-                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
-                  <span class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-edit="links-label" data-idx="${i}" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">${e(l.label)}</span>
-                  <span style="display:flex;align-items:center;gap:4px">
-                    <span class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-edit="links-url" data-idx="${i}" style="font-size:0.65rem;color:var(--text-tertiary);flex:1">${e(l.url)}</span>
-                    <a href="${e(l.url)}" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>
-                  </span>
-                </div>
-                ${isEdit ? `<button class="hub-edit-item-btn del" data-del="links" data-idx="${i}">×</button>` : ''}
-              </div>`
-            ).join('')}
-            <button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button>
-          </div>
+          ${_linksList}
         </div>`;
-      case 'progress':
+      }
+      case 'progress': {
         const _now_ = new Date();
         const progData = generateProgressData();
         const maxVal = Math.max(...progData.daily.map(d => d.done), 1);
         const todayCol = _now_.getDay() === 0 ? 6 : _now_.getDay() - 1;
         const dayLabels = ['M','T','W','T','F','S','S'];
-        const chartBars = progData.daily.map((d, i) => {
-          const pct = Math.max(4, (d.done / maxVal) * 100);
-          const todayClass = i === todayCol ? ' today' : '';
-          return `<div class="prog-bar-col${todayClass}">
-            <span class="prog-bar-count">${d.done}<span style="opacity:0.4">/${d.total}</span></span>
-            <div class="prog-bar" style="height:${pct}%"></div>
-            <span class="prog-bar-label">${dayLabels[i]}</span>
-          </div>`;
-        }).join('');
+        var _progStyle = _getProgStyle(uid);
+        var _progBody = '';
+        if (_progStyle === 'stats') {
+          _progBody = '<div class="prog-stats-only"><div class="prog-stat-row"><span class="prog-stat-val">' + progData.total + '</span><span class="prog-stat-lbl">completed this week</span></div><div class="prog-stat-row"><span class="prog-stat-val">' + progData.streak + '</span><span class="prog-stat-lbl">day streak</span></div><div class="prog-stat-row"><span class="prog-stat-val">' + progData.todayRemaining + '</span><span class="prog-stat-lbl">remaining today</span></div></div>';
+        } else if (_progStyle === 'minimal') {
+          var _todayPct = progData.todayTotal > 0 ? Math.round((progData.todayDone / progData.todayTotal) * 100) : 0;
+          _progBody = '<div class="prog-minimal"><div class="prog-mini-bar"><div class="prog-mini-fill" style="width:' + _todayPct + '%"></div></div><span class="prog-mini-text">' + progData.todayDone + ' / ' + progData.todayTotal + ' today (' + _todayPct + '%)</span></div>';
+        } else {
+          var chartBars = progData.daily.map(function(d, i) {
+            var pct = Math.max(4, (d.done / maxVal) * 100);
+            var todayClass = i === todayCol ? ' today' : '';
+            return '<div class="prog-bar-col' + todayClass + '"><span class="prog-bar-count">' + d.done + '<span style="opacity:0.4">/' + d.total + '</span></span><div class="prog-bar" style="height:' + pct + '%"></div><span class="prog-bar-label">' + dayLabels[i] + '</span></div>';
+          }).join('');
+          _progBody = '<div class="prog-stats-row"><div class="prog-stat"><span class="prog-stat-val">' + progData.total + '</span><span class="prog-stat-lbl">completed</span></div><div class="prog-stat"><span class="prog-stat-val">' + progData.streak + '</span><span class="prog-stat-lbl">day streak</span></div><div class="prog-stat"><span class="prog-stat-val">' + progData.todayRemaining + '</span><span class="prog-stat-lbl">remaining today</span></div></div><div class="prog-chart">' + chartBars + '</div>';
+        }
         return `<div class="bento-bubble prog-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head" style="color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Progress</span></div>
-          <div class="prog-stats-row">
-            <div class="prog-stat"><span class="prog-stat-val">${progData.total}</span><span class="prog-stat-lbl">completed</span></div>
-            <div class="prog-stat"><span class="prog-stat-val">${progData.streak}</span><span class="prog-stat-lbl">day streak</span></div>
-            <div class="prog-stat"><span class="prog-stat-val">${progData.todayRemaining}</span><span class="prog-stat-lbl">remaining today</span></div>
-          </div>
-          <div class="prog-chart">${chartBars}</div>
+          ${_progBody}
         </div>`;
+      }
       case 'clock':
         const now = new Date();
         const hh = String(now.getHours()).padStart(2,'0');
@@ -977,6 +1346,7 @@ function renderHubBento() {
             daysWithTasks[parseInt(t.date.slice(8))] = true;
           }
         });
+        var _calStyle = _getCalStyle(uid);
         let cells = '';
         for (let i = 0; i < firstDay; i++) { cells += '<span class="cal-cell cal-empty"></span>'; }
         for (let d = 1; d <= daysInMonth; d++) {
@@ -986,21 +1356,26 @@ function renderHubBento() {
           var dot = daysWithTasks[d] ? '<span class="cal-dot"></span>' : '';
           cells += `<span class="${cls}" data-cal-day="${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}">${d}${dot}</span>`;
         }
+        var _calNav = '<div class="cal-header"><button class="cal-nav" data-cal-nav="-1" title="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 18 9 12 15 6"/></svg></button><span><span class="cal-month">' + monthNames[calMonth] + '</span> <span class="cal-year">' + calYear + '</span></span><button class="cal-nav" data-cal-nav="1" title="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="9 18 15 12 9 6"/></svg></button></div>';
+        var _calBody = '';
+        if (_calStyle === 'compact') {
+          _calBody = _calNav + '<div class="cal-grid cal-grid-compact">' + dayHeaders.map(function(d) { return '<span class="cal-day-header">' + d + '</span>'; }).join('') + cells + '</div>';
+        } else if (_calStyle === 'list') {
+          var _todayStr = calYear + '-' + String(calMonth + 1).padStart(2, '0') + '-' + String(today).padStart(2, '0');
+          var _upcoming = allTasks.filter(function(t) { return t.date && t.date >= _todayStr; }).slice(0, 6);
+          var _taskList = _upcoming.map(function(t) {
+            return '<div class="cal-list-item"><span class="cal-list-date">' + t.date.slice(5) + '</span><span class="cal-list-title">' + escapeHtml(t.title) + '</span></div>';
+          }).join('');
+          _calBody = _calNav + '<div class="cal-list">' + (_taskList || '<div class="cal-list-empty">No upcoming tasks</div>') + '</div>';
+        } else {
+          _calBody = _calNav + '<div class="cal-grid">' + dayHeaders.map(function(d) { return '<span class="cal-day-header">' + d + '</span>'; }).join('') + cells + '</div>';
+        }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="cal-widget">
-            <div class="cal-header">
-              <button class="cal-nav" data-cal-nav="-1" title="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="15 18 9 12 15 6"/></svg></button>
-              <span><span class="cal-month">${monthNames[calMonth]}</span> <span class="cal-year">${calYear}</span></span>
-              <button class="cal-nav" data-cal-nav="1" title="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="9 18 15 12 9 6"/></svg></button>
-            </div>
-            <div class="cal-grid">
-              ${dayHeaders.map(d => `<span class="cal-day-header">${d}</span>`).join('')}
-              ${cells}
-            </div>
-          </div>
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Calendar</span></div>
+          <div class="cal-widget">${_calBody}</div>
         </div>`;
-      case 'timer':
+      case 'timer': {
         var ts = _timerState(uid);
         var tDisplay = ts.mode === 'countdown' ? _fmtTime(Math.max(0, ts.target - ts.elapsed)) : _fmtTime(ts.elapsed);
         var tStatus = ts.running ? 'running' : (ts.target > 0 && ts.elapsed > 0 ? 'paused' : (ts.target > 0 ? 'ready' : 'idle'));
@@ -1008,29 +1383,23 @@ function renderHubBento() {
         var modeLabel = ts.mode === 'countdown' ? 'SW' : 'TD';
         var tFrac = (ts.mode === 'countdown' && ts.target > 0) ? Math.max(0, Math.min(1, ts.elapsed / ts.target)) : 0;
         var tOffset = 326.73 - 326.73 * tFrac;
+        var _timerStyle = _getTimerStyle(uid);
+        var _timerBody = '';
+        if (_timerStyle === 'digital') {
+          _timerBody = '<div class="timer-widget timer-widget-digital" data-timer-uid="' + uid + '">' + presetsHtml + '<div class="timer-digital-display"><span class="timer-digital-time">' + tDisplay + '</span><span class="timer-digital-label">' + (ts.mode === 'countdown' ? (ts.target > 0 ? 'countdown' : 'set a preset') : 'stopwatch') + '</span></div><div class="timer-controls"><button class="timer-btn ' + (ts.running ? 'timer-btn-active' : '') + '" data-timer-action="toggle" data-timer-uid="' + uid + '">' + (ts.running ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="' + uid + '">' + modeLabel + '</button><button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="' + uid + '">Reset</button></div></div>';
+        } else if (_timerStyle === 'bar') {
+          var _barPct = Math.round(tFrac * 100);
+          _timerBody = '<div class="timer-widget timer-widget-bar" data-timer-uid="' + uid + '">' + presetsHtml + '<div class="timer-bar-wrap"><div class="timer-bar-track"><div class="timer-bar-fill" style="width:' + _barPct + '%"></div></div><span class="timer-bar-time">' + tDisplay + '</span></div><div class="timer-controls"><button class="timer-btn ' + (ts.running ? 'timer-btn-active' : '') + '" data-timer-action="toggle" data-timer-uid="' + uid + '">' + (ts.running ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="' + uid + '">' + modeLabel + '</button><button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="' + uid + '">Reset</button></div></div>';
+        } else {
+          _timerBody = '<div class="timer-widget" data-timer-uid="' + uid + '">' + presetsHtml + '<div class="timer-ring"><svg viewBox="0 0 120 120"><circle class="timer-ring-bg" cx="60" cy="60" r="52"/><circle class="timer-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="' + tOffset + '"/></svg><div class="timer-ring-text"><span class="timer-display">' + tDisplay + '</span><span class="timer-mode-label">' + (ts.mode === 'countdown' ? (ts.target > 0 ? 'countdown' : 'set a preset') : 'stopwatch') + '</span></div></div><div class="timer-controls"><button class="timer-btn ' + (ts.running ? 'timer-btn-active' : '') + '" data-timer-action="toggle" data-timer-uid="' + uid + '">' + (ts.running ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="' + uid + '">' + modeLabel + '</button><button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="' + uid + '">Reset</button></div></div>';
+        }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Timer</span></div>
-          <div class="timer-widget" data-timer-uid="${uid}">
-            ${presetsHtml}
-            <div class="timer-ring">
-              <svg viewBox="0 0 120 120">
-                <circle class="timer-ring-bg" cx="60" cy="60" r="52"/>
-                <circle class="timer-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="${tOffset}"/>
-              </svg>
-              <div class="timer-ring-text">
-                <span class="timer-display">${tDisplay}</span>
-                <span class="timer-mode-label">${ts.mode === 'countdown' ? (ts.target > 0 ? 'countdown' : 'set a preset') : 'stopwatch'}</span>
-              </div>
-            </div>
-            <div class="timer-controls">
-              <button class="timer-btn ${tStatus === 'running' ? 'timer-btn-active' : ''}" data-timer-action="toggle" data-timer-uid="${uid}">${ts.running ? 'Pause' : 'Start'}</button>
-              <button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="${uid}">${modeLabel}</button>
-              <button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="${uid}">Reset</button>
-            </div>
-          </div>
+          ${_timerBody}
         </div>`;
-      case 'pomodoro':
+      }
+      case 'pomodoro': {
         var ps = _pomoState(uid);
         var pDisplay = _fmtTime(ps.remaining);
         var phaseLabels = { focus:'Focus', short:'Short Break', long:'Long Break' };
@@ -1042,18 +1411,22 @@ function renderHubBento() {
         var pDots = '';
         for (var pdi = 0; pdi < 4; pdi++) pDots += '<span class="pomo-dot' + (pdi < pDone ? ' pomo-dot-on' : '') + '"></span>';
         var pOffset = 326.73 - (326.73 * pct / 100);
+        var _pomoStyle = _getPomoStyle(uid);
+        var _pomoBody = '';
+        if (_pomoStyle === 'minimal') {
+          _pomoBody = '<div class="pomo-widget pomo-widget-minimal" data-pomo-uid="' + uid + '"><div class="pomo-header"><span class="pomo-phase">' + pPhase + '</span><span class="pomo-dots">' + pDots + '</span></div><span class="pomo-time pomo-time-large">' + pDisplay + '</span><div class="pomo-controls"><button class="timer-btn ' + (pRunning ? 'timer-btn-active' : '') + '" data-pomo-action="toggle" data-pomo-uid="' + uid + '">' + (pRunning ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="' + uid + '">Reset</button><button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="' + uid + '">Skip</button></div></div>';
+        } else if (_pomoStyle === 'classic') {
+          var _pBar = '<div class="pomo-classic-bar"><div class="pomo-classic-fill" style="width:' + pct + '%"></div></div>';
+          _pomoBody = '<div class="pomo-widget pomo-widget-classic" data-pomo-uid="' + uid + '"><div class="pomo-header"><span class="pomo-phase">' + pPhase + '</span><span class="pomo-dots">' + pDots + '</span></div>' + _pBar + '<span class="pomo-time">' + pDisplay + '</span><div class="pomo-controls"><button class="timer-btn ' + (pRunning ? 'timer-btn-active' : '') + '" data-pomo-action="toggle" data-pomo-uid="' + uid + '">' + (pRunning ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="' + uid + '">Reset</button><button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="' + uid + '">Skip</button></div></div>';
+        } else {
+          _pomoBody = '<div class="pomo-widget" data-pomo-uid="' + uid + '"><div class="pomo-header"><span class="pomo-phase">' + pPhase + '</span><span class="pomo-dots">' + pDots + '</span></div><div class="pomo-ring pomo-ring-' + ps.phase + '"><svg viewBox="0 0 120 120"><circle class="pomo-ring-bg" cx="60" cy="60" r="52"/><circle class="pomo-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="' + pOffset + '"/></svg><span class="pomo-time">' + pDisplay + '</span></div><div class="pomo-controls"><button class="timer-btn ' + (pRunning ? 'timer-btn-active' : '') + '" data-pomo-action="toggle" data-pomo-uid="' + uid + '">' + (pRunning ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="' + uid + '">Reset</button><button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="' + uid + '">Skip</button></div></div>';
+        }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="pomo-widget" data-pomo-uid="${uid}">
-            <div class="pomo-header"><span class="pomo-phase">${pPhase}</span><span class="pomo-dots">${pDots}</span></div>
-            <div class="pomo-ring pomo-ring-${ps.phase}"><svg viewBox="0 0 120 120"><circle class="pomo-ring-bg" cx="60" cy="60" r="52"/><circle class="pomo-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="${pOffset}"/></svg><span class="pomo-time">${pDisplay}</span></div>
-            <div class="pomo-controls">
-              <button class="timer-btn ${pRunning ? 'timer-btn-active' : ''}" data-pomo-action="toggle" data-pomo-uid="${uid}">${pRunning ? 'Pause' : 'Start'}</button>
-              <button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="${uid}">Reset</button>
-              <button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="${uid}">Skip</button>
-            </div>
-          </div>
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Pomodoro</span></div>
+          ${_pomoBody}
         </div>`;
+      }
       case 'spotify':
         var _spActiveId = null;
         try { _spActiveId = localStorage.getItem('haven-spotify-active') || null; } catch(e) {}
@@ -1126,7 +1499,7 @@ function renderHubBento() {
             </div>
           </div>`;
         }
-      case 'sleep-score':
+      case 'sleep-score': {
         var _sleepLogs = []; try { _sleepLogs = JSON.parse(localStorage.getItem('haven-schedule-sleep') || '[]'); } catch(e) {}
         var _sleepTargets = {targetDuration:480}; try { _sleepTargets = JSON.parse(localStorage.getItem('haven-schedule-sleep-targets') || '{}'); } catch(e) {}
         var _weekLogs = _sleepWeekLogs();
@@ -1145,54 +1518,248 @@ function renderHubBento() {
         var _pct = _score != null ? _score : 0;
         var _offset = _circ - (_pct / 100) * _circ;
         var _durStr = _lastDur ? (_lastDur >= 60 ? Math.floor(_lastDur/60)+'h '+_lastDur%60+'m' : _lastDur+'m') : '—';
-        var _scoreColor = _score == null ? 'var(--border-color)' : _score >= 70 ? '#10b981' : _score >= 40 ? '#f59e0b' : '#ef4444';
+        var _scoreColor = _score == null ? 'var(--border-color)' : _score >= 80 ? '#10b981' : _score >= 60 ? '#3b82f6' : _score >= 40 ? '#f59e0b' : '#ef4444';
+        var _scoreGlow = _score == null ? 'none' : _score >= 80 ? '0 0 12px #10b98166' : _score >= 60 ? '0 0 12px #3b82f666' : _score >= 40 ? '0 0 12px #f59e0b66' : '0 0 12px #ef444466';
         var _bars = _weekLogs.map(function(w) {
           var pct = w.log && w.log.duration ? Math.min(1, w.log.duration / (w.log.duration > 0 ? Math.max(_target, 1) : 480)) : 0;
           var fill = pct * 34;
           var cls = 'ss-bar' + (w.log && w.log.duration >= _target ? ' ss-bar-hit' : '') + (w.ds === formatDate(new Date()) ? ' ss-bar-today' : '');
           return '<div class="' + cls + '"><svg viewBox="0 0 6 36"><rect class="bg" x="0.5" y="1" width="5" height="34" rx="2.5"/><rect class="fill" x="0.5" y="' + (35 - fill) + '" width="5" height="' + fill + '" rx="2.5"/></svg><span>' + w.dow + '</span></div>';
         }).join('');
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
-          ${editUI}
-          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span>Sleep</span></div>
-          <div class="ss-widget" data-ss-open="1" title="Log sleep">
-            <div class="ss-top">
-              <div class="ss-ring">
-                <svg viewBox="0 0 36 36">
-                  <circle class="bg" cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-color)" stroke-width="2.5"></circle>
-                  <circle class="fill" cx="18" cy="18" r="15.5" fill="none" stroke="${_scoreColor}" stroke-width="2.5" stroke-dasharray="${_circ}" stroke-dashoffset="${_offset}" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
-                </svg>
-                <div class="ss-ring-val">${_score != null ? _score : '—'}</div>
-              </div>
-              <div class="ss-top-meta">
-                <span class="ss-ring-label">sleep score</span>
-                <span class="ss-score-note">${_score == null ? 'log 3+ nights this week' : (_durStr + ' last night')}${_consistTxt ? ' · ' + _consistTxt : ''}</span>
-              </div>
-            </div>
-            <div class="ss-bars">${_bars}</div>
-            <div class="ss-foot">
-              <span class="ss-foot-item"><b>${_avgDur >= 60 ? Math.floor(_avgDur/60)+'h '+_avgDur%60+'m' : _avgDur+'m'}</b> avg</span>
-              <span class="ss-foot-item"><b>${_avgQual}</b> /5 quality</span>
-              <button class="ss-log-btn" data-ss-log title="Log sleep">Log</button>
-            </div>
-          </div>
-        </div>`;
+        var _ssStyle = _getSleepStyle(uid);
+        var _ssRingHtml = '<div class="ss-ring"><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-color)" stroke-width="2.5"></circle><circle class="fill" cx="18" cy="18" r="15.5" fill="none" stroke="' + _scoreColor + '" stroke-width="2.5" stroke-dasharray="' + _circ + '" stroke-dashoffset="' + _offset + '" stroke-linecap="round" transform="rotate(-90 18 18)" style="filter:drop-shadow(' + _scoreGlow + ')"></circle></svg><div class="ss-ring-val">' + (_score != null ? _score : '—') + '</div></div>';
+        var _ssBody = '';
+        if (_ssStyle === 'minimal') {
+          var _minPct = _lastDur ? Math.min(100, Math.round((_lastDur / _target) * 100)) : 0;
+          _ssBody = '<div class="ss-minimal"><div class="ss-min-row">' + _ssRingHtml + '<div class="ss-min-info"><span class="ss-min-score">' + (_score != null ? _score : '—') + '</span><span class="ss-min-label">sleep score</span>' + (_consistTxt ? '<span class="ss-consist-pill">' + _consistTxt + '</span>' : '') + '</div></div><div class="ss-min-bar"><div class="ss-min-bar-fill" style="width:' + _minPct + '%;background:' + _scoreColor + '"></div></div><span class="ss-min-dur">' + _durStr + ' last night</span><button class="ss-log-btn" data-ss-log title="Log sleep">Log</button></div>';
+        } else if (_ssStyle === 'detailed') {
+          var _qualityStars = '';
+          if (_lastQual) { for (var si = 0; si < 5; si++) _qualityStars += '<span class="ss-star' + (si < _lastQual ? ' ss-star-on' : '') + '">\u2605</span>'; }
+          var _targetPct = _target > 0 ? Math.min(100, Math.round((_lastDur / _target) * 100)) : 0;
+          _ssBody = '<div class="ss-detailed"><div class="ss-det-header">' + _ssRingHtml + '<div class="ss-det-meta"><span class="ss-det-title">Sleep Score</span><span class="ss-det-sub">' + (_score == null ? 'Log 3+ nights this week' : _durStr + ' last night') + (_consistTxt ? ' \u00B7 ' + _consistTxt : '') + '</span></div></div><div class="ss-det-stats"><div class="ss-det-stat"><span class="ss-det-stat-val" style="color:' + _scoreColor + '">' + (_avgDur >= 60 ? Math.floor(_avgDur/60)+'h '+_avgDur%60+'m' : _avgDur+'m') + '</span><span class="ss-det-stat-lbl">avg sleep</span></div><div class="ss-det-stat"><span class="ss-det-stat-val">' + _avgQual + '<span class="ss-det-stat-unit">/5</span></span><span class="ss-det-stat-lbl">quality</span></div><div class="ss-det-stat"><span class="ss-det-stat-val">' + _targetPct + '<span class="ss-det-stat-unit">%</span></span><span class="ss-det-stat-lbl">of target</span></div><div class="ss-det-stat"><span class="ss-det-stat-val">' + _loggedWeek.length + '<span class="ss-det-stat-unit">/7</span></span><span class="ss-det-stat-lbl">nights</span></div></div><div class="ss-det-week">' + _bars + '</div><button class="ss-log-btn ss-log-btn-full" data-ss-log title="Log sleep">Log Sleep</button></div>';
+        } else if (_ssStyle === 'timeline') {
+          var _timelineItems = _loggedWeek.slice(-7).map(function(w) {
+            var l = w.log;
+            var bParts = l.bedtime.split(':').map(Number);
+            var wParts = l.wakeTime.split(':').map(Number);
+            var bMin = bParts[0]*60+bParts[1];
+            var wMin = wParts[0]*60+wParts[1];
+            if (wMin <= bMin) wMin += 1440;
+            var dur = wMin - bMin;
+            var durStr = Math.floor(dur/60) + 'h' + (dur%60 > 0 ? ' ' + dur%60 + 'm' : '');
+            var hitTarget = dur >= _target;
+            return '<div class="ss-tl-item' + (hitTarget ? ' ss-tl-hit' : '') + '"><span class="ss-tl-day">' + w.dow + '</span><div class="ss-tl-bar-wrap"><div class="ss-tl-bar" style="width:' + Math.min(100, Math.round((dur / Math.max(_target, 1)) * 100)) + '%"></div></div><span class="ss-tl-dur">' + durStr + '</span></div>';
+          }).join('');
+          _ssBody = '<div class="ss-timeline"><div class="ss-tl-header">' + _ssRingHtml + '<div class="ss-tl-meta"><span class="ss-tl-score">' + (_score != null ? _score : '—') + '</span><span class="ss-tl-label">sleep score</span>' + (_consistTxt ? '<span class="ss-consist-pill">' + _consistTxt + '</span>' : '') + '</div></div><div class="ss-tl-list">' + (_timelineItems || '<span class="ss-tl-empty">No sleep logged yet</span>') + '</div><button class="ss-log-btn" data-ss-log title="Log sleep">Log</button></div>';
+        } else {
+          _ssBody = '<div class="ss-top">' + _ssRingHtml + '<div class="ss-top-meta"><span class="ss-ring-label">sleep score</span><span class="ss-score-note">' + (_score == null ? 'log 3+ nights this week' : (_durStr + ' last night')) + (_consistTxt ? ' \u00B7 ' + _consistTxt : '') + '</span></div></div><div class="ss-bars">' + _bars + '</div><div class="ss-foot"><span class="ss-foot-item"><b>' + (_avgDur >= 60 ? Math.floor(_avgDur/60)+'h '+_avgDur%60+'m' : _avgDur+'m') + '</b> avg</span><span class="ss-foot-item"><b>' + _avgQual + '</b> /5 quality</span><button class="ss-log-btn" data-ss-log title="Log sleep">Log</button></div>';
+        }
+        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span>Sleep</span></div><div class="ss-widget" data-ss-open="1" title="Log sleep">' + _ssBody + '</div></div>';
+      }
       case 'headlines': {
         const hlSource = _getHeadlineSource();
         const hlItems = _hlCache && _hlCache.source === hlSource ? _hlCache.items : null;
-        const hlList = hlItems ? hlItems.slice(0, 5).map(function(hl) {
-          return '<a class="hl-item" href="' + escapeHtml(_hlSafeLink(hl.link, hlSource)) + '" target="_blank" rel="noopener"><span class="hl-item-title">' + escapeHtml(hl.title) + '</span></a>';
+        const hlStyle = _getHeadlinesStyle(uid);
+        const hlList = hlItems ? hlItems.slice(0, hlStyle === 'compact' ? 6 : 5).map(function(hl, i) {
+          return '<a class="hl-item" href="' + escapeHtml(_hlSafeLink(hl.link, hlSource)) + '" target="_blank" rel="noopener"><span class="hl-item-title">' + escapeHtml(hl.title) + '</span>' + (hlStyle === 'full' ? '<span class="hl-item-src">' + _hlSourceName(hlSource) + '</span>' : '') + '</a>';
         }).join('') : '';
+        var _hlRefreshBtn = '<button class="weather-refresh" data-headlines-refresh title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>';
+        var _hlStamp = _hlFresh() ? '<span class="hl-stamp">' + new Date(_hlCache.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + '</span>' : '';
+        var _hlBody = '';
+        if (hlStyle === 'compact') {
+          _hlBody = hlList ? '<div class="hl-compact">' + hlList + '</div>' + _hlRefreshBtn : '<div class="hl-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Fetching...</span></div>';
+        } else if (hlStyle === 'full') {
+          _hlBody = hlList ? '<div class="hl-source-line"><span class="hl-source-name">' + _hlSourceName(hlSource) + '</span>' + _hlStamp + _hlRefreshBtn + '</div><div class="hl-list hl-list-full">' + hlList + '</div>' : '<div class="hl-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Fetching headlines...</span></div>';
+        } else {
+          _hlBody = hlList ? '<div class="hl-source-line"><span class="hl-source-name">' + _hlSourceName(hlSource) + '</span>' + _hlStamp + _hlRefreshBtn + '</div><div class="hl-list">' + hlList + '</div>' : '<div class="hl-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Fetching headlines...</span></div>';
+        }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg><span>Headlines</span></div>
-          <div class="headlines-widget" data-headlines-uid="${uid}">
-            ${hlList ? '<div class="hl-source-line"><span class="hl-source-name">' + _hlSourceName(hlSource) + '</span>' + (_hlFresh() ? '<span class="hl-stamp">' + new Date(_hlCache.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) + '</span>' : '') + '<button class="weather-refresh" data-headlines-refresh title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button></div><div class="hl-list">' + hlList + '</div>' : '<div class="hl-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Fetching headlines...</span></div>'}
-          </div>
+          <div class="headlines-widget" data-headlines-uid="${uid}">${_hlBody}</div>
         </div>`;
+      }
+      case 'water': {
+        var _wd = hubContent.water || { goal:8, logged:0, date:'' };
+        var _today = new Date().toISOString().slice(0,10);
+        if (_wd.date !== _today) { _wd.logged = 0; _wd.date = _today; hubContent.water = _wd; }
+        var _pct = Math.min(100, Math.round((_wd.logged / _wd.goal) * 100));
+        var _waterStyle = _getWaterStyle(uid);
+        var _wGlasses = '';
+        var _wBody = '';
+        if (_waterStyle === 'minimal') {
+          _wBody = '<div class="w-water-minimal"><div class="w-water-minimal-row"><span class="w-water-count-big">' + _wd.logged + '</span><span class="w-water-count-of">/ ' + _wd.goal + '</span></div><div class="w-water-bar"><div class="w-water-fill" style="width:' + _pct + '%"></div></div>' + (_pct >= 100 ? '<span class="w-water-goal-hit">Goal reached!</span>' : '') + '</div>';
+        } else {
+          var _glasses = [];
+          for (var i = 0; i < _wd.goal; i++) {
+            var _filled = i < _wd.logged;
+            _glasses.push('<div class="w-water-glass' + (_filled ? ' filled' : '') + '" data-water-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="' + (_filled ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>');
+          }
+          if (_waterStyle === 'detailed') {
+            _wBody = '<div class="w-water-grid">' + _glasses.join('') + '</div><div class="w-water-bar"><div class="w-water-fill" style="width:' + _pct + '%"></div></div><div class="w-water-detail"><span>' + _wd.logged + ' / ' + _wd.goal + ' glasses</span><span>' + _pct + '%</span></div>' + (_pct >= 100 ? '<span class="w-water-goal-hit">Goal reached!</span>' : '');
+          } else {
+            _wBody = '<div class="w-water-grid">' + _glasses.join('') + '</div><div class="w-water-bar"><div class="w-water-fill" style="width:' + _pct + '%"></div></div><div class="w-water-count">' + _wd.logged + ' / ' + _wd.goal + ' glasses' + (_pct >= 100 ? ' — Goal reached!' : '') + '</div>';
+          }
+        }
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><span>Water</span></div>
+          ${_wBody}
+        </div>`;
+      }
+      case 'mood': {
+        var _moods = ['&#x1F621;','&#x1F61E;','&#x1F610;','&#x1F60A;','&#x1F60D;'];
+        var _moodLabels = ['Angry','Sad','Meh','Good','Great'];
+        var _md = hubContent.mood || { today:null, history:{} };
+        var _mToday = new Date().toISOString().slice(0,10);
+        var _selected = _md.history?.[_mToday]?.mood ?? null;
+        var _note = _md.history?.[_mToday]?.note || '';
+        var _mBtns = _moods.map(function(em, idx) {
+          return '<div class="w-mood-btn' + (_selected === idx ? ' selected' : '') + '" data-mood-pick="' + idx + '" title="' + _moodLabels[idx] + '">' + em + '</div>';
+        }).join('');
+        var _recent = Object.keys(_md.history || {}).slice(-5).reverse().map(function(dk) {
+          var v = _md.history[dk];
+          var mood = v?.mood ?? v;
+          var note = v?.note || '';
+          return '<div class="w-mood-day"><span class="w-mood-day-label">' + dk.slice(5) + '</span><span>' + (mood != null ? _moods[mood] : '—') + '</span>' + (note ? '<span class="w-mood-note-preview" title="' + e(note) + '">' + e(note.slice(0,12)) + '</span>' : '') + '</div>';
+        }).join('');
+        var _moodStyle = _getMoodStyle(uid);
+        var _moodBody = '';
+        if (_moodStyle === 'minimal') {
+          _moodBody = '<div class="w-mood-row">' + _mBtns + '</div>';
+        } else if (_moodStyle === 'chart') {
+          var _chartBars = Object.keys(_md.history || {}).slice(-7).map(function(dk) {
+            var v = _md.history[dk];
+            var mood = v?.mood ?? v;
+            var h = mood != null ? ((mood + 1) / 5) * 100 : 0;
+            return '<div class="w-mood-chart-bar" style="height:' + Math.max(4, h) + '%"><span class="w-mood-chart-label">' + dk.slice(5, 7) + '/' + dk.slice(8, 10) + '</span></div>';
+          }).join('');
+          _moodBody = '<div class="w-mood-row">' + _mBtns + '</div><div class="w-mood-chart">' + _chartBars + '</div>';
+        } else {
+          _moodBody = '<div class="w-mood-row">' + _mBtns + '</div><input class="w-mood-note" data-mood-note placeholder="How are you feeling?" value="' + e(_note) + '"><div class="w-mood-history">' + (_recent || '<span style="color:var(--text-tertiary);font-size:0.65rem">No entries yet</span>') + '</div>';
+        }
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span>Mood</span></div>
+          ${_moodBody}
+        </div>`;
+      }
+      case 'countdown': {
+        var _cds = hubContent.countdown || [];
+        var _cdStyle = _getCdStyle(uid);
+        var _cdItems = _cds.map(function(c, i) {
+          var _target = new Date(c.date + 'T00:00:00');
+          var _now = new Date();
+          var _diff = Math.ceil((_target - _now) / (1000*60*60*24));
+          var _cls = _diff <= 0 ? ' passed' : _diff <= 7 ? ' soon' : '';
+          var _labelHtml = isEdit
+            ? '<input class="w-cd-label-input" data-cd-label="' + i + '" value="' + e(c.label) + '">'
+            : '<span class="w-cd-label">' + e(c.label) + '</span>';
+          var _dateHtml = isEdit
+            ? '<input type="date" class="w-cd-date-input" data-cd-date="' + i + '" value="' + e(c.date) + '">'
+            : '<span class="w-cd-days">' + (_diff <= 0 ? 'Today!' : _diff + ' days') + '</span>';
+          return '<div class="w-cd-item' + _cls + '">' + _labelHtml + _dateHtml + (isEdit ? '<button class="hub-edit-item-btn del" data-del="countdown" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+        }).join('');
+        var _cdBody = '';
+        if (_cdStyle === 'cards') {
+          _cdBody = '<div class="w-cd-cards">' + _cds.map(function(c, i) {
+            var _target = new Date(c.date + 'T00:00:00');
+            var _diff = Math.ceil((_target - new Date()) / (1000*60*60*24));
+            var _cls = _diff <= 0 ? ' w-cd-card-passed' : _diff <= 7 ? ' w-cd-card-soon' : '';
+            return '<div class="w-cd-card' + _cls + '"><span class="w-cd-card-num">' + (_diff <= 0 ? '0' : _diff) + '</span><span class="w-cd-card-label">' + e(c.label) + '</span></div>';
+          }).join('') + '</div>';
+        } else if (_cdStyle === 'minimal') {
+          _cdBody = '<div class="w-list w-list-compact">' + _cds.map(function(c, i) {
+            var _target = new Date(c.date + 'T00:00:00');
+            var _diff = Math.ceil((_target - new Date()) / (1000*60*60*24));
+            var _cls = _diff <= 0 ? ' w-item-done' : '';
+            return '<div class="w-item w-item-compact' + _cls + '"><span class="w-cd-mini-label">' + e(c.label) + '</span><span class="w-cd-mini-days">' + (_diff <= 0 ? 'Today' : _diff + 'd') + '</span></div>';
+          }).join('') + '</div>';
+        } else {
+          _cdBody = '<div class="w-list">' + (_cdItems || '<div style="color:var(--text-tertiary);font-size:0.65rem;text-align:center;padding:8px 0">No events yet</div>') + '</div>';
+        }
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 8 10"/></svg><span>Countdown</span></div>
+          ${_cdBody}
+          <button class="w-add-btn" data-add="countdown"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add event</button>
+        </div>`;
+      }
+      case 'expense': {
+        var _exp = hubContent.expense || { entries:[], balance:0 };
+        var _expStyle = _getExpenseStyle(uid);
+        var _balColor = _exp.balance >= 0 ? '#10b981' : '#ef4444';
+        var _totalIncome = 0, _totalExpense = 0;
+        _exp.entries.forEach(function(ex) { if (ex.type === 'income') _totalIncome += ex.amount; else _totalExpense += ex.amount; });
+        var _catIcons = { 'food':'\uD83C\uDF5E','transport':'\uD83D\uDE97','shopping':'\uD83D\uDECD\uFE0F','bills':'\uD83D\uDCCB','health':'\uD83C\uDFE5','entertainment':'\uD83C\uDFAC','education':'\uD83D\uDCDA','salary':'\uD83D\uDCB0','freelance':'\uD83D\uDCBB','gift':'\uD83C\uDF81','rent':'\uD83C\uDFE0','utilities':'\u26A1','travel':'\u2708\uFE0F','groceries':'\uD83D\uDED2','subscriptions':'\uD83D\uDCF1','other':'\u2022' };
+        function _expIcon(cat) { var c = (cat || '').toLowerCase(); for (var k in _catIcons) { if (c.indexOf(k) !== -1) return _catIcons[k]; } return '\u2022'; }
+        var _catColors = { 'food':'#f59e0b','transport':'#3b82f6','shopping':'#ec4899','bills':'#8b5cf6','health':'#10b981','entertainment':'#ef4444','education':'#06b6d4','salary':'#10b981','freelance':'#3b82f6','gift':'#f43f5e','rent':'#6366f1','utilities':'#eab308','travel':'#0ea5e9','groceries':'#22c55e','subscriptions':'#a855f7','other':'#64748b' };
+        function _catColor(cat) { var c = (cat || '').toLowerCase(); for (var k in _catColors) { if (c.indexOf(k) !== -1) return _catColors[k]; } return '#64748b'; }
+        var _expBody = '';
+        if (_expStyle === 'breakdown') {
+          var _catTotals = {};
+          _exp.entries.forEach(function(ex) {
+            var k = ex.category || 'General';
+            _catTotals[k] = (_catTotals[k] || 0) + ex.amount;
+          });
+          var _catArr = Object.keys(_catTotals).map(function(k) { return { name: k, val: _catTotals[k] }; }).sort(function(a,b) { return b.val - a.val; }).slice(0, 6);
+          var _maxAmt = Math.max.apply(null, _catArr.map(function(c) { return c.val; }).concat([1]));
+          var _total = _catArr.reduce(function(s,c) { return s + c.val; }, 0);
+          var _catHtml = _catArr.map(function(c) {
+            var pct = Math.round((c.val / _total) * 100);
+            var barW = Math.max(8, Math.round((c.val / _maxAmt) * 100));
+            var clr = _catColor(c.name);
+            return '<div class="ex-br" style="border-left:3px solid ' + clr + '"><span class="ex-br-icon">' + _expIcon(c.name) + '</span><span class="ex-br-name">' + e(c.name) + '</span><div class="ex-br-track"><div class="ex-br-fill" style="width:' + barW + '%;background:' + clr + '"></div></div><span class="ex-br-amt">$' + c.val.toFixed(0) + '</span><span class="ex-br-pct">' + pct + '%</span></div>';
+          }).join('');
+          _expBody = '<div class="ex-bd"><div class="ex-bd-bal" style="border-left:4px solid ' + _balColor + '"><span class="ex-bd-bal-val" style="color:' + _balColor + '">$' + _exp.balance.toFixed(0) + '</span><span class="ex-bd-bal-lbl">balance</span></div><div class="ex-bd-row"><span class="ex-bd-income" style="border-left:3px solid #10b981">+$' + _totalIncome.toFixed(0) + '</span><span class="ex-bd-expense" style="border-left:3px solid #ef4444">-$' + _totalExpense.toFixed(0) + '</span></div><div class="ex-br-list">' + (_catHtml || '<span class="ex-empty">No data</span>') + '</div></div>';
+        } else if (_expStyle === 'trend') {
+          var _dailyTotals = {};
+          _exp.entries.forEach(function(ex) {
+            var d = ex.date || new Date().toISOString().slice(0,10);
+            if (!_dailyTotals[d]) _dailyTotals[d] = 0;
+            _dailyTotals[d] += ex.amount;
+          });
+          var _days = [];
+          for (var di = 6; di >= 0; di--) {
+            var _dt = new Date(); _dt.setDate(_dt.getDate() - di);
+            var _dk = _dt.toISOString().slice(0,10);
+            var _dayShort = ['S','M','T','W','T','F','S'][_dt.getDay()];
+            _days.push({ date: _dk, label: _dayShort, val: _dailyTotals[_dk] || 0 });
+          }
+          var _maxDay = Math.max.apply(null, _days.map(function(d) { return d.val; }).concat([1]));
+          var _weekTotal = _days.reduce(function(s,d) { return s + d.val; }, 0);
+          var _trendHtml = _days.map(function(d) {
+            var h = d.val > 0 ? Math.max(4, Math.round((d.val / _maxDay) * 100)) : 0;
+            var isToday = d.date === new Date().toISOString().slice(0,10);
+            return '<div class="ex-tc' + (isToday ? ' ex-tc-today' : '') + '"><div class="ex-tc-bar-wrap"><div class="ex-tc-bar" style="height:' + h + '%"></div></div><span class="ex-tc-lbl">' + d.label + '</span></div>';
+          }).join('');
+          _expBody = '<div class="ex-tr"><div class="ex-tr-row"><div class="ex-tr-card ex-tr-card-green"><span class="ex-tr-val" style="color:#10b981">$' + _exp.balance.toFixed(0) + '</span><span class="ex-tr-lbl">balance</span></div><div class="ex-tr-card ex-tr-card-blue"><span class="ex-tr-val" style="color:#3b82f6">$' + _weekTotal.toFixed(0) + '</span><span class="ex-tr-lbl">this week</span></div><div class="ex-tr-card ex-tr-card-purple"><span class="ex-tr-val" style="color:#8b5cf6">$' + Math.round(_weekTotal/7) + '</span><span class="ex-tr-lbl">daily avg</span></div></div><div class="ex-tr-chart">' + _trendHtml + '</div></div>';
+        } else {
+          var _last4 = _exp.entries.slice(-4).reverse();
+          var _recentItems = _last4.map(function(ex) {
+            var _sign = ex.type === 'income' ? '+' : '-';
+            var _color = ex.type === 'income' ? '#10b981' : '#ef4444';
+            var _icon = _expIcon(ex.category);
+            var _clr = _catColor(ex.category);
+            return '<div class="ex-r" style="border-left:3px solid ' + _clr + '"><span class="ex-r-icon">' + _icon + '</span><span class="ex-r-cat">' + e(ex.category) + '</span><span class="ex-r-amt" style="color:' + _color + '">' + _sign + '$' + ex.amount.toFixed(2) + '</span></div>';
+          }).join('');
+          _expBody = '<div class="ex-ov"><div class="ex-ov-top" style="border-left:4px solid ' + _balColor + '"><div class="ex-ov-left"><span class="ex-ov-bal" style="color:' + _balColor + '">$' + _exp.balance.toFixed(2) + '</span><span class="ex-ov-lbl">balance</span></div><div class="ex-ov-split"><span class="ex-ov-in">+$' + _totalIncome.toFixed(0) + '</span><span class="ex-ov-out">-$' + _totalExpense.toFixed(0) + '</span></div></div><div class="ex-ov-list">' + (_recentItems || '<span class="ex-empty">No entries</span>') + '</div></div>';
+        }
+        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Expense</span></div><div class="ex-widget">' + _expBody + '</div></div>';
+      }
+      case 'text': {
+        var _textStyle = _getTextStyle(uid);
+        var _item = layout.find(function(i) { return i.uid === uid; });
+        var _text = (_item && _item.text) ? _item.text : 'Your text here';
+        var _fontClass = 'w-text-font-' + _textStyle.replace(/\s+/g, '-');
+        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-text-wrap"><div class="w-text-content ' + _fontClass + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-save="text" data-text-uid="' + uid + '">' + e(_text) + '</div></div></div>';
+      }
+      case 'crypto': {
+        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/><line x1="10" y1="6" x2="10" y2="8"/><line x1="14" y1="6" x2="14" y2="8"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg><span>Crypto</span></div><div class="crypto-widget" data-crypto-uid="' + uid + '"><div class="crypto-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/></svg><span>Loading prices...</span></div></div></div>';
       }
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
+          ${editUI}
           <div style="text-align:center;color:var(--text-tertiary);font-size:0.75rem">Unknown bubble</div>
         </div>`;
     }
@@ -1229,12 +1796,16 @@ function renderHubBento() {
       if (el._leafletMap) return;
       var lat = parseFloat(el.dataset.fr24Lat) || 51.5;
       var lon = parseFloat(el.dataset.fr24Lon) || -0.12;
+      var frKey = '';
+      try { frKey = localStorage.getItem('haven-fr24-key-' + el.id.replace('fr24-map-', '')) || ''; } catch(e) {}
       var map = L.map(el, { zoomControl: false, attributionControl: false, maxZoom: 12, minZoom: 3 }).setView([lat, lon], 6);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 12 }).addTo(map);
       el._leafletMap = map;
       el._flightMarkers = [];
+      el._flightMarkerLayer = L.layerGroup().addTo(map);
       el._fr24ProxyIdx = 0;
       el._fr24ConsecutiveFails = 0;
+      el._fr24Key = frKey;
       var statusEl = el.querySelector('.fr24-status-text');
       var statusDot = el.querySelector('.fr24-status-dot');
       var airportIcon = L.divIcon({ className: 'fr24-airport-icon', html: '<div style="width:8px;height:8px;background:#fff;border-radius:50%;border:2px solid rgba(255,255,255,0.2);box-shadow:0 0 12px rgba(255,255,255,0.6),0 0 24px rgba(255,255,255,0.2)"></div>', iconSize: [8, 8], iconAnchor: [4, 4] });
@@ -1244,43 +1815,92 @@ function renderHubBento() {
         if (statusDot) statusDot.className = 'fr24-status-dot fr24-status-' + state;
       }
       function fetchFlights() {
+        if (!map) return;
         var bounds = map.getBounds();
         var pad = 1;
         var url = 'https://opensky-network.org/api/states/all?lamin=' + (bounds.getSouth() - pad) + '&lamax=' + (bounds.getNorth() + pad) + '&lomin=' + (bounds.getWest() - pad) + '&lomax=' + (bounds.getEast() + pad);
         var proxyFn = _fr24Proxies[el._fr24ProxyIdx % _fr24Proxies.length];
-        fetch(proxyFn(url), { signal: AbortSignal.timeout(8000) })
-          .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-          .then(function(data) {
-            if (!data || !data.states) { setStatus('No data', 'warn'); return; }
-            el._fr24ConsecutiveFails = 0;
-            el._flightMarkers.forEach(function(m) { map.removeLayer(m); });
-            el._flightMarkers = [];
-            data.states.forEach(function(s) {
-              var nlat = s[6], nlon = s[5], callsign = (s[1] || '').trim();
-              if (nlat == null || nlon == null) return;
-              var heading = s[10] || 0;
-              var alt = s[13] ? Math.round(s[13] * 3.28084) : 0;
-              var spd = s[12] ? Math.round(s[12] * 3.6) : 0;
-              var trail = alt > 30000 ? '#fff' : alt > 15000 ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.35)';
-              var icon = L.divIcon({ className: 'fr24-plane-icon', html: '<svg viewBox="0 0 24 24" fill="' + trail + '" style="width:12px;height:12px;transform:rotate(' + heading + 'deg);filter:drop-shadow(0 0 3px ' + trail + ')"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>', iconSize: [12, 12], iconAnchor: [6, 6] });
-              var marker = L.marker([nlat, nlon], { icon: icon }).addTo(map);
-              var tip = callsign || 'UNK';
-              if (alt) tip += ' · ' + alt.toLocaleString() + ' ft';
-              if (spd) tip += ' · ' + spd + ' km/h';
-              marker.bindTooltip(tip, { direction: 'top', offset: [0, -6], className: 'fr24-tooltip' });
-              el._flightMarkers.push(marker);
-            });
-            var count = el._flightMarkers.length;
-            setStatus(count + ' plane' + (count !== 1 ? 's' : ''), 'ok');
-          })
-          .catch(function() {
-            el._fr24ConsecutiveFails++;
-            if (el._fr24ConsecutiveFails >= 2) {
-              el._fr24ProxyIdx = (el._fr24ProxyIdx + 1) % _fr24Proxies.length;
-              el._fr24ConsecutiveFails = 0;
-            }
-            setStatus('Offline', 'err');
+        var opts = { signal: AbortSignal.timeout(8000) };
+        if (el._fr24Key) opts.headers = { Authorization: 'Bearer ' + el._fr24Key };
+        function tryFetch(targetUrl, useProxy) {
+          var fetchUrl = useProxy ? proxyFn(targetUrl) : targetUrl;
+          return fetch(fetchUrl, opts).then(function(r) {
+            if (!r.ok) throw new Error(r.status);
+            return r.json();
           });
+        }
+        function attempt() {
+          // With a key, try direct first (proxies strip headers)
+          var firstTryDirect = !!el._fr24Key;
+          tryFetch(url, !firstTryDirect)
+            .then(function(data) {
+              if (!data || !data.states) { setStatus('No data', 'warn'); return; }
+              el._fr24ConsecutiveFails = 0;
+              el._flightMarkerLayer.clearLayers();
+              el._flightMarkers = [];
+              data.states.forEach(function(s) {
+                var nlat = s[6], nlon = s[5], callsign = (s[1] || '').trim();
+                if (nlat == null || nlon == null) return;
+                var heading = s[10] || 0;
+                var alt = s[13] ? Math.round(s[13] * 3.28084) : 0;
+                var spd = s[12] ? Math.round(s[12] * 3.6) : 0;
+                var trail = alt > 30000 ? '#fff' : alt > 15000 ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.35)';
+                var icon = L.divIcon({ className: 'fr24-plane-icon', html: '<svg viewBox="0 0 24 24" fill="' + trail + '" style="width:12px;height:12px;transform:rotate(' + heading + 'deg);filter:drop-shadow(0 0 3px ' + trail + ')"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>', iconSize: [12, 12], iconAnchor: [6, 6] });
+                var marker = L.marker([nlat, nlon], { icon: icon }).addTo(el._flightMarkerLayer);
+                var tip = callsign || 'UNK';
+                if (alt) tip += ' · ' + alt.toLocaleString() + ' ft';
+                if (spd) tip += ' · ' + spd + ' km/h';
+                marker.bindTooltip(tip, { direction: 'top', offset: [0, -6], className: 'fr24-tooltip' });
+                el._flightMarkers.push(marker);
+              });
+              var count = el._flightMarkers.length;
+              setStatus(count + ' plane' + (count !== 1 ? 's' : ''), 'ok');
+            })
+            .catch(function(err) {
+              if (firstTryDirect) {
+                // Direct request with key failed (likely CORS) — fall back to proxy without auth
+                tryFetch(url, true)
+                  .then(function(data) {
+                    if (!data || !data.states) { setStatus('No data', 'warn'); return; }
+                    el._fr24ConsecutiveFails = 0;
+                    el._flightMarkerLayer.clearLayers();
+                    el._flightMarkers = [];
+                    data.states.forEach(function(s) {
+                      var nlat = s[6], nlon = s[5], callsign = (s[1] || '').trim();
+                      if (nlat == null || nlon == null) return;
+                      var heading = s[10] || 0;
+                      var alt = s[13] ? Math.round(s[13] * 3.28084) : 0;
+                      var spd = s[12] ? Math.round(s[12] * 3.6) : 0;
+                      var trail = alt > 30000 ? '#fff' : alt > 15000 ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.35)';
+                      var icon = L.divIcon({ className: 'fr24-plane-icon', html: '<svg viewBox="0 0 24 24" fill="' + trail + '" style="width:12px;height:12px;transform:rotate(' + heading + 'deg);filter:drop-shadow(0 0 3px ' + trail + ')"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>', iconSize: [12, 12], iconAnchor: [6, 6] });
+                      var marker = L.marker([nlat, nlon], { icon: icon }).addTo(el._flightMarkerLayer);
+                      var tip = callsign || 'UNK';
+                      if (alt) tip += ' · ' + alt.toLocaleString() + ' ft';
+                      if (spd) tip += ' · ' + spd + ' km/h';
+                      marker.bindTooltip(tip, { direction: 'top', offset: [0, -6], className: 'fr24-tooltip' });
+                      el._flightMarkers.push(marker);
+                    });
+                    setStatus(el._flightMarkers.length + ' plane' + (el._flightMarkers.length !== 1 ? 's' : ''), 'ok');
+                  })
+                  .catch(function() {
+                    el._fr24ConsecutiveFails++;
+                    if (el._fr24ConsecutiveFails >= 2) {
+                      el._fr24ProxyIdx = (el._fr24ProxyIdx + 1) % _fr24Proxies.length;
+                      el._fr24ConsecutiveFails = 0;
+                    }
+                    setStatus('Offline', 'err');
+                  });
+                return;
+              }
+              el._fr24ConsecutiveFails++;
+              if (el._fr24ConsecutiveFails >= 2) {
+                el._fr24ProxyIdx = (el._fr24ProxyIdx + 1) % _fr24Proxies.length;
+                el._fr24ConsecutiveFails = 0;
+              }
+              setStatus('Offline', 'err');
+            });
+        }
+        attempt();
       }
       setStatus('Loading...', 'loading');
       fetchFlights();
@@ -1363,6 +1983,229 @@ function renderHubBento() {
     });
   });
 
+  // Wire sleep style toggle buttons
+  grid.querySelectorAll('[data-sleep-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.sleepStyleToggle;
+      var cur = _getSleepStyle(uid);
+      var idx = SLEEP_STYLE_LIST.indexOf(cur);
+      var next = SLEEP_STYLE_LIST[(idx + 1) % SLEEP_STYLE_LIST.length];
+      _setSleepStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  // Wire expense style toggle buttons
+  grid.querySelectorAll('[data-expense-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.expenseStyleToggle;
+      var cur = _getExpenseStyle(uid);
+      var idx = EXPENSE_STYLE_LIST.indexOf(cur);
+      var next = EXPENSE_STYLE_LIST[(idx + 1) % EXPENSE_STYLE_LIST.length];
+      _setExpenseStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  // Wire calendar style toggle buttons
+  grid.querySelectorAll('[data-cal-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.calStyleToggle;
+      var cur = _getCalStyle(uid);
+      var idx = CAL_STYLE_LIST.indexOf(cur);
+      var next = CAL_STYLE_LIST[(idx + 1) % CAL_STYLE_LIST.length];
+      _setCalStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  // Wire todos style toggle buttons
+  grid.querySelectorAll('[data-todos-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.todosStyleToggle;
+      var cur = _getTodosStyle(uid);
+      var idx = TODOS_STYLE_LIST.indexOf(cur);
+      var next = TODOS_STYLE_LIST[(idx + 1) % TODOS_STYLE_LIST.length];
+      _setTodosStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  // Wire habits style toggle buttons
+  grid.querySelectorAll('[data-habits-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.habitsStyleToggle;
+      var cur = _getHabitsStyle(uid);
+      var idx = HABITS_STYLE_LIST.indexOf(cur);
+      var next = HABITS_STYLE_LIST[(idx + 1) % HABITS_STYLE_LIST.length];
+      _setHabitsStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  // Wire mood style toggle buttons
+  grid.querySelectorAll('[data-mood-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.moodStyleToggle;
+      var cur = _getMoodStyle(uid);
+      var idx = MOOD_STYLE_LIST.indexOf(cur);
+      var next = MOOD_STYLE_LIST[(idx + 1) % MOOD_STYLE_LIST.length];
+      _setMoodStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  // Wire water style toggle buttons
+  grid.querySelectorAll('[data-water-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.waterStyleToggle;
+      var cur = _getWaterStyle(uid);
+      var idx = WATER_STYLE_LIST.indexOf(cur);
+      var next = WATER_STYLE_LIST[(idx + 1) % WATER_STYLE_LIST.length];
+      _setWaterStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-timer-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.timerStyleToggle;
+      var cur = _getTimerStyle(uid);
+      var idx = TIMER_STYLE_LIST.indexOf(cur);
+      var next = TIMER_STYLE_LIST[(idx + 1) % TIMER_STYLE_LIST.length];
+      _setTimerStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-pomo-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.pomoStyleToggle;
+      var cur = _getPomoStyle(uid);
+      var idx = POMO_STYLE_LIST.indexOf(cur);
+      var next = POMO_STYLE_LIST[(idx + 1) % POMO_STYLE_LIST.length];
+      _setPomoStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-notes-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.notesStyleToggle;
+      var cur = _getNotesStyle(uid);
+      var idx = NOTES_STYLE_LIST.indexOf(cur);
+      var next = NOTES_STYLE_LIST[(idx + 1) % NOTES_STYLE_LIST.length];
+      _setNotesStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-links-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.linksStyleToggle;
+      var cur = _getLinksStyle(uid);
+      var idx = LINKS_STYLE_LIST.indexOf(cur);
+      var next = LINKS_STYLE_LIST[(idx + 1) % LINKS_STYLE_LIST.length];
+      _setLinksStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-quote-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.quoteStyleToggle;
+      var cur = _getQuoteStyle(uid);
+      var idx = QUOTE_STYLE_LIST.indexOf(cur);
+      var next = QUOTE_STYLE_LIST[(idx + 1) % QUOTE_STYLE_LIST.length];
+      _setQuoteStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-cd-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.cdStyleToggle;
+      var cur = _getCdStyle(uid);
+      var idx = CD_STYLE_LIST.indexOf(cur);
+      var next = CD_STYLE_LIST[(idx + 1) % CD_STYLE_LIST.length];
+      _setCdStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-pri-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.priStyleToggle;
+      var cur = _getPriStyle(uid);
+      var idx = PRI_STYLE_LIST.indexOf(cur);
+      var next = PRI_STYLE_LIST[(idx + 1) % PRI_STYLE_LIST.length];
+      _setPriStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-prog-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.progStyleToggle;
+      var cur = _getProgStyle(uid);
+      var idx = PROG_STYLE_LIST.indexOf(cur);
+      var next = PROG_STYLE_LIST[(idx + 1) % PROG_STYLE_LIST.length];
+      _setProgStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-goals-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.goalsStyleToggle;
+      var cur = _getGoalsStyle(uid);
+      var idx = GOALS_STYLE_LIST.indexOf(cur);
+      var next = GOALS_STYLE_LIST[(idx + 1) % GOALS_STYLE_LIST.length];
+      _setGoalsStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-img-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.imgStyleToggle;
+      var cur = _getImgStyle(uid);
+      var idx = IMG_STYLE_LIST.indexOf(cur);
+      var next = IMG_STYLE_LIST[(idx + 1) % IMG_STYLE_LIST.length];
+      _setImgStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-text-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.textStyleToggle;
+      var cur = _getTextStyle(uid);
+      var idx = TEXT_STYLE_LIST.indexOf(cur);
+      var next = TEXT_STYLE_LIST[(idx + 1) % TEXT_STYLE_LIST.length];
+      _setTextStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
   if (isEdit) {
     // Done Editing button (fixed bottom)
     var doneBtn = document.createElement('button');
@@ -1390,7 +2233,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-text-style-toggle], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -1542,6 +2385,25 @@ function renderHubBento() {
         refreshHeadlines();
         return;
       }
+      var cryptoRefreshBtn = e.target.closest('[data-crypto-refresh]');
+      if (cryptoRefreshBtn) {
+        _cryptoLastData = null;
+        try { localStorage.removeItem(_cryptoCacheKey); } catch(e) {}
+        _cryptoFetched = false;
+        var cg = document.querySelector('.bento-grid');
+        if (cg) {
+          cg.querySelectorAll('.crypto-widget').forEach(function(w) {
+            w.innerHTML = '<div class="crypto-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Loading prices...</span></div>';
+          });
+          _fetchCrypto(cg);
+        }
+        return;
+      }
+      var cryptoEditBtn = e.target.closest('[data-crypto-edit]');
+      if (cryptoEditBtn) {
+        _openCryptoEditor(cryptoEditBtn.dataset.cryptoEdit);
+        return;
+      }
       var embedSetup = e.target.closest('[data-embed-setup]');
       if (embedSetup) {
         openEmbedSetup(embedSetup.dataset.embedSetup, embedSetup.dataset.embedUid);
@@ -1623,8 +2485,7 @@ function renderHubBento() {
                 if (ps2.remaining <= 0) {
                   ps2.running = false;
                   ps2.startTs = null;
-                  ps2.remaining = 0;
-                  _playPomoAlert();
+                  ps2.remaining = 0;                  _playPomoAlert('focus');
                   _advancePomoPhase(k);
                 }
                 _renderPomo(k);
@@ -1767,6 +2628,9 @@ function renderHubBento() {
   // ─── Headlines fetcher ────────────────────────
   _fetchHeadlines(grid);
 
+  // ─── Crypto fetcher ────────────────────────
+  _fetchCrypto(grid);
+
   // Wire headlines source selects (edit mode only, re-created each render)
   grid.querySelectorAll('[data-headlines-source]').forEach(function(sel) {
     sel.addEventListener('click', function(e) { e.stopPropagation(); });
@@ -1856,6 +2720,7 @@ function renderHubBento() {
       }
     });
   }
+  _fitTextWidgets();
 }
 
 /* ─── Canvas Guide popup ──────────────────── */
@@ -2497,6 +3362,7 @@ function setupBubbleResize() {
     updateAddBtnPosition();
     updateUndoButtons();
     refreshProgressWidget();
+    _fitTextWidgets();
     resizeTip.style.display = 'none';
     _bubbleResizeData = null;
     bubble.classList.remove('selected');
@@ -2526,7 +3392,15 @@ function bubbleTypeIcon(t) {
     strava: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2L21 12l-5.5 0L10 2z"/><path d="M10.5 12L6 2l-5.5 0L6 12z"/></svg>',
     flightradar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/><circle cx="12" cy="12" r="3"/><path d="M2 12h20"/></svg>',
     'sleep-score': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a9 9 0 1 0-9-9 9 9 0 0 0 9 9z"/><path d="M4 12a8 8 0 0 1 8-8"/><path d="M17 14.5a6.5 6.5 0 0 1-6-6.5"/></svg>',
-    headlines: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>'
+    headlines: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>',
+    water: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+    mood: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
+    countdown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 8 10"/></svg>',
+
+    expense: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    crypto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/><line x1="10" y1="6" x2="10" y2="8"/><line x1="14" y1="6" x2="14" y2="8"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg>',
+    text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+
   };
   return icons[t] || '';
 }
@@ -2898,11 +3772,163 @@ function refreshHeadlines() {
   }
 }
 
+/* ─── Crypto widget ─────────────────────────── */
+var _cryptoLastData = null;
+var _cryptoFetched = false;
+var _cryptoCacheKey = 'hub-crypto-prices';
+
+var _CRYPTO_COINS = [
+  { id:'bitcoin', symbol:'BTC', name:'Bitcoin' },
+  { id:'ethereum', symbol:'ETH', name:'Ethereum' },
+  { id:'solana', symbol:'SOL', name:'Solana' },
+  { id:'dogecoin', symbol:'DOGE', name:'Dogecoin' },
+  { id:'cardano', symbol:'ADA', name:'Cardano' },
+  { id:'ripple', symbol:'XRP', name:'XRP' },
+  { id:'polkadot', symbol:'DOT', name:'Polkadot' },
+  { id:'avalanche-2', symbol:'AVAX', name:'Avalanche' }
+];
+
+function _getCryptoCoins() {
+  try { return JSON.parse(localStorage.getItem('haven-crypto-coins')) || ['bitcoin','ethereum','solana']; }
+  catch(e) { return ['bitcoin','ethereum','solana']; }
+}
+function _setCryptoCoins(ids) {
+  try { localStorage.setItem('haven-crypto-coins', JSON.stringify(ids)); } catch(e) {}
+}
+
+function _makeSparkline(prices, isUp) {
+  if (!prices || prices.length < 2) return '';
+  var min = Math.min.apply(null, prices);
+  var max = Math.max.apply(null, prices);
+  var range = max - min || 1;
+  var w = 80, h = 24;
+  var pts = prices.map(function(p, i) {
+    var x = (i / (prices.length - 1)) * w;
+    var y = h - ((p - min) / range) * h;
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  var color = isUp ? '#22c55e' : '#ef4444';
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" class="crypto-sparkline" preserveAspectRatio="none"><polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+}
+
+function updateCryptoWidget(widget, data) {
+  if (!widget || !data) return;
+  var coins = _getCryptoCoins();
+  var rows = coins.map(function(id) {
+    var coin = _CRYPTO_COINS.find(function(c) { return c.id === id; });
+    var d = data[id];
+    if (!coin || !d) return '';
+    var price = d.usd;
+    var change = d.usd_24h_change;
+    var isUp = change >= 0;
+    var changeClass = isUp ? 'crypto-up' : 'crypto-down';
+    var changeStr = (isUp ? '+' : '') + change.toFixed(1) + '%';
+    var sparkline = d.sparkline ? _makeSparkline(d.sparkline, isUp) : '';
+    var priceStr = price >= 1000 ? '$' + price.toLocaleString('en-US', {maximumFractionDigits:0}) : price >= 1 ? '$' + price.toFixed(2) : '$' + price.toFixed(4);
+    return '<div class="crypto-row" data-crypto-id="' + id + '"><div class="crypto-info"><span class="crypto-symbol">' + coin.symbol + '</span><span class="crypto-name">' + coin.name + '</span></div><div class="crypto-right"><span class="crypto-price">' + priceStr + '</span>' + sparkline + '<span class="crypto-change ' + changeClass + '">' + changeStr + '</span></div></div>';
+  }).join('');
+  var refreshBtn = '<button class="crypto-refresh" data-crypto-refresh title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>';
+  var editBtn = '<button class="crypto-edit" data-crypto-edit="' + widget.dataset.cryptoUid + '" title="Select coins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>';
+  widget.innerHTML = '<div class="crypto-header">' + refreshBtn + editBtn + '</div>' + rows;
+}
+
+function _fetchCrypto(grid) {
+  var widgets = grid.querySelectorAll('.crypto-widget[data-crypto-uid]');
+  if (widgets.length === 0) return;
+  if (_cryptoLastData) {
+    widgets.forEach(function(w) { updateCryptoWidget(w, _cryptoLastData); });
+    return;
+  }
+  var cached = null;
+  try { cached = JSON.parse(localStorage.getItem(_cryptoCacheKey)); } catch(e) {}
+  if (cached && Date.now() - cached.ts < 120000) {
+    _cryptoLastData = cached.data;
+    widgets.forEach(function(w) { updateCryptoWidget(w, cached.data); });
+    return;
+  }
+  if (_cryptoFetched) return;
+  _cryptoFetched = true;
+  var coins = _getCryptoCoins();
+  var ids = coins.join(',');
+  var url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd&include_24hr_change=true&include_last_updated_at=true';
+  var sparkUrl = 'https://api.coingecko.com/api/v3/coins/' + coins[0] + '/market_chart?vs_currency=usd&days=1&interval=daily';
+  fetch(url, { signal: AbortSignal.timeout(10000) })
+    .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(data) {
+      if (!data || typeof data !== 'object') throw new Error('empty');
+      var result = {};
+      coins.forEach(function(id) {
+        if (data[id]) {
+          result[id] = { usd: data[id].usd || 0, usd_24h_change: data[id].usd_24h_change || 0 };
+        }
+      });
+      // Fetch sparkline for each coin sequentially to avoid rate limits
+      var coinQueue = coins.slice();
+      function fetchNextSparkline() {
+        if (coinQueue.length === 0) {
+          _cryptoLastData = result;
+          try { localStorage.setItem(_cryptoCacheKey, JSON.stringify({ ts: Date.now(), data: result })); } catch(e) {}
+          _cryptoFetched = false;
+          var g = document.querySelector('.bento-grid');
+          if (g) g.querySelectorAll('.crypto-widget[data-crypto-uid]').forEach(function(w) { updateCryptoWidget(w, result); });
+          return;
+        }
+        var coinId = coinQueue.shift();
+        fetch('https://api.coingecko.com/api/v3/coins/' + coinId + '/market_chart?vs_currency=usd&days=1&interval=daily', { signal: AbortSignal.timeout(8000) })
+          .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+          .then(function(cd) {
+            if (cd && cd.prices && cd.prices.length && result[coinId]) {
+              result[coinId].sparkline = cd.prices.map(function(p) { return p[1]; });
+            }
+          })
+          .catch(function() {})
+          .then(function() { setTimeout(fetchNextSparkline, 300); });
+      }
+      fetchNextSparkline();
+    })
+    .catch(function() {
+      _cryptoFetched = false;
+      var g2 = document.querySelector('.bento-grid');
+      if (g2) g2.querySelectorAll('.crypto-widget[data-crypto-uid]').forEach(function(w) {
+        w.innerHTML = '<div class="crypto-error"><span>Could not load prices</span></div>';
+      });
+    });
+}
+
+function _openCryptoEditor(uid) {
+  var existing = document.querySelector('.crypto-editor-overlay');
+  if (existing) existing.remove();
+  var coins = _getCryptoCoins();
+  var overlay = document.createElement('div');
+  overlay.className = 'crypto-editor-overlay';
+  var options = _CRYPTO_COINS.map(function(c) {
+    var checked = coins.indexOf(c.id) !== -1 ? 'checked' : '';
+    return '<label class="crypto-option"><input type="checkbox" value="' + c.id + '" ' + checked + '><span class="crypto-opt-symbol">' + c.symbol + '</span><span class="crypto-opt-name">' + c.name + '</span></label>';
+  }).join('');
+  overlay.innerHTML = '<div class="crypto-editor-modal"><div class="crypto-editor-header"><span>Select Coins</span><button class="crypto-editor-close" data-crypto-editor-close>&times;</button></div><div class="crypto-editor-body">' + options + '</div><div class="crypto-editor-footer"><button class="crypto-editor-save" data-crypto-editor-save="' + uid + '">Save</button></div></div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', function(ev) {
+    if (ev.target === overlay || ev.target.closest('[data-crypto-editor-close]')) overlay.remove();
+    if (ev.target.closest('[data-crypto-editor-save]')) {
+      var selected = [];
+      overlay.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb) { selected.push(cb.value); });
+      if (selected.length === 0) selected = ['bitcoin'];
+      _setCryptoCoins(selected);
+      _cryptoLastData = null;
+      try { localStorage.removeItem(_cryptoCacheKey); } catch(e) {}
+      overlay.remove();
+      renderHubBento();
+    }
+  });
+}
+
 function openEmbedSetup(type, uid) {
   var existing = document.querySelector('.embed-settings-overlay');
   if (existing) existing.remove();
   var overlay = document.createElement('div');
   overlay.className = 'embed-settings-overlay';
+  var frKey = '';
+  try { frKey = localStorage.getItem('haven-fr24-key-' + uid) || ''; } catch(e) {}
   overlay.innerHTML = '<div class="embed-settings-modal">' +
     '<div class="embed-settings-header">' +
       '<span class="embed-settings-title">' + (type === 'strava' ? 'Strava Activity' : 'FlightRadar24') + '</span>' +
@@ -2911,7 +3937,12 @@ function openEmbedSetup(type, uid) {
     '<div class="embed-settings-body">' +
       (type === 'strava'
         ? '<div class="embed-settings-field"><label>Paste a Strava activity URL</label><input class="embed-settings-input" id="embedStravaInput" placeholder="https://www.strava.com/activities/123456789"></div><p class="embed-settings-hint">Only public activities can be embedded.</p>'
-        : '<div class="embed-settings-field"><label>Location</label><select class="embed-settings-input" id="embedFr24Preset"><option value="51.5,-0.12">London (LHR)</option><option value="40.6413,-73.7781">New York (JFK)</option><option value="33.9425,-118.408">Los Angeles (LAX)</option><option value="35.5494,139.7798">Tokyo (NRT)</option><option value="25.2532,55.3657">Dubai (DXB)</option><option value="48.3538,11.7861">Munich (MUC)</option><option value="1.3644,103.9915">Singapore (SIN)</option><option value="52.5597,13.2877">Berlin (BER)</option><option value="-33.9461,151.177">Sydney (SYD)</option><option value="custom">Custom coordinates...</option></select></div><div class="embed-settings-field" id="embedFr24CustomFields" style="display:none"><label>Latitude</label><input class="embed-settings-input" id="embedFr24Lat" placeholder="51.5"><label>Longitude</label><input class="embed-settings-input" id="embedFr24Lon" placeholder="-0.12"></div><p class="embed-settings-hint">Choose an airport or enter custom coordinates.</p>') +
+        : '<div class="fr24-settings-row">' +
+          '<div class="embed-settings-field"><label>Location</label><select class="embed-settings-input" id="embedFr24Preset"><option value="51.5,-0.12">London (LHR)</option><option value="40.6413,-73.7781">New York (JFK)</option><option value="33.9425,-118.408">Los Angeles (LAX)</option><option value="35.5494,139.7798">Tokyo (NRT)</option><option value="25.2532,55.3657">Dubai (DXB)</option><option value="48.3538,11.7861">Munich (MUC)</option><option value="1.3644,103.9915">Singapore (SIN)</option><option value="52.5597,13.2877">Berlin (BER)</option><option value="-33.9461,151.177">Sydney (SYD)</option><option value="custom">Custom coordinates...</option></select></div>' +
+          '<div class="embed-settings-field" id="embedFr24CustomFields" style="display:none"><label>Latitude</label><input class="embed-settings-input" id="embedFr24Lat" placeholder="51.5"><label>Longitude</label><input class="embed-settings-input" id="embedFr24Lon" placeholder="-0.12"></div>' +
+          '<div class="embed-settings-field"><label>OpenSky API key (optional)</label><div class="fr24-key-row"><input type="text" class="embed-settings-input" id="embedFr24Key" placeholder="opensky-xxxx" value="' + escapeHtml(frKey) + '"><button type="button" class="ghost" id="embedFr24ClearKey">Clear</button></div><div class="fr24-key-hint">Free at opensky-network.org — removes rate limits and proxy failures.</div></div>' +
+          '<p class="embed-settings-hint">Choose an airport or enter custom coordinates.</p>' +
+        '</div>') +
     '</div>' +
     '<div class="embed-settings-footer"><button class="embed-settings-save" data-embed-save="' + type + '" data-embed-uid="' + uid + '">Save</button></div>' +
   '</div>';
@@ -2933,6 +3964,13 @@ function openEmbedSetup(type, uid) {
   if (presetSelect && customFields) {
     presetSelect.addEventListener('change', function() {
       customFields.style.display = this.value === 'custom' ? 'flex' : 'none';
+    });
+  }
+  var clearKeyBtn = overlay.querySelector('#embedFr24ClearKey');
+  if (clearKeyBtn) {
+    clearKeyBtn.addEventListener('click', function() {
+      var keyInput = overlay.querySelector('#embedFr24Key');
+      if (keyInput) keyInput.value = '';
     });
   }
 }
@@ -2963,6 +4001,12 @@ function saveEmbedSettings(type, uid) {
       showToast('Enter valid coordinates', 'error', 2500); return;
     }
     try { localStorage.setItem('haven-fr24-' + uid, latVal + ',' + lonVal); } catch(e) {}
+    var keyInput = document.getElementById('embedFr24Key');
+    var key = keyInput ? keyInput.value.trim() : '';
+    try {
+      if (key) localStorage.setItem('haven-fr24-key-' + uid, key);
+      else localStorage.removeItem('haven-fr24-key-' + uid);
+    } catch(e) {}
   }
   var overlay = document.querySelector('.embed-settings-overlay');
   if (overlay) overlay.remove();
@@ -3070,7 +4114,10 @@ function addBubbleTypes(types, dropPos) {
       if (layout.find(i => i.t === t)) return;
     }
     item.w = snap(280);
-    item.h = item.t === 'spotify' ? snap(420) : item.t === 'images' ? snap(280 / 1.333) : snap(280);
+    item.h = (function() {
+      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,pomodoro:180,weather:260,headlines:260,'sleep-score':280,water:180,mood:200,countdown:280,expense:320,notes:240,links:240,quote:220,priorities:320,todos:320,habits:240,progress:240,goals:420,text:160,crypto:300};
+      return snap(sizes[item.t] || 280);
+    })();
     // If a drop position is provided, use it; otherwise find a gap
     if (dropPos && typeof dropPos.x === 'number' && typeof dropPos.y === 'number') {
       item.x = snap(dropPos.x);
@@ -3157,7 +4204,9 @@ function _pomoState(uid) {
   if (!_pomodoroState[uid]) _pomodoroState[uid] = { phase:'focus', remaining:1500, total:1500, running:false, startTs:null, cycle:0 };
   return _pomodoroState[uid];
 }
-function _playPomoAlert() {
+function _playPomoAlert(phase) {
+  if (typeof playCompletionChime === 'function') { playCompletionChime(phase || 'focus'); return; }
+  if (typeof playChime === 'function') { playChime(); return; }
   if (typeof state !== 'undefined' && state.soundEnabled === false) return;
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3173,7 +4222,9 @@ function _playPomoAlert() {
     osc.stop(ctx.currentTime + 0.5);
   } catch(e) {}
 }
-function _playTimerAlert() {
+function _playTimerAlert(phase) {
+  if (typeof playCompletionChime === 'function') { playCompletionChime(phase || 'focus'); return; }
+  if (typeof playChime === 'function') { playChime(); return; }
   if (typeof state !== 'undefined' && state.soundEnabled === false) return;
   try {
     var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -3320,8 +4371,7 @@ function _startTimerTick() {
         if (ts.mode === 'countdown' && ts.elapsed >= ts.target) {
           ts.elapsed = ts.target;
           ts.running = false;
-          ts.startTs = null;
-          _playTimerAlert();
+          ts.startTs = null;              _playTimerAlert('focus');
           _renderTimer(k);
           _timerClearTickIfIdle();
           return;
@@ -3410,12 +4460,14 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines' };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', expense:'Expense', text:'Text', crypto:'Crypto' };
   var categories = [
     { name:'Productivity', short:'Prod', types:['goals','priorities','todos','habits','progress'] },
+    { name:'Wellness', short:'Well', types:['water','mood'] },
     { name:'Media', short:'Media', types:['spotify','strava','flightradar','images'] },
-    { name:'Utilities', short:'Utils', types:['clock','weather','calendar','timer','pomodoro','sleep-score','headlines'] },
-    { name:'Content', short:'Content', types:['quote','notes','links'] }
+    { name:'Finance', short:'Fin', types:['crypto','expense'] },
+    { name:'Utilities', short:'Utils', types:['clock','weather','calendar','timer','pomodoro','sleep-score','headlines','countdown'] },
+    { name:'Content', short:'Content', types:['quote','notes','links','text'] }
   ];
   function applyFilters() {
     var q = (dock.querySelector('.bds-input')?.value || '').toLowerCase().trim();
@@ -3473,29 +4525,39 @@ function renderBubbleDock(grid) {
 
   dock.appendChild(topbar);
 
-  // Items row — single horizontal scroll, icons only
-  var itemsRow = document.createElement('div');
-  itemsRow.className = 'bubble-dock-items';
-  itemsRow.setAttribute('data-dock-items', '');
+  // Widget grid — flat grid, all visible at once
+  var widgetGrid = document.createElement('div');
+  widgetGrid.className = 'bubble-dock-grid';
+  widgetGrid.setAttribute('data-dock-items', '');
 
+  var allTypes = [];
   categories.forEach(function(cat) {
     cat.types.forEach(function(t) {
-      var placed = t === 'images' ? false : has(t);
-      var item = document.createElement('div');
-      item.className = 'bubble-dock-item' + (placed ? ' placed' : '');
-      item.dataset.bubbleDockType = t;
-      item.dataset.dockItemType = t;
-      item.dataset.dockCategory = cat.name;
-      item.title = (placed ? labels[t] + ' (placed)' : labels[t]);
-      var icon = document.createElement('span');
-      icon.className = 'bdi-icon';
-      icon.innerHTML = bubbleTypeIcon(t);
-      item.appendChild(icon);
-      itemsRow.appendChild(item);
+      allTypes.push({ type: t, cat: cat.name, catShort: cat.short });
     });
   });
 
-  dock.appendChild(itemsRow);
+  allTypes.forEach(function(entry) {
+    var t = entry.type;
+    var placed = t === 'images' ? false : has(t);
+    var item = document.createElement('div');
+    item.className = 'bubble-dock-item' + (placed ? ' placed' : '');
+    item.dataset.bubbleDockType = t;
+    item.dataset.dockItemType = t;
+    item.dataset.dockCategory = entry.cat;
+    item.title = placed ? labels[t] + ' (already added)' : 'Drag to add ' + labels[t];
+    var icon = document.createElement('span');
+    icon.className = 'bdi-icon';
+    icon.innerHTML = bubbleTypeIcon(t);
+    var label = document.createElement('span');
+    label.className = 'bdi-label';
+    label.textContent = labels[t];
+    item.appendChild(icon);
+    item.appendChild(label);
+    widgetGrid.appendChild(item);
+  });
+
+  dock.appendChild(widgetGrid);
 
   // Filter toggle
   filters.addEventListener('click', function(e) {
@@ -3532,16 +4594,22 @@ function initBubbleDockDrag(dock) {
     _startDockDrag(e, item, true);
   });
 
-  function _getGhostSize(type) {
+  function _defWidgetSize(type) {
     var defSizes = {
       goals:{w:280,h:420},priorities:{w:280,h:320},todos:{w:280,h:320},
       habits:{w:280,h:240},progress:{w:280,h:240},clock:{w:280,h:160},
-      weather:{w:280,h:240},calendar:{w:280,h:300},timer:{w:280,h:180},
+      weather:{w:280,h:260},calendar:{w:280,h:300},timer:{w:280,h:180},
       pomodoro:{w:280,h:180},spotify:{w:280,h:420},strava:{w:280,h:420},
       flightradar:{w:280,h:420},quote:{w:280,h:220},notes:{w:280,h:240},
-      links:{w:280,h:240},images:{w:280,h:210},'sleep-score':{w:280,h:280},headlines:{w:280,h:260}
+      links:{w:280,h:240},images:{w:280,h:210},'sleep-score':{w:280,h:280},headlines:{w:280,h:260},
+      water:{w:280,h:180},mood:{w:280,h:200},countdown:{w:280,h:280},
+      expense:{w:280,h:320},text:{w:280,h:160},crypto:{w:280,h:300}
     };
-    var d = defSizes[type] || {w:280,h:280};
+    return defSizes[type] || {w:280,h:280};
+  }
+
+  function _getGhostSize(type) {
+    var d = _defWidgetSize(type);
     var maxGW = 140, maxGH = 150;
     var scale = Math.min(maxGW / d.w, maxGH / d.h, 1);
     return { w:Math.round(d.w * scale), h:Math.round(d.h * scale) };
@@ -3551,8 +4619,9 @@ function initBubbleDockDrag(dock) {
     var pos = isTouch ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : { x: e.clientX, y: e.clientY };
     var type = item.dataset.bubbleDockType;
     var rect = item.getBoundingClientRect();
-    var itemW = 280;
-    var itemH = type === 'spotify' ? 420 : type === 'strava' || type === 'flightradar' ? 420 : type === 'images' ? 210 : 280;
+    var defSize = _defWidgetSize(type);
+    var itemW = defSize.w;
+    var itemH = defSize.h;
     var ghostSize = _getGhostSize(type);
     _dockGhost = document.createElement('div');
     _dockGhost.className = 'bubble-dock-ghost';
@@ -3735,6 +4804,17 @@ function setupHubEditEvents() {
     if (field === 'notes') {
       hubContent.notes = el.textContent.trim();
       saveHubContent();
+    } else if (field === 'text') {
+      var textUid = el.dataset.textUid;
+      if (textUid) {
+        var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+        var item = layout.find(function(i) { return i.uid === textUid; });
+        if (item) {
+          item.text = el.textContent.trim();
+          hubContent.bentoLayout = layout;
+          saveHubContent();
+        }
+      }
     }
   }, true);
 
@@ -3794,6 +4874,17 @@ function setupHubEditEvents() {
     else if (field === 'todos') { hubContent.todos.splice(idx, 1); saveHubContent(); renderHubBento(); }
     else if (field === 'habits') { hubContent.habits.splice(idx, 1); saveHubContent(); renderHubBento(); }
     else if (field === 'links') { hubContent.links.splice(idx, 1); saveHubContent(); renderHubBento(); }
+    else if (field === 'countdown') { hubContent.countdown.splice(idx, 1); saveHubContent(); renderHubBento(); }
+    else if (field === 'expense') {
+      var _exp = hubContent.expense || { entries:[], balance:0 };
+      if (_exp.entries[idx]) {
+        _exp.balance += _exp.entries[idx].type === 'income' ? -_exp.entries[idx].amount : _exp.entries[idx].amount;
+        _exp.entries.splice(idx, 1);
+        hubContent.expense = _exp;
+        saveHubContent();
+        renderHubBento();
+      }
+    }
   });
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
@@ -3806,6 +4897,7 @@ function setupHubEditEvents() {
     else if (field === 'todos') { hubContent.todos.push({ text: 'new item', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="todos"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'habits') { hubContent.habits.push('new habit'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="habits"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'links') { hubContent.links.push({ label: 'new link', url: 'https://' }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="links-label"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    else if (field === 'countdown') { hubContent.countdown.push({ label: 'New Event', date: new Date().toISOString().slice(0,10) }); saveHubContent(); renderHubBento(); }
   });
 
   document.querySelector('.hub-layout')?.addEventListener('click', function(e) {
@@ -3957,6 +5049,85 @@ function setupHubEditEvents() {
         hubContent.habitData[todayKey][idx] = !hubContent.habitData[todayKey][idx];
         saveHubContent();
         renderHubBento();
+      }
+      return;
+    }
+    // Water toggle
+    const waterToggle = e.target.closest('[data-water-toggle]');
+    if (waterToggle) {
+      const idx = parseInt(waterToggle.dataset.waterToggle);
+      if (!isNaN(idx)) {
+        if (!hubContent.water) hubContent.water = { goal:8, logged:0, date:'' };
+        var _today = new Date().toISOString().slice(0,10);
+        if (hubContent.water.date !== _today) { hubContent.water.logged = 0; hubContent.water.date = _today; }
+        if (idx < hubContent.water.logged) {
+          hubContent.water.logged = idx;
+        } else {
+          hubContent.water.logged = idx + 1;
+        }
+        saveHubContent();
+        renderHubBento();
+      }
+      return;
+    }
+    // Mood picker
+    const moodPick = e.target.closest('[data-mood-pick]');
+    if (moodPick) {
+      const idx = parseInt(moodPick.dataset.moodPick);
+      if (!isNaN(idx)) {
+        if (!hubContent.mood) hubContent.mood = { today:null, history:{} };
+        var _today = new Date().toISOString().slice(0,10);
+        if (!hubContent.mood.history[_today]) hubContent.mood.history[_today] = {};
+        hubContent.mood.history[_today].mood = idx;
+        saveHubContent();
+        renderHubBento();
+      }
+      return;
+    }
+    // Expense type toggle
+    const expType = e.target.closest('[data-expense-type]');
+    if (expType) {
+      var _btns = expType.closest('.w-exp-type-row')?.querySelectorAll('.w-exp-type-btn');
+      _btns?.forEach(function(b) { b.classList.remove('active'); });
+      expType.classList.add('active');
+      return;
+    }
+    // Expense add
+    const expAdd = e.target.closest('[data-expense-add]');
+    if (expAdd) {
+      var _bubble = expAdd.closest('.bento-bubble');
+      var _amtInput = _bubble?.querySelector('[data-expense-amt]');
+      var _catInput = _bubble?.querySelector('[data-expense-cat]');
+      var _typeBtn = _bubble?.querySelector('.w-exp-type-btn.active');
+      var _amt = _amtInput ? parseFloat(_amtInput.value) : NaN;
+      var _cat = _catInput?.value?.trim() || 'General';
+      var _type = _typeBtn?.dataset?.expenseType || 'expense';
+      if (!isNaN(_amt) && _amt > 0) {
+        if (!hubContent.expense) hubContent.expense = { entries:[], balance:0 };
+        hubContent.expense.entries.push({ amount: _amt, category: _cat, type: _type, date: new Date().toISOString().slice(0,10) });
+        hubContent.expense.balance += _type === 'income' ? _amt : -_amt;
+        saveHubContent();
+        renderHubBento();
+      }
+      return;
+    }
+    // Countdown date/label change
+    const cdDate = e.target.closest('[data-cd-date]');
+    if (cdDate) {
+      const idx = parseInt(cdDate.dataset.cdDate);
+      if (!isNaN(idx) && hubContent.countdown?.[idx] !== undefined) {
+        hubContent.countdown[idx].date = cdDate.value;
+        saveHubContent();
+        renderHubBento();
+      }
+      return;
+    }
+    const cdLabel = e.target.closest('[data-cd-label]');
+    if (cdLabel) {
+      const idx = parseInt(cdLabel.dataset.cdLabel);
+      if (!isNaN(idx) && hubContent.countdown?.[idx] !== undefined) {
+        hubContent.countdown[idx].label = cdLabel.value;
+        saveHubContent();
       }
       return;
     }
@@ -4211,10 +5382,9 @@ function _snapshotBubblePreview(el, type) {
 
 var _snapshotColors = {
   goals:'#bdbdbd', priorities:'#b0b0b0', todos:'#a3a3a3', habits:'#979797',
-  progress:'#8a8a8a', clock:'#bdbdbd', weather:'#b0b0b0', calendar:'#a3a3a3',
-  timer:'#979797', pomodoro:'#8a8a8a', spotify:'#c7c7c7', strava:'#9a9a9a',
-  flightradar:'#8d8d8d', 'sleep-score':'#b5b5b5', quote:'#a8a8a8', notes:'#9c9c9c', headlines:'#ababab',
-  links:'#909090', images:'#c2c2c2'
+  progress:'#8a8a8a', clock:'#bdbdbd', weather:'#b0b0b0', calendar:'#a3a3a3',timer:'#979797', pomodoro:'#8a8a8a', spotify:'#c7c7c7', strava:'#9a9a9a',
+      flightradar:'#8d8d8d', 'sleep-score':'#b5b5b5', quote:'#a8a8a8', notes:'#9c9c9c', headlines:'#ababab',
+      links:'#909090', images:'#c2c2c2', crypto:'#f7931a'
 };
 
 window.captureHubSnapshot = function() {
@@ -4382,7 +5552,8 @@ window.captureHubSnapshot = function() {
       var ifr = w.querySelector('iframe');
       var header = w.querySelector('.spotify-header span');
       if (ifr && _active) {
-        ifr.src = 'https://open.spotify.com/embed/playlist/' + _active.id + '?utm_source=generator';
+        var _targetSrc = 'https://open.spotify.com/embed/playlist/' + _active.id + '?utm_source=generator';
+        if (ifr.src !== _targetSrc) ifr.src = _targetSrc;
         if (header) header.textContent = _active.name;
       } else if (w.classList.contains('spotify-empty') && _active) {
         // Had empty state, now has playlist — re-render to get the iframe

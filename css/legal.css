@@ -62,7 +62,7 @@ nav {
   display: flex; align-items: center; justify-content: center;
   transition: transform 0.3s var(--smooth);
 }
-.nav-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nav-icon img { width: 100%; height: 100%; object-fit: cover; display: block; transform: scale(1.9); }
 .nav-brand:hover .nav-icon { transform: scale(1.08); }
 .nav-name { font-size: 0.95rem; font-weight: 600; letter-spacing: -0.02em; }
 .nav-links { display: flex; align-items: center; gap: 20px; }

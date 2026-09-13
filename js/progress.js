@@ -248,6 +248,30 @@ function renderTags() {
   const heroCount = document.getElementById('actHeroCount');
   if (heroCount) heroCount.textContent = `${grandTotal} tasks`;
 
+  // Kernel line — data-driven status strip
+  const kernel = document.getElementById('kernelFocusLine');
+  if (kernel) {
+    let kbits = [];
+    const topTag = TAG_ORDER.map(t => ({ t, c: tagData[t]?.count || 0 })).sort((a, b) => b.c - a.c)[0];
+    if (topTag && topTag.c > 0) kbits.push(`most active in ${TAG_LABELS[topTag.t]}`);
+    const doneAll = tagData[TAG_ORDER[0]]?.count > 0 && tagData[TAG_ORDER[0]].completed === tagData[TAG_ORDER[0]].count;
+    if (doneAll) kbits.push('deep work column fully cleared');
+    const over = state.tasks.filter(t => !isWhiteboardTask(t) && t.completed).length;
+    kbits.push(`${over} total completions`);
+
+    const tNow = new Date();
+    const hh = tNow.getHours() * 60 + tNow.getMinutes();
+    const todayTasks = state.tasks.filter(t => !isWhiteboardTask(t) && t.date === formatDate(tNow));
+    const nowTask = todayTasks
+      .find(t => parseTime(t.startTime) <= hh && hh <= (parseTime(t.endTime) || parseTime(t.startTime) + 60));
+    let slotsTxt = 'hear what you planned';
+    if (nowTask) slotsTxt = `right now: ${nowTask.title}`;
+    else if (todayTasks.length === 0) slotsTxt = 'no events today — the plan is open';
+
+    const line = [`${kbits.join(' · ') || 'a quiet session'}`, slotsTxt].join(' — ');
+    kernel.textContent = line;
+  }
+
   // Fit text
   requestAnimationFrame(() => { fitTextAll('.tag-col-task', 13, 8); });
 
@@ -1048,6 +1072,18 @@ function updateView() {
   }
 }
 
+// --- THEME CLASS HOOK ----------------------------------------------------
+// The progress page ships its own design tokens (css/progress-desert.css,
+// css/progress-mono.css). Reflect the active theme on <html> so the design
+// can re-theme without touching the DOM layout.
+const PAGE_THEME_ATTR = 'data-pg-theme';
+function applyPageTheme() {
+  const root = document.documentElement;
+  const mono = !!document.querySelector('.mono-hero') && state.darkMode !== false;
+  const el = mono ? 'mono' : (state.darkMode === false ? 'light' : 'dark');
+  root.setAttribute(PAGE_THEME_ATTR, el);
+}
+
 // --- SETUP -----------------------------------------------------------------
 function setupPage() {
   dom.importFileInput = document.getElementById('importFileInput');
@@ -1142,7 +1178,7 @@ function setupPage() {
   });
 
   // Re-render on theme change
-  const observer = new MutationObserver(() => { renderActivities(); });
+  const observer = new MutationObserver(() => { applyPageTheme(); renderActivities(); });
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 }
 
@@ -1150,6 +1186,7 @@ function setupPage() {
 function init() {
   loadState();
   applyTheme();
+  applyPageTheme();
   loadCompletionLog();
   document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
   weekOffset = 0;
@@ -1168,7 +1205,7 @@ function init() {
   });
   setupTrendHover();
   window.addEventListener('resize', renderAnalytics);
-  const _analyticsThemeObserver = new MutationObserver(() => { renderAnalytics(); });
+  const _analyticsThemeObserver = new MutationObserver(() => { applyPageTheme(); renderAnalytics(); });
   _analyticsThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 }
 
@@ -1275,20 +1312,37 @@ function renderSummary(tasks) {
   const el = (id) => document.getElementById(id);
   let totalMins = 0;
   let doneCount = 0;
+  let deepMins = 0;
+  let studyMins = 0;
 
   for (const t of tasks) {
-    totalMins += getTaskDuration(t);
+    const dur = getTaskDuration(t);
+    totalMins += dur;
     if (t.completed) doneCount++;
+    if (t.tag === 'deep-work') deepMins += dur;
+    if (t.tag === 'study') studyMins += dur;
   }
 
   el('statTime').textContent = formatHrs(totalMins);
+  if (el('statTimeKpi')) el('statTimeKpi').textContent = formatHrs(totalMins);
+  if (el('statDeep')) el('statDeep').textContent = formatHrs(deepMins);
+  if (el('statStudy')) el('statStudy').textContent = formatHrs(studyMins);
 
   const sub = el('statTasksSub');
   if (sub) sub.textContent = `${doneCount} done of ${tasks.length}`;
+  if (el('statTasks')) el('statTasks').textContent = `${doneCount} done of ${tasks.length}`;
+  if (el('statTasksSubKpi')) el('statTasksSubKpi').textContent = `${doneCount} done of ${tasks.length}`;
+
+  const pct = tasks.length > 0 ? Math.round((doneCount / tasks.length) * 100) : 0;
+  if (el('compKpi')) el('compKpi').textContent = `${pct}%`;
+  if (el('compKpiSub')) el('compKpiSub').textContent = `${doneCount} done of ${tasks.length}`;
 
   const prev = getPreviousPeriodTasks(currentPeriod);
   const sumMins = (list) => list.reduce((s, t) => s + getTaskDuration(t), 0);
+  const sumTag = (list, tag) => list.reduce((s, t) => s + (t.tag === tag ? getTaskDuration(t) : 0), 0);
   setKpiTrend('statTimeTrend', totalMins, sumMins(prev));
+  setKpiTrend('statDeepTrend', deepMins, sumTag(prev, 'deep-work'));
+  setKpiTrend('statStudyTrend', studyMins, sumTag(prev, 'study'));
 }
 
 // ─── COMPLETION RATE ───────────────────────────────────────
@@ -1306,9 +1360,14 @@ function renderCompletion(tasks) {
   el('compTotal').textContent = total;
   el('completionFill').style.width = `${pct}%`;
   const ring = el('compRing');
-  if (ring) ring.style.background = `conic-gradient(var(--accent) ${pct}%, var(--bg-secondary) ${pct}%)`;
+  if (ring) ring.style.background = `conic-gradient(var(--primary) ${pct}%, var(--bg-secondary) ${pct}%)`;
   const ringPct = el('compRingPct');
   if (ringPct) ringPct.textContent = `${pct}%`;
+  const compPctEl = el('compPct');
+  if (compPctEl) {
+    compPctEl.className = 'an-kpi-trend flat';
+    compPctEl.textContent = `${pct}%`;
+  }
 }
 
 // ─── STREAK CARD ───────────────────────────────────────────
@@ -1379,15 +1438,21 @@ function chartFont(size, weight) {
   return `${weight ? weight + ' ' : ''}${size}px "Hanken Grotesk", Inter, sans-serif`;
 }
 
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function chartTheme() {
-  const isDark = document.documentElement.classList.contains('dark');
   return {
-    isDark,
-    textColor: isDark ? '#8a8a96' : '#6b6b78',
-    gridColor: isDark ? '#23232a' : '#e8e8ee',
-    holeColor: isDark ? '#1a1a1e' : '#ffffff',
-    labelColor: isDark ? '#fafafa' : '#0a0a0b',
-    accent: isDark ? '#a5b4fc' : '#6366f1'
+    isDark: true,
+    textColor: '#8a8a8a',
+    gridColor: '#262626',
+    holeColor: '#000000',
+    labelColor: '#ffffff',
+    accent: '#ffffff'
   };
 }
 
@@ -1489,7 +1554,7 @@ function renderTrendChart(tasks) {
   // Area fill under the line
   const pts = dayMins.map((m, i) => ({ x: xAt(i), y: yAt(m) }));
   const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
-  grad.addColorStop(0, theme.isDark ? 'rgba(165, 180, 252, 0.20)' : 'rgba(99, 102, 241, 0.15)');
+  grad.addColorStop(0, hexToRgba(accent, theme.isDark ? 0.20 : 0.15));
   grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.beginPath();
   ctx.moveTo(pts[0].x, pad.top + chartH);
@@ -1518,7 +1583,7 @@ function renderTrendChart(tasks) {
     if (isToday) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
-      ctx.fillStyle = theme.isDark ? 'rgba(165, 180, 252, 0.25)' : 'rgba(99, 102, 241, 0.18)';
+      ctx.fillStyle = hexToRgba(accent, theme.isDark ? 0.25 : 0.18);
       ctx.fill();
     }
   });
@@ -1687,9 +1752,13 @@ function renderSleepAnalytics() {
     const avgQ = weekLogs.reduce((s, l) => s + l.quality, 0) / weekLogs.length;
     qEl.textContent = avgQ.toFixed(1) + ' / 5';
     qSubEl.textContent = 'Average sleep quality';
+    const qFill = document.getElementById('sleepQualityFill');
+    if (qFill) qFill.style.width = Math.round((avgQ / 5) * 100) + '%';
   } else {
     qEl.textContent = '—';
     qSubEl.textContent = 'No sleep data';
+    const qFill = document.getElementById('sleepQualityFill');
+    if (qFill) qFill.style.width = '0%';
   }
   if (dotsEl) {
     dotsEl.innerHTML = days.map(ds => {
@@ -1697,7 +1766,7 @@ function renderSleepAnalytics() {
       const q = log ? log.quality : 0;
       const label = new Date(ds + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'narrow' });
       const color = log
-        ? 'color-mix(in srgb, var(--accent) ' + Math.round((q / 5) * 100) + '%, var(--bg-secondary))'
+        ? 'color-mix(in srgb, var(--primary) ' + Math.round((q / 5) * 100) + '%, var(--bg-secondary))'
         : '';
       return '<div class="an-quality-dot" title="' + label + (log ? ': ' + q + '/5 · ' + formatSleepMinutes(log.duration) : ': no log') + '">' +
         '<i style="' + (color ? 'background:' + color : '') + '"></i><span>' + label + '</span></div>';
@@ -1785,7 +1854,7 @@ function renderSleepChart(weekLogs, days) {
 
   // 8-hour reference line
   const refY = pad.top + chartH - (480 / maxMins) * chartH;
-  ctx.strokeStyle = isDark ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.2)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
   ctx.lineWidth = 1;
   ctx.setLineDash([3, 3]);
   ctx.beginPath();
@@ -1795,7 +1864,7 @@ function renderSleepChart(weekLogs, days) {
   ctx.setLineDash([]);
 
   // "8h" label
-  ctx.fillStyle = isDark ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.3)';
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
   ctx.font = chartFont(8);
   ctx.textAlign = 'left';
   ctx.fillText('8h', w - pad.right - 14, refY - 2);
@@ -1833,6 +1902,11 @@ function renderAnalytics() {
   if (labelEl) {
     const map = { week: 'This Week', month: 'This Month', all: 'All Time' };
     labelEl.textContent = map[currentPeriod] || 'All Time';
+  }
+  const periodLine = document.getElementById('completionPeriod');
+  if (periodLine) {
+    const map = { week: 'this week', month: 'this month', all: 'all time' };
+    periodLine.textContent = map[currentPeriod] || 'all time';
   }
 }
 

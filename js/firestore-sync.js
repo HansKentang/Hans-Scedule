@@ -460,7 +460,7 @@ function onDataChanged(rawKey) {
   if (key.indexOf('haven-image-') === 0 || key.indexOf('hub-image-') === 0) return;
 
   // Track whether task stats changed so we can push them alongside the data sync
-  if (key === 'haven-schedule-tasks' || key.indexOf('haven-activities-completions') === 0 || key.indexOf('haven-activity-completions') === 0) {
+  if (key === 'haven-schedule-tasks' || key === 'haven-activities-completions') {
     SYNC_STATS_DIRTY = true;
   }
 
