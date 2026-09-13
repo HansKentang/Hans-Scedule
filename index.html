@@ -12,16 +12,19 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <title>Havën Schedule — Hub</title>
-  <script>// Redirect new visitors to landing page (skip in dev mode)
-  (function(){
-    var hasUser = !!localStorage.getItem('haven-gsi-active');
-    var isGuest = sessionStorage.getItem('haven-guest') === '1';
-    // Allow bypass for local development/testing via URL param ?dev=true
-    var isDev = location.search.includes('dev=true') || location.search.includes('debug=1');
-    if (!hasUser && !isGuest && !isDev) {
-      window.location.replace('landing.html');
-    }
-  })();</script>
+   <script>// Redirect new visitors to landing page (skip in dev mode)
+   (function(){
+     var hasUser = !!localStorage.getItem('haven-gsi-active');
+     var isGuest = sessionStorage.getItem('haven-guest') === '1';
+     var isDev = location.search.includes('dev=true') || location.search.includes('debug=1');
+     if (!hasUser && !isGuest && !isDev) {
+       setTimeout(function() {
+         if (!localStorage.getItem('haven-gsi-active') && sessionStorage.getItem('haven-guest') !== '1') {
+           window.location.replace('landing.html');
+         }
+       }, 300);
+     }
+   })();</script>
   <script>// Detect hub mode (desktop/mobile) and set body class before CSS loads to prevent flash
   (function(){
     var mode = null;
