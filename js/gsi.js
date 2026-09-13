@@ -51,8 +51,25 @@ function getActiveUserId() {
 }
 
 function setActiveUserId(id) {
-  if (id) localStorage.setItem(AUTH_ACTIVE_KEY, id);
-  else localStorage.removeItem(AUTH_ACTIVE_KEY);
+  function _clearImages() {
+    try {
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var k = localStorage.key(i);
+        if (k && (k.indexOf('haven-image-') === 0 || k.indexOf('hub-image-') === 0)) {
+          localStorage.removeItem(k);
+        }
+      }
+    } catch(e) {}
+  }
+  if (id) {
+    localStorage.setItem(AUTH_ACTIVE_KEY, id);
+    if (localStorage.getItem(AUTH_ACTIVE_KEY) !== id) {
+      _clearImages();
+      localStorage.setItem(AUTH_ACTIVE_KEY, id);
+    }
+  } else {
+    localStorage.removeItem(AUTH_ACTIVE_KEY);
+  }
 }
 
 // Initialize currentUserId synchronously BEFORE any page scripts call loadState()
