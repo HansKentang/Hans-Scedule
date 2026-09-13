@@ -95,6 +95,31 @@ function getColorForId(id) {
   return colors[Math.abs(hash) % colors.length];
 }
 
+function _syncMenuProfile(activeUser, isGuest) {
+  var nameEl = document.getElementById('menuName');
+  var emailEl = document.getElementById('menuEmail');
+  var avatarEl = document.getElementById('menuAvatar');
+  if (!nameEl) return;
+  if (activeUser) {
+    nameEl.textContent = activeUser.name || 'User';
+    if (emailEl) emailEl.textContent = activeUser.email || '';
+    if (avatarEl) {
+      var initials = getInitials(activeUser.name);
+      var color = activeUser._color || getColorForId(activeUser.id);
+      if (activeUser.picture) {
+        avatarEl.innerHTML = '<img src="' + activeUser.picture + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover">';
+      } else {
+        avatarEl.textContent = initials;
+        avatarEl.style.background = color;
+      }
+    }
+  } else {
+    nameEl.textContent = 'Guest';
+    if (emailEl) emailEl.textContent = '';
+    if (avatarEl) { avatarEl.textContent = 'G'; avatarEl.style.background = '#fff'; avatarEl.style.color = '#3f3f3a'; }
+  }
+}
+
 function renderAuthUI() {
   var container = document.getElementById('gsiContainer');
   if (!container) return;
@@ -135,6 +160,7 @@ function renderAuthUI() {
         '<span>Create profile</span></div></div>';
     container.querySelector('#gsiButton').addEventListener('click', openAccountPopup);
   }
+  _syncMenuProfile(activeUser, guestProfile);
 }
 
 /* ════════════════════════════════════════════════════════════
