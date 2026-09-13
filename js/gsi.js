@@ -452,7 +452,11 @@ function completeGoogleSignIn(gdata) {
     setActiveUserId(targetId);
     if (typeof state !== 'undefined') state.currentUserId = targetId;
     renderAuthUI();
-    location.reload();
+    if (isLoginPage()) {
+      location.href = 'index.html';
+    } else {
+      location.reload();
+    }
   };
   var existing = localUsers.find(function(u) { return u.googleId === gdata.googleId; });
   if (existing) {
