@@ -823,7 +823,6 @@ function removeAllProfiles() {
   saveUsers();
   try { localStorage.removeItem(AUTH_ACTIVE_KEY); } catch (e) {}
   try { sessionStorage.removeItem('haven-guest'); } catch (e) {}
-  try { localStorage.removeItem('haven-hub-mode'); } catch (e) {}
   try { localStorage.removeItem('haven-gsi-migrated'); } catch (e) {}
   if (typeof state !== 'undefined') {
     state.currentUserId = null;

@@ -70,6 +70,7 @@
 | `START_HOUR` | `5` (grid start) | `js/shared.js` |
 | `VISIBLE_HOURS` | `24` (grid span, 5am–5am next day) | `js/shared.js` |
 | `BENTO_UNDO_MAX` | `30` | `js/hub-visuals.js` |
+| `HUB_MOBILE_DISABLED` | `true` (flip to re-enable hub on mobile) | `js/hub-visuals.js` |
 
 ## Critical Rules
 
@@ -421,3 +422,6 @@ gallery    │ hero → image grid → footer
 - Finance Savings KPI card (renamed to Balance, then removed)
 - Text widget type in bento canvas
 - Rate stat in progress widget
+- Desktop/mobile hub mode switching (`hubMode`, `switchHubMode`, `renderMobileDashboard`, `initHubMode`, `applyModeVisibility`, `updateHubModeToggle`, `_onHubModeResize`)
+- Mobile dashboard (`#hubMobileDash`, `.hub-mobile-dash`, `.hub-mode-mobile`, `.hmd-*` classes)
+- Mobile bento keys (`haven-hub-content-mobile`, `haven-hub-bento-mobile`, `haven-hub-visibility-mobile`, `haven-schedule-hub-layout-mobile`, `haven-hub-mode`)

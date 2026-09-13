@@ -1390,7 +1390,7 @@ function expandRecurringTasks(dateStart, dateEnd) {
         content.classList.add('transitioning-out');
         setTimeout(() => {
           window.location.href = href;
-        }, 200);
+        }, 260);
       });
     });
   }
@@ -3821,8 +3821,6 @@ function exportHubSettings() {
   var data = { version: 1, exportedAt: new Date().toISOString() };
   var keys = [
     'haven-hub-content', 'haven-hub-bento', 'haven-hub-visibility', 'haven-schedule-hub-layout',
-    'haven-hub-content-mobile', 'haven-hub-bento-mobile', 'haven-hub-visibility-mobile', 'haven-schedule-hub-layout-mobile',
-    'haven-hub-mode',
     'haven-schedule-settings', 'haven-schedule-categories', 'haven-custom-tags',
     'haven-card-colors', 'haven-subcategories', 'haven-renamed-labels'
   ];
@@ -3863,8 +3861,6 @@ function importHubSettings(e) {
       var data = JSON.parse(ev.target.result);
       var keys = [
         'haven-hub-content', 'haven-hub-bento', 'haven-hub-visibility', 'haven-schedule-hub-layout',
-        'haven-hub-content-mobile', 'haven-hub-bento-mobile', 'haven-hub-visibility-mobile', 'haven-schedule-hub-layout-mobile',
-        'haven-hub-mode',
         'haven-schedule-settings', 'haven-schedule-categories', 'haven-custom-tags',
         'haven-card-colors', 'haven-subcategories', 'haven-renamed-labels'
       ];
@@ -3880,9 +3876,7 @@ function importHubSettings(e) {
       }
       if (typeof loadState === 'function') try { loadState(); } catch(e) {}
       if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
-      if (typeof initHubMode === 'function') try { initHubMode(); } catch(e) {}
       if (typeof renderHubBento === 'function') try { renderHubBento(); } catch(e) {}
-      if (typeof renderMobileDashboard === 'function' && typeof hubMode !== 'undefined' && hubMode === 'mobile') try { renderMobileDashboard(); } catch(e) {}
       showToast('Hub settings imported successfully', 'success');
     } catch(err) {
       alert('Invalid file: ' + err.message);
@@ -4797,9 +4791,11 @@ function renderSidebarImages() {
   var spEl = document.querySelector('.sp-sidebar');
   // Apply saved height (never more than space above Spotify)
   if (config.imageSectionHeight) {
-    var spH = spEl ? spEl.offsetHeight : 100;
+    var spH = spEl ? spEl.offsetHeight : 0;
+    var minSpH = 120;
+    if (spH < 30) spH = minSpH;
     var parentH = container.parentElement ? container.parentElement.offsetHeight : 600;
-    var clampedH = Math.min(config.imageSectionHeight, Math.max(16, Math.min(200, parentH - spH)));
+    var clampedH = Math.min(config.imageSectionHeight, Math.max(16, Math.min(200, parentH - spH - 16)));
     container.style.flex = 'none';
     container.style.height = clampedH + 'px';
     container.style.maxHeight = 'none';

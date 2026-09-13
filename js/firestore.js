@@ -19,14 +19,11 @@ function initFirestore() {
     firebase.initializeApp(FIREBASE_CONFIG);
   }
   FIRESTORE_DB = firebase.firestore();
-  // Enable offline persistence (new API for Firestore 11.10+)
   var isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
   if (!isFileProtocol && FIRESTORE_DB) {
     FIRESTORE_DB.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
       if (err.code === 'failed-precondition') {
-        // Multiple tabs open — persistence can only be enabled in one tab at a time
       } else if (err.code === 'unimplemented') {
-        // Browser doesn't support persistence
       }
     });
   }

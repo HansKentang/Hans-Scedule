@@ -161,7 +161,7 @@ function _getImgStyle(uid) { return _imgStyles[uid] || 'default'; }
 function _setImgStyle(uid, style) { _imgStyles[uid] = style; try { localStorage.setItem(IMG_STYLES_KEY, JSON.stringify(_imgStyles)); } catch(e) {} }
 
 const TEXT_STYLES_KEY = 'haven-text-styles';
-const TEXT_STYLE_LIST = ['sans','serif','mono','mono thin','cursive','rounded','georgia','arial','times','courier','verdana','consolas','fira','roboto','poppins'];
+const TEXT_STYLE_LIST = ['sans','serif','mono','georgia','arial','times','courier','verdana','consolas'];
 let _textStyles = {};
 try { _textStyles = JSON.parse(localStorage.getItem(TEXT_STYLES_KEY) || '{}'); } catch(e) {}
 function _getTextStyle(uid) { return _textStyles[uid] || 'sans'; }
@@ -169,11 +169,7 @@ function _setTextStyle(uid, style) { _textStyles[uid] = style; try { localStorag
 
 const HUB_VIS_KEY = 'haven-hub-visibility';
 const HUB_CONTENT_KEY = 'haven-hub-content';
-const HUB_MODE_KEY = 'haven-hub-mode';
-const HUB_CONTENT_MOBILE_KEY = 'haven-hub-content-mobile';
-const HUB_BENTO_MOBILE_KEY = 'haven-hub-bento-mobile';
-const HUB_VIS_MOBILE_KEY = 'haven-hub-visibility-mobile';
-const HUB_LAYOUT_MOBILE_KEY = 'haven-schedule-hub-layout-mobile';
+const HUB_MOBILE_DISABLED = true;
 const TIMER_STATE_KEY = 'hub-timer-state';
 const GUEST_TEMPLATE_KEY = 'haven-guest-default-template';
 
@@ -181,109 +177,11 @@ const MAX_CANVAS_HEIGHT = 10000;
 let hubEditMode = false;
 try { hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true'; } catch (e) { /* ignore */ }
 let hubMode = 'desktop';
-function detectHubMode() {
-  return window.innerWidth < 768 ? 'mobile' : 'desktop';
-}
-function getHubMode() {
-  if (window.innerWidth >= 768) return 'desktop';
-  try {
-    var saved = localStorage.getItem(HUB_MODE_KEY);
-    if (saved === 'desktop' || saved === 'mobile') return saved;
-  } catch(e) {}
-  return detectHubMode();
-}
-function _contentKey() { return hubMode === 'mobile' ? HUB_CONTENT_MOBILE_KEY : HUB_CONTENT_KEY; }
-function _bentoKey() { return hubMode === 'mobile' ? HUB_BENTO_MOBILE_KEY : HUB_BENTO_KEY; }
-function _visKey() { return hubMode === 'mobile' ? HUB_VIS_MOBILE_KEY : HUB_VIS_KEY; }
-function _layoutKey() { return hubMode === 'mobile' ? HUB_LAYOUT_MOBILE_KEY : HUB_LAYOUT_KEY; }
+function _contentKey() { return HUB_CONTENT_KEY; }
+function _bentoKey() { return HUB_BENTO_KEY; }
+function _visKey() { return HUB_VIS_KEY; }
+function _layoutKey() { return HUB_LAYOUT_KEY; }
 
-let _hubModeLocked = false;
-function initHubMode() {
-  if (window.innerWidth >= 768) {
-    hubMode = 'desktop';
-    _hubModeLocked = false;
-  } else {
-    var saved = null;
-    try { saved = localStorage.getItem(HUB_MODE_KEY); } catch(e) {}
-    if (saved === 'desktop' || saved === 'mobile') {
-      hubMode = saved;
-      _hubModeLocked = detectHubMode() !== saved;
-    } else {
-      hubMode = detectHubMode();
-      _hubModeLocked = false;
-    }
-  }
-  applyModeVisibility();
-  updateHubModeToggle();
-}
-function applyModeVisibility() {
-  var isMobile = hubMode === 'mobile';
-  var html = document.documentElement;
-  if (isMobile) {
-    html.classList.add('hub-mode-mobile');
-    html.classList.remove('hub-mode-desktop');
-  } else {
-    html.classList.add('hub-mode-desktop');
-    html.classList.remove('hub-mode-mobile');
-  }
-
-  var bentoWrap = document.querySelector('.hub-section-wrap[data-hub-section="bento"]');
-  var mobileDash = document.getElementById('hubMobileDash');
-  var accessHub = document.getElementById('hubAccessHub');
-  if (isMobile) {
-    if (bentoWrap) { bentoWrap.style.display = 'none'; bentoWrap.style.visibility = 'hidden'; }
-    if (mobileDash) mobileDash.style.display = 'flex';
-    if (accessHub) accessHub.style.display = 'none';
-  } else {
-    if (bentoWrap) { bentoWrap.style.display = ''; bentoWrap.style.visibility = ''; }
-    if (mobileDash) mobileDash.style.display = 'none';
-    if (accessHub) accessHub.style.display = '';
-  }
-}
-function updateHubModeToggle() {
-  var btn = document.getElementById('hubModeToggle');
-  if (!btn) return;
-  if (window.innerWidth >= 768) { btn.style.display = 'none'; return; }
-  btn.style.display = '';
-  var span = btn.querySelector('.hub-mode-label') || btn;
-  var isMobile = hubMode === 'mobile';
-  span.textContent = isMobile ? 'Desktop View' : 'Mobile View';
-  btn.title = isMobile ? 'Switch to desktop layout' : 'Switch to mobile layout';
-}
-function switchHubMode(mode, manual) {
-  if (window.innerWidth >= 768) mode = 'desktop';
-  if (!mode) mode = hubMode === 'mobile' ? 'desktop' : 'mobile';
-  if (mode === hubMode) { applyModeVisibility(); updateHubModeToggle(); return; }
-  if (hubContent) saveHubContent();
-  hubMode = mode;
-  if (manual !== false) {
-    _hubModeLocked = detectHubMode() !== mode;
-    try { localStorage.setItem(HUB_MODE_KEY, mode); } catch(e) {}
-  }
-  hubContent = loadHubContent();
-  applyModeVisibility();
-  updateHubModeToggle();
-  if (hubMode === 'desktop') {
-    try { applyHubEditMode(); } catch(e) { console.error('applyHubEditMode error:', e); }
-    try { renderHubBento(); } catch(e) { console.error('renderHubBento error:', e); }
-  } else {
-    try { renderMobileDashboard(); } catch(e) { console.error('renderMobileDashboard error:', e); }
-  }
-  if (typeof renderSleepHub === 'function') renderSleepHub();
-  if (typeof renderHubGreeting === 'function') renderHubGreeting();
-}
-function _onHubModeResize() {
-  if (window.innerWidth >= 768) { hubMode = 'desktop'; return; }
-  if (_hubModeLocked) return;
-  if (!_hubModeResizeTO) {
-      _hubModeResizeTO = setTimeout(function() {
-      _hubModeResizeTO = null;
-      var newMode = detectHubMode();
-      if (newMode !== hubMode) switchHubMode(newMode, false);
-    }, 100);
-  }
-}
-let _hubModeResizeTO = null;
 let _bentoUidCounter = 0;
 let _clockInterval = null;
 let _timerIntervals = {};
@@ -980,7 +878,6 @@ function renderHubBento() {
     console.warn('[hub] .bento-grid not found, skipping render');
     return;
   }
-  if (hubMode === 'mobile') return;
   // Defensive: ensure hubContent exists and has all required fields
   if (!hubContent) {
     console.warn('[hub] hubContent is null/undefined, loading defaults');
@@ -1005,6 +902,12 @@ function renderHubBento() {
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   hubContent.bentoLayout = layout;
   const isEdit = hubEditMode;
+
+  var _prevSpSrc = null;
+  try {
+    var _prevIfr = grid.querySelector('.spotify-widget iframe');
+    if (_prevIfr && _prevIfr.src && _prevIfr.src.indexOf('open.spotify.com') !== -1) _prevSpSrc = _prevIfr.src;
+  } catch(e) {}
 
   grid.innerHTML = '';
 
@@ -1039,7 +942,7 @@ function renderHubBento() {
          ${type === 'progress' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-prog-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
          ${type === 'goals' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-goals-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
          ${type === 'images' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-img-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'text' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-text-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+          ${type === 'text' ? '<select class="bento-tool-btn bento-tool-style bento-tool-delete-right bento-text-font-select" data-text-font-select="' + uid + '" title="Change font" style="right:34px">' + TEXT_STYLE_LIST.map(function(f) { return '<option value="' + f + '"' + (f === _getTextStyle(uid) ? ' selected' : '') + '>' + f.charAt(0).toUpperCase() + f.slice(1) + '</option>'; }).join('') + '</select>' : ''}
          <button class="bento-tool-btn bento-tool-delete bento-tool-delete-right" data-remove-bubble="${uid}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
@@ -1428,13 +1331,16 @@ function renderHubBento() {
         </div>`;
       }
       case 'spotify':
-        var _spActiveId = null;
-        try { _spActiveId = localStorage.getItem('haven-spotify-active') || null; } catch(e) {}
-        var _spPlaylists = [];
-        try { _spPlaylists = JSON.parse(localStorage.getItem('haven-spotify-playlists') || '[]'); } catch(e) {}
+        var _spActiveId = (typeof spActiveId !== 'undefined') ? spActiveId : null;
+        var _spPlaylists = (typeof spPlaylists !== 'undefined') ? spPlaylists : [];
+        if (!_spActiveId && _spPlaylists.length === 0) {
+          try { _spActiveId = localStorage.getItem('haven-spotify-active') || null; } catch(e) {}
+          try { _spPlaylists = JSON.parse(localStorage.getItem('haven-spotify-playlists') || '[]'); } catch(e) {}
+        }
         var _spActivePlaylist = _spPlaylists.find(function(p) { return p.id === _spActiveId; });
         if (_spActivePlaylist) {
           var spotUrl = 'https://open.spotify.com/embed/playlist/' + _spActivePlaylist.id + '?utm_source=generator';
+          var _iframeSrc = (_prevSpSrc && _prevSpSrc.indexOf(_spActivePlaylist.id) !== -1) ? _prevSpSrc : e(spotUrl);
           return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
             ${editUI}
             <div class="spotify-widget">
@@ -1442,7 +1348,7 @@ function renderHubBento() {
                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
                 <span>${_spActivePlaylist.name}</span>
               </div>
-              <iframe src="${e(spotUrl)}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" loading="lazy" style="display:block;width:100%;border:none"></iframe>
+              <iframe src="${_iframeSrc}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" loading="lazy" style="display:block;width:100%;border:none"></iframe>
             </div>
           </div>`;
         } else {
@@ -1772,12 +1678,14 @@ function renderHubBento() {
   });
 
   const visible = layout.filter(i => !i.hidden);
-  visible.forEach(item => {
+  visible.forEach((item, idx) => {
     try {
       var html = bubbleHtml(item);
       var accent = hubContent.bubbleColors && hubContent.bubbleColors[item.uid];
       if (accent) {
-        html = html.replace(/style="(left:[^"]+)"/, function(m, p1) { return 'style="' + p1 + ';--bubble-accent:' + accent + '"'; });
+        html = html.replace(/style="(left:[^"]+)"/, function(m, p1) { return 'style="' + p1 + ';--bubble-accent:' + accent + ';animation-delay:' + (idx * 60) + 'ms"'; });
+      } else {
+        html = html.replace(/style="(left:[^"]+)"/, function(m, p1) { return 'style="' + p1 + ';animation-delay:' + (idx * 60) + 'ms"'; });
       }
       grid.insertAdjacentHTML('beforeend', html);
     } catch (e) {
@@ -2194,16 +2102,14 @@ function renderHubBento() {
     });
   });
 
-  grid.querySelectorAll('[data-text-style-toggle]').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
+  grid.querySelectorAll('[data-text-font-select]').forEach(function(sel) {
+    sel.addEventListener('change', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.textStyleToggle;
-      var cur = _getTextStyle(uid);
-      var idx = TEXT_STYLE_LIST.indexOf(cur);
-      var next = TEXT_STYLE_LIST[(idx + 1) % TEXT_STYLE_LIST.length];
-      _setTextStyle(uid, next);
+      var uid = this.dataset.textFontSelect;
+      _setTextStyle(uid, this.value);
       renderHubBento();
     });
+    sel.addEventListener('click', function(e) { e.stopPropagation(); });
   });
 
   if (isEdit) {
@@ -2233,7 +2139,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-text-style-toggle], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -5268,6 +5174,41 @@ if (document.getElementById('hubAccessHub')) {
     positionHubFAB();
   }
   window.addEventListener('resize', positionHubFAB);
+
+  // ─── Bento resize: scale positions to new grid width ────
+  var _lastBentoGridW = 0;
+  var _bentoResizeTO = null;
+  function _onBentoResize() {
+    var grid = document.querySelector('.bento-grid');
+    if (!grid) return;
+    var newW = grid.getBoundingClientRect().width;
+    if (!newW || Math.abs(newW - _lastBentoGridW) < 10) return;
+    var oldW = _lastBentoGridW || newW;
+    _lastBentoGridW = newW;
+    var layout = hubContent && hubContent.bentoLayout;
+    if (!layout || !layout.length) return;
+    var ratio = newW / oldW;
+    layout.forEach(function(item) {
+      if (item.hidden) return;
+      item.x = snap(Math.max(0, Math.min(item.x * ratio, newW - item.w)));
+    });
+    renderHubBento();
+  }
+  function _scheduleBentoResize() {
+    if (_bentoResizeTO) return;
+    _bentoResizeTO = setTimeout(function() { _bentoResizeTO = null; _onBentoResize(); }, 200);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      var g = document.querySelector('.bento-grid');
+      if (g) _lastBentoGridW = g.getBoundingClientRect().width;
+      window.addEventListener('resize', _scheduleBentoResize);
+    });
+  } else {
+    var g = document.querySelector('.bento-grid');
+    if (g) _lastBentoGridW = g.getBoundingClientRect().width;
+    window.addEventListener('resize', _scheduleBentoResize);
+  }
 
   // Directly wire the FAB toggle + outside-close (skip if already wired by setupHubEditEvents)
   const _wireHubFab = () => {

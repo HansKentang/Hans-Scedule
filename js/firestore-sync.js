@@ -2,6 +2,15 @@
 // Loaded AFTER gsi.js. Dynamically loads Firestore SDK if needed.
 // Syncs all haven-* localStorage keys to Firestore for the logged-in user.
 
+(function() {
+  var _origWarn = console.warn;
+  console.warn = function() {
+    var msg = arguments[0];
+    if (typeof msg === 'string' && msg.indexOf('enableMultiTabIndexedDbPersistence') !== -1) return;
+    return _origWarn.apply(console, arguments);
+  };
+})();
+
 var SYNC_ENABLED = false;
 var SYNC_DB = null;
 var SYNC_PENDING = false;
@@ -46,14 +55,11 @@ function setupFirestore() {
     SYNC_DB = firebase.firestore();
     SYNC_ENABLED = true;
 
-    // Enable offline persistence for Firestore
     var isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
     if (!isFileProtocol && SYNC_DB) {
       SYNC_DB.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
         if (err.code === 'failed-precondition') {
-          // Multiple tabs — only one can have persistence
         } else if (err.code === 'unimplemented') {
-          // Browser doesn't support persistence
         }
       });
     }
