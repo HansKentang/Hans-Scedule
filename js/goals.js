@@ -121,6 +121,8 @@ const MOODS = [
 
 // ─── DATA ────────────────────────────────────────────────────
 let goalsData = null;
+let goalFilter = 'all';
+let goalSort = 'progress';
 
 function loadGoals() {
   try {
@@ -301,11 +303,55 @@ function getCategoryMeta(catId) {
 
 // ─── RENDER ──────────────────────────────────────────────────
 function renderAll() {
+  renderOverview();
   renderStats();
   renderBento();
   renderManifesto();
   renderResolutions();
   renderCounts();
+}
+
+function renderOverview() {
+  const container = document.getElementById('glOverview');
+  if (!container) return;
+  const goals = getGoals();
+  const total = goals.length;
+  const avg = total > 0 ? Math.round(goals.reduce((s, g) => s + calcProgress(g), 0) / total) : 0;
+  const activeCount = goals.filter(g => g.status !== 'done').length;
+  const doneGoals = goals.filter(g => g.status === 'done' || calcProgress(g) >= 100).length;
+  const totalTasks = goals.reduce((s, g) => s + (g.tasks ? g.tasks.length : 0), 0);
+  const doneTasks = goals.reduce((s, g) => s + (g.tasks ? g.tasks.filter(t => t.done).length : 0), 0);
+  const resolutions = getResolutions();
+  const last7 = getWeekKeys().slice(-7);
+  const weekActive = last7.map(w => resolutions.some(r => r.weekChecks[w]));
+  const weekLabels = last7.map(w => new Date(w + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' }).charAt(0));
+  const activeWeeks = resolutions.filter(r => last7.some(w => r.weekChecks[w])).length;
+  const bestOverall = resolutions.reduce((m, r) => Math.max(m, calcResolutionBestStreak(r)), 0);
+  const dots = weekActive.map((on, i) => {
+    const cls = ['an-streak-day'];
+    if (on) cls.push('active');
+    if (i === weekActive.length - 1) cls.push('today');
+    return `<div class="${cls.join(' ')}">${weekLabels[i]}</div>`;
+  }).join('');
+  container.innerHTML = `
+    <div class="an-overview-cell">
+      <span class="cell-label">Overall progress</span>
+      <div class="an-overview-value">${avg}%</div>
+      <div class="an-overview-sub"><span>${activeCount} active · ${doneGoals} done</span></div>
+    </div>
+    <div class="an-overview-cell an-overview-ring">
+      <div class="an-comp-ring" id="glCompRing"><span>${avg}%</span></div>
+      <div class="an-overview-ring-info">
+        <div class="an-overview-ring-num"><span>${doneTasks}</span><span class="lbl">done</span></div>
+        <div class="an-overview-ring-num"><span>${totalTasks}</span><span class="lbl">tasks</span></div>
+      </div>
+    </div>
+    <div class="an-overview-cell an-overview-streak">
+      <div class="an-streak-days">${dots}</div>
+      <div class="an-overview-sub"><span>${activeWeeks} active streaks</span><span style="opacity:0.6">best ${bestOverall} wk</span></div>
+    </div>`;
+  const ring = container.querySelector('#glCompRing');
+  if (ring) ring.style.background = `conic-gradient(var(--text-primary) ${avg}%, color-mix(in srgb, var(--text-primary) 12%, transparent) ${avg}%)`;
 }
 
 function escapeHtml(str) {
@@ -333,7 +379,7 @@ function progressRing(pct, color, size) {
   const offset = circ - (pct / 100) * circ;
   return `
     <svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" style="flex-shrink:0">
-      <circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="var(--bg-secondary)" stroke-width="${stroke}"/>
+      <circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="color-mix(in srgb, var(--text-primary) 12%, transparent)" stroke-width="${stroke}"/>
       <circle cx="${s/2}" cy="${s/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}"
         stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
         transform="rotate(-90 ${s/2} ${s/2})" style="transition: stroke-dashoffset 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)"/>
@@ -360,18 +406,18 @@ function renderStats() {
   const activeStreaks = resolutions.filter(r => recentKeys.some(w => r.weekChecks[w])).length;
 
   const metrics = [
-    { value: total, label: 'Goals', color: 'var(--primary)' },
-    { value: active, label: 'Active', color: '#6366f1' },
-    { value: completed, label: 'Done', color: '#10b981' },
-    { value: overdue > 0 ? overdue + ' overdue' : avgProgress + '% avg', label: overdue > 0 ? 'Overdue' : 'Progress', color: overdue > 0 ? '#ef4444' : 'var(--primary)' },
+    { value: total, label: 'Goals' },
+    { value: active, label: 'Active' },
+    { value: completed, label: 'Done' },
+    { value: overdue > 0 ? overdue + ' overdue' : avgProgress + '% avg', label: overdue > 0 ? 'Overdue' : 'Progress' },
   ];
   if (resolutions.length > 0) {
-    metrics.push({ value: activeStreaks, label: 'Streaks', color: '#f59e0b' });
+    metrics.push({ value: activeStreaks, label: 'Streaks' });
   }
 
   container.innerHTML = metrics.map(m => `
-    <div class="gl-metric" style="--stat-color:${m.color}">
-      <div class="gl-metric-value"><span class="gl-metric-dot" style="background:${m.color}"></span>${escapeHtml(m.value.toString())}</div>
+    <div class="gl-metric">
+      <div class="gl-metric-value"><span class="gl-metric-dot"></span>${escapeHtml(m.value.toString())}</div>
       <div class="gl-metric-label">${escapeHtml(m.label)}</div>
     </div>
   `).join('');
@@ -386,15 +432,30 @@ function renderBento() {
 
   if (goals.length === 0) {
     container.innerHTML = `<div class="gl-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><p>No goals yet</p><div class="sub">Add your first goal to start tracking</div></div>`;
+    const emptyCount = document.getElementById('glFilterCount');
+    if (emptyCount) emptyCount.textContent = '0 of 0 shown';
     return;
   }
 
-  const sorted = [...goals].sort((a, b) => {
-    if (a.targetDate && b.targetDate) return a.targetDate.localeCompare(b.targetDate);
-    if (a.targetDate) return -1;
-    if (b.targetDate) return 1;
+  const visible = goals.filter(g => goalFilter === 'all' || g.status === goalFilter);
+  const sorted = [...visible].sort((a, b) => {
+    if (goalSort === 'title') return a.title.localeCompare(b.title);
+    if (goalSort === 'deadline') {
+      if (a.targetDate && b.targetDate) return a.targetDate.localeCompare(b.targetDate);
+      if (a.targetDate) return -1;
+      if (b.targetDate) return 1;
+      return 0;
+    }
     return calcProgress(a) - calcProgress(b);
   });
+
+  const countEl = document.getElementById('glFilterCount');
+  if (countEl) countEl.textContent = `${visible.length} of ${goals.length} shown`;
+
+  if (visible.length === 0) {
+    container.innerHTML = `<div class="gl-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><p>Nothing here</p><div class="sub">Try a different filter</div></div>`;
+    return;
+  }
 
   let html = '';
   for (let i = 0; i < sorted.length; i++) {
@@ -414,7 +475,7 @@ function renderBento() {
     if (hasMore) tasksHtml += `<span class="gl-card-task-chip" style="opacity:0.5">+${g.tasks.length - 4} more</span>`;
 
     html += `
-      <div class="gl-card" style="--gl-accent:${g.color}" data-goal-id="${g.id}">
+      <div class="gl-card" data-goal-id="${g.id}">
         ${isEdit ? `
         <div class="gl-edit-overlay">
           <button class="gl-edit-item-btn" data-action="edit-goal" data-goal-id="${g.id}" title="Edit">\u270e</button>
@@ -430,7 +491,7 @@ function renderBento() {
           </div>
           <div class="gl-card-progress">
             <div class="gl-card-progress-track"><div class="gl-card-progress-fill" style="width:${progress}%"></div></div>
-            <span class="gl-card-progress-pct">${progress}%</span>
+            <span class="gl-card-ring">${progressRing(progress, 'var(--text-primary)', 36)}</span>
           </div>
           ${g.description ? `<div class="gl-card-desc">${escapeHtml(g.description)}</div>` : ''}
           <div class="gl-card-tasks">${tasksHtml}</div>
@@ -528,10 +589,6 @@ function showGoalEditPopup(goalId, anchorEl) {
   const popup = document.createElement('div');
   popup.className = 'gl-edit-popup';
 
-  const colorSwatches = GOAL_COLORS.map(c =>
-    `<span class="gl-color-swatch ${c === goal.color ? 'active' : ''}" style="background:${c}" data-color="${c}"></span>`
-  ).join('');
-
   const iconOptions = GOAL_ICONS.map(ic =>
     `<option value="${ic}" ${ic === goal.icon ? 'selected' : ''}>${ic}</option>`
   ).join('');
@@ -547,10 +604,6 @@ function showGoalEditPopup(goalId, anchorEl) {
     </div>
     <input type="text" id="gepTitle" value="${escapeHtml(goal.title)}" placeholder="Goal title">
     <textarea id="gepDesc" placeholder="Description (optional)" rows="2">${escapeHtml(goal.description)}</textarea>
-    <div style="margin-bottom:var(--space-2)">
-      <label style="font-size:0.58rem;color:var(--text-tertiary);display:block;margin-bottom:6px;font-weight:600;letter-spacing:0.04em">Color</label>
-      <div class="gl-color-picker">${colorSwatches}</div>
-    </div>
     <div class="gep-row" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);margin-bottom:var(--space-2)">
       <div>
         <label style="font-size:0.58rem;color:var(--text-tertiary);display:block;margin-bottom:6px;font-weight:600;letter-spacing:0.04em">Icon</label>
@@ -576,19 +629,10 @@ function showGoalEditPopup(goalId, anchorEl) {
 
   document.getElementById('gepClose')?.addEventListener('click', closeGoalPopup);
 
-  popup.querySelectorAll('.gl-color-swatch').forEach(el => {
-    el.addEventListener('click', function() {
-      popup.querySelectorAll('.gl-color-swatch').forEach(s => s.classList.remove('active'));
-      this.classList.add('active');
-    });
-  });
-
   document.getElementById('gepSave').addEventListener('click', function() {
-    const newColor = popup.querySelector('.gl-color-swatch.active')?.dataset.color || goal.color;
     updateGoal(goalId, {
       title: document.getElementById('gepTitle').value.trim() || goal.title,
       description: document.getElementById('gepDesc').value.trim(),
-      color: newColor,
       icon: document.getElementById('gepIcon').value,
       status: document.getElementById('gepStatus').value,
       targetDate: document.getElementById('gepTarget').value || '',
@@ -655,7 +699,7 @@ function showGoalJournalPopup(goalId) {
   popup.innerHTML = `
     <div class="gj-header">
       <div style="display:flex;align-items:center;gap:var(--space-3)">
-        <div style="width:38px;height:38px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:color-mix(in srgb, ${goal.color} 15%, transparent);color:${goal.color};box-shadow:0 2px 8px color-mix(in srgb, ${goal.color} 15%, transparent)">
+        <div style="width:38px;height:38px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:color-mix(in srgb, var(--text-primary) 8%, transparent);color:var(--text-primary)">
           <span class="material-symbols-outlined" style="font-size:1.15rem">${goal.icon}</span>
         </div>
         <div style="flex:1;min-width:0">
@@ -780,6 +824,7 @@ function renderResolutions() {
   for (const r of resolutions) {
     const cat = getCategoryMeta(r.category);
     const streak = calcResolutionStreak(r);
+    const best = calcResolutionBestStreak(r);
     const doneCount = weekKeys.filter(w => r.weekChecks[w]).length;
     const pct = weekKeys.length > 0 ? Math.round((doneCount / weekKeys.length) * 100) : 0;
 
@@ -795,11 +840,11 @@ function renderResolutions() {
     }).join('');
 
     html += `
-      <div class="gl-res-card" style="--cat-color:${cat.color}" data-res-id="${r.id}">
+      <div class="gl-res-card" data-res-id="${r.id}">
         <div class="gl-res-row1">
           <span class="gl-res-cat">${cat.label}</span>
           <span class="gl-res-title">${escapeHtml(r.title)}</span>
-          <span class="gl-res-stat">${streak}wk</span>
+          <span class="gl-res-stat" title="Best streak ${best} week${best !== 1 ? 's' : ''}">${streak}wk${best > streak ? ` · best ${best}` : ''}</span>
           ${isEdit ? `
             <div class="gl-res-actions">
               <button class="gl-res-edit-btn" data-action="edit-res" data-res-id="${r.id}" title="Edit">\u270e</button>
@@ -943,15 +988,24 @@ function renderCounts() {
     const totalProgress = goals.length > 0
       ? Math.round(goals.reduce((s, g) => s + calcProgress(g), 0) / goals.length)
       : 0;
-    ringWrap.innerHTML = progressRing(totalProgress, 'var(--primary)', 48) +
-      `<div class="gl-hero-ring-label"><strong>${totalProgress}%</strong>overall</div>`;
+    ringWrap.innerHTML = progressRing(totalProgress, 'var(--text-primary)', 40) +
+      `<span class="gl-hero-ring-label"><strong>${totalProgress}%</strong> overall</span>`;
   }
+}
+
+// ─── PAGE THEME ────────────────────────────────────────────
+function applyPageTheme() {
+  const root = document.documentElement;
+  const next = (document.querySelector('.mono-hero') && state.darkMode !== false) ? 'mono' : (state.darkMode === false ? 'light' : 'dark');
+  if (root.getAttribute('data-pg-theme') !== next) root.setAttribute('data-pg-theme', next);
 }
 
 // ─── INIT ──────────────────────────────────────────────────
 function init() {
   loadState();
   applyTheme();
+  applyPageTheme();
+  new MutationObserver(() => applyPageTheme()).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   loadGoals();
 
   document.querySelectorAll('img[data-image-id]').forEach(el => {
@@ -967,6 +1021,18 @@ function init() {
     }
   });
 
+  window._onImageSaved = function(id, url) {
+    document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(el => {
+      el.src = url || '';
+      el.style.display = url ? 'block' : 'none';
+      const wrap = el.closest('.gl-vision-img-wrap');
+      if (wrap) {
+        const ph = wrap.querySelector('.gl-vision-img-placeholder');
+        if (ph) ph.style.display = url ? 'none' : 'flex';
+      }
+    });
+  };
+
   const manifestoEl = document.getElementById('glManifestoText');
   if (manifestoEl) {
     manifestoEl.addEventListener('blur', saveManifesto);
@@ -975,6 +1041,20 @@ function init() {
       if (e.key === 'Escape') this.blur();
     });
   }
+
+  document.querySelectorAll('#glFilterPills .an-period-pill').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('#glFilterPills .an-period-pill').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      goalFilter = this.dataset.filter;
+      renderBento();
+    });
+  });
+
+  document.getElementById('glSortSelect')?.addEventListener('change', function() {
+    goalSort = this.value;
+    renderBento();
+  });
 
   document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
 

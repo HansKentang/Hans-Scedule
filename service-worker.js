@@ -1,5 +1,5 @@
 /* Havën Schedule — Service Worker v2.0 */
-const CACHE = 'haven-schedule-v7';
+const CACHE = 'haven-schedule-v31';
 const URLS = [
   '/',
   '/index.html',
@@ -17,6 +17,7 @@ const URLS = [
   '/support.html',
   '/css/style.css',
   '/css/legal.css',
+  '/css/progress-desert.css',
   '/css/progress-editorial.css',
   '/css/progress-mono.css',
   '/js/shared.js',
@@ -41,6 +42,7 @@ const URLS = [
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(URLS))
   );
@@ -56,15 +58,27 @@ self.addEventListener('fetch', (e) => {
       url.indexOf('googleapis.com/securetoken') !== -1) {
     return;
   }
-  e.respondWith(
-    caches.match(e.request).then((hit) => hit || fetch(e.request))
-  );
+  if (e.request.method !== 'GET') return;
+  e.respondWith((async () => {
+    try {
+      const res = await fetch(e.request);
+      if (res && res.ok && new URL(e.request.url).origin === self.location.origin) {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+      }
+      return res;
+    } catch (err) {
+      const hit = await caches.match(e.request);
+      if (hit) return hit;
+      throw err;
+    }
+  })());
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(
-      keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))
-    ))
-  );
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    await self.clients.claim();
+  })());
 });

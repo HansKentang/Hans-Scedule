@@ -1188,7 +1188,19 @@ function init() {
   applyTheme();
   applyPageTheme();
   loadCompletionLog();
-  document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
+  document.querySelectorAll('img[data-image-id]').forEach(el => { const url = getImage(el.dataset.imageId) || ''; el.src = url; el.style.display = url ? 'block' : 'none'; });
+  window._onImageSaved = function(id, url) {
+    document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(el => {
+      el.src = url || '';
+      el.style.display = url ? 'block' : 'none';
+    });
+  };
+  document.addEventListener('click', function(e) {
+    if (!state.editMode) return;
+    const imgEl = e.target.closest('.mono-hero.has-image .hero-img');
+    if (!imgEl || !imgEl.dataset.imageId) return;
+    openImagePicker(imgEl.dataset.imageId);
+  });
   weekOffset = 0;
   renderActivities();
   renderAnalytics();

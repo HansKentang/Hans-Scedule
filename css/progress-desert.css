@@ -61,6 +61,10 @@
   color: var(--gray-400);
 }
 .mono-hero-row .gsi-section { display: none; }
+.mono-hero.has-image { position: relative; overflow: hidden; min-height: 220px; display: flex; align-items: flex-end; }
+.mono-hero.has-image .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
+.mono-hero.has-image .hero-shade { position: absolute; inset: 0; background: linear-gradient(to top, var(--ink) 0%, transparent 65%); }
+.mono-hero.has-image .mono-hero-row { position: relative; z-index: 1; width: 100%; }
 
 /* kernel line */
 .kernel-line {
@@ -144,29 +148,54 @@
 
 /* ─── 4 · Section heads ──────────────────────────────────────────── */
 .pg-section-head {
-  margin: 48px 0 0;
-  padding: 0 0 12px;
+  margin: 64px 0 0;
+  padding: 0 0 20px;
   border-bottom: 1px solid var(--hairline);
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
 }
-.pg-section-head > div { display: flex; flex-direction: column; gap: 6px; }
+.pg-section-head > div { position: relative; z-index: 1; }
+.pg-section-head > div { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .pg-section-head .pg-eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.6rem;
-  letter-spacing: 0.2em;
+  font-size: 0.62rem;
+  letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--gray-400);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.pg-section-head .pg-eyebrow::before {
+  content: '';
+  height: 1px;
+  width: 56px;
+  background: currentColor;
+  opacity: 0.5;
+}
+.pg-section-head .pg-eyebrow::after {
+  content: '';
+  height: 1px;
+  width: 56px;
+  background: currentColor;
+  opacity: 0.5;
 }
 .pg-section-head h2 {
   font-family: 'Bebas Neue', var(--font-display);
-  font-size: 2.8rem;
+  font-size: clamp(3rem, 11vw, 7rem);
   font-weight: 400;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em;
   line-height: 1;
   color: var(--ink);
+  width: 100%;
 }
 .pg-section-head p:not(.pg-eyebrow) {
   font-family: var(--font-serif);

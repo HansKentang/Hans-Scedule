@@ -92,7 +92,9 @@
       color: color-mix(in srgb, var(--chip-accent, var(--text-tertiary)) 45%, var(--text-secondary));
       font-size: 0.68rem; font-family: var(--font-family); font-weight: 550;
       cursor: pointer;
-      transition: all 0.3s var(--curve);
+      transition: transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 250ms ease, color 250ms ease, background 250ms ease;
       white-space: nowrap;
       user-select: none;
       line-height: 1.4;
@@ -109,26 +111,28 @@
       border-color: color-mix(in srgb, var(--chip-accent, var(--accent)) 40%, transparent);
       color: color-mix(in srgb, var(--chip-accent, var(--accent)) 60%, var(--text-secondary));
       background: color-mix(in srgb, var(--chip-accent, var(--accent)) 8%, transparent);
-      transform: translateY(-1px);
-      box-shadow: 0 2px 8px color-mix(in srgb, var(--chip-accent, var(--accent)) 6%, transparent);
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--chip-accent, var(--accent)) 12%, transparent),
+                  0 1px 3px color-mix(in srgb, var(--chip-accent, var(--accent)) 6%, transparent);
     }
     .sch-pm-chip.active {
       border-color: color-mix(in srgb, var(--chip-accent, var(--accent)) 40%, transparent);
       color: color-mix(in srgb, var(--chip-accent, var(--accent)) 60%, var(--text-secondary));
       background: color-mix(in srgb, var(--chip-accent, var(--accent)) 10%, transparent);
-      box-shadow: var(--chip-active-inset, inset 0 1.5px 3px rgba(0,0,0,0.2)), 0 2px 6px color-mix(in srgb, var(--chip-accent, var(--accent)) 6%, transparent);
+      box-shadow: var(--chip-active-inset, inset 0 1.5px 3px rgba(0,0,0,0.2)), 0 2px 8px color-mix(in srgb, var(--chip-accent, var(--accent)) 10%, transparent);
     }
-    .sch-pm-chip:active { transform: scale(0.97); }
+    .sch-pm-chip.active:hover { transform: translateY(-1px) scale(1.01); }
+    .sch-pm-chip:active { transform: scale(0.95); transition-duration: 100ms; }
     .sch-pm-chip-dot {
       width: 8px; height: 8px; border-radius: 50%;
       background: var(--chip-accent, var(--gray-300));
       opacity: 0.6;
       flex-shrink: 0;
-      transition: all 0.3s var(--curve);
+      transition: opacity 250ms ease, box-shadow 300ms ease;
     }
     .sch-pm-chip.active .sch-pm-chip-dot {
       opacity: 0.9;
-      box-shadow: 0 0 4px var(--chip-accent, var(--accent));
+      box-shadow: 0 0 6px 1px var(--chip-accent, var(--accent));
     }
     .sch-pm-chip-count {
       font-size: 0.5rem;
@@ -145,31 +149,6 @@
       font-size: 0.64rem; font-family: var(--font-family); font-weight: 550;
       outline: none; width: 80px;
     }
-    .sch-pm-add-chip {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      border: 1.5px dashed var(--border-subtle);
-      background: transparent;
-      color: var(--text-tertiary);
-      cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      transition: all 0.3s var(--curve);
-      padding: 0;
-      opacity: 0.5;
-      font-size: 1rem;
-    }
-    .sch-pm-add-chip:hover {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: color-mix(in srgb, var(--accent) 10%, transparent);
-      transform: scale(1.15);
-      opacity: 1;
-      border-style: solid;
-      box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 20%, transparent);
-    }
-    .sch-pm-add-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    
     /* --- INLINE SUBCATEGORY BAR (below pill manager) -- */
     .sch-sc-bar {
       padding: 5px var(--space-3);
@@ -194,7 +173,10 @@
       color: var(--text-secondary);
       font-size: 0.62rem; font-family: var(--font-family); font-weight: 500;
       cursor: grab;
-      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                  box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 200ms ease, color 200ms ease, background 200ms ease,
+                  opacity 200ms ease;
       user-select: none;
       line-height: 1.4;
       white-space: nowrap;
@@ -205,11 +187,12 @@
       border-color: var(--sc-accent, var(--accent));
       color: var(--sc-accent, var(--text-primary));
       background: color-mix(in srgb, var(--sc-accent, var(--accent)) 10%, transparent);
-      transform: translateY(-1px);
-      box-shadow: 0 3px 8px color-mix(in srgb, var(--sc-accent, var(--accent)) 15%, transparent);
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--sc-accent, var(--accent)) 18%, transparent),
+                  0 1px 3px color-mix(in srgb, var(--sc-accent, var(--accent)) 8%, transparent);
     }
-    .sch-sc-bar-pill:active { cursor: grabbing; transform: scale(0.95); }
-    .sch-sc-bar-pill.dragging { opacity: 0.5; }
+    .sch-sc-bar-pill:active { cursor: grabbing; transform: scale(0.94); transition-duration: 80ms; }
+    .sch-sc-bar-pill.dragging { opacity: 0.35; transform: scale(0.96) rotate(-1deg); }
     .sch-sc-bar-pill .sc-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sc-accent); flex-shrink: 0; }
     .sch-sc-bar-pill .sc-drag-hint { display: none; }
     @media (hover: hover) {
@@ -270,180 +253,102 @@
     }
     .tpl-add-input-error { border-color: #e04040 !important; }
 
-    /* --- CATEGORY EDITOR OVERLAY + CARD — GLASSMORPHISM -- */
-    .cat-add-overlay {
-      position: fixed; inset: 0; z-index: 300;
-      background: rgba(0,0,0,0.4);
-      backdrop-filter: blur(12px) saturate(1.2);
-      -webkit-backdrop-filter: blur(12px) saturate(1.2);
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0; visibility: hidden; pointer-events: none;
-      transition: opacity 0.28s ease, visibility 0.28s ease;
-    }
-    .cat-add-overlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
-    .cat-add-popup {
-      z-index: 301;
-      width: min(92vw, 680px);
-      max-height: 88vh;
-      background: rgba(30,30,30,0.72);
-      backdrop-filter: blur(24px) saturate(1.5);
-      -webkit-backdrop-filter: blur(24px) saturate(1.5);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 20px;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 1px 0 rgba(255,255,255,0.06) inset;
-      overflow: hidden;
-      display: flex; flex-direction: column;
-      transform: scale(0.94) translateY(16px);
-      opacity: 0; visibility: hidden;
-      transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms ease, visibility 260ms ease;
-    }
-    .cat-add-overlay.active .cat-add-popup {
-      transform: scale(1) translateY(0);
-      opacity: 1; visibility: visible;
-    }
-    .cat-add-popup.hidden { display: none; }
-    html.light .cat-add-popup {
-      background: rgba(255,255,255,0.62);
-      border: 1px solid rgba(255,255,255,0.5);
-      box-shadow: 0 24px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.4) inset, 0 1px 0 rgba(255,255,255,0.7) inset;
-    }
-    .cat-add-header {
-      display: flex; align-items: center; gap: 10px;
-      padding: 16px 22px 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      flex-shrink: 0;
-    }
-    html.light .cat-add-header { border-bottom-color: rgba(0,0,0,0.06); }
-    .cat-add-header svg { flex-shrink: 0; color: var(--accent); width: 15px; height: 15px; }
-    .cat-add-header span { flex: 1; font-size: 0.85rem; font-weight: 650; color: var(--text-primary); letter-spacing: -0.01em; }
-    .cat-add-close {
-      width: 30px; height: 30px; padding: 0; border: none; border-radius: 10px;
-      background: rgba(255,255,255,0.06); color: var(--text-tertiary); cursor: pointer;
+    /* --- ADD-CATEGORY TRIGGER CHIP -- */
+    .sch-pm-add-chip {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      border: 1.5px dashed var(--border-subtle); background: transparent;
+      color: var(--text-tertiary); cursor: pointer; padding: 0;
       display: inline-flex; align-items: center; justify-content: center;
-      transition: all 0.15s;
+      opacity: 0.55; transition: all 0.25s var(--curve);
     }
-    html.light .cat-add-close { background: rgba(0,0,0,0.05); }
-    .cat-add-close:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
-    html.light .cat-add-close:hover { background: rgba(0,0,0,0.08); }
-    .cat-add-close svg { width: 14px; height: 14px; }
-    .cat-add-body {
-      padding: 20px 22px 22px;
-      display: grid; grid-template-columns: 1fr 200px; gap: 22px; align-items: start;
-      overflow-y: auto;
+    .sch-pm-add-chip:hover {
+      border-style: solid; border-color: var(--accent); color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      opacity: 1; transform: scale(1.1);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 20%, transparent);
     }
-    .cat-add-form { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-    .cat-add-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-    .cat-add-label { font-size: 0.65rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--text-tertiary); }
-    .cat-add-input {
-      width: 100%; padding: 10px 13px; box-sizing: border-box;
-      border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.05); color: var(--text-primary);
-      font-size: 0.82rem; font-family: var(--font-family);
-      outline: none; transition: all 0.15s;
-    }
-    html.light .cat-add-input {
-      border-color: rgba(0,0,0,0.1);
-      background: rgba(255,255,255,0.6);
-    }
-    .cat-add-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); background: rgba(255,255,255,0.08); }
-    html.light .cat-add-input:focus { background: rgba(255,255,255,0.8); }
-    .cat-add-input::placeholder { color: var(--text-tertiary); opacity: 0.45; }
-    textarea.cat-add-input { resize: vertical; min-height: 52px; line-height: 1.5; }
-    .cat-add-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .cat-add-select {
-      width: 100%; padding: 9px 11px; box-sizing: border-box; border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05); color: var(--text-primary);
-      font-size: 0.76rem; font-family: var(--font-family); outline: none; cursor: pointer;
-    }
-    html.light .cat-add-select {
-      border-color: rgba(0,0,0,0.1);
-      background: rgba(255,255,255,0.6);
-    }
-    .cat-add-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
-    .cat-add-swatches { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 2px 0; }
-    .cat-add-swatch {
-      width: 28px; height: 28px; border-radius: 50%; border: 2.5px solid transparent; cursor: pointer; padding: 0;
-      transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1); flex-shrink: 0;
-      position: relative;
-    }
-    .cat-add-swatch:hover { transform: scale(1.18); }
-    .cat-add-swatch.active { border-color: #fff; transform: scale(1.1); box-shadow: 0 0 0 2.5px rgba(30,30,30,0.6), 0 0 0 4.5px currentColor; }
-    html.light .cat-add-swatch.active { border-color: #333; box-shadow: 0 0 0 2.5px rgba(255,255,255,0.8), 0 0 0 4.5px currentColor; }
-    .cat-add-custom-color { position: relative; width: 28px; height: 28px; flex-shrink: 0; }
-    .cat-add-custom-color input[type="color"] {
-      width: 28px; height: 28px; padding: 0; border: 2.5px dashed rgba(255,255,255,0.15); border-radius: 50%;
-      cursor: pointer; opacity: 0; position: absolute; inset: 0; z-index: 1;
-      transition: border-color 0.15s;
-    }
-    html.light .cat-add-custom-color input[type="color"] { border-color: rgba(0,0,0,0.15); }
-    .cat-add-custom-color svg { width: 28px; height: 28px; color: var(--text-tertiary); position: absolute; inset: 0; pointer-events: none; transition: color 0.15s; }
-    .cat-add-custom-color input[type="color"]:hover + svg { color: var(--text-primary); }
-    .cat-add-preset-row { display: flex; flex-wrap: wrap; gap: 5px; }
-    .cat-add-preset {
-      padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.08);
-      background: rgba(255,255,255,0.05); color: var(--text-secondary); font-size: 0.62rem;
-      font-family: var(--font-family); cursor: pointer; transition: all 0.15s;
-    }
-    html.light .cat-add-preset {
-      border-color: rgba(0,0,0,0.1);
-      background: rgba(255,255,255,0.5);
-    }
-    .cat-add-preset:hover, .cat-add-preset.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
-    .cat-add-actions { display: flex; gap: 8px; margin-top: 4px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06); }
-    html.light .cat-add-actions { border-top-color: rgba(0,0,0,0.06); }
-    .cat-add-actions button { flex: 1; padding: 10px 0; border-radius: 10px; border: none; font-size: 0.76rem; font-family: var(--font-family); font-weight: 600; cursor: pointer; transition: all 0.15s ease; }
-    .cat-add-cancel { background: rgba(255,255,255,0.06); color: var(--text-tertiary); }
-    html.light .cat-add-cancel { background: rgba(0,0,0,0.05); }
-    .cat-add-cancel:hover { color: var(--text-primary); background: rgba(255,255,255,0.12); }
-    html.light .cat-add-cancel:hover { background: rgba(0,0,0,0.08); }
-    .cat-add-save { background: var(--accent); color: var(--text-inverse); box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 30%, transparent); }
-    .cat-add-save:hover { opacity: .92; transform: translateY(-1px); box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 35%, transparent); }
-    .cat-add-error { min-height: 14px; font-size: .62rem; color: #e04040; }
-    .cat-add-preview {
-      padding: 16px; border-radius: 14px; box-sizing: border-box;
-      border: 1px solid rgba(255,255,255,0.06);
-      background: rgba(255,255,255,0.04);
-      display: flex; flex-direction: column; gap: 12px;
-    }
-    html.light .cat-add-preview {
-      border-color: rgba(0,0,0,0.06);
-      background: rgba(255,255,255,0.4);
-    }
-    .cat-add-preview-label { font-size: .58rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-tertiary); }
-    .cat-add-preview-chip {
-      display: inline-flex; align-items: center; gap: 8px; width: fit-content; max-width: 100%;
-      padding: 8px 14px; border-radius: 999px;
-      background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent);
-      font-size: .74rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
-    }
-    .cat-add-preview-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-    .cat-add-preview-name { font-size: .88rem; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; }
-    .cat-add-preview-meta { display: flex; flex-wrap: wrap; gap: 4px; }
-    .cat-add-preview-meta span { padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); color: var(--text-secondary); font-size: .6rem; }
-    html.light .cat-add-preview-meta span { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.06); }
-    .cat-add-preview-subs { display: flex; flex-wrap: wrap; gap: 4px; }
-    .cat-add-preview-subs span { padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); color: var(--text-secondary); font-size: .58rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    html.light .cat-add-preview-subs span { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.06); }
-    .cat-add-preview-empty { color: var(--text-tertiary); font-size: .65rem; font-style: italic; }
-    @media (max-width: 600px) {
-      .cat-add-popup { width: 96vw; max-height: 92vh; border-radius: 16px; }
-      .cat-add-body { grid-template-columns: 1fr; gap: 16px; padding: 16px 18px 18px; }
-      .cat-add-header { padding: 14px 18px 12px; }
-      .cat-add-preview { order: -1; }
-      .cat-add-swatches { gap: 6px; }
-      .cat-add-swatch { width: 30px; height: 30px; }
-      .cat-add-custom-color { width: 30px; height: 30px; }
-      .cat-add-custom-color input[type="color"] { width: 30px; height: 30px; }
-      .cat-add-custom-color svg { width: 30px; height: 30px; }
-      .cat-add-actions { flex-direction: column; }
-    }
+    .sch-pm-add-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     /* --- HAMBURGER MENU POPUP ---------------------------- */
     .sch-menu-popup {
       position: absolute; left: 0; top: calc(100% + 4px);
       width: 200px; background: var(--bg-primary);
       border: 1px solid var(--border-color);
       border-radius: 10px; box-shadow: var(--shadow-lg);
+    /* --- ADD CATEGORY MODAL (mirrors task modal glass card) -- */
+    #catOverlay {
+      position: fixed; inset: 0; z-index: 102;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity 300ms ease, visibility 300ms ease;
+    }
+    #catOverlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
+    #catModal {
+      z-index: 103; background: rgba(20,20,20,0.85);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 1px 0 rgba(255,255,255,0.06) inset;
+      width: 440px; max-width: calc(100vw - 32px);
+      height: min(600px, calc(100vh - 40px));
+      transform: scale(0.94) translateY(16px); opacity: 0; visibility: hidden;
+      transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, visibility 300ms ease;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    html.light #catOverlay { background: rgba(0,0,0,0.25); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+    html.light #catModal {
+      background: rgba(255,255,255,0.86); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(0,0,0,0.08);
+    .cat-swatches { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .cat-swatch {
+      width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent;
+      cursor: pointer; padding: 0; flex-shrink: 0; transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .cat-swatch:hover { transform: scale(1.15); }
+    .cat-swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px var(--sw, var(--accent)), 0 2px 8px rgba(0,0,0,0.3); transform: scale(1.1); }
+    .cat-custom-color { position: relative; width: 26px; height: 26px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 1.5px dashed rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); cursor: pointer; }
+    html.light .cat-custom-color { border-color: rgba(0,0,0,0.2); }
+    .cat-custom-color input { position: absolute; inset: -4px; opacity: 0; cursor: pointer; }
+    .cat-preset-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .cat-preset {
+      padding: 4px 12px; border-radius: var(--radius-full); font-size: 0.68rem; font-weight: 500;
+      border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: var(--text-secondary);
+      cursor: pointer; transition: all 0.15s; font-family: var(--font-family);
+    }
+    html.light .cat-preset { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.03); }
+    .cat-preset:hover { border-color: var(--accent); color: var(--accent); }
+    .cat-preview {
+      border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+      border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    html.light .cat-preview { border-color: rgba(0,0,0,0.08); background: rgba(0,0,0,0.02); }
+    .cat-preview-chip {
+      display: inline-flex; align-items: center; gap: 7px; align-self: flex-start;
+      padding: 4px 14px 4px 11px; border-radius: var(--radius-full);
+      border: 1px solid color-mix(in srgb, var(--chip-accent, var(--accent)) 40%, transparent);
+      background: color-mix(in srgb, var(--chip-accent, var(--accent)) 10%, transparent);
+      color: color-mix(in srgb, var(--chip-accent, var(--accent)) 60%, var(--text-secondary));
+      font-size: 0.72rem; font-weight: 550;
+    }
+    .cat-preview-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--chip-accent, var(--accent)); box-shadow: 0 0 6px 1px var(--chip-accent, var(--accent)); }
+    .cat-preview-meta { display: flex; gap: 8px; font-size: 0.66rem; color: var(--text-secondary); font-family: var(--font-mono); }
+    .cat-preview-subs { display: flex; gap: 5px; flex-wrap: wrap; }
+    .cat-preview-subs span {
+      font-size: 0.62rem; padding: 2px 9px; border-radius: var(--radius-full);
+      border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.04); color: var(--text-secondary);
+    }
+    html.light .cat-preview-subs span { border-color: rgba(0,0,0,0.08); background: rgba(0,0,0,0.03); }
+    .cat-preview-empty { font-size: 0.62rem; color: var(--text-tertiary); font-style: italic; }
+    .cat-error { font-size: 0.68rem; color: #e04040; min-height: 1em; margin-top: 10px; }
+    .cat-dup-row { display: flex; gap: 8px; }
+    .cat-dup-row .tm-input-wrap { flex: 1; }
+    .cat-dup-row select.tm-input { cursor: pointer; appearance: none; padding-right: 18px; }
+    @media (max-width: 640px) { .sch-pm-add-chip { width: 26px; height: 26px; } }
+      box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.5) inset, 0 1px 0 rgba(255,255,255,0.9) inset;
+    }
+    #catOverlay.active #catModal { transform: scale(1) translateY(0); opacity: 1; visibility: visible; }
+    #catModal .tm-field, #catModal .tm-section, #catModal .tm-row, #catModal .tm-footer { animation: tmFieldIn 350ms ease both; }
+    #catModal .tm-footer { animation-delay: 200ms; }
       z-index: 100; padding: var(--space-2) 0;
     }
     .sch-menu-section { padding: 0 var(--space-2); }
@@ -526,7 +431,6 @@
       .sch-pm-chip-del { width: 20px; height: 20px; opacity: 0.4; font-size: 0.6rem; }
       .sch-pm-chip-edit { width: 20px; height: 20px; opacity: 0.4; }
       .sch-pm-chip-edit svg { width: 12px; height: 12px; }
-      .sch-pm-add-chip { width: 26px; height: 26px; }
       .sch-sc-bar {
         padding: 5px var(--space-2);
         gap: 4px;
@@ -582,7 +486,6 @@
       .sch-pm-chip { font-size: 0.52rem; padding: 3px 7px 3px 5px; gap: 3px; min-height: 28px; }
       .sch-pm-chip-dot { width: 5px; height: 5px; }
       .sch-pm-chip-count { font-size: 0.42rem; padding: 0 3px; }
-      .sch-pm-add-chip { width: 22px; height: 22px; font-size: 0.8rem; }
 
       /* --- SUBCATEGORY BAR COMPACT -- */
       .sch-sc-bar { padding: 3px var(--space-2); gap: 3px; }
@@ -976,8 +879,8 @@
       <!-- Pill Manager: category chips ? subcategory bubble -->
       <div class="sch-pill-manager hub-anim-in hub-anim-in-2" id="schPillManager">
         <div id="pmChips"><!-- Populated by JS --></div>
-        <button class="sch-pm-add-chip" id="catAddBtn" title="Add category">
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <button class="sch-pm-add-chip" id="catAddBtn" title="Add category" aria-label="Add category">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         </button>
       </div>
 
@@ -1123,6 +1026,12 @@
             </div>
           </div>
 
+          <div class="tm-section">
+            <div class="tm-section-label">Category</div>
+            <div class="tm-category-chips" id="taskCategoryChips"></div>
+            <select id="taskCategorySelect" class="tm-hidden-select"></select>
+          </div>
+
           <div class="tm-row tm-row-2">
             <div class="tm-field">
               <div class="tm-section-label">Repeat</div>
@@ -1198,7 +1107,103 @@
       </div>
     </div>
     </div>
-<div id="helpOverlay" class="hidden"></div>
+    <div id="catOverlay" class="hidden">
+    <div id="catModal" class="hidden" role="dialog" aria-label="Add Category">
+      <div class="tm-header">
+        <div class="tm-header-left">
+          <div class="tm-icon" id="catModalIcon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div class="tm-header-text">
+            <h3>New Category</h3>
+            <span class="tm-task-id">pill + template defaults</span>
+          </div>
+        </div>
+        <button id="catModalClose" class="tm-close" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="tm-body">
+        <div class="tm-field">
+          <input type="text" id="catAddInput" class="tm-title-input" placeholder="Category name" maxlength="30" autocomplete="off">
+        </div>
+        <div class="tm-section">
+          <div class="tm-section-label">Color</div>
+          <div class="cat-swatches" id="catAddSwatches">
+            <button type="button" class="cat-swatch" style="background:#6366f1;--sw:#6366f1" data-color="#6366f1" aria-label="Indigo"></button>
+            <button type="button" class="cat-swatch" style="background:#f59e0b;--sw:#f59e0b" data-color="#f59e0b" aria-label="Amber"></button>
+            <button type="button" class="cat-swatch" style="background:#ef4444;--sw:#ef4444" data-color="#ef4444" aria-label="Red"></button>
+            <button type="button" class="cat-swatch" style="background:#10b981;--sw:#10b981" data-color="#10b981" aria-label="Emerald"></button>
+            <button type="button" class="cat-swatch" style="background:#3b82f6;--sw:#3b82f6" data-color="#3b82f6" aria-label="Blue"></button>
+            <button type="button" class="cat-swatch" style="background:#ec4899;--sw:#ec4899" data-color="#ec4899" aria-label="Pink"></button>
+            <button type="button" class="cat-swatch" style="background:#8b5cf6;--sw:#8b5cf6" data-color="#8b5cf6" aria-label="Violet"></button>
+            <button type="button" class="cat-swatch" style="background:#14b8a6;--sw:#14b8a6" data-color="#14b8a6" aria-label="Teal"></button>
+            <div class="cat-custom-color" title="Custom color">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+              <input type="color" id="catColorPicker" value="#6366f1" aria-label="Custom category color">
+            </div>
+          </div>
+        </div>
+        <div class="tm-row tm-row-2">
+          <div class="tm-field">
+            <div class="tm-section-label">Default start</div>
+            <div class="tm-input-wrap">
+              <svg class="tm-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <input type="time" id="catAddStartTime" class="tm-input" value="09:00">
+            </div>
+          </div>
+          <div class="tm-field">
+            <div class="tm-section-label">Duration (min)</div>
+            <div class="tm-input-wrap">
+              <svg class="tm-input-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <input type="number" id="catAddDuration" class="tm-input" value="60" min="5" max="480" step="5">
+            </div>
+          </div>
+        </div>
+        <div class="tm-field">
+          <div class="tm-section-label">Subcategories</div>
+          <div class="tm-input-wrap tm-textarea-wrap">
+            <textarea id="catAddSubcategories" class="tm-textarea" rows="2" placeholder="One per line, e.g. Branding, UI, Research" maxlength="300" spellcheck="false"></textarea>
+          </div>
+          <div class="cat-preset-row" id="catAddPresets">
+            <button type="button" class="cat-preset" data-preset="focus">Focus</button>
+            <button type="button" class="cat-preset" data-preset="meetings">Meetings</button>
+            <button type="button" class="cat-preset" data-preset="fitness">Fitness</button>
+            <button type="button" class="cat-preset" data-preset="study">Study</button>
+            <button type="button" class="cat-preset" data-preset="creative">Creative</button>
+          </div>
+        </div>
+        <div class="tm-section">
+          <div class="tm-section-label">Duplicate existing</div>
+          <div class="cat-dup-row">
+            <div class="tm-input-wrap">
+              <select id="catAddDuplicate" class="tm-input"></select>
+            </div>
+            <button type="button" id="catAddDuplicateBtn" class="tm-btn tm-btn-ghost" style="flex-shrink:0">Use template</button>
+          </div>
+        </div>
+        <div class="tm-section">
+          <div class="tm-section-label">Preview</div>
+          <div class="cat-preview" aria-live="polite" id="catPreviewCard">
+            <span class="cat-preview-chip"><span class="cat-preview-dot"></span><span id="catPreviewName">New category</span></span>
+            <div class="cat-preview-meta"><span id="catPreviewTime">09:00</span><span id="catPreviewDuration">60 min</span></div>
+            <div class="cat-preview-subs" id="catPreviewSubs"></div>
+          </div>
+        </div>
+        <div class="cat-error" id="catAddError" role="alert"></div>
+        <div class="tm-footer">
+          <span></span>
+          <div class="tm-footer-right">
+            <button type="button" id="catAddCancel" class="tm-btn tm-btn-ghost">Cancel</button>
+            <button type="button" id="catAddSave" class="tm-btn tm-btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Add category
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
     <div id="helpModal" class="hidden" role="dialog" aria-label="Help and Shortcuts">
       <div class="modal-header">
         <h3>
@@ -1282,94 +1287,6 @@
           <button class="drawer-btn danger" onclick="handleImagePickerReset()" style="flex:1">Reset</button>
           <button class="drawer-btn primary" onclick="handleImagePickerSave()" style="flex:1">Save</button>
         </div>
-        </div>
-      </div>
-    </div>
-
-<!-- Add Category Overlay -->
-    <div class="cat-add-overlay" id="catAddOverlay">
-      <div class="cat-add-popup hidden" id="catAddPopup" aria-label="Add category">
-        <div class="cat-add-header">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-          <span>Add Category</span>
-          <button class="cat-add-close" id="catAddClose" aria-label="Close category editor">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <div class="cat-add-body">
-          <div class="cat-add-form">
-            <div class="cat-add-field">
-              <label class="cat-add-label" for="catAddInput">Category name</label>
-              <input type="text" class="cat-add-input" id="catAddInput" placeholder="e.g. Design, Health..." maxlength="30" autocomplete="off" spellcheck="false">
-            </div>
-            <div class="cat-add-field">
-              <span class="cat-add-label">Color</span>
-              <div class="cat-add-swatches" id="catAddSwatches">
-                <button class="cat-add-swatch active" style="background:#6366f1" data-color="#6366f1" aria-label="Indigo"></button>
-                <button class="cat-add-swatch" style="background:#f59e0b" data-color="#f59e0b" aria-label="Amber"></button>
-                <button class="cat-add-swatch" style="background:#ef4444" data-color="#ef4444" aria-label="Red"></button>
-                <button class="cat-add-swatch" style="background:#22c55e" data-color="#22c55e" aria-label="Green"></button>
-                <button class="cat-add-swatch" style="background:#06b6d4" data-color="#06b6d4" aria-label="Cyan"></button>
-                <button class="cat-add-swatch" style="background:#ec4899" data-color="#ec4899" aria-label="Pink"></button>
-                <button class="cat-add-swatch" style="background:#f97316" data-color="#f97316" aria-label="Orange"></button>
-                <button class="cat-add-swatch" style="background:#8b5cf6" data-color="#8b5cf6" aria-label="Violet"></button>
-                <button class="cat-add-swatch" style="background:#14b8a6" data-color="#14b8a6" aria-label="Teal"></button>
-                <button class="cat-add-swatch" style="background:#84cc16" data-color="#84cc16" aria-label="Lime"></button>
-                <div class="cat-add-custom-color">
-                  <input type="color" id="catColorPicker" value="#6366f1" aria-label="Custom category color">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-                </div>
-              </div>
-            </div>
-            <div class="cat-add-field">
-              <label class="cat-add-label" for="catAddSubcategories">Subcategories</label>
-              <textarea class="cat-add-input" id="catAddSubcategories" placeholder="One per line, e.g. Branding, UI, Research" maxlength="300" spellcheck="false"></textarea>
-              <div class="cat-add-preset-row" id="catAddPresets">
-                <button type="button" class="cat-add-preset" data-preset="focus">Focus</button>
-                <button type="button" class="cat-add-preset" data-preset="meetings">Meetings</button>
-                <button type="button" class="cat-add-preset" data-preset="fitness">Fitness</button>
-                <button type="button" class="cat-add-preset" data-preset="study">Study</button>
-                <button type="button" class="cat-add-preset" data-preset="creative">Creative</button>
-              </div>
-            </div>
-            <div class="cat-add-row">
-              <div class="cat-add-field">
-                <label class="cat-add-label" for="catAddStartTime">Default start</label>
-                <input type="time" class="cat-add-input" id="catAddStartTime" value="09:00">
-              </div>
-              <div class="cat-add-field">
-                <label class="cat-add-label" for="catAddDuration">Default duration</label>
-                <input type="number" class="cat-add-input" id="catAddDuration" value="60" min="5" max="480" step="5">
-              </div>
-            </div>
-            <div class="cat-add-field">
-              <label class="cat-add-label" for="catAddDuplicate">Duplicate an existing category</label>
-              <div class="cat-add-row">
-                <select class="cat-add-select" id="catAddDuplicate"></select>
-                <button type="button" class="cat-add-cancel" id="catAddDuplicateBtn">Use template</button>
-              </div>
-            </div>
-            <div class="cat-add-actions">
-              <button type="button" class="cat-add-cancel" id="catAddCancel">Cancel</button>
-              <button type="button" class="cat-add-save" id="catAddSave">Add category</button>
-            </div>
-            <div class="cat-add-error" id="catAddError" role="alert"></div>
-          </div>
-          <div class="cat-add-preview" aria-live="polite">
-            <span class="cat-add-preview-label">Live preview</span>
-            <div class="cat-add-preview-chip">
-              <span class="cat-add-preview-dot"></span>
-              <span class="cat-add-preview-name" id="catPreviewName">New category</span>
-            </div>
-            <div class="cat-add-preview-meta">
-              <span id="catPreviewTime">09:00</span>
-              <span id="catPreviewDuration">60 min</span>
-            </div>
-            <div>
-              <span class="cat-add-preview-label">Subcategories</span>
-              <div class="cat-add-preview-subs" id="catPreviewSubs"></div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -186,7 +186,9 @@
       <div class="hub-content hub-page-transition">
 
         <!-- ─── MINIMAL MONO HERO (replaces image hero) ─── -->
-        <section class="mono-hero">
+        <section class="mono-hero has-image">
+          <img class="hero-img" data-image-id="progress-hero" src="" alt="" style="display:none">
+          <div class="hero-shade"></div>
           <div class="mono-hero-row">
             <div>
               <h1>Progress</h1>
@@ -198,26 +200,8 @@
           </div>
         </section>
 
-        <div class="pg-section-head hub-anim-in hub-anim-in-1">
-          <div>
-            <p class="pg-eyebrow">01 / Field Notes</p>
-            <h2>Activities</h2>
-            <p>Everything you've planned and done, laid out in ink.</p>
-          </div>
-        </div>
-
-        <!-- View toggle + header -->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2)">
-          <div class="act-view-toggle">
-            <button class="act-view-btn active" data-view="board" title="Kanban Board">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-              Board
-            </button>
-            <button class="act-view-btn" data-view="timeline" title="Chronological Timeline">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="2" x2="10" y2="22"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-              Timeline
-            </button>
-          </div>
+        <!-- Search + count -->
+        <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:var(--space-2)">
           <div style="display:flex;align-items:center;gap:var(--space-2)">
             <div class="act-search-cap">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
@@ -267,12 +251,8 @@
         </div>
 
         <!-- Period Filter -->
-        <div class="pg-section-head hub-anim-in hub-anim-in-2">
-          <div>
-            <p class="pg-eyebrow">02 / Insights</p>
-            <h2>Analytics</h2>
-            <p>Numbers for the selected period <span id="completionPeriod">—</span>.</p>
-          </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:32px 0 16px;flex-wrap:wrap;gap:12px">
+          <span style="font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-secondary)">Analytics period</span>
           <div class="an-period-pills" id="analyticsPeriodPills">
             <button class="an-period-pill active" data-period="week" data-i18n="an.weekly">Week</button>
             <button class="an-period-pill" data-period="month" data-i18n="an.thisMonth">Month</button>

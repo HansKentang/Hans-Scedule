@@ -396,42 +396,9 @@ function normalizeBentoLayout(layout, parent) {
     const norm = typeof item === 'string' ? {t: item} : {...item};
     if (!norm.uid) norm.uid = _nextUid();
     if (norm.w === undefined || norm.h === undefined) {
-      const sizeMap = {s:220, m:280, l:420, xl:540, full:600};
-      norm.w = snap(sizeMap[norm.s] || 280);
-      if (norm.t === 'images') {
-        const imgLookup = norm.imageId || 'hub-tulips';
-        const oldAspect = parent?.imageAspects?.[imgLookup] || parent?.imageAspect || 'landscape';
-        const aspectRatios = {square:1, portrait:0.75, landscape:1.333, wide:1.778, tall:0.5625};
-        const ratio = aspectRatios[oldAspect] || 1.333;
-        norm.h = snap(norm.w / ratio);
-      } else if (norm.t === 'spotify') {
-        norm.h = snap(420);
-      } else if (norm.t === 'strava' || norm.t === 'flightradar') {
-        norm.h = snap(420);
-      } else if (norm.t === 'sleep-score') {
-        norm.h = snap(280);
-      } else if (norm.t === 'water') {
-        norm.h = snap(180);
-      } else if (norm.t === 'mood') {
-        norm.h = snap(200);
-      } else if (norm.t === 'countdown') {
-        norm.h = snap(280);
-      } else if (norm.t === 'clock') {
-        norm.h = snap(160);
-      } else if (norm.t === 'calendar') {
-        norm.h = snap(300);
-      } else if (norm.t === 'timer' || norm.t === 'pomodoro') {
-        norm.h = snap(180);
-      } else if (norm.t === 'weather' || norm.t === 'headlines') {
-        norm.h = snap(260);
-      } else if (norm.t === 'expense') {
-        norm.h = snap(320);
-      } else if (norm.t === 'text') {
-        norm.h = snap(160);
-      } else {
-        norm.h = snap(280);
-      }
-      delete norm.s;
+      const defaultSize = 280;
+      norm.w = snap(defaultSize);
+      norm.h = snap(defaultSize);
     }
     if (norm.hidden === undefined) norm.hidden = false;
     result.push(norm);
@@ -442,11 +409,9 @@ function normalizeBentoLayout(layout, parent) {
       if (n.t === 'images' && !n.imageId) n.imageId = 'hub-tulips';
     });
   }
-  // Phase 1: position items that have x,y and resolve their collisions
+  // Phase 1: place new items below the lowest placed item
   const placed = result.filter(i => i.x !== undefined && i.y !== undefined);
   const unplaced = result.filter(i => i.x === undefined || i.y === undefined);
-  resolveBubbleCollisions(placed);
-  // Phase 2: place new items below the lowest placed item
   let maxY = 24;
   placed.forEach(i => { maxY = Math.max(maxY, i.y + i.h); });
   unplaced.forEach(item => {
@@ -454,9 +419,9 @@ function normalizeBentoLayout(layout, parent) {
     item.y = snap(maxY + 24);
     maxY = item.y + item.h;
   });
-  // Phase 3: recombine and resolve any remaining collisions
+  // Phase 2: only resolve collisions for unplaced (new) items, not existing ones
   const combined = [...placed, ...unplaced];
-  resolveBubbleCollisions(combined);
+  if (unplaced.length > 0) resolveBubbleCollisions(combined);
   return combined;
 }
 
@@ -611,13 +576,8 @@ function loadHubContent() {
     const raw = localStorage.getItem(ck);
     if (raw) {
       const hc = JSON.parse(raw);
-      var _bentoLayout = hc.bentoLayout;
-      try {
-        var _bl = localStorage.getItem(_bentoKey());
-        if (_bl) { _bentoLayout = JSON.parse(_bl); }
-      } catch(e) {}
-      hc.bentoLayout = normalizeBentoLayout(_bentoLayout, hc).filter(i => i.t !== 'text');
-      if (!hc.bentoLayout || !hc.bentoLayout.length) hc.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
+      hc.bentoLayout = normalizeBentoLayout(hc.bentoLayout, hc).filter(i => i.t !== 'text');
+      try { localStorage.removeItem(_bentoKey()); } catch(e) {}
 if (!hc.goals) hc.goals = [...defaults.goals];
       if (!hc.priorities) hc.priorities = [...defaults.priorities];
       if (!hc.quote) hc.quote = getQuoteOfTheWeek();
@@ -673,9 +633,6 @@ function saveHubContent() {
   const ck = _contentKey();
   try {
     var ok = safeSetItem(ck, JSON.stringify(hubContent));
-    if (hubContent.bentoLayout) {
-      try { localStorage.setItem(_bentoKey(), JSON.stringify(hubContent.bentoLayout)); } catch(e) {}
-    }
     if (!ok) {
       console.warn('[img] saveHubContent: SAVE FAILED (quota)');
       if (typeof showToast === 'function') showToast('Could not save layout: storage is full. Try removing some images.', 'error', 4000);
@@ -741,7 +698,6 @@ function toggleHubEdit(on) {
         item.h = Math.max(80, snap(h));
       }
     });
-    resolveBubbleCollisions(hubContent.bentoLayout);
   }
   hubEditMode = on !== undefined ? on : !hubEditMode;
   localStorage.setItem(HUB_EDIT_KEY, hubEditMode);
@@ -858,12 +814,29 @@ function _fitTextWidgets() {
     var txt = (content.textContent || '').trim();
     if (!txt) return;
     var lines = txt.split(/\n/);
+    var numLines = lines.length;
     var maxLineLen = 0;
     lines.forEach(function(l) { if (l.length > maxLineLen) maxLineLen = l.length; });
-    var charW = ww / Math.max(maxLineLen, 1);
-    var lineH = wh / Math.max(lines.length, 1);
-    var fs = Math.min(charW * 0.95, lineH * 0.85);
-    fs = Math.max(8, Math.min(fs, wh * 0.9));
+    var test = document.createElement('span');
+    test.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-family:inherit;font-weight:inherit;letter-spacing:inherit';
+    wrap.appendChild(test);
+    var lo = 8, hi = Math.max(ww, wh);
+    while (hi - lo > 1) {
+      var mid = (lo + hi) / 2;
+      test.style.fontSize = mid + 'px';
+      if (test.offsetWidth <= ww * 0.98) lo = mid; else hi = mid;
+    }
+    var fsW = lo;
+    lo = 8; hi = wh;
+    var lineH = 1.1;
+    while (hi - lo > 1) {
+      var mid = (lo + hi) / 2;
+      if (mid * lineH * numLines <= wh * 0.98) lo = mid; else hi = mid;
+    }
+    var fsH = lo;
+    test.remove();
+    var fs = Math.min(fsW, fsH);
+    fs = Math.max(8, Math.min(fs, wh * 0.95));
     content.style.fontSize = fs + 'px';
     content.style.lineHeight = '1.1';
   });
@@ -885,7 +858,7 @@ function renderHubBento() {
   }
   // Backfill any missing fields from HUB_DEFAULTS
   const defaults = HUB_DEFAULTS;
-  if (!hubContent.bentoLayout || !hubContent.bentoLayout.length) hubContent.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
+  if (!hubContent.bentoLayout) hubContent.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
   if (!hubContent.goals) hubContent.goals = [...defaults.goals];
   if (!hubContent.priorities) hubContent.priorities = [...defaults.priorities];
   if (!hubContent.quote) hubContent.quote = getQuoteOfTheWeek();
@@ -900,7 +873,6 @@ function renderHubBento() {
   if (!hubContent.expense) hubContent.expense = { entries:[], balance:0 };
 
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
-  hubContent.bentoLayout = layout;
   const isEdit = hubEditMode;
 
   var _prevSpSrc = null;
@@ -2242,7 +2214,7 @@ function renderHubBento() {
   }
 
   // SAFETY: Ensure grid has content; if somehow empty, force default render
-  if (!grid.children.length) {
+  if (!grid.children.length && hubContent.bentoLayout && hubContent.bentoLayout.length) {
     console.warn('[hub] renderHubBento produced empty grid, forcing default layout');
     hubContent.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
     // Re-render once with defaults
@@ -4917,7 +4889,8 @@ function setupHubEditEvents() {
       const bubble = calNav.closest('.bento-bubble');
       if (!bubble) return;
       const uid = bubble.dataset.bubble;
-      const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+  const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+  hubContent.bentoLayout = layout;
       const item = layout.find(i => i.uid === uid);
       if (item) {
         item.calOffset = (item.calOffset || 0) + parseInt(calNav.dataset.calNav);
@@ -5174,41 +5147,6 @@ if (document.getElementById('hubAccessHub')) {
     positionHubFAB();
   }
   window.addEventListener('resize', positionHubFAB);
-
-  // ─── Bento resize: scale positions to new grid width ────
-  var _lastBentoGridW = 0;
-  var _bentoResizeTO = null;
-  function _onBentoResize() {
-    var grid = document.querySelector('.bento-grid');
-    if (!grid) return;
-    var newW = grid.getBoundingClientRect().width;
-    if (!newW || Math.abs(newW - _lastBentoGridW) < 10) return;
-    var oldW = _lastBentoGridW || newW;
-    _lastBentoGridW = newW;
-    var layout = hubContent && hubContent.bentoLayout;
-    if (!layout || !layout.length) return;
-    var ratio = newW / oldW;
-    layout.forEach(function(item) {
-      if (item.hidden) return;
-      item.x = snap(Math.max(0, Math.min(item.x * ratio, newW - item.w)));
-    });
-    renderHubBento();
-  }
-  function _scheduleBentoResize() {
-    if (_bentoResizeTO) return;
-    _bentoResizeTO = setTimeout(function() { _bentoResizeTO = null; _onBentoResize(); }, 200);
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      var g = document.querySelector('.bento-grid');
-      if (g) _lastBentoGridW = g.getBoundingClientRect().width;
-      window.addEventListener('resize', _scheduleBentoResize);
-    });
-  } else {
-    var g = document.querySelector('.bento-grid');
-    if (g) _lastBentoGridW = g.getBoundingClientRect().width;
-    window.addEventListener('resize', _scheduleBentoResize);
-  }
 
   // Directly wire the FAB toggle + outside-close (skip if already wired by setupHubEditEvents)
   const _wireHubFab = () => {

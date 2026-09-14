@@ -2704,6 +2704,16 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
+function popupAnimateOut(el, cb) {
+  if (!el || el._animatingOut) return;
+  el._animatingOut = true;
+  el.style.animation = 'popupOut 200ms ease forwards';
+  el.addEventListener('animationend', function handler() {
+    el.removeEventListener('animationend', handler);
+    if (cb) cb();
+  });
+}
+
 function formatTimeRange(start, end) {
   const fmt = (t) => {
     const [h, m] = t.split(':').map(Number);
@@ -2862,6 +2872,7 @@ const DEFAULT_IMAGES = {
   'tags-hero': '',
   'tags-studio': '',
   'analytics-hero': '',
+  'progress-hero': '',
   'finance-hero': '',
   'goals-hero': '',
   'hub-image-1': '',
@@ -3190,6 +3201,7 @@ function imageLabel(id) {
     'activities-hero': 'Activities Hero',
     'tags-hero': 'Tags Hero', 'tags-studio': 'Tags Studio',
     'analytics-hero': 'Analytics Hero',
+    'progress-hero': 'Progress Hero',
     'finance-hero': 'Finance Hero',
     'goals-hero': 'Goals Hero',
     'gallery-hero': 'Gallery Hero',
@@ -4144,6 +4156,10 @@ const IMAGE_MANAGER_GROUPS = [
   {
     label: 'Activities',
     ids: ['activities-hero']
+  },
+  {
+    label: 'Progress',
+    ids: ['progress-hero']
   },
   {
     label: 'Tags',
@@ -5360,6 +5376,7 @@ function openNewTaskModal(date, startMins, opts) {
   state._selectedPriority = 3;
   if (opts && opts.tag && TAG_ORDER.includes(opts.tag)) state.lastQuickTag = opts.tag;
   const sr = roundToNearest(startMins, SNAP_MINUTES);
+  const defaultTag = state.lastQuickTag && TAG_ORDER.includes(state.lastQuickTag) ? state.lastQuickTag : (state.selectedTag || 'meeting');
   dom.taskModalTitle.textContent = 'New Task';
   dom.taskTitle.value = (opts && opts.title) || '';
   dom.taskTitle.dispatchEvent(new Event('input'));
@@ -5373,6 +5390,7 @@ function openNewTaskModal(date, startMins, opts) {
   setDropdownValue('tmReminderTrigger', 'tmReminderMenu', '0');
   dom.taskDeleteBtn.classList.add('hidden');
   document.getElementById('taskModalId').textContent = '';
+  renderTaskCategoryChips(defaultTag);
   updatePriorityUI();
   showTaskModal();
 }
@@ -5398,6 +5416,7 @@ function openTaskModal(id) {
   setDropdownValue('tmReminderTrigger', 'tmReminderMenu', reminderVal);
   dom.taskDeleteBtn.classList.remove('hidden');
   document.getElementById('taskModalId').textContent = `#${id.slice(0, 6)}`;
+  renderTaskCategoryChips(task.tag || 'meeting');
   updatePriorityUI();
   showTaskModal();
 }
@@ -5408,6 +5427,38 @@ function updatePriorityUI() {
   group.querySelectorAll('.tm-pr').forEach(o => {
     o.classList.toggle('active', parseInt(o.dataset.priority) === (state._selectedPriority || 3));
   });
+}
+
+function renderTaskCategoryChips(selectedTag) {
+  const container = document.getElementById('taskCategoryChips');
+  const select = document.getElementById('taskCategorySelect');
+  if (!container || !select) return;
+  container.innerHTML = '';
+  select.innerHTML = '';
+  for (const tag of TAG_ORDER) {
+    const label = TAG_LABELS[tag] || tag;
+    const meta = getTagMeta(tag);
+    const color = meta?.text || '#888';
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'tm-cat-chip' + (tag === selectedTag ? ' active' : '');
+    chip.dataset.tag = tag;
+    chip.style.setProperty('--chip-accent', color);
+    chip.innerHTML = `<span class="tm-cat-dot" style="background:${color}"></span>${escapeHtml(label)}`;
+    chip.addEventListener('click', () => {
+      container.querySelectorAll('.tm-cat-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      select.value = tag;
+    });
+    container.appendChild(chip);
+    const opt = document.createElement('option');
+    opt.value = tag;
+    opt.textContent = label;
+    select.appendChild(opt);
+  }
+  select.value = selectedTag || TAG_ORDER[0];
+  const activeChip = container.querySelector(`[data-tag="${select.value}"]`);
+  if (activeChip) activeChip.classList.add('active');
 }
 
 function showTaskModal() {
@@ -5436,13 +5487,15 @@ function hideTaskModal() {
 
 function handleTaskFormSubmit(e) {
   e.preventDefault();
-  const fallbackTag = state.lastQuickTag && TAG_ORDER.includes(state.lastQuickTag) ? state.lastQuickTag : (state.selectedTag || 'meeting');
+  const catSelect = document.getElementById('taskCategorySelect');
+  const selectedTag = catSelect ? catSelect.value : null;
+  const fallbackTag = selectedTag || (state.lastQuickTag && TAG_ORDER.includes(state.lastQuickTag) ? state.lastQuickTag : (state.selectedTag || 'meeting'));
   const data = {
     title: dom.taskTitle.value.trim(),
     date: dom.taskDate.value,
     startTime: dom.taskStart.value,
     endTime: dom.taskEnd.value,
-    tag: state.editingTask ? (getTask(state.editingTask)?.tag || 'meeting') : fallbackTag,
+    tag: fallbackTag,
     notes: dom.taskNotes.value.trim(),
     priority: state._selectedPriority || 3,
   };
@@ -5899,6 +5952,33 @@ function executeActions(actions, responseText) {
         storeMemory(key, fact, 'ai');
         actionSummary.push(`◇ Noted: ${escapeHtml(key)} — ${escapeHtml(fact)}`);
       }
+    } else if (action.type === 'moveTask' && action.data.id) {
+      const t = getTask(action.data.id);
+      if (t) {
+        const changes = {};
+        if (action.data.startTime) changes.startTime = action.data.startTime;
+        if (action.data.endTime) changes.endTime = action.data.endTime;
+        if (action.data.date) changes.date = action.data.date;
+        updateTask(action.data.id, changes);
+        actionSummary.push(`→ Moved: <strong>${escapeHtml(t.title)}</strong> to ${changes.startTime || t.startTime}${changes.date ? ' on ' + changes.date : ''}`);
+        actionsModified = true;
+      }
+    } else if (action.type === 'batchCreate' && Array.isArray(action.data.tasks)) {
+      for (const data of action.data.tasks) {
+        if (!data.title || !data.date) continue;
+        const startM = parseTime(data.startTime);
+        const endM = parseTime(data.endTime) || startM + 60;
+        const conflict = findConflict(data.date, startM, endM);
+        if (conflict) {
+          const dur = endM - startM;
+          const slot = findFreeSlot(data.date, dur);
+          if (slot) { data.startTime = slot.startTime; data.endTime = slot.endTime; }
+        }
+        const task = createTask(data);
+        createdTaskIds.push(task.id);
+        const meta = getTagMeta(data.tag || 'meeting');
+        actionSummary.push(`● <strong>${escapeHtml(data.title)}</strong> <span style="color:${meta.text}">${data.startTime}–${data.endTime}</span> on ${data.date}`);
+      }
     }
   }
 
@@ -5942,6 +6022,49 @@ function sendAIMessage() {
     return;
   }
 
+  // Local command parser — skip API for common queries
+  const localResult = localCommandParser(text);
+  if (localResult) {
+    typingEl.remove();
+    aiChatHistory.push({ role: 'user', text });
+    saveChatHistory();
+    if (localResult.confirmAction) {
+      const planHtml = `${localResult.text}
+        <div class="ai-plan-bar">
+          <div class="ai-plan-summary"><strong>Confirm action</strong></div>
+          <div class="ai-plan-actions">
+            <button class="btn btn-primary ai-plan-confirm" style="font-size:0.74rem;padding:3px 12px">Confirm</button>
+            <button class="btn btn-outline ai-plan-cancel" style="font-size:0.74rem;padding:3px 12px">Cancel</button>
+          </div>
+        </div>`;
+      appendAIMessage('assistant', planHtml);
+      aiChatHistory.push({ role: 'assistant', text: localResult.text });
+      saveChatHistory();
+      const msgEl = dom.aiChatMessages.lastElementChild;
+      msgEl.querySelector('.ai-plan-confirm')?.addEventListener('click', () => {
+        let actions;
+        if (localResult.confirmAction === 'clearAllTasks') {
+          actions = [{ type: 'clearAllTasks', data: {} }];
+        } else if (localResult.confirmAction === 'updateTask' && localResult.moveData) {
+          actions = [{ type: 'updateTask', data: localResult.moveData }];
+        }
+        if (actions) {
+          const resultHtml = executeActions(actions, localResult.text);
+          msgEl.querySelector('.ai-bubble').innerHTML = resultHtml;
+        }
+      });
+      msgEl.querySelector('.ai-plan-cancel')?.addEventListener('click', () => {
+        msgEl.querySelector('.ai-bubble').innerHTML = localResult.text + '\n\n<em style="color:var(--text-tertiary)">Cancelled</em>';
+      });
+    } else {
+      appendAIMessage('assistant', localResult.text);
+      aiChatHistory.push({ role: 'assistant', text: localResult.text });
+      saveChatHistory();
+    }
+    trackAIUsage('chat');
+    return;
+  }
+
   trackAIUsage('chat');
   trackAIUsage('api');
   aiChatHistory.push({ role: 'user', text });
@@ -5965,6 +6088,8 @@ function sendAIMessage() {
         if (a.type === 'deleteTasksByQuery') return `⊘ Delete tasks matching "${escapeHtml(a.data.query)}"`;
         if (a.type === 'updateTask') return `✎ Update task ${a.data.id}`;
         if (a.type === 'deleteTask') return `✕ Delete task ${a.data.id}`;
+        if (a.type === 'moveTask') return `→ Move task to ${a.data.startTime || ''}${a.data.date ? ' on ' + a.data.date : ''}`;
+        if (a.type === 'batchCreate') return `● Create ${a.data.tasks.length} task${a.data.tasks.length > 1 ? 's' : ''} (weekly plan)`;
         return `» ${a.type}`;
       }).join('<br>');
 
@@ -6178,6 +6303,124 @@ function processOnboardingStep(userText, typingEl) {
   return true;
 }
 
+// ─── LOCAL COMMAND PARSER (skip API for common queries) ──
+function localCommandParser(text) {
+  const t = text.trim().toLowerCase();
+  const today = formatDate(new Date());
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  function freeSlotsForDate(date) {
+    const dayTasks = state.tasks.filter(x => x.date === date && !x.completed && !isWhiteboardTask(x));
+    const busy = dayTasks.map(x => ({ start: parseTime(x.startTime), end: parseTime(x.endTime) || parseTime(x.startTime) + 60 })).sort((a,b) => a.start - b.start);
+    const free = []; let cur = START_HOUR * 60;
+    for (const b of busy) { if (cur + 30 <= b.start) free.push({ start: cur, end: b.start }); cur = Math.max(cur, b.end + 15); }
+    const dayEnd = (START_HOUR + VISIBLE_HOURS) * 60;
+    if (cur + 30 <= dayEnd) free.push({ start: cur, end: dayEnd });
+    return free;
+  }
+
+  function formatSlots(slots) {
+    if (!slots.length) return 'No free slots';
+    return slots.map(s => `${toTimeStr(s.start)}–${toTimeStr(s.end)} (${formatDuration(s.end - s.start)})`).join('\n');
+  }
+
+  function tasksOnDate(date) {
+    return state.tasks.filter(t => t.date === date && !isWhiteboardTask(t));
+  }
+
+  // Greetings
+  if (/^(hi|hello|hey|sup|yo|howdy|greetings|good\s*(morning|afternoon|evening))/i.test(t)) {
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    return { text: `${greeting}! I'm **ChickBot**. I can manage your schedule, find free time, create tasks, and more. Try:\n- "What's on today?"\n- "Find me time for deep work"\n- "Schedule my week"` };
+  }
+
+  // Help
+  if (/^(help|commands|what can you do|options)/i.test(t)) {
+    return { text: `**Commands:**\n- "today" / "tomorrow" — quick schedule view\n- "this week" — weekly overview\n- "free today" — free time slots\n- "my tasks" — pending tasks\n- "how busy am I?" — workload summary\n- "create [task] on [date] at [time]" — new task\n- "move [task] to [time]" — reschedule\n- "delete all [tag] tasks" — remove by tag\n- "clear my schedule" — reset\n- "schedule my week" — full week plan\n- "how many tasks?" — quick count` };
+  }
+
+  // "today" / "what's on today" / "today's schedule"
+  if (t === 'today' || /today('?s|\s+(schedule|tasks|plan|agenda))/i.test(t) || /what('?s|\s+is)\s+(on\s+)?today/i.test(t)) {
+    const td = tasksOnDate(today);
+    if (!td.length) return { text: `**Today (${today}):** Nothing scheduled.` };
+    const lines = td.sort((a,b) => parseTime(a.startTime) - parseTime(b.startTime)).map(x => `• **${x.title}** at ${x.startTime} (${TAG_LABELS[x.tag] || x.tag})`);
+    return { text: `**Today (${today}):**\n\n${lines.join('\n')}\n\n_${td.length} task${td.length !== 1 ? 's' : ''}_` };
+  }
+
+  // "tomorrow" / "tomorrow's schedule"
+  if (t === 'tomorrow' || /tomorrow('?s|\s+(schedule|tasks|plan))/i.test(t)) {
+    const tm = formatDate(addDays(new Date(), 1));
+    const td = tasksOnDate(tm);
+    if (!td.length) return { text: `**Tomorrow (${tm}):** Nothing scheduled.` };
+    const lines = td.sort((a,b) => parseTime(a.startTime) - parseTime(b.startTime)).map(x => `• **${x.title}** at ${x.startTime} (${TAG_LABELS[x.tag] || x.tag})`);
+    return { text: `**Tomorrow (${tm}):**\n\n${lines.join('\n')}\n\n_${td.length} task${td.length !== 1 ? 's' : ''}_` };
+  }
+
+  // "this week" / "week schedule" / "weekly"
+  if (/(this\s+)?week/i.test(t) && /(schedule|overview|plan|agenda|tasks)/i.test(t) || t === 'this week' || t === 'week') {
+    const weekStart = getMonday(new Date());
+    const tasks = state.tasks.filter(x => { if (!x.date) return false; const d = new Date(x.date + 'T12:00:00'); return d >= weekStart && d < addDays(weekStart, 7); });
+    if (!tasks.length) return { text: `**This Week:** No tasks scheduled.` };
+    const grouped = {};
+    tasks.forEach(x => { const d = new Date(x.date + 'T12:00:00'); const day = dayNames[d.getDay()]; if (!grouped[day]) grouped[day] = []; grouped[day].push(x); });
+    let html = '**This Week:**\n\n';
+    for (const day of dayNames) {
+      if (!grouped[day]) continue;
+      html += `**${day}:** ${grouped[day].map(x => `${x.title} (${x.startTime})`).join(', ')}\n`;
+    }
+    return { text: html + `\n_${tasks.length} task${tasks.length !== 1 ? 's' : ''} total_` };
+  }
+
+  // "free today" / "free time" / "when am i free" / "gaps today"
+  if (/free\s*(today|time|slots|now|today)?/i.test(t) || /when\s+am\s+i\s+free/i.test(t) || /gaps?\s*(today)?/i.test(t)) {
+    const slots = freeSlotsForDate(today);
+    return { text: `**Free Time Today:**\n\n${formatSlots(slots)}` };
+  }
+
+  // "how many tasks?" / "task count" / "total tasks"
+  if (/how\s+many\s+tasks|task\s+count|total\s+tasks/i.test(t)) {
+    const total = state.tasks.filter(t => !isWhiteboardTask(t)).length;
+    const done = state.tasks.filter(t => t.completed).length;
+    const pending = total - done;
+    return { text: `**Task Count:** ${pending} pending, ${done} completed, ${total} total` };
+  }
+
+  // "how busy am I?" / "busy" / "workload"
+  if (/how\s+busy|workload|what('?s|\s+is)\s+my\s+(schedule\s+)?like/i.test(t)) {
+    const weekStart = getMonday(new Date());
+    const todayTasks = tasksOnDate(today);
+    const weekTasks = state.tasks.filter(x => { if (!x.date) return false; const d = new Date(x.date + 'T12:00:00'); return d >= weekStart && d < addDays(weekStart, 7); });
+    const tags = {};
+    state.tasks.filter(x => !isWhiteboardTask(x) && !x.completed).forEach(x => { tags[x.tag] = (tags[x.tag] || 0) + 1; });
+    const tagStr = Object.entries(tags).map(([k,v]) => `${TAG_LABELS[k] || k}: ${v}`).join(', ');
+    return { text: `**Workload:**\n• Today: ${todayTasks.length} tasks\n• This week: ${weekTasks.length} tasks\n• By type: ${tagStr || 'none'}` };
+  }
+
+  // "my tasks" / "show tasks" / "pending tasks"
+  if (/my\s+tasks|show\s+tasks|pending\s+tasks|all\s+tasks|what\s+are\s+my/i.test(t)) {
+    const pending = state.tasks.filter(t => !t.completed && !isWhiteboardTask(t));
+    if (!pending.length) return { text: `No pending tasks. Ask me to create some!` };
+    const lines = pending.slice(0, 12).map(x => `• **${x.title}** — ${x.date} ${x.startTime} (${TAG_LABELS[x.tag] || x.tag})`);
+    return { text: `**Pending Tasks (${pending.length}):**\n\n${lines.join('\n')}${pending.length > 12 ? `\n\n_...and ${pending.length - 12} more_` : ''}` };
+  }
+
+  // "clear schedule" / "clear everything" / "reset schedule"
+  if (/clear\s+(my\s+)?(schedule|everything|all)|reset\s+schedule|delete\s+all/i.test(t)) {
+    return { text: 'Are you sure you want to clear your entire schedule?', confirmAction: 'clearAllTasks' };
+  }
+
+  // No match — go to API
+  return null;
+}
+
+function detectQueryScope(t) {
+  if (/today|tonight|this\s+morning|this\s+afternoon/i.test(t)) return 'today';
+  if (/tomorrow/i.test(t)) return 'tomorrow';
+  if (/this\s+week|next\s+week|week/i.test(t)) return 'week';
+  return 'all';
+}
+
 function callAIAgent(userText) {
   const today = formatDate(new Date());
   const weekStart = getMonday(new Date());
@@ -6269,125 +6512,39 @@ ${TAG_ORDER.map(t => `- ${TAG_LABELS[t]}: ${tagSummary[t].count} tasks, ${format
 
   const profileSection = buildChickBotProfileSection();
 
-  const systemPrompt = `You are ChickBot, a friendly smart-schedule assistant integrated into Havën Schedule.
+  const systemPrompt = `You are ChickBot, Havën Schedule's smart assistant. ${getHolidayMode() ? 'HOLIDAY mode — lighter workloads, flexible timing.' : 'SCHOOL mode — prioritize study/deep work on weekdays.'} ${learningContext}${profileSection}
 
-Today's date is ${today}. Current time: ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}. The user's timezone is ${Intl.DateTimeFormat().resolvedOptions().timeZone}.${getHolidayMode() ? '\n\nThe user is currently on HOLIDAY — no school commitments. When scheduling, suggest lighter workloads, more free time, flexible timing, and focus on hobbies, exercise, social activities, and relaxation. Weekdays and weekends are more similar.' : '\n\nThe user is currently in SCHOOL mode — they have regular school/class commitments on weekdays. When scheduling, prioritize study sessions, deep work, and structured activities during weekdays.'}${learningContext}${profileSection}
+TODAY: ${today} | TIME: ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} | TZ: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
+GRID: ${toTimeStr(START_HOUR * 60)}–${toTimeStr((START_HOUR + VISIBLE_HOURS) * 60)}, 30-min snap, wraps to 4am
 
-CURRENT SCHEDULE CONTEXT:
+SCHEDULE CONTEXT:
 ${context}
 
-RECENT CONVERSATION HISTORY:
-${recentHistory || '(no previous conversation)'}
+CONVERSATION:
+${recentHistory || '(start fresh)'}
 
-CAPABILITIES:
-1. Answer questions about the user's schedule (counts, summaries, breakdowns by tag, free time, etc.)
-2. Suggest and INSTANTLY create new tasks on the calendar when the user asks
-3. Find free time slots for new tasks
-4. Help organize and prioritize tasks
-5. Give advice on scheduling and time management
-6. Process uploaded files — the user can attach images (photos of schedules, class timetables, handwritten notes), PDFs, or text files. When an image is attached, carefully examine the image contents and extract any schedule, task, or event information from it, then offer to add them to the calendar.
-7. Understand natural language about time — "morning" = 6-12, "afternoon" = 12-17, "evening" = 17-21, "night" = 21-6
-8. **LEARN AND REMEMBER** — You get smarter over time. When the user tells you something about themselves (preferences, habits, routines, personal facts), use the "rememberFact" action to store it permanently. In future conversations, you'll see everything you've learned in the "THINGS I'VE LEARNED ABOUT YOU" section above. Proactively apply what you know — if they told you they're vegetarian, don't suggest cooking tasks; if they said they work remote Tuesdays, remember that.
+${attachedFile ? (attachedFile.isImage ? `[Image: ${attachedFile.name}]\n` : `[File: ${attachedFile.name}]\n${(attachedFile.data||'').slice(0,2000)}\n`) : ''}
 
-GRID RULES (the calendar grid runs ${toTimeStr(START_HOUR * 60)} – ${toTimeStr((START_HOUR + VISIBLE_HOURS) * 60)}):
-- Tasks snap to 30-minute increments (0 or 30 past the hour)
-- Earliest slot is ${toTimeStr(START_HOUR * 60)}, latest ends at ${toTimeStr((START_HOUR + VISIBLE_HOURS) * 60)}
-- The grid wraps past midnight until 4am (next day)
-- A task at 11:30 PM is valid; a task at 4:30 AM is not
+TASK RULES:
+- 30-min snap, no overlap, 15min buffer. Deep work→9-12, Exercise→6-8/5-7, Meetings→10-11/2-4(30min), Study→daily slot, Hobby→evenings/wknd
+- Morning=6-12, afternoon=12-17, evening=17-21. Prefer learned patterns. If time taken, find nearest free slot.
+- Titles must be specific: "Deep work: [goal]", "[workout type]", "Study [subject] — [topic]". Never bare tag names.
+- "Schedule my week" → batchCreate ALL 5-7 days, balanced mix per day (1 deep work, 1 meeting, 1 exercise, optional study/hobby)
+- Use rememberFact to store user preferences/facts. Process images to extract schedule info.
 
-NATURAL LANGUAGE EXAMPLES — understand these user phrasings:
-- "What's on today?" → show today's tasks
-- "Am I free tomorrow at 3?" → check specific time
-- "Find me an hour for deep work" → find a 1h free slot
-- "I need to fit in a workout" → find free time for exercise (45-60min)
-- "How busy is my week?" → count tasks per day, show busy/free balance
-- "Move my meeting to 2pm" → update task time
-- "What does my morning look like?" → show tasks between 6-12
-- "I have too many meetings" → count meetings, suggest consolidating
-- "Schedule a study session for Wednesday" → create task on specific day
-- "Can I fit another task today?" → check free time availability
+TAGS: ${TAG_ORDER.map(t => `"${t}"=${TAG_LABELS[t]}`).join(', ')}
+${(() => { const subcatMap = loadSubcategories(); const p = []; for (const t of TAG_ORDER) { const s = subcatMap[t] || []; if (s.length) p.push(`${t}:${s.join(',')}`); } return p.length ? 'SUBCATS:\n' + p.join('\n') : ''; })()}
+Default: 60min, 09:00. Tomorrow=next day. Day names=next occurrence.
 
-SMART SCHEDULING RULES — apply these when creating tasks:
-1. Never schedule a task that overlaps an existing task on the calendar
-2. Consider what fits best at each time of day:
-   - Deep work (2hr blocks) → morning 9-12 — peak focus hours
-   - Exercise → morning 6-8 or late afternoon 17-19
-   - Meetings → late morning 10-11 or afternoon 14-16, default 30min
-   - Study → afternoon or evening, consistent daily time
-   - Hobby → evening or weekends as wind-down
-3. Leave 15min buffer between tasks so the user isn't rushing
-4. Don't schedule anything before 6am or after 11pm unless the user explicitly says
-5. Follow the user's routine from their typical schedule above — if they say they usually work out at 6pm, don't schedule it at 8am
-6. If the user specifies a time but it's already taken, pick the nearest free slot (use the FREE TIME list above to find it)
-7. When the user asks "find me time for X", look at the FREE TIME TODAY section and suggest the best-matching slot
-8. Consider the user's MOST ACTIVE HOURS from their learned patterns — they tend to prefer those times
+RESPOND with ONLY valid JSON (no markdown fences, no extra text):
+{"text":"response","actions":[{"type":"ACTION","data":{...}}]}
 
-TASK TITLE QUALITY — make every task title specific and descriptive:
-- Deep work: "Deep work: [concrete goal]" (e.g. "Deep work: Design system architecture", "Deep work: Write Q3 planning doc")
-- Exercise: "[type of workout]" (e.g. "Morning run 5k", "Gym: upper body", "Evening yoga flow", "Swim laps")
-- Meetings: "[purpose] sync/review" (e.g. "Team standup", "1:1 with Manager", "Design review: homepage", "Sprint planning")
-- Study: "Study [subject] — [specific topic]" (e.g. "Study Mandarin — lesson 12 vocab", "Study physics — thermodynamics problems")
-- Hobby: "[activity]" (e.g. "Read 'Atomic Habits'", "Practice guitar — scales", "Work on portfolio site", "Sketching practice")
-- NEVER use generic titles like "Deep Work", "Meeting", "Study", "Exercise", "Hobby" alone — always add the specific goal or activity
-- For weekly schedules, vary the tasks each day (don't repeat "Deep work: Project" 5 times identically)
+ACTIONS: createTask{title,date,startTime,endTime,tag,subcategory?} | updateTask{id,changes:{title?,date?,startTime?,endTime?,tag?,completed?}} | deleteTask{id} | clearAllTasks{} | clearDate{date} | clearCompletedTasks{} | deleteTasksByTag{tag} | deleteTasksByQuery{query} | rememberFact{key,fact} | moveTask{id,startTime,endTime} | batchCreate{tasks:[{title,date,startTime,endTime,tag,subcategory?}]}
 
-WEEKLY SCHEDULE RULE: When the user says "schedule my week", "make a weekly schedule", or similar, create tasks for ALL 5-7 days (Monday through Sunday) unless they specify otherwise. Fill each day with a balanced mix: typically 1 deep work block, 1 meeting, 1 exercise, and optional study/hobby. The actions array can hold many tasks — don't limit yourself to 1-2 days. Aim for a complete, realistic week.
+EXAMPLES: "Clear schedule"→clearAllTasks. "Delete gym tasks"→deleteTasksByTag:{tag:"exercise"}. "Move X to 2pm"→moveTask. "Schedule week"→batchCreate 5-7 days.
 
-Available tags: ${TAG_ORDER.map(t => `"${t}"`).join(', ')} (default: "meeting")
-Tag labels: ${TAG_ORDER.map(t => `"${t}" = "${TAG_LABELS[t]}"`).join(', ')}
-${(() => {
-  const subcatMap = loadSubcategories();
-  const parts = [];
-  for (const t of TAG_ORDER) {
-    const subs = subcatMap[t] || [];
-    if (subs.length > 0) parts.push(`"${t}" subcategories: ${subs.map(s => `"${s}"`).join(', ')}`);
-  }
-  return parts.length > 0 ? 'SUBCATEGORIES per tag:\n' + parts.join('\n') : '';
-})()}
-Default duration: 60 minutes. Default time: 09:00.
-Tomorrow = next day from today. Day names = next occurrence.
-When creating a task, if the user mentions a known subcategory, include "subcategory" in the data.
-
-You MUST return your response as VALID JSON with this exact format:
-{
-  "text": "Your friendly, natural response explaining what was done or answering the question. Use markdown.",
-  "actions": [
-    {
-      "type": "createTask",
-      "data": {
-        "title": "Task Title",
-        "date": "YYYY-MM-DD",
-        "startTime": "HH:MM",
-        "endTime": "HH:MM",
-        "tag": "tag-name",
-        "subcategory": "subcategory-name or empty"
-      }
-    }
-  ]
-}
-
-AVAILABLE ACTION TYPES:
-- "createTask": create a new task. data: { title, date, startTime, endTime, tag, subcategory? }
-- "updateTask": modify an existing task. data: { id, changes: { title?, date?, startTime?, endTime?, tag?, subcategory?, completed? } }
-- "deleteTask": delete a single task by its id. data: { id }
-- "clearAllTasks": delete EVERY task on the schedule (keeps whiteboard ideas). data: {} (empty)
-- "clearDate": delete all tasks on a specific date. data: { date: "YYYY-MM-DD" }
-- "clearCompletedTasks": delete all completed tasks. data: {} (empty)
-- "deleteTasksByTag": delete all tasks of a specific tag type. data: { tag: "tag-name" }
-- "deleteTasksByQuery": delete all tasks whose title contains the given text. data: { query: "search text" }
-- "rememberFact": store something you learned about the user for future conversations. data: { key: "short-unique-key", fact: "the fact to remember" }. Use this when the user shares personal info, preferences, habits, or anything useful to recall later. Example: { type: "rememberFact", data: { key: "work-hours", fact: "works 10am-6pm Tue-Sat" } }
-
-EXAMPLES:
-- "Clear my whole schedule" → use "clearAllTasks"
-- "Delete everything on Friday" → use { type: "clearDate", data: { date: "2026-06-12" } }
-- "Remove all completed tasks" → use "clearCompletedTasks"
-- "Delete all my gym tasks" → use { type: "deleteTasksByTag", data: { tag: "exercise" } }
- - "Delete any task about laundry" → use { type: "deleteTasksByQuery", data: { query: "laundry" } }
-
-USER'S EXTRA INSTRUCTIONS FOR YOU:
-${(() => { try { return localStorage.getItem('haven-ai-extra-instructions') || ''; } catch (e) { return ''; } })()}
-
-IMPORTANT: Return ONLY valid JSON. No markdown fences, no extra text.`;
+${(() => { try { const extra = localStorage.getItem('haven-ai-extra-instructions') || ''; return extra ? `EXTRA:\n${extra}\n` : ''; } catch (e) { return ''; } })()}
+IMPORTANT: Only valid JSON.`;
 
   return callAIChat(systemPrompt, fileAwareUserText, hasImageAttachment ? attachedFile : null);
 }
@@ -6436,8 +6593,8 @@ function callGroqChat(systemPrompt, userText, attachedImage) {
   const body = {
     model: state.apiModel,
     messages,
-    temperature: 0.3,
-    max_tokens: 3000,
+    temperature: 0.2,
+    max_tokens: 2000,
   };
   if (!hasVision) {
     body.response_format = { type: 'json_object' };
@@ -6505,7 +6662,7 @@ function callGeminiChat(systemPrompt, userText, attachedImage) {
         ...historyMessages,
         { role: 'user', parts: userParts }
       ],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 3000 }
+      generationConfig: { temperature: 0.2, maxOutputTokens: 2000 }
     })
   }).then(async res => {
     if (!res.ok) {

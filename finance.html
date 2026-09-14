@@ -12,6 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/progress-desert.css">
+  <link rel="stylesheet" href="css/progress-mono.css">
     <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <title>Havën Schedule — Finance</title>
@@ -21,94 +23,76 @@
       --fin-expense: #ef4444;
       --fin-accent: var(--primary);
     }
-    .fin-kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
-    .fin-kpi { padding: var(--space-5); border-radius: var(--radius-xl); border: 1px solid var(--border-color); background: var(--bg-card); position: relative; overflow: hidden; transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1); cursor: default; }
-    .fin-kpi::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: var(--card-inner-glow); pointer-events: none; }
-    .fin-kpi::before {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg,
-        color-mix(in srgb, var(--fin-accent) 4%, transparent) 0%,
-        transparent 60%
-      );
-      opacity: 0; pointer-events: none;
-      transition: opacity 400ms;
-    }
-    .fin-kpi.income::before { background: linear-gradient(135deg, color-mix(in srgb, #22c55e 6%, transparent) 0%, transparent 60%); }
-    .fin-kpi.expense::before { background: linear-gradient(135deg, color-mix(in srgb, #ef4444 6%, transparent) 0%, transparent 60%); }
-    .fin-kpi.net::before { background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, transparent) 0%, transparent 60%); }
-    .fin-kpi:hover { border-color: var(--text-primary); box-shadow: 0 8px 28px rgba(0,0,0,0.06); }
-    .fin-kpi:hover::before { opacity: 1; }
-    .fin-kpi:active { transform: translateY(-1px) scale(0.995); }
-    .fin-kpi.income::before { background: var(--fin-income); }
-    .fin-kpi.income .fin-kpi-value { color: var(--text-primary); }
-    .fin-kpi.expense::before { background: var(--fin-expense); }
-    .fin-kpi.expense .fin-kpi-value { color: var(--text-primary); }
-    .fin-kpi.net::before { background: var(--fin-accent); }
-    .fin-kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-2); }
-    .fin-kpi-label { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
-    .fin-kpi-value { font-size: 1.8rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; transition: transform 300ms; }
+    .fin-kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: 24px 0 var(--space-6); }
+    .fin-kpi { padding: 20px; border-radius: 14px; border: 1px solid var(--border-color); background: var(--bg-card); position: relative; overflow: hidden; transition: box-shadow 200ms, transform 200ms; cursor: default; display: flex; flex-direction: column; gap: 8px; }
+    .fin-kpi:hover { border-color: color-mix(in srgb, var(--text-primary) 25%, transparent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-2px); }
+    .fin-kpi:active { transform: scale(0.99); }
+    .fin-kpi-header { display: flex; align-items: center; justify-content: space-between; }
+    .fin-kpi-label { font-family: var(--font-mono); font-size: 0.58rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-secondary); }
+    .fin-kpi-value { font-family: var(--font-display); font-size: 2rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+    .fin-kpi.income .fin-kpi-value { color: var(--fin-income); }
+    .fin-kpi.expense .fin-kpi-value { color: var(--fin-expense); }
 
 
     .fin-toolbar { display:flex; align-items:center; justify-content:space-between; gap: var(--space-3); margin-bottom: var(--space-4); flex-wrap: wrap; }
     .fin-toolbar-left { display: flex; align-items: center; gap: var(--space-2); }
     .fin-toolbar-right { display: flex; align-items: center; gap: var(--space-2); }
-    .fin-tabs { display: inline-flex; gap: 4px; background: var(--surface-container-low); border: 1px solid var(--border-color); padding: 4px; border-radius: 12px; }
-    .fin-tab { border: none; background: transparent; color: var(--text-secondary); padding: 6px 12px; border-radius: 10px; font-weight: 600; font-size: 0.72rem; cursor: pointer; transition: all var(--t-fast); }
-    .fin-tab:hover { color: var(--text-primary); background: var(--accent-soft); }
-    .fin-tab.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 0 rgba(0,0,0,0.06); }
-    .fin-count { font-size: 0.68rem; color: var(--text-tertiary); font-weight: 600; white-space: nowrap; }
-    .fin-export-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all var(--t-fast); padding: 0; }
-    .fin-export-btn:hover { background: var(--accent-soft); color: var(--text-primary); }
+    .fin-tabs { display: inline-flex; gap: 4px; background: color-mix(in srgb, var(--text-primary) 7%, transparent); border: none; padding: 4px; border-radius: 10px; }
+    .fin-tab { border: none; background: transparent; color: var(--text-secondary); padding: 6px 14px; border-radius: 8px; font-weight: 500; font-size: 0.72rem; cursor: pointer; transition: all 200ms; font-family: var(--font-sans); }
+    .fin-tab:hover { color: var(--text-primary); }
+    .fin-tab.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .fin-count { font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-secondary); white-space: nowrap; }
+    .fin-export-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 150ms; padding: 0; }
+    .fin-export-btn:hover { background: color-mix(in srgb, var(--text-primary) 8%, transparent); color: var(--text-primary); }
     .fin-export-btn svg { width: 16px; height: 16px; }
 
 
     .fin-panels { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space-4); margin-bottom: var(--space-6); }
     @media (max-width: 767px) { .fin-panels { grid-template-columns: 1fr; } .fin-kpi-row { grid-template-columns: 1fr; } }
 
-    .fin-table-wrap { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); overflow: hidden; position: relative; }
-    .fin-table-wrap::after { content: ''; position: absolute; inset: 0; border-radius: inherit; box-shadow: var(--card-inner-glow); pointer-events: none; }
-    .fin-table-wrap:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
-    .fin-table-head { display:grid; grid-template-columns: 0.9fr 1fr 0.9fr 1.1fr 0.7fr 0.7fr; gap: var(--space-3); padding: 12px 16px; border-bottom: 1px solid var(--border-color); background: var(--bg-secondary); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-tertiary); }
+    .fin-table-wrap { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; position: relative; }
+    .fin-table-wrap:hover { border-color: color-mix(in srgb, var(--text-primary) 25%, transparent); }
+    .fin-table-head { display:grid; grid-template-columns: 0.9fr 1fr 0.9fr 1.1fr 0.7fr 0.7fr; gap: var(--space-3); padding: 10px 16px; border-bottom: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 0.58rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); }
     .fin-table { max-height: 420px; overflow-y: auto; }
-    .fin-row { display:grid; grid-template-columns: 0.9fr 1fr 0.9fr 1.1fr 0.7fr 0.7fr; gap: var(--space-3); padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); align-items: center; font-size: 0.85rem; transition: background 200ms, box-shadow 200ms; position: relative; cursor: pointer; }
-    .fin-row:hover { background: var(--accent-soft); box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
-    .fin-amount { font-weight: 700; font-variant-numeric: tabular-nums; }
-    .fin-amount.income { color: var(--text-primary); }
-    .fin-amount.expense { color: var(--text-primary); }
-    .fin-category-pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.68rem; font-weight: 600; background: var(--accent-soft); color: var(--text-primary); border: 1px solid var(--border-color); }
+    .fin-row { display:grid; grid-template-columns: 0.9fr 1fr 0.9fr 1.1fr 0.7fr 0.7fr; gap: var(--space-3); padding: 10px 16px; border-bottom: 1px solid var(--border-subtle); align-items: center; font-size: 0.8rem; transition: background 150ms; position: relative; cursor: pointer; }
+    .fin-row:hover { background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+    .fin-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
+    .fin-amount.income { color: var(--fin-income); }
+    .fin-amount.expense { color: var(--fin-expense); }
+    .fin-category-pill { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.66rem; font-weight: 500; background: color-mix(in srgb, var(--text-primary) 6%, transparent); color: var(--text-secondary); border: 1px solid var(--border-subtle); font-family: var(--font-sans); }
     .fin-row-actions { display: flex; gap: 4px; }
-    .fin-row-edit { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1); padding: 0; }
-    .fin-row-edit:hover { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); transform: scale(1.12); }
+    .fin-row-edit { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 150ms; padding: 0; }
+    .fin-row-edit:hover { background: color-mix(in srgb, var(--text-primary) 8%, transparent); color: var(--text-primary); }
     .fin-row-edit:active { transform: scale(0.9); }
     .fin-row-edit svg, .fin-row-del svg { width: 14px; height: 14px; }
-    .fin-row-del { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 200ms cubic-bezier(0.34, 1.56, 0.64, 1); padding: 0; }
-    .fin-row-del:hover { background: color-mix(in srgb, #e04040 14%, transparent); color: #e04040; transform: scale(1.12); }
+    .fin-row-del { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 150ms; padding: 0; }
+    .fin-row-del:hover { background: color-mix(in srgb, #e04040 14%, transparent); color: #e04040; }
     .fin-row-del:active { transform: scale(0.9); }
-    .fin-row.editing { background: var(--accent-soft); }
-    .fin-row-edit.editing { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+    .fin-row.editing { background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
+    .fin-row-edit.editing { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 10%, transparent); }
 
-    .fin-form-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: var(--space-5); position: sticky; top: 12px; transition: all 250ms var(--curve); }
-    .fin-form-panel:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
-    .fin-form-panel h2 { font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); margin-bottom: var(--space-4); }
+    .fin-form-panel { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: var(--space-5); position: sticky; top: 12px; transition: border-color 200ms; }
+    .fin-form-panel:hover { border-color: color-mix(in srgb, var(--text-primary) 25%, transparent); }
+    .fin-form-panel h2 { font-family: var(--font-serif); font-size: 0.82rem; font-weight: 500; color: var(--text-secondary); margin-bottom: var(--space-4); }
     .fin-form-stack { display:flex; flex-direction:column; gap: var(--space-3); }
     .fin-form-stack .form-group { display:flex; flex-direction:column; gap: 4px; }
-    .fin-form-stack label { font-size: 0.7rem; color: var(--text-tertiary); font-weight: 600; }
-    .fin-form-stack input, .fin-form-stack select { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-family); font-size: 0.85rem; outline: none; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
-    .fin-form-stack input:focus, .fin-form-stack select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent); }
-    .fin-toggle { display: inline-flex; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 999px; padding: 3px; }
-    .fin-toggle button { border: none; background: transparent; color: var(--text-secondary); padding: 7px 12px; border-radius: 999px; font-weight: 700; font-size: 0.75rem; cursor: pointer; transition: all var(--t-fast); }
+    .fin-form-stack label { font-family: var(--font-mono); font-size: 0.58rem; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; }
+    .fin-form-stack input, .fin-form-stack select { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-family); font-size: 0.85rem; outline: none; transition: border-color 150ms, box-shadow 150ms; }
+    .fin-form-stack input:focus, .fin-form-stack select:focus { border-color: var(--text-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 12%, transparent); }
+    .fin-toggle { display: inline-flex; background: color-mix(in srgb, var(--text-primary) 7%, transparent); border: none; border-radius: 10px; padding: 4px; }
+    .fin-toggle button { border: none; background: transparent; color: var(--text-secondary); padding: 7px 12px; border-radius: 8px; font-weight: 500; font-size: 0.72rem; cursor: pointer; transition: all 200ms; font-family: var(--font-sans); }
     .fin-toggle button:hover { color: var(--text-primary); }
-    .fin-toggle button.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
-    .fin-btn { width: 100%; padding: 10px 14px; border-radius: 12px; border: none; background: var(--primary); color: var(--text-inverse); font-weight: 700; cursor: pointer; font-size: 0.85rem; letter-spacing: 0.02em; transition: all var(--t-fast); }
-    .fin-btn:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .fin-toggle button.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .fin-btn { width: 100%; padding: 10px 14px; border-radius: 10px; border: none; background: var(--text-primary); color: var(--text-inverse); font-weight: 600; cursor: pointer; font-size: 0.8rem; letter-spacing: 0.02em; transition: all 150ms; font-family: var(--font-sans); }
+    .fin-btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
     .fin-btn:active { transform: translateY(0); }
     .fin-btn.secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border-color); }
-    .fin-btn.secondary:hover { border-color: var(--text-primary); background: var(--accent-soft); filter: none; }
+    .fin-btn.secondary:hover { border-color: var(--text-tertiary); box-shadow: none; }
 
     .fin-charts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); }
-    .fin-chart-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); padding: var(--space-5); transition: all var(--t-base); }
-    .fin-chart-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
-    .fin-chart-title { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-tertiary); margin-bottom: var(--space-4); }
+    .fin-chart-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; transition: border-color 200ms; }
+    .fin-chart-card:hover { border-color: color-mix(in srgb, var(--text-primary) 25%, transparent); }
+    .fin-chart-title { font-family: var(--font-serif); font-size: 0.82rem; font-weight: 500; color: var(--text-secondary); margin-bottom: var(--space-4); }
     .fin-bar-chart { height: 160px; display:flex; align-items:flex-end; gap: 3px; padding-bottom: 20px; }
     .fin-bar-group { position: relative; display: flex; align-items: flex-end; gap: 2px; }
     .fin-bar { border-radius: 4px 4px 0 0; min-width: 8px; position: relative; transition: all 0.2s; cursor: pointer; }
@@ -132,87 +116,61 @@
     .fin-empty svg { opacity: 0.15; width: 32px; height: 32px; }
     .fin-empty p { font-size: 0.8rem; margin: 0; }
     .fin-empty .sub { font-size: 0.68rem; opacity: 0.6; }
-    .fin-hero-decor { position: absolute; right: 10px; top: 10px; width: 120px; height: 120px; opacity: 0.12; pointer-events: none; }
-    .fin-hero-decor svg { width: 100%; height: 100%; }
 
     /* ─── PIGGY BANK & WALLET ─────────────────────────── */
     .fin-savings-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); }
     @media (max-width: 700px) { .fin-savings-row { grid-template-columns: 1fr; } }
 
     .fin-piggy-card, .fin-wallet-card {
-      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl);
-      padding: var(--space-5); transition: all 350ms cubic-bezier(0.34, 1.56, 0.64, 1); position: relative; overflow: hidden;
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px;
+      padding: var(--space-5); transition: border-color 200ms; position: relative; overflow: hidden;
     }
-    .fin-piggy-card::after, .fin-wallet-card::after {
-      content: ''; position: absolute; inset: 0;
-      border-radius: inherit;
-      box-shadow: var(--card-inner-glow);
-      pointer-events: none;
-    }
-    .fin-piggy-card:hover { 
-      border-color: #fbbf24; 
-      box-shadow: 0 8px 28px rgba(251,191,36,0.15), 0 4px 12px rgba(251,191,36,0.08); 
-      transform: translateY(-3px) scale(1.005); 
-    }
-    .fin-wallet-card:hover { 
-      border-color: var(--text-primary); 
-      box-shadow: var(--shadow-md); 
-      transform: translateY(-3px) scale(1.005); 
+    .fin-piggy-card:hover, .fin-wallet-card:hover {
+      border-color: color-mix(in srgb, var(--text-primary) 25%, transparent);
     }
 
     .fin-piggy-header, .fin-wallet-header { display: flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-4); }
     .fin-piggy-label, .fin-wallet-label {
-      font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-      color: var(--text-tertiary); margin-bottom: 2px;
+      font-family: var(--font-mono); font-size: 0.58rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em;
+      color: var(--text-secondary); margin-bottom: 2px;
     }
     .fin-piggy-balance, .fin-wallet-balance {
-      font-size: 1.6rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums;
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      font-family: var(--font-display); font-size: 2rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums;
+      color: var(--text-primary);
     }
     .fin-piggy-balance { color: #fbbf24; }
-    .fin-wallet-balance { color: var(--text-primary); }
     .fin-piggy-actions, .fin-wallet-actions { display: flex; gap: var(--space-2); align-items: center; }
     .fin-piggy-input, .fin-wallet-input {
       flex: 1; min-width: 0; padding: 10px 12px; border-radius: 10px;
       border: 1px solid var(--border-color); background: var(--bg-primary);
       color: var(--text-primary); font-family: var(--font-family); font-size: 0.85rem;
-      outline: none; transition: border-color 0.15s ease; max-width: 120px;
+      outline: none; transition: border-color 150ms, box-shadow 150ms; max-width: 120px;
     }
     .fin-piggy-input:focus { border-color: #fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,0.12); }
     .fin-wallet-input:focus { border-color: var(--text-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 12%, transparent); }
     .fin-piggy-btn, .fin-wallet-btn {
-      border: none; padding: 8px 14px; border-radius: 10px; font-weight: 700;
-      font-size: 0.75rem; cursor: pointer; transition: all var(--t-fast);
-      font-family: var(--font-family); white-space: nowrap;
+      border: none; padding: 8px 14px; border-radius: 10px; font-weight: 600;
+      font-size: 0.75rem; cursor: pointer; transition: all 150ms;
+      font-family: var(--font-sans); white-space: nowrap;
     }
     .fin-piggy-btn.add { background: #fbbf24; color: #1c1917; }
-    .fin-piggy-btn.add:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(251,191,36,0.25); }
-    .fin-piggy-btn.add:active { transform: scale(0.92); }
-    .fin-piggy-btn.sub { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
-    .fin-piggy-btn.sub:hover { border-color: var(--text-primary); color: var(--text-primary); transform: translateY(-1px); }
     .fin-wallet-btn.add { background: var(--text-primary); color: var(--text-inverse); }
-    .fin-wallet-btn.add:hover { filter: brightness(1.15); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-    .fin-wallet-btn.add:active { transform: scale(0.92); }
-    .fin-wallet-btn.sub { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
-    .fin-wallet-btn.sub:hover { border-color: var(--text-primary); color: var(--text-primary); transform: translateY(-1px); }
+    .fin-piggy-btn.add:hover, .fin-wallet-btn.add:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .fin-piggy-btn.add:active, .fin-wallet-btn.add:active { transform: scale(0.95); }
+    .fin-piggy-btn.sub, .fin-wallet-btn.sub { background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); }
+    .fin-piggy-btn.sub:hover, .fin-wallet-btn.sub:hover { border-color: var(--text-tertiary); color: var(--text-primary); }
 
     /* ─── SAVINGS LINE CHARTS ──────────────────────────── */
     .fin-savings-charts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-6); }
     @media (max-width: 700px) { .fin-savings-charts { grid-template-columns: 1fr; } }
     .fin-savings-chart-card {
-      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl);
-      padding: var(--space-5); transition: all 250ms var(--curve); overflow: hidden; position: relative;
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px;
+      padding: 24px; transition: border-color 200ms; overflow: hidden; position: relative;
     }
-    .fin-savings-chart-card::after {
-      content: ''; position: absolute; inset: 0;
-      border-radius: inherit;
-      box-shadow: var(--card-inner-glow);
-      pointer-events: none;
-    }
-    .fin-savings-chart-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .fin-savings-chart-card:hover { border-color: color-mix(in srgb, var(--text-primary) 25%, transparent); }
     .fin-savings-chart-title {
-      font-family: var(--font-sans); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--text-tertiary); margin-bottom: var(--space-3);
+      font-family: var(--font-serif); font-size: 0.82rem; font-weight: 500;
+      color: var(--text-secondary); margin-bottom: var(--space-3);
     }
     .fin-savings-chart-body { position: relative; min-height: 140px; }
     .fin-savings-chart-body svg { display: block; }
@@ -229,22 +187,22 @@
     /* ─── ADVANCED CHARTS ──────────────────────────────── */
     .fin-adv-section { margin-bottom: var(--space-6); }
     .fin-adv-header {
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex; align-items: center; justify-content: center;
       margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-3);
     }
     .fin-adv-tabs {
-      display: inline-flex; gap: 3px; background: var(--surface-container-low);
-      border: 1px solid var(--border-color); padding: 3px; border-radius: 12px;
+      display: inline-flex; gap: 4px; background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+      border: none; padding: 4px; border-radius: 10px;
     }
     .fin-adv-tab {
       display: inline-flex; align-items: center; gap: 5px;
       border: none; background: transparent; color: var(--text-secondary);
-      padding: 5px 10px; border-radius: 10px; font-weight: 600;
-      font-size: 0.68rem; cursor: pointer; transition: all var(--t-fast);
-      white-space: nowrap; font-family: var(--font-family);
+      padding: 6px 12px; border-radius: 8px; font-weight: 500;
+      font-size: 0.72rem; cursor: pointer; transition: all 200ms;
+      white-space: nowrap; font-family: var(--font-sans);
     }
-    .fin-adv-tab:hover { color: var(--text-primary); background: var(--accent-soft); }
-    .fin-adv-tab.active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 0 rgba(0,0,0,0.06); }
+    .fin-adv-tab:hover { color: var(--text-primary); }
+    .fin-adv-tab.active { background: var(--bg-card); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .fin-adv-tab svg { width: 14px; height: 14px; opacity: 0.7; }
     .fin-adv-tab.active svg { opacity: 1; }
     #finAdvBody { min-height: 280px; position: relative; }
@@ -421,9 +379,7 @@
       font-size: 0.6rem; font-weight: 700; flex-shrink: 0;
       background: var(--bg-secondary); color: var(--text-tertiary);
     }
-    .fin-merch-rank.top1 { background: #f59e0b; color: #fff; }
-    .fin-merch-rank.top2 { background: #9ca3af; color: #fff; }
-    .fin-merch-rank.top3 { background: #d97706; color: #fff; }
+    .fin-merch-rank.top1, .fin-merch-rank.top2, .fin-merch-rank.top3 { background: var(--text-primary); color: var(--text-inverse); }
     .fin-merch-icon {
       width: 28px; height: 28px; border-radius: var(--radius-md);
       display: flex; align-items: center; justify-content: center;
@@ -473,15 +429,6 @@
 
     @media (max-width: 640px) {
 
-      /* Hero compact */
-      .hub-main > section:first-child { height: 130px !important; }
-      .hub-main > section:first-child .font-headline-lg { font-size: 24px !important; }
-      .hub-main > section:first-child [style*="padding:0 var(--container-padding)"] { padding: 0 12px !important; }
-      .hub-main > section:first-child .gsi-section .gsi-avatar-name { display: none; }
-      .hub-main > section:first-child .gsi-avatar-wrap { width: 28px !important; height: 28px !important; }
-      .hub-main > section:first-child .gsi-avatar { width: 28px !important; height: 28px !important; font-size: 0.75rem !important; }
-      .fin-hero-decor { width: 80px; height: 80px; right: 4px; top: 4px; }
-
       /* KPI row */
       .fin-kpi-row { grid-template-columns: 1fr 1fr; gap: var(--space-2); }
       .fin-kpi { padding: var(--space-3); }
@@ -527,9 +474,6 @@
     }
 
     @media (max-width: 480px) {
-      .hub-main > section:first-child { height: 110px !important; }
-      .hub-main > section:first-child .font-headline-lg { font-size: 20px !important; }
-      .hub-main > section:first-child [style*="padding:0 var(--container-padding)"] { padding: 0 8px !important; }
       .fin-kpi-row { grid-template-columns: 1fr !important; gap: var(--space-2) !important; }
       .fin-kpi { padding: var(--space-2) var(--space-3) !important; }
       .fin-kpi-value { font-size: 1.1rem !important; }
@@ -547,6 +491,8 @@
       .fin-mom-delta { font-size: 0.5rem; }
       .fin-wf-chart { height: 140px; }
     }
+    .fin-cat-fill::after { display: none; }
+    .fin-row { animation: none; }
   </style>
 </head>
 <body>
@@ -658,21 +604,17 @@
       <!-- ─── FINANCE HERO BANNER ────────────────────────── -->
       <div class="hub-content hub-page-transition">
 
-        <section class="page-hero" style="position:relative;height:180px;overflow:hidden">
-        <img data-image-id="finance-hero" src="" alt=""
-             style="width:100%;height:100%;object-fit:cover;opacity:0.7">
-        <div style="position:absolute;inset:0;background:linear-gradient(to top, var(--bg-primary) 0%, transparent 60%)"></div>
-        <div class="fin-hero-decor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
-        <div style="position:absolute;bottom:var(--container-padding);left:var(--container-padding);right:var(--container-padding);display:flex;align-items:center;justify-content:space-between">
-          <div>
-            <h1 style="font-family:var(--font-serif);font-size:32px;font-weight:500;line-height:1;letter-spacing:-0.02em;color:var(--text-primary)" data-i18n="nav.finance">Finance</h1>
-            <div style="display:flex;gap:var(--space-2);margin-top:var(--space-1);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.2em;opacity:0.6;color:var(--text-secondary)">
-              <span style="font-size:0.62rem" id="finHeroTitle">Your money, clearer.</span>
+        <section class="mono-hero has-image">
+          <img class="hero-img" data-image-id="finance-hero" src="" alt="" style="display:none">
+          <div class="hero-shade"></div>
+          <div class="mono-hero-row">
+            <div>
+              <h1>Finance</h1>
+              <div class="mono-hero-sub"><span id="finHeroTitle">Your money, clearer.</span></div>
             </div>
           </div>
-          <div id="gsiContainer" class="gsi-section"></div>
-        </div>
-      </section>
+          <div id="gsiContainer" class="gsi-section" style="display:none"></div>
+        </section>
 
         <div class="fin-kpi-row hub-anim-in hub-anim-in-2">
           <div class="fin-kpi income">
@@ -705,7 +647,7 @@
 
           <div class="fin-wallet-card">
             <div class="fin-wallet-header">
-              <span class="material-symbols-outlined" style="font-size:42px;color:var(--text-primary);filter:drop-shadow(0 2px 6px rgba(0,0,0,0.08))">account_balance_wallet</span>
+              <span class="material-symbols-outlined" style="font-size:42px;color:var(--text-primary)">account_balance_wallet</span>
               <div>
                 <div class="fin-wallet-label" data-i18n="fin.wallet">Wallet</div>
                 <div class="fin-wallet-balance" id="walletBalance">Rp 0</div>
@@ -829,7 +771,6 @@
         <!-- ─── ADVANCED CHARTS ───────────────────────────── -->
         <div class="fin-adv-section hub-anim-in hub-anim-in-9">
           <div class="fin-adv-header">
-            <span style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary)" data-i18n="fin.intelligence">Spending Intelligence</span>
             <div class="fin-adv-tabs" id="finAdvTabs">
               <button class="fin-adv-tab active" data-view="treemap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="15"/><rect x="3" y="14" width="7" height="4"/></svg>
@@ -874,7 +815,6 @@
     let currentRange = '30d';
     let currentType = 'expense';
     let editingId = null;
-    const FIN_CAT_COLORS = ['#6366f1','#f59e0b','#ef4444','#22c55e','#06b6d4','#ec4899','#f97316','#8b5cf6','#14b8a6'];
 
     function uid() { return 'fin_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
     function loadFin() { try { const raw = localStorage.getItem(FIN_STORAGE); return raw ? JSON.parse(raw) : []; } catch (e) { return []; } }
@@ -1124,7 +1064,7 @@
       const max = entries[0][1];
       wrap.innerHTML = entries.map(([k,v], i) => {
         const pct = (v / max) * 100;
-        const color = FIN_CAT_COLORS[i % FIN_CAT_COLORS.length];
+        const color = 'var(--text-primary)';
         return `<div class="fin-cat-row"><div class="fin-cat-name" title="${escapeHtml(k)}"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>${escapeHtml(k)}</div><div class="fin-cat-track"><div class="fin-cat-fill" style="width:${pct}%;background:${color}"></div></div><div class="fin-cat-val">${fmtMoney(v)}</div></div>`;
       }).join('');
     }
@@ -1176,7 +1116,21 @@
       });
 
       document.querySelectorAll('img[data-image-id]').forEach(el => {
-        el.src = getImage(el.dataset.imageId) || '';
+        const url = getImage(el.dataset.imageId) || '';
+        el.src = url;
+        el.style.display = url ? 'block' : 'none';
+      });
+      window._onImageSaved = function(id, url) {
+        document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(el => {
+          el.src = url || '';
+          el.style.display = url ? 'block' : 'none';
+        });
+      };
+      document.addEventListener('click', function(e) {
+        if (!state.editMode) return;
+        const imgEl = e.target.closest('.mono-hero.has-image .hero-img');
+        if (!imgEl || !imgEl.dataset.imageId) return;
+        openImagePicker(imgEl.dataset.imageId);
       });
       renderAll();
       initSavings();
@@ -1343,13 +1297,13 @@
       const body = document.getElementById('piggyChart');
       if (!body) return;
       const data = loadPiggyData();
-      renderLineChart(body, data.history, '#fbbf24', 'Piggy Bank');
+      renderLineChart(body, data.history, 'var(--text-primary)', 'Piggy Bank');
     }
     function renderWalletChart() {
       const body = document.getElementById('walletChart');
       if (!body) return;
       const data = loadWalletData();
-      renderLineChart(body, data.history, '#c4a882', 'Wallet');
+      renderLineChart(body, data.history, 'var(--text-primary)', 'Wallet');
     }
     function renderLineChart(container, history, lineColor) {
       // Filter to last 30 days

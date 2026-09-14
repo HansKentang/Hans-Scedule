@@ -12,6 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/progress-desert.css">
+  <link rel="stylesheet" href="css/progress-mono.css">
     <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <title>Havën Schedule — Goals &amp; Resolutions</title>
@@ -714,9 +716,171 @@
     .hub-main::-webkit-scrollbar { width: 4px; }
     .hub-main::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
 
-    /* ─── CUSTOM SCROLLBAR ──────────────────────────────── */
     .hub-main::-webkit-scrollbar { width: 4px; }
     .hub-main::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+
+    .hub-content [class*="hub-anim-in"] { animation: none !important; opacity: 1 !important; transform: none !important; }
+    .gl-card, .gl-metric, .gl-res-card, .gl-vision, .gl-add-goal-btn { animation: none !important; }
+    .gl-hero::before, .gl-hero-ring-wrap svg, .gl-metric-dot, .gl-card-progress-fill::after, .gl-res-dot.checked { animation: none !important; }
+    #glOverview { margin-top: 24px; }
+    .gl-metrics { margin-top: 16px; }
+    .gl-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0 0; flex-wrap: wrap; }
+    .gl-toolbar-right { display: flex; align-items: center; gap: 8px; }
+    #glFilterCount { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.03em; color: var(--text-secondary); }
+    #glSortSelect { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 500; color: var(--text-secondary); background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 10px; outline: none; cursor: pointer; }
+    #glSortSelect:focus { border-color: var(--text-primary); }
+    #glSortSelect:hover { border-color: var(--border-color); }
+    .gl-card-ring { flex-shrink: 0; display: inline-flex; align-items: center; }
+    .gl-vision-grid { grid-template-columns: 1fr 1fr; }
+    .gl-vision-img-wrap:first-child { grid-column: 1 / -1; aspect-ratio: 21 / 9; }
+    .gl-manifesto { border-left: 3px solid var(--text-primary); }
+    .gl-manifesto-text { font-size: 1rem; line-height: 1.6; }
+    .gl-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin: 24px 0 0; background: transparent; border: none; border-radius: 0; overflow: visible; padding: 0; }
+    .gl-metric { flex: none; text-align: left; padding: 20px; position: relative; cursor: default; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; transition: box-shadow 200ms, transform 200ms; display: flex; flex-direction: column; gap: 8px; }
+    .gl-metric + .gl-metric { border-left: 1px solid var(--border-color); }
+    .gl-metric:hover { background: var(--bg-card); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .gl-metric:first-child { background: var(--text-primary); border-color: transparent; color: var(--text-inverse); }
+    .gl-metric:first-child .gl-metric-value { color: var(--text-inverse); }
+    .gl-metric:first-child .gl-metric-label { color: var(--text-inverse); opacity: 0.65; }
+    .gl-metric-value { font-family: var(--font-display); font-size: 2rem; font-weight: 500; letter-spacing: -0.02em; line-height: 1; color: var(--text-primary); display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+    .gl-metric-label { font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-secondary); margin-top: 0; font-weight: 500; }
+    .gl-metric-dot { display: inline-block; width: 8px; height: 8px; border-radius: 3px; margin-right: 0; vertical-align: middle; background: currentColor; }
+    .gl-list { margin: 24px 0 0; background: color-mix(in srgb, var(--text-primary) 4%, transparent); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 8px; }
+    .gl-card { display: flex; gap: 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; margin-bottom: 0; overflow: hidden; position: relative; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 200ms, transform 200ms, background 160ms, border-color 160ms; }
+    .gl-card::after { display: none; }
+    .gl-card:hover { border-color: color-mix(in srgb, var(--text-primary) 25%, transparent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .gl-card:active { transform: scale(0.99); }
+    .gl-card-strip { width: 4px; flex-shrink: 0; background: var(--text-primary); opacity: 1; transition: none; }
+    .gl-card:hover .gl-card-strip { opacity: 1; width: 4px; }
+    .gl-card-body { flex: 1; padding: 12px 14px; min-width: 0; position: relative; z-index: 1; }
+    .gl-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .gl-card-title { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; color: var(--text-primary); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gl-card-badge-row { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .gl-status-badge { font-family: var(--font-display); font-size: 0.62rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color); background: transparent; color: var(--text-secondary); flex-shrink: 0; }
+    .gl-status-active, .gl-status-in-progress, .gl-status-milestone, .gl-status-done { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .gl-status-done { background: var(--text-primary); border-color: transparent; color: var(--text-inverse); }
+    .gl-card-progress { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .gl-card-progress-track { flex: 1; height: 4px; background: color-mix(in srgb, var(--text-primary) 10%, transparent); border-radius: 99px; overflow: hidden; box-shadow: none; }
+    .gl-card-progress-fill { height: 100%; border-radius: 99px; background: var(--text-primary); position: relative; transition: width 400ms; }
+    .gl-card-progress-fill::after { display: none; }
+    .gl-card-progress-pct { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 500; color: var(--text-secondary); font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; }
+    .gl-card-desc { font-family: var(--font-serif); font-style: italic; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .gl-card-tasks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+    .gl-card-task-chip { font-family: var(--font-sans); font-size: 0.66rem; font-weight: 500; padding: 4px 10px; border-radius: 99px; background: color-mix(in srgb, var(--text-primary) 6%, transparent); border: 1px solid var(--border-subtle); color: var(--text-secondary); display: inline-flex; align-items: center; gap: 6px; transition: background 150ms, border-color 150ms; cursor: pointer; }
+    .gl-card-task-chip:hover { background: color-mix(in srgb, var(--text-primary) 10%, transparent); border-color: var(--border-color); transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); color: var(--text-primary); }
+    .gl-card-task-chip:active { transform: scale(0.98); }
+    .gl-card-task-chip.done { opacity: 0.5; text-decoration: line-through; text-decoration-color: var(--text-tertiary); }
+    .gl-card-task-chip.done::before { display: none; }
+    .gl-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 10px; border-top: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-secondary); }
+    .gl-card-footer .overdue { color: var(--status-revert, #ef4444); font-weight: 600; }
+    .gl-card-add { border: 1px dashed var(--border-color); background: transparent; color: var(--text-tertiary); cursor: pointer; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 10px; border-radius: 10px; transition: all 150ms; margin-top: 8px; }
+    .gl-card-add:hover { border-color: var(--text-tertiary); color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+    .gl-card-add-input { display: none; width: 100%; padding: 10px 12px; box-sizing: border-box; font-size: 0.78rem; font-family: var(--font-sans); background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 10px; outline: none; margin-top: 8px; }
+    .gl-card-add-input:focus { border-color: var(--text-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 12%, transparent); }
+    .gl-card-add-input.show { display: block; }
+    .gl-add-goal-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 16px; border: 1.5px dashed var(--border-color); border-radius: 14px; background: transparent; color: var(--text-tertiary); cursor: pointer; font-family: var(--font-serif); font-size: 0.75rem; transition: all 150ms; margin: 8px 0 0; position: relative; overflow: hidden; width: 100%; }
+    .gl-add-goal-btn::before { display: none; }
+    .gl-add-goal-btn:hover { border-color: var(--text-tertiary); color: var(--text-primary); background: transparent; transform: none; box-shadow: none; }
+    .gl-add-goal-btn:active { transform: scale(0.99); }
+    .gl-add-goal-btn svg { width: 16px; height: 16px; opacity: 0.5; }
+    .gl-vision { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin: 24px 0 0; transition: box-shadow 200ms; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    .gl-vision:hover { border-color: color-mix(in srgb, var(--text-primary) 25%, transparent); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: none; }
+    .gl-vision-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px; margin-bottom: 14px; }
+    .gl-vision-title { font-family: var(--font-serif); font-size: 0.82rem; font-weight: 500; color: var(--text-secondary); }
+    .gl-vision-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .gl-vision-img-wrap { aspect-ratio: 4/3; border-radius: 10px; overflow: hidden; position: relative; background: color-mix(in srgb, var(--text-primary) 4%, transparent); border: 1px solid var(--border-subtle); cursor: pointer; transition: box-shadow 160ms, transform 160ms, background 160ms, border-color 160ms; }
+    .gl-vision-img-wrap:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); background: var(--bg-card); border-color: var(--border-color); }
+    .gl-vision-img-wrap img { width: 100%; height: 100%; object-fit: cover; filter: none; transition: opacity 150ms; }
+    .gl-vision-img-wrap:hover img { filter: none; }
+    .gl-vision-img-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px dashed var(--border-color); border-radius: 10px; color: var(--text-tertiary); font-family: var(--font-serif); font-style: italic; font-size: 0.72rem; font-weight: 400; text-align: center; transition: all 150ms; padding: 8px; background: transparent; }
+    .gl-vision-img-placeholder:hover { border-color: var(--text-tertiary); color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+    .gl-vision-img-placeholder svg { width: 18px; height: 18px; opacity: 0.5; transition: none; }
+    .gl-vision-img-placeholder:hover svg { opacity: 1; }
+    .gl-manifesto { background: color-mix(in srgb, var(--text-primary) 4%, transparent); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; transition: background 150ms, border-color 150ms; }
+    .gl-manifesto:hover { border-color: var(--border-color); background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+    .gl-manifesto-label { font-family: var(--font-mono); font-size: 0.58rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-tertiary); }
+    .gl-manifesto-text { font-family: var(--font-serif); font-style: italic; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; cursor: text; transition: background 150ms; padding: 4px 6px; margin: -4px -6px; border-radius: 6px; }
+    .gl-manifesto-text:hover { background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+    .gl-manifesto-text:focus { background: var(--bg-card); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 12%, transparent); }
+    .gl-resolutions { margin: 24px 0 0; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 8px; }
+    .gl-res-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px; margin-bottom: 6px; }
+    .gl-res-title-label { font-family: var(--font-serif); font-size: 0.82rem; font-weight: 500; color: var(--text-secondary); }
+    .gl-res-head-left { display: flex; align-items: center; gap: 8px; }
+    .gl-res-head-badge { font-family: var(--font-mono); font-size: 0.6rem; font-weight: 500; padding: 2px 8px; border-radius: 99px; background: color-mix(in srgb, var(--text-primary) 8%, transparent); color: var(--text-secondary); text-transform: none; letter-spacing: 0.02em; }
+    .gl-res-head-sub { font-family: var(--font-mono); font-size: 0.6rem; letter-spacing: 0.03em; color: var(--text-secondary); }
+    .gl-res-card { background: color-mix(in srgb, var(--text-primary) 4%, transparent); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px 14px; margin-bottom: 0; transition: background 160ms, border-color 160ms, box-shadow 160ms; }
+    .gl-res-card:hover { border-color: var(--border-color); background: var(--bg-card); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .gl-res-row1 { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .gl-res-cat { font-family: var(--font-display); font-size: 0.62rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 4px; background: transparent; border: 1px solid var(--border-color); color: var(--text-secondary); flex-shrink: 0; display: inline-flex; align-items: center; }
+    .gl-res-cat::before { content: ''; width: 8px; height: 8px; border-radius: 3px; background: var(--text-primary); display: inline-block; margin-right: 6px; flex-shrink: 0; }
+    .gl-res-title { font-family: var(--font-sans); font-size: 0.8rem; font-weight: 500; color: var(--text-primary); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gl-res-row2 { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .gl-res-bar-wrap { flex: 1; max-width: 160px; }
+    .gl-res-bar-track { height: 6px; background: color-mix(in srgb, var(--text-primary) 10%, transparent); border-radius: 99px; overflow: hidden; }
+    .gl-res-bar-fill { height: 100%; border-radius: 99px; background: var(--text-primary); transition: width 400ms; }
+    .gl-res-grid { display: flex; gap: 6px; flex-shrink: 0; }
+    .gl-res-dot { width: 16px; height: 16px; border-radius: 5px; cursor: pointer; transition: background 150ms, border-color 150ms, transform 150ms; flex-shrink: 0; position: relative; }
+    .gl-res-dot.checked { background: var(--text-primary); border: 1px solid var(--text-primary); animation: none; }
+    .gl-res-dot.empty { background: color-mix(in srgb, var(--text-primary) 8%, transparent); border: 1px solid var(--border-color); }
+    .gl-res-dot.future { background: transparent; border: 1px dashed var(--border-color); cursor: default; opacity: 0.5; }
+    .gl-res-dot:hover:not(.future) { transform: none; box-shadow: none; border-color: var(--text-tertiary); }
+    .gl-res-stat { font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+    .gl-res-stat strong { color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums; }
+    .gl-res-actions { display: flex; gap: 2px; flex-shrink: 0; }
+    .gl-res-edit-btn, .gl-res-del-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 0.7rem; transition: all 150ms; }
+    .gl-res-edit-btn:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+    .gl-res-del-btn:hover { color: var(--status-revert, #ef4444); background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+    .gl-add-resolution-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px dashed var(--border-color); border-radius: 10px; background: transparent; color: var(--text-tertiary); cursor: pointer; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 500; transition: all 150ms; width: 100%; }
+    .gl-add-resolution-btn:hover { border-color: var(--text-tertiary); color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 4%, transparent); }
+    .gl-edit-overlay-bg { position: fixed; inset: 0; z-index: 1001; background: rgba(0,0,0,0.5); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .gl-edit-popup { position: fixed; z-index: 1002; background: var(--bg-elevated); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; box-shadow: 0 10px 26px rgba(0,0,0,0.3); min-width: 300px; max-width: 90vw; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; }
+    .gl-edit-popup input, .gl-edit-popup select, .gl-edit-popup textarea { display: block; width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.78rem; margin-bottom: 8px; outline: none; box-sizing: border-box; }
+    .gl-edit-popup input:focus, .gl-edit-popup select:focus, .gl-edit-popup textarea:focus { border-color: var(--text-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 12%, transparent); }
+    .gl-edit-popup-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle); }
+    .gl-edit-popup-actions button { border: none; padding: 8px 16px; border-radius: 8px; font-weight: 500; font-family: var(--font-sans); font-size: 0.72rem; cursor: pointer; transition: all 150ms; }
+    .gl-edit-popup-actions .primary { background: var(--text-primary); color: var(--text-inverse); }
+    .gl-edit-popup-actions .primary:hover { filter: none; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .gl-edit-popup-actions .cancel { background: transparent; color: var(--text-secondary); }
+    .gl-edit-popup-actions .cancel:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+    .gl-edit-popup-actions .danger { background: transparent; color: var(--status-revert, #ef4444); }
+    .gl-edit-popup-actions .danger:hover { background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+    .gl-card .gl-edit-overlay { position: absolute; top: 8px; right: 8px; display: flex; gap: 3px; opacity: 0; transition: opacity 150ms; z-index: 5; }
+    .gl-card:hover .gl-edit-overlay { opacity: 1; }
+    .gl-edit-item-btn { border: none; background: color-mix(in srgb, var(--text-primary) 8%, transparent); color: var(--text-secondary); cursor: pointer; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 0.7rem; line-height: 1; transition: all 150ms; }
+    .gl-edit-item-btn:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 14%, transparent); }
+    .gl-edit-item-btn.del:hover { color: var(--status-revert, #ef4444); background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+    .gj-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border-subtle); }
+    .gj-close-btn { border: none; background: transparent; color: var(--text-tertiary); cursor: pointer; font-size: 1.2rem; padding: 4px 8px; line-height: 1; transition: all 150ms; border-radius: 6px; }
+    .gj-close-btn:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+    .gj-desc { font-family: var(--font-serif); font-style: italic; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
+    .gj-section-label { font-family: var(--font-mono); font-size: 0.58rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-tertiary); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+    .gj-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border-subtle); }
+    .gj-list { max-height: 180px; overflow-y: auto; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .gj-list::-webkit-scrollbar { width: 3px; }
+    .gj-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 2px; }
+    .gj-entry { padding: 10px 12px; border-left: 3px solid var(--text-primary); background: color-mix(in srgb, var(--text-primary) 4%, transparent); border-radius: 0 10px 10px 0; margin-bottom: 0; transition: background 150ms; }
+    .gj-entry:hover { border-left-color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
+    .gj-entry-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .gj-entry-date { font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-secondary); font-weight: 500; }
+    .gj-entry-mood { font-size: 0.9rem; line-height: 1; }
+    .gj-entry-text { font-size: 0.76rem; color: var(--text-primary); line-height: 1.5; }
+    .gj-empty { font-family: var(--font-serif); font-style: italic; font-size: 0.78rem; color: var(--text-tertiary); padding: 36px 0; text-align: center; }
+    .gj-mood-row { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    .gj-mood-btn { border: 1px solid var(--border-color); background: transparent; border-radius: 8px; padding: 5px 10px; cursor: pointer; font-size: 1rem; transition: all 150ms; line-height: 1; }
+    .gj-mood-btn:hover { border-color: var(--text-tertiary); transform: none; }
+    .gj-mood-btn.active { border-color: transparent; background: var(--text-primary); color: var(--text-inverse); box-shadow: none; }
+    .gj-input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans); font-size: 0.76rem; resize: vertical; outline: none; box-sizing: border-box; transition: border-color 150ms, box-shadow 150ms; min-height: 60px; }
+    .gj-input:focus { border-color: var(--text-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-primary) 12%, transparent); }
+    .gj-actions { margin-top: 8px; display: flex; justify-content: flex-end; }
+    .gj-save-btn { border: none; padding: 8px 16px; border-radius: 8px; font-weight: 500; font-family: var(--font-sans); font-size: 0.72rem; cursor: pointer; background: var(--text-primary); color: var(--text-inverse); transition: all 150ms; }
+    .gj-save-btn:hover { filter: none; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .gl-empty { text-align: center; padding: 40px; color: var(--text-tertiary); background: transparent; border-radius: 10px; }
+    .gl-empty svg { width: 32px; height: 32px; margin-bottom: 8px; opacity: 0.4; }
+    .gl-empty p { font-family: var(--font-serif); font-style: italic; font-size: 0.84rem; font-weight: 400; margin-bottom: 4px; color: var(--text-secondary); }
+    .gl-empty .sub { font-family: var(--font-sans); font-size: 0.7rem; color: var(--text-tertiary); margin-top: 8px; opacity: 1; }
+    @media (max-width: 900px) { .gl-metrics { grid-template-columns: 1fr 1fr; } .gl-vision-layout { grid-template-columns: 1fr !important; } }
+    @media (max-width: 767px) { .gl-vision-grid { grid-template-columns: 1fr; } .gl-vision-layout { grid-template-columns: 1fr !important; } .gl-card .gl-edit-overlay { opacity: 1; } .gl-res-dot { width: 18px; height: 18px; } }
+    @media (max-width: 600px) { .gl-metrics { grid-template-columns: 1fr 1fr; gap: 12px; } .gl-metric { padding: 14px 16px; } .gl-metric-value { font-size: 1.6rem; } .gl-card-body { padding: 12px; } .gl-vision { padding: 20px; border-radius: 14px; } .gl-resolutions { padding: 20px; } .gl-res-row2 { flex-wrap: wrap; gap: 8px; } .gl-res-bar-wrap { max-width: none; flex: 1 1 100%; order: 1; } .gl-res-grid { order: 2; } .gl-res-stat { order: 3; } .gl-edit-popup { min-width: 280px; padding: 20px; } }
   </style>
 </head>
 <body>
@@ -832,39 +996,48 @@
       <!-- ─── HERO ────────────────────────────────────── -->
       <div class="hub-content hub-page-transition">
 
-        <section class="gl-hero page-hero">
-        <img data-image-id="goals-hero" src="" alt="Goals hero" class="gl-hero-bg">
-        <div class="gl-hero-overlay"></div>
-        <div class="gl-hero-inner">
-          <div class="gl-hero-text">
-            <h1 class="gl-hero-title">Goals &amp; Resolutions</h1>
-            <div class="gl-hero-meta">
-              <span id="glPageMeta">Define what matters</span>
-              <span class="gl-hero-dot"></span>
-              <span id="glGoalCount">0 goals</span>
-            </div>
-            <div class="gl-hero-sub" id="glHeroSub">Track your aspirations</div>
-          </div>
-          <div class="gl-hero-ring-wrap" id="glHeroRingWrap">
-            <div class="gl-hero-ring-label" id="glHeroRingLabel">
-              <strong>0%</strong>
-              overall
+        <section class="mono-hero has-image">
+          <img class="hero-img" data-image-id="goals-hero" src="" alt="" style="display:none">
+          <div class="hero-shade"></div>
+          <div class="mono-hero-row">
+            <div>
+              <h1>Goals</h1>
+              <div class="mono-hero-sub"><span id="glPageMeta">Define what matters</span> · <span id="glGoalCount">0 goals</span></div>
+              <div class="kernel-line">
+                <span class="kernel-focus" id="glHeroSub">Track your aspirations</span>
+              </div>
             </div>
           </div>
-          <div id="gsiContainer" class="gsi-section"></div>
-        </div>
-      </section>
+          <div id="gsiContainer" class="gsi-section" style="display:none"></div>
+        </section>
 
-        <!-- ─── STATS DASHBOARD ──────────────────────── -->
+        <div class="an-overview-row" id="glOverview"></div>
+
         <div class="gl-metrics" id="glStats"></div>
 
-        <!-- ─── GOALS BENTO GRID ─────────────────────── -->
+        <div class="gl-toolbar">
+          <div class="an-period-pills" id="glFilterPills">
+            <button class="an-period-pill active" data-filter="all">All</button>
+            <button class="an-period-pill" data-filter="active">Active</button>
+            <button class="an-period-pill" data-filter="in-progress">In Progress</button>
+            <button class="an-period-pill" data-filter="milestone">Milestone</button>
+            <button class="an-period-pill" data-filter="done">Done</button>
+          </div>
+          <div class="gl-toolbar-right">
+            <span id="glFilterCount"></span>
+            <select id="glSortSelect" aria-label="Sort goals">
+              <option value="progress">Sort: Progress</option>
+              <option value="deadline">Sort: Deadline</option>
+              <option value="title">Sort: Title</option>
+            </select>
+          </div>
+        </div>
+
         <div class="gl-list" id="glBento"></div>
 
-        <!-- ─── VISION BOARD ─────────────────────────── -->
         <div class="gl-vision hub-anim-in hub-anim-in-4">
           <div class="gl-vision-header">
-            <div class="gl-vision-title" data-i18n="gl.vision">Vision Board</div>
+            <div class="gl-vision-title">Vision Board</div>
           </div>
           <div class="gl-vision-layout" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
             <div class="gl-vision-grid" id="glVisionGrid">
@@ -897,7 +1070,6 @@
           </div>
         </div>
 
-        <!-- ─── RESOLUTIONS ─────────────────────────── -->
         <div class="gl-resolutions hub-anim-in hub-anim-in-5" id="glResolutions"></div>
 
     <!-- ─── FOOTER ───────────────────────────────── -->

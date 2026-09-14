@@ -598,7 +598,6 @@ function renderUnscheduledTray() {
   for (const t of list) {
     const chip = document.createElement('div');
     chip.className = 'unsched-chip';
-    chip.draggable = true;
     chip.dataset.taskId = t.id;
     const label = document.createElement('span');
     label.textContent = t.title || 'Untitled';
@@ -611,11 +610,16 @@ function renderUnscheduledTray() {
     });
     chip.appendChild(label);
     chip.appendChild(btn);
-    chip.addEventListener('dragstart', (ev) => {
+    chip.addEventListener('mousedown', (ev) => {
+      if (ev.button !== 0 || ev.target.closest('button')) return;
       ev.stopPropagation();
-      try { ev.dataTransfer.setData('text/plain', t.id); } catch (err) {}
-      startDrag(ev, null, { unschedTask: t, chipEl: chip });
+      startDrag(ev, chip, { unschedTask: t, chipEl: chip });
     });
+    chip.addEventListener('touchstart', (ev) => {
+      if (ev.target.closest('button')) return;
+      ev.stopPropagation();
+      startDrag(ev, chip, { unschedTask: t, chipEl: chip });
+    }, { passive: false });
     wrap.appendChild(chip);
   }
 }
@@ -751,13 +755,24 @@ function duplicateTask(taskId) {
 }
 
 function cancelGridDrag() {
-  if (!gridDrag || !gridDrag.active) return;
-  gridDrag.dragGhost?.remove();
-  gridDrag.dropPreview?.remove();
-  gridDrag.timeTooltip?.remove();
-  gridDrag.deltaHighlight?.remove();
-  gridDrag.active = false;
+  if (!gridDrag) return;
+  removeGridDragListeners();
+  if (gridDrag.source) gridDrag.source.classList.remove('dragging');
+  if (gridDrag.pressEl) gridDrag.pressEl.classList.remove('pressing');
+  if (gridDrag.ghost) gridDrag.ghost.remove();
+  removeDropPreview();
+  clearConflictPreview();
+  removeDragTooltip();
+  document.body.style.cursor = '';
   gridDrag = null;
+}
+
+function removeGridDragListeners() {
+  document.removeEventListener('mousemove', onDragMove);
+  document.removeEventListener('mouseup', onDragEnd);
+  document.removeEventListener('touchmove', onDragMove);
+  document.removeEventListener('touchend', onDragEnd);
+  document.removeEventListener('touchcancel', onDragEnd);
 }
 
 function moveFocused(mins) {
@@ -831,7 +846,7 @@ function bindSlotCreate() {
     openNewTaskModal(d.date, a, { start: minutesToTime(a), end: minutesToTime(b) });
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && gridDrag && gridDrag.active) { try { cancelGridDrag(); } catch (err) {} }
+    if (e.key === 'Escape' && gridDrag) { try { cancelGridDrag(); } catch (err) {} }
     if (e.key === 'Escape' && cDrag) { if (cDrag.el) cDrag.el.remove(); cDrag = null; }
     if (e.key === 'Escape' && weekSelected.size) clearWeekSelection();
     hideTaskCtx();
@@ -1385,7 +1400,7 @@ function renderTasks() {
       const colW = `(100% - 10px) / ${maxCol}`;
       const cardLeft = `calc(5px + ${columns[i]} * ${colW})`;
       const cardWidth = `calc(${colW})`;
-      el.style.cssText = `top:${top}px;height:${height}px;left:${cardLeft};width:${cardWidth}${zIdx}`;
+      el.style.cssText = `top:${top}px;min-height:${height}px;left:${cardLeft};width:${cardWidth}${zIdx}`;
       el.dataset.restoreZ = restoreZ;
       const checked = task.completed ? ' checked' : '';
       const pCls = task.priority && task.priority < 3 ? ` priority-${task.priority}` : '';
@@ -1430,7 +1445,7 @@ function renderTasks() {
       el.addEventListener('mousedown', (e) => {
         if (e.target.closest('[data-toggle-complete]')) return;
         if (e.target.closest('.task-resize-handle')) return;
-        if (e.target.closest('.task-title')) return;
+        if (e.target.closest('.task-title.is-editing') || e.target.closest('.task-title-input')) return;
         weekFocusedId = resolvedId;
         if (e.shiftKey) {
           e.stopPropagation();
@@ -1443,7 +1458,7 @@ function renderTasks() {
       el.addEventListener('touchstart', (e) => {
         if (e.target.closest('[data-toggle-complete]')) return;
         if (e.target.closest('.task-resize-handle')) return;
-        if (e.target.closest('.task-title')) return;
+        if (e.target.closest('.task-title.is-editing') || e.target.closest('.task-title-input')) return;
         weekFocusedId = resolvedId;
         e.stopPropagation();
         startDrag(e, el);
@@ -1570,31 +1585,37 @@ const QUICK_ADD_TITLES = {
 // ─── UNIFIED DRAG AND DROP ────────────────────────────────
 // One handler for all: task-reschedule, whiteboard→grid, quick-add→grid
 var _lastTouchDragTime = 0;
+// A pull this long (any direction) before the card lifts, so clicks never drag
+const DRAG_THRESHOLD = 8;
 function startDrag(e, source, preset) {
   if (e.button !== 0 && !isTouchEvent(e)) return;
   // Prevent synthetic mousedown from touch event (double-dispatch protection)
   if (!isTouchEvent(e) && Date.now() - _lastTouchDragTime < 300) return;
   if (isTouchEvent(e)) { _lastTouchDragTime = Date.now(); e.preventDefault(); }
 
+  if (gridDrag) cancelGridDrag();
+
   const presetTask = preset && preset.unschedTask ? preset.unschedTask : null;
-  const rect = presetTask && preset.chipEl ? preset.chipEl.getBoundingClientRect() : source.getBoundingClientRect();
-  const ghost = document.createElement('div');
-  ghost.className = 'grid-drag-ghost calendar-task';
-  ghost.textContent = presetTask ? (presetTask.title || 'New Task') : (source.textContent || '').slice(0, 40);
-  ghost.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${Math.max(rect.width, 120)}px;position:fixed;`;
-  document.body.appendChild(ghost);
+  const chipEl = preset && preset.chipEl ? preset.chipEl : null;
+  const anchor = presetTask && chipEl ? chipEl : source;
+  if (!anchor) return;
+  const rect = anchor.getBoundingClientRect();
 
   const dragPos = getEventPos(e);
   gridDrag = {
     type: 'task',
-    source: source || (preset && preset.chipEl) || null,
-    ghost,
+    source: source || chipEl || null,
+    presetTask,
+    rect,
+    ghost: null,
     offX: dragPos.x - rect.left,
     offY: dragPos.y - rect.top,
+    startX: dragPos.x,
+    startY: dragPos.y,
     dropDate: null,
     dropTime: null,
     moved: false,
-    active: true,
+    active: false,
   };
 
   // If dragging an unscheduled chip, convert to a real task on drop
@@ -1611,6 +1632,11 @@ function startDrag(e, source, preset) {
 
   // If dragging an existing task, store original values
   const taskEl = source ? source.closest('.calendar-task') : null;
+  if (taskEl) {
+    // Press feedback: the shadow loads up while the button is down
+    taskEl.classList.add('pressing');
+    gridDrag.pressEl = taskEl;
+  }
   if (taskEl && taskEl.dataset.taskId) {
     const task = getTask(taskEl.dataset.taskId);
     if (task) {
@@ -1630,45 +1656,129 @@ function startDrag(e, source, preset) {
     gridDrag.tag = scPill.dataset.tag;
     gridDrag.duration = getTagDur(scPill.dataset.tag);
     gridDrag.title = scPill.dataset.scName || '';
-    ghost.innerHTML = gridDrag.title || QUICK_ADD_TITLES[scPill.dataset.tag] || 'New Task';
+    gridDrag.ghostLabel = gridDrag.title || QUICK_ADD_TITLES[scPill.dataset.tag] || 'New Task';
   }
 
-
-  // Apply tag-based styling to ghost
-  let ghostTag = null;
-  if (gridDrag.type === 'reschedule') {
-    const task = getTask(gridDrag.taskId);
-    if (task) ghostTag = task.tag;
-  } else if (gridDrag.type === 'quickadd' && gridDrag.tag) {
-    ghostTag = gridDrag.tag;
-  }
-
-  if (ghostTag) {
-    const meta = TAG_COLORS[ghostTag] || TAG_COLORS.meeting;
-    if (gridDrag.type === 'quickadd' || gridDrag.type === 'unsched') {
-      ghost.style.background = '#fff';
-      ghost.style.color = '#333';
-      ghost.style.border = '2px solid var(--border-color)';
-      ghost.style.boxShadow = '0 4px 20px rgba(0,0,0,0.12)';
-    } else {
-      ghost.style.border = `2px solid ${meta.text}`;
-      ghost.style.boxShadow = `0 4px 20px color-mix(in srgb, ${meta.text} 25%, transparent)`;
-      // For non-task ghosts (quick-add), also set background/color
-      if (gridDrag.type !== 'reschedule') {
-        ghost.style.background = meta.bg;
-        ghost.style.color = meta.text;
-      }
-    }
-  }
-
-  // Add visual drag feedback to source
-  if (source) source.classList.add('dragging');
-
-  document.body.style.cursor = 'grabbing';
   document.addEventListener('mousemove', onDragMove);
   document.addEventListener('mouseup', onDragEnd);
   document.addEventListener('touchmove', onDragMove, { passive: false });
   document.addEventListener('touchend', onDragEnd);
+  document.addEventListener('touchcancel', onDragEnd);
+}
+
+// Build the floating preview once the pointer has actually moved
+function activateGridDrag() {
+  if (!gridDrag || gridDrag.active) return;
+  const { rect, presetTask } = gridDrag;
+  const srcCard = gridDrag.source ? gridDrag.source.closest('.calendar-task') : null;
+  const ghost = srcCard && !presetTask
+    ? buildCardGhost(srcCard, rect)
+    : buildNewTaskGhost(gridDrag, rect.width);
+  ghost.style.left = `${rect.left}px`;
+  ghost.style.top = `${rect.top}px`;
+  document.body.appendChild(ghost);
+  gridDrag.ghost = ghost;
+  // Scale about the pixel you grabbed so the card never slips out from under the pointer
+  ghost.style.transformOrigin = `${gridDrag.offX}px ${gridDrag.offY}px`;
+  if (gridDrag.pressEl) gridDrag.pressEl.classList.remove('pressing');
+
+  let ghostTag = null;
+  if (gridDrag.type === 'reschedule') {
+    const task = getTask(gridDrag.taskId);
+    if (task) ghostTag = task.tag;
+  } else if (gridDrag.tag) {
+    ghostTag = gridDrag.tag;
+  }
+  if (ghostTag) {
+    const meta = TAG_COLORS[ghostTag] || TAG_COLORS.meeting;
+    ghost.style.setProperty('--task-accent', meta.text);
+    if (gridDrag.type === 'quickadd') {
+      ghost.style.background = meta.bg;
+      ghost.style.color = meta.text;
+    }
+    // Border marks the tag; the lift shadow lives in the grab keyframes so it can animate
+    ghost.style.border = `1.5px solid ${meta.text}`;
+  }
+
+  gridDrag.cols = captureDayColumns();
+  if (gridDrag.source) gridDrag.source.classList.add('dragging');
+  document.body.style.cursor = 'grabbing';
+  gridDrag.active = true;
+  gridDrag.moved = true;
+}
+
+// Clone a grid card so the lifted preview matches it exactly
+function buildCardGhost(srcCard, rect) {
+  const clone = srcCard.cloneNode(true);
+  clone.classList.remove('dragging', 'resizing', 'task-selected', 'task-conflict',
+    'task-intro', 'task-settle', 'task-now', 'task-past', 'task-next');
+  const ghost = document.createElement('div');
+  ghost.className = 'grid-drag-ghost ' + clone.className;
+  ghost.innerHTML = clone.innerHTML;
+  ghost.style.cssText = `position:fixed;width:${Math.max(rect.width, 120)}px;height:${rect.height}px;`;
+  return ghost;
+}
+
+// Preview for tasks/quick-adds that have no card yet
+function buildNewTaskGhost(drag, refWidth) {
+  const meta = TAG_COLORS[drag.tag] || TAG_COLORS.meeting;
+  const mins = drag.duration || 60;
+  const ghost = document.createElement('div');
+  ghost.className = 'grid-drag-ghost calendar-task';
+  if (drag.type === 'unsched') {
+    const col = dom.grid.querySelector('.day-column');
+    const colRect = col ? col.getBoundingClientRect() : null;
+    const hourH = colRect && colRect.height ? colRect.height : HOUR_HEIGHT;
+    const width = Math.max((colRect ? colRect.width : 160) - 8, 120);
+    ghost.innerHTML = `<div class="task-body">
+        <div class="task-row">
+          <span class="task-dot"></span>
+          <span class="task-title">${escapeHtml(drag.title || 'New Task')}</span>
+        </div>
+        <div class="task-meta">
+          <span class="task-tag-chip" style="--chip-accent:${meta.text}">${escapeHtml(TAG_LABELS[drag.tag] || drag.tag || '')}</span>
+          <span class="task-duration">${fmtDur(mins)}</span>
+        </div>
+      </div>`;
+    ghost.style.cssText = `position:fixed;width:${width}px;height:${(mins / 60) * hourH}px;`;
+    return ghost;
+  }
+  ghost.textContent = drag.ghostLabel || drag.title || QUICK_ADD_TITLES[drag.tag] || 'New Task';
+  ghost.style.cssText = `position:fixed;width:${Math.max(refWidth, 120)}px;`;
+  return ghost;
+}
+
+// Column under the cursor — re-captures bounds if the grid was re-rendered mid-drag
+function matchDayColumn(x) {
+  if (!gridDrag) return null;
+  let cols = gridDrag.cols || [];
+  if (!cols.some(c => c.el.isConnected)) cols = gridDrag.cols = captureDayColumns();
+  for (const c of cols) {
+    if (x >= c.left && x < c.right) return c;
+  }
+  return null;
+}
+
+// Cache each day's bounds + rendered hour range for the duration of a drag
+function captureDayColumns() {
+  const cols = [];
+  const byDate = new Map();
+  dom.grid.querySelectorAll('.day-column[data-date]').forEach(col => {
+    const date = col.dataset.date;
+    const t = Number(col.dataset.time);
+    if (!date || !Number.isFinite(t)) return;
+    const entry = byDate.get(date);
+    if (!entry) {
+      const r = col.getBoundingClientRect();
+      const fresh = { date, left: r.left, right: r.right, el: col, startM: t, endM: t + 60 };
+      byDate.set(date, fresh);
+      cols.push(fresh);
+      return;
+    }
+    entry.endM = Math.max(entry.endM, t + 60);
+    if (t < entry.startM) { entry.startM = t; entry.el = col; }
+  });
+  return cols;
 }
 
 function getDragHlColor() {
@@ -1710,7 +1820,8 @@ function showDropPreview(col, spanStart, spanEnd, hlColor, label, snapped) {
     col.appendChild(el);
   }
   const actualHH = col.getBoundingClientRect().height;
-  const top = ((spanStart - START_HOUR * 60) / 60) * actualHH;
+  const originM = Number(col.dataset.time || START_HOUR * 60);
+  const top = ((spanStart - originM) / 60) * actualHH;
   const height = ((spanEnd - spanStart) / 60) * actualHH;
   el.style.top = `${top}px`;
   el.style.height = `${Math.max(height, 4)}px`;
@@ -1748,6 +1859,12 @@ function clearConflictPreview() {
 function onDragMove(e) {
   if (!gridDrag) return;
   const pos = getEventPos(e);
+  // Wait for a real pull (in any direction) before lifting the card
+  if (!gridDrag.active) {
+    if (Math.hypot(pos.x - gridDrag.startX, pos.y - gridDrag.startY) < DRAG_THRESHOLD) return;
+    activateGridDrag();
+    if (!gridDrag || !gridDrag.ghost) return;
+  }
   const { ghost, offX, offY } = gridDrag;
   gridDrag.moved = true;
   ghost.style.left = `${pos.x - offX}px`;
@@ -1763,35 +1880,22 @@ function onDragMove(e) {
     }
   } catch (err) {}
 
-  // Find which date column the cursor is over by checking X position
-  const dayCols = dom.grid.querySelectorAll('.day-column');
-  let matchedDate = null;
-  for (const col of dayCols) {
-    const rect = col.getBoundingClientRect();
-    if (getEventPos(e).x >= rect.left && getEventPos(e).x < rect.right) {
-      matchedDate = col.dataset.date;
-      break;
-    }
-  }
+  // Find which date column the cursor is over (column bounds cached at drag start)
+  const matched = matchDayColumn(pos.x);
 
-  if (matchedDate) {
-    const refCol = dom.grid.querySelector(`.day-column[data-date="${matchedDate}"]`);
-    if (!refCol) {
-      gridDrag.dropDate = null;
-      gridDrag.dropTime = null;
-      document.body.style.cursor = 'grabbing';
-      removeDropPreview();
-      clearConflictPreview();
-      removeDragTooltip();
-      return;
-    }
+  if (matched) {
+    const refCol = matched.el;
+    const matchedDate = matched.date;
     const colRect = refCol.getBoundingClientRect();
-    const yOffset = getEventPos(e).y - colRect.top;
+    // The card keeps the spot you grabbed, so the drop follows its top edge
+    const yOffset = pos.y - (gridDrag.offY || 0) - colRect.top;
     const actualHourHeight = colRect.height;
-    const rawMinutes = (yOffset / actualHourHeight) * 60 + Number(refCol.dataset.time || START_HOUR * 60);
-    const baseMin = Number(refCol.dataset.time || 0);
-    const clampLo = Math.max(baseMin, START_HOUR * 60);
-    const clampHi = Math.min(baseMin + 60, (START_HOUR + VISIBLE_HOURS) * 60) - SNAP_MINUTES;
+    // refCol is the day's first hour cell, so yOffset maps straight onto the whole day
+    const dayStartM = Number(refCol.dataset.time || START_HOUR * 60);
+    const dayEndM = matched.endM || dayStartM + VISIBLE_HOURS * 60;
+    const rawMinutes = (yOffset / actualHourHeight) * 60 + dayStartM;
+    const clampLo = dayStartM;
+    const clampHi = dayEndM - SNAP_MINUTES;
     const clamped = Math.max(clampLo, Math.min(rawMinutes, clampHi));
     const base = roundToNearest(clamped, SNAP_MINUTES);
     const mag = magneticSnap(matchedDate, base, gridDrag.taskId || null);
@@ -1799,7 +1903,7 @@ function onDragMove(e) {
 
     gridDrag.dropDate = matchedDate;
     gridDrag.dropTime = snap;
-    document.body.style.cursor = 'copy';
+    document.body.style.cursor = gridDrag.type === 'quickadd' || gridDrag.type === 'unsched' ? 'copy' : 'grabbing';
 
     // Calculate the task span
     const dragEndM = gridDrag.dragEndM ?? (gridDrag.dropTime + (gridDrag.duration || 60));
@@ -1887,13 +1991,11 @@ function attachTimeAxisTooltips() {
 
 function onDragEnd() {
   if (!gridDrag) return;
-  document.removeEventListener('mousemove', onDragMove);
-  document.removeEventListener('mouseup', onDragEnd);
-  document.removeEventListener('touchmove', onDragMove);
-  document.removeEventListener('touchend', onDragEnd);
+  removeGridDragListeners();
 
   // Clean up dragging feedback
   if (gridDrag.source) gridDrag.source.classList.remove('dragging');
+  if (gridDrag.pressEl) gridDrag.pressEl.classList.remove('pressing');
   if (gridDrag.ghost) gridDrag.ghost.remove();
   removeDropPreview();
   clearConflictPreview();
@@ -2042,8 +2144,9 @@ function onResizeMove(e) {
   const newDur = Math.max(snapped - startM, SNAP_MINUTES);
   const newHeight = (newDur / 60) * hourHeight;
 
-  // Update visual height in real-time
+  // Update visual height in real-time (min-height must follow so shrinking works)
   el.style.height = `${newHeight}px`;
+  el.style.minHeight = `${newHeight}px`;
 
   // Show delta highlight: the area between original end and new end
   const oldDelta = document.getElementById('resizeDeltaHighlight');
@@ -2300,216 +2403,159 @@ function bindEvents() {
 
   renderSchTemplates();
 
-  const CATEGORY_PRESETS = {
-    focus: ['Deep Work', 'Planning', 'Review', 'Admin'],
-    meetings: ['Standup', '1:1', 'Client Call', 'Brainstorm', 'Review'],
-    fitness: ['Warmup', 'Workout', 'Cardio', 'Stretching', 'Recovery'],
-    study: ['Reading', 'Practice', 'Revision', 'Notes', 'Exam Prep'],
-    creative: ['Brainstorm', 'Draft', 'Design', 'Edit', 'Publish'],
-  };
+  initCatAddModal();
 
-  let selectedCatColor = '#6366f1';
-  const catAddBtn = document.getElementById('catAddBtn');
-  const catAddOverlay = document.getElementById('catAddOverlay');
-  const catAddPopup = document.getElementById('catAddPopup');
-  const catAddInput = document.getElementById('catAddInput');
-  const catAddSubcategories = document.getElementById('catAddSubcategories');
-  const catAddColor = document.getElementById('catColorPicker');
-  const catAddSave = document.getElementById('catAddSave');
-  const catAddCancel = document.getElementById('catAddCancel');
-  const catAddClose = document.getElementById('catAddClose');
-  const catAddSwatches = document.getElementById('catAddSwatches');
-  const catAddPresets = document.getElementById('catAddPresets');
-  const catAddStartTime = document.getElementById('catAddStartTime');
-  const catAddDuration = document.getElementById('catAddDuration');
-  const catAddDuplicate = document.getElementById('catAddDuplicate');
-  const catAddDuplicateBtn = document.getElementById('catAddDuplicateBtn');
-  const catAddError = document.getElementById('catAddError');
-  const catPreviewName = document.getElementById('catPreviewName');
-  const catPreviewTime = document.getElementById('catPreviewTime');
-  const catPreviewDuration = document.getElementById('catPreviewDuration');
-  const catPreviewSubs = document.getElementById('catPreviewSubs');
-
-  function normalizeCatStartTime(value) {
-    const match = String(value || '').match(/^(\d{1,2}):(\d{2})$/);
-    if (!match) return '09:00';
-    const minutes = Number(match[1]) * 60 + Number(match[2]);
-    return minutes >= 0 && minutes < 1440 ? toTimeStr(minutes) : '09:00';
+  // ─── Add Category modal (task-modal card design) ──
+  let _catColor = '#6366f1';
+  function catEls() {
+    return {
+      btn: document.getElementById('catAddBtn'),
+      overlay: document.getElementById('catOverlay'),
+      modal: document.getElementById('catModal'),
+      input: document.getElementById('catAddInput'),
+      swatches: document.getElementById('catAddSwatches'),
+      picker: document.getElementById('catColorPicker'),
+      subs: document.getElementById('catAddSubcategories'),
+      start: document.getElementById('catAddStartTime'),
+      dur: document.getElementById('catAddDuration'),
+      dup: document.getElementById('catAddDuplicate'),
+      dupBtn: document.getElementById('catAddDuplicateBtn'),
+      save: document.getElementById('catAddSave'),
+      cancel: document.getElementById('catAddCancel'),
+      close: document.getElementById('catModalClose'),
+      err: document.getElementById('catAddError'),
+      icon: document.getElementById('catModalIcon'),
+      prevCard: document.getElementById('catPreviewCard'),
+      prevName: document.getElementById('catPreviewName'),
+      prevTime: document.getElementById('catPreviewTime'),
+      prevDur: document.getElementById('catPreviewDuration'),
+      prevSubs: document.getElementById('catPreviewSubs'),
+    };
   }
-
-  function normalizeCatDuration(value) {
-    const duration = Number(value);
-    if (!Number.isFinite(duration)) return 60;
-    return Math.min(480, Math.max(5, Math.round(duration / 5) * 5 || 60));
+  function syncCatSwatches() {
+    document.querySelectorAll('#catAddSwatches .cat-swatch').forEach(el => {
+      el.classList.toggle('selected', (el.dataset.color || '').toLowerCase() === String(_catColor).toLowerCase());
+    });
   }
-
-  function readCatSubcategories() {
+  function readCatSubs() {
+    const raw = document.getElementById('catAddSubcategories')?.value || '';
     const seen = new Set();
-    return String(catAddSubcategories?.value || '')
-      .split(/\r?\n/)
-      .map(value => value.trim().slice(0, 40))
-      .filter(Boolean)
-      .filter(value => {
-        const key = value.toLowerCase();
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
-      .slice(0, 20);
+    return raw.split('\n').map(s => s.trim().slice(0, 40)).filter(s => {
+      if (!s) return false;
+      const k = s.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    }).slice(0, 20);
   }
-
   function updateCatPreview() {
-    const name = catAddInput?.value.trim();
-    const startTime = normalizeCatStartTime(catAddStartTime?.value);
-    const duration = normalizeCatDuration(catAddDuration?.value);
-    const subcategories = readCatSubcategories();
-    if (catPreviewName) catPreviewName.textContent = name || 'New category';
-    if (catPreviewTime) catPreviewTime.textContent = formatTimeAMPM(startTime);
-    if (catPreviewDuration) catPreviewDuration.textContent = formatDuration(duration);
-    if (catPreviewSubs) {
-      catPreviewSubs.innerHTML = subcategories.length
-        ? subcategories.map(value => `<span>${escapeHtml(value)}</span>`).join('')
-        : '<span class="cat-add-preview-empty">No subcategories yet</span>';
+    const e = catEls();
+    const name = e.input?.value.trim() || 'New category';
+    const start = e.start?.value || '09:00';
+    const dur = Math.min(480, Math.max(5, Math.round((Number(e.dur?.value) || 60) / 5) * 5));
+    if (e.prevName) e.prevName.textContent = name.slice(0, 30);
+    if (e.prevTime) e.prevTime.textContent = start;
+    if (e.prevDur) e.prevDur.textContent = dur + ' min';
+    if (e.prevCard) e.prevCard.style.setProperty('--chip-accent', _catColor);
+    if (e.icon) { e.icon.style.background = _catColor; e.icon.style.boxShadow = '0 2px 8px ' + _catColor + '66'; }
+    if (e.prevSubs) {
+      const subs = readCatSubs();
+      e.prevSubs.innerHTML = subs.length
+        ? subs.map(v => '<span>' + escapeHtml(v) + '</span>').join('')
+        : '<span class="cat-preview-empty">No subcategories yet</span>';
     }
   }
-
-  function setCatAddColor(color) {
-    selectedCatColor = /^#[0-9a-f]{6}$/i.test(color || '') ? color : '#6366f1';
-    if (catAddColor) catAddColor.value = selectedCatColor;
-    catAddSwatches?.querySelectorAll('.cat-add-swatch').forEach(button => {
-      button.classList.toggle('active', button.dataset.color === selectedCatColor);
-    });
-    catAddPopup?.style.setProperty('--accent', selectedCatColor);
+  function openCatModal() {
+    const e = catEls();
+    if (!e.overlay || !e.modal) return;
+    _catColor = '#6366f1';
+    if (e.input) e.input.value = '';
+    if (e.subs) e.subs.value = '';
+    if (e.start) e.start.value = '09:00';
+    if (e.dur) e.dur.value = '60';
+    if (e.picker) e.picker.value = '#6366f1';
+    if (e.err) e.err.textContent = '';
+    if (e.dup) {
+      e.dup.innerHTML = '<option value="">Start from scratch</option>' + TAG_ORDER.map(tag =>
+        '<option value="' + tag + '">' + escapeHtml(TAG_LABELS[tag] || tag) + '</option>').join('');
+      e.dup.value = '';
+    }
+    syncCatSwatches();
     updateCatPreview();
+    e.overlay.classList.remove('hidden');
+    e.modal.classList.remove('hidden');
+    requestAnimationFrame(() => e.overlay.classList.add('active'));
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => e.input?.focus(), 120);
   }
-
-  function populateCatDuplicateSelect() {
-    if (!catAddDuplicate) return;
-    const current = catAddDuplicate.value;
-    const tags = [...new Set(TAG_ORDER)];
-    catAddDuplicate.innerHTML = '<option value="">Choose a category...</option>' + tags.map(tag =>
-      `<option value="${escapeHtml(tag)}">${escapeHtml(TAG_LABELS[tag] || tag)}</option>`
-    ).join('');
-    catAddDuplicate.value = tags.includes(current) ? current : '';
-  }
-
-  function loadCatTemplate(tag) {
-    const category = loadCustomCategories().find(item => item.id === tag);
-    const label = category?.label || TAG_LABELS[tag] || tag;
-    const color = category?.color || getCategoryColor(tag);
-    const defaults = getCategoryDefaults(tag);
-    const subcategories = loadSubcategories()[tag] || [];
-    if (catAddInput) catAddInput.value = `${label} copy`;
-    if (catAddSubcategories) catAddSubcategories.value = subcategories.join('\n');
-    if (catAddStartTime) catAddStartTime.value = defaults.defaultStart;
-    if (catAddDuration) catAddDuration.value = defaults.duration;
-    setCatAddColor(color);
-    catAddError.textContent = '';
-    updateCatPreview();
-  }
-
-  function resetCatAddForm() {
-    if (catAddInput) catAddInput.value = '';
-    if (catAddSubcategories) catAddSubcategories.value = '';
-    if (catAddStartTime) catAddStartTime.value = '09:00';
-    if (catAddDuration) catAddDuration.value = '60';
-    if (catAddDuplicate) catAddDuplicate.value = '';
-    if (catAddError) catAddError.textContent = '';
-    setCatAddColor('#6366f1');
-  }
-
-  function closeCatAddPopup() {
-    catAddOverlay?.classList.remove('active');
-    catAddPopup?.classList.add('hidden');
-    catAddBtn?.setAttribute('aria-expanded', 'false');
+  function closeCatModal() {
+    const e = catEls();
+    if (!e.overlay || !e.modal) return;
+    e.overlay.classList.remove('active');
+    setTimeout(() => { e.overlay.classList.add('hidden'); e.modal.classList.add('hidden'); }, 280);
     document.body.style.overflow = '';
   }
-
-  function openCatAddPopup() {
-    populateCatDuplicateSelect();
-    resetCatAddForm();
-    catAddPopup?.classList.remove('hidden');
-    catAddOverlay?.classList.add('active');
-    catAddBtn?.setAttribute('aria-expanded', 'true');
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => catAddInput?.focus(), 60);
-  }
-
-  catAddSwatches?.addEventListener('click', (e) => {
-    const swatch = e.target.closest('.cat-add-swatch');
-    if (swatch) setCatAddColor(swatch.dataset.color);
-  });
-
-  catAddColor?.addEventListener('input', () => setCatAddColor(catAddColor.value));
-  catAddInput?.addEventListener('input', updateCatPreview);
-  catAddSubcategories?.addEventListener('input', updateCatPreview);
-  catAddStartTime?.addEventListener('input', updateCatPreview);
-  catAddDuration?.addEventListener('input', updateCatPreview);
-
-  catAddPresets?.addEventListener('click', (e) => {
-    const preset = e.target.closest('.cat-add-preset');
-    if (!preset || !catAddSubcategories) return;
-    catAddSubcategories.value = (CATEGORY_PRESETS[preset.dataset.preset] || []).join('\n');
-    catAddPresets.querySelectorAll('.cat-add-preset').forEach(button => button.classList.toggle('active', button === preset));
-    updateCatPreview();
-  });
-
-  catAddDuplicateBtn?.addEventListener('click', () => {
-    const sourceTag = catAddDuplicate?.value;
-    if (!sourceTag) {
-      if (catAddError) catAddError.textContent = 'Choose a category to duplicate.';
-      catAddDuplicate?.focus();
-      return;
-    }
-    loadCatTemplate(sourceTag);
-  });
-
-  catAddBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (catAddPopup?.classList.contains('hidden')) openCatAddPopup();
-    else closeCatAddPopup();
-  });
-
-  catAddClose?.addEventListener('click', closeCatAddPopup);
-  catAddCancel?.addEventListener('click', closeCatAddPopup);
-
-  catAddInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); catAddSave?.click(); }
-    if (e.key === 'Escape') closeCatAddPopup();
-  });
-
-  catAddPopup?.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { e.stopPropagation(); closeCatAddPopup(); }
-  });
-
-  catAddOverlay?.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { e.stopPropagation(); closeCatAddPopup(); }
-  });
-
-  catAddSave?.addEventListener('click', () => {
-    const name = catAddInput?.value.trim();
-    if (!name) {
-      if (catAddError) catAddError.textContent = 'Enter a category name.';
-      catAddInput?.focus();
-      return;
-    }
-    const startTime = normalizeCatStartTime(catAddStartTime?.value);
-    const duration = normalizeCatDuration(catAddDuration?.value);
-    const subcategories = readCatSubcategories();
-    addCustomCategory(name, selectedCatColor, {
-      defaultStart: startTime,
-      duration,
-      subcategories,
+  function initCatAddModal() {
+    const e = catEls();
+    if (!e.btn || !e.overlay) return;
+    const PRESETS = {
+      focus: ['Deep Work', 'Planning', 'Review', 'Admin'],
+      meetings: ['Standup', '1:1', 'Client Call', 'Brainstorm'],
+      fitness: ['Cardio', 'Strength', 'Mobility', 'Recovery'],
+      study: ['Reading', 'Notes', 'Practice', 'Review'],
+      creative: ['Sketch', 'Draft', 'Edit', 'Publish'],
+    };
+    e.btn.addEventListener('click', openCatModal);
+    e.cancel?.addEventListener('click', closeCatModal);
+    e.close?.addEventListener('click', closeCatModal);
+    e.overlay.addEventListener('click', (ev) => { if (ev.target === e.overlay) closeCatModal(); });
+    e.swatches?.addEventListener('click', (ev) => {
+      const sw = ev.target.closest('.cat-swatch');
+      if (!sw) return;
+      _catColor = sw.dataset.color;
+      if (e.picker) e.picker.value = _catColor;
+      syncCatSwatches();
+      updateCatPreview();
     });
-    renderSchTemplates();
-    closeCatAddPopup();
-    showToast(`Category "${escapeHtml(name)}" added`, 'success', 2000);
-  });
-
-  catAddOverlay?.addEventListener('click', (e) => {
-    if (e.target === catAddOverlay) closeCatAddPopup();
-  });
-
+    e.picker?.addEventListener('input', () => { _catColor = e.picker.value; syncCatSwatches(); updateCatPreview(); });
+    [e.input, e.subs, e.start, e.dur].forEach(el => el?.addEventListener('input', updateCatPreview));
+    document.getElementById('catAddPresets')?.addEventListener('click', (ev) => {
+      const b = ev.target.closest('.cat-preset');
+      if (!b) return;
+      if (e.subs) e.subs.value = (PRESETS[b.dataset.preset] || []).join('\n');
+      updateCatPreview();
+    });
+    e.dupBtn?.addEventListener('click', () => {
+      const tag = e.dup?.value;
+      if (!tag) return;
+      const custom = loadCustomCategories().find(c => c.id === tag);
+      const subs = loadSubcategories()[tag] || [];
+      const defaults = getCategoryDefaults(tag);
+      if (e.input) e.input.value = (TAG_LABELS[tag] || tag) + ' copy';
+      _catColor = custom?.color || getCategoryColor(tag) || '#6366f1';
+      if (e.picker) e.picker.value = /^#[0-9a-f]{6}$/i.test(_catColor) ? _catColor : '#6366f1';
+      if (e.start) e.start.value = custom?.defaultStart || defaults.defaultStart || '09:00';
+      if (e.dur) e.dur.value = custom?.duration || defaults.duration || 60;
+      if (e.subs) e.subs.value = subs.join('\n');
+      syncCatSwatches();
+      updateCatPreview();
+      e.input?.focus();
+    });
+    e.save?.addEventListener('click', () => {
+      const name = e.input?.value.trim();
+      if (!name) { if (e.err) e.err.textContent = 'Enter a category name.'; e.input?.focus(); return; }
+      const start = (/^([01]\d|2[0-3]):[0-5]\d$/.test(e.start?.value || '')) ? e.start.value : '09:00';
+      const dur = Math.min(480, Math.max(5, Math.round((Number(e.dur?.value) || 60) / 5) * 5));
+      addCustomCategory(name, _catColor, { defaultStart: start, duration: dur, subcategories: readCatSubs() });
+      renderSchTemplates();
+      closeCatModal();
+      showToast('Category "' + escapeHtml(name) + '" added', 'success', 2500);
+    });
+    e.modal?.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') { ev.stopPropagation(); closeCatModal(); }
+      if (ev.key === 'Enter' && ev.target.tagName !== 'TEXTAREA') { ev.preventDefault(); e.save?.click(); }
+    });
+  }
   // Apply access hub customization
   applyAccessHubConfig();
 
