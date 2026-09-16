@@ -1607,6 +1607,7 @@ let state = {
   searchQuery: '',
 
   taskModalOpen: false,
+  catModalOpen: false,
   helpModalOpen: false,
   aiChatOpen: false,
   apiKey: '',
@@ -1717,6 +1718,30 @@ function getStoragePrefix() {
 }
 
 var __origLS = {};
+
+// Remove this account's image cache keys from localStorage to free space.
+// Physical keys are stored as '{userId}:haven-image-...' (or unprefixed for
+// guest/no-account sessions), so always operate on the RAW store here and
+// strip the current prefix before matching — using the wrapped API would
+// re-prefix an already-prefixed key and miss it entirely.
+function forceFreeImageCache(limit) {
+  var freed = 0;
+  var pre = getStoragePrefix();
+  try {
+    for (var i = __origLS.length - 1; i >= 0; i--) {
+      var k = __origLS.key(i);
+      if (!k) continue;
+      var short = pre && k.indexOf(pre) === 0 ? k.slice(pre.length) : k;
+      if (short.indexOf('haven-image-') === 0 || short.indexOf('hub-image-') === 0) {
+        __origLS.removeItem(k);
+        freed++;
+        if (freed >= limit) break;
+      }
+    }
+  } catch (e) { /* ignore */ }
+  return freed;
+}
+
 (function() {
   __origLS.getItem = localStorage.getItem.bind(localStorage);
   __origLS.setItem = localStorage.setItem.bind(localStorage);
@@ -1738,16 +1763,7 @@ var __origLS = {};
     try { __origLS.setItem(pKey, val); } catch (e) {
       if (e.name === 'QuotaExceededError' || e.code === 22) {
         try {
-          var freed = 0;
-          for (var i = localStorage.length - 1; i >= 0; i--) {
-            var k = localStorage.key(i);
-            if (k && k.indexOf('haven-image-') === 0) {
-              localStorage.removeItem(k);
-              freed++;
-              if (freed >= 10) break;
-            }
-          }
-          if (freed > 0) __origLS.setItem(pKey, val);
+          if (forceFreeImageCache(10) > 0) __origLS.setItem(pKey, val);
         } catch (e2) { /* ignore */ }
       }
     }
@@ -1757,26 +1773,26 @@ var __origLS = {};
 
 
 
-// Safe localStorage write with auto-cleanup on quota exceeded
+// Safe localStorage write with auto-cleanup on quota exceeded.
+// Returns true only when the value was actually verified as stored.
 function safeSetItem(key, val) {
-  try { localStorage.setItem(key, val); return true; } catch (e) {
-    if (e.name === 'QuotaExceededError' || e.code === 22) {
-      // Try freeing space by removing old direct image keys
-      try {
-        var freed = 0;
-        for (var i = localStorage.length - 1; i >= 0; i--) {
-          var k = localStorage.key(i);
-          if (k && k.indexOf('haven-image-') === 0) {
-            localStorage.removeItem(k);
-            freed++;
-            if (freed >= 10) break; // free up to 10 images per write
-          }
-        }
-        if (freed > 0) { localStorage.setItem(key, val); return true; }
-      } catch (e2) { /* ignore */ }
-    }
-    return false;
+  var ok = false;
+  try {
+    localStorage.setItem(key, val);
+    ok = localStorage.getItem(key) !== null && String(localStorage.getItem(key)) === String(val);
+  } catch (e) {
+    ok = false;
   }
+  if (!ok) {
+    // Likely quota — free the active account's image cache and retry once.
+    try {
+      if (forceFreeImageCache(10) > 0) {
+        localStorage.setItem(key, val);
+        ok = localStorage.getItem(key) !== null && String(localStorage.getItem(key)) === String(val);
+      }
+    } catch (e2) { ok = false; }
+  }
+  return ok;
 }
 
 // ─── I18N — Minimal translation system ─────────────────
@@ -3844,11 +3860,15 @@ function exportHubSettings() {
   });
   try {
     var imgs = {};
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.indexOf('haven-image-') === 0 && k.indexOf('haven-image-gallery-') === -1) {
-        try { imgs[k] = localStorage.getItem(k); } catch(e) {}
-      }
+    var pre = getStoragePrefix();
+    for (var i = __origLS.length - 1; i >= 0; i--) {
+      var k = __origLS.key(i);
+      if (!k) continue;
+      var short = pre && k.indexOf(pre) === 0 ? k.slice(pre.length) : (pre ? null : k);
+      if (!short) continue;
+      if (short.indexOf('haven-image-') !== 0 || short.indexOf('haven-image-gallery-') !== -1) continue;
+      var v = __origLS.getItem(k);
+      if (v) imgs[short] = v;
     }
     if (Object.keys(imgs).length) data.images = imgs;
   } catch(e) {}
@@ -4647,12 +4667,7 @@ function renderSidebarEditControls() {
     }
   });
 
-  // Add "Add link" button at the bottom of nav
-  const addBtn = document.createElement('button');
-  addBtn.className = 'snav-add-link-btn';
-  addBtn.innerHTML = '+ Add link';
-  addBtn.addEventListener('click', showAddLinkPopup);
-  stagger.appendChild(addBtn);
+  // Add link button removed
 
   // Setup drag events
   setupSidebarDrag();
@@ -4677,7 +4692,7 @@ function renderSidebarEditControls() {
 }
 
 function removeSidebarEditControls() {
-  document.querySelectorAll('.snav-drag-handle, .snav-hide-btn, .snav-add-link-btn, .sidebar-footer-handle').forEach(el => el.remove());
+  document.querySelectorAll('.snav-drag-handle, .snav-hide-btn, .sidebar-footer-handle').forEach(el => el.remove());
   // Reset opacity on hidden items
   document.querySelectorAll('.hub-snav-item').forEach(item => {
     item.style.opacity = '';
@@ -6700,6 +6715,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (state.aiChatOpen) hideAIChat();
     else if (state.taskModalOpen) hideTaskModal();
+    else if (state.catModalOpen) closeCatModal();
     else if (state.helpModalOpen) hideHelpModal();
   }
 
@@ -7154,7 +7170,13 @@ function spInit() {
     if (spCollapsed) el.classList.add('collapsed');
     else el.classList.remove('collapsed');
   }
-  document.addEventListener('keydown', spOnKey);
+  if (!spListenersBound) {
+    spListenersBound = true;
+    document.addEventListener('keydown', spOnKey);
+    document.addEventListener('visibilitychange', function() { if (!document.hidden) spScheduleEmbedCheck(800); });
+    window.addEventListener('pageshow', function() { spScheduleEmbedCheck(800); });
+  }
+  spScheduleEmbedCheck(6000);
 }
 
 function spLoadState() {
@@ -7173,6 +7195,47 @@ function spSaveActive() {
   else localStorage.removeItem(SP_ACTIVE_KEY);
 }
 
+let spEmbedCheckTimer = null;
+let spListenersBound = false;
+
+function spEmbedUrl(playlist) {
+  if (!playlist || !playlist.id) return '';
+  return 'https://open.spotify.com/embed/playlist/' + playlist.id + '?utm_source=generator';
+}
+
+function spTrackEmbed(iframe) {
+  if (!iframe || iframe._spTracked) return;
+  iframe._spTracked = true;
+  iframe._spLoaded = false;
+  iframe._spRetries = 0;
+  iframe.addEventListener('load', function() {
+    if ((iframe.getAttribute('src') || '').indexOf('open.spotify.com') !== -1) iframe._spLoaded = true;
+  });
+}
+
+function spReviveEmbeds() {
+  document.querySelectorAll('.sp-embed-wrap iframe, .spotify-widget iframe').forEach(function(iframe) {
+    spTrackEmbed(iframe);
+    var src = iframe.getAttribute('src') || '';
+    if (src.indexOf('open.spotify.com') === -1) return;
+    if (iframe._spLoaded || iframe._spRetries >= 3) return;
+    if (!iframe.offsetWidth && !iframe.offsetHeight) return;
+    if (iframe._spSeenSrc !== src) { iframe._spSeenSrc = src; iframe._spSrcAt = Date.now(); return; }
+    if (Date.now() - iframe._spSrcAt < 4000) return;
+    iframe._spRetries++;
+    iframe.src = src;
+    iframe._spSrcAt = Date.now();
+  });
+}
+
+function spScheduleEmbedCheck(delay) {
+  if (spEmbedCheckTimer) clearTimeout(spEmbedCheckTimer);
+  spEmbedCheckTimer = setTimeout(function() {
+    spEmbedCheckTimer = null;
+    spReviveEmbeds();
+  }, delay || 4000);
+}
+
 function spRenderSidebar(forceReload) {
   const empty = document.getElementById('spEmpty');
   const wrap = document.getElementById('spEmbedWrap');
@@ -7181,10 +7244,12 @@ function spRenderSidebar(forceReload) {
   if (!empty || !wrap || !embed) return;
   const active = spPlaylists.find(p => p.id === spActiveId);
   if (active) {
-    const targetSrc = active.embedUrl || 'https://open.spotify.com/embed/playlist/' + active.id + '?utm_source=generator';
+    const targetSrc = spEmbedUrl(active);
     empty.style.display = 'none';
     wrap.style.display = 'block';
-    if (forceReload || embed.src !== targetSrc) embed.src = targetSrc;
+    if (forceReload || embed.getAttribute('src') !== targetSrc) embed.src = targetSrc;
+    spTrackEmbed(embed);
+    spScheduleEmbedCheck(5000);
     if (controls) controls.style.display = 'flex';
   } else {
     empty.style.display = 'flex';
@@ -7214,7 +7279,7 @@ function spSideNav(dir) {
   spUpdateNav();
   const modalEmbed = document.getElementById('spModalEmbed');
   const playlist = spPlaylists.find(p => p.id === spActiveId);
-  if (modalEmbed && playlist) modalEmbed.src = playlist.embedUrl || 'https://open.spotify.com/embed/playlist/' + playlist.id + '?utm_source=generator';
+  if (modalEmbed && playlist) modalEmbed.src = spEmbedUrl(playlist);
 }
 
 function spUpdateNav() {
@@ -7230,7 +7295,7 @@ function spToggleSection() {
   const sidebar = document.getElementById('spSidebar');
   if (sidebar) {
     if (spCollapsed) sidebar.classList.add('collapsed');
-    else sidebar.classList.remove('collapsed');
+    else { sidebar.classList.remove('collapsed'); spScheduleEmbedCheck(1000); }
   }
 }
 
@@ -7241,7 +7306,7 @@ function spOpenSettings() {
   spRenderList();
   const modalEmbed = document.getElementById('spModalEmbed');
   const active = spPlaylists.find(p => p.id === spActiveId);
-  if (modalEmbed && active) modalEmbed.src = active.embedUrl || 'https://open.spotify.com/embed/playlist/' + active.id + '?utm_source=generator';
+  if (modalEmbed && active) modalEmbed.src = spEmbedUrl(active);
 }
 
 function spCloseSettings() {
@@ -7268,7 +7333,7 @@ function spAddPlaylist() {
     if (idMatch) { playlistId = idMatch[0]; embedUrl = 'https://open.spotify.com/embed/playlist/' + playlistId; }
   }
   if (!playlistId || spPlaylists.some(p => p.id === playlistId)) return;
-  spPlaylists.push({ id: playlistId, name: 'Playlist ' + playlistId.slice(0, 8), embedUrl });
+  spPlaylists.push({ id: playlistId, name: 'Playlist ' + playlistId.slice(0, 8), embedUrl: spEmbedUrl({ id: playlistId }) });
   spSavePlaylists();
   input.value = '';
   if (!spActiveId) {
@@ -7294,7 +7359,7 @@ function spPlayPlaylist(id) {
   spSaveActive();
   const modalEmbed = document.getElementById('spModalEmbed');
   const playlist = spPlaylists.find(p => p.id === id);
-  if (modalEmbed && playlist) modalEmbed.src = playlist.embedUrl || 'https://open.spotify.com/embed/playlist/' + playlist.id + '?utm_source=generator';
+  if (modalEmbed && playlist) modalEmbed.src = spEmbedUrl(playlist);
   spRenderSidebar();
   spRenderList();
   spUpdateNav();

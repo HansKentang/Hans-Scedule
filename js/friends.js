@@ -7,6 +7,9 @@ let currentTab = 'all';
 let friendsData = [];
 let friendRequestsData = [];
 let friendUnsubscribe = null;
+let convUnsubscribe = null;
+let feedUnsubscribe = null;
+let challengesUnsubscribe = null;
 
 // Firestore collection references
 function getFriendsCollection() {
@@ -444,6 +447,339 @@ function removeFriend(friendshipId) {
   });
 }
 
+// ─── RENDER PROFILE ──────────────────────────────────────
+function renderProfile() {
+  var activeId = getActiveUserId();
+  if (!activeId) return;
+
+  var avatarEl = document.getElementById('frProfileAvatar');
+  var nameEl = document.getElementById('frProfileName');
+  var statusEl = document.getElementById('frProfileStatus');
+  var codeEl = document.getElementById('frProfileCode');
+  var tasksEl = document.getElementById('frMyTasks');
+  var streakEl = document.getElementById('frMyStreak');
+  var rateEl = document.getElementById('frMyRate');
+
+  var activeUser = (typeof localUsers !== 'undefined' && activeId)
+    ? localUsers.find(function(u) { return u.id === activeId; })
+    : null;
+
+  if (activeUser && nameEl) {
+    var displayName = activeUser.name || 'User';
+    nameEl.textContent = displayName;
+    if (avatarEl) {
+      var initials = displayName.split(/\s+/).slice(0, 2).map(function(s) { return s[0]; }).join('').toUpperCase() || '?';
+      var photoURL = activeUser.picture || '';
+      avatarEl.style.background = activeUser._color || 'var(--accent)';
+      avatarEl.innerHTML = photoURL
+        ? '<img src="' + escapeHtml(photoURL) + '" alt="" style="width:100%;height:100%;object-fit:cover">'
+        : '<span>' + escapeHtml(initials) + '</span>';
+    }
+  }
+
+  if (codeEl) {
+    var code = generateFriendCode(activeId);
+    codeEl.textContent = code;
+    codeEl.onclick = function() {
+      var t = codeEl.textContent;
+      if (!t || t === '\u2014') return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(t).then(function() {
+          codeEl.style.background = 'var(--accent-soft)';
+          codeEl.style.color = 'var(--primary)';
+          setTimeout(function() { codeEl.style.background = ''; codeEl.style.color = ''; }, 1500);
+        });
+      }
+    };
+  }
+
+  if (statusEl) {
+    statusEl.onclick = function() {
+      var cur = statusEl.textContent === 'Click to set status...' ? '' : statusEl.textContent;
+      var next = prompt('Set your status:', cur);
+      if (next !== null) {
+        statusEl.textContent = next || 'Click to set status...';
+        initFirestore();
+        var db = getFirestoreDb();
+        if (db) db.collection('users').doc(activeId).update({ statusMessage: next }).catch(function() {});
+      }
+    };
+  }
+
+  initFirestore();
+  var db = getFirestoreDb();
+  if (db) {
+    db.collection('users').doc(activeId).get().then(function(doc) {
+      if (doc.exists) {
+        var data = doc.data();
+        var stats = data.stats || {};
+        if (tasksEl) tasksEl.textContent = stats.totalTasks || 0;
+        if (streakEl) streakEl.textContent = stats.currentStreak || 0;
+        if (rateEl) rateEl.textContent = (stats.completionRate || 0) + '%';
+        if (statusEl && data.statusMessage) statusEl.textContent = data.statusMessage;
+      }
+    }).catch(function() {});
+  }
+}
+
+// ─── CONVERSATIONS LIST ──────────────────────────────────
+function subscribeToConversations() {
+  var activeId = getActiveUserId();
+  if (!activeId) return;
+  if (convUnsubscribe) { convUnsubscribe(); convUnsubscribe = null; }
+
+  initFirestore();
+  var db = getFirestoreDb();
+  if (!db) return;
+
+  convUnsubscribe = db.collection('conversations')
+    .where('participants', 'array-contains', activeId)
+    .onSnapshot(function(snapshot) {
+      var convos = [];
+      snapshot.forEach(function(doc) { convos.push({ id: doc.id, ...doc.data() }); });
+      convos.sort(function(a, b) {
+        var ta = a.updatedAt && a.updatedAt.toMillis ? a.updatedAt.toMillis() : 0;
+        var tb = b.updatedAt && b.updatedAt.toMillis ? b.updatedAt.toMillis() : 0;
+        return tb - ta;
+      });
+      renderConversations(convos);
+    }, function() {});
+}
+
+function renderConversations(conversations) {
+  var listEl = document.getElementById('frConvList');
+  if (!listEl) return;
+  var activeId = getActiveUserId();
+
+  if (!conversations || conversations.length === 0) {
+    listEl.innerHTML = '<div class="fr-conv-item" style="opacity:0.5;pointer-events:none">' +
+      '<div class="fr-conv-avatar" style="background:var(--text-tertiary)">?</div>' +
+      '<div class="fr-conv-info"><div class="fr-conv-name">No conversations yet</div>' +
+      '<div class="fr-conv-preview">Start chatting with a friend</div></div></div>';
+    return;
+  }
+
+  var db = getFirestoreDb();
+  if (!db) return;
+
+  var fetches = conversations.map(function(conv) {
+    var otherId = conv.participants.find(function(p) { return p !== activeId; });
+    return db.collection('users').doc(otherId).get().then(function(doc) {
+      return { conv: conv, user: doc.exists ? doc.data() : null, otherId: otherId };
+    }).catch(function() { return { conv: conv, user: null, otherId: otherId }; });
+  });
+
+  Promise.all(fetches).then(function(results) {
+    var html = '';
+    results.forEach(function(r) {
+      var user = r.user;
+      var name = user ? (user.displayName || 'Unknown') : 'Unknown';
+      var initials = name.split(/\s+/).slice(0, 2).map(function(s) { return s[0]; }).join('').toUpperCase() || '?';
+      var color = user ? (user.avatarColor || '#b4ccbc') : '#b4ccbc';
+      var photoURL = user ? (user.photoURL || '') : '';
+      var lastMsg = r.conv.lastMessage ? r.conv.lastMessage.text : 'No messages yet';
+      var time = frFormatTime(r.conv.updatedAt);
+      var unread = r.conv.unreadCount && r.conv.unreadCount[activeId] ? r.conv.unreadCount[activeId] : 0;
+
+      var avatarHtml = photoURL
+        ? '<img src="' + escapeHtml(photoURL) + '" alt="" style="width:100%;height:100%;object-fit:cover">'
+        : '<span>' + escapeHtml(initials) + '</span>';
+
+      html += '<div class="fr-conv-item" data-conv-friend="' + r.otherId + '" data-conv-name="' + escapeHtml(name) + '">' +
+        '<div class="fr-conv-avatar" style="background:' + color + '">' + avatarHtml + '</div>' +
+        '<div class="fr-conv-info"><div class="fr-conv-name">' + escapeHtml(name) + '</div>' +
+        '<div class="fr-conv-preview">' + escapeHtml((lastMsg || '').substring(0, 50)) + '</div></div>' +
+        '<div class="fr-conv-meta"><div class="fr-conv-time">' + time + '</div>' +
+        (unread > 0 ? '<div class="fr-conv-badge">' + unread + '</div>' : '') +
+        '</div></div>';
+    });
+    listEl.innerHTML = html;
+    listEl.querySelectorAll('.fr-conv-item[data-conv-friend]').forEach(function(item) {
+      item.addEventListener('click', function() {
+        if (typeof openChatPanel === 'function') openChatPanel(item.dataset.convFriend, item.dataset.convName);
+      });
+    });
+  });
+}
+
+function frFormatTime(ts) {
+  if (!ts) return '';
+  var then = ts.toMillis ? ts.toMillis() : (ts.seconds ? ts.seconds * 1000 : 0);
+  if (!then) return '';
+  var diff = Date.now() - then;
+  if (diff < 60000) return 'Now';
+  if (diff < 3600000) return Math.floor(diff / 60000) + 'm';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
+  if (diff < 604800000) return Math.floor(diff / 86400000) + 'd';
+  var d = new Date(then);
+  return (d.getMonth() + 1) + '/' + d.getDate();
+}
+
+// ─── LEADERBOARD ─────────────────────────────────────────
+function renderLeaderboard() {
+  var listEl = document.getElementById('frLeaderboard');
+  if (!listEl) return;
+  var activeId = getActiveUserId();
+
+  var entries = [];
+  var activeUser = (typeof localUsers !== 'undefined' && activeId)
+    ? localUsers.find(function(u) { return u.id === activeId; })
+    : null;
+  var myTasks = 0;
+  try { var ms = computeUserStats ? computeUserStats() : {}; myTasks = ms.totalTasks || 0; } catch(e) {}
+  entries.push({ name: activeUser ? activeUser.name || 'You' : 'You', tasks: myTasks, color: activeUser && activeUser._color ? activeUser._color : 'var(--accent)', isMe: true });
+
+  friendsData.filter(function(f) { return f.status === 'accepted'; }).forEach(function(f) {
+    if (f.userData && f.userData.stats) {
+      entries.push({ name: f.userData.displayName || 'Unknown', tasks: f.userData.stats.totalTasks || 0, color: f.userData.avatarColor || '#b4ccbc', photoURL: f.userData.photoURL || '', isMe: false });
+    }
+  });
+
+  entries.sort(function(a, b) { return b.tasks - a.tasks; });
+
+  var html = '';
+  entries.forEach(function(e, i) {
+    var initials = e.name.split(/\s+/).slice(0, 2).map(function(s) { return s[0]; }).join('').toUpperCase() || '?';
+    var av = e.photoURL ? '<img src="' + escapeHtml(e.photoURL) + '" alt="" style="width:100%;height:100%;object-fit:cover">' : '<span>' + escapeHtml(initials) + '</span>';
+    html += '<div class="fr-lb-row' + (e.isMe ? ' me' : '') + '">' +
+      '<div class="fr-lb-rank">' + (i + 1) + '</div>' +
+      '<div class="fr-lb-avatar" style="background:' + e.color + '">' + av + '</div>' +
+      '<div class="fr-lb-name">' + escapeHtml(e.name) + '</div>' +
+      '<div class="fr-lb-score"><div class="fr-lb-score-num">' + e.tasks + '</div><div class="fr-lb-score-label">tasks</div></div></div>';
+  });
+  if (entries.length <= 1) {
+    html = '<div class="fr-lb-row me"><div class="fr-lb-rank">\u2014</div><div class="fr-lb-avatar" style="background:var(--accent)">' + (entries[0] ? entries[0].name.charAt(0) : '?') + '</div><div class="fr-lb-name">Add friends to compete!</div><div class="fr-lb-score"><div class="fr-lb-score-num">' + myTasks + '</div><div class="fr-lb-score-label">tasks</div></div></div>';
+  }
+  listEl.innerHTML = html;
+}
+
+// ─── CHALLENGES ──────────────────────────────────────────
+function subscribeToChallenges() {
+  var activeId = getActiveUserId();
+  if (!activeId) return;
+  if (challengesUnsubscribe) { challengesUnsubscribe(); challengesUnsubscribe = null; }
+  initFirestore();
+  var db = getFirestoreDb();
+  if (!db) return;
+  challengesUnsubscribe = db.collection('challenges')
+    .where('participants', 'array-contains', activeId)
+    .onSnapshot(function(snap) {
+      var chs = [];
+      snap.forEach(function(doc) { chs.push({ id: doc.id, ...doc.data() }); });
+      chs.sort(function(a, b) {
+        var ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+        var tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+        return tb - ta;
+      });
+      renderChallenges(chs);
+    }, function() {});
+}
+
+function renderChallenges(challenges) {
+  var listEl = document.getElementById('frChallengeList');
+  if (!listEl) return;
+  if (!challenges || challenges.length === 0) {
+    listEl.innerHTML = '<div class="fr-ch-empty">No active challenges. Create one to compete with friends!</div>';
+    return;
+  }
+  var html = '';
+  challenges.forEach(function(ch) {
+    var progress = ch.progress || 0;
+    var target = ch.target || 10;
+    var pct = Math.min(100, Math.round((progress / target) * 100));
+    var isActive = ch.status !== 'completed';
+    html += '<div class="fr-ch-item">' +
+      '<div class="fr-ch-item-header"><div class="fr-ch-item-title">' + escapeHtml(ch.title || 'Challenge') + '</div>' +
+      '<span class="fr-ch-item-badge ' + (isActive ? 'active' : 'completed') + '">' + (isActive ? 'Active' : 'Done') + '</span></div>' +
+      '<div class="fr-ch-item-meta">' + escapeHtml(ch.description || '') + ' \u00b7 ' + progress + '/' + target + '</div>' +
+      '<div class="fr-ch-progress-bar"><div class="fr-ch-progress-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="fr-ch-participants">';
+    (ch.participantNames || []).forEach(function(n) {
+      html += '<div class="fr-ch-participant" style="background:var(--accent)" title="' + escapeHtml(n) + '">' + escapeHtml((n || '?').charAt(0)) + '</div>';
+    });
+    html += '</div></div>';
+  });
+  listEl.innerHTML = html;
+}
+
+function setupChallenges() {
+  var btn = document.getElementById('frChCreateBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function() {
+    var title = prompt('Challenge title (e.g. "7-Day Exercise Streak"):');
+    if (!title) return;
+    var target = parseInt(prompt('Target number:', '10'), 10);
+    if (!target || target < 1) return;
+    var activeId = getActiveUserId();
+    if (!activeId) return;
+
+    var accepted = friendsData.filter(function(f) { return f.status === 'accepted'; });
+    var participants = [activeId];
+    var participantNames = [];
+    var activeUser = (typeof localUsers !== 'undefined' && activeId) ? localUsers.find(function(u) { return u.id === activeId; }) : null;
+    if (activeUser) participantNames.push(activeUser.name || 'User');
+    accepted.forEach(function(f) {
+      participants.push(f.otherUserId);
+      if (f.userData) participantNames.push(f.userData.displayName || 'Unknown');
+    });
+
+    initFirestore();
+    var db = getFirestoreDb();
+    if (!db) return;
+    db.collection('challenges').add({
+      title: title, description: 'Complete ' + target + ' tasks', target: target,
+      progress: 0, status: 'active', participants: participants,
+      participantNames: participantNames, createdBy: activeId,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(function(err) { console.warn('[friends] challenge error:', err); });
+  });
+}
+
+// ─── ACTIVITY FEED ───────────────────────────────────────
+function subscribeToFeed() {
+  var activeId = getActiveUserId();
+  if (!activeId) return;
+  if (feedUnsubscribe) { feedUnsubscribe(); feedUnsubscribe = null; }
+  initFirestore();
+  var db = getFirestoreDb();
+  if (!db) return;
+
+  var accepted = friendsData.filter(function(f) { return f.status === 'accepted'; });
+  var friendIds = accepted.map(function(f) { return f.otherUserId; }).filter(Boolean);
+  friendIds.push(activeId);
+
+  feedUnsubscribe = db.collection('activity')
+    .orderBy('createdAt', 'desc')
+    .limit(30)
+    .onSnapshot(function(snap) {
+      var items = [];
+      snap.forEach(function(doc) {
+        var d = doc.data();
+        if (friendIds.indexOf(d.userId) !== -1) items.push({ id: doc.id, ...d });
+      });
+      renderFeed(items);
+    }, function() {});
+}
+
+function renderFeed(items) {
+  var listEl = document.getElementById('frFeedList');
+  if (!listEl) return;
+  if (!items || items.length === 0) {
+    listEl.innerHTML = '<div class="fr-feed-empty">Activity from friends will appear here</div>';
+    return;
+  }
+  var html = '';
+  items.forEach(function(item) {
+    var time = frFormatTime(item.createdAt);
+    html += '<div class="fr-feed-item">' +
+      '<div class="fr-feed-avatar" style="background:' + (item.avatarColor || 'var(--accent)') + '">' +
+      (item.userName ? escapeHtml(item.userName.charAt(0).toUpperCase()) : '?') + '</div>' +
+      '<div class="fr-feed-body"><div class="fr-feed-text"><strong>' + escapeHtml(item.userName || 'Someone') + '</strong> ' + escapeHtml(item.text || 'did something awesome') + '</div>' +
+      '<div class="fr-feed-time">' + time + '</div></div></div>';
+  });
+  listEl.innerHTML = html;
+}
+
 // ─── SETUP TABS ───────────────────────────────────────────
 function setupTabs() {
   var tabsContainer = document.getElementById('frTabs');
@@ -490,6 +826,9 @@ function setupPage() {
   setupCopyButton();
   setupAddFriend();
   setupTabs();
+  setupChallenges();
+  renderProfile();
+  subscribeToConversations();
 
   if (typeof initChat === 'function') {
     initChat();
@@ -503,7 +842,10 @@ function init() {
   applyImages();
 
   renderFriendCode();
+  renderProfile();
   subscribeToFriends();
+  subscribeToChallenges();
+  subscribeToFeed();
   setupPage();
 
   // Ensure this user's profile + friend code exist in Firestore

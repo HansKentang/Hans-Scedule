@@ -39,32 +39,33 @@
 
 /* ─── 2 · HERO ──────────────────────────────────────────────────── */
 .mono-hero {
-  padding: 40px 32px 28px;
-  border-bottom: 1px solid var(--hairline);
+  position: relative;
+  height: 220px;
+  overflow: hidden;
   background: var(--ink);
   color: var(--paper);
 }
 .mono-hero h1 {
-  font-family: var(--font-display);
-  font-size: 42px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  color: var(--paper);
-  text-transform: uppercase;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin: 0;
 }
 .mono-hero-sub {
   margin-top: 8px;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
-  color: var(--gray-400);
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
-.mono-hero-row .gsi-section { display: none; }
-.mono-hero.has-image { position: relative; overflow: hidden; min-height: 220px; display: flex; align-items: flex-end; }
-.mono-hero.has-image .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
-.mono-hero.has-image .hero-shade { position: absolute; inset: 0; background: linear-gradient(to top, var(--ink) 0%, transparent 65%); }
-.mono-hero.has-image .mono-hero-row { position: relative; z-index: 1; width: 100%; }
+.mono-hero-row .gsi-section { margin: 0; flex-shrink: 0; }
+.mono-hero-row > div:not(.gsi-section) { flex: 1; min-width: 0; }
+.mono-hero.has-image { display: flex; align-items: center; padding: 0 var(--container-padding); }
+.mono-hero.has-image .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
+.mono-hero.has-image .hero-shade { position: absolute; inset: 0; background: linear-gradient(to right, var(--ink) 0%, transparent 55%); }
+.mono-hero.has-image .mono-hero-row { position: relative; z-index: 1; width: 100%; display: flex; align-items: center; gap: var(--space-4); }
 
 /* kernel line */
 .kernel-line {

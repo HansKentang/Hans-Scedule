@@ -160,6 +160,13 @@ try { _imgStyles = JSON.parse(localStorage.getItem(IMG_STYLES_KEY) || '{}'); } c
 function _getImgStyle(uid) { return _imgStyles[uid] || 'default'; }
 function _setImgStyle(uid, style) { _imgStyles[uid] = style; try { localStorage.setItem(IMG_STYLES_KEY, JSON.stringify(_imgStyles)); } catch(e) {} }
 
+const HW_STYLES_KEY = 'haven-hw-styles';
+const HW_STYLE_LIST = ['default','compact','kanban'];
+let _hwStyles = {};
+try { _hwStyles = JSON.parse(localStorage.getItem(HW_STYLES_KEY) || '{}'); } catch(e) {}
+function _getHwStyle(uid) { return _hwStyles[uid] || 'default'; }
+function _setHwStyle(uid, style) { _hwStyles[uid] = style; try { localStorage.setItem(HW_STYLES_KEY, JSON.stringify(_hwStyles)); } catch(e) {} }
+
 const TEXT_STYLES_KEY = 'haven-text-styles';
 const TEXT_STYLE_LIST = ['sans','serif','mono','georgia','arial','times','courier','verdana','consolas'];
 let _textStyles = {};
@@ -175,7 +182,7 @@ const GUEST_TEMPLATE_KEY = 'haven-guest-default-template';
 
 const MAX_CANVAS_HEIGHT = 10000;
 let hubEditMode = false;
-try { hubEditMode = localStorage.getItem(HUB_EDIT_KEY) === 'true'; } catch (e) { /* ignore */ }
+try { localStorage.setItem(HUB_EDIT_KEY, 'false'); } catch (e) { /* ignore */ }
 let hubMode = 'desktop';
 function _contentKey() { return HUB_CONTENT_KEY; }
 function _bentoKey() { return HUB_BENTO_KEY; }
@@ -558,6 +565,7 @@ const HUB_DEFAULTS = {
   mood: { today: null, history: {} },
   countdown: [{ label: 'New Year', date: '2027-01-01' }, { label: 'Summer', date: '2026-06-21' }],
   expense: { entries: [], balance: 0 },
+  homework: [{ text: 'Math Ch.5 Problems', subject: 'Math', due: '2026-09-20', priority: 'high', done: false }, { text: 'English Essay Draft', subject: 'English', due: '2026-09-22', priority: 'medium', done: false }, { text: 'Science Lab Report', subject: 'Science', due: '2026-09-25', priority: 'low', done: false }],
   gallery: [
     { label: 'Schedule', desc: 'Time-blocking grid with drag & drop, AI scheduling, and week/month/agenda views.', href: 'schedule.html', icon: 'calendar', color: 'var(--tag-deep-work-text)', bg: 'var(--tag-deep-work-bg)' },
     { label: 'Progress', desc: 'Board, timeline, log, and charts tracking what you do and how you are doing.', href: 'progress.html', icon: 'chart', color: 'var(--tag-hobby-text)', bg: 'var(--tag-hobby-bg)' },
@@ -596,6 +604,7 @@ if (!hc.goals) hc.goals = [...defaults.goals];
       if (!hc.habitData) hc.habitData = {};
       if (hc.notes === undefined) hc.notes = '';
       if (!hc.links) hc.links = defaults.links.map(l => ({...l}));
+      if (!hc.homework) hc.homework = defaults.homework.map(h => ({...h}));
       return hc;
     }
   } catch(e) { console.warn('[img] loadHubContent: error:', e); }
@@ -620,6 +629,7 @@ if (!hc.goals) hc.goals = [...defaults.goals];
       if (!tc.habitData) tc.habitData = {};
       if (tc.notes === undefined) tc.notes = '';
       if (!tc.links) tc.links = defaults.links.map(function(l) { return {label:l.label,url:l.url}; });
+      if (!tc.homework) tc.homework = defaults.homework.map(function(h) { return {text:h.text,subject:h.subject,due:h.due,priority:h.priority,done:h.done}; });
       return tc;
     }
   } catch(e) {}
@@ -871,14 +881,15 @@ function renderHubBento() {
   if (!hubContent.mood) hubContent.mood = { today:null, history:{} };
   if (!hubContent.countdown) hubContent.countdown = defaults.countdown.map(c => ({...c}));
   if (!hubContent.expense) hubContent.expense = { entries:[], balance:0 };
+  if (!hubContent.homework) hubContent.homework = defaults.homework.map(h => ({...h}));
 
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   const isEdit = hubEditMode;
 
-  var _prevSpSrc = null;
+  var _prevSpIframes = [];
   try {
-    var _prevIfr = grid.querySelector('.spotify-widget iframe');
-    if (_prevIfr && _prevIfr.src && _prevIfr.src.indexOf('open.spotify.com') !== -1) _prevSpSrc = _prevIfr.src;
+    var _prevIfr = grid.querySelectorAll('.spotify-widget iframe');
+    Array.prototype.forEach.call(_prevIfr, function(f) { if ((f.getAttribute('src') || '').indexOf('open.spotify.com') !== -1) _prevSpIframes.push(f); });
   } catch(e) {}
 
   grid.innerHTML = '';
@@ -914,8 +925,9 @@ function renderHubBento() {
          ${type === 'progress' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-prog-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
          ${type === 'goals' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-goals-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
          ${type === 'images' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-img-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-          ${type === 'text' ? '<select class="bento-tool-btn bento-tool-style bento-tool-delete-right bento-text-font-select" data-text-font-select="' + uid + '" title="Change font" style="right:34px">' + TEXT_STYLE_LIST.map(function(f) { return '<option value="' + f + '"' + (f === _getTextStyle(uid) ? ' selected' : '') + '>' + f.charAt(0).toUpperCase() + f.slice(1) + '</option>'; }).join('') + '</select>' : ''}
-         <button class="bento-tool-btn bento-tool-delete bento-tool-delete-right" data-remove-bubble="${uid}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>${resizeHandle}`
+           ${type === 'text' ? '<select class="bento-tool-btn bento-tool-style bento-tool-delete-right bento-text-font-select" data-text-font-select="' + uid + '" title="Change font" style="right:34px">' + TEXT_STYLE_LIST.map(function(f) { return '<option value="' + f + '"' + (f === _getTextStyle(uid) ? ' selected' : '') + '>' + f.charAt(0).toUpperCase() + f.slice(1) + '</option>'; }).join('') + '</select>' : ''}
+          ${type === 'homework' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-hw-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
+          <button class="bento-tool-btn bento-tool-delete bento-tool-delete-right" data-remove-bubble="${uid}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
     const clampH = Math.min(h, MAX_CANVAS_HEIGHT - clampY);
@@ -1311,8 +1323,8 @@ function renderHubBento() {
         }
         var _spActivePlaylist = _spPlaylists.find(function(p) { return p.id === _spActiveId; });
         if (_spActivePlaylist) {
-          var spotUrl = 'https://open.spotify.com/embed/playlist/' + _spActivePlaylist.id + '?utm_source=generator';
-          var _iframeSrc = (_prevSpSrc && _prevSpSrc.indexOf(_spActivePlaylist.id) !== -1) ? _prevSpSrc : e(spotUrl);
+          var spotUrl = (typeof spEmbedUrl === 'function') ? spEmbedUrl(_spActivePlaylist) : ('https://open.spotify.com/embed/playlist/' + _spActivePlaylist.id);
+          var _iframeSrc = e(spotUrl);
           return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
             ${editUI}
             <div class="spotify-widget">
@@ -1320,7 +1332,7 @@ function renderHubBento() {
                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
                 <span>${_spActivePlaylist.name}</span>
               </div>
-              <iframe src="${_iframeSrc}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" loading="lazy" style="display:block;width:100%;border:none"></iframe>
+              <iframe src="${_iframeSrc}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" style="display:block;width:100%;border:none"></iframe>
             </div>
           </div>`;
         } else {
@@ -1635,6 +1647,66 @@ function renderHubBento() {
       case 'crypto': {
         return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/><line x1="10" y1="6" x2="10" y2="8"/><line x1="14" y1="6" x2="14" y2="8"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg><span>Crypto</span></div><div class="crypto-widget" data-crypto-uid="' + uid + '"><div class="crypto-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/></svg><span>Loading prices...</span></div></div></div>';
       }
+      case 'homework': {
+        var _hwStyle = _getHwStyle(uid);
+        var _hwItems = hubContent.homework || [];
+        var _hwDone = _hwItems.filter(function(h) { return h.done; }).length;
+        var _hwTotal = _hwItems.length;
+        var _hwPct = _hwTotal ? Math.round((_hwDone / _hwTotal) * 100) : 0;
+        var _today = new Date().toISOString().slice(0, 10);
+        var _subjectColors = { Math:'#4a90d9', Science:'#27ae60', English:'#8e44ad', History:'#f39c12', Art:'#e74c8b', Music:'#16a085', PE:'#e67e22', Programming:'#2980b9' };
+        var _colorIdx = 0;
+        var _colorPalette = ['#4a90d9','#27ae60','#8e44ad','#f39c12','#e74c8b','#16a085','#e67e22','#2980b9','#c0392b','#1abc9c'];
+        function _hwSubColor(subj) {
+          if (!subj) return _colorPalette[0];
+          if (_subjectColors[subj]) return _subjectColors[subj];
+          var hash = 0;
+          for (var ci = 0; ci < subj.length; ci++) hash = subj.charCodeAt(ci) + ((hash << 5) - hash);
+          return _colorPalette[Math.abs(hash) % _colorPalette.length];
+        }
+        function _hwDueClass(due) {
+          if (!due) return '';
+          if (due < _today) return ' w-hw-overdue';
+          if (due === _today) return ' w-hw-due-today';
+          return '';
+        }
+        function _hwPriorityDot(p) {
+          var cls = p === 'high' ? 'w-pri-high' : p === 'medium' ? 'w-pri-med' : 'w-pri-low';
+          return '<span class="w-hw-pri-dot ' + cls + '" title="' + (p || 'low') + ' priority"></span>';
+        }
+        function _hwDueChip(due) {
+          if (!due) return '';
+          var parts = due.split('-');
+          var label = parseInt(parts[1]) + '/' + parseInt(parts[2]);
+          return '<span class="w-hw-due-chip' + _hwDueClass(due) + '">' + label + '</span>';
+        }
+        function _hwSubjectBadge(subj) {
+          if (!subj) return '';
+          return '<span class="w-hw-subject" style="background:' + _hwSubColor(subj) + '20;color:' + _hwSubColor(subj) + '">' + e(subj) + '</span>';
+        }
+        var _hwBody = '';
+        if (_hwStyle === 'kanban') {
+          var _pending = _hwItems.map(function(h,i){return Object.assign({},h,{_idx:i});}).filter(function(h){return !h.done;});
+          var _done = _hwItems.map(function(h,i){return Object.assign({},h,{_idx:i});}).filter(function(h){return h.done;});
+          function _kanbanCard(h) {
+            return '<div class="w-hw-kcard' + _hwDueClass(h.due) + '" data-idx="' + h._idx + '">' + _hwPriorityDot(h.priority) + '<span class="w-hw-ktext' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="homework" data-idx="' + h._idx + '">' + e(h.text) + '</span>' + _hwSubjectBadge(h.subject) + _hwDueChip(h.due) + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + h._idx + '">\u00d7</button>' : '') + '</div>';
+          }
+          _hwBody = '<div class="w-hw-kanban"><div class="w-hw-kcol"><div class="w-hw-kcol-head">Pending</div><div class="w-hw-kcol-body">' + _pending.map(_kanbanCard).join('') + '</div></div><div class="w-hw-kcol"><div class="w-hw-kcol-head">Done</div><div class="w-hw-kcol-body">' + _done.map(_kanbanCard).join('') + '</div></div></div>';
+        } else if (_hwStyle === 'compact') {
+          _hwBody = '<div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _hwPct + '%"></div></div><span class="w-hw-prog-text">' + _hwDone + '/' + _hwTotal + ' done (' + _hwPct + '%)</span></div><div class="w-list w-hw-list">' + _hwItems.map(function(h, i) {
+            return '<div class="w-item w-item-compact w-hw-item' + (h.done ? ' w-item-done' : '') + _hwDueClass(h.due) + '" data-idx="' + i + '">' + _hwPriorityDot(h.priority) + '<span class="w-todo-box w-todo-box-sm ' + (h.done ? 'w-todo-checked' : '') + '">' + (h.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (h.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="homework" data-idx="' + i + '">' + e(h.text) + '</span>' + _hwDueChip(h.due) + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + i + '">\u00d7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="homework"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add homework</button></div>';
+        } else {
+          _hwBody = '<div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _hwPct + '%"></div></div><span class="w-hw-prog-text">' + _hwDone + '/' + _hwTotal + ' done (' + _hwPct + '%)</span></div><div class="w-list w-hw-list">' + _hwItems.map(function(h, i) {
+            return '<div class="w-item w-hw-item' + (h.done ? ' w-item-done' : '') + _hwDueClass(h.due) + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-hw-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (h.done ? 'w-todo-checked' : '') + '">' + (h.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><div class="w-hw-details"><span class="w-item-text ' + (h.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="homework" data-idx="' + i + '">' + e(h.text) + '</span><div class="w-hw-meta">' + _hwSubjectBadge(h.subject) + _hwPriorityDot(h.priority) + '<span class="w-hw-due-chip' + _hwDueClass(h.due) + '" data-hw-due="' + i + '">' + (h.due ? h.due.split('-').slice(1).join('/') : 'No due date') + '</span></div></div>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + i + '">\u00d7</button>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-add="homework"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add homework</button></div>';
+        }
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Homework</span></div>
+          ${_hwBody}
+        </div>`;
+      }
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
           ${editUI}
@@ -1664,6 +1736,20 @@ function renderHubBento() {
       console.warn('Bento bubble render error:', item.t, e);
     }
   });
+
+  if (_prevSpIframes.length) {
+    grid.querySelectorAll('.spotify-widget iframe').forEach(function(iframe) {
+      var want = iframe.getAttribute('src');
+      for (var i = 0; i < _prevSpIframes.length; i++) {
+        if (_prevSpIframes[i].getAttribute('src') === want) {
+          iframe.replaceWith(_prevSpIframes[i]);
+          _prevSpIframes.splice(i, 1);
+          break;
+        }
+      }
+    });
+  }
+  if (grid.querySelector('.spotify-widget iframe') && typeof spScheduleEmbedCheck === 'function') spScheduleEmbedCheck(6000);
 
   // Initialize Leaflet flight radar maps
   if (typeof L !== 'undefined') {
@@ -2074,6 +2160,18 @@ function renderHubBento() {
     });
   });
 
+  grid.querySelectorAll('[data-hw-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.hwStyleToggle;
+      var cur = _getHwStyle(uid);
+      var idx = HW_STYLE_LIST.indexOf(cur);
+      var next = HW_STYLE_LIST[(idx + 1) % HW_STYLE_LIST.length];
+      _setHwStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
   grid.querySelectorAll('[data-text-font-select]').forEach(function(sel) {
     sel.addEventListener('change', function(e) {
       e.stopPropagation();
@@ -2111,7 +2209,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-hw-style-toggle], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], [data-hw-due], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -3278,6 +3376,7 @@ function bubbleTypeIcon(t) {
     expense: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
     crypto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/><line x1="10" y1="6" x2="10" y2="8"/><line x1="14" y1="6" x2="14" y2="8"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg>',
     text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+    homework: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
 
   };
   return icons[t] || '';
@@ -3491,11 +3590,14 @@ function refreshWeather() {
   _weatherLastData = null;
   try {
     var keys = [];
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.indexOf('hub-weather-') === 0) keys.push(k);
+    var pre = (typeof getStoragePrefix === 'function') ? getStoragePrefix() : '';
+    for (var i = __origLS.length - 1; i >= 0; i--) {
+      var k = __origLS.key(i);
+      if (!k) continue;
+      var short = pre && k.indexOf(pre) === 0 ? k.slice(pre.length) : k;
+      if (short.indexOf('hub-weather-') === 0) keys.push(k);
     }
-    keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
+    keys.forEach(function(k) { try { __origLS.removeItem(k); } catch(e) {} });
   } catch(e) {}
   var grid = document.querySelector('.bento-grid');
   if (grid) {
@@ -3635,11 +3737,14 @@ function refreshHeadlines() {
   _hlCache = null;
   try {
     var keys = [];
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.indexOf('hub-headlines-') === 0) keys.push(k);
+    var pre = (typeof getStoragePrefix === 'function') ? getStoragePrefix() : '';
+    for (var i = __origLS.length - 1; i >= 0; i--) {
+      var k = __origLS.key(i);
+      if (!k) continue;
+      var short = pre && k.indexOf(pre) === 0 ? k.slice(pre.length) : k;
+      if (short.indexOf('hub-headlines-') === 0) keys.push(k);
     }
-    keys.forEach(function(k) { try { localStorage.removeItem(k); } catch(e) {} });
+    keys.forEach(function(k) { try { __origLS.removeItem(k); } catch(e) {} });
   } catch(e) {}
   var grid = document.querySelector('.bento-grid');
   if (grid) {
@@ -3993,7 +4098,7 @@ function addBubbleTypes(types, dropPos) {
     }
     item.w = snap(280);
     item.h = (function() {
-      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,pomodoro:180,weather:260,headlines:260,'sleep-score':280,water:180,mood:200,countdown:280,expense:320,notes:240,links:240,quote:220,priorities:320,todos:320,habits:240,progress:240,goals:420,text:160,crypto:300};
+      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,pomodoro:180,weather:260,headlines:260,'sleep-score':280,water:180,mood:200,countdown:280,expense:320,notes:240,links:240,quote:220,priorities:320,todos:320,habits:240,progress:240,goals:420,text:160,crypto:300,homework:320};
       return snap(sizes[item.t] || 280);
     })();
     // If a drop position is provided, use it; otherwise find a gap
@@ -4338,9 +4443,9 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', expense:'Expense', text:'Text', crypto:'Crypto' };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', expense:'Expense', text:'Text', crypto:'Crypto', homework:'Homework' };
   var categories = [
-    { name:'Productivity', short:'Prod', types:['goals','priorities','todos','habits','progress'] },
+    { name:'Productivity', short:'Prod', types:['goals','priorities','todos','habits','progress','homework'] },
     { name:'Wellness', short:'Well', types:['water','mood'] },
     { name:'Media', short:'Media', types:['spotify','strava','flightradar','images'] },
     { name:'Finance', short:'Fin', types:['crypto','expense'] },
@@ -4665,6 +4770,9 @@ function setupHubEditEvents() {
     } else if (field === 'links-url' && !isNaN(idx)) {
       hubContent.links[idx].url = span.textContent.trim();
       saveHubContent();
+    } else if (field === 'homework' && !isNaN(idx)) {
+      hubContent.homework[idx].text = span.textContent.trim();
+      saveHubContent();
     }
   }, true);
 
@@ -4763,6 +4871,7 @@ function setupHubEditEvents() {
         renderHubBento();
       }
     }
+    else if (field === 'homework') { hubContent.homework.splice(idx, 1); saveHubContent(); renderHubBento(); }
   });
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
@@ -4776,6 +4885,7 @@ function setupHubEditEvents() {
     else if (field === 'habits') { hubContent.habits.push('new habit'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="habits"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'links') { hubContent.links.push({ label: 'new link', url: 'https://' }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="links-label"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'countdown') { hubContent.countdown.push({ label: 'New Event', date: new Date().toISOString().slice(0,10) }); saveHubContent(); renderHubBento(); }
+    else if (field === 'homework') { hubContent.homework.push({ text: 'New Assignment', subject: '', due: '', priority: 'medium', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="homework"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
   });
 
   document.querySelector('.hub-layout')?.addEventListener('click', function(e) {
@@ -4883,6 +4993,17 @@ function setupHubEditEvents() {
       renderHubBento();
       return;
     }
+    const hwBox = e.target.closest('.w-hw-item .w-todo-box');
+    if (hwBox) {
+      const hwItem = hwBox.closest('.w-hw-item');
+      if (!hwItem) return;
+      const idx = parseInt(hwItem.dataset.idx);
+      if (isNaN(idx) || !hubContent.homework || !hubContent.homework[idx]) return;
+      hubContent.homework[idx].done = !hubContent.homework[idx].done;
+      saveHubContent();
+      renderHubBento();
+      return;
+    }
     const calNav = e.target.closest('[data-cal-nav]');
     if (calNav) {
       e.preventDefault();
@@ -4898,6 +5019,30 @@ function setupHubEditEvents() {
         saveHubContent();
         renderHubBento();
       }
+      return;
+    }
+    const hwDue = e.target.closest('[data-hw-due]');
+    if (hwDue) {
+      e.stopPropagation();
+      var idx = parseInt(hwDue.dataset.hwDue);
+      if (isNaN(idx) || !hubContent.homework || !hubContent.homework[idx]) return;
+      var input = document.createElement('input');
+      input.type = 'date';
+      input.value = hubContent.homework[idx].due || '';
+      input.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:9999;padding:8px 12px;border-radius:8px;border:1px solid var(--border-color);background:var(--surface-container-high);color:var(--text-primary);font-size:0.85rem;';
+      function closePicker() {
+        if (input.value !== hubContent.homework[idx].due) {
+          hubContent.homework[idx].due = input.value;
+          saveHubContent();
+          renderHubBento();
+        }
+        input.remove();
+      }
+      input.addEventListener('blur', closePicker);
+      input.addEventListener('change', closePicker);
+      document.body.appendChild(input);
+      input.focus();
+      input.showPicker && input.showPicker();
       return;
     }
     const calDay = e.target.closest('[data-cal-day]');

@@ -74,6 +74,27 @@
     try { localStorage.removeItem(key); return true; } catch(e) { return false; }
   }
 
+  // RAW store access. Physical keys carry '{userId}:' prefixes, so scans that
+  // enumerate with key(i) must read/remove through __origLS (never the wrapped
+  // localStorage — it would re-prefix and/or miss account-scoped keys).
+  function rawLS() {
+    return (typeof __origLS !== 'undefined' && __origLS.length !== undefined && typeof __origLS.key === 'function')
+      ? __origLS
+      : {
+          length: localStorage.length,
+          key: function(i) { return localStorage.key(i); },
+          getItem: function(k) { return localStorage.getItem(k); },
+          removeItem: function(k) { localStorage.removeItem(k); }
+        };
+  }
+
+  function _adActivePrefix() {
+    try {
+      if (typeof state !== 'undefined' && state && state.currentUserId) return state.currentUserId + ':';
+    } catch (e) {}
+    return '';
+  }
+
   function getLSJSON(key) {
     try {
       var v = localStorage.getItem(key);
@@ -216,10 +237,11 @@
     var wallet = 0;
     try { var wData = getLSJSON('haven-wallet'); if (wData) wallet = wData.balance || 0; } catch(e) {}
 
-    // Storage
-    var keyCount = localStorage.length;
+    // Storage (iterate the raw store — keys carry account prefixes)
+    var _raw = rawLS();
+    var keyCount = _raw.length;
     var totalSize = 0;
-    try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k) { var v = localStorage.getItem(k); if (v) totalSize += k.length + v.length; } } } catch(e) {}
+    try { for (var i = 0; i < _raw.length; i++) { var k = _raw.key(i); if (k) { var v = _raw.getItem(k); if (v) totalSize += k.length + v.length; } } } catch(e) {}
 
     // Tasks stats
     var today = formatDate(new Date());
@@ -315,10 +337,16 @@
     if (!el) return;
     var searchTerm = ($('adStorageSearch') || {}).value || '';
     var keys = [];
+    var front = _adActivePrefix();
     try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
-        if (k) keys.push(k);
+      for (var i = 0; i < rawLS().length; i++) {
+        var k = rawLS().key(i);
+        if (!k) continue;
+        if (front) {
+          if (k.indexOf(front) === 0) keys.push(k.slice(front.length));
+        } else {
+          keys.push(k);
+        }
       }
     } catch(e) {}
     keys.sort();
@@ -655,27 +683,53 @@
     window._adClearAppData = function() {
       if (!confirm('Clear ALL Havën app data? This will remove tasks, settings, everything!')) return;
       if (!confirm('Are you sure?')) return;
+      var _raw = rawLS();
       var havenKeys = [];
-      try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('haven-') === 0) havenKeys.push(k); } } catch(e) {}
-      havenKeys.forEach(function(k) { removeLSItem(k); });
+      try {
+        for (var i = 0; i < _raw.length; i++) {
+          var k = _raw.key(i);
+          if (!k) continue;
+          var short = k.indexOf(':') > 0 ? k.slice(k.indexOf(':') + 1) : k;
+          if (short.indexOf('haven-') === 0) havenKeys.push(k);
+        }
+      } catch(e) {}
+      havenKeys.forEach(function(k) { try { _raw.removeItem(k); } catch(e) {} });
       showToast('Cleared ' + havenKeys.length + ' Havën keys', 'success');
       renderDataManager();
     };
     window._adQuickBackup = function() {
       var backup = {};
       var count = 0;
+      var _raw = rawLS();
+      var front = _adActivePrefix();
       try {
-        for (var i = 0; i < localStorage.length; i++) {
-          var k = localStorage.key(i);
-          if (k && k.indexOf('haven-') === 0) { backup[k] = localStorage.getItem(k); count++; }
+        for (var i = 0; i < _raw.length; i++) {
+          var k = _raw.key(i);
+          if (!k) continue;
+          var short = front && k.indexOf(front) === 0 ? k.slice(front.length) : k;
+          if (short.indexOf('haven-') !== 0) continue;
+          if (short.indexOf('haven-admin-backup-') === 0) continue;
+          var val = _raw.getItem(k);
+          if (val === null) continue;
+          backup[short] = val;
+          count++;
         }
       } catch(e) {}
       setLSJSON('haven-admin-backup-' + formatDate(new Date()), backup);
       showToast('Backup saved (' + count + ' keys)', 'success');
     };
     window._adQuickRestore = function() {
+      var _raw = rawLS();
+      var front = _adActivePrefix();
       var backupKeys = [];
-      try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (k && k.indexOf('haven-admin-backup-') === 0) backupKeys.push(k); } } catch(e) {}
+      try {
+        for (var i = 0; i < _raw.length; i++) {
+          var k = _raw.key(i);
+          if (!k) continue;
+          var short = front && k.indexOf(front) === 0 ? k.slice(front.length) : k;
+          if (short.indexOf('haven-admin-backup-') === 0) backupKeys.push(short);
+        }
+      } catch(e) {}
       if (backupKeys.length === 0) { showError('No backups found'); return; }
       var latest = backupKeys.sort().pop();
       var backup = getLSJSON(latest);
@@ -1011,14 +1065,15 @@
     html += '<div class="ad-dash-card"><div class="ad-dash-label">Online</div><div class="ad-dash-value" style="font-size:0.85rem">' + (navigator.onLine ? 'Online' : 'Offline') + '</div></div>';
 
     // Storage
-    var keyCount = localStorage.length;
+    var _raw = rawLS();
+    var keyCount = _raw.length;
     var totalSize = 0;
     var largestKeys = [];
     try {
-      for (var i = 0; i < localStorage.length; i++) {
-        var k = localStorage.key(i);
+      for (var i = 0; i < _raw.length; i++) {
+        var k = _raw.key(i);
         if (k) {
-          var v = localStorage.getItem(k);
+          var v = _raw.getItem(k);
           if (v) {
             var sz = k.length + v.length;
             totalSize += sz;

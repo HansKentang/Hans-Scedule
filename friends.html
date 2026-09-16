@@ -308,6 +308,262 @@
       .fr-item-actions { margin-left: auto; }
     }
 
+    /* ─── PROFILE CARD ──────────────────────────── */
+    .fr-profile-card {
+      display: flex; align-items: center; gap: var(--space-4);
+      padding: var(--space-5);
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      margin-bottom: var(--space-6);
+      transition: all var(--t-base);
+    }
+    .fr-profile-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .fr-profile-avatar {
+      width: 64px; height: 64px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 700; color: var(--text-inverse);
+      flex-shrink: 0; overflow: hidden;
+    }
+    .fr-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .fr-profile-info { flex: 1; min-width: 0; }
+    .fr-profile-name {
+      font-family: var(--font-serif); font-size: 1.1rem; font-weight: 500;
+      color: var(--text-primary); margin-bottom: 2px;
+    }
+    .fr-profile-status {
+      font-size: 0.72rem; color: var(--text-tertiary); margin-bottom: var(--space-2);
+      cursor: pointer;
+    }
+    .fr-profile-status:hover { color: var(--text-secondary); }
+    .fr-profile-code {
+      font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-tertiary);
+      background: var(--bg-secondary); padding: 2px 8px; border-radius: var(--radius-md);
+      display: inline-block; cursor: pointer; transition: all var(--t-fast);
+    }
+    .fr-profile-code:hover { background: var(--accent-soft); color: var(--primary); }
+    .fr-profile-stats {
+      display: flex; gap: var(--space-4); margin-top: var(--space-2);
+    }
+    .fr-profile-stat {
+      display: flex; align-items: baseline; gap: 4px;
+      font-size: 0.6rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .fr-profile-stat b {
+      font-size: 1rem; font-weight: 700; color: var(--text-primary);
+      letter-spacing: 0; text-transform: none;
+    }
+
+    /* ─── QUICK ACTIONS ROW ──────────────────────── */
+    .fr-quick-row {
+      display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);
+      margin-bottom: var(--space-6);
+    }
+    .fr-quick-row .fr-code-card, .fr-quick-row .fr-add-card { margin-bottom: 0; }
+
+    /* ─── CONVERSATIONS LIST ──────────────────────── */
+    .fr-conv-section { margin-bottom: var(--space-6); }
+    .fr-conv-list {
+      display: flex; flex-direction: column; gap: var(--space-2);
+    }
+    .fr-conv-item {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-card); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      cursor: pointer; transition: all var(--t-fast);
+    }
+    .fr-conv-item:hover { border-color: var(--border-color); background: var(--accent-soft); }
+    .fr-conv-avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 700; color: var(--text-inverse);
+      flex-shrink: 0;
+    }
+    .fr-conv-info { flex: 1; min-width: 0; }
+    .fr-conv-name {
+      font-size: 0.82rem; font-weight: 600; color: var(--text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .fr-conv-preview {
+      font-size: 0.7rem; color: var(--text-tertiary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      margin-top: 1px;
+    }
+    .fr-conv-meta { text-align: right; flex-shrink: 0; }
+    .fr-conv-time {
+      font-size: 0.6rem; color: var(--text-tertiary); white-space: nowrap;
+    }
+    .fr-conv-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--accent); color: var(--text-inverse);
+      font-size: 0.55rem; font-weight: 700; margin-top: 4px;
+    }
+
+    /* ─── LEADERBOARD ──────────────────────────────── */
+    .fr-lb-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl); padding: var(--space-5);
+      margin-bottom: var(--space-6);
+      transition: all var(--t-base);
+    }
+    .fr-lb-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .fr-lb-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+    .fr-lb-title {
+      font-family: var(--font-serif); font-size: 1rem; font-weight: 500;
+      color: var(--text-primary);
+    }
+    .fr-lb-period {
+      font-size: 0.65rem; color: var(--text-tertiary); font-weight: 500;
+    }
+    .fr-lb-list {
+      display: flex; flex-direction: column; gap: var(--space-2);
+    }
+    .fr-lb-row {
+      display: flex; align-items: center; gap: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--radius-md);
+      transition: background var(--t-fast);
+    }
+    .fr-lb-row:hover { background: var(--accent-soft); }
+    .fr-lb-row.me { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+    .fr-lb-rank {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.7rem; font-weight: 700; color: var(--text-tertiary);
+      background: var(--bg-secondary); flex-shrink: 0;
+    }
+    .fr-lb-row:nth-child(1) .fr-lb-rank { background: #fbbf24; color: #000; }
+    .fr-lb-row:nth-child(2) .fr-lb-rank { background: #94a3b8; color: #000; }
+    .fr-lb-row:nth-child(3) .fr-lb-rank { background: #d97706; color: #000; }
+    .fr-lb-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; color: var(--text-inverse);
+      flex-shrink: 0;
+    }
+    .fr-lb-name {
+      flex: 1; font-size: 0.82rem; font-weight: 500; color: var(--text-primary);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .fr-lb-score { text-align: right; }
+    .fr-lb-score-num {
+      font-size: 0.82rem; font-weight: 700; color: var(--text-primary);
+    }
+    .fr-lb-score-label {
+      font-size: 0.5rem; color: var(--text-tertiary); text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── CHALLENGES ──────────────────────────────── */
+    .fr-ch-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl); padding: var(--space-5);
+      margin-bottom: var(--space-6);
+      transition: all var(--t-base);
+    }
+    .fr-ch-card:hover { border-color: var(--text-primary); box-shadow: var(--shadow-sm); }
+    .fr-ch-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+    .fr-ch-title {
+      font-family: var(--font-serif); font-size: 1rem; font-weight: 500;
+      color: var(--text-primary);
+    }
+    .fr-ch-create-btn {
+      display: flex; align-items: center; gap: var(--space-1);
+      padding: var(--space-1) var(--space-3);
+      border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+      background: transparent; color: var(--text-secondary);
+      font-size: 0.72rem; font-weight: 500; cursor: pointer;
+      font-family: var(--font-family); transition: all var(--t-fast);
+    }
+    .fr-ch-create-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--accent-soft); }
+    .fr-ch-list { display: flex; flex-direction: column; gap: var(--space-3); }
+    .fr-ch-item {
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-secondary); border-radius: var(--radius-lg);
+      border: 1px solid var(--border-subtle);
+    }
+    .fr-ch-item-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: var(--space-2);
+    }
+    .fr-ch-item-title { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+    .fr-ch-item-badge {
+      font-size: 0.6rem; font-weight: 600; padding: 2px 8px;
+      border-radius: var(--radius-full); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .fr-ch-item-badge.active { background: color-mix(in srgb, #10b981 12%, transparent); color: #10b981; }
+    .fr-ch-item-badge.completed { background: color-mix(in srgb, #6366f1 12%, transparent); color: #6366f1; }
+    .fr-ch-item-meta { font-size: 0.68rem; color: var(--text-tertiary); margin-bottom: var(--space-2); }
+    .fr-ch-progress-bar {
+      height: 6px; background: var(--bg-primary); border-radius: 3px; overflow: hidden;
+    }
+    .fr-ch-progress-fill {
+      height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.5s ease;
+    }
+    .fr-ch-participants {
+      display: flex; align-items: center; margin-top: var(--space-2);
+    }
+    .fr-ch-participant {
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.5rem; font-weight: 700; color: var(--text-inverse);
+      border: 2px solid var(--bg-card); margin-left: -6px;
+    }
+    .fr-ch-participant:first-child { margin-left: 0; }
+    .fr-ch-empty {
+      text-align: center; padding: var(--space-6) var(--space-4);
+      color: var(--text-tertiary); font-size: 0.78rem;
+    }
+
+    /* ─── ACTIVITY FEED ──────────────────────────── */
+    .fr-feed-section { margin-bottom: var(--space-6); }
+    .fr-feed-list { display: flex; flex-direction: column; }
+    .fr-feed-item {
+      display: flex; align-items: flex-start; gap: var(--space-3);
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--border-subtle);
+      animation: frItemIn 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .fr-feed-item:last-child { border-bottom: none; }
+    .fr-feed-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; color: var(--text-inverse);
+      flex-shrink: 0;
+    }
+    .fr-feed-body { flex: 1; min-width: 0; }
+    .fr-feed-text { font-size: 0.78rem; color: var(--text-primary); line-height: 1.4; }
+    .fr-feed-text strong { font-weight: 600; }
+    .fr-feed-time { font-size: 0.6rem; color: var(--text-tertiary); margin-top: 2px; }
+    .fr-feed-empty {
+      text-align: center; padding: var(--space-6) var(--space-4);
+      color: var(--text-tertiary); font-size: 0.78rem;
+    }
+
+    /* ─── ENHANCED FRIEND CARDS ──────────────────── */
+    .fr-item-badges { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+    .fr-item-badge {
+      font-size: 0.5rem; font-weight: 600; padding: 1px 6px;
+      border-radius: var(--radius-full); background: var(--accent-soft); color: var(--accent);
+    }
+    .fr-item-badge.streak { background: color-mix(in srgb, #f59e0b 12%, transparent); color: #f59e0b; }
+    .fr-item-badge.tasks { background: color-mix(in srgb, #10b981 12%, transparent); color: #10b981; }
+
+    /* ─── RESPONSIVE NEW ──────────────────────────── */
+    @media (max-width: 640px) {
+      .fr-quick-row { grid-template-columns: 1fr; }
+      .fr-profile-card { flex-direction: column; text-align: center; }
+      .fr-profile-stats { justify-content: center; }
+      .fr-profile-code { display: block; width: fit-content; margin: var(--space-2) auto 0; }
+    }
+
     .hub-menu-panel { position:fixed; top:0; right:0; width:300px; max-width:85vw; height:100vh; background:var(--bg-primary); border-left:1px solid var(--border-color); z-index:10000; display:flex; flex-direction:column; transform:translateX(100%); transition:transform 200ms cubic-bezier(0.16,1,0.3,1); box-shadow:-4px 0 24px rgba(0,0,0,0.12); }
     .hub-menu-panel.open { transform:translateX(0); }
     .hub-menu-panel.hidden { display:flex; }
@@ -460,35 +716,110 @@
         </div>
       </section>
 
-        <!-- ─── FRIEND CODE CARD ─────────────────────── -->
-        <div class="hub-anim-in hub-anim-in-2" style="margin-bottom:var(--space-6)">
-          <div class="fr-code-card">
-            <div class="fr-code-label">Your Friend Code</div>
-            <div class="fr-code-row">
-              <span class="fr-code-value" id="frCodeDisplay">—</span>
-              <button class="fr-copy-btn" id="frCopyBtn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                Copy
-              </button>
+        <!-- ─── PROFILE + CODE ROW ─────────────────── -->
+        <div class="hub-anim-in hub-anim-in-2 fr-quick-row">
+          <div class="fr-profile-card">
+            <div class="fr-profile-avatar" id="frProfileAvatar" style="background:var(--accent)">?</div>
+            <div class="fr-profile-info">
+              <div class="fr-profile-name" id="frProfileName">User</div>
+              <div class="fr-profile-status" id="frProfileStatus" title="Click to set status">Click to set status...</div>
+              <div style="display:flex;align-items:center;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-1)">
+                <span class="fr-profile-code" id="frProfileCode" title="Click to copy">—</span>
+              </div>
+              <div class="fr-profile-stats">
+                <div class="fr-profile-stat"><b id="frMyTasks">0</b> tasks</div>
+                <div class="fr-profile-stat"><b id="frMyStreak">0</b> streak</div>
+                <div class="fr-profile-stat"><b id="frMyRate">0%</b> done</div>
+              </div>
             </div>
           </div>
+          <div>
+            <div class="fr-code-card" style="margin-bottom:var(--space-4)">
+              <div class="fr-code-label">Your Friend Code</div>
+              <div class="fr-code-row">
+                <span class="fr-code-value" id="frCodeDisplay">—</span>
+                <button class="fr-copy-btn" id="frCopyBtn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  Copy
+                </button>
+              </div>
+            </div>
+            <div class="fr-add-card">
+              <div class="fr-add-header">Add a Friend</div>
+              <div class="fr-add-row">
+                <input type="text" id="frAddInput" class="fr-add-input" placeholder="Enter friend code (e.g. haven-abc1234)" autocomplete="off" spellcheck="false">
+                <button class="fr-add-btn" id="frAddBtn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add Friend
+                </button>
+              </div>
+              <div class="fr-add-status" id="frAddStatus"></div>
+            </div>
+          </div>
+        </div>
 
-          <!-- ─── ADD FRIEND CARD ───────────────────── -->
-          <div class="fr-add-card">
-            <div class="fr-add-header">Add a Friend</div>
-            <div class="fr-add-row">
-              <input type="text" id="frAddInput" class="fr-add-input" placeholder="Enter friend code (e.g. haven-abc1234)" autocomplete="off" spellcheck="false">
-              <button class="fr-add-btn" id="frAddBtn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add Friend
+        <!-- ─── CONVERSATIONS ─────────────────────── -->
+        <div class="hub-anim-in hub-anim-in-3 fr-conv-section">
+          <div class="fr-section-header">
+            <div class="fr-section-title">Messages</div>
+          </div>
+          <div class="fr-conv-list" id="frConvList">
+            <div class="fr-conv-item" style="opacity:0.5;pointer-events:none">
+              <div class="fr-conv-avatar" style="background:var(--text-tertiary)">?</div>
+              <div class="fr-conv-info">
+                <div class="fr-conv-name">No conversations yet</div>
+                <div class="fr-conv-preview">Start chatting with a friend</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── LEADERBOARD ───────────────────────── -->
+        <div class="hub-anim-in hub-anim-in-4">
+          <div class="fr-lb-card">
+            <div class="fr-lb-header">
+              <div class="fr-lb-title">Leaderboard</div>
+              <div class="fr-lb-period">This Week</div>
+            </div>
+            <div class="fr-lb-list" id="frLeaderboard">
+              <div class="fr-lb-row me">
+                <div class="fr-lb-rank">—</div>
+                <div class="fr-lb-avatar" id="frLbMeAvatar" style="background:var(--accent)">?</div>
+                <div class="fr-lb-name" id="frLbMeName">You</div>
+                <div class="fr-lb-score"><div class="fr-lb-score-num" id="frLbMeScore">0</div><div class="fr-lb-score-label">tasks</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── CHALLENGES ─────────────────────────── -->
+        <div class="hub-anim-in hub-anim-in-5">
+          <div class="fr-ch-card">
+            <div class="fr-ch-header">
+              <div class="fr-ch-title">Challenges</div>
+              <button class="fr-ch-create-btn" id="frChCreateBtn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create
               </button>
             </div>
-            <div class="fr-add-status" id="frAddStatus"></div>
+            <div class="fr-ch-list" id="frChallengeList">
+              <div class="fr-ch-empty">No active challenges. Create one to compete with friends!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── ACTIVITY FEED ──────────────────────── -->
+        <div class="hub-anim-in hub-anim-in-6 fr-feed-section">
+          <div class="fr-section-header">
+            <div class="fr-section-title">Activity</div>
+          </div>
+          <div class="fr-feed-list" id="frFeedList">
+            <div class="fr-feed-empty">Activity from friends will appear here</div>
           </div>
         </div>
 
         <!-- ─── FRIEND LIST ─────────────────────────── -->
-        <div class="hub-anim-in hub-anim-in-3" style="margin-bottom:var(--space-6)">
+        <div class="hub-anim-in hub-anim-in-7" style="margin-bottom:var(--space-6)">
           <div class="fr-section-header">
             <div class="fr-section-title" data-i18n="fr.connections">Connections</div>
             <span class="fr-section-count" id="frTotalCount">0 connections</span>

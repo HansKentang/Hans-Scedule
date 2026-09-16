@@ -1,0 +1,43 @@
+<!DOCTYPE html><html><body>
+<iframe id="f" src="/index.html" style="width:1500px;height:900px"></iframe>
+<pre id="out">PENDING</pre>
+<script>
+localStorage.clear();
+sessionStorage.clear();
+localStorage.setItem('haven-gsi-accounts', JSON.stringify([{id:'u1',name:'Tester'}]));
+localStorage.setItem('haven-gsi-active','u1');
+localStorage.setItem('u1:haven-spotify-playlists', JSON.stringify([{id:'37i9dQZF1DXcBWIGoYBM5M',name:'Test Playlist'}]));
+localStorage.setItem('u1:haven-spotify-active','37i9dQZF1DXcBWIGoYBM5M');
+const hubContent = { bentoLayout:[{t:'spotify',x:24,y:24,w:280,h:420}], goals:['g1'], priorities:['p1'], todos:[], habits:[], links:[], water:{goal:8,logged:0,date:new Date().toISOString().slice(0,10)}, mood:{today:null,history:{}}, countdown:[], expense:{entries:[],balance:0}, notes:'' };
+localStorage.setItem('u1:haven-hub-content', JSON.stringify(hubContent));
+setTimeout(function(){
+  try {
+    var doc = document.getElementById('f').contentDocument;
+    var lines = [];
+    var sp = doc.getElementById('spSidebar');
+    lines.push('spSidebar present: ' + !!sp);
+    if (sp) {
+      var body = sp.closest('.hub-sidebar-body');
+      lines.push('inside hub-sidebar-body: ' + !!body);
+      if (body) lines.push('body.children: ' + Array.prototype.map.call(body.children, function(c){return c.className||c.tagName}).join(' | '));
+      lines.push('spSidebar offsetParent: ' + !!sp.offsetParent);
+      lines.push('spSidebar display: ' + doc.defaultView.getComputedStyle(sp).display);
+      var emb = doc.getElementById('spEmbedWrap');
+      lines.push('embedWrap display: ' + (emb ? doc.defaultView.getComputedStyle(emb).display : 'missing'));
+      var empty = doc.getElementById('spEmpty');
+      lines.push('spEmpty display: ' + (empty ? doc.defaultView.getComputedStyle(empty).display : 'missing'));
+      var ifr = doc.getElementById('spEmbed');
+      lines.push('sidebar iframe src: ' + (ifr ? ifr.src : 'missing'));
+    }
+    var widget = doc.querySelector('.spotify-widget');
+    lines.push('bento spotify widget: ' + !!widget);
+    if (widget) {
+      var wifr = widget.querySelector('iframe');
+      lines.push('widget iframe src: ' + (wifr ? wifr.src : 'missing'));
+    }
+    document.getElementById('out').textContent = 'RESULT_START\n' + lines.join('\n') + '\nRESULT_END';
+  } catch(e) {
+    document.getElementById('out').textContent = 'RESULT_START\nERROR ' + e.message + '\nRESULT_END';
+  }
+}, 5000);
+</script></body></html>

@@ -25,10 +25,16 @@ function loadUsers() {
   localUsers = localUsers.filter(function(u) {
     if (u && u.name === 'Guest' && u !== keep) {
       var prefix = u.id + ':';
-      for (var i = 0; i < __origLS.length; i++) {
-        var key = __origLS.key(i);
-        if (key && key.indexOf(prefix) === 0) __origLS.removeItem(key);
-      }
+      var doomed = [];
+      try {
+        // Collect first, then remove — removing during iteration shifts the
+        // raw store's live length and permanently skips ~half the keys.
+        for (var i = 0; i < __origLS.length; i++) {
+          var key = __origLS.key(i);
+          if (key && key.indexOf(prefix) === 0) doomed.push(key);
+        }
+        for (var j = 0; j < doomed.length; j++) __origLS.removeItem(doomed[j]);
+      } catch (e) { /* ignore */ }
       removed = true;
       return false;
     }
@@ -53,10 +59,14 @@ function getActiveUserId() {
 function setActiveUserId(id) {
   function _clearImages() {
     try {
-      for (var i = localStorage.length - 1; i >= 0; i--) {
-        var k = localStorage.key(i);
-        if (k && (k.indexOf('haven-image-') === 0 || k.indexOf('hub-image-') === 0)) {
-          localStorage.removeItem(k);
+      if (typeof forceFreeImageCache === 'function') {
+        forceFreeImageCache(__origLS.length || 100000);
+      } else {
+        for (var i = __origLS.length - 1; i >= 0; i--) {
+          var k = __origLS.key(i);
+          if (k && (k.indexOf('haven-image-') === 0 || k.indexOf('hub-image-') === 0)) {
+            __origLS.removeItem(k);
+          }
         }
       }
     } catch(e) {}
@@ -754,10 +764,16 @@ function performRemoveProfile(id) {
     }
   } catch (e) {}
   var prefix = user.id + ':';
-  for (var i = 0; i < __origLS.length; i++) {
-    var key = __origLS.key(i);
-    if (key && key.indexOf(prefix) === 0) __origLS.removeItem(key);
-  }
+  var doomed = [];
+  try {
+    // Collect first, then remove — removing during iteration shifts the raw
+    // store's live length and permanently skips ~half the keys.
+    for (var i = 0; i < __origLS.length; i++) {
+      var key = __origLS.key(i);
+      if (key && key.indexOf(prefix) === 0) doomed.push(key);
+    }
+    for (var j = 0; j < doomed.length; j++) __origLS.removeItem(doomed[j]);
+  } catch (e) { /* ignore */ }
   _deleteImageDBByName('haven-images-' + user.id);
   localUsers = localUsers.filter(function(u) { return u.id !== id; });
   saveUsers();
@@ -872,15 +888,15 @@ var _deviceLabel = null;
 function getDeviceId() {
   if (_deviceId) return _deviceId;
   var d = null;
-  try { d = localStorage.getItem('haven-device-id'); } catch (e) {}
-  if (!d) { d = 'dev' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); try { localStorage.setItem('haven-device-id', d); } catch (e) { sessionStorage.setItem('haven-device-id', d); } }
+  try { d = __origLS.getItem('haven-device-id'); } catch (e) {}
+  if (!d) { d = 'dev' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); try { __origLS.setItem('haven-device-id', d); } catch (e) { try { sessionStorage.setItem('haven-device-id', d); } catch (e2) {} } }
   _deviceId = d;
   return d;
 }
 function getDeviceLabel() {
   if (_deviceLabel) return _deviceLabel;
   var stored = null;
-  try { stored = localStorage.getItem('haven-device-label'); } catch (e) {}
+  try { stored = __origLS.getItem('haven-device-label'); } catch (e) {}
   if (!stored) { try { stored = sessionStorage.getItem('haven-device-label'); } catch (e) {} }
   if (stored) { _deviceLabel = stored; return stored; }
   var ua = navigator.userAgent;
@@ -892,8 +908,8 @@ function getDeviceLabel() {
   else if (/Mac/.test(ua)) label = 'Mac';
   else if (/Linux/.test(ua)) label = 'Linux';
   label += ' — ' + window.screen.width + '\u00D7' + window.screen.height;
-  if (typeof safeSetItem === 'function') safeSetItem('haven-device-label', label);
-  else { try { localStorage.setItem('haven-device-label', label); } catch (e) { try { sessionStorage.setItem('haven-device-label', label); } catch (e2) {} } }
+  try { __origLS.setItem('haven-device-label', label); }
+  catch (e) { try { sessionStorage.setItem('haven-device-label', label); } catch (e2) {} }
   _deviceLabel = label;
   return label;
 }
@@ -1243,13 +1259,18 @@ function renderAccountSettings(el) {
   // Export
   document.getElementById('accExport')?.addEventListener('click', function() {
     if (typeof exportAllData === 'function') { exportAllData(); return; }
-    // Fallback: collect all storage keys
+    // Fallback: collect all storage keys (active account, prefix-stripped)
     var data = {};
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.startsWith('haven-')) {
-        try { data[k] = JSON.parse(localStorage.getItem(k)); } catch (e) { try { data[k] = localStorage.getItem(k); } catch(e2) { data[k] = null; } }
-      }
+    var front = (typeof getStoragePrefix === 'function') ? getStoragePrefix() : '';
+    for (var i = 0; i < __origLS.length; i++) {
+      var k = __origLS.key(i);
+      if (!k) continue;
+      var short = front && k.indexOf(front) === 0 ? k.slice(front.length) : (front ? null : k);
+      if (!short) continue;
+      if (short.indexOf('haven-') !== 0) continue;
+      var rawv = __origLS.getItem(k);
+      if (rawv === null) continue;
+      try { data[short] = JSON.parse(rawv); } catch (e) { data[short] = rawv; }
     }
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     var a = document.createElement('a');
@@ -1265,11 +1286,22 @@ function renderAccountSettings(el) {
     if (!confirmAction('This will permanently delete ALL your data (tasks, habits, goals, finance, gallery, settings).\n\nThis cannot be undone. Are you sure?')) return;
     if (!confirmAction('Final confirmation: delete all data?')) return;
     var keys = [];
-    for (var i = 0; i < localStorage.length; i++) {
-      var k = localStorage.key(i);
-      if (k && k.startsWith('haven-')) keys.push(k);
+    // Physical keys are '{userId}:haven-...' when signed in — match the
+    // current account's prefix (or unprefixed guest keys) via the raw store.
+    var pre = (typeof getStoragePrefix === 'function') ? getStoragePrefix() : '';
+    for (var i = 0; i < __origLS.length; i++) {
+      var k = __origLS.key(i);
+      if (!k) continue;
+      var short = pre && k.indexOf(pre) === 0 ? k.slice(pre.length) : k;
+      if (short.indexOf('haven-') !== 0) continue;
+      if (short.indexOf('haven-gsi-') === 0) continue;
+      keys.push(k);
     }
-    keys.forEach(function(k) { try { localStorage.removeItem(k); } catch (e) { /* ignore */ } });
+    keys.forEach(function(k) { try { __origLS.removeItem(k); } catch (e) { /* ignore */ } });
+    if (typeof _deleteImageDBByName === 'function' && typeof getStoragePrefix === 'function') {
+      var _pre = getStoragePrefix();
+      if (_pre) { try { _deleteImageDBByName('haven-images-' + _pre.slice(0, -1)); } catch (e) {} }
+    }
     // Also clear state
     if (typeof state !== 'undefined') {
       if (typeof loadState === 'function') loadState();
@@ -1821,12 +1853,18 @@ function renderShortcutsSettings(el) {
 
 function renderPrivacySettings(el) {
   var keys = [];
-  for (var i = 0; i < localStorage.length; i++) {
-    var k = localStorage.key(i);
-    if (k && k.indexOf('haven-') === 0) keys.push(k);
+  var front = (typeof getStoragePrefix === 'function') ? getStoragePrefix() : '';
+  for (var i = 0; i < __origLS.length; i++) {
+    var k = __origLS.key(i);
+    if (!k) continue;
+    if (front) {
+      if (k.indexOf(front) === 0) keys.push(k.slice(front.length));
+    } else if (k.indexOf('haven-') === 0 && k.indexOf(':') === -1) {
+      keys.push(k);
+    }
   }
   var totalBytes = 0;
-  keys.forEach(function(k) { try { totalBytes += (localStorage.getItem(k) || '').length; } catch(e) {} });
+  keys.forEach(function(k) { try { totalBytes += (__origLS.getItem(front + k) || '').length; } catch(e) {} });
   var kb = totalBytes > 1024 ? (totalBytes / 1024).toFixed(1) + ' KB' : totalBytes + ' B';
 
   var listHtml = keys.length === 0

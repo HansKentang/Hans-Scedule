@@ -92,13 +92,15 @@ function cleanupOldPicsumDefaults() {
   }
   // Also clean up any standalone localStorage keys
   try {
-    for (var i = localStorage.length - 1; i >= 0; i--) {
-      var k = localStorage.key(i);
-      if (k && k.indexOf('haven-image-gallery-image-') === 0) {
-        var val = localStorage.getItem(k);
-        if (val && val.indexOf('https://picsum.photos/') === 0) {
-          localStorage.removeItem(k);
-        }
+    var pre = (typeof getStoragePrefix === 'function') ? getStoragePrefix() : '';
+    for (var i = __origLS.length - 1; i >= 0; i--) {
+      var k = __origLS.key(i);
+      if (!k) continue;
+      var short = pre && k.indexOf(pre) === 0 ? k.slice(pre.length) : k;
+      if (short.indexOf('haven-image-gallery-image-') !== 0) continue;
+      var val = __origLS.getItem(k);
+      if (val && val.indexOf('https://picsum.photos/') === 0) {
+        __origLS.removeItem(k);
       }
     }
   } catch (e) {}

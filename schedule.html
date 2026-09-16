@@ -7,11 +7,11 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Hav�n">
+  <meta name="apple-mobile-web-app-title" content="Havën">
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
-  <title>Hav�n Schedule � Schedule</title>
+  <title>Havën Schedule — Schedule</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
@@ -36,7 +36,7 @@
     }
     .sch-mini-day.today.has-tasks::after { background: var(--text-inverse); background: contrast-color(var(--accent)); }
 
-    /* Calendar header � thin breadcrumb style */
+    /* Calendar header — thin breadcrumb style */
     .sch-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: var(--space-2) var(--space-5);
@@ -61,7 +61,7 @@
     .sch-holiday-badge:active { transform: scale(0.95); }
     .sch-holiday-badge:focus-visible { box-shadow: var(--focus-ring); }
     .sch-api-badge #taskCount { font-weight: 600; color: var(--text-primary); font-size: 0.68rem; }
-    /* active = holiday mode on � keep neutral, accent only on hover */
+    /* active = holiday mode on — keep neutral, accent only on hover */
 
     /* Calendar container */
     #calendarContainer { flex: 1; overflow: auto; position: relative; display: flex; flex-direction: column; }
@@ -123,17 +123,6 @@
     }
     .sch-pm-chip.active:hover { transform: translateY(-1px) scale(1.01); }
     .sch-pm-chip:active { transform: scale(0.95); transition-duration: 100ms; }
-    .sch-pm-chip-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--chip-accent, var(--gray-300));
-      opacity: 0.6;
-      flex-shrink: 0;
-      transition: opacity 250ms ease, box-shadow 300ms ease;
-    }
-    .sch-pm-chip.active .sch-pm-chip-dot {
-      opacity: 0.9;
-      box-shadow: 0 0 6px 1px var(--chip-accent, var(--accent));
-    }
     .sch-pm-chip-count {
       font-size: 0.5rem;
       opacity: 0.55;
@@ -274,7 +263,9 @@
       width: 200px; background: var(--bg-primary);
       border: 1px solid var(--border-color);
       border-radius: 10px; box-shadow: var(--shadow-lg);
-    /* --- ADD CATEGORY MODAL (mirrors task modal glass card) -- */
+      z-index: 100; padding: var(--space-2) 0;
+    }
+    /* --- ADD CATEGORY POPUP CARD (mirrors task modal glass card, centered) -- */
     #catOverlay {
       position: fixed; inset: 0; z-index: 102;
       background: rgba(0,0,0,0.55);
@@ -284,21 +275,43 @@
       transition: opacity 300ms ease, visibility 300ms ease;
     }
     #catOverlay.active { opacity: 1; visibility: visible; pointer-events: auto; }
-    #catModal {
-      z-index: 103; background: rgba(20,20,20,0.85);
+    #catPopup {
+      z-index: 103;
+      background: rgba(20,20,20,0.85);
       backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
       box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset, 0 1px 0 rgba(255,255,255,0.06) inset;
-      width: 440px; max-width: calc(100vw - 32px);
-      height: min(600px, calc(100vh - 40px));
-      transform: scale(0.94) translateY(16px); opacity: 0; visibility: hidden;
+      width: 560px; max-width: calc(100vw - 32px);
+      height: min(560px, calc(100vh - 40px));
+      transform: scale(0.94) translateY(16px);
+      opacity: 0; visibility: hidden; pointer-events: none;
       transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, visibility 300ms ease;
       display: flex; flex-direction: column; overflow: hidden;
     }
-    html.light #catOverlay { background: rgba(0,0,0,0.25); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
-    html.light #catModal {
-      background: rgba(255,255,255,0.86); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    #catOverlay.active #catPopup { transform: scale(1) translateY(0); opacity: 1; visibility: visible; pointer-events: auto; }
+    #catPopup .tm-header { padding: 16px 20px; }
+    #catPopup #catAddDot { width: 32px; height: 32px; border-radius: 10px; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+    #catPopup .tm-body { padding: 16px 20px 20px; overflow-y: auto; flex: 1; }
+    #catPopup .tm-field { margin-bottom: 14px; }
+    #catPopup .tm-field:last-child { margin-bottom: 0; }
+    #catPopup .tm-section { margin-bottom: 14px; }
+    #catPopup .tm-section-label { margin-bottom: 8px; }
+    #catPopup .tm-row { margin-bottom: 14px; }
+    #catPopup .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; align-items: start; }
+    #catPopup .tm-footer { margin-top: 4px; }
+    #catPopup .tm-textarea { resize: none; min-height: 40px; }
+    #catPopup #catPreviewCard { --chip-accent: #6366f1; }
+    #catPopup .cat-error { min-height: 0; margin-top: 6px; }
+    html.light #catOverlay {
+      background: rgba(0,0,0,0.25);
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    }
+    html.light #catPopup {
+      background: rgba(255,255,255,0.86);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
       border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.5) inset, 0 1px 0 rgba(255,255,255,0.9) inset;
+    }
     .cat-swatches { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .cat-swatch {
       width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent;
@@ -343,13 +356,10 @@
     .cat-dup-row { display: flex; gap: 8px; }
     .cat-dup-row .tm-input-wrap { flex: 1; }
     .cat-dup-row select.tm-input { cursor: pointer; appearance: none; padding-right: 18px; }
-    @media (max-width: 640px) { .sch-pm-add-chip { width: 26px; height: 26px; } }
-      box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.5) inset, 0 1px 0 rgba(255,255,255,0.9) inset;
-    }
-    #catOverlay.active #catModal { transform: scale(1) translateY(0); opacity: 1; visibility: visible; }
-    #catModal .tm-field, #catModal .tm-section, #catModal .tm-row, #catModal .tm-footer { animation: tmFieldIn 350ms ease both; }
-    #catModal .tm-footer { animation-delay: 200ms; }
-      z-index: 100; padding: var(--space-2) 0;
+    @media (max-width: 640px) {
+      .sch-pm-add-chip { width: 26px; height: 26px; }
+      #catPopup { width: calc(100vw - 32px); }
+      #catPopup .cat-grid { grid-template-columns: 1fr; }
     }
     .sch-menu-section { padding: 0 var(--space-2); }
     .sch-menu-section + .sch-menu-section { border-top: 1px solid var(--border-subtle); margin-top: var(--space-2); padding-top: var(--space-2); }
@@ -427,7 +437,6 @@
         padding: 4px 10px 4px 7px;
         gap: 4px;
       }
-      .sch-pm-chip-dot { width: 7px; height: 7px; }
       .sch-pm-chip-del { width: 20px; height: 20px; opacity: 0.4; font-size: 0.6rem; }
       .sch-pm-chip-edit { width: 20px; height: 20px; opacity: 0.4; }
       .sch-pm-chip-edit svg { width: 12px; height: 12px; }
@@ -450,7 +459,7 @@
       .sch-sc-bar-add-input:focus { width: 120px; }
       .sch-sc-bar-add-btn { width: 24px; height: 24px; }
 
-      /* Calendar grid mobile � single-day view with hidden overflow */
+      /* Calendar grid mobile — single-day view with hidden overflow */
       #calendarContainer { overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 
       /* Filters bar mobile */
@@ -484,7 +493,6 @@
       /* --- PILL MANAGER EXTRA COMPACT -- */
       .sch-pill-manager { padding: 2px var(--space-2); gap: 2px; min-height: 24px; }
       .sch-pm-chip { font-size: 0.52rem; padding: 3px 7px 3px 5px; gap: 3px; min-height: 28px; }
-      .sch-pm-chip-dot { width: 5px; height: 5px; }
       .sch-pm-chip-count { font-size: 0.42rem; padding: 0 3px; }
 
       /* --- SUBCATEGORY BAR COMPACT -- */
@@ -689,8 +697,8 @@
     <!-- --- SIDEBAR (Hub workspace) ---------------------- -->
     <aside class="hub-sidebar" role="navigation" aria-label="Sidebar" id="hubSidebar">
       <div class="hub-workspace">
-        <a href="login.html" class="hub-workspace-link"><div class="hub-workspace-icon"><img src="assets/icon-192.png" alt="Hav�n"></div>
-        <span class="hub-workspace-name">Hav�n</span></a>
+        <a href="login.html" class="hub-workspace-link"><div class="hub-workspace-icon"><img src="assets/icon-192.png" alt="Havën"></div>
+        <span class="hub-workspace-name">Havën</span></a>
         <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
         <button class="hub-hamburger" aria-label="Menu">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -787,13 +795,13 @@
         <div class="hub-footer-btns">
           <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
           <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg><span>Theme</span></button>
-          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode � tap any image to change">
+          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
             <span>Visuals</span>
           </button>
         </div>
         <div class="sidebar-legal">
-          <a href="privacy.html">Privacy</a><span>�</span><a href="terms.html">Terms</a><span>�</span><a href="support.html">Support</a>
+          <a href="privacy.html">Privacy</a><span>·</span><a href="terms.html">Terms</a><span>·</span><a href="support.html">Support</a>
         </div>
       </div>
     </aside>
@@ -1020,9 +1028,7 @@
             <div class="tm-section-label">Priority</div>
             <div class="tm-priority" id="prioritySelectGroup">
               <button type="button" class="tm-pr" data-priority="1" style="--pr-c:#ef4444">Urgent</button>
-              <button type="button" class="tm-pr" data-priority="2" style="--pr-c:#f59e0b">High</button>
-              <button type="button" class="tm-pr active" data-priority="3" style="--pr-c:#818cf8">Medium</button>
-              <button type="button" class="tm-pr" data-priority="4" style="--pr-c:#6b7280">Low</button>
+              <button type="button" class="tm-pr active" data-priority="3" style="--pr-c:#6b7280">None</button>
             </div>
           </div>
 
@@ -1090,30 +1096,27 @@
               <textarea id="taskNotes" class="tm-textarea" rows="2" placeholder="Add notes..."></textarea>
             </div>
           </div>
-
-          <div class="tm-footer">
-            <button type="button" id="taskDeleteBtn" class="tm-btn tm-btn-danger hidden">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-            </button>
-            <div class="tm-footer-right">
-              <button type="button" id="taskCancelBtn" class="tm-btn tm-btn-ghost">Cancel</button>
-              <button type="submit" id="taskSaveBtn" class="tm-btn tm-btn-primary">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Save
-              </button>
-            </div>
-          </div>
         </form>
+      </div>
+      <div class="tm-footer">
+        <button type="button" id="taskDeleteBtn" class="tm-btn tm-btn-danger hidden">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+        <div class="tm-footer-right">
+          <button type="button" id="taskCancelBtn" class="tm-btn tm-btn-ghost">Cancel</button>
+          <button type="submit" id="taskSaveBtn" class="tm-btn tm-btn-primary" form="taskForm">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Save
+          </button>
+        </div>
       </div>
     </div>
     </div>
     <div id="catOverlay" class="hidden">
-    <div id="catModal" class="hidden" role="dialog" aria-label="Add Category">
+    <div id="catPopup" class="hidden" role="dialog" aria-label="Add Category">
       <div class="tm-header">
         <div class="tm-header-left">
-          <div class="tm-icon" id="catModalIcon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </div>
+          <div class="tm-dot" id="catAddDot" style="background:#6366f1"></div>
           <div class="tm-header-text">
             <h3>New Category</h3>
             <span class="tm-task-id">pill + template defaults</span>
@@ -1127,6 +1130,8 @@
         <div class="tm-field">
           <input type="text" id="catAddInput" class="tm-title-input" placeholder="Category name" maxlength="30" autocomplete="off">
         </div>
+        <div class="cat-grid">
+          <div class="cat-grid-col">
         <div class="tm-section">
           <div class="tm-section-label">Color</div>
           <div class="cat-swatches" id="catAddSwatches">
@@ -1160,10 +1165,21 @@
             </div>
           </div>
         </div>
+        <div class="tm-section">
+          <div class="tm-section-label">Duplicate existing</div>
+          <div class="cat-dup-row">
+            <div class="tm-input-wrap">
+              <select id="catAddDuplicate" class="tm-input"></select>
+            </div>
+            <button type="button" id="catAddDuplicateBtn" class="tm-btn tm-btn-ghost" style="flex-shrink:0">Use template</button>
+          </div>
+        </div>
+          </div>
+          <div class="cat-grid-col">
         <div class="tm-field">
           <div class="tm-section-label">Subcategories</div>
           <div class="tm-input-wrap tm-textarea-wrap">
-            <textarea id="catAddSubcategories" class="tm-textarea" rows="2" placeholder="One per line, e.g. Branding, UI, Research" maxlength="300" spellcheck="false"></textarea>
+            <textarea id="catAddSubcategories" class="tm-textarea" rows="3" placeholder="One per line, e.g. Branding, UI, Research" maxlength="300" spellcheck="false"></textarea>
           </div>
           <div class="cat-preset-row" id="catAddPresets">
             <button type="button" class="cat-preset" data-preset="focus">Focus</button>
@@ -1174,20 +1190,13 @@
           </div>
         </div>
         <div class="tm-section">
-          <div class="tm-section-label">Duplicate existing</div>
-          <div class="cat-dup-row">
-            <div class="tm-input-wrap">
-              <select id="catAddDuplicate" class="tm-input"></select>
-            </div>
-            <button type="button" id="catAddDuplicateBtn" class="tm-btn tm-btn-ghost" style="flex-shrink:0">Use template</button>
-          </div>
-        </div>
-        <div class="tm-section">
           <div class="tm-section-label">Preview</div>
           <div class="cat-preview" aria-live="polite" id="catPreviewCard">
             <span class="cat-preview-chip"><span class="cat-preview-dot"></span><span id="catPreviewName">New category</span></span>
             <div class="cat-preview-meta"><span id="catPreviewTime">09:00</span><span id="catPreviewDuration">60 min</span></div>
             <div class="cat-preview-subs" id="catPreviewSubs"></div>
+          </div>
+        </div>
           </div>
         </div>
         <div class="cat-error" id="catAddError" role="alert"></div>

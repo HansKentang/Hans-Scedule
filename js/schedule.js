@@ -1392,7 +1392,7 @@ function renderTasks() {
       if (dur <= 30) cls.push('task-xs');
       else if (dur <= 60) cls.push('task-sm');
       if (weekSelected.has(task.id)) cls.push('task-selected');
-      if (task.priority) cls.push(`priority-${task.priority}`);
+      if (task.priority === 1) cls.push('priority-1');
 
       const el = document.createElement('div');
       el.className = cls.join(' ');
@@ -1403,11 +1403,7 @@ function renderTasks() {
       el.style.cssText = `top:${top}px;min-height:${height}px;left:${cardLeft};width:${cardWidth}${zIdx}`;
       el.dataset.restoreZ = restoreZ;
       const checked = task.completed ? ' checked' : '';
-      const pCls = task.priority && task.priority < 3 ? ` priority-${task.priority}` : '';
-      var shortTime = '';
-      if (task.startTime) {
-        shortTime = formatCompactTime(task.startTime, task.endTime);
-      }
+      const pCls = task.priority === 1 ? ' priority-1' : '';
       var tagLabelText = TAG_LABELS[task.tag] || task.tag;
       var durText = '';
       if (task.startTime && task.endTime) {
@@ -1416,10 +1412,16 @@ function renderTasks() {
         var d = (eh * 60 + em) - (sh * 60 + sm);
         if (d > 0) durText = d >= 60 ? (Math.floor(d / 60) + 'h' + (d % 60 ? ' ' + d % 60 + 'm' : '')) : d + 'm';
       }
+      var shortTime = '';
+      if (task.startTime) {
+        shortTime = formatCompactTime(task.startTime, task.endTime);
+        if (durText) shortTime += ' · ' + durText;
+      }
+      const prioIcon = task.priority === 1 ? `<span class="task-prio-icon prio-1" title="Urgent">!</span>` : '';
       el.innerHTML = `<div class="task-body${pCls}">
           <div class="task-row">
             <span class="task-check${checked}" data-toggle-complete="${task.id}"></span>
-            <span class="task-dot"></span>
+            ${prioIcon}
             <span class="task-title" data-task-id="${task.id}">${escapeHtml(task.title)}</span>
             <span class="task-time">${shortTime}</span>
           </div>
@@ -1427,6 +1429,7 @@ function renderTasks() {
             <span class="task-tag-chip" style="--chip-accent:${(TAG_COLORS[task.tag] || TAG_COLORS.meeting).text}">${escapeHtml(tagLabelText)}</span>
             <span class="task-duration">${durText}</span>
           </div>
+          ${task.notes ? `<div class="task-notes">${escapeHtml(task.notes)}</div>` : ''}
         </div>
         <div class="task-resize-handle" data-task-id="${task.id}" title="Drag to resize"></div>`;
 
@@ -1732,7 +1735,6 @@ function buildNewTaskGhost(drag, refWidth) {
     const width = Math.max((colRect ? colRect.width : 160) - 8, 120);
     ghost.innerHTML = `<div class="task-body">
         <div class="task-row">
-          <span class="task-dot"></span>
           <span class="task-title">${escapeHtml(drag.title || 'New Task')}</span>
         </div>
         <div class="task-meta">
@@ -2405,13 +2407,13 @@ function bindEvents() {
 
   initCatAddModal();
 
-  // ─── Add Category modal (task-modal card design) ──
+  // ─── Add Category modal (mirrors task modal glass card, centered) ──
   let _catColor = '#6366f1';
   function catEls() {
     return {
       btn: document.getElementById('catAddBtn'),
       overlay: document.getElementById('catOverlay'),
-      modal: document.getElementById('catModal'),
+      popup: document.getElementById('catPopup'),
       input: document.getElementById('catAddInput'),
       swatches: document.getElementById('catAddSwatches'),
       picker: document.getElementById('catColorPicker'),
@@ -2424,7 +2426,7 @@ function bindEvents() {
       cancel: document.getElementById('catAddCancel'),
       close: document.getElementById('catModalClose'),
       err: document.getElementById('catAddError'),
-      icon: document.getElementById('catModalIcon'),
+      dot: document.getElementById('catAddDot'),
       prevCard: document.getElementById('catPreviewCard'),
       prevName: document.getElementById('catPreviewName'),
       prevTime: document.getElementById('catPreviewTime'),
@@ -2457,7 +2459,7 @@ function bindEvents() {
     if (e.prevTime) e.prevTime.textContent = start;
     if (e.prevDur) e.prevDur.textContent = dur + ' min';
     if (e.prevCard) e.prevCard.style.setProperty('--chip-accent', _catColor);
-    if (e.icon) { e.icon.style.background = _catColor; e.icon.style.boxShadow = '0 2px 8px ' + _catColor + '66'; }
+    if (e.dot) e.dot.style.background = _catColor;
     if (e.prevSubs) {
       const subs = readCatSubs();
       e.prevSubs.innerHTML = subs.length
@@ -2467,7 +2469,7 @@ function bindEvents() {
   }
   function openCatModal() {
     const e = catEls();
-    if (!e.overlay || !e.modal) return;
+    if (!e.overlay || !e.popup) return;
     _catColor = '#6366f1';
     if (e.input) e.input.value = '';
     if (e.subs) e.subs.value = '';
@@ -2482,22 +2484,29 @@ function bindEvents() {
     }
     syncCatSwatches();
     updateCatPreview();
+    e.popup.classList.remove('hidden');
     e.overlay.classList.remove('hidden');
-    e.modal.classList.remove('hidden');
-    requestAnimationFrame(() => e.overlay.classList.add('active'));
-    document.body.style.overflow = 'hidden';
+    state.catModalOpen = true;
+    requestAnimationFrame(() => {
+      e.overlay.classList.add('active');
+      e.popup.classList.add('active');
+    });
     setTimeout(() => e.input?.focus(), 120);
   }
   function closeCatModal() {
     const e = catEls();
-    if (!e.overlay || !e.modal) return;
+    if (!e.overlay || !e.popup) return;
     e.overlay.classList.remove('active');
-    setTimeout(() => { e.overlay.classList.add('hidden'); e.modal.classList.add('hidden'); }, 280);
-    document.body.style.overflow = '';
+    e.popup.classList.remove('active');
+    state.catModalOpen = false;
+    setTimeout(() => {
+      e.popup.classList.add('hidden');
+      e.overlay.classList.add('hidden');
+    }, 240);
   }
   function initCatAddModal() {
     const e = catEls();
-    if (!e.btn || !e.overlay) return;
+    if (!e.btn || !e.popup || !e.overlay) return;
     const PRESETS = {
       focus: ['Deep Work', 'Planning', 'Review', 'Admin'],
       meetings: ['Standup', '1:1', 'Client Call', 'Brainstorm'],
@@ -2505,10 +2514,13 @@ function bindEvents() {
       study: ['Reading', 'Notes', 'Practice', 'Review'],
       creative: ['Sketch', 'Draft', 'Edit', 'Publish'],
     };
-    e.btn.addEventListener('click', openCatModal);
+    e.btn.addEventListener('click', (ev) => { ev.stopPropagation(); if (e.popup.classList.contains('active')) closeCatModal(); else openCatModal(); });
     e.cancel?.addEventListener('click', closeCatModal);
     e.close?.addEventListener('click', closeCatModal);
-    e.overlay.addEventListener('click', (ev) => { if (ev.target === e.overlay) closeCatModal(); });
+    e.overlay?.addEventListener('click', (ev) => {
+      if (ev.target === e.overlay) closeCatModal();
+    });
+    e.popup?.addEventListener('click', (ev) => ev.stopPropagation());
     e.swatches?.addEventListener('click', (ev) => {
       const sw = ev.target.closest('.cat-swatch');
       if (!sw) return;
@@ -2551,7 +2563,7 @@ function bindEvents() {
       closeCatModal();
       showToast('Category "' + escapeHtml(name) + '" added', 'success', 2500);
     });
-    e.modal?.addEventListener('keydown', (ev) => {
+    e.popup?.addEventListener('keydown', (ev) => {
       if (ev.key === 'Escape') { ev.stopPropagation(); closeCatModal(); }
       if (ev.key === 'Enter' && ev.target.tagName !== 'TEXTAREA') { ev.preventDefault(); e.save?.click(); }
     });
@@ -3070,7 +3082,6 @@ function renderSchTemplates() {
     const isBuiltin = BUILTIN_TAGS.includes(tag);
     html += `<div class="sch-pm-chip${isOpen ? ' active' : ''}" data-pm-tag="${tag}"
       style="--chip-accent:${accent}" role="button" tabindex="0">
-      <span class="sch-pm-chip-dot" style="background:${accent}"></span>
       <span class="sch-pm-chip-label">${TAG_LABELS[tag]}</span>
       ${subs.length > 0 ? `<span class="sch-pm-chip-count">${subs.length}</span>` : ''}
     </div>`;
