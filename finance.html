@@ -1075,6 +1075,8 @@
 
     function init() {
       loadState();
+      applyTheme();
+      document.getElementById('themeBtnSidebar')?.addEventListener('click', toggleTheme);
       const dateEl = document.getElementById('finDate');
       if (dateEl) dateEl.value = new Date().toISOString().slice(0,10);
       document.getElementById('finAddBtn').addEventListener('click', addTransaction);

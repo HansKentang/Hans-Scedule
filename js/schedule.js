@@ -2435,9 +2435,12 @@ function bindEvents() {
     };
   }
   function syncCatSwatches() {
-    document.querySelectorAll('#catAddSwatches .cat-swatch').forEach(el => {
-      el.classList.toggle('selected', (el.dataset.color || '').toLowerCase() === String(_catColor).toLowerCase());
-    });
+    const dot = document.getElementById('catColorDot');
+    const hex = document.getElementById('catColorHex');
+    const picker = document.getElementById('catColorPicker');
+    if (dot) dot.style.background = _catColor;
+    if (hex) hex.textContent = _catColor;
+    if (picker) picker.value = _catColor;
   }
   function readCatSubs() {
     const raw = document.getElementById('catAddSubcategories')?.value || '';
@@ -2521,15 +2524,11 @@ function bindEvents() {
       if (ev.target === e.overlay) closeCatModal();
     });
     e.popup?.addEventListener('click', (ev) => ev.stopPropagation());
-    e.swatches?.addEventListener('click', (ev) => {
-      const sw = ev.target.closest('.cat-swatch');
-      if (!sw) return;
-      _catColor = sw.dataset.color;
-      if (e.picker) e.picker.value = _catColor;
-      syncCatSwatches();
-      updateCatPreview();
+    document.getElementById('catColorBtn')?.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (typeof openColorPopup !== 'function') return;
+      openColorPopup(document.getElementById('catColorBtn'), { title: 'Category color', value: _catColor, onPick: (hex) => { _catColor = hex; syncCatSwatches(); updateCatPreview(); } });
     });
-    e.picker?.addEventListener('input', () => { _catColor = e.picker.value; syncCatSwatches(); updateCatPreview(); });
     [e.input, e.subs, e.start, e.dur].forEach(el => el?.addEventListener('input', updateCatPreview));
     document.getElementById('catAddPresets')?.addEventListener('click', (ev) => {
       const b = ev.target.closest('.cat-preset');

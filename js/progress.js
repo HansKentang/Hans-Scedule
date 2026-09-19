@@ -482,8 +482,8 @@ function openAddCategoryPopup(anchorEl) {
       <div class="tf-group">
         <label class="tf-label">Color</label>
         <div class="add-cat-color-row">
-          <input type="color" id="addCatColor" value="#6366f1">
-          <span style="font-size:0.65rem;color:var(--text-tertiary);opacity:0.6">Pick a color</span>
+          <button class="cpop-trigger" id="addCatColorBtn"><span class="cpop-trigger-dot" style="background:#6366f1"></span><span class="cpop-trigger-hex">#6366f1</span></button>
+          <input type="hidden" id="addCatColor" value="#6366f1">
         </div>
       </div>
       <div class="add-cat-actions">
@@ -513,6 +513,19 @@ function openAddCategoryPopup(anchorEl) {
 
   document.getElementById('addCatCancel')?.addEventListener('click', () => popup.remove());
   document.getElementById('addCatSave')?.addEventListener('click', saveNewCategory);
+  document.getElementById('addCatColorBtn')?.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const btn = document.getElementById('addCatColorBtn');
+    const hidden = document.getElementById('addCatColor');
+    if (typeof openColorPopup !== 'function' || !btn || !hidden) return;
+    openColorPopup(btn, { title: 'Category color', value: hidden.value, onPick: function(hex) {
+      hidden.value = hex;
+      const dot = btn.querySelector('.cpop-trigger-dot');
+      const label = btn.querySelector('.cpop-trigger-hex');
+      if (dot) dot.style.background = hex;
+      if (label) label.textContent = hex;
+    } });
+  });
   popup.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { popup.remove(); }
     if (e.key === 'Enter') { e.preventDefault(); saveNewCategory(); }

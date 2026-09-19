@@ -20,7 +20,7 @@ const SETTINGS_EXPORT_KEYS = [
   'haven-hub-content',
   'haven-schedule-hub-layout',
   'haven-hub-visibility',
-  'haven-schedule-routine',
+  'haven-schedule-sleep-routine',
   'haven-schedule-profile',
   'haven-chickbot-profile',
   'haven-ai-extra-instructions',

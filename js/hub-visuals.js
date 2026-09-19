@@ -167,6 +167,77 @@ try { _hwStyles = JSON.parse(localStorage.getItem(HW_STYLES_KEY) || '{}'); } cat
 function _getHwStyle(uid) { return _hwStyles[uid] || 'default'; }
 function _setHwStyle(uid, style) { _hwStyles[uid] = style; try { localStorage.setItem(HW_STYLES_KEY, JSON.stringify(_hwStyles)); } catch(e) {} }
 
+function _studyUid(p) { return (p || 'st') + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36); }
+function _normalizeStudy(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map(function(s) {
+    var subj = (s && typeof s === 'object') ? s : { name: String(s || '') };
+    var chapters = Array.isArray(subj.chapters) ? subj.chapters.map(function(c) {
+      var chap = (c && typeof c === 'object') ? c : { name: String(c || '') };
+      var items = Array.isArray(chap.items) ? chap.items.map(function(it) {
+        if (it && typeof it === 'object') return { id: it.id || _studyUid('si'), text: it.text || it.name || '', done: !!it.done };
+        return { id: _studyUid('si'), text: String(it || ''), done: false };
+      }) : [];
+      return { id: chap.id || _studyUid('ch'), name: chap.name || 'Chapter', collapsed: !!chap.collapsed, items: items };
+    }) : [];
+    return { id: subj.id || _studyUid('sj'), name: subj.name || 'Subject', color: subj.color || '', collapsed: !!subj.collapsed, chapters: chapters };
+  });
+}
+function _ensureStudy() {
+  if (!hubContent) return [];
+  if (!Array.isArray(hubContent.study)) hubContent.study = [];
+  hubContent.study = _normalizeStudy(hubContent.study);
+  return hubContent.study;
+}
+function _findStudy(sid, cid, iid) {
+  var subs = _ensureStudy();
+  var sj = null, ch = null, it = null;
+  for (var i = 0; i < subs.length; i++) {
+    if (subs[i].id === sid) { sj = subs[i]; break; }
+  }
+  if (!sj) return {};
+  if (cid === undefined || cid === null) return { sj: sj };
+  for (var j = 0; j < sj.chapters.length; j++) {
+    if (sj.chapters[j].id === cid) { ch = sj.chapters[j]; break; }
+  }
+  if (!ch) return { sj: sj };
+  if (iid === undefined || iid === null) return { sj: sj, ch: ch };
+  for (var k = 0; k < ch.items.length; k++) {
+    if (ch.items[k].id === iid) { it = ch.items[k]; break; }
+  }
+  return { sj: sj, ch: ch, it: it };
+}
+function _studyCounts(items) {
+  var total = items.length;
+  var done = 0;
+  for (var i = 0; i < items.length; i++) if (items[i].done) done++;
+  return { done: done, total: total, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+function _studySubjectItems(sj) {
+  var out = [];
+  (sj.chapters || []).forEach(function(c) { (c.items || []).forEach(function(it) { out.push(it); }); });
+  return out;
+}
+function _closeStudyColorPopup() {
+  if (typeof closeColorPopup === 'function') closeColorPopup();
+  var p = document.querySelector('.w-st-color-pop');
+  if (p) p.remove();
+}
+function _openStudyColorPopup(sid, anchor) {
+  var found = _findStudy(sid);
+  if (!found.sj) return;
+  var sj = found.sj;
+  if (typeof openColorPopup === 'function') {
+    openColorPopup(anchor, { title: sj.name || 'Subject', value: sj.color || '', onPick: function(hex) {
+      var f = _findStudy(sid);
+      if (!f.sj) return;
+      f.sj.color = hex;
+      saveHubContent();
+      renderHubBento();
+    } });
+  }
+}
+
 const TEXT_STYLES_KEY = 'haven-text-styles';
 const TEXT_STYLE_LIST = ['sans','serif','mono','georgia','arial','times','courier','verdana','consolas'];
 let _textStyles = {};
@@ -553,19 +624,20 @@ function getQuoteOfTheWeek() {
 /* ─── Default hub content ──────────────────── */
 const HUB_DEFAULTS = {
   greeting: '',
-  goals: ['develop emotional maturity', 'go to the gym + workout consistently', 'eat intentionally', 'learn finances via books'],
-  priorities: ['mental and physical health', 'academics', 'self-development'],
+  goals: [],
+  priorities: [],
   quote: getQuoteOfTheWeek(),
-  todos: [{ text: 'get driver\'s license', done: false }, { text: 'get gym membership', done: false }],
-  habits: ['drink water', 'exercise', 'read'],
+  todos: [],
+  habits: [],
 
   notes: '',
-  links: [{ label: 'GitHub', url: 'https://github.com' }, { label: 'Reddit', url: 'https://reddit.com' }],
+  links: [],
   water: { goal: 8, logged: 0, date: new Date().toISOString().slice(0,10) },
   mood: { today: null, history: {} },
-  countdown: [{ label: 'New Year', date: '2027-01-01' }, { label: 'Summer', date: '2026-06-21' }],
+  countdown: [],
   expense: { entries: [], balance: 0 },
-  homework: [{ text: 'Math Ch.5 Problems', subject: 'Math', due: '2026-09-20', priority: 'high', done: false }, { text: 'English Essay Draft', subject: 'English', due: '2026-09-22', priority: 'medium', done: false }, { text: 'Science Lab Report', subject: 'Science', due: '2026-09-25', priority: 'low', done: false }],
+  homework: [],
+  study: [],
   gallery: [
     { label: 'Schedule', desc: 'Time-blocking grid with drag & drop, AI scheduling, and week/month/agenda views.', href: 'schedule.html', icon: 'calendar', color: 'var(--tag-deep-work-text)', bg: 'var(--tag-deep-work-bg)' },
     { label: 'Progress', desc: 'Board, timeline, log, and charts tracking what you do and how you are doing.', href: 'progress.html', icon: 'chart', color: 'var(--tag-hobby-text)', bg: 'var(--tag-hobby-bg)' },
@@ -605,6 +677,8 @@ if (!hc.goals) hc.goals = [...defaults.goals];
       if (hc.notes === undefined) hc.notes = '';
       if (!hc.links) hc.links = defaults.links.map(l => ({...l}));
       if (!hc.homework) hc.homework = defaults.homework.map(h => ({...h}));
+      if (!hc.study) hc.study = [];
+      else hc.study = _normalizeStudy(hc.study);
       return hc;
     }
   } catch(e) { console.warn('[img] loadHubContent: error:', e); }
@@ -630,6 +704,8 @@ if (!hc.goals) hc.goals = [...defaults.goals];
       if (tc.notes === undefined) tc.notes = '';
       if (!tc.links) tc.links = defaults.links.map(function(l) { return {label:l.label,url:l.url}; });
       if (!tc.homework) tc.homework = defaults.homework.map(function(h) { return {text:h.text,subject:h.subject,due:h.due,priority:h.priority,done:h.done}; });
+      if (!tc.study) tc.study = [];
+      else tc.study = _normalizeStudy(tc.study);
       return tc;
     }
   } catch(e) {}
@@ -882,6 +958,8 @@ function renderHubBento() {
   if (!hubContent.countdown) hubContent.countdown = defaults.countdown.map(c => ({...c}));
   if (!hubContent.expense) hubContent.expense = { entries:[], balance:0 };
   if (!hubContent.homework) hubContent.homework = defaults.homework.map(h => ({...h}));
+  if (!hubContent.study) hubContent.study = [];
+  else hubContent.study = _normalizeStudy(hubContent.study);
 
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   const isEdit = hubEditMode;
@@ -939,16 +1017,16 @@ function renderHubBento() {
         var _goalsList = '';
         if (_goalsStyle === 'compact') {
           _goalsList = '<div class="w-list w-list-compact">' + hubContent.goals.map(function(g, i) {
-            return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-item-num w-item-num-sm">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+            return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-item-num w-item-num-sm">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a goal…" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button></div>';
         } else if (_goalsStyle === 'numbered') {
           _goalsList = '<div class="w-list w-list-numbered">' + hubContent.goals.map(function(g, i) {
             var pct = Math.min(100, Math.round(((i + 1) / hubContent.goals.length) * 100));
-            return '<div class="w-item w-item-numbered" data-idx="' + i + '"><span class="w-goal-num-bg">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+            return '<div class="w-item w-item-numbered" data-idx="' + i + '"><span class="w-goal-num-bg">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a goal…" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button></div>';
         } else {
           _goalsList = '<div class="w-list">' + hubContent.goals.map(function(g, i) {
-            return '<div class="w-item" data-idx="' + i + '"><span class="w-item-num">' + (i+1) + '</span><span class="w-item-text' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+            return '<div class="w-item" data-idx="' + i + '"><span class="w-item-num">' + (i+1) + '</span><span class="w-item-text' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a goal…" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button></div>';
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
@@ -985,15 +1063,15 @@ function renderHubBento() {
         var _priList = '';
         if (_priStyle === 'compact') {
           _priList = '<div class="w-list w-list-compact">' + hubContent.priorities.map(function(p, i) {
-            return '<div class="w-item w-item-compact" data-idx="' + i + '"><span class="w-pri-dot" style="background:' + priColors[i % priColors.length] + '"></span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+            return '<div class="w-item w-item-compact" data-idx="' + i + '"><span class="w-pri-dot" style="background:' + priColors[i % priColors.length] + '"></span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a priority…" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button></div>';
         } else if (_priStyle === 'numbered') {
           _priList = '<div class="w-list">' + hubContent.priorities.map(function(p, i) {
-            return '<div class="w-item w-item-card" data-idx="' + i + '"><span class="w-pri-badge" style="background:' + priColors[i % priColors.length] + '">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+            return '<div class="w-item w-item-card" data-idx="' + i + '"><span class="w-pri-badge" style="background:' + priColors[i % priColors.length] + '">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a priority…" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button></div>';
         } else {
           _priList = '<div class="w-list">' + hubContent.priorities.map(function(p, i) {
-            return '<div class="w-item w-item-card" data-idx="' + i + '"><span class="w-pri-dot" style="background:' + priColors[i % priColors.length] + '"></span><span class="w-item-text' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+            return '<div class="w-item w-item-card" data-idx="' + i + '"><span class="w-pri-dot" style="background:' + priColors[i % priColors.length] + '"></span><span class="w-item-text' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a priority…" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button></div>';
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
@@ -1029,15 +1107,15 @@ function renderHubBento() {
         if (_todosStyle === 'progress') {
           var _progPct = _todosTotal ? Math.round((_todosDone / _todosTotal) * 100) : 0;
           _todosItems = '<div class="w-todos-progress"><div class="w-todos-prog-bar"><div class="w-todos-prog-fill" style="width:' + _progPct + '%"></div></div><span class="w-todos-prog-text">' + _todosDone + '/' + _todosTotal + ' done (' + _progPct + '%)</span></div>' + hubContent.todos.map(function(t, i) {
-            return '<div class="w-item' + (t.done ? ' w-item-done' : '') + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
+            return '<div class="w-item' + (t.done ? ' w-item-done' : '') + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('');
         } else if (_todosStyle === 'compact') {
           _todosItems = hubContent.todos.map(function(t, i) {
-            return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box w-todo-box-sm ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
+            return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box w-todo-box-sm ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('');
         } else {
           _todosItems = hubContent.todos.map(function(t, i) {
-            return '<div class="w-item" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
+            return '<div class="w-item" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('');
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
@@ -1054,7 +1132,7 @@ function renderHubBento() {
         if (_habitsStyle === 'list') {
           _habitsBody = '<div class="w-habit-list">' + hubContent.habits.map(function(h, i) {
             var checked = habitDone[i] ? ' w-habit-checked' : '';
-            return '<div class="w-habit-row" data-idx="' + i + '"><span class="w-habit-check' + checked + '" data-habit-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="w-habit-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="habits" data-idx="' + i + '">' + e(h) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="habits" data-idx="' + i + '">×</button>' : '') + '</div>';
+            return '<div class="w-habit-row" data-idx="' + i + '"><span class="w-habit-check' + checked + '" data-habit-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="w-habit-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a habit…" data-edit="habits" data-idx="' + i + '">' + e(h) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="habits" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('') + '</div>';
         } else if (_habitsStyle === 'minimal') {
           _habitsBody = '<div class="w-habit-minimal">' + hubContent.habits.map(function(h, i) {
@@ -1064,7 +1142,7 @@ function renderHubBento() {
         } else {
           _habitsBody = '<div class="w-habit-grid">' + hubContent.habits.map(function(h, i) {
             var checked = habitDone[i] ? ' w-habit-checked' : '';
-            return '<div class="w-habit-chip" data-idx="' + i + '"><span class="w-habit-check' + checked + '" data-habit-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="habits" data-idx="' + i + '">' + e(h) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="habits" data-idx="' + i + '">×</button>' : '') + '</div>';
+            return '<div class="w-habit-chip" data-idx="' + i + '"><span class="w-habit-check' + checked + '" data-habit-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a habit…" data-edit="habits" data-idx="' + i + '">' + e(h) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="habits" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add habit</button></div>';
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
@@ -1091,15 +1169,15 @@ function renderHubBento() {
         var _linksList = '';
         if (_linksStyle === 'compact') {
           _linksList = '<div class="w-list w-list-compact">' + hubContent.links.map(function(l, i) {
-            return '<div class="w-item w-item-compact" data-idx="' + i + '"><span class="w-link-icon-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="links-label" data-idx="' + i + '">' + e(l.label) + '</span><a href="' + e(l.url) + '" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="links" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+            return '<div class="w-item w-item-compact" data-idx="' + i + '"><span class="w-link-icon-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Link name…" data-edit="links-label" data-idx="' + i + '">' + e(l.label) + '</span><a href="' + e(l.url) + '" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="links" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button></div>';
         } else if (_linksStyle === 'grid') {
           _linksList = '<div class="w-links-grid">' + hubContent.links.map(function(l, i) {
-            return '<div class="w-link-card-grid" data-idx="' + i + '"><div class="w-link-icon-grid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div><span class="w-link-label-grid ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="links-label" data-idx="' + i + '">' + e(l.label) + '</span><a href="' + e(l.url) + '" target="_blank" rel="noopener" class="w-link-url-grid">' + e(l.url.slice(0, 30)) + '</a>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="links" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+            return '<div class="w-link-card-grid" data-idx="' + i + '"><div class="w-link-icon-grid"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div><span class="w-link-label-grid ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Link name…" data-edit="links-label" data-idx="' + i + '">' + e(l.label) + '</span><a href="' + e(l.url) + '" target="_blank" rel="noopener" class="w-link-url-grid">' + e(l.url.slice(0, 30)) + '</a>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="links" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
           }).join('') + '</div><button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button>';
         } else {
           _linksList = '<div class="w-list">' + hubContent.links.map(function(l, i) {
-            return '<div class="w-link-card" data-idx="' + i + '"><div class="w-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="links-label" data-idx="' + i + '" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">' + e(l.label) + '</span><span style="display:flex;align-items:center;gap:4px"><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="links-url" data-idx="' + i + '" style="font-size:0.65rem;color:var(--text-tertiary);flex:1">' + e(l.url) + '</span><a href="' + e(l.url) + '" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></span></div>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="links" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
+            return '<div class="w-link-card" data-idx="' + i + '"><div class="w-link-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Link name…" data-edit="links-label" data-idx="' + i + '" style="font-size:0.78rem;font-weight:500;color:var(--text-primary)">' + e(l.label) + '</span><span style="display:flex;align-items:center;gap:4px"><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="https://…" data-edit="links-url" data-idx="' + i + '" style="font-size:0.65rem;color:var(--text-tertiary);flex:1">' + e(l.url) + '</span><a href="' + e(l.url) + '" target="_blank" rel="noopener" style="flex-shrink:0;color:var(--text-tertiary);display:flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></span></div>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="links" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="links"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add link</button></div>';
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
@@ -1317,11 +1395,19 @@ function renderHubBento() {
       case 'spotify':
         var _spActiveId = (typeof spActiveId !== 'undefined') ? spActiveId : null;
         var _spPlaylists = (typeof spPlaylists !== 'undefined') ? spPlaylists : [];
+        if (typeof spCleanId === 'function' && _spActiveId) _spActiveId = spCleanId(_spActiveId);
         if (!_spActiveId && _spPlaylists.length === 0) {
           try { _spActiveId = localStorage.getItem('haven-spotify-active') || null; } catch(e) {}
           try { _spPlaylists = JSON.parse(localStorage.getItem('haven-spotify-playlists') || '[]'); } catch(e) {}
+          if (!Array.isArray(_spPlaylists)) _spPlaylists = [];
+          if (typeof spCleanId === 'function') {
+            _spActiveId = spCleanId(_spActiveId);
+            _spPlaylists = _spPlaylists.filter(function(p) { return p && spCleanId(p.id); });
+            _spPlaylists.forEach(function(p) { p.id = spCleanId(p.id); });
+          }
         }
-        var _spActivePlaylist = _spPlaylists.find(function(p) { return p.id === _spActiveId; });
+        if (_spActiveId && _spPlaylists.length && !_spPlaylists.some(function(p) { return p.id === _spActiveId; })) _spActiveId = _spPlaylists[0].id;
+        var _spActivePlaylist = (_spPlaylists || []).find(function(p) { return p.id === _spActiveId; });
         if (_spActivePlaylist) {
           var spotUrl = (typeof spEmbedUrl === 'function') ? spEmbedUrl(_spActivePlaylist) : ('https://open.spotify.com/embed/playlist/' + _spActivePlaylist.id);
           var _iframeSrc = e(spotUrl);
@@ -1543,7 +1629,7 @@ function renderHubBento() {
           var _diff = Math.ceil((_target - _now) / (1000*60*60*24));
           var _cls = _diff <= 0 ? ' passed' : _diff <= 7 ? ' soon' : '';
           var _labelHtml = isEdit
-            ? '<input class="w-cd-label-input" data-cd-label="' + i + '" value="' + e(c.label) + '">'
+            ? '<input class="w-cd-label-input" data-cd-label="' + i + '" value="' + e(c.label) + '" placeholder="Event name">'
             : '<span class="w-cd-label">' + e(c.label) + '</span>';
           var _dateHtml = isEdit
             ? '<input type="date" class="w-cd-date-input" data-cd-date="' + i + '" value="' + e(c.date) + '">'
@@ -1689,16 +1775,16 @@ function renderHubBento() {
           var _pending = _hwItems.map(function(h,i){return Object.assign({},h,{_idx:i});}).filter(function(h){return !h.done;});
           var _done = _hwItems.map(function(h,i){return Object.assign({},h,{_idx:i});}).filter(function(h){return h.done;});
           function _kanbanCard(h) {
-            return '<div class="w-hw-kcard' + _hwDueClass(h.due) + '" data-idx="' + h._idx + '">' + _hwPriorityDot(h.priority) + '<span class="w-hw-ktext' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="homework" data-idx="' + h._idx + '">' + e(h.text) + '</span>' + _hwSubjectBadge(h.subject) + _hwDueChip(h.due) + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + h._idx + '">\u00d7</button>' : '') + '</div>';
+            return '<div class="w-hw-kcard' + _hwDueClass(h.due) + '" data-idx="' + h._idx + '">' + _hwPriorityDot(h.priority) + '<span class="w-hw-ktext' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type assignment…" data-edit="homework" data-idx="' + h._idx + '">' + e(h.text) + '</span>' + _hwSubjectBadge(h.subject) + _hwDueChip(h.due) + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + h._idx + '">\u00d7</button>' : '') + '</div>';
           }
           _hwBody = '<div class="w-hw-kanban"><div class="w-hw-kcol"><div class="w-hw-kcol-head">Pending</div><div class="w-hw-kcol-body">' + _pending.map(_kanbanCard).join('') + '</div></div><div class="w-hw-kcol"><div class="w-hw-kcol-head">Done</div><div class="w-hw-kcol-body">' + _done.map(_kanbanCard).join('') + '</div></div></div>';
         } else if (_hwStyle === 'compact') {
           _hwBody = '<div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _hwPct + '%"></div></div><span class="w-hw-prog-text">' + _hwDone + '/' + _hwTotal + ' done (' + _hwPct + '%)</span></div><div class="w-list w-hw-list">' + _hwItems.map(function(h, i) {
-            return '<div class="w-item w-item-compact w-hw-item' + (h.done ? ' w-item-done' : '') + _hwDueClass(h.due) + '" data-idx="' + i + '">' + _hwPriorityDot(h.priority) + '<span class="w-todo-box w-todo-box-sm ' + (h.done ? 'w-todo-checked' : '') + '">' + (h.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (h.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="homework" data-idx="' + i + '">' + e(h.text) + '</span>' + _hwDueChip(h.due) + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + i + '">\u00d7</button>' : '') + '</div>';
+            return '<div class="w-item w-item-compact w-hw-item' + (h.done ? ' w-item-done' : '') + _hwDueClass(h.due) + '" data-idx="' + i + '">' + _hwPriorityDot(h.priority) + '<span class="w-todo-box w-todo-box-sm ' + (h.done ? 'w-todo-checked' : '') + '">' + (h.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (h.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type assignment…" data-edit="homework" data-idx="' + i + '">' + e(h.text) + '</span>' + _hwDueChip(h.due) + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + i + '">\u00d7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="homework"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add homework</button></div>';
         } else {
           _hwBody = '<div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _hwPct + '%"></div></div><span class="w-hw-prog-text">' + _hwDone + '/' + _hwTotal + ' done (' + _hwPct + '%)</span></div><div class="w-list w-hw-list">' + _hwItems.map(function(h, i) {
-            return '<div class="w-item w-hw-item' + (h.done ? ' w-item-done' : '') + _hwDueClass(h.due) + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-hw-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (h.done ? 'w-todo-checked' : '') + '">' + (h.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><div class="w-hw-details"><span class="w-item-text ' + (h.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-edit="homework" data-idx="' + i + '">' + e(h.text) + '</span><div class="w-hw-meta">' + _hwSubjectBadge(h.subject) + _hwPriorityDot(h.priority) + '<span class="w-hw-due-chip' + _hwDueClass(h.due) + '" data-hw-due="' + i + '">' + (h.due ? h.due.split('-').slice(1).join('/') : 'No due date') + '</span></div></div>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + i + '">\u00d7</button>' : '') + '</div>';
+            return '<div class="w-item w-hw-item' + (h.done ? ' w-item-done' : '') + _hwDueClass(h.due) + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-hw-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (h.done ? 'w-todo-checked' : '') + '">' + (h.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><div class="w-hw-details"><span class="w-item-text ' + (h.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type assignment…" data-edit="homework" data-idx="' + i + '">' + e(h.text) + '</span><div class="w-hw-meta">' + _hwSubjectBadge(h.subject) + _hwPriorityDot(h.priority) + '<span class="w-hw-due-chip' + _hwDueClass(h.due) + '" data-hw-due="' + i + '">' + (h.due ? h.due.split('-').slice(1).join('/') : 'No due date') + '</span></div></div>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + i + '">\u00d7</button>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-add="homework"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add homework</button></div>';
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
@@ -1706,6 +1792,43 @@ function renderHubBento() {
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Homework</span></div>
           ${_hwBody}
         </div>`;
+      }
+      case 'study': {
+        var _stSubs = _ensureStudy();
+        var _stPalette = ['#4a90d9','#27ae60','#8e44ad','#f39c12','#e74c8b','#16a085','#e67e22','#2980b9','#c0392b','#1abc9c'];
+        function _stColor(name) {
+          if (!name) return _stPalette[0];
+          var hash = 0;
+          for (var ci = 0; ci < name.length; ci++) hash = name.charCodeAt(ci) + ((hash << 5) - hash);
+          return _stPalette[Math.abs(hash) % _stPalette.length];
+        }
+        var _stAll = [];
+        _stSubs.forEach(function(sj) { _studySubjectItems(sj).forEach(function(it) { _stAll.push(it); }); });
+        var _stCounts = _studyCounts(_stAll);
+        function _stCheckSvg() {
+          return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        }
+        var _stBody = '';
+        if (!_stSubs.length) {
+          _stBody = '<div class="w-st-empty">No subjects yet. Add your first subject to start tracking chapters.</div><button class="w-add-btn" data-st-add-subject><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add subject</button>';
+        } else {
+          _stBody = _stSubs.map(function(sj) {
+            var _sjItems = _studySubjectItems(sj);
+            var _sjC = _studyCounts(_sjItems);
+            var _sjColor = sj.color || _stColor(sj.name);
+            var _chaps = (sj.chapters || []).map(function(ch) {
+              var _chC = _studyCounts(ch.items || []);
+              var _items = (ch.items || []).map(function(it) {
+                return '<div class="w-st-leaf' + (it.done ? ' w-st-done' : '') + '"><span class="w-todo-box w-todo-box-sm' + (it.done ? ' w-todo-checked' : '') + '" data-st-toggle-item="' + sj.id + '|' + ch.id + '|' + it.id + '">' + (it.done ? _stCheckSvg() : '') + '</span><span class="w-item-text' + (it.done ? ' w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type subchapter…" data-edit="study-item" data-sid="' + sj.id + '" data-cid="' + ch.id + '" data-iid="' + it.id + '">' + e(it.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-item="' + sj.id + '|' + ch.id + '|' + it.id + '">×</button>' : '') + '</div>';
+              }).join('');
+              var _chapOpen = !ch.collapsed;
+              return '<div class="w-st-chap"><div class="w-st-chap-head" data-st-toggle-chap="' + sj.id + '|' + ch.id + '"><span class="w-st-caret' + (_chapOpen ? ' open' : '') + '">▸</span><span class="w-st-chap-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Chapter name…" data-edit="study-chapter" data-sid="' + sj.id + '" data-cid="' + ch.id + '">' + e(ch.name) + '</span><span class="w-st-count">' + _chC.done + '/' + _chC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-chapter="' + sj.id + '|' + ch.id + '">×</button>' : '') + '</div>' + (_chapOpen ? '<div class="w-st-leaves">' + _items + '<button class="w-st-add-inline" data-st-add-item="' + sj.id + '|' + ch.id + '">+ Subchapter</button></div>' : '') + '</div>';
+            }).join('');
+            var _subjOpen = !sj.collapsed;
+            return '<div class="w-st-subj"><div class="w-st-subj-head" data-st-toggle-subj="' + sj.id + '"><span class="w-st-caret' + (_subjOpen ? ' open' : '') + '">▸</span><span class="w-st-dot" style="background:' + _sjColor + '" data-st-color="' + sj.id + '" title="Change color"></span><span class="w-st-subj-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Subject name…" data-edit="study-subject" data-sid="' + sj.id + '">' + e(sj.name) + '</span><span class="w-st-count">' + _sjC.done + '/' + _sjC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-subject="' + sj.id + '">×</button>' : '') + '</div>' + (_subjOpen ? '<div class="w-st-subj-bar"><div class="w-st-subj-fill" style="width:' + _sjC.pct + '%;background:' + _sjColor + '"></div></div><div class="w-st-chaps">' + _chaps + '<button class="w-st-add-inline" data-st-add-chapter="' + sj.id + '">+ Chapter</button></div>' : '') + '</div>';
+          }).join('') + '<button class="w-add-btn" data-st-add-subject><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add subject</button>';
+        }
+        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg><span>Study</span></div><div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _stCounts.pct + '%"></div></div><span class="w-hw-prog-text">' + _stCounts.done + '/' + _stCounts.total + ' done (' + _stCounts.pct + '%)</span></div><div class="w-list w-st-list">' + _stBody + '</div></div>';
       }
       default:
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};padding:24px;background:var(--surface-container);border:1px dashed var(--border-color)">
@@ -2209,7 +2332,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-hw-style-toggle], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], [data-hw-due], .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-hw-style-toggle], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], [data-hw-due], [data-accent-popup], [data-st-toggle-subj], [data-st-toggle-chap], [data-st-toggle-item], [data-st-add-subject], [data-st-add-chapter], [data-st-add-item], [data-st-del-subject], [data-st-del-chapter], [data-st-del-item], [data-st-color], .cpop, .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .w-st-add-inline')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -2331,10 +2454,9 @@ function renderHubBento() {
   grid.style.paddingBottom = isEdit ? '64px' : '';
   // Show dock in edit mode, clean up otherwise
   if (isEdit) {
-    if (!document.querySelector('.bento-bubble-dock[data-bubble-dock]')) {
-      renderBubbleDock(grid);
-    }
+    syncBubbleDock(grid);
   } else {
+    _dockManuallyClosed = false;
     var d = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
     if (d) d.remove();
   }
@@ -3377,6 +3499,7 @@ function bubbleTypeIcon(t) {
     crypto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/><line x1="10" y1="6" x2="10" y2="8"/><line x1="14" y1="6" x2="14" y2="8"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg>',
     text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
     homework: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+    study: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>',
 
   };
   return icons[t] || '';
@@ -4098,7 +4221,7 @@ function addBubbleTypes(types, dropPos) {
     }
     item.w = snap(280);
     item.h = (function() {
-      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,pomodoro:180,weather:260,headlines:260,'sleep-score':280,water:180,mood:200,countdown:280,expense:320,notes:240,links:240,quote:220,priorities:320,todos:320,habits:240,progress:240,goals:420,text:160,crypto:300,homework:320};
+      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,pomodoro:180,weather:260,headlines:260,'sleep-score':280,water:180,mood:200,countdown:280,expense:320,notes:240,links:240,quote:220,priorities:320,todos:320,habits:240,progress:240,goals:420,text:160,crypto:300,homework:320,study:420};
       return snap(sizes[item.t] || 280);
     })();
     // If a drop position is provided, use it; otherwise find a gap
@@ -4436,6 +4559,8 @@ function _loadPomoStates() {
 
 /* ─── BUBBLE DOCK (draggable add panel below canvas) ─── */
 function renderBubbleDock(grid) {
+  if (!grid) grid = document.querySelector('.bento-grid');
+  if (!grid) return;
   var existing = document.querySelector('.bento-bubble-dock');
   if (existing) existing.remove();
   var dock = document.createElement('div');
@@ -4443,9 +4568,9 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', expense:'Expense', text:'Text', crypto:'Crypto', homework:'Homework' };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', expense:'Expense', text:'Text', crypto:'Crypto', homework:'Homework', study:'Study' };
   var categories = [
-    { name:'Productivity', short:'Prod', types:['goals','priorities','todos','habits','progress','homework'] },
+    { name:'Productivity', short:'Prod', types:['goals','priorities','todos','habits','progress','homework','study'] },
     { name:'Wellness', short:'Well', types:['water','mood'] },
     { name:'Media', short:'Media', types:['spotify','strava','flightradar','images'] },
     { name:'Finance', short:'Fin', types:['crypto','expense'] },
@@ -4463,6 +4588,22 @@ function renderBubbleDock(grid) {
       it.style.display = (catMatch && searchMatch) ? '' : 'none';
     });
   }
+
+  function isPlacedType(t) { return t === 'images' ? false : has(t); }
+
+  // Keeps the "already added" state in sync without rebuilding the dock
+  // (rebuilding would drop the search text, the active filter and the animation)
+  function updatePlacedStates() {
+    if (!widgetGrid) return;
+    var live = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+    widgetGrid.querySelectorAll('[data-dock-item-type]').forEach(function(it) {
+      var t = it.dataset.dockItemType;
+      var on = t === 'images' ? false : live.some(function(i) { return i.t === t; });
+      it.classList.toggle('placed', on);
+      it.title = on ? labels[t] + ' (already added)' : 'Drag to add ' + labels[t];
+    });
+  }
+  dock._dockSync = updatePlacedStates;
 
   // Top bar: search + filter pills + close
   var topbar = document.createElement('div');
@@ -4503,7 +4644,15 @@ function renderBubbleDock(grid) {
   closeBtn.className = 'bubble-dock-close';
   closeBtn.innerHTML = '\u00d7';
   closeBtn.title = 'Close dock';
-  closeBtn.addEventListener('click', function() { dock.remove(); });
+  closeBtn.addEventListener('click', function() { _dockManuallyClosed = true; dock.remove(); });
+
+  var doneBtn = document.createElement('button');
+  doneBtn.type = 'button';
+  doneBtn.className = 'bubble-dock-done';
+  doneBtn.title = 'Done editing';
+  doneBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Done</span>';
+  doneBtn.addEventListener('click', function() { toggleHubEdit(false); });
+  topbar.appendChild(doneBtn);
   topbar.appendChild(closeBtn);
 
   dock.appendChild(topbar);
@@ -4522,12 +4671,13 @@ function renderBubbleDock(grid) {
 
   allTypes.forEach(function(entry) {
     var t = entry.type;
-    var placed = t === 'images' ? false : has(t);
+    var placed = isPlacedType(t);
     var item = document.createElement('div');
     item.className = 'bubble-dock-item' + (placed ? ' placed' : '');
     item.dataset.bubbleDockType = t;
     item.dataset.dockItemType = t;
     item.dataset.dockCategory = entry.cat;
+    item.dataset.dockLabel = labels[t];
     item.title = placed ? labels[t] + ' (already added)' : 'Drag to add ' + labels[t];
     var icon = document.createElement('span');
     icon.className = 'bdi-icon';
@@ -4558,6 +4708,22 @@ function renderBubbleDock(grid) {
   initBubbleDockDrag(dock);
 }
 
+var _dockManuallyClosed = false;
+
+// Refreshes the widget dock in place (or builds it if missing).
+// The dock is the only "add widget" entry point, so it must stay accurate
+// after deletes, duplicates, undo/redo and any other canvas mutation.
+function syncBubbleDock(grid) {
+  if (!grid) grid = document.querySelector('.bento-grid');
+  var dock = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
+  if (!dock) {
+    if (_dockManuallyClosed || !grid) return;
+    renderBubbleDock(grid);
+    return;
+  }
+  if (typeof dock._dockSync === 'function') dock._dockSync();
+}
+
 function initBubbleDockDrag(dock) {
   if (!dock) dock = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
   if (!dock || dock._dockDragWired) return;
@@ -4586,7 +4752,7 @@ function initBubbleDockDrag(dock) {
       flightradar:{w:280,h:420},quote:{w:280,h:220},notes:{w:280,h:240},
       links:{w:280,h:240},images:{w:280,h:210},'sleep-score':{w:280,h:280},headlines:{w:280,h:260},
       water:{w:280,h:180},mood:{w:280,h:200},countdown:{w:280,h:280},
-      expense:{w:280,h:320},text:{w:280,h:160},crypto:{w:280,h:300}
+      expense:{w:280,h:320},text:{w:280,h:160},crypto:{w:280,h:300},homework:{w:280,h:320},study:{w:280,h:420}
     };
     return defSizes[type] || {w:280,h:280};
   }
@@ -4610,7 +4776,7 @@ function initBubbleDockDrag(dock) {
     _dockGhost.className = 'bubble-dock-ghost';
     _dockGhost.style.width = ghostSize.w + 'px';
     _dockGhost.style.height = ghostSize.h + 'px';
-    _dockGhost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.title?.replace(' (placed)','') || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';
+    _dockGhost.innerHTML = '<div class="bdg-icon">' + bubbleTypeIcon(type) + '</div><span class="bdg-label">' + (item.dataset.dockLabel || type) + '</span><span class="bdg-dim">' + itemW + ' \u00D7 ' + itemH + '</span>';
     var offX = pos.x - rect.left;
     var offY = pos.y - rect.top;
     _dockGhost.style.left = (pos.x - offX - ghostSize.w / 2 + rect.width / 2) + 'px';
@@ -4660,7 +4826,7 @@ function initBubbleDockDrag(dock) {
       _dockGhost = null; _dockDropPreview = null; _dockDragData = null;
       if (placed) {
         var grid2 = document.querySelector('.bento-grid');
-        if (grid2) renderBubbleDock(grid2);
+        if (grid2) syncBubbleDock(grid2);
       }
     }
 
@@ -4750,6 +4916,7 @@ function setupHubEditEvents() {
     const span = e.target.closest('[data-edit]');
     if (!span) return;
     if (!hubEditMode) return;
+    if (!span.textContent.trim()) span.innerHTML = '';
     const field = span.dataset.edit;
     const idx = parseInt(span.dataset.idx);
     if (field === 'goals' && !isNaN(idx)) {
@@ -4773,6 +4940,15 @@ function setupHubEditEvents() {
     } else if (field === 'homework' && !isNaN(idx)) {
       hubContent.homework[idx].text = span.textContent.trim();
       saveHubContent();
+    } else if (field === 'study-subject') {
+      var _ss = _findStudy(span.dataset.sid);
+      if (_ss.sj) { _ss.sj.name = span.textContent.trim(); saveHubContent(); }
+    } else if (field === 'study-chapter') {
+      var _sc = _findStudy(span.dataset.sid, span.dataset.cid);
+      if (_sc.ch) { _sc.ch.name = span.textContent.trim(); saveHubContent(); }
+    } else if (field === 'study-item') {
+      var _si = _findStudy(span.dataset.sid, span.dataset.cid, span.dataset.iid);
+      if (_si.it) { _si.it.text = span.textContent.trim(); saveHubContent(); }
     }
   }, true);
 
@@ -4879,13 +5055,13 @@ function setupHubEditEvents() {
     const addBtn = e.target.closest('[data-add]');
     if (!addBtn) return;
     const field = addBtn.dataset.add;
-    if (field === 'goals') { hubContent.goals.push('new goal'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="goals"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
-    else if (field === 'priorities') { hubContent.priorities.push('new priority'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="priorities"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
-    else if (field === 'todos') { hubContent.todos.push({ text: 'new item', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="todos"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
-    else if (field === 'habits') { hubContent.habits.push('new habit'); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="habits"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
-    else if (field === 'links') { hubContent.links.push({ label: 'new link', url: 'https://' }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="links-label"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
-    else if (field === 'countdown') { hubContent.countdown.push({ label: 'New Event', date: new Date().toISOString().slice(0,10) }); saveHubContent(); renderHubBento(); }
-    else if (field === 'homework') { hubContent.homework.push({ text: 'New Assignment', subject: '', due: '', priority: 'medium', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="homework"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    if (field === 'goals') { hubContent.goals.push(''); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="goals"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    else if (field === 'priorities') { hubContent.priorities.push(''); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="priorities"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    else if (field === 'todos') { hubContent.todos.push({ text: '', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="todos"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    else if (field === 'habits') { hubContent.habits.push(''); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="habits"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    else if (field === 'links') { hubContent.links.push({ label: '', url: '' }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="links-label"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
+    else if (field === 'countdown') { hubContent.countdown.push({ label: '', date: new Date().toISOString().slice(0,10) }); saveHubContent(); renderHubBento(); }
+    else if (field === 'homework') { hubContent.homework.push({ text: '', subject: '', due: '', priority: 'medium', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="homework"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
   });
 
   document.querySelector('.hub-layout')?.addEventListener('click', function(e) {
@@ -4925,7 +5101,6 @@ function setupHubEditEvents() {
 
     var menu = document.createElement('div');
     menu.className = 'snap-preset-menu';
-    var colors = ['#4fc3f7','#81c784','#ffb74d','#e57373','#ba68c8','#a1887f','#90a4ae','var(--text-primary)'];
     var itemColor = hubContent.bubbleColors && hubContent.bubbleColors[uid];
     menu.innerHTML =
       '<div class="snap-preset-head">Resize</div>' +
@@ -4933,10 +5108,7 @@ function setupHubEditEvents() {
       '<div class="snap-preset-item" data-snap-preset="' + uid + '" data-snap-size="medium">Medium (240×160)</div>' +
       '<div class="snap-preset-item" data-snap-preset="' + uid + '" data-snap-size="large">Large (340×240)</div>' +
       '<div class="snap-preset-head" style="margin-top:4px">Accent Color</div>' +
-      '<div class="snap-preset-colors">' + colors.map(function(c) {
-        var checked = c === itemColor ? ' data-checked="1"' : '';
-        return '<div class="snap-color-swatch' + (c === itemColor ? ' snap-color-active' : '') + '" data-bubble-color="' + uid + '" data-color="' + (c === 'var(--text-primary)' ? '' : c) + '" style="background:' + c + '"' + checked + '></div>';
-      }).join('') + '</div>';
+      '<div class="snap-preset-colors"><button class="cpop-trigger" data-accent-popup="' + uid + '" style="margin:2px 8px 8px"><span class="cpop-trigger-dot" style="background:' + (itemColor || 'var(--text-primary)') + '"></span><span class="cpop-trigger-hex">' + (itemColor || 'default') + '</span></button></div>';
     var menuW = 180, menuH = 250;
     menu.style.left = Math.min(e.pageX, window.innerWidth - menuW - 8) + 'px';
     menu.style.top = Math.min(e.pageY, window.innerHeight - menuH - 8) + 'px';
@@ -4962,16 +5134,21 @@ function setupHubEditEvents() {
       if (menu) menu.remove();
       return;
     }
-    var colorSwatch = e.target.closest('[data-bubble-color]');
-    if (colorSwatch) {
-      var uid = colorSwatch.dataset.bubbleColor;
-      var color = colorSwatch.dataset.color || '';
-      hubContent.bubbleColors = hubContent.bubbleColors || {};
-      hubContent.bubbleColors[uid] = color;
-      saveHubContent();
-      renderHubBento();
-      var menu = document.querySelector('.snap-preset-menu');
-      if (menu) menu.remove();
+    var accentBtn = e.target.closest('[data-accent-popup]');
+    if (accentBtn) {
+      e.stopPropagation();
+      var auid = accentBtn.dataset.accentPopup;
+      var cur = (hubContent.bubbleColors && hubContent.bubbleColors[auid]) || '';
+      if (typeof openColorPopup === 'function') {
+        openColorPopup(accentBtn, { title: 'Bubble accent', value: cur, allowAuto: true, autoLabel: 'Default', autoValue: '', onPick: function(hex) {
+          hubContent.bubbleColors = hubContent.bubbleColors || {};
+          hubContent.bubbleColors[auid] = hex;
+          saveHubContent();
+          renderHubBento();
+        } });
+      }
+      var smenu = document.querySelector('.snap-preset-menu');
+      if (smenu) smenu.remove();
       return;
     }
     if (!e.target.closest('.snap-preset-menu')) {
@@ -5043,6 +5220,106 @@ function setupHubEditEvents() {
       document.body.appendChild(input);
       input.focus();
       input.showPicker && input.showPicker();
+      return;
+    }
+    const stDelSubj = e.target.closest('[data-st-del-subject]');
+    if (stDelSubj) {
+      if (!hubEditMode) return;
+      e.stopPropagation();
+      var _dss = _ensureStudy();
+      var _dsi = -1;
+      for (var _di = 0; _di < _dss.length; _di++) if (_dss[_di].id === stDelSubj.dataset.stDelSubject) { _dsi = _di; break; }
+      if (_dsi !== -1) { _dss.splice(_dsi, 1); saveHubContent(); renderHubBento(); }
+      return;
+    }
+    const stDelChap = e.target.closest('[data-st-del-chapter]');
+    if (stDelChap) {
+      if (!hubEditMode) return;
+      e.stopPropagation();
+      var _dcp = (stDelChap.dataset.stDelChapter || '').split('|');
+      var _dc = _findStudy(_dcp[0], _dcp[1]);
+      if (_dc.sj && _dc.ch) {
+        var _dci = _dc.sj.chapters.indexOf(_dc.ch);
+        if (_dci !== -1) { _dc.sj.chapters.splice(_dci, 1); saveHubContent(); renderHubBento(); }
+      }
+      return;
+    }
+    const stDelItem = e.target.closest('[data-st-del-item]');
+    if (stDelItem) {
+      if (!hubEditMode) return;
+      e.stopPropagation();
+      var _dip = (stDelItem.dataset.stDelItem || '').split('|');
+      var _dit = _findStudy(_dip[0], _dip[1], _dip[2]);
+      if (_dit.ch && _dit.it) {
+        var _dii = _dit.ch.items.indexOf(_dit.it);
+        if (_dii !== -1) { _dit.ch.items.splice(_dii, 1); saveHubContent(); renderHubBento(); }
+      }
+      return;
+    }
+    const stTogItem = e.target.closest('[data-st-toggle-item]');
+    if (stTogItem) {
+      var _tip = (stTogItem.dataset.stToggleItem || '').split('|');
+      var _tit = _findStudy(_tip[0], _tip[1], _tip[2]);
+      if (_tit.it) { _tit.it.done = !_tit.it.done; saveHubContent(); renderHubBento(); }
+      return;
+    }
+    const stAddSubj = e.target.closest('[data-st-add-subject]');
+    if (stAddSubj) {
+      var _nss = _ensureStudy();
+      var _nsj = { id: _studyUid('sj'), name: 'New subject', collapsed: false, chapters: [{ id: _studyUid('ch'), name: 'Chapter 1', collapsed: false, items: [] }] };
+      _nss.push(_nsj);
+      saveHubContent();
+      renderHubBento();
+      setTimeout(function() { var el = document.querySelector('.w-st-subj-name[data-sid="' + _nsj.id + '"]'); if (el) el.focus(); }, 50);
+      return;
+    }
+    const stAddChap = e.target.closest('[data-st-add-chapter]');
+    if (stAddChap) {
+      var _acs = _findStudy(stAddChap.dataset.stAddChapter);
+      if (_acs.sj) {
+        var _nch = { id: _studyUid('ch'), name: 'Chapter ' + (_acs.sj.chapters.length + 1), collapsed: false, items: [] };
+        _acs.sj.chapters.push(_nch);
+        _acs.sj.collapsed = false;
+        saveHubContent();
+        renderHubBento();
+        setTimeout(function() { var el = document.querySelector('.w-st-chap-name[data-cid="' + _nch.id + '"]'); if (el) el.focus(); }, 50);
+      }
+      return;
+    }
+    const stAddItem = e.target.closest('[data-st-add-item]');
+    if (stAddItem) {
+      var _aip = (stAddItem.dataset.stAddItem || '').split('|');
+      var _ait = _findStudy(_aip[0], _aip[1]);
+      if (_ait.ch) {
+        var _nit = { id: _studyUid('si'), text: '', done: false };
+        _ait.ch.items.push(_nit);
+        _ait.sj.collapsed = false;
+        _ait.ch.collapsed = false;
+        saveHubContent();
+        renderHubBento();
+        setTimeout(function() { var els = document.querySelectorAll('.w-item-text[data-edit="study-item"][data-iid="' + _nit.id + '"]'); var last = els[els.length - 1]; if (last) last.focus(); }, 50);
+      }
+      return;
+    }
+    const stColorDot = e.target.closest('[data-st-color]');
+    if (stColorDot) {
+      e.stopPropagation();
+      _openStudyColorPopup(stColorDot.dataset.stColor, stColorDot);
+      return;
+    }
+    const stTogChap = e.target.closest('[data-st-toggle-chap]');
+    if (stTogChap) {
+      if (e.target.closest('[contenteditable],button,.w-todo-box,[data-st-toggle-item],[data-st-add-item]')) return;
+      var _tcp = (stTogChap.dataset.stToggleChap || '').split('|');
+      var _tct = _findStudy(_tcp[0], _tcp[1]);
+      if (_tct.ch) { _tct.ch.collapsed = !_tct.ch.collapsed; saveHubContent(); renderHubBento(); }
+      return;
+    }
+    const stTogSubj = e.target.closest('[data-st-toggle-subj]');
+    if (stTogSubj) {
+      if (e.target.closest('[contenteditable],button,.w-todo-box,[data-st-toggle-item],[data-st-add-item],[data-st-add-chapter],[data-st-color]')) return;
+      var _tst = _findStudy(stTogSubj.dataset.stToggleSubj);
+      if (_tst.sj) { _tst.sj.collapsed = !_tst.sj.collapsed; saveHubContent(); renderHubBento(); }
       return;
     }
     const calDay = e.target.closest('[data-cal-day]');
@@ -5368,7 +5645,7 @@ function _snapshotBubblePreview(el, type) {
       if (sn) lines.push(sn.textContent.trim().replace(/\s+/g,' '));
       if (sa) lines.push(sa.textContent.trim().replace(/\s+/g,' '));
       if (!lines.length) lines.push('Not playing');
-    } else if (type === 'goals' || type === 'todos' || type === 'habits' || type === 'priorities') {
+    } else if (type === 'goals' || type === 'todos' || type === 'habits' || type === 'priorities' || type === 'study' || type === 'homework') {
       var items = el.querySelectorAll('.w-item-text');
       items.forEach(function(it) { var t = it.textContent.trim().replace(/\s+/g,' '); if (t) lines.push(t); });
     } else if (type === 'notes') {
@@ -5408,7 +5685,7 @@ var _snapshotColors = {
   goals:'#bdbdbd', priorities:'#b0b0b0', todos:'#a3a3a3', habits:'#979797',
   progress:'#8a8a8a', clock:'#bdbdbd', weather:'#b0b0b0', calendar:'#a3a3a3',timer:'#979797', pomodoro:'#8a8a8a', spotify:'#c7c7c7', strava:'#9a9a9a',
       flightradar:'#8d8d8d', 'sleep-score':'#b5b5b5', quote:'#a8a8a8', notes:'#9c9c9c', headlines:'#ababab',
-      links:'#909090', images:'#c2c2c2', crypto:'#f7931a'
+       links:'#909090', images:'#c2c2c2', crypto:'#f7931a', homework:'#9a9a9a', study:'#8e44ad'
 };
 
 window.captureHubSnapshot = function() {
@@ -5571,6 +5848,13 @@ window.captureHubSnapshot = function() {
     var _id = null, _playlists = [];
     try { _id = localStorage.getItem('haven-spotify-active') || null; } catch(e) {}
     try { _playlists = JSON.parse(localStorage.getItem('haven-spotify-playlists') || '[]'); } catch(e) {}
+    if (!Array.isArray(_playlists)) _playlists = [];
+    if (typeof spCleanId === 'function') {
+      _id = spCleanId(_id);
+      _playlists = _playlists.filter(function(p) { return p && spCleanId(p.id); });
+      _playlists.forEach(function(p) { p.id = spCleanId(p.id); });
+    }
+    if (_id && _playlists.length && !_playlists.some(function(p) { return p.id === _id; })) _id = _playlists[0].id;
     var _active = _playlists.find(function(p) { return p.id === _id; });
     document.querySelectorAll('.spotify-widget').forEach(function(w) {
       var ifr = w.querySelector('iframe');
@@ -5588,6 +5872,7 @@ window.captureHubSnapshot = function() {
       }
     });
   }
+  window._updateSpotifyBubbles = _updateSpotifyBubbles;
 })();
 
 /* ─── Patch updateSectionHandles ────────────── */

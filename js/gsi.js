@@ -1920,7 +1920,7 @@ function renderPrivacySettings(el) {
   var clearGroups = {
     tasks: ['haven-schedule-tasks'],
     categories: ['haven-schedule-categories', 'haven-subcategories', 'haven-custom-tags', 'haven-card-colors'],
-    sleep: ['haven-schedule-sleep', 'haven-schedule-sleep-targets', 'haven-schedule-routine'],
+    sleep: ['haven-schedule-sleep', 'haven-schedule-sleep-targets', 'haven-schedule-sleep-routine'],
     finance: ['haven-schedule-finance', 'haven-piggybank', 'haven-wallet'],
     gallery: ['haven-gallery-layout']
   };

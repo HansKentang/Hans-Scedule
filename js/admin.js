@@ -959,7 +959,7 @@
     // Visual settings
     html += '<div class="ad-dash-card full"><div class="ad-dash-label">Theme & Appearance</div>';
     html += '<div class="ad-dash-row" style="flex-wrap:wrap;gap:10px;margin-top:8px">';
-    html += '<div><label style="font-size:0.68rem;color:var(--text-tertiary)">Accent Color</label><br><input type="color" id="adSetAccent" value="' + esc(settings.accentColor || '#a5b4fc') + '" onchange="window._adPreviewAccent(this.value)"></div>';
+    html += '<div><label style="font-size:0.68rem;color:var(--text-tertiary)">Accent Color</label><br><input type="color" id="adSetAccent" class="cpop-native-round" value="' + esc(settings.accentColor || '#a5b4fc') + '" onchange="window._adPreviewAccent(this.value)"></div>';
     html += '<div><label style="font-size:0.68rem;color:var(--text-tertiary)">Dark Mode</label><br><select class="ad-select" id="adSetDarkMode" onchange="window._adUpdateSetting()">';
     html += '<option value="system"' + (settings.darkMode === undefined || settings.darkMode === null ? ' selected' : '') + '>System</option>';
     html += '<option value="true"' + (settings.darkMode === true ? ' selected' : '') + '>Dark</option>';
@@ -1261,8 +1261,11 @@
     var themeBtn = $('themeBtnSidebar');
     if (themeBtn) {
       themeBtn.addEventListener('click', function() {
-        document.documentElement.classList.toggle('light');
-        try { localStorage.setItem('haven-theme', document.documentElement.classList.contains('light') ? 'light' : 'dark'); } catch(e) {}
+        if (typeof toggleTheme === 'function') toggleTheme();
+        else {
+          document.documentElement.classList.toggle('light');
+          document.documentElement.classList.toggle('dark');
+        }
       });
     }
 

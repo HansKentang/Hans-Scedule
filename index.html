@@ -1104,7 +1104,7 @@ function init() {
     });
 
     // ── Routine ──
-    var ROUTINE_LIST_KEY = 'haven-schedule-sleep-routine';
+    var ROUTINE_LIST_KEY = (typeof SLEEP_ROUTINE_KEY !== 'undefined') ? SLEEP_ROUTINE_KEY : 'haven-schedule-sleep-routine';
     function loadSleepRoutine() {
       try {
         var data = localStorage.getItem(ROUTINE_LIST_KEY);
@@ -1308,13 +1308,14 @@ function init() {
       document.querySelectorAll('.sl-mood-chip.active').forEach(function(c) { mood.push(c.dataset.mood); });
       var slider = document.getElementById('sleepQuality');
       if (slider) sleepSelectedQuality = parseInt(slider.value);
+      if (!date) { showToast('Pick a date first', 'error', 2000); return; }
+      var saved = null;
       if (sleepLogEditId) {
-        updateSleepLog(sleepLogEditId, { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
+        saved = updateSleepLog(sleepLogEditId, { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
       } else {
-        var existing = getSleepLog(date);
-        if (existing) updateSleepLog(existing.id, { bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
-        else addSleepLog({ date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
+        saved = addSleepLog({ date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
       }
+      if (!saved) { showToast('Could not save — storage may be full', 'error', 3000); return; }
       closeSleepLogModal();
       renderSleepHub();
       showToast('Sleep saved for ' + date, 'success', 2000);

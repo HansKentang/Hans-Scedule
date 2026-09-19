@@ -179,13 +179,21 @@ function pullFromCloud() {
 
       // Cloud has newer data — merge into localStorage
       var restoredKeys = [];
+      var SLEEP_GUARD_KEYS = ['haven-schedule-sleep', 'haven-schedule-sleep-targets', 'haven-schedule-sleep-routine'];
       for (var key in cloudData) {
         if (key === '_syncedAt' || key === '_version') continue;
         if (key.indexOf('haven-') !== 0) continue;
         // Skip gallery images (too large for sync)
         if (key.indexOf('haven-image-') === 0 || key.indexOf('hub-image-') === 0) continue;
         try {
-          localStorage.setItem(key, JSON.stringify(cloudData[key]));
+          var val = cloudData[key];
+          if (val === null || typeof val === 'undefined') continue;
+          if (SLEEP_GUARD_KEYS.indexOf(key) !== -1 && isEmptyCloudValue(val) && !isEmptyLocalValue(key)) continue;
+          // Push stores plain strings as-is and JSON values as native types.
+          // Pull must invert that: strings go back verbatim, otherwise stringify.
+          // Always stringifying would wrap plain strings (e.g. haven-spotify-active)
+          // in extra quotes ('"id"' instead of 'id') and break lookups.
+          localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
           restoredKeys.push(key);
         } catch (e) { /* quota */ }
       }
@@ -201,6 +209,24 @@ function pullFromCloud() {
 
       // Reload in-memory state
       if (typeof loadState === 'function') loadState();
+      // Spotify keeps its own in-memory copy — refresh it so a restored
+      // active playlist shows up instead of the "No playlist linked" empty state.
+      try {
+        if (restoredKeys.indexOf('haven-spotify-playlists') !== -1 || restoredKeys.indexOf('haven-spotify-active') !== -1) {
+          if (typeof spLoadState === 'function') spLoadState();
+          if (typeof spRenderSidebar === 'function') spRenderSidebar();
+          if (typeof window._updateSpotifyBubbles === 'function') window._updateSpotifyBubbles();
+          else if (typeof renderHubBento === 'function' && document.querySelector('.bento-grid')) renderHubBento();
+        }
+      } catch (e) {}
+      try {
+        if (restoredKeys.indexOf('haven-schedule-sleep') !== -1 || restoredKeys.indexOf('haven-schedule-sleep-targets') !== -1 || restoredKeys.indexOf('haven-schedule-sleep-routine') !== -1) {
+          if (typeof renderSleepHub === 'function') renderSleepHub();
+          if (typeof renderSleepAnalytics === 'function') renderSleepAnalytics();
+          if (typeof renderTargetEditor === 'function' && typeof loadSleepTargets === 'function') renderTargetEditor(loadSleepTargets());
+          if (typeof renderSleepRoutine === 'function') renderSleepRoutine();
+        }
+      } catch (e) {}
     })
     .catch(function(err) {
       console.warn('[sync] Pull failed:', err);
@@ -210,12 +236,34 @@ function pullFromCloud() {
     });
 }
 
+function isEmptyCloudValue(val) {
+  if (typeof val === 'string') return val === '' || val === '[]' || val === '{}';
+  if (Array.isArray(val)) return val.length === 0;
+  if (val && typeof val === 'object') return Object.keys(val).length === 0;
+  return false;
+}
+
+function isEmptyLocalValue(key) {
+  var raw = null;
+  try { raw = localStorage.getItem(key); } catch (e) { return true; }
+  if (raw === null || raw === '') return true;
+  try {
+    var parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.length === 0;
+    if (parsed && typeof parsed === 'object') return Object.keys(parsed).length === 0;
+    return false;
+  } catch (e) {
+    return raw === '';
+  }
+}
+
 // ─── Push localStorage → Firestore ──────────────────────
 function pushToCloud() {
   if (!SYNC_ENABLED || !SYNC_DB || !state.currentUserId) return false;
   if (SYNC_PENDING) return false;
   // Skip push if currently pulling from cloud (to prevent pull→push loop)
   if (SYNC_PULLING) return false;
+  if (!SYNC_PULLED_ONCE) return false;
 
   SYNC_PENDING = true;
 

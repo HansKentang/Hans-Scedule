@@ -313,15 +313,6 @@
       box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.5) inset, 0 1px 0 rgba(255,255,255,0.9) inset;
     }
     .cat-swatches { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .cat-swatch {
-      width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent;
-      cursor: pointer; padding: 0; flex-shrink: 0; transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .cat-swatch:hover { transform: scale(1.15); }
-    .cat-swatch.selected { border-color: #fff; box-shadow: 0 0 0 2px var(--sw, var(--accent)), 0 2px 8px rgba(0,0,0,0.3); transform: scale(1.1); }
-    .cat-custom-color { position: relative; width: 26px; height: 26px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 1.5px dashed rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; color: var(--text-tertiary); cursor: pointer; }
-    html.light .cat-custom-color { border-color: rgba(0,0,0,0.2); }
-    .cat-custom-color input { position: absolute; inset: -4px; opacity: 0; cursor: pointer; }
     .cat-preset-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
     .cat-preset {
       padding: 4px 12px; border-radius: var(--radius-full); font-size: 0.68rem; font-weight: 500;
@@ -1135,18 +1126,8 @@
         <div class="tm-section">
           <div class="tm-section-label">Color</div>
           <div class="cat-swatches" id="catAddSwatches">
-            <button type="button" class="cat-swatch" style="background:#6366f1;--sw:#6366f1" data-color="#6366f1" aria-label="Indigo"></button>
-            <button type="button" class="cat-swatch" style="background:#f59e0b;--sw:#f59e0b" data-color="#f59e0b" aria-label="Amber"></button>
-            <button type="button" class="cat-swatch" style="background:#ef4444;--sw:#ef4444" data-color="#ef4444" aria-label="Red"></button>
-            <button type="button" class="cat-swatch" style="background:#10b981;--sw:#10b981" data-color="#10b981" aria-label="Emerald"></button>
-            <button type="button" class="cat-swatch" style="background:#3b82f6;--sw:#3b82f6" data-color="#3b82f6" aria-label="Blue"></button>
-            <button type="button" class="cat-swatch" style="background:#ec4899;--sw:#ec4899" data-color="#ec4899" aria-label="Pink"></button>
-            <button type="button" class="cat-swatch" style="background:#8b5cf6;--sw:#8b5cf6" data-color="#8b5cf6" aria-label="Violet"></button>
-            <button type="button" class="cat-swatch" style="background:#14b8a6;--sw:#14b8a6" data-color="#14b8a6" aria-label="Teal"></button>
-            <div class="cat-custom-color" title="Custom color">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-              <input type="color" id="catColorPicker" value="#6366f1" aria-label="Custom category color">
-            </div>
+            <button type="button" class="cpop-trigger" id="catColorBtn"><span class="cpop-trigger-dot" id="catColorDot" style="background:#6366f1"></span><span class="cpop-trigger-hex" id="catColorHex">#6366f1</span></button>
+            <input type="hidden" id="catColorPicker" value="#6366f1">
           </div>
         </div>
         <div class="tm-row tm-row-2">

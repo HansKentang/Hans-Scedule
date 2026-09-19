@@ -85,56 +85,146 @@ const AI_USAGE_KEY = 'haven-schedule-ai-usage';
 
 // ─── SLEEP TRACKING ──────────────────────────────────────────
 const SLEEP_STORAGE_KEY = 'haven-schedule-sleep';
+const SLEEP_RECOVERY_KEY = 'haven-schedule-sleep-recovery';
+const SLEEP_ROUTINE_KEY = 'haven-schedule-sleep-routine';
+
+function isValidSleepDate(s) {
+  return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
+function isValidSleepTime(s) {
+  return typeof s === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(s);
+}
+
+function sanitizeSleepLog(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  if (!isValidSleepDate(raw.date)) return null;
+  const bedtime = isValidSleepTime(raw.bedtime) ? raw.bedtime : '23:00';
+  const wakeTime = isValidSleepTime(raw.wakeTime) ? raw.wakeTime : '07:00';
+  let quality = parseInt(raw.quality, 10);
+  if (!Number.isFinite(quality)) quality = 3;
+  quality = Math.min(5, Math.max(1, quality));
+  return {
+    id: (typeof raw.id === 'string' && raw.id) ? raw.id : uid(),
+    date: raw.date,
+    bedtime: bedtime,
+    wakeTime: wakeTime,
+    quality: quality,
+    notes: typeof raw.notes === 'string' ? raw.notes : '',
+    mood: Array.isArray(raw.mood) ? raw.mood.filter(m => typeof m === 'string') : [],
+    env: Array.isArray(raw.env) ? raw.env.filter(e => typeof e === 'string') : [],
+    createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : new Date().toISOString(),
+    duration: calculateSleepDuration(bedtime, wakeTime),
+  };
+}
 
 function loadSleepLogs() {
+  let data = null;
   try {
-    const data = localStorage.getItem(SLEEP_STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    data = localStorage.getItem(SLEEP_STORAGE_KEY);
   } catch (e) {
     return [];
   }
+  if (data === null || data === '') return [];
+  let parsed = null;
+  try {
+    parsed = JSON.parse(data);
+  } catch (e) {
+    parsed = null;
+  }
+  if (!Array.isArray(parsed)) {
+    try { __origLS.setItem(getStoragePrefix() + SLEEP_RECOVERY_KEY, String(data)); } catch (e) {}
+    try { localStorage.setItem(SLEEP_STORAGE_KEY, '[]'); } catch (e) {}
+    return [];
+  }
+  const clean = [];
+  const seen = {};
+  for (const raw of parsed) {
+    const log = sanitizeSleepLog(raw);
+    if (!log || seen[log.date]) continue;
+    seen[log.date] = true;
+    clean.push(log);
+  }
+  if (clean.length !== parsed.length) {
+    try { localStorage.setItem(SLEEP_STORAGE_KEY, JSON.stringify(clean)); } catch (e) {}
+  }
+  return clean;
 }
 
 function saveSleepLogs(logs) {
+  if (!Array.isArray(logs)) return false;
   try {
     localStorage.setItem(SLEEP_STORAGE_KEY, JSON.stringify(logs));
-  } catch (e) { /* ignore */ }
+    return localStorage.getItem(SLEEP_STORAGE_KEY) !== null;
+  } catch (e) {
+    return false;
+  }
 }
 
 function addSleepLog(data) {
-  const logs = loadSleepLogs();
-  const log = {
+  data = data || {};
+  const candidate = sanitizeSleepLog({
     id: uid(),
-    date: data.date || formatDate(new Date()),
-    bedtime: data.bedtime || '23:00',
-    wakeTime: data.wakeTime || '07:00',
-    quality: data.quality || 3,
-    notes: data.notes || '',
-    mood: data.mood || [],
-    env: data.env || [],
+    date: isValidSleepDate(data.date) ? data.date : formatDate(new Date()),
+    bedtime: isValidSleepTime(data.bedtime) ? data.bedtime : '23:00',
+    wakeTime: isValidSleepTime(data.wakeTime) ? data.wakeTime : '07:00',
+    quality: data.quality,
+    notes: data.notes,
+    mood: data.mood,
+    env: data.env,
     createdAt: new Date().toISOString(),
-  };
-  log.duration = calculateSleepDuration(log.bedtime, log.wakeTime);
-  logs.push(log);
-  saveSleepLogs(logs);
-  return log;
+  });
+  if (!candidate) return null;
+  const logs = loadSleepLogs();
+  const existing = logs.find(l => l.date === candidate.date);
+  if (existing) {
+    Object.assign(existing, {
+      bedtime: candidate.bedtime,
+      wakeTime: candidate.wakeTime,
+      quality: candidate.quality,
+      notes: candidate.notes,
+      mood: candidate.mood,
+      env: candidate.env,
+      duration: candidate.duration,
+    });
+    return saveSleepLogs(logs) ? existing : null;
+  }
+  logs.push(candidate);
+  return saveSleepLogs(logs) ? candidate : null;
 }
 
 function updateSleepLog(id, data) {
   const logs = loadSleepLogs();
   const idx = logs.findIndex(l => l.id === id);
   if (idx === -1) return null;
-  logs[idx] = { ...logs[idx], ...data };
-  if (data.bedtime !== undefined || data.wakeTime !== undefined) {
-    logs[idx].duration = calculateSleepDuration(logs[idx].bedtime, logs[idx].wakeTime);
+  const next = { ...logs[idx], ...data };
+  if (data.date !== undefined && !isValidSleepDate(data.date)) delete next.date;
+  if (data.bedtime !== undefined && !isValidSleepTime(data.bedtime)) next.bedtime = logs[idx].bedtime;
+  if (data.wakeTime !== undefined && !isValidSleepTime(data.wakeTime)) next.wakeTime = logs[idx].wakeTime;
+  const clean = sanitizeSleepLog(next);
+  if (!clean) return null;
+  const clash = logs.find(l => l.date === clean.date && l.id !== id);
+  if (clash) {
+    Object.assign(clash, {
+      bedtime: clean.bedtime,
+      wakeTime: clean.wakeTime,
+      quality: clean.quality,
+      notes: clean.notes,
+      mood: clean.mood,
+      env: clean.env,
+      duration: clean.duration,
+    });
+    const rest = logs.filter(l => l.id !== id && l.id !== clash.id);
+    rest.push(clash);
+    return saveSleepLogs(rest) ? clash : null;
   }
-  saveSleepLogs(logs);
-  return logs[idx];
+  logs[idx] = { ...clean, id: logs[idx].id, createdAt: logs[idx].createdAt };
+  return saveSleepLogs(logs) ? logs[idx] : null;
 }
 
 function deleteSleepLog(id) {
   const logs = loadSleepLogs();
-  saveSleepLogs(logs.filter(l => l.id !== id));
+  return saveSleepLogs(logs.filter(l => l.id !== id));
 }
 
 function getSleepLog(date) {
@@ -143,6 +233,7 @@ function getSleepLog(date) {
 }
 
 function calculateSleepDuration(bedtime, wakeTime) {
+  if (!isValidSleepTime(bedtime) || !isValidSleepTime(wakeTime)) return 0;
   const [bh, bm] = bedtime.split(':').map(Number);
   const [wh, wm] = wakeTime.split(':').map(Number);
   let bedMins = bh * 60 + bm;
@@ -173,16 +264,32 @@ const SLEEP_TARGET_KEY = 'haven-schedule-sleep-targets';
 function loadSleepTargets() {
   try {
     const data = localStorage.getItem(SLEEP_TARGET_KEY);
-    return data ? JSON.parse(data) : getDefaultSleepTargets();
+    if (!data) return getDefaultSleepTargets();
+    const parsed = JSON.parse(data);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return getDefaultSleepTargets();
+    const defaults = getDefaultSleepTargets();
+    const out = { ...defaults };
+    if (isValidSleepTime(parsed.targetBedtime)) out.targetBedtime = parsed.targetBedtime;
+    if (isValidSleepTime(parsed.targetWakeTime)) out.targetWakeTime = parsed.targetWakeTime;
+    const dur = parseInt(parsed.targetDuration, 10);
+    if (Number.isFinite(dur) && dur > 0 && dur <= 1440) out.targetDuration = dur;
+    if (typeof parsed.windDownReminder === 'boolean') out.windDownReminder = parsed.windDownReminder;
+    const mins = parseInt(parsed.windDownReminderMins, 10);
+    if (Number.isFinite(mins) && mins >= 0) out.windDownReminderMins = mins;
+    return out;
   } catch (e) {
     return getDefaultSleepTargets();
   }
 }
 
 function saveSleepTargets(targets) {
+  if (!targets || typeof targets !== 'object') return false;
   try {
     localStorage.setItem(SLEEP_TARGET_KEY, JSON.stringify(targets));
-  } catch (e) { /* ignore */ }
+    return localStorage.getItem(SLEEP_TARGET_KEY) !== null;
+  } catch (e) {
+    return false;
+  }
 }
 
 function getDefaultSleepTargets() {
@@ -768,15 +875,8 @@ function openCategoryEditPopup(anchorEl, tagId) {
         <input type="text" id="catEditName" value="${escapeHtml(curCat.label || curCat.name)}" autocomplete="off" maxlength="30" spellcheck="false">
       </div>
       <div class="cat-edit-field">
-        <div class="cat-edit-swatches">
-          ${['#6366f1','#f59e0b','#ef4444','#22c55e','#06b6d4','#ec4899','#f97316','#8b5cf6','#14b8a6','#84cc16'].map(c =>
-            `<button class="cat-edit-swatch${c === accent ? ' active' : ''}" style="background:${c}" data-color="${c}"></button>`
-          ).join('')}
-          <div class="cat-edit-custom-color">
-            <input type="color" id="catEditColor" value="${accent}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-          </div>
-        </div>
+        <button class="cpop-trigger" id="catEditColorBtn"><span class="cpop-trigger-dot" style="background:${accent}"></span><span class="cpop-trigger-hex">${accent}</span></button>
+        <input type="hidden" id="catEditColor" value="${accent}">
       </div>
       <div class="cat-edit-actions">
         <button id="catEditCancel">Cancel</button>
@@ -803,13 +903,20 @@ function openCategoryEditPopup(anchorEl, tagId) {
     document.getElementById('catEditName')?.select();
   });
 
-  // Swatch picker
-  popup.querySelectorAll('.cat-edit-swatch').forEach(btn => {
-    btn.addEventListener('click', () => {
-      popup.querySelectorAll('.cat-edit-swatch').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('catEditColor').value = btn.dataset.color;
-    });
+  document.getElementById('catEditColorBtn')?.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const btn = document.getElementById('catEditColorBtn');
+    const hidden = document.getElementById('catEditColor');
+    openColorPopup(btn, { title: 'Category color', value: hidden ? hidden.value : accent, onPick: function(hex) {
+      if (hidden) hidden.value = hex;
+      const dot = btn ? btn.querySelector('.cpop-trigger-dot') : null;
+      const label = btn ? btn.querySelector('.cpop-trigger-hex') : null;
+      if (dot) dot.style.background = hex;
+      if (label) label.textContent = hex;
+      popup.style.setProperty('--edit-accent', hex);
+      const headDot = popup.querySelector('.cat-edit-dot');
+      if (headDot) headDot.style.background = hex;
+    } });
   });
 
   function saveEdit() {
@@ -841,6 +948,7 @@ function openCategoryEditPopup(anchorEl, tagId) {
 
   setTimeout(() => {
     function closeOnOutside(e) {
+      if (e.target.closest && e.target.closest('.cpop')) return;
       if (!popup.contains(e.target) && !anchorEl.contains(e.target)) {
         popup.remove();
         document.removeEventListener('click', closeOnOutside);
@@ -1568,12 +1676,12 @@ function applyActivePresetIfNewUser() {
     if (data.settings) {
       if (typeof state !== 'undefined') {
         try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ darkMode: data.settings.darkMode !== undefined ? data.settings.darkMode : null, accentColor: data.settings.accentColor || null, accentCustomColors: data.settings.accentCustomColors || [], accentRemovedPresets: data.settings.accentRemovedPresets || [], showWeekends: true, showCompleted: true, accessBubbles: {}, currentView: "week" })); } catch(e) {}
-      if (typeof applyAccentColor === 'function') try { applyAccentColor(); } catch(e) {}
-      if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
         if (data.settings.accentColor !== undefined) state.accentColor = data.settings.accentColor;
         if (data.settings.darkMode !== undefined) state.darkMode = data.settings.darkMode;
         if (data.settings.accentCustomColors) state.accentCustomColors = [...data.settings.accentCustomColors];
         if (data.settings.accentRemovedPresets) state.accentRemovedPresets = [...data.settings.accentRemovedPresets];
+      if (typeof applyAccentColor === 'function') try { applyAccentColor(); } catch(e) {}
+      if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
       }
     }
 
@@ -3522,7 +3630,6 @@ function toggleTheme() {
   if (state.darkMode === null) state.darkMode = !prefersDark;
   else state.darkMode = !currentIsDark;
   applyTheme();
-  applyCardColors();
   saveState();
 }
 
@@ -3807,7 +3914,14 @@ function renderAIUsage() {
 // ─── DATA EXPORT/IMPORT ────────────────────────────────────
 function exportData() {
   const sleepLogs = loadSleepLogs();
-  const data = JSON.stringify({ tasks: state.tasks, sleepLogs: sleepLogs, version: 1 }, null, 2);
+  let sleepTargets = null;
+  let sleepRoutine = null;
+  try { sleepTargets = loadSleepTargets(); } catch (e) {}
+  try {
+    const rawRoutine = localStorage.getItem(SLEEP_ROUTINE_KEY);
+    if (rawRoutine) sleepRoutine = JSON.parse(rawRoutine);
+  } catch (e) {}
+  const data = JSON.stringify({ tasks: state.tasks, sleepLogs: sleepLogs, sleepTargets: sleepTargets, sleepRoutine: sleepRoutine, version: 1 }, null, 2);
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -3832,7 +3946,21 @@ function importData(e) {
       }
       state.tasks = data.tasks;
       if (data.sleepLogs && Array.isArray(data.sleepLogs)) {
-        saveSleepLogs(data.sleepLogs);
+        const clean = [];
+        const seen = {};
+        for (const raw of data.sleepLogs) {
+          const log = sanitizeSleepLog(raw);
+          if (!log || seen[log.date]) continue;
+          seen[log.date] = true;
+          clean.push(log);
+        }
+        saveSleepLogs(clean);
+      }
+      if (data.sleepTargets && typeof data.sleepTargets === 'object') {
+        saveSleepTargets(data.sleepTargets);
+      }
+      if (data.sleepRoutine && typeof data.sleepRoutine === 'object') {
+        try { localStorage.setItem(SLEEP_ROUTINE_KEY, JSON.stringify(data.sleepRoutine)); } catch (e) {}
       }
       saveState();
       dom.importFileInput.value = '';
@@ -4046,7 +4174,7 @@ function renderAccentColorPicker(container) {
     html += '<div class="acc-reset-row"><button class="acc-custom-add" data-acc-reset="1">Reset palette</button></div>';
   }
   html += '<div class="acc-custom-hint">Right-click any swatch to remove it</div>';
-  html += '<div class="acc-custom-row"><input type="color" class="acc-custom-picker" value="#a8c8e8"><input type="text" class="acc-custom-hex" value="#a8c8e8" maxlength="7" placeholder="#hex"><button class="acc-custom-add" data-acc-add="1">Save</button></div>';
+  html += '<div class="acc-custom-row"><input type="color" class="acc-custom-picker cpop-native-round" value="#a8c8e8"><input type="text" class="acc-custom-hex" value="#a8c8e8" maxlength="7" placeholder="#hex"><button class="acc-custom-add" data-acc-add="1">Save</button></div>';
   body.innerHTML = html;
 
   if (!container._accBound) {
@@ -4261,6 +4389,10 @@ function openSettingsDrawer() {
   try { renderCardColorsInSettings(); } catch (e) {}
   try { renderBubbleConfigInSettings(); } catch (e) {}
   try { injectHubExportUI(); } catch (e) {}
+  try {
+    var imgSec = document.getElementById('settingsImageManager');
+    if (imgSec && !imgSec.querySelector('.acc-picker-body, .cc-swatch-grid, .settings-card, button, input, select')) imgSec.style.display = 'none';
+  } catch (e) {}
   overlay.classList.remove('hidden');
   drawer.classList.remove('hidden');
   requestAnimationFrame(() => {
@@ -4353,21 +4485,25 @@ function handleSettingsSubmit(e) {
   saveApiProvider(provider);
   try { localStorage.setItem('haven-schedule-model', model); } catch (e) { /* ignore */ }
   updateSettingsKeyStatus();
-  // Save bubble config from settings form
+  // Save bubble config from settings form (only on pages that have bubble inputs;
+  // otherwise an empty collection would wipe the user's existing customization)
+  const bubbleInputs = document.querySelectorAll('[data-bubble-config]');
   const bubbleConfig = {};
-  document.querySelectorAll('[data-bubble-config]').forEach(el => {
-    const key = el.dataset.bubbleConfig;
-    const visibleEl = document.getElementById(`bubble-visible-${key}`);
-    const labelEl = document.getElementById(`bubble-label-${key}`);
-    const colorEl = document.getElementById(`bubble-color-${key}`);
-    if (!visibleEl && !labelEl && !colorEl) return;
-    const overrides = {};
-    if (visibleEl) overrides.visible = visibleEl.checked;
-    if (labelEl) overrides.label = labelEl.value.trim() || DEFAULT_BUBBLES[key]?.label || key;
-    if (colorEl) overrides.color = colorEl.value;
-    if (Object.keys(overrides).length) bubbleConfig[key] = overrides;
-  });
-  state.accessBubbles = bubbleConfig;
+  if (bubbleInputs.length) {
+    bubbleInputs.forEach(el => {
+      const key = el.dataset.bubbleConfig;
+      const visibleEl = document.getElementById(`bubble-visible-${key}`);
+      const labelEl = document.getElementById(`bubble-label-${key}`);
+      const colorEl = document.getElementById(`bubble-color-${key}`);
+      if (!visibleEl && !labelEl && !colorEl) return;
+      const overrides = {};
+      if (visibleEl) overrides.visible = visibleEl.checked;
+      if (labelEl) overrides.label = labelEl.value.trim() || DEFAULT_BUBBLES[key]?.label || key;
+      if (colorEl) overrides.color = colorEl.value;
+      if (Object.keys(overrides).length) bubbleConfig[key] = overrides;
+    });
+    state.accessBubbles = bubbleConfig;
+  }
   // Persist custom images to individual haven-image-* keys (single source of truth)
   try {
     var _existingSettings = {};
@@ -6898,253 +7034,102 @@ function renderBubbleConfigInSettings() {
         Show
       </label>
       <input type="text" id="bubble-label-${key}" data-bubble-config="${key}" value="${label}" placeholder="${def.label}" style="flex:1;min-width:0;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);font-size:13px;">
-      <input type="color" id="bubble-color-${key}" data-bubble-config="${key}" value="${color}" style="width:32px;height:28px;padding:0;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:none;">
+      <input type="color" id="bubble-color-${key}" data-bubble-config="${key}" value="${color}" class="cpop-native-round" style="width:28px;height:28px;" title="Bubble color">
     `;
     container.appendChild(row);
   });
 }
 
+// ─── SHARED COLOR POPUP ────────────────────────────────
+const COLOR_POPUP_PALETTE = ['#4a90d9','#27ae60','#8e44ad','#f39c12','#e74c8b','#16a085','#e67e22','#2980b9','#c0392b','#1abc9c','#e91e63','#9c27b0','#3f51b5','#009688','#ff5722','#607d8b'];
+let _cpopWired = false;
+function closeColorPopup() {
+  const p = document.querySelector('.cpop');
+  if (p) p.remove();
+}
+function openColorPopup(anchorEl, opts) {
+  opts = opts || {};
+  closeColorPopup();
+  const title = opts.title || 'Color';
+  let value = String(opts.value || '').toLowerCase();
+  const palette = Array.isArray(opts.palette) && opts.palette.length ? opts.palette : COLOR_POPUP_PALETTE;
+  const allowAuto = !!opts.allowAuto;
+  const autoLabel = opts.autoLabel || 'Auto';
+  const autoValue = opts.autoValue !== undefined ? String(opts.autoValue) : '';
+  const onPick = typeof opts.onPick === 'function' ? opts.onPick : function() {};
+  const grid = palette.map(function(c) {
+    const sel = (value && value === String(c).toLowerCase()) ? ' sel' : '';
+    return '<button class="cpop-swatch' + sel + '" data-cpop-pick="' + c + '" style="background:' + c + '" title="' + c + '">' + (sel ? '✓' : '') + '</button>';
+  }).join('') + (allowAuto ? '<button class="cpop-swatch cpop-auto' + (value === autoValue.toLowerCase() || (!value && !autoValue) ? ' sel' : '') + '" data-cpop-pick="__auto__" title="' + escapeHtml(autoLabel) + '">' + ((value === autoValue.toLowerCase() || (!value && !autoValue)) ? '✓' : 'A') + '</button>' : '');
+  const pop = document.createElement('div');
+  pop.className = 'cpop';
+  pop.innerHTML = '<div class="cpop-head"><span class="cpop-preview" style="background:' + (value || autoValue || '#4a90d9') + '"></span><span class="cpop-name">' + escapeHtml(title) + '</span><button class="cpop-close" data-cpop-close>×</button></div>'
+    + '<div class="cpop-label">Color</div><div class="cpop-grid">' + grid + '</div>'
+    + '<div class="cpop-label">Custom</div><div class="cpop-custom"><label class="cpop-custom-swatch" title="Pick a custom color"><input type="color" data-cpop-custom value="' + (value || '#4a90d9') + '"><span>+</span></label><span class="cpop-hex">' + (value || autoLabel.toLowerCase()) + '</span></div>';
+  document.body.appendChild(pop);
+  const r = anchorEl && anchorEl.getBoundingClientRect ? anchorEl.getBoundingClientRect() : { left: window.innerWidth / 2, top: 100, bottom: 140 };
+  const pw = 208, ph = 300;
+  let left = Math.max(8, Math.min(r.left - 20, window.innerWidth - pw - 8));
+  let top = r.bottom + 8;
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, (r.top || 100) - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+  function apply(hex) {
+    onPick(hex);
+    closeColorPopup();
+  }
+  pop.addEventListener('click', function(ev) {
+    if (ev.target.closest('[data-cpop-close]')) { closeColorPopup(); return; }
+    const pick = ev.target.closest('[data-cpop-pick]');
+    if (pick) {
+      const v = pick.getAttribute('data-cpop-pick');
+      apply(v === '__auto__' ? autoValue : v);
+    }
+  });
+  const custom = pop.querySelector('[data-cpop-custom]');
+  const hexEl = pop.querySelector('.cpop-hex');
+  const preview = pop.querySelector('.cpop-preview');
+  custom.addEventListener('input', function() {
+    if (hexEl) hexEl.textContent = custom.value;
+    if (preview) preview.style.background = custom.value;
+  });
+  custom.addEventListener('change', function() { apply(custom.value); });
+  if (!_cpopWired) {
+    _cpopWired = true;
+    document.addEventListener('mousedown', function(ev) {
+      if (!ev.target.closest('.cpop')) closeColorPopup();
+    });
+    document.addEventListener('keydown', function(ev) {
+      if (ev.key === 'Escape') closeColorPopup();
+    });
+  }
+  return pop;
+}
+
 // ─── COLOR PICKER COMPONENT ────────────────────────────────
-function renderHueStrip(canvas) {
-  const ctx = canvas.getContext('2d');
-  const h = canvas.height;
-  for (let y = 0; y < h; y++) {
-    const hue = (y / h) * 360;
-    const hex = hsvToHex(hue, 1, 1);
-    ctx.fillStyle = hex;
-    ctx.fillRect(0, y, canvas.width, 1);
-  }
-}
-
-function renderColorTriangle(canvas, hue) {
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  const imgData = ctx.createImageData(W, H);
-  const data = imgData.data;
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const u = x / W, v = y / H;
-      if (u + v > 1) {
-        // Outside triangle - transparent
-        const idx = (y * W + x) * 4;
-        data[idx] = 0; data[idx+1] = 0; data[idx+2] = 0; data[idx+3] = 0;
-        continue;
-      }
-      const s = 1 - u;
-      const val = 1 - v;
-      const hex = hsvToHex(hue, s, val);
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
-      const idx = (y * W + x) * 4;
-      data[idx] = r; data[idx+1] = g; data[idx+2] = b; data[idx+3] = 255;
-    }
-  }
-  ctx.putImageData(imgData, 0, 0);
-}
-
-function getTriangleColor(canvas, hue, mx, my) {
-  const W = canvas.width, H = canvas.height;
-  const u = mx / W, v = my / H;
-  if (u + v > 1) return null;
-  const s = 1 - u;
-  const val = 1 - v;
-  return hsvToHex(hue, s, val);
-}
-
-function getHueFromY(canvas, my) {
-  return Math.max(0, Math.min(360, (my / canvas.height) * 360));
-}
-
 function openCardColorPicker(anchorEl, tag, currentHex, onPick) {
-  const existing = document.querySelector('.card-color-popover');
-  if (existing) existing.remove();
-
-  let hue = hexToHsv(currentHex).h;
-  let currentColor = currentHex;
-
-  const popover = document.createElement('div');
-  popover.className = 'card-color-popover';
-  popover.innerHTML = `<div class="ccp-header">
-      <span class="ccp-swatch" style="background:${currentHex}"></span>
-      <input type="text" class="ccp-hex" value="${currentHex}" maxlength="7" spellcheck="false">
-      <button class="btn btn-ghost ccp-close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-    </div>
-    <div class="ccp-canvas-wrap">
-      <canvas class="ccp-hue" width="16" height="150"></canvas>
-      <canvas class="ccp-triangle" width="180" height="150"></canvas>
-    </div>
-    <div class="ccp-footer">
-      <span class="ccp-tag-label">${TAG_LABELS[tag] || tag}</span>
-      <button class="btn btn-ghost ccp-reset">Reset</button>
-    </div>`;
-
-  document.body.appendChild(popover);
-
-  const hueCanvas = popover.querySelector('.ccp-hue');
-  const triCanvas = popover.querySelector('.ccp-triangle');
-  const swatch = popover.querySelector('.ccp-swatch');
-  const hexInput = popover.querySelector('.ccp-hex');
-  const closeBtn = popover.querySelector('.ccp-close');
-  const resetBtn = popover.querySelector('.ccp-reset');
-
-  hueCanvas.width = 16; hueCanvas.height = 150;
-  triCanvas.width = 180; triCanvas.height = 150;
-
-  let hueDrag = false, triDrag = false;
-
-  function updatePicker() {
-    renderHueStrip(hueCanvas);
-    renderColorTriangle(triCanvas, hue);
-    swatch.style.background = currentColor;
-    hexInput.value = currentColor;
-    drawMarkers();
-  }
-
-  function drawMarkers() {
-    const hsv = hexToHsv(currentColor);
-    const hsvHue = hsv.h;
-
-    // Hue marker
-    const ctx = hueCanvas.getContext('2d');
-    const hy = (hsvHue / 360) * hueCanvas.height;
-    ctx.clearRect(0, 0, hueCanvas.width, hueCanvas.height);
-    renderHueStrip(hueCanvas);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, hy - 3, hueCanvas.width, 6);
-
-    // Triangle marker
-    const tCtx = triCanvas.getContext('2d');
-    renderColorTriangle(triCanvas, hue);
-    const u = 1 - hsv.s, v = 1 - hsv.v;
-    const mx = u * triCanvas.width;
-    const my = v * triCanvas.height;
-    if (u + v <= 1) {
-      tCtx.beginPath();
-      tCtx.arc(mx, my, 5, 0, Math.PI * 2);
-      tCtx.strokeStyle = '#fff';
-      tCtx.lineWidth = 2;
-      tCtx.stroke();
-      tCtx.beginPath();
-      tCtx.arc(mx, my, 4, 0, Math.PI * 2);
-      tCtx.strokeStyle = '#000';
-      tCtx.lineWidth = 1;
-      tCtx.stroke();
+  let def = null;
+  try {
+    if (typeof DEFAULT_TAG_COLORS !== 'undefined' && DEFAULT_TAG_COLORS[tag]) def = DEFAULT_TAG_COLORS[tag].light;
+    if (!def && typeof loadCustomTags === 'function') {
+      const ct = (loadCustomTags() || []).find(function(c) { return c.id === tag; });
+      if (ct) def = ct.color;
     }
-  }
-
-  function pickColor() {
-    const allColors = { ...cardColors };
-    allColors[tag] = {
-      light: currentColor,
-      dark: lightenColor(currentColor, 0.45),
-    };
-    saveCardColors(allColors);
-    onPick(currentColor);
-  }
-
-  // Hue bar events
-  function onHueDown(clientY) {
-    hueDrag = true;
-    const rect = hueCanvas.getBoundingClientRect();
-    hue = getHueFromY(hueCanvas, clientY - rect.top);
-    currentColor = hsvToHex(hue, hexToHsv(currentColor).s, hexToHsv(currentColor).v);
-    updatePicker();
-  }
-
-  function onTriDown(clientX, clientY) {
-    triDrag = true;
-    const rect = triCanvas.getBoundingClientRect();
-    const mx = clientX - rect.left;
-    const my = clientY - rect.top;
-    const c = getTriangleColor(triCanvas, hue, mx, my);
-    if (c) { currentColor = c; updatePicker(); }
-  }
-
-  function onMove(clientX, clientY) {
-    if (hueDrag) {
-      const rect = hueCanvas.getBoundingClientRect();
-      hue = getHueFromY(hueCanvas, Math.max(0, Math.min(clientY - rect.top, hueCanvas.height)));
-      currentColor = hsvToHex(hue, hexToHsv(currentColor).s, hexToHsv(currentColor).v);
-      updatePicker();
-    }
-    if (triDrag) {
-      const rect = triCanvas.getBoundingClientRect();
-      const mx = Math.max(0, Math.min(clientX - rect.left, triCanvas.width));
-      const my = Math.max(0, Math.min(clientY - rect.top, triCanvas.height));
-      const c = getTriangleColor(triCanvas, hue, mx, my);
-      if (c) { currentColor = c; updatePicker(); }
-    }
-  }
-
-  function onUp() {
-    if (hueDrag || triDrag) {
-      hueDrag = false; triDrag = false;
-      pickColor();
-    }
-  }
-
-  hueCanvas.addEventListener('mousedown', (e) => onHueDown(e.clientY));
-  triCanvas.addEventListener('mousedown', (e) => onTriDown(e.clientX, e.clientY));
-  document.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
-  document.addEventListener('mouseup', onUp);
-
-  hueCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); const t = e.touches[0]; onHueDown(t.clientY); }, { passive: false });
-  triCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); const t = e.touches[0]; onTriDown(t.clientX, t.clientY); }, { passive: false });
-  document.addEventListener('touchmove', (e) => { const t = e.touches[0]; onMove(t.clientX, t.clientY); }, { passive: false });
-  document.addEventListener('touchend', onUp);
-
-  // Hex input
-  hexInput.addEventListener('input', () => {
-    let val = hexInput.value.trim();
-    if (/^#[0-9a-f]{6}$/i.test(val)) {
-      currentColor = val.toLowerCase();
-      hue = hexToHsv(currentColor).h;
-      updatePicker();
-      pickColor();
+  } catch(e) {}
+  openColorPopup(anchorEl, {
+    title: (typeof TAG_LABELS !== 'undefined' && TAG_LABELS[tag]) || tag,
+    value: currentHex,
+    allowAuto: !!def,
+    autoLabel: 'Reset',
+    autoValue: def || '',
+    onPick: function(hex) {
+      const finalHex = hex || def || currentHex;
+      const allColors = { ...cardColors };
+      allColors[tag] = { light: finalHex, dark: lightenColor(finalHex, 0.45) };
+      saveCardColors(allColors);
+      onPick(finalHex);
     }
   });
-
-  closeBtn.addEventListener('click', () => popover.remove());
-  resetBtn.addEventListener('click', () => {
-    const def = DEFAULT_TAG_COLORS[tag];
-    if (def) {
-      currentColor = def.light;
-    } else {
-      const customTags = loadCustomTags();
-      const ct = customTags.find(c => c.id === tag);
-      if (ct) currentColor = ct.color;
-    }
-    hue = hexToHsv(currentColor).h;
-    updatePicker();
-    pickColor();
-  });
-
-  // Position
-  requestAnimationFrame(() => {
-    const anchorRect = anchorEl.getBoundingClientRect();
-    const pw = 220, ph = popover.offsetHeight || 240;
-    let left = anchorRect.left;
-    let top = anchorRect.bottom + 4;
-    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
-    if (top + ph > window.innerHeight - 8) top = anchorRect.top - ph - 4;
-    popover.style.left = left + 'px';
-    popover.style.top = top + 'px';
-    popover.classList.add('active');
-    updatePicker();
-  });
-
-  // Close on click outside
-  setTimeout(() => {
-    document.addEventListener('click', closeOutside, true);
-  }, 0);
-  function closeOutside(e) {
-    if (!popover.contains(e.target) && e.target !== anchorEl) {
-      popover.remove();
-      document.removeEventListener('click', closeOutside, true);
-    }
-  }
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -7177,13 +7162,48 @@ function spInit() {
     window.addEventListener('pageshow', function() { spScheduleEmbedCheck(800); });
   }
   spScheduleEmbedCheck(6000);
+  // The hub bento grid may have rendered before spInit loaded playlists
+  // (empty-state widget). Refresh it now so the Spotify bubble appears.
+  try {
+    if (typeof window._updateSpotifyBubbles === 'function') window._updateSpotifyBubbles();
+    else if (typeof renderHubBento === 'function' && document.querySelector('.bento-grid') && document.querySelector('.spotify-widget.spotify-empty') && spPlaylists.length) renderHubBento();
+  } catch (e) {}
+}
+
+function spCleanId(val) {
+  if (val === null || val === undefined) return null;
+  var s = String(val).trim();
+  if (s.length >= 2 && ((s[0] === '"' && s[s.length - 1] === '"') || (s[0] === "'" && s[s.length - 1] === "'"))) s = s.slice(1, -1).trim();
+  return s || null;
 }
 
 function spLoadState() {
   try { spPlaylists = JSON.parse(localStorage.getItem(SP_PLAYLISTS_KEY)) || []; }
   catch { spPlaylists = []; }
-  spActiveId = localStorage.getItem(SP_ACTIVE_KEY) || null;
-  spCollapsed = localStorage.getItem(SP_COLLAPSED_KEY) === '1';
+  if (!Array.isArray(spPlaylists)) spPlaylists = [];
+  spPlaylists = spPlaylists.filter(function(p) { return p && spCleanId(p.id); });
+  spPlaylists.forEach(function(p) { p.id = spCleanId(p.id); });
+  var rawActive = null;
+  try { rawActive = localStorage.getItem(SP_ACTIVE_KEY); } catch (e) { rawActive = null; }
+  spActiveId = spCleanId(rawActive);
+  // Heal a previously double-encoded value ('"id"' from an old cloud sync)
+  // so the player stops randomly showing the empty state after reloads.
+  if (rawActive && spActiveId && rawActive !== spActiveId) {
+    try { localStorage.setItem(SP_ACTIVE_KEY, spActiveId); } catch (e) {}
+  }
+  // If the active id no longer matches any playlist, fall back to the first
+  // playlist instead of showing an empty player.
+  if (spActiveId && !spPlaylists.some(function(p) { return p.id === spActiveId; })) {
+    spActiveId = spPlaylists.length ? spPlaylists[0].id : null;
+    spSaveActive();
+  }
+  var rawCollapsed = null;
+  try { rawCollapsed = localStorage.getItem(SP_COLLAPSED_KEY); } catch (e) { rawCollapsed = null; }
+  if (rawCollapsed === '"1"' || rawCollapsed === '"0"' || rawCollapsed === '""') {
+    rawCollapsed = spCleanId(rawCollapsed) || '';
+    try { localStorage.setItem(SP_COLLAPSED_KEY, rawCollapsed); } catch (e) {}
+  }
+  spCollapsed = rawCollapsed === '1';
 }
 
 function spSavePlaylists() {
@@ -7200,7 +7220,9 @@ let spListenersBound = false;
 
 function spEmbedUrl(playlist) {
   if (!playlist || !playlist.id) return '';
-  return 'https://open.spotify.com/embed/playlist/' + playlist.id + '?utm_source=generator';
+  var id = (typeof spCleanId === 'function') ? spCleanId(playlist.id) : String(playlist.id).trim();
+  if (!id) return '';
+  return 'https://open.spotify.com/embed/playlist/' + id + '?utm_source=generator';
 }
 
 function spTrackEmbed(iframe) {
@@ -7242,7 +7264,13 @@ function spRenderSidebar(forceReload) {
   const embed = document.getElementById('spEmbed');
   const controls = document.getElementById('spControls');
   if (!empty || !wrap || !embed) return;
-  const active = spPlaylists.find(p => p.id === spActiveId);
+  var active = spPlaylists.find(p => p.id === spActiveId);
+  if (!active && spPlaylists.length) {
+    // Stale active id (e.g. pre-heal state) — fall back instead of blank player.
+    active = spPlaylists[0];
+    spActiveId = active.id;
+    try { spSaveActive(); } catch (e) {}
+  }
   if (active) {
     const targetSrc = spEmbedUrl(active);
     empty.style.display = 'none';
