@@ -3841,6 +3841,22 @@ function handleImagePickerPaste(e) {
   const status = document.getElementById('imagePickerStatus');
   const preview = document.getElementById('imagePickerPreview');
   const clipboardData = e.clipboardData || window.clipboardData;
+  var htmlGif = '';
+  try { htmlGif = clipboardData ? (clipboardData.getData('text/html') || '') : ''; } catch(err) { htmlGif = ''; }
+  if (htmlGif) {
+    var m = htmlGif.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (m && m[1]) {
+      var gifSrc = m[1];
+      var gifFile = /^https?:\/\//i.test(gifSrc) && /\.gif(\?|#|$)/i.test(gifSrc);
+      var gifData = /^data:image\/gif/i.test(gifSrc);
+      if (gifFile || gifData) {
+        e.preventDefault();
+        if (status) { status.textContent = 'Processing...'; status.style.color = 'var(--text-tertiary)'; }
+        finishPickerDataUrl(gifSrc);
+        return;
+      }
+    }
+  }
   const items = clipboardData?.items;
   if (!items) return;
   for (let i = 0; i < items.length; i++) {

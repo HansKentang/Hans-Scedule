@@ -5095,7 +5095,25 @@ function _alarmPersist(uid, list) {
   saveHubContent();
   return pitem;
 }
+var ONLINE_ALARM_SOUNDS = [
+  { key: 'mx995', label: 'Classic alarm', url: 'https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3' },
+  { key: 'mx989', label: 'Digital clock beep', url: 'https://assets.mixkit.co/active_storage/sfx/989/989-preview.mp3' },
+  { key: 'mx988', label: 'Alarm clock beep', url: 'https://assets.mixkit.co/active_storage/sfx/988/988-preview.mp3' },
+  { key: 'mx1003', label: 'Morning clock alarm', url: 'https://assets.mixkit.co/active_storage/sfx/1003/1003-preview.mp3' },
+  { key: 'mx996', label: 'Alarm tone', url: 'https://assets.mixkit.co/active_storage/sfx/996/996-preview.mp3' },
+  { key: 'mx993', label: 'Classic short alarm', url: 'https://assets.mixkit.co/active_storage/sfx/993/993-preview.mp3' },
+  { key: 'mx992', label: 'Digital alarm buzzer', url: 'https://assets.mixkit.co/active_storage/sfx/992/992-preview.mp3' },
+  { key: 'mx2462', label: 'Rooster crowing', url: 'https://assets.mixkit.co/active_storage/sfx/2462/2462-preview.mp3' }
+];
+function _onlineAlarmUrl(key) {
+  for (var i = 0; i < ONLINE_ALARM_SOUNDS.length; i++) {
+    if (ONLINE_ALARM_SOUNDS[i].key === key) return ONLINE_ALARM_SOUNDS[i].url;
+  }
+  return '';
+}
 function _alarmSoundFile(key) {
+  var online = _onlineAlarmUrl(key);
+  if (online) return online;
   if (key && typeof CHIME_SOUNDS !== 'undefined' && CHIME_SOUNDS[key]) return CHIME_SOUNDS[key].file;
   if (typeof getChimeFile === 'function') return getChimeFile();
   return 'sounds/chime-success.mp3';
@@ -5106,6 +5124,14 @@ function _playAlarmSound(key, vol) {
     var a = new Audio(_alarmSoundFile(key));
     var v = isFinite(vol) ? vol : 80;
     a.volume = Math.max(0, Math.min(1, v / 100));
+    a.onerror = function() {
+      try {
+        var fb = new Audio(typeof getChimeFile === 'function' ? getChimeFile() : 'sounds/chime-success.mp3');
+        fb.volume = a.volume;
+        var pr2 = fb.play();
+        if (pr2 && pr2.catch) pr2.catch(function() {});
+      } catch(e) {}
+    };
     var pr = a.play();
     if (pr && pr.catch) pr.catch(function() {});
   } catch(e) {}
@@ -5117,7 +5143,11 @@ function _alarmSoundOptions(sel) {
       out += '<option value="' + k + '"' + (sel === k ? ' selected' : '') + '>' + CHIME_SOUNDS[k].label + '</option>';
     });
   }
-  return out;
+  out += '<optgroup label="Online ringtones">';
+  ONLINE_ALARM_SOUNDS.forEach(function(s) {
+    out += '<option value="' + s.key + '"' + (sel === s.key ? ' selected' : '') + '>' + s.label + '</option>';
+  });
+  return out + '</optgroup>';
 }
 function _alarmsStatusText(list) {
   var now = new Date();
