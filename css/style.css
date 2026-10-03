@@ -5729,6 +5729,21 @@ html.light .hub-db-header .hub-db-count strong {
 .weather-wind { font-size:0.55rem; color:var(--text-tertiary); display:block; margin-top:2px; }
 .weather-refresh { background:none; border:none; color:var(--text-tertiary); cursor:pointer; padding:3px; display:inline-flex; align-items:center; justify-content:center; opacity:0.4; transition:opacity 0.15s; vertical-align:middle; margin-left:4px; border-radius:4px; }
 .weather-refresh:hover { opacity:1; color:var(--accent); background:var(--accent-subtle); }
+.weather-loc { background:none; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:4px; font-size:0.58rem; font-weight:500; color:var(--text-tertiary); padding:3px 8px; border-radius:20px; margin-top:6px; max-width:100%; }
+.weather-loc span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; }
+.weather-loc:hover { color:var(--accent); background:var(--accent-subtle); }
+.weather-err-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:2px; }
+.weather-err-btn { border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-secondary); font-size:0.6rem; font-weight:600; padding:5px 10px; border-radius:20px; cursor:pointer; }
+.weather-err-btn:hover { border-color:var(--accent); color:var(--accent); }
+.weather-err-ghost { background:none; }
+.weather-loc-form { display:flex; flex-direction:column; gap:8px; width:100%; max-width:230px; }
+.weather-loc-input { width:100%; padding:7px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-primary); font-size:0.7rem; outline:none; }
+.weather-loc-input:focus { border-color:var(--accent); }
+.weather-loc-row { display:flex; gap:6px; justify-content:center; }
+.weather-loc-results { display:flex; flex-direction:column; gap:4px; width:100%; }
+.weather-loc-item { border:1px solid var(--border-subtle); background:none; color:var(--text-secondary); font-size:0.65rem; text-align:left; padding:6px 9px; border-radius:8px; cursor:pointer; }
+.weather-loc-item:hover { border-color:var(--accent); color:var(--text-primary); background:var(--accent-subtle); }
+.weather-loc-status { font-size:0.6rem; color:var(--text-tertiary); text-align:center; padding:4px 0; }
 
 /* ─── Headlines Widget ─────────────────────────── */
 .headlines-widget { flex:1; display:flex; flex-direction:column; min-height:0; gap:6px; }

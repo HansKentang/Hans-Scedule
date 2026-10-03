@@ -2599,6 +2599,14 @@ function renderHubBento() {
   // ─── Timer / Pomodoro wiring ──────────────────
   if (!grid._timerWired) {
     grid._timerWired = true;
+    grid.addEventListener('keydown', function(e) {
+      if (e.key !== 'Enter') return;
+      var inp = (e.target && e.target.closest) ? e.target.closest('.weather-loc-input') : null;
+      if (!inp) return;
+      e.preventDefault();
+      var ww = inp.closest('.weather-widget');
+      if (ww) _weatherSearchAndRender(ww, inp.value);
+    });
     grid.addEventListener('click', function(e) {
       var shuffleBtn = e.target.closest('[data-quote-shuffle]');
       if (shuffleBtn) {
@@ -2611,6 +2619,54 @@ function renderHubBento() {
       var weatherRefreshBtn = e.target.closest('[data-weather-refresh]');
       if (weatherRefreshBtn) {
         refreshWeather();
+        return;
+      }
+      var weatherPickBtn = e.target.closest('[data-weather-pick]');
+      if (weatherPickBtn) {
+        var parts = (weatherPickBtn.getAttribute('data-weather-pick') || '').split(',');
+        var plat = parseFloat(parts[0]);
+        var plon = parseFloat(parts[1]);
+        var pname = weatherPickBtn.getAttribute('data-weather-name') || '';
+        if (isFinite(plat) && isFinite(plon)) {
+          _setSavedWeatherLoc(plat, plon, pname);
+          _weatherFetched = false;
+          _weatherLastData = null;
+          var pGrid = document.querySelector('.bento-grid');
+          if (pGrid) {
+            var pWidgets = pGrid.querySelectorAll('.weather-widget[data-weather-uid]');
+            pWidgets.forEach(function(w) {
+              w.innerHTML = '<div class="weather-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Fetching weather...</span></div>';
+            });
+            _weatherFetched = true;
+            _loadWeatherForCoords(plat, plon, pname, pWidgets);
+          }
+        }
+        return;
+      }
+      var weatherGoBtn = e.target.closest('[data-weather-loc-go]');
+      if (weatherGoBtn) {
+        var goWidget = weatherGoBtn.closest('.weather-widget');
+        if (goWidget) {
+          var goInput = goWidget.querySelector('.weather-loc-input');
+          _weatherSearchAndRender(goWidget, goInput ? goInput.value : '');
+        }
+        return;
+      }
+      var weatherCancelBtn = e.target.closest('[data-weather-cancel]');
+      if (weatherCancelBtn) {
+        refreshWeather();
+        return;
+      }
+      var weatherApproxBtn = e.target.closest('[data-weather-approx]');
+      if (weatherApproxBtn) {
+        var aGrid = document.querySelector('.bento-grid');
+        if (aGrid) _fetchWeatherByIP(aGrid.querySelectorAll('.weather-widget[data-weather-uid]'));
+        return;
+      }
+      var weatherEditBtn = e.target.closest('[data-weather-edit]');
+      if (weatherEditBtn) {
+        var eWidget = weatherEditBtn.closest('.weather-widget');
+        _weatherShowLocForm(eWidget);
         return;
       }
       var headlinesRefreshBtn = e.target.closest('[data-headlines-refresh]');
@@ -3989,93 +4045,194 @@ function updateWeatherWidget(widget, data) {
     }).join('') + '</div>';
   }
 
+  var rawLoc = data.locName || data.name || '';
+  var safeLoc = String(rawLoc).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  var locLabel = safeLoc || 'Set location';
+  var locLine = '<button class="weather-loc" data-weather-edit title="Change location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>' + locLabel + '</span></button>';
   if (wStyle === 'hero') {
-    widget.innerHTML = '<div class="wh-hero">' + iconLg + '<span class="wh-hero-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-hero-cond">' + cond + '</span>' + feelsHtml + '<div class="wh-hero-meta">' + hiloHtml + windHtml + refreshBtn + '</div></div>';
+    widget.innerHTML = '<div class="wh-hero">' + locLine + iconLg + '<span class="wh-hero-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-hero-cond">' + cond + '</span>' + feelsHtml + '<div class="wh-hero-meta">' + hiloHtml + windHtml + refreshBtn + '</div></div>';
   } else if (wStyle === 'minimal') {
-    widget.innerHTML = '<div class="wh-minimal"><span class="wh-min-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-min-cond">' + cond + '</span>' + feelsHtml + refreshBtn + '</div>';
+    widget.innerHTML = '<div class="wh-minimal">' + locLine + '<span class="wh-min-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-min-cond">' + cond + '</span>' + feelsHtml + refreshBtn + '</div>';
   } else if (wStyle === 'forecast') {
-    widget.innerHTML = '<div class="wh-forecast-head"><span class="wh-forecast-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-forecast-cond">' + cond + '</span>' + hiloHtml + refreshBtn + '</div>' + strip;
+    widget.innerHTML = '<div class="wh-forecast-head"><span class="wh-forecast-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-forecast-cond">' + cond + '</span>' + hiloHtml + refreshBtn + '</div>' + strip + locLine;
   } else if (wStyle === 'card') {
-    widget.innerHTML = '<div class="wh-card">' + icon + '<div class="wh-card-info"><span class="wh-card-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-card-cond">' + cond + '</span>' + feelsHtml + '</div><div class="wh-card-hilo">' + hiloHtml + windHtml + '</div>' + refreshBtn + '</div>' + strip;
+    widget.innerHTML = '<div class="wh-card">' + icon + '<div class="wh-card-info"><span class="wh-card-temp">' + Math.round(data.temp) + '&deg;</span><span class="wh-card-cond">' + cond + '</span>' + feelsHtml + '</div><div class="wh-card-hilo">' + hiloHtml + windHtml + '</div>' + refreshBtn + '</div>' + strip + locLine;
   } else {
     widget.innerHTML = '<div class="weather-main">' + icon + '<span class="weather-temp">' + Math.round(data.temp) + '&deg;</span></div>'
       + '<div class="weather-cond">' + cond + feelsHtml + '</div>'
       + '<div class="weather-meta">' + hiloHtml + windHtml + refreshBtn + '</div>'
-      + strip;
+      + strip + locLine;
   }
 }
 
+var WEATHER_LOC_KEY = 'haven-weather-location';
+function _getSavedWeatherLoc() {
+  try {
+    var raw = localStorage.getItem(WEATHER_LOC_KEY);
+    if (!raw) return null;
+    var o = JSON.parse(raw);
+    if (!o || typeof o.lat !== 'number' || typeof o.lon !== 'number') return null;
+    if (!isFinite(o.lat) || !isFinite(o.lon)) return null;
+    return { lat: o.lat, lon: o.lon, name: o.name || '' };
+  } catch(e) { return null; }
+}
+function _setSavedWeatherLoc(lat, lon, name) {
+  try { localStorage.setItem(WEATHER_LOC_KEY, JSON.stringify({ lat: lat, lon: lon, name: name || '' })); } catch(e) {}
+}
+function _weatherEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function _weatherErrHtml(msg) {
+  return '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>'
+    + _weatherEsc(msg)
+    + '</span><div class="weather-err-actions"><button class="weather-err-btn" data-weather-approx>Use approximate location</button><button class="weather-err-btn weather-err-ghost" data-weather-edit>Set location</button></div></div>';
+}
+function _weatherLocFormHtml() {
+  return '<div class="weather-loc-form"><input class="weather-loc-input" type="text" placeholder="City name..." autocomplete="off" /><div class="weather-loc-row"><button class="weather-err-btn" data-weather-loc-go>Search</button><button class="weather-err-btn weather-err-ghost" data-weather-cancel>Cancel</button></div><div class="weather-loc-results"></div></div>';
+}
+function _weatherShowLocForm(widget) {
+  if (!widget) return;
+  widget.innerHTML = _weatherLocFormHtml();
+  var input = widget.querySelector('.weather-loc-input');
+  if (input) { try { input.focus(); } catch(e) {} }
+}
+function _weatherSearchAndRender(widget, q) {
+  if (!widget) return;
+  var list = widget.querySelector('.weather-loc-results');
+  if (!list) return;
+  q = String(q || '').trim();
+  if (q.length < 2) {
+    list.innerHTML = '<div class="weather-loc-status">Type at least 2 letters.</div>';
+    return;
+  }
+  list.innerHTML = '<div class="weather-loc-status">Searching...</div>';
+  fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=5&language=en&format=json').then(function(r) { return r.json(); }).then(function(data) {
+    var res = (data && data.results) || [];
+    if (!res.length) {
+      list.innerHTML = '<div class="weather-loc-status">No matches found.</div>';
+      return;
+    }
+    list.innerHTML = res.map(function(g) {
+      var label = _weatherEsc([g.name, g.admin1, g.country].filter(Boolean).join(', '));
+      return '<button class="weather-loc-item" data-weather-pick="' + _weatherEsc(g.latitude) + ',' + _weatherEsc(g.longitude) + '" data-weather-name="' + label + '"><span>' + label + '</span></button>';
+    }).join('');
+  }).catch(function() {
+    list.innerHTML = '<div class="weather-loc-status">Search failed. Check connection.</div>';
+  });
+}
+function _loadWeatherForCoords(lat, lon, locName, widgets) {
+  var list = Array.prototype.slice.call(widgets || []);
+  if (!list.length) return;
+  var cacheKey = 'hub-weather-' + Math.round(lat * 10) + '-' + Math.round(lon * 10);
+  var cached = null;
+  try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) {}
+  if (cached && Date.now() - cached.ts < 600000 && cached.data && cached.data.temp != null) {
+    _weatherLastData = cached.data;
+    if (locName && !_weatherLastData.locName) _weatherLastData.locName = locName;
+    list.forEach(function(w) { updateWeatherWidget(w, _weatherLastData); });
+    return;
+  }
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&current=temperature_2m,apparent_temperature,is_day,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=2';
+  fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+    if (!data || (!data.current && !data.current_weather)) throw new Error('bad');
+    var cur = data.current || {};
+    var legacy = data.current_weather || {};
+    var wd = {
+      temp: cur.temperature_2m != null ? cur.temperature_2m : legacy.temperature,
+      code: cur.weather_code != null ? cur.weather_code : legacy.weathercode,
+      wind: cur.wind_speed_10m != null ? cur.wind_speed_10m : legacy.windspeed,
+      feels: cur.apparent_temperature,
+      isDay: cur.is_day === undefined ? true : cur.is_day === 1,
+      locName: locName || ''
+    };
+    if (wd.temp == null && wd.code == null) throw new Error('bad');
+    if (data.daily && data.daily.temperature_2m_max && data.daily.temperature_2m_max.length) {
+      wd.hi = data.daily.temperature_2m_max[0];
+      wd.lo = data.daily.temperature_2m_min[0];
+    }
+    if (data.hourly && data.hourly.time && data.hourly.temperature_2m) {
+      var pad = function(x) { return String(x).padStart(2, '0'); };
+      var n = new Date();
+      var stamp = n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate()) + 'T' + pad(n.getHours()) + ':00';
+      var idx = data.hourly.time.indexOf(stamp);
+      if (idx === -1) {
+        for (var ti = 0; ti < data.hourly.time.length; ti++) {
+          if (new Date(data.hourly.time[ti]) >= n) { idx = ti; break; }
+        }
+      }
+      if (idx !== -1) {
+        var wcodes = data.hourly.weather_code || data.hourly.weathercode || [];
+        wd.hourly = [];
+        for (var k = idx; k < Math.min(idx + 7, data.hourly.time.length); k++) {
+          var hd = new Date(data.hourly.time[k]);
+          wd.hourly.push({ t: data.hourly.time[k], temp: data.hourly.temperature_2m[k], code: wcodes[k], day: hd.getHours() >= 6 && hd.getHours() < 20 });
+        }
+      }
+    }
+    if (wd.locName) _setSavedWeatherLoc(lat, lon, wd.locName);
+    else {
+      var prev = _getSavedWeatherLoc();
+      if (prev && Math.abs(prev.lat - lat) < 0.06 && Math.abs(prev.lon - lon) < 0.06 && prev.name) wd.locName = prev.name;
+      else _setSavedWeatherLoc(lat, lon, '');
+    }
+    _weatherLastData = wd;
+    try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: wd})); } catch(e) {}
+    list.forEach(function(w) { updateWeatherWidget(w, wd); });
+  }).catch(function() {
+    list.forEach(function(w) { w.innerHTML = _weatherErrHtml('Could not load weather'); });
+  });
+}
+function _fetchWeatherByIP(widgets) {
+  var list = Array.prototype.slice.call(widgets || []);
+  if (!list.length) return;
+  list.forEach(function(w) {
+    w.innerHTML = '<div class="weather-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Detecting location...</span></div>';
+  });
+  fetch('https://ipapi.co/json/').then(function(r) { return r.json(); }).then(function(d) {
+    var lat = d ? parseFloat(d.latitude != null ? d.latitude : d.lat) : NaN;
+    var lon = d ? parseFloat(d.longitude != null ? d.longitude : d.lon) : NaN;
+    if (!isFinite(lat) || !isFinite(lon)) throw new Error('no-coords');
+    var name = [d.city, d.country_name || d.country].filter(Boolean).join(', ');
+    _loadWeatherForCoords(lat, lon, name, list);
+  }).catch(function() {
+    fetch('https://ip-api.com/json/?fields=status,message,lat,lon,city,country').then(function(r) { return r.json(); }).then(function(d2) {
+      if (!d2 || d2.status !== 'success' || !isFinite(d2.lat) || !isFinite(d2.lon)) throw new Error('no-coords');
+      var name2 = [d2.city, d2.country].filter(Boolean).join(', ');
+      _loadWeatherForCoords(d2.lat, d2.lon, name2, list);
+    }).catch(function() {
+      list.forEach(function(w) { w.innerHTML = _weatherErrHtml('Could not detect location'); });
+    });
+  });
+}
 function _fetchWeather(grid) {
   var weatherWidgets = grid.querySelectorAll('.weather-widget[data-weather-uid]');
   if (weatherWidgets.length === 0) return;
   if (_weatherLastData) {
     weatherWidgets.forEach(function(w) { updateWeatherWidget(w, _weatherLastData); });
-  } else if (!_weatherFetched && typeof navigator !== 'undefined' && navigator.geolocation) {
-    _weatherFetched = true;
-    navigator.geolocation.getCurrentPosition(function(pos) {
-      var lat = pos.coords.latitude;
-      var lon = pos.coords.longitude;
-      var cacheKey = 'hub-weather-' + Math.round(lat * 10) + '-' + Math.round(lon * 10);
-      var cached = null;
-      try { cached = JSON.parse(localStorage.getItem(cacheKey)); } catch(e) {}
-      if (cached && Date.now() - cached.ts < 600000) {
-        _weatherLastData = cached.data;
-        weatherWidgets.forEach(function(w) { updateWeatherWidget(w, cached.data); });
-        return;
-      }
-      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&current=temperature_2m,apparent_temperature,is_day,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=2';
-      fetch(url).then(function(r) { return r.json(); }).then(function(data) {
-        if (!data || (!data.current && !data.current_weather)) return;
-        var cur = data.current || {};
-        var legacy = data.current_weather || {};
-        var wd = {
-          temp: cur.temperature_2m != null ? cur.temperature_2m : legacy.temperature,
-          code: cur.weather_code != null ? cur.weather_code : legacy.weathercode,
-          wind: cur.wind_speed_10m != null ? cur.wind_speed_10m : legacy.windspeed,
-          feels: cur.apparent_temperature,
-          isDay: cur.is_day === undefined ? true : cur.is_day === 1
-        };
-        if (wd.temp == null && wd.code == null) return;
-        if (data.daily && data.daily.temperature_2m_max && data.daily.temperature_2m_max.length) {
-          wd.hi = data.daily.temperature_2m_max[0];
-          wd.lo = data.daily.temperature_2m_min[0];
-        }
-        if (data.hourly && data.hourly.time && data.hourly.temperature_2m) {
-          var pad = function(x) { return String(x).padStart(2, '0'); };
-          var n = new Date();
-          var stamp = n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate()) + 'T' + pad(n.getHours()) + ':00';
-          var idx = data.hourly.time.indexOf(stamp);
-          if (idx === -1) {
-            for (var ti = 0; ti < data.hourly.time.length; ti++) {
-              if (new Date(data.hourly.time[ti]) >= n) { idx = ti; break; }
-            }
-          }
-          if (idx !== -1) {
-            var wcodes = data.hourly.weather_code || data.hourly.weathercode || [];
-            wd.hourly = [];
-            for (var k = idx; k < Math.min(idx + 7, data.hourly.time.length); k++) {
-              var hd = new Date(data.hourly.time[k]);
-              wd.hourly.push({ t: data.hourly.time[k], temp: data.hourly.temperature_2m[k], code: wcodes[k], day: hd.getHours() >= 6 && hd.getHours() < 20 });
-            }
-          }
-        }
-        _weatherLastData = wd;
-        try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: wd})); } catch(e) {}
-        weatherWidgets.forEach(function(w) { updateWeatherWidget(w, wd); });
-      }).catch(function() {
-        weatherWidgets.forEach(function(w) {
-          w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Could not load weather</span></div>';
-        });
-      });
-    }, function() {
-      weatherWidgets.forEach(function(w) {
-        w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Location access needed</span></div>';
-      });
-    }, {timeout: 8000, enableHighAccuracy: false});
+    return;
+  }
+  if (_weatherFetched) return;
+  _weatherFetched = true;
+  var saved = _getSavedWeatherLoc();
+  if (saved) {
+    _loadWeatherForCoords(saved.lat, saved.lon, saved.name, weatherWidgets);
+    return;
+  }
+  if (typeof navigator !== 'undefined' && navigator.geolocation && navigator.geolocation.getCurrentPosition) {
+    try {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        var lat = pos.coords.latitude;
+        var lon = pos.coords.longitude;
+        var prev = _getSavedWeatherLoc();
+        _loadWeatherForCoords(lat, lon, prev ? prev.name : 'Current location', weatherWidgets);
+      }, function() {
+        _fetchWeatherByIP(weatherWidgets);
+      }, {timeout: 8000, enableHighAccuracy: false});
+    } catch(e) {
+      _fetchWeatherByIP(weatherWidgets);
+    }
   } else {
-    weatherWidgets.forEach(function(w) {
-      w.innerHTML = '<div class="weather-error"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg><span>Geolocation unavailable</span></div>';
-    });
+    _fetchWeatherByIP(weatherWidgets);
   }
 }
 
@@ -4085,13 +4242,14 @@ function refreshWeather() {
   try {
     var keys = [];
     var pre = (typeof getStoragePrefix === 'function') ? getStoragePrefix() : '';
-    for (var i = __origLS.length - 1; i >= 0; i--) {
-      var k = __origLS.key(i);
+    var store = (typeof __origLS !== 'undefined' && __origLS && __origLS.length !== undefined) ? __origLS : localStorage;
+    for (var i = store.length - 1; i >= 0; i--) {
+      var k = store.key(i);
       if (!k) continue;
       var short = pre && k.indexOf(pre) === 0 ? k.slice(pre.length) : k;
       if (short.indexOf('hub-weather-') === 0) keys.push(k);
     }
-    keys.forEach(function(k) { try { __origLS.removeItem(k); } catch(e) {} });
+    keys.forEach(function(k) { try { store.removeItem(k); } catch(e) {} });
   } catch(e) {}
   var grid = document.querySelector('.bento-grid');
   if (grid) {
