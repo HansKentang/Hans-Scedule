@@ -1569,7 +1569,7 @@
             var displayName = name || email.split('@')[0];
             var sbSignUp = getSupabaseDb();
             if (!sbSignUp) { nameBtn.disabled = false; nameBtn.classList.remove('loading'); setBtnLabel(nameBtn, 'Sign Up'); showToast('Supabase SDK not loaded. Refresh the page.', 'error'); return; }
-            sbSignUp.auth.signUp({ email: email, password: password, options: { data: { full_name: displayName } } }).then(function(res) {
+            sbSignUp.auth.signUp({ email: email, password: password, options: { data: { full_name: displayName }, emailRedirectTo: location.origin + location.pathname } }).then(function(res) {
               if (res.error) throw res.error;
               var sbUser = res.data.user;
               var sbSession = res.data.session;
