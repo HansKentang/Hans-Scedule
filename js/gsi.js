@@ -702,7 +702,7 @@ function gsiSignIn() {
   var redirectTo = location.origin + location.pathname;
   sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo } }).then(function(res) {
     if (res && res.error) {
-      console.error('Google sign-in error:', res.error);
+      console.error('Google sign-in error:', res.error, redirectTo);
       showToast('Google sign-in failed: ' + (res.error.message || 'unknown error'), 'error');
     }
   }).catch(function(error) {
