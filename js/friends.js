@@ -11,17 +11,8 @@ let convUnsubscribe = null;
 let feedUnsubscribe = null;
 let challengesUnsubscribe = null;
 
-// Firestore collection references
-function getFriendsCollection() {
-  var db = getFirestoreDb();
-  if (!db) return null;
-  return db.collection('friends');
-}
-
-function getUserFriendsCollection(userId) {
-  var db = getFirestoreDb();
-  if (!db) return null;
-  return db.collection('friends').where('users', 'array-contains', userId);
+function sbClient() {
+  return getSupabaseDb();
 }
 
 // ─── RENDER FRIEND CODE ─────────────────────────────────
@@ -33,8 +24,7 @@ function renderFriendCode() {
     codeEl.textContent = '—';
     return;
   }
-  var code = generateFriendCode(activeId);
-  codeEl.textContent = code;
+  codeEl.textContent = generateFriendCode(activeId);
 }
 
 // ─── COPY FRIEND CODE ────────────────────────────────────
@@ -84,6 +74,13 @@ function setupAddFriend() {
   var status = document.getElementById('frAddStatus');
   if (!input || !btn || !status) return;
 
+  var ADD_BTN_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Friend';
+
+  function resetBtn() {
+    btn.disabled = false;
+    btn.innerHTML = ADD_BTN_HTML;
+  }
+
   function doAddFriend() {
     var code = input.value.trim();
     if (!code) {
@@ -99,7 +96,6 @@ function setupAddFriend() {
       return;
     }
 
-    // Don't allow adding yourself
     var ownCode = generateFriendCode(activeId);
     if (code === ownCode) {
       status.textContent = "That's your own friend code!";
@@ -112,35 +108,19 @@ function setupAddFriend() {
     status.textContent = 'Looking up friend code...';
     status.className = 'fr-add-status';
 
-    // Look up the friend code in Firestore
-    initFirestore();
-    var db = getFirestoreDb();
-    if (!db) {
+    var sb = sbClient();
+    if (!sb) {
       status.textContent = 'Could not connect to server. Try again later.';
       status.className = 'fr-add-status error';
-      btn.disabled = false;
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Friend';
+      resetBtn();
       return;
-    }
-
-    db.collection('users').where('friendCode', '==', code).get()
-      .then(function(snapshot) {
-        if (snapshot.empty) {
+    }      sb.from('profiles_public').select('*').eq('friend_code', code).limit(1).maybeSingle()
+      .then(function(res) {
+        if (res.error) throw res.error;
+        var targetUser = res.data ? mapProfileRow(res.data) : null;
+        if (!targetUser) {
           status.textContent = 'No user found with that friend code';
           status.className = 'fr-add-status error';
-          btn.disabled = false;
-          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Friend';
-          return;
-        }
-
-        var targetUser = null;
-        snapshot.forEach(function(doc) { targetUser = { id: doc.id, ...doc.data() }; });
-
-        if (!targetUser) {
-          status.textContent = 'Could not find user';
-          status.className = 'fr-add-status error';
-          btn.disabled = false;
-          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Friend';
           return;
         }
 
@@ -148,62 +128,47 @@ function setupAddFriend() {
         if (friendId === activeId) {
           status.textContent = "That's your own friend code!";
           status.className = 'fr-add-status error';
-          btn.disabled = false;
-          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Friend';
           return;
         }
 
-        // Check if friendship already exists
         var friendshipId = activeId < friendId ? activeId + '_' + friendId : friendId + '_' + activeId;
 
-        db.collection('friends').doc(friendshipId).get()
-          .then(function(doc) {
-            if (doc.exists) {
-              var existing = doc.data();
-              if (existing.status === 'accepted') {
-                status.textContent = 'You are already friends with ' + (targetUser.displayName || 'this user');
-                status.className = 'fr-add-status error';
-              } else if (existing.status === 'pending') {
-                status.textContent = 'Friend request already sent. Waiting for them to accept.';
-                status.className = 'fr-add-status';
-              } else {
-                status.textContent = 'Friendship already exists';
-                status.className = 'fr-add-status error';
-              }
-              btn.disabled = false;
-              btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Friend';
-              return;
+        return sb.from('friends').select('*').eq('id', friendshipId).maybeSingle().then(function(fres) {
+          if (fres.error) throw fres.error;
+          if (fres.data) {
+            if (fres.data.status === 'accepted') {
+              status.textContent = 'You are already friends with ' + (targetUser.displayName || 'this user');
+              status.className = 'fr-add-status error';
+            } else if (fres.data.status === 'pending') {
+              status.textContent = 'Friend request already sent. Waiting for them to accept.';
+              status.className = 'fr-add-status';
+            } else {
+              status.textContent = 'Friendship already exists';
+              status.className = 'fr-add-status error';
             }
+            return;
+          }
 
-            // Create friend request
-            return db.collection('friends').doc(friendshipId).set({
-              users: [activeId, friendId],
-              status: 'pending',
-              initiatedBy: activeId,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(function() {
-              status.textContent = 'Friend request sent to ' + (targetUser.displayName || 'user') + '!';
-              status.className = 'fr-add-status success';
-              input.value = '';
-              // Refresh the friend list
-              subscribeToFriends();
-              btn.disabled = false;
-              btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Friend';
-            });
-          })
-          .catch(function(err) {
-            status.textContent = 'Error: ' + err.message;
-            status.className = 'fr-add-status error';
-            btn.disabled = false;
-            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Friend';
+          return sb.from('friends').insert({
+            id: friendshipId,
+            users: [activeId, friendId],
+            status: 'pending',
+            initiated_by: activeId,
+            created_at: new Date().toISOString()
+          }).then(function(ires) {
+            if (ires.error) throw ires.error;
+            status.textContent = 'Friend request sent to ' + (targetUser.displayName || 'user') + '!';
+            status.className = 'fr-add-status success';
+            input.value = '';
+            subscribeToFriends();
           });
+        });
       })
       .catch(function(err) {
-        status.textContent = 'Error looking up code: ' + err.message;
+        status.textContent = 'Error: ' + (err.message || err);
         status.className = 'fr-add-status error';
-        btn.disabled = false;
-        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add Friend';
-      });
+      })
+      .then(resetBtn);
   }
 
   btn.addEventListener('click', doAddFriend);
@@ -217,81 +182,68 @@ function subscribeToFriends() {
   var activeId = getActiveUserId();
   if (!activeId) return;
 
-  // Unsubscribe previous listener
   if (friendUnsubscribe) {
     friendUnsubscribe();
     friendUnsubscribe = null;
   }
+  if (!sbClient()) return;
 
-  initFirestore();
-  var db = getFirestoreDb();
-  if (!db) return;
+  loadFriends();
+  friendUnsubscribe = sbWatch('friends', function() { loadFriends(); });
+}
 
-  friendUnsubscribe = db.collection('friends')
-    .where('users', 'array-contains', activeId)
-    .onSnapshot(function(snapshot) {
-      var friends = [];
-      var requests = [];
-      var accepted = [];
+function loadFriends() {
+  var sb = sbClient();
+  var activeId = getActiveUserId();
+  if (!sb || !activeId) return;
 
-      snapshot.forEach(function(doc) {
-        var data = doc.data();
-        var entry = { id: doc.id, ...data };
-        // Determine the other user's ID
-        var otherId = data.users.find(function(u) { return u !== activeId; });
-        entry.otherUserId = otherId;
+  sb.from('friends').select('*').contains('users', [activeId]).then(function(res) {
+    if (res.error) {
+      console.warn('[friends] load error:', res.error);
+      return;
+    }
 
-        friends.push(entry);
-        if (data.status === 'pending') {
-          requests.push(entry);
-        } else if (data.status === 'accepted') {
-          accepted.push(entry);
-        }
+    var rows = res.data || [];
+    var ids = [];
+    var friends = [];
+
+    rows.forEach(function(r) {
+      var users = r.users || [];
+      var otherId = users.find(function(u) { return u !== activeId; });
+      friends.push({
+        id: r.id,
+        users: users,
+        status: r.status,
+        initiatedBy: r.initiated_by,
+        otherUserId: otherId
       });
-
-      friendsData = friends;
-      friendRequestsData = requests;
-
-      // Look up display names for each friend
-      var userIds = accepted.map(function(f) { return f.otherUserId; }).filter(Boolean);
-      if (userIds.length > 0) {
-        Promise.all(userIds.map(function(uid) {
-          return db.collection('users').doc(uid).get().then(function(doc) {
-            return { id: uid, data: doc.exists ? doc.data() : null };
-          }).catch(function() { return { id: uid, data: null }; });
-        })).then(function(userDataList) {
-          var userMap = {};
-          userDataList.forEach(function(ud) { userMap[ud.id] = ud.data; });
-          // Attach user data to accepted friends
-          accepted.forEach(function(f) { f.userData = userMap[f.otherUserId] || null; });
-          // Also for pending — look up the initiator's info
-          var pendingUserIds = requests.map(function(r) {
-            return r.initiatedBy === activeId ? r.otherUserId : r.initiatedBy;
-          }).filter(Boolean);
-          if (pendingUserIds.length > 0) {
-            Promise.all(pendingUserIds.map(function(uid) {
-              return db.collection('users').doc(uid).get().then(function(doc) {
-                return { id: uid, data: doc.exists ? doc.data() : null };
-              }).catch(function() { return { id: uid, data: null }; });
-            })).then(function(pendingDataList) {
-              var pendingMap = {};
-              pendingDataList.forEach(function(pd) { pendingMap[pd.id] = pd.data; });
-              requests.forEach(function(r) {
-                var lookupId = r.initiatedBy === activeId ? r.otherUserId : r.initiatedBy;
-                r.userData = pendingMap[lookupId] || null;
-              });
-              renderFriendList();
-            });
-          } else {
-            renderFriendList();
-          }
-        });
-      } else {
-        renderFriendList();
-      }
-    }, function(err) {
-      console.warn('[friends] Firestore subscription error:', err);
+      if (otherId) ids.push(otherId);
+      if (r.status === 'pending' && r.initiated_by) ids.push(r.initiated_by);
     });
+
+    friendsData = friends;
+    friendRequestsData = friends.filter(function(f) { return f.status === 'pending'; });
+
+    ids = ids.filter(function(v, i, a) { return v && a.indexOf(v) === i; });
+    if (!ids.length) {
+      renderFriendList();
+      renderLeaderboard();
+      return;
+    }
+
+    sb.from('profiles_public').select('*').in('id', ids).then(function(pres) {
+      var map = {};
+      (pres.data || []).forEach(function(p) { map[p.id] = mapProfileRow(p); });
+      friends.forEach(function(f) {
+        var lookup = f.status === 'pending'
+          ? (f.initiatedBy === activeId ? f.otherUserId : f.initiatedBy)
+          : f.otherUserId;
+        f.userData = map[lookup] || null;
+      });
+      renderFriendList();
+      renderLeaderboard();
+    });
+  });
 }
 
 // ─── RENDER FRIEND LIST ───────────────────────────────────
@@ -305,7 +257,6 @@ function renderFriendList() {
   var accepted = friendsData.filter(function(f) { return f.status === 'accepted'; });
   var requests = friendsData.filter(function(f) { return f.status === 'pending'; });
 
-  // Count badges
   document.getElementById('frTabAllCount').textContent = friendsData.length;
   document.getElementById('frTabPendingCount').textContent = requests.length;
   document.getElementById('frTabAcceptedCount').textContent = accepted.length;
@@ -313,7 +264,6 @@ function renderFriendList() {
   if (totalCountEl) totalCountEl.textContent = friendsData.length + ' connections';
   if (friendCountEl) friendCountEl.textContent = accepted.length + ' friends';
 
-  // Filter by tab
   var displayList;
   if (currentTab === 'pending') {
     displayList = requests;
@@ -339,11 +289,10 @@ function renderFriendList() {
     var isPending = f.status === 'pending';
     var isAccepted = f.status === 'accepted';
 
-    // Figure out who the other person is
     var otherUser = f.userData;
     var displayName = otherUser ? (otherUser.displayName || 'Unknown') : 'Loading...';
     var initials = displayName.split(/\s+/).slice(0, 2).map(function(s) { return s[0]; }).join('').toUpperCase() || '?';
-    var avatarColor = otherUser ? (otherUser.avatarColor || '#b4ccbc') : '#b4ccbc';
+    var avatarColor = safeColor(otherUser ? otherUser.avatarColor : null, '#b4ccbc');
     var photoURL = otherUser ? (otherUser.photoURL || '') : '';
     var isOnline = otherUser ? otherUser.status === 'online' : false;
 
@@ -370,10 +319,8 @@ function renderFriendList() {
           : '') +
       '</div>';
 
-    // Actions
     html += '<div class="fr-item-actions">';
     if (isPending) {
-      // If this user is the one who received the request, show accept/decline
       if (f.initiatedBy !== activeId) {
         html += '<button class="fr-item-action-btn accept" data-friend-accept="' + f.id + '" title="Accept">' +
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>';
@@ -391,7 +338,6 @@ function renderFriendList() {
 
   listEl.innerHTML = html;
 
-  // Attach event listeners for accept/decline/remove
   listEl.querySelectorAll('[data-friend-accept]').forEach(function(btn) {
     btn.addEventListener('click', function() {
       acceptFriendRequest(btn.dataset.friendAccept);
@@ -420,30 +366,31 @@ function renderFriendList() {
 
 // ─── ACCEPT / DECLINE / REMOVE ────────────────────────────
 function acceptFriendRequest(friendshipId) {
-  var db = getFirestoreDb();
-  if (!db) return;
-  db.collection('friends').doc(friendshipId).update({
+  var sb = sbClient();
+  if (!sb) return;
+  sb.from('friends').update({
     status: 'accepted',
-    acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).catch(function(err) {
-    console.warn('[friends] accept error:', err);
+    accepted_at: new Date().toISOString()
+  }).eq('id', friendshipId).then(function(res) {
+    if (res.error) console.warn('[friends] accept error:', res.error);
+    else loadFriends();
   });
 }
 
 function declineFriendRequest(friendshipId) {
-  var db = getFirestoreDb();
-  if (!db) return;
-  db.collection('friends').doc(friendshipId).delete().catch(function(err) {
-    console.warn('[friends] decline error:', err);
+  var sb = sbClient();
+  if (!sb) return;
+  sb.from('friends').delete().eq('id', friendshipId).then(function(res) {
+    if (res.error) console.warn('[friends] decline error:', res.error);
   });
 }
 
 function removeFriend(friendshipId) {
-  var db = getFirestoreDb();
-  if (!db) return;
+  var sb = sbClient();
+  if (!sb) return;
   if (!confirm('Remove this friend connection?')) return;
-  db.collection('friends').doc(friendshipId).delete().catch(function(err) {
-    console.warn('[friends] remove error:', err);
+  sb.from('friends').delete().eq('id', friendshipId).then(function(res) {
+    if (res.error) console.warn('[friends] remove error:', res.error);
   });
 }
 
@@ -463,6 +410,7 @@ function renderProfile() {
   var activeUser = (typeof localUsers !== 'undefined' && activeId)
     ? localUsers.find(function(u) { return u.id === activeId; })
     : null;
+  var activeAuthUid = activeUser && activeUser.authUid ? activeUser.authUid : '';
 
   if (activeUser && nameEl) {
     var displayName = activeUser.name || 'User';
@@ -499,25 +447,24 @@ function renderProfile() {
       var next = prompt('Set your status:', cur);
       if (next !== null) {
         statusEl.textContent = next || 'Click to set status...';
-        initFirestore();
-        var db = getFirestoreDb();
-        if (db) db.collection('users').doc(activeId).update({ statusMessage: next }).catch(function() {});
+        var sb = sbClient();
+        if (sb) ownProfileFilter(sb.from('profiles').update({ status_message: next }), activeId, activeAuthUid)
+          .then(function() {}).catch(function() {});
       }
     };
   }
 
-  initFirestore();
-  var db = getFirestoreDb();
-  if (db) {
-    db.collection('users').doc(activeId).get().then(function(doc) {
-      if (doc.exists) {
-        var data = doc.data();
-        var stats = data.stats || {};
-        if (tasksEl) tasksEl.textContent = stats.totalTasks || 0;
-        if (streakEl) streakEl.textContent = stats.currentStreak || 0;
-        if (rateEl) rateEl.textContent = (stats.completionRate || 0) + '%';
-        if (statusEl && data.statusMessage) statusEl.textContent = data.statusMessage;
-      }
+  var sb = sbClient();
+  if (sb) {
+    ownProfileFilter(sb.from('profiles').select('*'), activeId, activeAuthUid).maybeSingle().then(function(res) {
+      if (res.error) return;
+      var row = res.data;
+      if (!row) return;
+      var stats = row.stats || {};
+      if (tasksEl) tasksEl.textContent = stats.totalTasks || 0;
+      if (streakEl) streakEl.textContent = stats.currentStreak || 0;
+      if (rateEl) rateEl.textContent = (stats.completionRate || 0) + '%';
+      if (statusEl && row.status_message) statusEl.textContent = row.status_message;
     }).catch(function() {});
   }
 }
@@ -527,23 +474,31 @@ function subscribeToConversations() {
   var activeId = getActiveUserId();
   if (!activeId) return;
   if (convUnsubscribe) { convUnsubscribe(); convUnsubscribe = null; }
+  if (!sbClient()) return;
 
-  initFirestore();
-  var db = getFirestoreDb();
-  if (!db) return;
+  loadConversations();
+  convUnsubscribe = sbWatch('conversations', function() { loadConversations(); });
+}
 
-  convUnsubscribe = db.collection('conversations')
-    .where('participants', 'array-contains', activeId)
-    .onSnapshot(function(snapshot) {
-      var convos = [];
-      snapshot.forEach(function(doc) { convos.push({ id: doc.id, ...doc.data() }); });
-      convos.sort(function(a, b) {
-        var ta = a.updatedAt && a.updatedAt.toMillis ? a.updatedAt.toMillis() : 0;
-        var tb = b.updatedAt && b.updatedAt.toMillis ? b.updatedAt.toMillis() : 0;
-        return tb - ta;
-      });
-      renderConversations(convos);
-    }, function() {});
+function loadConversations() {
+  var sb = sbClient();
+  var activeId = getActiveUserId();
+  if (!sb || !activeId) return;
+
+  sb.from('conversations').select('*').contains('participants', [activeId]).then(function(res) {
+    if (res.error) return;
+    var convos = (res.data || []).map(function(r) {
+      return {
+        id: r.id,
+        participants: r.participants || [],
+        lastMessage: r.last_message || null,
+        unreadCount: r.unread_count || {},
+        updatedAt: r.updated_at
+      };
+    });
+    convos.sort(function(a, b) { return tsMillis(b.updatedAt) - tsMillis(a.updatedAt); });
+    renderConversations(convos);
+  });
 }
 
 function renderConversations(conversations) {
@@ -559,33 +514,34 @@ function renderConversations(conversations) {
     return;
   }
 
-  var db = getFirestoreDb();
-  if (!db) return;
+  var sb = sbClient();
+  if (!sb) return;
 
-  var fetches = conversations.map(function(conv) {
-    var otherId = conv.participants.find(function(p) { return p !== activeId; });
-    return db.collection('users').doc(otherId).get().then(function(doc) {
-      return { conv: conv, user: doc.exists ? doc.data() : null, otherId: otherId };
-    }).catch(function() { return { conv: conv, user: null, otherId: otherId }; });
-  });
+  var otherIds = conversations.map(function(c) {
+    return c.participants.find(function(p) { return p !== activeId; });
+  }).filter(Boolean);
 
-  Promise.all(fetches).then(function(results) {
+  sb.from('profiles_public').select('*').in('id', otherIds).then(function(res) {
+    var map = {};
+    (res.data || []).forEach(function(p) { map[p.id] = mapProfileRow(p); });
+
     var html = '';
-    results.forEach(function(r) {
-      var user = r.user;
+    conversations.forEach(function(conv) {
+      var otherId = conv.participants.find(function(p) { return p !== activeId; });
+      var user = map[otherId] || null;
       var name = user ? (user.displayName || 'Unknown') : 'Unknown';
       var initials = name.split(/\s+/).slice(0, 2).map(function(s) { return s[0]; }).join('').toUpperCase() || '?';
-      var color = user ? (user.avatarColor || '#b4ccbc') : '#b4ccbc';
+      var color = safeColor(user ? user.avatarColor : null, '#b4ccbc');
       var photoURL = user ? (user.photoURL || '') : '';
-      var lastMsg = r.conv.lastMessage ? r.conv.lastMessage.text : 'No messages yet';
-      var time = frFormatTime(r.conv.updatedAt);
-      var unread = r.conv.unreadCount && r.conv.unreadCount[activeId] ? r.conv.unreadCount[activeId] : 0;
+      var lastMsg = conv.lastMessage ? conv.lastMessage.text : 'No messages yet';
+      var time = frFormatTime(conv.updatedAt);
+      var unread = conv.unreadCount && conv.unreadCount[activeId] ? conv.unreadCount[activeId] : 0;
 
       var avatarHtml = photoURL
         ? '<img src="' + escapeHtml(photoURL) + '" alt="" style="width:100%;height:100%;object-fit:cover">'
         : '<span>' + escapeHtml(initials) + '</span>';
 
-      html += '<div class="fr-conv-item" data-conv-friend="' + r.otherId + '" data-conv-name="' + escapeHtml(name) + '">' +
+      html += '<div class="fr-conv-item" data-conv-friend="' + otherId + '" data-conv-name="' + escapeHtml(name) + '">' +
         '<div class="fr-conv-avatar" style="background:' + color + '">' + avatarHtml + '</div>' +
         '<div class="fr-conv-info"><div class="fr-conv-name">' + escapeHtml(name) + '</div>' +
         '<div class="fr-conv-preview">' + escapeHtml((lastMsg || '').substring(0, 50)) + '</div></div>' +
@@ -603,8 +559,7 @@ function renderConversations(conversations) {
 }
 
 function frFormatTime(ts) {
-  if (!ts) return '';
-  var then = ts.toMillis ? ts.toMillis() : (ts.seconds ? ts.seconds * 1000 : 0);
+  var then = tsMillis(ts);
   if (!then) return '';
   var diff = Date.now() - then;
   if (diff < 60000) return 'Now';
@@ -631,7 +586,7 @@ function renderLeaderboard() {
 
   friendsData.filter(function(f) { return f.status === 'accepted'; }).forEach(function(f) {
     if (f.userData && f.userData.stats) {
-      entries.push({ name: f.userData.displayName || 'Unknown', tasks: f.userData.stats.totalTasks || 0, color: f.userData.avatarColor || '#b4ccbc', photoURL: f.userData.photoURL || '', isMe: false });
+      entries.push({ name: f.userData.displayName || 'Unknown', tasks: f.userData.stats.totalTasks || 0, color: safeColor(f.userData.avatarColor, '#b4ccbc'), photoURL: f.userData.photoURL || '', isMe: false });
     }
   });
 
@@ -658,21 +613,34 @@ function subscribeToChallenges() {
   var activeId = getActiveUserId();
   if (!activeId) return;
   if (challengesUnsubscribe) { challengesUnsubscribe(); challengesUnsubscribe = null; }
-  initFirestore();
-  var db = getFirestoreDb();
-  if (!db) return;
-  challengesUnsubscribe = db.collection('challenges')
-    .where('participants', 'array-contains', activeId)
-    .onSnapshot(function(snap) {
-      var chs = [];
-      snap.forEach(function(doc) { chs.push({ id: doc.id, ...doc.data() }); });
-      chs.sort(function(a, b) {
-        var ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
-        var tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
-        return tb - ta;
-      });
-      renderChallenges(chs);
-    }, function() {});
+  if (!sbClient()) return;
+  loadChallenges();
+  challengesUnsubscribe = sbWatch('challenges', function() { loadChallenges(); });
+}
+
+function loadChallenges() {
+  var sb = sbClient();
+  var activeId = getActiveUserId();
+  if (!sb || !activeId) return;
+  sb.from('challenges').select('*').contains('participants', [activeId]).then(function(res) {
+    if (res.error) return;
+    var chs = (res.data || []).map(function(r) {
+      return {
+        id: r.id,
+        title: r.title,
+        description: r.description,
+        target: r.target,
+        progress: r.progress,
+        status: r.status,
+        participants: r.participants || [],
+        participantNames: r.participant_names || [],
+        createdBy: r.created_by,
+        createdAt: r.created_at
+      };
+    });
+    chs.sort(function(a, b) { return tsMillis(b.createdAt) - tsMillis(a.createdAt); });
+    renderChallenges(chs);
+  });
 }
 
 function renderChallenges(challenges) {
@@ -716,21 +684,24 @@ function setupChallenges() {
     var accepted = friendsData.filter(function(f) { return f.status === 'accepted'; });
     var participants = [activeId];
     var participantNames = [];
-    var activeUser = (typeof localUsers !== 'undefined' && activeId) ? localUsers.find(function(u) { return u.id === activeId; }) : null;
+  var activeUser = (typeof localUsers !== 'undefined' && activeId)
+    ? localUsers.find(function(u) { return u.id === activeId; })
+    : null;
     if (activeUser) participantNames.push(activeUser.name || 'User');
     accepted.forEach(function(f) {
       participants.push(f.otherUserId);
       if (f.userData) participantNames.push(f.userData.displayName || 'Unknown');
     });
 
-    initFirestore();
-    var db = getFirestoreDb();
-    if (!db) return;
-    db.collection('challenges').add({
+    var sb = sbClient();
+    if (!sb) return;
+    sb.from('challenges').insert({
       title: title, description: 'Complete ' + target + ' tasks', target: target,
       progress: 0, status: 'active', participants: participants,
-      participantNames: participantNames, createdBy: activeId,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      participant_names: participantNames, created_by: activeId,
+      created_at: new Date().toISOString()
+    }).then(function(res) {
+      if (res.error) console.warn('[friends] challenge error:', res.error);
     }).catch(function(err) { console.warn('[friends] challenge error:', err); });
   });
 }
@@ -740,25 +711,29 @@ function subscribeToFeed() {
   var activeId = getActiveUserId();
   if (!activeId) return;
   if (feedUnsubscribe) { feedUnsubscribe(); feedUnsubscribe = null; }
-  initFirestore();
-  var db = getFirestoreDb();
-  if (!db) return;
+  if (!sbClient()) return;
+  loadFeed();
+  feedUnsubscribe = sbWatch('activity', function() { loadFeed(); });
+}
+
+function loadFeed() {
+  var sb = sbClient();
+  var activeId = getActiveUserId();
+  if (!sb || !activeId) return;
 
   var accepted = friendsData.filter(function(f) { return f.status === 'accepted'; });
   var friendIds = accepted.map(function(f) { return f.otherUserId; }).filter(Boolean);
   friendIds.push(activeId);
 
-  feedUnsubscribe = db.collection('activity')
-    .orderBy('createdAt', 'desc')
-    .limit(30)
-    .onSnapshot(function(snap) {
-      var items = [];
-      snap.forEach(function(doc) {
-        var d = doc.data();
-        if (friendIds.indexOf(d.userId) !== -1) items.push({ id: doc.id, ...d });
+  sb.from('activity').select('*').order('created_at', { ascending: false }).limit(30).then(function(res) {
+    if (res.error) return;
+    var items = (res.data || [])
+      .filter(function(r) { return friendIds.indexOf(r.user_id) !== -1; })
+      .map(function(r) {
+        return { id: r.id, userId: r.user_id, userName: r.user_name, avatarColor: r.avatar_color, text: r.text, createdAt: r.created_at };
       });
-      renderFeed(items);
-    }, function() {});
+    renderFeed(items);
+  });
 }
 
 function renderFeed(items) {
@@ -772,7 +747,7 @@ function renderFeed(items) {
   items.forEach(function(item) {
     var time = frFormatTime(item.createdAt);
     html += '<div class="fr-feed-item">' +
-      '<div class="fr-feed-avatar" style="background:' + (item.avatarColor || 'var(--accent)') + '">' +
+      '<div class="fr-feed-avatar" style="background:' + safeColor(item.avatarColor, 'var(--accent)') + '">' +
       (item.userName ? escapeHtml(item.userName.charAt(0).toUpperCase()) : '?') + '</div>' +
       '<div class="fr-feed-body"><div class="fr-feed-text"><strong>' + escapeHtml(item.userName || 'Someone') + '</strong> ' + escapeHtml(item.text || 'did something awesome') + '</div>' +
       '<div class="fr-feed-time">' + time + '</div></div></div>';
@@ -848,17 +823,18 @@ function init() {
   subscribeToFeed();
   setupPage();
 
-  // Ensure this user's profile + friend code exist in Firestore
   var activeId = getActiveUserId();
   var activeUser = (typeof localUsers !== 'undefined' && activeId)
     ? localUsers.find(function(u) { return u.id === activeId; })
     : null;
-  if (activeUser && typeof syncUserToFirestore === 'function') {
-    syncUserToFirestore({
+  if (activeUser && typeof syncUserToProfile === 'function') {
+    syncUserToProfile({
       id: activeUser.id,
       name: activeUser.name,
       picture: activeUser.picture || '',
-      _color: activeUser._color
+      email: activeUser.email || '',
+      _color: activeUser._color,
+      authUid: activeUser.authUid || ''
     });
   }
 
@@ -868,9 +844,8 @@ function init() {
     document.getElementById('drawerImportFile')?.click();
   });
 
-  // Mobile sidebar overlay + nav item close (shared handler in shared.js handles toggle)
   var frOverlay = document.getElementById('hubSidebarOverlay');
-  function closeFrSidebar() { 
+  function closeFrSidebar() {
     var s = document.getElementById('hubSidebar');
     if (s) s.classList.remove('open');
     frOverlay?.classList.remove('active');
@@ -882,8 +857,8 @@ function init() {
   frSidebar?.querySelectorAll('.hub-snav-item').forEach(function(item) {
     item.addEventListener('click', closeFrSidebar);
   });
-
 }
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+if (typeof havenBoot === 'function') havenBoot(init);
+else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

@@ -25,6 +25,8 @@
 | File | Role |
 |------|------|
 | `js/shared.js` | Core state, storage (localStorage + IndexedDB), helpers, AI |
+| `js/supabase-sync.js` | Mirrors guest/local-only profiles' `haven-*` keys to the `app_data` blob; profile + stats sync for everyone |
+| `js/cloud-store.js` | Cloud-only storage for Supabase-authenticated accounts (memory store, hydrate/purge, image sync). Loaded after `gsi.js` |
 | `js/progress.js` | Progress page logic (merged board/timeline/log/chart + analytics dashboard) |
 | `js/schedule.js` | Schedule page logic: grid, tasks, drag/drop, focus |
 | `js/hub-visuals.js` | Bento canvas hub: bubbles, undo/redo, widgets |
@@ -48,6 +50,8 @@
 | `haven-image-*` / `hub-image-*` | Data URL | Image widget cache (IndexedDB primary) |
 | `haven-custom-tags` | `[{id, name, color}]` | Custom tags for board/activities |
 | `haven-card-colors` | `{tag: {light, dark}}` | Per-tag card color overrides |
+
+**Storage model** — Guests and local-only profiles (no `authUid`) keep everything in `localStorage` under a `<userId>:` prefix, mirrored to `app_data` by `supabase-sync.js`. Accounts signed in with Google/email (has `authUid`) are **cloud-only**: `js/cloud-store.js` hydrates the `haven-*` set from `app_data` into `CLOUD_MEM` on boot, routes all reads/writes there, pushes back to Supabase, and purges the device copy. Images go to the `haven-user-images` Storage bucket (run `supabase/storage-images.sql`).
 
 ## CSS Variables
 
@@ -82,6 +86,8 @@
 6. **Screenshot**: Pure canvas render (no html2canvas) — uses `state.currentWeekStart`, `state.tasks`, `TAG_COLORS`, `START_HOUR`, `VISIBLE_HOURS`
 7. **AI memory**: Facts stored in `state.userProfile.conversationMemory`, persisted under `haven-schedule-profile`
 8. **Built-in categories**: `deep-work`, `meeting`, `exercise`, `study`, `hobby` — cannot be deleted
+9. **Cloud-only accounts**: every page boot must go through `havenBoot(fn)` (never a raw `DOMContentLoaded` handler) so it runs after `CLOUD_MEM` hydrates; `cloudPushNow()` refuses to write until `CLOUD_HYDRATED` so an empty state can never overwrite the cloud blob
+10. **New storage keys**: app data written via `localStorage` in a cloud-only account lives in `CLOUD_MEM` only — keep it out of `CLOUD_DEVICE_KEYS`; device/secret keys (`haven-gsi-*`, `sb-*`, `haven-device-*`, API keys) stay on the device by design
 
 ## Page Layouts
 
@@ -425,3 +431,4 @@ gallery    │ hero → image grid → footer
 - Desktop/mobile hub mode switching (`hubMode`, `switchHubMode`, `renderMobileDashboard`, `initHubMode`, `applyModeVisibility`, `updateHubModeToggle`, `_onHubModeResize`)
 - Mobile dashboard (`#hubMobileDash`, `.hub-mobile-dash`, `.hub-mode-mobile`, `.hmd-*` classes)
 - Mobile bento keys (`haven-hub-content-mobile`, `haven-hub-bento-mobile`, `haven-hub-visibility-mobile`, `haven-schedule-hub-layout-mobile`, `haven-hub-mode`)
+- Standalone `rhythm.html` and the Rhythm setup wizard — the wizard, its CSS on `login.html`, `?rhythm=1` / `?redo=1` entry points, `needsSetup` routing, and Settings "Redo setup" are all removed. `rhythm.html` is a redirect stub to `login.html?stay=1`. Schedule pills default to none (`TAG_ORDER = []`); builtins no longer pre-seeded — users add categories via the pill manager. Don't restore the old sticky-hero layout or the login page's right-hand carousel panel (hidden by CSS, still in the DOM)

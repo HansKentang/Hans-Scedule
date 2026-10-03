@@ -700,7 +700,7 @@ function showGoalJournalPopup(goalId) {
     <div class="gj-header">
       <div style="display:flex;align-items:center;gap:var(--space-3)">
         <div style="width:38px;height:38px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;background:color-mix(in srgb, var(--text-primary) 8%, transparent);color:var(--text-primary)">
-          <span class="material-symbols-outlined" style="font-size:1.15rem">${goal.icon}</span>
+          <span class="material-symbols-outlined" style="font-size:1.15rem">${escapeHtml(goal.icon)}</span>
         </div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary)">${escapeHtml(goal.title)}</div>
@@ -1100,7 +1100,9 @@ document.getElementById('focusToggleBtn')?.addEventListener('click', toggleFocus
 
 pageAfterImport = () => { loadGoals(); renderAll(); };
 
-if (document.readyState === 'loading') {
+if (typeof havenBoot === 'function') {
+  havenBoot(init);
+} else if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();

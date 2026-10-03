@@ -58,7 +58,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: clamp(20px, 4vh, 48px) clamp(24px, 5vw, 56px);
+      padding: clamp(16px, 3vh, 40px) clamp(24px, 5vw, 56px);
       position: relative;
       overflow: hidden;
       animation: fadeIn 0.7s var(--smooth) both;
@@ -290,7 +290,7 @@
       border: 1px solid var(--border);
       border-radius: clamp(16px, 2.2vh, 22px);
       background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
-      padding: clamp(20px, 2.8vh, 28px) clamp(20px, 2.6vw, 28px);
+      padding: clamp(16px, 2.2vh, 24px) clamp(20px, 2.6vw, 28px);
       box-shadow: 0 24px 60px -28px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
@@ -315,7 +315,7 @@
       align-items: center;
       justify-content: center;
       gap: clamp(14px, 2vw, 22px);
-      margin-top: clamp(10px, 1.6vh, 18px);
+      margin-top: clamp(6px, 1vh, 12px);
       font-size: clamp(0.6rem, 0.85vw, 0.68rem);
       color: var(--text-tertiary);
       font-weight: 400;
@@ -547,8 +547,8 @@
     }
 
     #googleButtonContainer {
-      width: 100%; display: flex; justify-content: center;
-      min-height: 36px;
+      width: 100%; display: none; justify-content: center;
+      min-height: 0;
     }
 
 
@@ -557,7 +557,7 @@
       text-align: center;
       font-size: clamp(0.75rem, 1vw, 0.85rem);
       color: var(--text-tertiary);
-      margin-top: clamp(10px, 1.4vh, 16px);
+      margin-top: clamp(8px, 1vh, 12px);
     }
     .auth-toggle button {
       background: none; border: none;
@@ -957,6 +957,17 @@
         animation: none;
       }
     }
+
+    .auth-grid {
+      position: relative;
+      z-index: 2;
+      overflow: hidden;
+    }
+    .auth-left {
+      overflow-y: auto;
+      justify-content: flex-start;
+    }
+    .auth-form-wrap { margin-block: auto; }
   </style>
 </head>
 <body>
@@ -987,7 +998,7 @@
         <!-- Heading (changes with toggle) -->
         <div class="auth-eyebrow auth-reveal" style="--d:0.14s">Secure access</div>
         <h1 class="auth-heading auth-reveal" id="authHeading" style="--d:0.2s">Welcome <span class="hl-accent">back</span></h1>
-        <p class="auth-sub auth-reveal" id="authSub" style="--d:0.26s">Enter your name to sign in to your account</p>
+        <p class="auth-sub auth-reveal" id="authSub" style="--d:0.26s">Enter your email and password to sign in</p>
 
         <!-- Form Card -->
         <div class="auth-card auth-reveal" style="--d:0.32s">
@@ -1045,8 +1056,8 @@
                and
                <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.
              </p>
-           </div>
          </form>
+         </div>
 
          <!-- Toggle -->
         <p class="auth-toggle auth-reveal" id="authToggle" style="--d:0.5s">
@@ -1394,12 +1405,15 @@
   </div>
 
   <!-- Google Identity Services -->
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/shared.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/gsi.js"></script>
-  <script src="js/firestore-sync.js"></script>
+  <script src="js/supabase-sync.js"></script>
+  <script src="js/cloud-store.js"></script>
+  <script src="js/premium-config.js"></script>
+  <script src="js/premium.js"></script>
   <script>
     (function() {
       var isSignIn = true;
@@ -1530,42 +1544,62 @@
           setBtnLabel(nameBtn, isSignIn ? 'Signing in…' : 'Creating account…');
 
           if (isSignIn) {
-            firebase.auth().signInWithEmailAndPassword(email, password).then(function(result) {
-              var fbUser = result.user;
-              var fbName = fbUser.displayName || email.split('@')[0];
+            var sbSignIn = getSupabaseDb();
+            if (!sbSignIn) { nameBtn.disabled = false; nameBtn.classList.remove('loading'); setBtnLabel(nameBtn, 'Sign In'); showToast('Supabase SDK not loaded. Refresh the page.', 'error'); return; }
+            sbSignIn.auth.signInWithPassword({ email: email, password: password }).then(function(res) {
+              if (res.error) throw res.error;
+              var sbUser = res.data.user;
+              var sbName = (sbUser.user_metadata && (sbUser.user_metadata.full_name || sbUser.user_metadata.name)) || email.split('@')[0];
               if (typeof googleSignIn === 'function') {
-                googleSignIn({ name: fbName, email: email, picture: fbUser.photoURL || '', googleId: fbUser.uid });
+                googleSignIn({ name: sbName, email: email, picture: (sbUser.user_metadata && sbUser.user_metadata.avatar_url) || '', googleId: sbUser.id, authUid: sbUser.id });
               } else {
-                createLocalProfile(fbName);
+                createLocalProfile(sbName);
               }
             }).catch(function(error) {
               nameBtn.disabled = false;
               nameBtn.classList.remove('loading');
               setBtnLabel(nameBtn, 'Sign In');
-              if (error.code === 'auth/user-not-found') { showToast('No account found with this email', 'error'); shakeInput(document.getElementById('loginEmailInput')); }
-              else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') { showToast('Incorrect email or password', 'error'); shakeInput(document.getElementById('loginPasswordInput')); }
-              else if (error.code === 'auth/invalid-email') { showToast('Invalid email address', 'error'); shakeInput(document.getElementById('loginEmailInput')); }
-              else showToast('Sign in failed: ' + (error.message || 'unknown error'), 'error');
+              var msg = (error && error.message) || 'unknown error';
+              if (msg.toLowerCase().indexOf('invalid login credentials') !== -1) { showToast('Incorrect email or password', 'error'); shakeInput(document.getElementById('loginPasswordInput')); }
+              else if (msg.toLowerCase().indexOf('email') !== -1 && msg.toLowerCase().indexOf('invalid') !== -1) { showToast('Invalid email address', 'error'); shakeInput(document.getElementById('loginEmailInput')); }
+              else if (msg.toLowerCase().indexOf('not confirmed') !== -1) { showToast('Confirm your email first — check your inbox', 'error', 4500); }
+              else showToast('Sign in failed: ' + msg, 'error');
             });
           } else {
             var displayName = name || email.split('@')[0];
-            firebase.auth().createUserWithEmailAndPassword(email, password).then(function(result) {
-              var fbUser = result.user;
-              return fbUser.updateProfile({ displayName: displayName }).then(function() {
-                if (typeof googleSignIn === 'function') {
-                  googleSignIn({ name: displayName, email: email, picture: fbUser.photoURL || '', googleId: fbUser.uid });
-                } else {
-                  createLocalProfile(displayName);
-                }
-              });
+            var sbSignUp = getSupabaseDb();
+            if (!sbSignUp) { nameBtn.disabled = false; nameBtn.classList.remove('loading'); setBtnLabel(nameBtn, 'Sign Up'); showToast('Supabase SDK not loaded. Refresh the page.', 'error'); return; }
+            sbSignUp.auth.signUp({ email: email, password: password, options: { data: { full_name: displayName } } }).then(function(res) {
+              if (res.error) throw res.error;
+              var sbUser = res.data.user;
+              var sbSession = res.data.session;
+              // No session means the project still requires email confirmation.
+              // Signing in locally here would create an account with no Supabase
+              // session, so every cloud write would be rejected by RLS.
+              if (!sbUser || !sbSession) {
+                nameBtn.disabled = false;
+                nameBtn.classList.remove('loading');
+                setBtnLabel(nameBtn, 'Sign Up');
+                showToast('Account created — check your email to confirm, then sign in.', 'info', 5000);
+                isSignIn = true;
+                updateToggle();
+                return;
+              }
+              var sbName = (sbUser.user_metadata && sbUser.user_metadata.full_name) || displayName;
+              if (typeof googleSignIn === 'function') {
+                googleSignIn({ name: sbName, email: email, picture: (sbUser.user_metadata && sbUser.user_metadata.avatar_url) || '', googleId: sbUser.id, authUid: sbUser.id });
+              } else {
+                createLocalProfile(sbName);
+              }
             }).catch(function(error) {
               nameBtn.disabled = false;
               nameBtn.classList.remove('loading');
               setBtnLabel(nameBtn, 'Sign Up');
-              if (error.code === 'auth/email-already-in-use') showToast('This email is already registered', 'error');
-              else if (error.code === 'auth/weak-password') { showToast('Password is too weak (min 6 characters)', 'error'); shakeInput(document.getElementById('loginPasswordInput')); }
-              else if (error.code === 'auth/invalid-email') { showToast('Invalid email address', 'error'); shakeInput(document.getElementById('loginEmailInput')); }
-              else showToast('Sign up failed: ' + (error.message || 'unknown error'), 'error');
+              var msg = (error && error.message) || 'unknown error';
+              if (msg.toLowerCase().indexOf('already registered') !== -1 || msg.toLowerCase().indexOf('already been registered') !== -1) showToast('This email is already registered', 'error');
+              else if (msg.toLowerCase().indexOf('password') !== -1) { showToast('Password is too weak (min 6 characters)', 'error'); shakeInput(document.getElementById('loginPasswordInput')); }
+              else if (msg.toLowerCase().indexOf('email') !== -1 && msg.toLowerCase().indexOf('invalid') !== -1) { showToast('Invalid email address', 'error'); shakeInput(document.getElementById('loginEmailInput')); }
+              else showToast('Sign up failed: ' + msg, 'error');
             });
           }
         }
@@ -1908,70 +1942,31 @@
             });
           }
         }
-        // ─── Initialize Firebase Auth Google Sign-In ───
-        initFirebaseGoogle();
+        // ─── Initialize Supabase Auth Google Sign-In ───
+        initSupabaseGoogle();
       });
 
-      function initFirebaseGoogle() {
+      function initSupabaseGoogle() {
         var googleBtn = document.getElementById('loginGoogleBtn');
         var guestBtn = document.getElementById('loginGuestBtn');
         if (!googleBtn) return;
-        if (typeof firebase !== 'undefined' && typeof FIREBASE_CONFIG !== 'undefined' && !firebase.apps.length) {
-          firebase.initializeApp(FIREBASE_CONFIG);
-        }
         googleBtn.addEventListener('click', function(e) {
           e.preventDefault();
-          if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') {
-            showToast('Firebase SDK not loaded. Refresh the page.', 'error');
-            return;
+          if (typeof gsiSignIn === 'function') {
+            gsiSignIn();
+          } else if (typeof getSupabaseDb !== 'function' || !getSupabaseDb()) {
+            showToast('Supabase SDK not loaded. Refresh the page.', 'error');
           }
-          var provider = new firebase.auth.GoogleAuthProvider();
-          provider.addScope('profile');
-          provider.addScope('email');
-          googleBtn.classList.add('loading');
-          firebase.auth().signInWithPopup(provider).then(function(result) {
-            var user = result.user;
-            if (!user) { showToast('Google sign-in failed', 'error'); return; }
-            var gdata = {
-              name: user.displayName || '',
-              email: user.email || '',
-              picture: user.photoURL || '',
-              googleId: user.uid || ''
-            };
-            if (typeof googleSignIn === 'function') {
-              googleSignIn(gdata);
-            } else if (typeof createLocalProfile === 'function') {
-              createLocalProfile(gdata.name || gdata.email.split('@')[0] || 'Google User');
-            }
-          }).catch(function(error) {
-            googleBtn.classList.remove('loading');
-            if (error.code === 'auth/popup-closed-by-user') return;
-            console.error('Firebase Google sign-in error:', error);
-            showToast('Google sign-in failed: ' + (error.message || 'unknown error'), 'error');
-          });
         });
 
-        // ─── Anonymous / Guest sign-in ───
+        // ─── Guest sign-in (local-only session) ───
         if (guestBtn) {
           guestBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') {
-              showToast('Firebase SDK not loaded. Refresh the page.', 'error');
-              return;
+            sessionStorage.setItem('haven-guest', '1');
+            if (typeof createLocalProfile === 'function') {
+              createLocalProfile('Guest');
             }
-            guestBtn.classList.add('loading');
-            firebase.auth().signInAnonymously().then(function(result) {
-              var user = result.user;
-              if (!user) { showToast('Guest sign-in failed', 'error'); return; }
-              sessionStorage.setItem('haven-guest', '1');
-              if (typeof createLocalProfile === 'function') {
-                createLocalProfile(user.uid ? 'Guest' : 'Guest');
-              }
-            }).catch(function(error) {
-              guestBtn.classList.remove('loading');
-              console.error('Firebase anonymous sign-in error:', error);
-              showToast('Guest sign-in failed: ' + (error.message || 'unknown error'), 'error');
-            });
           });
         }
       }

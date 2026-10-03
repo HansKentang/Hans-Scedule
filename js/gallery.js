@@ -83,6 +83,11 @@ function galUid() {
 
 // ─── CLEANUP OLD PICSUM DEFAULTS ──────────────────────────
 function cleanupOldPicsumDefaults() {
+  var flagKey = 'haven-picsum-defaults-cleaned';
+  var pre0 = (typeof getStoragePrefix === 'function') ? getStoragePrefix() : '';
+  try {
+    if (__origLS.getItem(pre0 + flagKey)) return;
+  } catch (e) {}
   // Remove any old picsum.photos URLs stored for gallery images
   for (var key in state.images) {
     if (key.indexOf('gallery-image-') === 0 && state.images[key] && state.images[key].indexOf('https://picsum.photos/') === 0) {
@@ -104,6 +109,7 @@ function cleanupOldPicsumDefaults() {
       }
     }
   } catch (e) {}
+  try { __origLS.setItem(pre0 + flagKey, '1'); } catch (e) {}
 }
 
 // ─── LAYOUT CRUD ─────────────────────────────────────────
@@ -758,7 +764,9 @@ function init() {
 
 }
 
-if (document.readyState === 'loading') {
+if (typeof havenBoot === 'function') {
+  havenBoot(init);
+} else if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {
   init();

@@ -11,103 +11,144 @@
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
-  <title>Havën Schedule — Gallery</title>
+  <title>Premium — Havën</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
     <style>
-    /* ─── Hide ambient gradient on gallery (distracting from images) ─── */
-    .hub-ambient { display: none !important; }
-
-    /* ─── GALLERY HERO ───────────────────────────────── */
-    .gl-hero {
-      position: relative; height: 200px; overflow: hidden;
+    /* ─── PREMIUM HEADER ───────────────────────────────── */
+    .prc-header {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+      margin-top: var(--space-5);
+      padding: var(--space-4) var(--space-5);
+      border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border-color));
+      border-radius: var(--radius-2xl);
+      background:
+        radial-gradient(130% 180% at 0% 0%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 55%),
+        var(--bg-secondary);
+      overflow: hidden;
     }
-    @keyframes kenBurns {
-      0% { transform: scale(1) translate(0, 0); }
-      25% { transform: scale(1.08) translate(-1%, -0.5%); }
-      50% { transform: scale(1.12) translate(0.5%, -1%); }
-      75% { transform: scale(1.06) translate(-0.5%, 0.5%); }
-      100% { transform: scale(1) translate(0, 0); }
-    }
-    @keyframes glHeroBreath {
-      0%, 100% { filter: brightness(1); }
-      50% { filter: brightness(1.05); }
-    }
-    .gl-hero-bg {
-      width: 100%; height: 100%; object-fit: cover;
-      opacity: 0.5;
-      transition: opacity 0.6s ease;
-      animation: kenBurns 20s ease-in-out infinite, glHeroBreath 6s ease-in-out infinite;
-    }
-    .gl-hero:hover .gl-hero-bg {
-      opacity: 0.55;
-    }
-    .gl-hero-overlay {
-      position: absolute; inset: 0;
-      background: linear-gradient(to top, var(--bg-primary) 0%, transparent 60%),
-                  linear-gradient(135deg, color-mix(in srgb, var(--primary) 18%, transparent) 0%, transparent 50%);
+    .prc-header::after {
+      content: '';
+      position: absolute;
+      top: -50px; right: -40px;
+      width: 170px; height: 170px;
+      border-radius: 50%;
+      background: radial-gradient(circle, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%);
       pointer-events: none;
     }
-    .gl-hero-inner {
-      position: absolute; inset: 0;
-      display: flex; align-items: flex-end; justify-content: space-between;
-      padding: var(--space-5) var(--container-padding);
-      gap: var(--space-4);
+    .prc-crown {
+      width: 42px; height: 42px;
+      flex-shrink: 0;
+      font-size: 1.1rem;
+      box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 32%, transparent);
     }
-    .gl-hero-text { min-width: 0; }
-    .gl-hero-title {
-      font-family: var(--font-serif);
-      font-size: 1.75rem; font-weight: 500;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, var(--text-primary) 50%, var(--accent));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1.15;
-      margin-bottom: var(--space-1);
-    }
-    .gl-hero-title::after {
-      content: ''; display: block;
-      width: 40px; height: 2px;
-      background: var(--accent);
-      border-radius: 2px;
-      margin-top: var(--space-2);
-      opacity: 0.5;
-    }
-    .gl-hero-meta {
-      display: flex; align-items: center; gap: var(--space-2);
-      font-size: 0.75rem; color: var(--text-primary);
+    .prc-text { flex: 1; min-width: 0; }
+    .prc-title-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
       flex-wrap: wrap;
     }
-    .gl-hero-dot {
-      width: 3px; height: 3px; border-radius: 50%;
-      background: var(--text-tertiary); opacity: 0.4;
-      animation: glDotPulse 2s ease-in-out infinite;
+    .prc-title {
+      margin: 0;
+      font-family: var(--font-serif);
+      font-size: 1.6rem; font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      background: linear-gradient(135deg, var(--text-primary) 55%, var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    @keyframes glDotPulse {
-      0%, 100% { opacity: 0.4; }
-      50% { opacity: 0.8; }
+    .prc-plan-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 9px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      background: var(--bg-primary);
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--text-secondary);
     }
-    .gl-hero-sub {
-      font-size: 0.68rem; color: var(--text-primary);
-      margin-top: var(--space-1);
-      font-weight: 400;
-      opacity: 0.65;
-      transition: opacity 300ms;
+    .prc-plan-chip[data-premium-state].is-premium {
+      border-color: transparent;
+      font-size: 0.62rem;
     }
-    .gl-hero-sub:hover { opacity: 1; }
-    @media (max-width: 767px) {
-      .gl-hero { height: 170px; }
-      .gl-hero-title { font-size: 1.4rem; }
-      .gl-hero-inner { padding: var(--space-4) var(--space-4); }
+    .prc-sub {
+      margin: 5px 0 0;
+      font-size: 0.73rem;
+      color: var(--text-secondary);
     }
-    @media (max-width: 480px) {
-      .gl-hero { height: 140px; }
-      .gl-hero-title { font-size: 1.2rem; }
-      .gl-hero-sub { font-size: 0.6rem; }
-      .gl-hero-inner { padding: var(--space-3) var(--space-3); }
+    .prc-account { margin: 0; flex-shrink: 0; z-index: 1; }
+    .prc-account .gsi-avatar-wrap {
+      padding: 3px 9px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      background: var(--bg-primary);
+    }
+    .prc-account .gsi-avatar { width: 26px; height: 26px; }
+
+    /* ─── PREMIUM PAGE POLISH ──────────────────────────── */
+    .premium-page { margin-top: var(--space-4); }
+    .premium-status {
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 72%),
+        var(--bg-secondary);
+    }
+    .premium-page-plan {
+      transition: transform var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
+    }
+    .premium-page-plan:hover {
+      transform: translateY(-3px);
+      border-color: color-mix(in srgb, var(--accent) 55%, var(--border-color));
+      box-shadow: var(--shadow-lg);
+    }
+    .premium-page-plan.is-highlight {
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, transparent), transparent 62%),
+        var(--bg-primary);
+    }
+    .premium-page-heading {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+    }
+    .premium-page-heading::before {
+      content: '';
+      width: 18px; height: 2px;
+      border-radius: 2px;
+      background: var(--accent);
+    }
+    .premium-benefit-card {
+      transition: transform var(--t-fast), border-color var(--t-fast);
+    }
+    .premium-benefit-card:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--border-subtle));
+    }
+    @media (max-width: 640px) {
+      .prc-header { padding: var(--space-4); gap: var(--space-3); }
+      .prc-title { font-size: 1.3rem; }
+      .prc-sub { font-size: 0.68rem; }
+      .prc-account .gsi-avatar-name { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .premium-page-plan, .premium-benefit-card { transition: none; }
+      .premium-page-plan:hover, .premium-benefit-card:hover { transform: none; }
     }
 
     /* ─── GALLERY VISION BOARD ───────────────────────── */
@@ -576,55 +617,24 @@
 
     <!-- ─── MAIN ───────────────────────────────────────── -->
     <div class="hub-main hub-main-pad" role="main">
-      <!-- ─── HERO ────────────────────────────────────── -->
+      <!-- ─── HEADER ───────────────────────────────────── -->
       <div class="hub-content hub-page-transition">
 
-        <section class="gl-hero page-hero">
-        <img data-image-id="gallery-hero" src="" alt="Gallery hero" class="gl-hero-bg">
-        <div class="gl-hero-overlay"></div>
-        <div class="gl-hero-inner">
-          <div class="gl-hero-text">
-            <h1 class="gl-hero-title" data-i18n="nav.gallery">Gallery</h1>
-            <div class="gl-hero-meta">
-              <span id="galPageMeta" data-i18n="gal.vision">Vision Board</span>
-              <span class="gl-hero-dot"></span>
-              <span id="galImageCount">0 images</span>
+        <header class="prc-header hub-anim-in">
+          <span class="premium-crown prc-crown" aria-hidden="true">✦</span>
+          <div class="prc-text">
+            <div class="prc-title-row">
+              <h1 class="prc-title">Premium</h1>
+              <span id="premiumHeroPlan" class="prc-plan-chip" data-premium-state>Free plan</span>
             </div>
-            <div class="gl-hero-sub" id="galHeroSub">Your designs &amp; posters</div>
+            <div class="prc-sub" id="premiumHeroSub">Unlock everything Havën can do</div>
           </div>
-          <div id="gsiContainer" class="gsi-section"></div>
-        </div>
-      </section>
+          <div id="gsiContainer" class="gsi-section prc-account"></div>
+        </header>
 
-        <!-- ─── GALLERY GRID ───────────────────────── -->
-        <div class="hub-anim-in hub-anim-in-2" style="margin-bottom:var(--space-6)">
-          <div class="gal-top-actions hub-anim-in hub-anim-in-3">
-            <div>
-              <div class="gal-top-title" data-i18n="gal.vision">Vision Board</div>
-              <span class="gal-top-count" id="galCount">0 images</span>
-            </div>
-            <div class="gal-actions-row">
-              <div class="gal-col-toggle" id="galColToggle">
-                <button class="gal-col-btn" data-cols="2">2</button>
-                <button class="gal-col-btn active" data-cols="3">3</button>
-                <button class="gal-col-btn" data-cols="4">4</button>
-              </div>
-              <button class="btn btn-ghost" id="galResetBtn" title="Reset all gallery images" style="display:none">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
-                Reset
-              </button>
-              <button class="btn btn-outline" id="galAddBtn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add Image
-              </button>
-            </div>
-          </div>
 
-          <!-- Gallery Canvas (freeform, drag in edit mode) -->
-          <div class="gal-canvas-wrap hub-anim-in hub-anim-in-4">
-            <div class="gal-canvas" id="galGrid"></div>
-          </div>
-        </div>
+        <!-- ─── PREMIUM PLANS ─────────────────────── -->
+        <div class="premium-page hub-anim-in hub-anim-in-2" id="premiumPageRoot"></div>
 
       </div>
 
@@ -881,152 +891,8 @@
   <script src="js/supabase-sync.js"></script>
   <script src="js/cloud-store.js"></script>
   <script src="js/premium-config.js"></script>
-  <script src="js/premium.js"></script>
-  <script src="js/gallery.js"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
-<!-- Gallery enhancements: lazy load, column toggle, lightbox -->
-  <script>
-    (function() {
-      // ─── Lazy Load ───
-      function initLazyLoad() {
-        var imgs = document.querySelectorAll('.gal-item img:not(.lazy-loaded)');
-        if (!imgs.length) return;
-        if ('IntersectionObserver' in window) {
-          var obs = new IntersectionObserver(function(entries) {
-            entries.forEach(function(e) {
-              if (e.isIntersecting) {
-                var img = e.target;
-                img.classList.add('lazy', 'loaded');
-                obs.unobserve(img);
-              }
-            });
-          }, { rootMargin: '100px' });
-          imgs.forEach(function(img) { obs.observe(img); });
-        } else {
-          imgs.forEach(function(img) { img.classList.add('lazy', 'loaded'); });
-        }
-      }
-      initLazyLoad();
-      if (typeof MutationObserver !== 'undefined') {
-        var grid = document.getElementById('galGrid');
-        if (grid) {
-          new MutationObserver(function() { initLazyLoad(); }).observe(grid, { childList: true, subtree: true });
-        }
-      }
-
-      // ─── Column Toggle ───
-      var galColToggle = document.getElementById('galColToggle');
-      var galCanvas = document.querySelector('.gal-canvas');
-      if (galColToggle && galCanvas) {
-        var savedCols = parseInt(localStorage.getItem('gal-columns')) || 3;
-        galCanvas.style.columnCount = savedCols;
-        galColToggle.querySelectorAll('.gal-col-btn').forEach(function(btn) {
-          btn.classList.toggle('active', parseInt(btn.dataset.cols) === savedCols);
-          btn.addEventListener('click', function() {
-            var cols = parseInt(this.dataset.cols);
-            galCanvas.style.columnCount = cols;
-            galColToggle.querySelectorAll('.gal-col-btn').forEach(function(b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            localStorage.setItem('gal-columns', cols);
-          });
-        });
-      }
-
-      // ─── Lightbox ───
-      var lightbox = document.getElementById('galLightbox');
-      var lbImg = document.getElementById('lbImg');
-      var lbCounter = document.getElementById('lbCounter');
-      var lbImages = [];
-      var lbIndex = 0;
-      var lbStartX = 0;
-      var lbDragging = false;
-
-      function collectImages() {
-        lbImages = [];
-        document.querySelectorAll('.gal-item img').forEach(function(img) {
-          if (img.src && img.src !== location.href) lbImages.push(img.src);
-        });
-      }
-
-      function openLightbox(index) {
-        collectImages();
-        if (!lbImages.length) return;
-        lbIndex = index;
-        updateLightbox();
-        lightbox.classList.add('open');
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeLightbox() {
-        lightbox.classList.remove('open');
-        document.body.style.overflow = '';
-      }
-
-      function updateLightbox() {
-        if (!lbImages.length) return;
-        lbImg.src = lbImages[lbIndex];
-        lbCounter.textContent = (lbIndex + 1) + ' / ' + lbImages.length;
-      }
-
-      function lbNext() {
-        lbIndex = (lbIndex + 1) % lbImages.length;
-        updateLightbox();
-      }
-
-      function lbPrev() {
-        lbIndex = (lbIndex - 1 + lbImages.length) % lbImages.length;
-        updateLightbox();
-      }
-
-      // Click on gallery items to open lightbox
-      var galGrid = document.getElementById('galGrid');
-      if (galGrid) {
-        galGrid.addEventListener('click', function(e) {
-          var item = e.target.closest('.gal-item');
-          if (!item) return;
-          var img = item.querySelector('img');
-          if (!img || !img.src) return;
-          collectImages();
-          var idx = lbImages.indexOf(img.src);
-          if (idx === -1) idx = 0;
-          openLightbox(idx);
-        });
-      }
-
-      // Lightbox controls
-      if (lightbox) {
-        document.getElementById('lbClose').addEventListener('click', closeLightbox);
-        document.getElementById('lbPrev').addEventListener('click', lbPrev);
-        document.getElementById('lbNext').addEventListener('click', lbNext);
-        lightbox.addEventListener('click', function(e) {
-          if (e.target === lightbox) closeLightbox();
-        });
-        // Keyboard
-        document.addEventListener('keydown', function(e) {
-          if (!lightbox.classList.contains('open')) return;
-          if (e.key === 'Escape') closeLightbox();
-          if (e.key === 'ArrowLeft') lbPrev();
-          if (e.key === 'ArrowRight') lbNext();
-        });
-        // Swipe
-        lightbox.addEventListener('touchstart', function(e) {
-          lbStartX = e.touches[0].clientX;
-          lbDragging = true;
-        }, { passive: true });
-        lightbox.addEventListener('touchmove', function(e) {
-          if (!lbDragging) return;
-        }, { passive: true });
-        lightbox.addEventListener('touchend', function(e) {
-          if (!lbDragging) return;
-          lbDragging = false;
-          var dx = e.changedTouches[0].clientX - lbStartX;
-          if (Math.abs(dx) > 50) {
-            if (dx < 0) lbNext(); else lbPrev();
-          }
-        });
-      }
-    })();
-  </script>
+  <script src="js/premium.js"></script>
 
   <!-- ─── Spotify Settings Modal ──────────────── -->
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">

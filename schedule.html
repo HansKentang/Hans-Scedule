@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,11 +7,11 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Havën">
+  <meta name="apple-mobile-web-app-title" content="HavÃ«n">
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
-  <title>Havën Schedule — Schedule</title>
+  <title>HavÃ«n Schedule â€” Schedule</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
@@ -36,7 +36,7 @@
     }
     .sch-mini-day.today.has-tasks::after { background: var(--text-inverse); background: contrast-color(var(--accent)); }
 
-    /* Calendar header — thin breadcrumb style */
+    /* Calendar header â€” thin breadcrumb style */
     .sch-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: var(--space-2) var(--space-5);
@@ -61,7 +61,7 @@
     .sch-holiday-badge:active { transform: scale(0.95); }
     .sch-holiday-badge:focus-visible { box-shadow: var(--focus-ring); }
     .sch-api-badge #taskCount { font-weight: 600; color: var(--text-primary); font-size: 0.68rem; }
-    /* active = holiday mode on — keep neutral, accent only on hover */
+    /* active = holiday mode on â€” keep neutral, accent only on hover */
 
     /* Calendar container */
     #calendarContainer { flex: 1; overflow: auto; position: relative; display: flex; flex-direction: column; }
@@ -450,7 +450,7 @@
       .sch-sc-bar-add-input:focus { width: 120px; }
       .sch-sc-bar-add-btn { width: 24px; height: 24px; }
 
-      /* Calendar grid mobile — single-day view with hidden overflow */
+      /* Calendar grid mobile â€” single-day view with hidden overflow */
       #calendarContainer { overflow-x: hidden; -webkit-overflow-scrolling: touch; }
 
       /* Filters bar mobile */
@@ -688,8 +688,8 @@
     <!-- --- SIDEBAR (Hub workspace) ---------------------- -->
     <aside class="hub-sidebar" role="navigation" aria-label="Sidebar" id="hubSidebar">
       <div class="hub-workspace">
-        <a href="login.html" class="hub-workspace-link"><div class="hub-workspace-icon"><img src="assets/icon-192.png" alt="Havën"></div>
-        <span class="hub-workspace-name">Havën</span></a>
+        <a href="login.html" class="hub-workspace-link"><div class="hub-workspace-icon"><img src="assets/icon-192.png" alt="HavÃ«n"></div>
+        <span class="hub-workspace-name">HavÃ«n</span></a>
         <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
         <button class="hub-hamburger" aria-label="Menu">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -786,13 +786,13 @@
         <div class="hub-footer-btns">
           <button id="aiChatBtnSidebar" class="btn btn-ghost" title="Settings"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
           <button id="themeBtnSidebar" class="btn btn-ghost" title="Theme"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg><span>Theme</span></button>
-          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
+          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode â€” tap any image to change">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
             <span>Visuals</span>
           </button>
         </div>
         <div class="sidebar-legal">
-          <a href="privacy.html">Privacy</a><span>·</span><a href="terms.html">Terms</a><span>·</span><a href="support.html">Support</a>
+          <a href="privacy.html">Privacy</a><span>Â·</span><a href="terms.html">Terms</a><span>Â·</span><a href="support.html">Support</a>
         </div>
       </div>
     </aside>
@@ -1255,6 +1255,12 @@
         </h3>
         <div style="flex:1;overflow-y:auto;padding:var(--space-5) var(--space-6) var(--space-6)">
         <img id="imagePickerPreview" class="image-picker-preview" src="" alt="">
+        <div class="image-picker-tabs">
+          <button type="button" class="image-picker-tab active" data-picker-tab="upload" onclick="imagePickerSwitchTab('upload')">Upload</button>
+          <button type="button" class="image-picker-tab" data-picker-tab="url" onclick="imagePickerSwitchTab('url')">URL</button>
+          <button type="button" class="image-picker-tab" data-picker-tab="browse" onclick="imagePickerSwitchTab('browse')">Browse</button>
+        </div>
+        <div class="image-picker-tab-panel active" data-picker-panel="upload">
         <div class="image-picker-pastezone" id="imagePickerPasteZone" tabindex="0" contenteditable="true" onpaste="handleImagePickerPaste(event)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           <div>Paste image (Ctrl+V) or drag &amp; drop</div>
@@ -1266,7 +1272,21 @@
             Choose from gallery
           </button>
         </div>
+        </div>
+        <div class="image-picker-tab-panel" data-picker-panel="url">
         <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()">
+        </div>
+        <div class="image-picker-tab-panel" data-picker-panel="browse">
+          <div class="image-picker-browse-bar">
+            <input type="text" id="imagePickerSearchInput" placeholder="Search free photos..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();imagePickerSearch()}">
+            <button type="button" class="drawer-btn primary" onclick="imagePickerSearch()">Search</button>
+            <button type="button" class="drawer-btn" id="imagePickerSearchClear" onclick="imagePickerClearSearch()" style="display:none">Clear</button>
+          </div>
+          <div class="image-picker-grid" id="imagePickerGrid"></div>
+          <div id="imagePickerGridSentinel" style="height:1px"></div>
+          <div class="image-picker-grid-loading" id="imagePickerGridStatus"></div>
+          <div class="image-picker-credit">Photos via Wikimedia Commons &amp; Lorem Picsum</div>
+        </div>
         <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
       <div class="img-fit-row" id="imagePickerFitRow">
         <span class="img-fit-label">Fit:</span>
@@ -1364,7 +1384,7 @@
             <div class="settings-content-section" id="settingsSection-appearance">
               <div class="settings-content-header">
                 <h4>Appearance</h4>
-                <p>Customize colors, tag colors, and accent color</p>
+                <p>Customize tag colors and display</p>
               </div>
               <div class="settings-card" id="settingsCardColors">
                 <div class="settings-card-header">
@@ -1373,12 +1393,12 @@
                 </div>
                 <p class="settings-card-desc">Click any tag to customize its card border color</p>
               </div>
-              <div class="settings-card" id="settingsAccentColor">
+              <div class="settings-card" id="settingsDisplay">
                 <div class="settings-card-header">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-                  <span class="settings-card-title">Accent Color</span>
+                  <span class="settings-card-title">Display</span>
                 </div>
-                <p class="settings-card-desc">Choose an accent colour for buttons, highlights, and active states</p>
+                <p class="settings-card-desc">Adjust spacing, motion, and background effects</p>
               </div>
             </div>
 
@@ -1490,10 +1510,13 @@
   </script>
   <script src="js/shared.js"></script>
   <script src="js/settings.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/gsi.js"></script>
-  <script src="js/firestore-sync.js"></script>
+  <script src="js/supabase-sync.js"></script>
+  <script src="js/cloud-store.js"></script>
+  <script src="js/premium-config.js"></script>
+  <script src="js/premium.js"></script>
   <script src="js/schedule.js"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
   <!-- --- Spotify Settings Modal ---------------- -->
@@ -1521,7 +1544,7 @@
       </div>
     </div>
   </div>
-  <script>spInit();</script>
+  <script>if (typeof havenBoot === 'function') havenBoot(spInit); else spInit();</script>
 
 
 

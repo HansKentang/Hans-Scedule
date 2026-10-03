@@ -31,7 +31,6 @@ function updateUnreadBadge() {
     badge.style.display = 'none';
   }
 
-  // Update document title
   var baseTitle = document.title.replace(/^\(\d+\)\s*/, '');
   if (total > 0) {
     document.title = '(' + total + ') ' + baseTitle;
@@ -49,38 +48,33 @@ function subscribeToConversations() {
     _badgeConvUnsub = null;
   }
 
-  var db = getFirestoreDb();
-  if (!db) return;
+  var sb = getSupabaseDb();
+  if (!sb) return;
 
-  _badgeConvUnsub = db.collection('conversations')
-    .where('participants', 'array-contains', activeId)
-    .orderBy('updatedAt', 'desc')
-    .onSnapshot(function(snapshot) {
-      var convs = [];
-      snapshot.forEach(function(doc) {
-        var data = doc.data();
-        convs.push({ id: doc.id, data: data });
+  function load() {
+    sb.from('conversations').select('*').contains('participants', [activeId]).then(function(res) {
+      if (res.error) {
+        console.warn('[chat-badge] subscription error:', res.error);
+        return;
+      }
+      var convs = (res.data || []).map(function(r) {
+        return { id: r.id, data: { unreadCount: r.unread_count || {} } };
       });
-
       _badgePrevUnreadTotal = _badgeGetTotalUnreadCount(convs);
       updateUnreadBadge();
-    }, function(err) {
-      console.warn('[chat-badge] subscription error:', err);
     });
+  }
+
+  load();
+  _badgeConvUnsub = sbWatch('conversations', load);
 }
 
 function initChatBadge() {
   var activeId = getActiveUserId();
   if (!activeId) return;
 
-  initFirestore();
+  setTimeout(subscribeToConversations, 100);
 
-  // Delay subscription slightly to let Firestore init settle
-  setTimeout(function() {
-    subscribeToConversations();
-  }, 100);
-
-  // Clean up Firestore listener on page unload to prevent "message channel closed" errors
   window.addEventListener('beforeunload', function() {
     if (_badgeConvUnsub) {
       _badgeConvUnsub();
@@ -89,6 +83,5 @@ function initChatBadge() {
   });
 }
 
-// Expose for chat.js to reuse if needed
 window.updateUnreadBadge = updateUnreadBadge;
 window.initChatBadge = initChatBadge;

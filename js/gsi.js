@@ -1,14 +1,3 @@
-// ─── Firebase Configuration ────────────────────────────
-var FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDhGJuLw9TW7i6GUQkhVQwOSRkX4nAoS8g",
-  authDomain: "haven-schedule-c8fec.firebaseapp.com",
-  projectId: "haven-schedule-c8fec",
-  storageBucket: "haven-schedule-c8fec.firebasestorage.app",
-  messagingSenderId: "372760068715",
-  appId: "1:372760068715:web:e18957b41d42b727ab272e",
-  measurementId: "G-QD3WMGTYVS"
-};
-
 // ─── Auth (Local profiles) ──────────────────────────────
 var AUTH_USERS_KEY = 'haven-gsi-accounts';
 var AUTH_ACTIVE_KEY = 'haven-gsi-active';
@@ -57,10 +46,10 @@ function getActiveUserId() {
 }
 
 function setActiveUserId(id) {
-  function _clearImages() {
+  function _clearImages(freeAll) {
     try {
       if (typeof forceFreeImageCache === 'function') {
-        forceFreeImageCache(__origLS.length || 100000);
+        forceFreeImageCache(freeAll ? (__origLS.length || 100000) : 10);
       } else {
         for (var i = __origLS.length - 1; i >= 0; i--) {
           var k = __origLS.key(i);
@@ -71,15 +60,20 @@ function setActiveUserId(id) {
       }
     } catch(e) {}
   }
-  if (id) {
-    localStorage.setItem(AUTH_ACTIVE_KEY, id);
-    if (localStorage.getItem(AUTH_ACTIVE_KEY) !== id) {
-      _clearImages();
-      localStorage.setItem(AUTH_ACTIVE_KEY, id);
-    }
-  } else {
+  if (!id) {
     localStorage.removeItem(AUTH_ACTIVE_KEY);
+    return true;
   }
+  // The active id decides which account every other key is read from, so a
+  // write that silently fails would reload into the previous account and make
+  // both profiles show identical data. Verify it, escalate the cleanup, and
+  // report failure so callers can stop instead of switching into the wrong one.
+  for (var attempt = 0; attempt < 3; attempt++) {
+    try { localStorage.setItem(AUTH_ACTIVE_KEY, id); } catch (e) {}
+    if (localStorage.getItem(AUTH_ACTIVE_KEY) === id) return true;
+    _clearImages(attempt > 0);
+  }
+  return false;
 }
 
 // Initialize currentUserId synchronously BEFORE any page scripts call loadState()
@@ -229,8 +223,8 @@ function renderAccountPopup() {
   var activeId = getActiveUserId();
   var activeUser = localUsers.find(function(u) { return u.id === activeId; });
   var guest = isGuestMode();
-  var hasFirebase = false;
-  try { hasFirebase = typeof firebase !== 'undefined' && typeof firebase.auth === 'function' && firebase.apps && firebase.apps.length > 0; } catch (e) {}
+  var hasSupabase = false;
+  try { hasSupabase = !!getSupabaseDb(); } catch (e) {}
 
   if (_accPopupView === 'add') {
     _accPopupRenderAdd(card);
@@ -238,6 +232,10 @@ function renderAccountPopup() {
   }
   if (_accPopupView === 'confirm-remove') {
     _accPopupRenderConfirmRemove(card);
+    return;
+  }
+  if (_accPopupView === 'confirm-remove-all') {
+    _accPopupRenderConfirmRemoveAll(card);
     return;
   }
 
@@ -281,17 +279,22 @@ function renderAccountPopup() {
       var av = u.picture
         ? '<img class="accpop-acc-avatar" src="' + escapeHtml(u.picture) + '" alt="">'
         : '<div class="accpop-acc-avatar" style="background:' + c2 + '">' + escapeHtml(i2) + '</div>';
-      html += '<div class="accpop-item' + (isActive ? ' active' : '') + '" data-accpop-switch="' + u.id + '" role="button" tabindex="0">' +
+      var sub = u.email ? escapeHtml(u.email) : 'Supabase account';
+      html += '<div class="accpop-item' + (isActive ? ' active' : '') + '" data-accpop-switch="' + u.id + '" role="button" tabindex="0" title="Switch to ' + escapeHtml(u.name) + '">' +
         av +
         '<div class="accpop-item-info">' +
-          '<div class="accpop-item-name">' + escapeHtml(u.name) + '</div>' +
-          (u.email ? '<div class="accpop-item-sub">' + escapeHtml(u.email) + '</div>' : '') +
+          '<div class="accpop-item-name">' + escapeHtml(u.name) +
+            (isActive && typeof isPremium === 'function' && isPremium() ? '<span class="premium-badge is-plan">Pro</span>' : '') + '</div>' +
+          '<div class="accpop-item-sub">' + sub + '</div>' +
         '</div>' +
+        '<div class="accpop-item-side">' +
         (isActive
           ? '<svg class="accpop-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
-          : '<button class="accpop-item-remove" data-accpop-remove="' + u.id + '" title="Remove account">' +
-              '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
-            '</button>') +
+          : '') +
+        '<button class="accpop-item-remove" data-accpop-remove="' + u.id + '" title="Remove ' + escapeHtml(u.name) + '">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>' +
+          '</button>' +
+        '</div>' +
         '</div>';
     });
     html += '</div>';
@@ -311,7 +314,12 @@ function renderAccountPopup() {
       '<svg viewBox="0 0 48 48" fill="none"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg>' +
       '<span>' + (guest ? 'Sign in with Google (keep guest data)' : 'Sign in with Google') + '</span>' +
     '</button>';
-  if (!guest && hasFirebase) {
+  html +=
+    '<button class="accpop-guest-btn" id="accPopEmail">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 7 12 14 2 7"/></svg>' +
+      '<span>' + (guest ? 'Sign in with email' : 'Add account with email') + '</span>' +
+    '</button>';
+  if (!guest && hasSupabase) {
     html +=
       '<button class="accpop-guest-btn" id="accPopGuest">' +
         '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
@@ -327,9 +335,10 @@ function renderAccountPopup() {
   }
   html += '</div>';
 
-  html += '<div class="accpop-footer">Manage your accounts on this device</div>';
+  html += '<div class="accpop-footer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg><span>Synced with Supabase</span></div>';
 
-  html += '<button class="accpop-remove-all" id="accPopRemoveAll">Remove all accounts</button>';
+  html += '<div class="accpop-dangerzone"><div class="accpop-dangerzone-title">Danger zone</div>' +
+    '<button class="accpop-remove-all" id="accPopRemoveAll">Remove all accounts</button></div>';
 
   card.innerHTML = html;
 
@@ -346,6 +355,10 @@ function renderAccountPopup() {
         closeAccountPopup();
       }
     });
+    el.addEventListener('keydown', function(e) {
+      if (e.target.closest('[data-accpop-remove]')) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+    });
   });
   card.querySelectorAll('[data-accpop-remove]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
@@ -356,53 +369,169 @@ function renderAccountPopup() {
   card.querySelector('#accPopAdd').addEventListener('click', function() { _accPopupGo('add'); });
   var gBtn = card.querySelector('#accPopGoogle');
   if (gBtn) gBtn.addEventListener('click', function() { closeAccountPopup(); gsiSignIn(); });
+  var emailBtn = card.querySelector('#accPopEmail');
+  if (emailBtn) emailBtn.addEventListener('click', function() { _markAddIntent(); closeAccountPopup(); location.href = 'login.html'; });
   var guestBtn = card.querySelector('#accPopGuest');
-  if (guestBtn) guestBtn.addEventListener('click', function() { closeAccountPopup(); location.href = 'login.html'; });
+  if (guestBtn) guestBtn.addEventListener('click', function() { _markAddIntent(); closeAccountPopup(); location.href = 'login.html'; });
   var removeAllBtn = card.querySelector('#accPopRemoveAll');
-  if (removeAllBtn) removeAllBtn.addEventListener('click', function(e) { e.stopPropagation(); removeAllProfiles(); });
+  if (removeAllBtn) removeAllBtn.addEventListener('click', function(e) { e.stopPropagation(); _accPopupGo('confirm-remove-all'); });
   var guestExitBtn = card.querySelector('#accPopGuestExit');
   if (guestExitBtn) guestExitBtn.addEventListener('click', function() { closeAccountPopup(); guestSignOut(); });
 }
 
 function _accPopupRenderAdd(card) {
+  var palette = ['#b4ccbc','#c4a4c8','#c8b88a','#a4c8c4','#c8a4a4','#a4b4c8','#b8c8a4','#c8b4a4'];
+  var selectedColor = palette[Math.floor(Math.random() * palette.length)];
+  var switchTo = true;
+  var countLabel = localUsers.length ? (localUsers.length + 1) + ' of ' + (localUsers.length + 1) : 'New';
   var html =
-    '<div class="accpop-header">' +
+    '<div class="accpop-header accpop-header-add">' +
+      '<button class="accpop-back" id="accPopBack" title="Back">' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>' +
+      '</button>' +
       '<div class="accpop-header-info">' +
         '<div class="accpop-header-name">Add account</div>' +
-        '<div class="accpop-header-sub">Create a local profile on this device</div>' +
+        '<div class="accpop-header-sub">Profile ' + countLabel + ' &middot; syncs with Supabase</div>' +
       '</div>' +
-      '<button class="accpop-back" id="accPopBack" title="Back">' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>' +
+      '<button class="accpop-close" id="accPopAddClose" title="Close">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
       '</button>' +
     '</div>' +
-    '<div class="accpop-form">' +
-      '<label class="accpop-label" for="accPopName">Profile name</label>' +
-      '<input class="accpop-input" id="accPopName" type="text" placeholder="e.g. Alex" maxlength="30" spellcheck="false" autocomplete="off">' +
-      '<button class="accpop-primary-btn" id="accPopCreate" disabled>Create profile</button>' +
-      '<div class="accpop-or"><span>or</span></div>' +
-      '<button class="accpop-google-btn" id="accPopGoogleFull">' +
-        '<svg viewBox="0 0 48 48" fill="none"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg>' +
-        '<span>Sign in with Google instead</span>' +
+    '<div class="accpop-add-scroll">' +
+    '<div class="accpop-preview" id="accPopPreview" style="background:linear-gradient(135deg,' + selectedColor + '33,' + selectedColor + '11)">' +
+      '<div class="accpop-preview-avatar" id="accPopAvatarPreview" style="background:' + selectedColor + '">?</div>' +
+      '<div class="accpop-preview-info">' +
+        '<div class="accpop-preview-name" id="accPopPreviewName">Your name</div>' +
+        '<div class="accpop-preview-sub" id="accPopPreviewSub">Supabase account</div>' +
+      '</div>' +
+      '<button class="accpop-shuffle" id="accPopShuffle" title="Shuffle avatar color">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>' +
       '</button>' +
+    '</div>' +
+    '<div class="accpop-form accpop-form-add">' +
+      '<div class="accpop-field-head"><label class="accpop-label" for="accPopName">Profile name</label><span class="accpop-count" id="accPopCount">0 / 30</span></div>' +
+      '<input class="accpop-input" id="accPopName" type="text" placeholder="e.g. Alex Morgan" maxlength="30" spellcheck="false" autocomplete="off">' +
+      '<div class="accpop-hint">Use at least 2 characters. This name shows across Schedule, Goals and Analytics.</div>' +
+      '<div class="accpop-error" id="accPopError" hidden></div>' +
+      '<div class="accpop-field-head" style="margin-top:12px"><label class="accpop-label" for="accPopEmailInput">Email label <span class="accpop-optional">(optional)</span></label></div>' +
+      '<input class="accpop-input" id="accPopEmailInput" type="text" placeholder="e.g. alex@work.com" maxlength="80" spellcheck="false" autocomplete="off" inputmode="email">' +
+      '<div class="accpop-hint">Shown on your account — everything stays synced with Supabase.</div>' +
+      '<div class="accpop-field-head" style="margin-top:12px"><span class="accpop-label">Avatar color</span><span class="accpop-count" id="accPopColorName"></span></div>' +
+      '<div class="accpop-swatches" id="accPopSwatches">' +
+        palette.map(function(c, i) { return '<button class="accpop-swatch' + (c === selectedColor ? ' selected' : '') + '" data-color="' + c + '" style="background:' + c + '" title="' + c + '" aria-label="Color ' + (i + 1) + '"></button>'; }).join('') +
+      '</div>' +
+      '<button class="accpop-switch-row" id="accPopSwitchRow" aria-checked="true">' +
+        '<span class="accpop-switch-text"><span class="accpop-switch-title">Switch to this account</span><span class="accpop-switch-sub">Start using it right after creating</span></span>' +
+        '<span class="accpop-switch" id="accPopSwitchToggle"><span class="accpop-switch-knob"></span></span>' +
+      '</button>' +
+      '<button class="accpop-primary-btn" id="accPopCreate" disabled><span id="accPopCreateLabel">Create profile</span></button>' +
+      '<div class="accpop-or"><span>or connect with</span></div>' +
+      '<div class="accpop-connect">' +
+      '<button class="accpop-connect-btn" id="accPopGoogleFull">' +
+        '<span class="accpop-connect-icon"><svg viewBox="0 0 48 48" fill="none"><path d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z" fill="#FFC107"/><path d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z" fill="#FF3D00"/><path d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0124 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z" fill="#4CAF50"/><path d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 01-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z" fill="#1976D2"/></svg></span>' +
+        '<span class="accpop-connect-text"><span class="accpop-connect-title">Google</span><span class="accpop-connect-sub">Backup &amp; sync across devices</span></span>' +
+        '<svg class="accpop-connect-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+      '</button>' +
+      '<button class="accpop-connect-btn" id="accPopEmailFull">' +
+        '<span class="accpop-connect-icon accpop-connect-icon-mail"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 7 12 14 2 7"/></svg></span>' +
+        '<span class="accpop-connect-text"><span class="accpop-connect-title">Email</span><span class="accpop-connect-sub">Sign in or register with email</span></span>' +
+        '<svg class="accpop-connect-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>' +
+      '</button>' +
+      '</div>' +
+      '<div class="accpop-secure"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><span>Accounts sync with Supabase so your data follows you across devices.</span></div>' +
+    '</div>' +
     '</div>';
   card.innerHTML = html;
 
   card.querySelector('#accPopBack').addEventListener('click', function() { _accPopupGo('list'); });
+  card.querySelector('#accPopAddClose').addEventListener('click', closeAccountPopup);
   var input = card.querySelector('#accPopName');
+  var emailInput = card.querySelector('#accPopEmailInput');
   var createBtn = card.querySelector('#accPopCreate');
-  input.addEventListener('input', function() { createBtn.disabled = !input.value.trim(); });
+  var createLabel = card.querySelector('#accPopCreateLabel');
+  var errBox = card.querySelector('#accPopError');
+  var countEl = card.querySelector('#accPopCount');
+  var previewName = card.querySelector('#accPopPreviewName');
+  var previewSub = card.querySelector('#accPopPreviewSub');
+  var previewAvatar = card.querySelector('#accPopAvatarPreview');
+  var previewBanner = card.querySelector('#accPopPreview');
+  var swatchesEl = card.querySelector('#accPopSwatches');
+  var switchRow = card.querySelector('#accPopSwitchRow');
+  var switchToggle = card.querySelector('#accPopSwitchToggle');
+
+  function showError(msg) {
+    if (!msg) { errBox.hidden = true; errBox.textContent = ''; input.classList.remove('invalid'); return; }
+    errBox.hidden = false;
+    errBox.textContent = msg;
+    input.classList.add('invalid');
+  }
+  function applyColor(c) {
+    selectedColor = c;
+    previewAvatar.style.background = c;
+    previewBanner.style.background = 'linear-gradient(135deg,' + c + '33,' + c + '11)';
+    var sw = swatchesEl.querySelectorAll('.accpop-swatch');
+    for (var i = 0; i < sw.length; i++) sw[i].classList.toggle('selected', sw[i].getAttribute('data-color') === c);
+  }
+  function validate() {
+    var name = input.value.trim();
+    var emailVal = emailInput.value.trim();
+    countEl.textContent = input.value.length + ' / 30';
+    previewName.textContent = name || 'Your name';
+    try { previewAvatar.textContent = name ? getInitials(name) : '?'; } catch (e) { previewAvatar.textContent = '?'; }
+    previewSub.textContent = emailVal || 'Supabase account';
+    if (!name) { showError(''); createBtn.disabled = true; return false; }
+    if (name.length < 2) { showError('Name needs at least 2 characters.'); createBtn.disabled = true; return false; }
+    var dup = localUsers.some(function(u) { return u && u.name && u.name.toLowerCase() === name.toLowerCase(); });
+    if (dup) { showError('A profile named "' + name + '" already exists. Try "' + name + ' 2" or another name.'); createBtn.disabled = true; return false; }
+    if (emailVal && emailVal.indexOf('@') !== -1 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) { showError('That email label does not look valid.'); createBtn.disabled = true; return false; }
+    showError('');
+    createBtn.disabled = false;
+    return true;
+  }
+  input.addEventListener('input', validate);
+  emailInput.addEventListener('input', validate);
   input.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !createBtn.disabled) createBtn.click();
+    if (e.key === 'Enter' && !createBtn.disabled) { e.preventDefault(); createBtn.click(); }
+  });
+  emailInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !createBtn.disabled) { e.preventDefault(); createBtn.click(); }
+  });
+  swatchesEl.addEventListener('click', function(e) {
+    var b = e.target.closest('.accpop-swatch');
+    if (b) applyColor(b.getAttribute('data-color'));
+  });
+  card.querySelector('#accPopShuffle').addEventListener('click', function(e) {
+    e.preventDefault();
+    applyColor(palette[Math.floor(Math.random() * palette.length)]);
+  });
+  switchRow.addEventListener('click', function(e) {
+    e.preventDefault();
+    switchTo = !switchTo;
+    switchRow.setAttribute('aria-checked', switchTo ? 'true' : 'false');
+    switchToggle.classList.toggle('off', !switchTo);
   });
   createBtn.addEventListener('click', function() {
+    if (!validate()) return;
     var name = input.value.trim();
-    if (!name) return;
-    createLocalProfile(name);
+    var emailVal = emailInput.value.trim();
+    createBtn.disabled = true;
+    createLabel.textContent = 'Creating\u2026';
+    setTimeout(function() {
+      var res = createLocalProfile(name, { email: emailVal, color: selectedColor, switchTo: switchTo });
+      if (res === false) {
+        createBtn.disabled = false;
+        createLabel.textContent = 'Create profile';
+        showError('Could not create that profile. Please try a different name.');
+      }
+    }, 60);
   });
   card.querySelector('#accPopGoogleFull').addEventListener('click', function() {
     closeAccountPopup();
     gsiSignIn();
   });
+  var emailFullBtn = card.querySelector('#accPopEmailFull');
+  if (emailFullBtn) emailFullBtn.addEventListener('click', function() { _markAddIntent(); closeAccountPopup(); location.href = 'login.html'; });
+  validate();
   requestAnimationFrame(function() { input.focus(); });
 }
 
@@ -412,6 +541,8 @@ function _accPopupRenderConfirmRemove(card) {
   var activeId = getActiveUserId();
   var isActive = user.id === activeId;
   var remaining = localUsers.filter(function(u) { return u.id !== user.id; });
+  var nextName = (isActive && remaining.length > 0) ? remaining[0].name : '';
+  var deleteCloud = true;
   var i2 = getInitials(user.name);
   var c2 = user._color || getColorForId(user.id);
   var av = user.picture
@@ -420,66 +551,199 @@ function _accPopupRenderConfirmRemove(card) {
 
   var html =
     '<div class="accpop-header">' +
+      '<button class="accpop-back" id="accPopBack" title="Back">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>' +
+      '</button>' +
       '<div class="accpop-header-info">' +
         '<div class="accpop-header-name">Remove account?</div>' +
         '<div class="accpop-header-sub">This cannot be undone</div>' +
       '</div>' +
-      '<button class="accpop-back" id="accPopBack" title="Back">' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>' +
+      '<button class="accpop-close" id="accPopRemoveClose" title="Close">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
       '</button>' +
     '</div>' +
-    '<div class="accpop-confirm">' +
-      av +
-      '<div class="accpop-confirm-name">' + escapeHtml(user.name) + '</div>' +
-      (user.email ? '<div class="accpop-confirm-sub">' + escapeHtml(user.email) + '</div>' : '') +
-      '<div class="accpop-confirm-warn">All data for this profile on this device will be deleted' +
-      (isActive && remaining.length > 0 ? ' and you will be switched to <strong>' + escapeHtml(remaining[0].name) + '</strong>' : '') +
-      '.</div>' +
-      '<div class="accpop-confirm-btns">' +
-        '<button class="accpop-cancel-btn" id="accPopCancel">Cancel</button>' +
-        '<button class="accpop-danger-btn" id="accPopConfirmRemove">Remove account</button>' +
+    '<div class="accpop-add-scroll"><div class="accpop-confirm accpop-remove-view">' +
+      '<div class="accpop-warn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
+      '<div class="accpop-remove-target">' + av +
+        '<div class="accpop-remove-target-info">' +
+          '<div class="accpop-confirm-name">' + escapeHtml(user.name) + '</div>' +
+          '<div class="accpop-confirm-sub">' + (user.email ? escapeHtml(user.email) : 'Supabase account') + '</div>' +
+        '</div>' +
+        '<span class="accpop-sync-pill"><span class="accpop-sync-dot"></span>Synced</span>' +
       '</div>' +
-    '</div>';
+      '<div class="accpop-del-list">' +
+        '<div class="accpop-del-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg><span>App data on this device <em>tasks, schedule, goals, finance</em></span></div>' +
+        '<div class="accpop-del-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg><span>Images &amp; uploads for this account</span></div>' +
+      '</div>' +
+      '<button class="accpop-switch-row accpop-cloud-row" id="accPopCloudRow" aria-checked="true">' +
+        '<span class="accpop-switch-text"><span class="accpop-switch-title">Delete Supabase cloud backup</span><span class="accpop-switch-sub">Remove the synced copy too — off keeps it for later</span></span>' +
+        '<span class="accpop-switch" id="accPopCloudToggle"><span class="accpop-switch-knob"></span></span>' +
+      '</button>' +
+      (isActive
+        ? (nextName
+          ? '<div class="accpop-switch-note">You are using <strong>' + escapeHtml(user.name) + '</strong> now — you will be switched to <strong>' + escapeHtml(nextName) + '</strong>.</div>'
+          : '<div class="accpop-switch-note">You are using <strong>' + escapeHtml(user.name) + '</strong> now — you will be signed out.</div>')
+        : '') +
+      '<div class="accpop-confirm-btns">' +
+        '<button class="accpop-cancel-btn" id="accPopCancel">Keep account</button>' +
+        '<button class="accpop-danger-btn" id="accPopConfirmRemove">Remove</button>' +
+      '</div>' +
+    '</div></div>';
   card.innerHTML = html;
 
   card.querySelector('#accPopBack').addEventListener('click', function() { _accPopupGo('list'); });
+  card.querySelector('#accPopRemoveClose').addEventListener('click', closeAccountPopup);
   card.querySelector('#accPopCancel').addEventListener('click', function() { _accPopupGo('list'); });
-  card.querySelector('#accPopConfirmRemove').addEventListener('click', function() {
-    closeAccountPopup();
-    performRemoveProfile(user.id);
+  var cloudRow = card.querySelector('#accPopCloudRow');
+  var cloudToggle = card.querySelector('#accPopCloudToggle');
+  cloudRow.addEventListener('click', function(e) {
+    e.preventDefault();
+    deleteCloud = !deleteCloud;
+    cloudRow.setAttribute('aria-checked', deleteCloud ? 'true' : 'false');
+    cloudToggle.classList.toggle('off', !deleteCloud);
+  });
+  var confirmBtn = card.querySelector('#accPopConfirmRemove');
+  confirmBtn.addEventListener('click', function() {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Removing…';
+    setTimeout(function() {
+      closeAccountPopup();
+      performRemoveProfile(user.id, { deleteCloud: deleteCloud });
+    }, 350);
   });
 }
 
+function _accPopupRenderConfirmRemoveAll(card) {
+  var shown = localUsers.slice(0, 6);
+  var extra = localUsers.length - shown.length;
+  var html =
+    '<div class="accpop-header">' +
+      '<button class="accpop-back" id="accPopBack" title="Back">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>' +
+      '</button>' +
+      '<div class="accpop-header-info">' +
+        '<div class="accpop-header-name">Remove all accounts?</div>' +
+        '<div class="accpop-header-sub">' + localUsers.length + ' account' + (localUsers.length === 1 ? '' : 's') + ' · device + Supabase</div>' +
+      '</div>' +
+      '<button class="accpop-close" id="accPopRemoveAllClose" title="Close">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+      '</button>' +
+    '</div>' +
+    '<div class="accpop-add-scroll"><div class="accpop-confirm accpop-remove-view">' +
+      '<div class="accpop-warn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>' +
+      '<div class="accpop-confirm-warn">Every account on this device will be signed out and all of their data — including Supabase cloud backups and images — will be permanently deleted.</div>' +
+      '<div class="accpop-mini-list">' +
+        shown.map(function(u) {
+          var ini = getInitials(u.name);
+          var col = u._color || getColorForId(u.id);
+          var mAv = u.picture
+            ? '<img class="accpop-mini-avatar" src="' + escapeHtml(u.picture) + '" alt="">'
+            : '<div class="accpop-mini-avatar" style="background:' + col + '">' + escapeHtml(ini) + '</div>';
+          return '<div class="accpop-mini-item">' + mAv +
+            '<div class="accpop-mini-info"><div class="accpop-mini-name">' + escapeHtml(u.name) + '</div>' +
+            '<div class="accpop-mini-sub">' + (u.email ? escapeHtml(u.email) : 'Supabase account') + '</div></div></div>';
+        }).join('') +
+        (extra > 0 ? '<div class="accpop-mini-more">+' + extra + ' more</div>' : '') +
+      '</div>' +
+      '<label class="accpop-ack"><input type="checkbox" id="accPopAckAll"><span>I understand this cannot be undone</span></label>' +
+      '<div class="accpop-confirm-btns">' +
+        '<button class="accpop-cancel-btn" id="accPopCancelAll">Cancel</button>' +
+        '<button class="accpop-danger-btn" id="accPopConfirmRemoveAll" disabled>Remove all</button>' +
+      '</div>' +
+    '</div></div>';
+  card.innerHTML = html;
+
+  card.querySelector('#accPopBack').addEventListener('click', function() { _accPopupGo('list'); });
+  card.querySelector('#accPopRemoveAllClose').addEventListener('click', closeAccountPopup);
+  card.querySelector('#accPopCancelAll').addEventListener('click', function() { _accPopupGo('list'); });
+  var ack = card.querySelector('#accPopAckAll');
+  var confirmAllBtn = card.querySelector('#accPopConfirmRemoveAll');
+  ack.addEventListener('change', function() { confirmAllBtn.disabled = !ack.checked; });
+  confirmAllBtn.addEventListener('click', function() {
+    confirmAllBtn.disabled = true;
+    confirmAllBtn.textContent = 'Removing…';
+    setTimeout(function() { removeAllProfiles(); }, 350);
+  });
+}
+
+var OAUTH_INTENT_KEY = 'haven-gsi-oauth';
+var ADD_INTENT_KEY = 'haven-gsi-add';
+
+function _markOAuthIntent() {
+  try { sessionStorage.setItem(OAUTH_INTENT_KEY, '1'); } catch (e) {}
+}
+// True once, then cleared: the Google flow was started by the user on this tab.
+function _consumedOAuthIntent() {
+  try {
+    if (sessionStorage.getItem(OAUTH_INTENT_KEY) !== '1') return false;
+    sessionStorage.removeItem(OAUTH_INTENT_KEY);
+    return true;
+  } catch (e) { return false; }
+}
+// Marked when the user is heading to the login page to add another account, so
+// the login page does not bounce them straight back to the hub.
+function _markAddIntent() {
+  try { sessionStorage.setItem(ADD_INTENT_KEY, '1'); } catch (e) {}
+}
+function _hasAddIntent() {
+  try { return sessionStorage.getItem(ADD_INTENT_KEY) === '1'; } catch (e) { return false; }
+}
+function _clearAddIntent() {
+  try { sessionStorage.removeItem(ADD_INTENT_KEY); } catch (e) {}
+}
+
 function gsiSignIn() {
-  if (typeof firebase === 'undefined' || typeof firebase.auth !== 'function') {
-    showToast('Firebase SDK not loaded. Refresh the page.', 'error');
+  var sb = getSupabaseDb();
+  if (!sb) {
+    showToast('Supabase SDK not loaded. Refresh the page.', 'error');
     return;
   }
-  if (!firebase.apps.length && typeof FIREBASE_CONFIG !== 'undefined') {
-    firebase.initializeApp(FIREBASE_CONFIG);
-  }
-  var provider = new firebase.auth.GoogleAuthProvider();
-  provider.addScope('profile');
-  provider.addScope('email');
-  firebase.auth().signInWithPopup(provider).then(function(result) {
-    var user = result.user;
-    if (!user) return;
-    var gdata = {
-      name: user.displayName || '',
-      email: user.email || '',
-      picture: user.photoURL || '',
-      googleId: user.uid || ''
-    };
-    completeGoogleSignIn(gdata);
-  }).catch(function(error) {
-    if (error.code === 'auth/popup-closed-by-user') return;
-    if (error.code === 'auth/unauthorized-domain') {
-      showToast('Domain not authorized. Add this domain in Firebase Console \u2192 Authentication \u2192 Settings \u2192 Authorized domains.', 'error', 4000);
-      return;
+  _markOAuthIntent();
+  var redirectTo = location.origin + location.pathname;
+  sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo } }).then(function(res) {
+    if (res && res.error) {
+      console.error('Google sign-in error:', res.error);
+      showToast('Google sign-in failed: ' + (res.error.message || 'unknown error'), 'error');
     }
+  }).catch(function(error) {
     console.error('Google sign-in error:', error);
     showToast('Google sign-in failed: ' + (error.message || 'unknown error'), 'error');
   });
+}
+
+function gsiSignOutSupabase() { return supabaseSignOut(); }
+
+var _supabaseAuthHandled = false;
+
+function handleSupabaseAuthUser(user) {
+  if (!user || user.is_anonymous) return;
+  if (_supabaseAuthHandled) return;
+  // An account is already active, so a Supabase session on load is just the
+  // signed-in state of that account — unless the user explicitly started the
+  // Google flow, which means they want this account added as another profile.
+  if (!_consumedOAuthIntent() && getActiveUserId()) return;
+  _supabaseAuthHandled = true;
+  var meta = user.user_metadata || {};
+  var name = meta.full_name || meta.name || (user.email ? user.email.split('@')[0] : 'User');
+  completeGoogleSignIn({
+    name: name,
+    email: user.email || '',
+    picture: meta.avatar_url || meta.picture || '',
+    googleId: user.id,
+    authUid: user.id
+  });
+}
+
+function initSupabaseAuthBridge() {
+  var sb = getSupabaseDb();
+  if (!sb) return;
+  sb.auth.onAuthStateChange(function(event, session) {
+    if (event === 'SIGNED_IN' && session && session.user) handleSupabaseAuthUser(session.user);
+  });
+  sb.auth.getSession().then(function(res) {
+    var session = res && res.data && res.data.session;
+    if (session && session.user) handleSupabaseAuthUser(session.user);
+  }).catch(function() {});
 }
 
 // Entry point for Google sign-in flows that already have the profile payload
@@ -493,15 +757,15 @@ function googleSignIn(gdata) {
     name: gdata.name || '',
     email: gdata.email || '',
     picture: gdata.picture || '',
-    googleId: gdata.googleId
+    googleId: gdata.googleId,
+    authUid: gdata.authUid || ''
   });
 }
 
-// Shared finish for every Google sign-in. Creates or reuses the Google-backed
-// account, then activates it. While in a guest session, the guest's data is
-// bled into the account first (account's own data wins on conflicts).
 function completeGoogleSignIn(gdata) {
+  havenFlushAccountData();
   var finish = function(targetId) {
+    havenBlockUnloadSaves();
     setActiveUserId(targetId);
     if (typeof state !== 'undefined') state.currentUserId = targetId;
     renderAuthUI();
@@ -513,6 +777,11 @@ function completeGoogleSignIn(gdata) {
   };
   var existing = localUsers.find(function(u) { return u.googleId === gdata.googleId; });
   if (existing) {
+    if (gdata.authUid && existing.authUid !== gdata.authUid) {
+      existing.authUid = gdata.authUid;
+      saveUsers();
+    }
+    if (typeof syncUserToProfile === 'function') syncUserToProfile(existing);
     if (isGuestMode()) {
       recordDeviceAccess(existing);
       bleedGuestDataInto(existing.id).then(function() { finish(existing.id); }).catch(function() { finish(existing.id); });
@@ -521,23 +790,41 @@ function completeGoogleSignIn(gdata) {
     }
     return;
   }
-  var newUser = {
-    id: generateId(),
-    name: gdata.name || (gdata.email ? gdata.email.split('@')[0] : 'Google User'),
-    email: gdata.email || '',
-    picture: gdata.picture || '',
-    googleId: gdata.googleId,
-    _color: getColorForId(generateId())
+  var createWithId = function(reuseId) {
+    var freshId = generateId();
+    var idTaken = reuseId && localUsers.some(function(u) { return u.id === reuseId && u.googleId !== gdata.googleId; });
+    var newUser = {
+      id: (!idTaken && reuseId) ? reuseId : freshId,
+      name: gdata.name || (gdata.email ? gdata.email.split('@')[0] : 'Google User'),
+      email: gdata.email || '',
+      picture: gdata.picture || '',
+      googleId: gdata.googleId,
+      authUid: gdata.authUid || '',
+      _color: getColorForId(freshId)
+    };
+    migrateExistingData(newUser.id);
+    recordDeviceAccess(newUser);
+    localUsers.push(newUser);
+    saveUsers();
+    if (typeof syncUserToProfile === 'function') syncUserToProfile(newUser);
+    if (isGuestMode()) {
+      bleedGuestDataInto(newUser.id).then(function() { finish(newUser.id); }).catch(function() { finish(newUser.id); });
+    } else {
+      finish(newUser.id);
+    }
   };
-  migrateExistingData(newUser.id);
-  recordDeviceAccess(newUser);
-  localUsers.push(newUser);
-  saveUsers();
-  if (isGuestMode()) {
-    bleedGuestDataInto(newUser.id).then(function() { finish(newUser.id); }).catch(function() { finish(newUser.id); });
-  } else {
-    finish(newUser.id);
+  if (gdata.authUid) {
+    var sb = null;
+    try { sb = getSupabaseDb(); } catch (e) { sb = null; }
+    if (sb) {
+      sb.from('profiles').select('id').eq('auth_uid', gdata.authUid).maybeSingle().then(function(res) {
+        if (res && !res.error && res.data && res.data.id) createWithId(res.data.id);
+        else createWithId(null);
+      }).catch(function() { createWithId(null); });
+      return;
+    }
   }
+  createWithId(null);
 }
 
 function _openImageDBByName(dbName) {
@@ -658,11 +945,7 @@ function bleedGuestDataInto(targetId) {
         saveUsers();
       }
       try { sessionStorage.removeItem('haven-guest'); } catch (e) {}
-      try {
-        if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function' && firebase.apps && firebase.apps.length) {
-          firebase.auth().signOut().catch(function() {});
-        }
-      } catch (e) {}
+      try { supabaseSignOut(); } catch (e) {}
       if (moved > 0 && typeof showToast === 'function') {
         showToast('Guest data moved to your account (' + moved + ' items)', 'info', 3000);
       }
@@ -676,11 +959,7 @@ function bleedGuestDataInto(targetId) {
 
 function guestSignOut() {
   sessionStorage.removeItem('haven-guest');
-  try {
-    if (typeof firebase !== 'undefined' && firebase.auth && firebase.apps.length) {
-      firebase.auth().signOut().catch(function() {});
-    }
-  } catch (e) {}
+  try { supabaseSignOut(); } catch (e) {}
   var others = localUsers.filter(function(u) { return u.name !== 'Guest'; });
   if (others.length > 0) {
     switchAccount(others[0].id);
@@ -691,6 +970,7 @@ function guestSignOut() {
   if (activeUser && activeUser.name === 'Guest') {
     localUsers = localUsers.filter(function(u) { return u.id !== activeId; });
     saveUsers();
+    havenBlockUnloadSaves();
     setActiveUserId(null);
     if (typeof state !== 'undefined') state.currentUserId = null;
     location.href = 'login.html';
@@ -704,42 +984,100 @@ function guestSignOut() {
 
 
 // ─── Local profile ────────────────────────────────────
-function createLocalProfile(name) {
-  if (!name || !name.trim()) return;
+// A real profile takes over the session, so the guest flag must not linger:
+// it keeps guest-only paths armed (bleeding, sign-out, redirect skip) that can
+// move or drop data belonging to the account now in use.
+function _leaveGuestSession(user) {
+  if (!user || user.name === 'Guest') return;
+  try { sessionStorage.removeItem('haven-guest'); } catch (e) { /* ignore */ }
+}
+
+// Creates a local-only profile.
+function createLocalProfile(name, opts) {
+  if (!name || !name.trim()) return false;
+  opts = opts || {};
+  _clearAddIntent();
   name = name.trim();
+  var emailVal = (opts.email || '').toString().trim().slice(0, 80);
+  var colorVal = opts.color || getColorForId(generateId());
+  if (!/^#[0-9a-fA-F]{6}$/.test(colorVal)) colorVal = getColorForId(generateId());
+  var stayHere = opts.switchTo === false && !isLoginPage();
   if (name === 'Guest') {
     var existingGuest = localUsers.find(function(u) { return u.name === 'Guest'; });
     if (existingGuest) {
       recordDeviceAccess(existingGuest);
+      havenBeginAccountSwitch();
       setActiveUserId(existingGuest.id);
       if (typeof state !== 'undefined') state.currentUserId = existingGuest.id;
       renderAuthUI();
       if (isLoginPage()) location.href = 'index.html';
       else location.reload();
-      return;
+      return true;
     }
   }
-  var user = { id: generateId(), name: name, _color: getColorForId(generateId()) };
+  var dup = localUsers.find(function(u) { return u && u.name.toLowerCase() === name.toLowerCase(); });
+  if (dup) {
+    if (typeof showToast === 'function') showToast('A profile named "' + dup.name + '" already exists. Pick a different name.', 'error', 3500);
+    return false;
+  }
+  var user = { id: generateId(), name: name, _color: colorVal };
+  if (emailVal) user.email = emailVal;
   migrateExistingData(user.id);
   recordDeviceAccess(user);
   localUsers.push(user);
   saveUsers();
+  if (stayHere) {
+    renderAuthUI();
+    if (typeof showToast === 'function') showToast('Profile "' + name + '" created. Find it in your account list.', 'info', 2500);
+    if (_accPopup) _accPopupGo('list');
+    return true;
+  }
+  havenBeginAccountSwitch();
   setActiveUserId(user.id);
   if (typeof state !== 'undefined') state.currentUserId = user.id;
+  _leaveGuestSession(user);
   renderAuthUI();
   if (isLoginPage()) location.href = 'index.html';
   else location.reload();
+  return true;
 }
 
 function switchAccount(id) {
   var user = localUsers.find(function(u) { return u.id === id; });
   if (!user) return;
   recordDeviceAccess(user);
-  setActiveUserId(id);
+  if (!setActiveUserId(id)) {
+    showToast('Could not switch to ' + user.name + ' — browser storage is full.', 'error', 4000);
+    return;
+  }
+  havenBeginAccountSwitch();
   if (typeof state !== 'undefined') state.currentUserId = id;
+  _leaveGuestSession(user);
   renderAuthUI();
   showToast('Switched to ' + user.name, 'info', 1500);
   location.reload();
+}
+
+// Ends the session only. The profile and every key under its prefix stay on the
+// device untouched, so signing back in restores it. Deleting an account is a
+// separate, explicitly labelled action.
+function signOutKeepProfile() {
+  var id = getActiveUserId();
+  if (!id) { location.href = 'login.html'; return; }
+  try { sessionStorage.removeItem('haven-guest'); } catch (e) {}
+  try { sessionStorage.removeItem(OAUTH_INTENT_KEY); } catch (e) {}
+  havenBeginAccountSwitch();
+  setActiveUserId(null);
+  if (typeof state !== 'undefined') state.currentUserId = null;
+  renderAuthUI();
+  var once = false;
+  var go = function() { if (once) return; once = true; location.href = 'login.html'; };
+  try {
+    var p = supabaseSignOut();
+    if (p && typeof p.then === 'function') p.then(go, go);
+    else go();
+  } catch (e) { go(); }
+  setTimeout(go, 1500);
 }
 
 function removeProfile(id) {
@@ -753,16 +1091,14 @@ function removeProfile(id) {
   performRemoveProfile(id);
 }
 
-function performRemoveProfile(id) {
+function performRemoveProfile(id, opts) {
+  opts = opts || {};
+  var deleteCloud = opts.deleteCloud !== false;
   var user = localUsers.find(function(u) { return u.id === id; });
   if (!user) return;
   var isActive = getActiveUserId() === id;
-  // Sign out of Firebase Auth if this was a Google-authenticated user
-  try {
-    if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function' && firebase.apps && firebase.apps.length) {
-      firebase.auth().signOut().catch(function() {});
-    }
-  } catch (e) {}
+  // Sign out of Supabase Auth if this was a Google-authenticated user
+  try { supabaseSignOut(); } catch (e) {}
   var prefix = user.id + ':';
   var doomed = [];
   try {
@@ -775,13 +1111,21 @@ function performRemoveProfile(id) {
     for (var j = 0; j < doomed.length; j++) __origLS.removeItem(doomed[j]);
   } catch (e) { /* ignore */ }
   _deleteImageDBByName('haven-images-' + user.id);
+  if (deleteCloud) {
+    if (typeof cloudDeleteRemoteData === 'function') { try { cloudDeleteRemoteData(user.id); } catch (e) { /* ignore */ } }
+    try { localStorage.removeItem('haven-cloud-imgmeta-' + user.id); } catch (e) { /* ignore */ }
+  }
   localUsers = localUsers.filter(function(u) { return u.id !== id; });
   saveUsers();
   if (isActive) {
+    // This profile's data is gone — block the unload savers so the reload
+    // cannot write its in-memory copy into the next account's namespace.
+    havenBlockUnloadSaves();
     if (localUsers.length > 0) {
       var next = localUsers[0];
       setActiveUserId(next.id);
       if (typeof state !== 'undefined') state.currentUserId = next.id;
+      _leaveGuestSession(next);
     } else {
       setActiveUserId(null);
       if (typeof state !== 'undefined') state.currentUserId = null;
@@ -795,14 +1139,41 @@ function performRemoveProfile(id) {
   } else if (isActive) {
     location.href = 'login.html';
   } else {
-    showToast('Profile removed', 'info', 1500);
+    showToast(deleteCloud ? 'Account removed (device + cloud)' : 'Account removed from this device', 'info', 2500);
     setTimeout(function() { location.reload(); }, 700);
   }
 }
 
+function _hasAccountData(prefix) {
+  try {
+    for (var i = 0; i < __origLS.length; i++) {
+      var k = __origLS.key(i);
+      if (k && k.indexOf(prefix) === 0) return true;
+    }
+  } catch (e) { /* ignore */ }
+  return false;
+}
+
+// Hand the pre-accounts (unprefixed) data to an account exactly once per device.
+// The source keys are copied, never removed, so an existing account's data is
+// never touched — and if another profile already owns data on this device, the
+// unprefixed leftovers are just an older copy of it, so nothing is duplicated.
 function migrateExistingData(id) {
+  if (!id) return;
   var prefix = id + ':';
-  try { if (__origLS.getItem('haven-gsi-migrated') === '1') return; } catch (e) { return; }
+  var DEVICE_KEYS = ['haven-device-id', 'haven-device-label', 'haven-admin-password', 'haven-guest-default-template', 'haven-synced-at'];
+  try { if (__origLS.getItem('haven-gsi-migrated')) return; } catch (e) { return; }
+
+  var claimed = false;
+  try {
+    claimed = localUsers.some(function(u) { return u && u.id && u.id !== id && _hasAccountData(u.id + ':'); });
+  } catch (e) { /* ignore */ }
+  if (claimed) { try { __origLS.setItem('haven-gsi-migrated', '1'); } catch (e) {} return; }
+
+  // Claim before copying: a partial copy (quota) must not let the next account
+  // created on this device inherit the same data again.
+  try { __origLS.setItem('haven-gsi-migrated', '1'); } catch (e) {}
+
   var keys = [];
   for (var i = 0; i < __origLS.length; i++) {
     var key = __origLS.key(i);
@@ -811,20 +1182,18 @@ function migrateExistingData(id) {
     }
   }
   for (var j = 0; j < keys.length; j++) {
-    if (keys[j].indexOf('image') !== -1) continue; // skip image data from migration
-    var val = __origLS.getItem(keys[j]);
-    try { if (val) __origLS.setItem(prefix + keys[j], val); } catch (e) {}
+    var srcKey = keys[j];
+    if (srcKey.indexOf('image') !== -1) continue; // image data stays in place
+    if (DEVICE_KEYS.indexOf(srcKey) !== -1) continue; // device-level, not account data
+    if (__origLS.getItem(prefix + srcKey) !== null) continue; // account's own value wins
+    var val = __origLS.getItem(srcKey);
+    if (val === null || val === undefined) continue;
+    try { __origLS.setItem(prefix + srcKey, val); } catch (e) { /* ignore */ }
   }
-  try { __origLS.setItem('haven-gsi-migrated', '1'); } catch (e) {}
 }
 
 function removeAllProfiles() {
-  if (!confirm('Remove ALL accounts and data from this device?\n\nThis cannot be undone.')) return;
-  try {
-    if (typeof firebase !== 'undefined' && typeof firebase.auth === 'function' && firebase.apps && firebase.apps.length) {
-      firebase.auth().signOut().catch(function() {});
-    }
-  } catch (e) {}
+  try { supabaseSignOut(); } catch (e) {}
   localUsers.forEach(function(u) {
     var prefix = u.id + ':';
     var keysToRemove = [];
@@ -834,12 +1203,15 @@ function removeAllProfiles() {
     }
     for (var j = 0; j < keysToRemove.length; j++) __origLS.removeItem(keysToRemove[j]);
     try { _deleteImageDBByName('haven-images-' + u.id); } catch(e) {}
+    if (typeof cloudDeleteRemoteData === 'function') { try { cloudDeleteRemoteData(u.id); } catch (e) { /* ignore */ } }
+    try { localStorage.removeItem('haven-cloud-imgmeta-' + u.id); } catch (e) { /* ignore */ }
   });
   localUsers = [];
   saveUsers();
   try { localStorage.removeItem(AUTH_ACTIVE_KEY); } catch (e) {}
   try { sessionStorage.removeItem('haven-guest'); } catch (e) {}
   try { localStorage.removeItem('haven-gsi-migrated'); } catch (e) {}
+  havenBlockUnloadSaves();
   if (typeof state !== 'undefined') {
     state.currentUserId = null;
     state.localUsers = [];
@@ -848,8 +1220,40 @@ function removeAllProfiles() {
   location.href = 'login.html';
 }
 
+function removeLocalOnlyProfiles() {
+  if (!confirm('Remove all local-only profiles and their data from this device?\n\nProfiles connected to Google/email will be kept.\n\nThis cannot be undone.')) return;
+  var kept = [];
+  localUsers.forEach(function(u) {
+    var isLocalOnly = !u.authUid;
+    if (isLocalOnly) {
+      var prefix = u.id + ':';
+      var keysToRemove = [];
+      for (var i = 0; i < __origLS.length; i++) {
+        var key = __origLS.key(i);
+        if (key && key.indexOf(prefix) === 0) keysToRemove.push(key);
+      }
+      for (var j = 0; j < keysToRemove.length; j++) __origLS.removeItem(keysToRemove[j]);
+      try { _deleteImageDBByName('haven-images-' + u.id); } catch(e) {}
+    } else {
+      kept.push(u);
+    }
+  });
+  localUsers = kept;
+  saveUsers();
+  var activeId = getActiveUserId();
+  if (!localUsers.some(function(u) { return u.id === activeId; })) {
+    try { localStorage.removeItem(AUTH_ACTIVE_KEY); } catch (e) {}
+    havenBlockUnloadSaves();
+    if (typeof state !== 'undefined') state.currentUserId = null;
+  }
+  renderAuthUI();
+  if (typeof showToast === 'function') showToast('Local-only profiles removed (' + (localUsers.length) + ' account(s) kept)', 'info', 3000);
+  setTimeout(function() { location.reload(); }, 800);
+}
+
 function initGSI() {
     loadUsers();
+  initSupabaseAuthBridge();
   var activeId = getActiveUserId();
   if (typeof state !== 'undefined') {
     state.currentUserId = activeId || null;
@@ -859,7 +1263,11 @@ function initGSI() {
   authInitialized = true;
 
   if (isLoginPage()) {
-    if (activeId) { location.href = 'index.html'; return; }
+    // Signed in and just passing through → back to the hub. Arriving here on
+    // purpose to add another account → stay on the form. stay=1 → always show
+    // the form (e.g. opened from the Admin pages panel).
+    if (location.search.indexOf('stay=1') !== -1) return;
+    if (activeId && !_hasAddIntent()) { location.href = 'index.html'; return; }
     return;
   }
 
@@ -876,9 +1284,6 @@ function isLoginPage() {
 
 function isGuestMode() {
   if (sessionStorage.getItem('haven-guest') === '1') return true;
-  try {
-    if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser && firebase.auth().currentUser.isAnonymous) return true;
-  } catch (e) {}
   return false;
 }
 
@@ -1228,11 +1633,13 @@ function renderAccountSettings(el) {
       listHtml +
       
       '<button class="set-link-btn" id="setAddLocal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add local profile</button>' +
+      '<button class="set-link-btn" id="setRemoveLocal" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>Remove local profiles</button>' +
     '</div>' +
     '<div class="set-divider"></div>' +
     // Sign out
     '<div class="set-logout">' +
-      '<button class="set-btn set-btn-danger" id="setSignOut">Sign Out</button>' +
+      '<button class="set-btn" id="setSignOut">Sign Out</button>' +
+      '<button class="set-link-btn" id="setDeleteAccount" style="margin-top:10px;color:var(--danger,#ef4444)">Delete this account and its data</button>' +
     '</div>';
   // Profile save
   document.getElementById('accProfileSave')?.addEventListener('click', function() {
@@ -1324,27 +1731,42 @@ function renderAccountSettings(el) {
       removeProfile(btn.dataset.accRemove);
     });
   });
-    document.getElementById('setAddLocal')?.addEventListener('click', function() { closeSettingsPanel(); gsiSignIn(); });
-  document.getElementById('setSignOut')?.addEventListener('click', function() { closeSettingsPanel(); removeProfile(activeId); });
+  document.getElementById('setAddLocal')?.addEventListener('click', function() {
+    closeSettingsPanel();
+    var name = (typeof prompt === 'function') ? prompt('Enter a profile name:', '') : '';
+    if (name && name.trim()) createLocalProfile(name.trim());
+  });
+  document.getElementById('setRemoveLocal')?.addEventListener('click', function() { closeSettingsPanel(); removeLocalOnlyProfiles(); });
+  document.getElementById('setSignOut')?.addEventListener('click', function() { closeSettingsPanel(); signOutKeepProfile(); });
+  document.getElementById('setDeleteAccount')?.addEventListener('click', function() { closeSettingsPanel(); removeProfile(activeId); });
 }
 
 function renderAppearanceSettings(el) {
   var prefersDark = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
   var isDark = state.darkMode === null ? prefersDark : state.darkMode;
-  var accent = typeof state !== 'undefined' && state.accentColor ? state.accentColor : null;
 
   el.innerHTML =
     '<h3>Appearance</h3>' +
-    '<div class="set-desc">Customize the theme, accent color, and visuals</div>' +
+    '<div class="set-desc">Customize the theme and display</div>' +
     '<div class="set-group">' +
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">Dark Mode</div><div class="set-row-desc">Switch between dark and light theme</div></div>' +
         '<button class="set-toggle' + (isDark ? ' on' : '') + '" id="setThemeToggle"></button>' +
       '</div>' +
     '</div>' +
-    '<div class="set-group set-group-collapse">' +
-      '<div class="set-row-label set-acc-header" onclick="var n=this.nextElementSibling;n.classList.toggle(\'collapsed\');this.classList.toggle(\'collapsed\')">ACCENT COLOR <span class="set-acc-badge" style="background:' + (accent || '#888') + '"></span> <span class="set-acc-toggle">›</span></div>' +
-      '<div class="set-acc-body"></div>' +
+    '<div class="set-group">' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Compact mode</div><div class="set-row-desc">Tighter spacing throughout the app</div></div>' +
+        '<button class="set-toggle' + (state.compactMode ? ' on' : '') + '" id="setDisplayCompactToggle"></button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Reduce motion</div><div class="set-row-desc">Turn off motion effects across the app</div></div>' +
+        '<button class="set-toggle' + (state.animations === false ? ' on' : '') + '" id="setDisplayMotionToggle"></button>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Ambient effects</div><div class="set-row-desc">Soft background glows and gradients</div></div>' +
+        '<button class="set-toggle' + (state.ambientEffects !== false ? ' on' : '') + '" id="setDisplayAmbientToggle"></button>' +
+      '</div>' +
     '</div>' +
     '<div class="set-group">' +
       '<div class="set-row">' +
@@ -1358,10 +1780,26 @@ function renderAppearanceSettings(el) {
     this.classList.toggle('on');
   });
 
-  var accBody = el.querySelector('.set-acc-body');
-  if (accBody && typeof renderAccentColorPicker === 'function') {
-    renderAccentColorPicker(accBody);
-  }
+  document.getElementById('setDisplayCompactToggle')?.addEventListener('click', function() {
+    state.compactMode = !state.compactMode;
+    this.classList.toggle('on', state.compactMode);
+    applyBehaviorClasses();
+    saveState();
+  });
+  document.getElementById('setDisplayMotionToggle')?.addEventListener('click', function() {
+    var motionEnabled = state.animations !== false;
+    state.animations = !motionEnabled;
+    this.classList.toggle('on', state.animations === false);
+    applyBehaviorClasses();
+    saveState();
+  });
+  document.getElementById('setDisplayAmbientToggle')?.addEventListener('click', function() {
+    var ambientEnabled = state.ambientEffects !== false;
+    state.ambientEffects = !ambientEnabled;
+    this.classList.toggle('on', state.ambientEffects !== false);
+    applyAmbientEffects();
+    saveState();
+  });
 
   document.getElementById('setVisualsToggle')?.addEventListener('click', function() {
     if (typeof toggleEditMode !== 'undefined') toggleEditMode();
@@ -1601,34 +2039,14 @@ function renderLanguageSettings(el) {
 function renderBehaviorSettings(el) {
   el.innerHTML =
     '<h3>General</h3>' +
-    '<div class="set-desc">App-wide behavior and interface density</div>' +
+    '<div class="set-desc">App-wide behavior preferences</div>' +
     '<div class="set-group">' +
-      '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">Animations</div><div class="set-row-desc">Motion effects across the app</div></div>' +
-        '<button class="set-toggle' + (state.animations !== false ? ' on' : '') + '" id="setAnimationsToggle"></button>' +
-      '</div>' +
-      '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">Compact mode</div><div class="set-row-desc">Tighter spacing throughout the app</div></div>' +
-        '<button class="set-toggle' + (state.compactMode ? ' on' : '') + '" id="setCompactToggle"></button>' +
-      '</div>' +
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">Confirm before deleting</div><div class="set-row-desc">Ask for confirmation on destructive actions</div></div>' +
         '<button class="set-toggle' + (state.confirmBeforeDelete !== false ? ' on' : '') + '" id="setConfirmToggle"></button>' +
       '</div>' +
     '</div>';
 
-  document.getElementById('setAnimationsToggle').addEventListener('click', function() {
-    state.animations = !(state.animations !== false);
-    this.classList.toggle('on', state.animations);
-    applyBehaviorClasses();
-    saveState();
-  });
-  document.getElementById('setCompactToggle').addEventListener('click', function() {
-    state.compactMode = !state.compactMode;
-    this.classList.toggle('on', state.compactMode);
-    applyBehaviorClasses();
-    saveState();
-  });
   document.getElementById('setConfirmToggle').addEventListener('click', function() {
     state.confirmBeforeDelete = !(state.confirmBeforeDelete !== false);
     this.classList.toggle('on', state.confirmBeforeDelete);
@@ -2009,8 +2427,9 @@ function closeSettingsPanel() {
 
 window.initGSI = initGSI;
 window.gsiSignIn = gsiSignIn;
-window.gsiSignOut = removeProfile;
+window.gsiSignOut = signOutKeepProfile;
 window.switchGSIAccount = switchAccount;
 window.getGSIActiveSub = getActiveUserId;
 window.createLocalProfile = createLocalProfile;
+window.removeLocalOnlyProfiles = removeLocalOnlyProfiles;
 window.openSettingsBubble = openSettingsBubble;

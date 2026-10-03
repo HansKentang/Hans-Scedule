@@ -517,8 +517,8 @@ function formatTimeAMPM(timeStr) {
 }
 
 
-const TAG_ORDER = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
-const BUILTIN_TAGS = ['deep-work', 'meeting', 'exercise', 'study', 'hobby'];
+const TAG_ORDER = [];
+const BUILTIN_TAGS = ['daily', 'math', 'physics', 'bio', 'chem', 'eng', 'mandarin'];
 
 const ACCENT_PALETTE = [
   { name: 'Rose', dark: '#e8b8c0', light: '#905a68', group: 'pink' },
@@ -576,11 +576,13 @@ const SUBCATEGORIES_KEY = 'haven-subcategories';
 
 function getDefaultSubcategories() {
   return {
-    'deep-work': ['Coding', 'Writing', 'Design', 'Research', 'Planning', 'Deep Reading'],
-    'meeting': ['Team Standup', '1:1', 'Client Call', 'Brainstorm', 'Review', 'Planning', 'Retro'],
-    'exercise': ['Chest Day', 'Back Day', 'Leg Day', 'Shoulder Day', 'Arm Day', 'Cardio', 'HIIT', 'Yoga', 'Stretching', 'Running', 'Swimming', 'Cycling', 'Full Body'],
-    'study': ['Math', 'Science', 'Language', 'History', 'Programming', 'Reading', 'Exam Prep', 'Coursework'],
-    'hobby': ['Music', 'Art', 'Gaming', 'Reading', 'Cooking', 'Photography', 'Gardening', 'DIY', 'Writing'],
+    'daily': ['Chores', 'Errands', 'Meals', 'Routines', 'Exercise', 'Self-care', 'Shopping', 'Cleaning', 'Laundry', 'Cooking', 'Walking', 'Rest'],
+    'math': ['Algebra', 'Calculus', 'Geometry', 'Statistics', 'Trigonometry', 'Problem Set'],
+    'physics': ['Mechanics', 'Thermodynamics', 'Electromagnetism', 'Optics', 'Quantum', 'Lab'],
+    'bio': ['Cell Bio', 'Genetics', 'Ecology', 'Anatomy', 'Evolution', 'Lab'],
+    'chem': ['Organic', 'Inorganic', 'Physical Chem', 'Lab', 'Reactions', 'Equations'],
+    'eng': ['Essay', 'Reading', 'Grammar', 'Vocabulary', 'Literature', 'Writing'],
+    'mandarin': ['Vocabulary', 'Grammar', 'Reading', 'Writing', 'Speaking', 'HSK'],
   };
 }
 
@@ -640,6 +642,7 @@ function renameSubcategory(tag, oldName, newName) {
 
 // ─── CUSTOM CATEGORIES (editable, localStorage-backed) ─────
 const CUSTOM_CATEGORIES_KEY = 'haven-schedule-categories';
+const CATEGORY_PRESET_KEY = 'haven-category-preset';
 
 function loadCustomCategories() {
   try {
@@ -685,11 +688,13 @@ function getCategoryColor(tag) {
 }
 
 const BUILTIN_CATEGORY_DEFAULTS = {
-  'deep-work': { defaultStart: '09:00', duration: 120 },
-  'meeting': { defaultStart: '09:00', duration: 30 },
-  'exercise': { defaultStart: '09:00', duration: 60 },
-  'study': { defaultStart: '09:00', duration: 60 },
-  'hobby': { defaultStart: '09:00', duration: 60 },
+  'daily': { defaultStart: '09:00', duration: 60 },
+  'math': { defaultStart: '09:00', duration: 60 },
+  'physics': { defaultStart: '09:00', duration: 60 },
+  'bio': { defaultStart: '09:00', duration: 60 },
+  'chem': { defaultStart: '09:00', duration: 60 },
+  'eng': { defaultStart: '09:00', duration: 60 },
+  'mandarin': { defaultStart: '09:00', duration: 60 },
 };
 
 function getCategoryDefaults(tag) {
@@ -712,6 +717,13 @@ function makeUniqueCategoryLabel(label, existing) {
 }
 
 function addCustomCategory(label, color, options) {
+  if (typeof hasAccess === 'function' && !hasAccess('unlimited_tags')) {
+    const catLimit = typeof premiumLimit === 'function' ? premiumLimit('customCategories') : 0;
+    if (loadCustomCategories().length >= catLimit) {
+      requirePremium('unlimited_tags', { reason: catLimit > 0 ? 'The Free plan includes ' + catLimit + ' custom categories' : 'Custom categories are a Premium feature' });
+      return;
+    }
+  }
   const categoryOptions = normalizeCategoryOptions(options);
   const cats = loadCustomCategories();
   const id = 'cat-' + uid();
@@ -821,6 +833,23 @@ function initCustomCategories() {
       cardColors[ct.id] = { light: ct.color, dark: lightenColor(ct.color, 0.45) };
     }
   }
+  applyCategoryPresetAtBoot();
+}
+
+// Applies a saved Rhythm preset: hides starter categories the user replaced.
+// Only removes ids from TAG_ORDER — no task data is ever touched, and
+// clearing the haven-category-preset key restores the defaults.
+function applyCategoryPresetAtBoot() {
+  try {
+    const raw = localStorage.getItem(CATEGORY_PRESET_KEY);
+    if (!raw) return;
+    const preset = JSON.parse(raw);
+    if (!preset || !Array.isArray(preset.hiddenStarters) || !preset.hiddenStarters.length) return;
+    const hide = new Set(preset.hiddenStarters);
+    for (let i = TAG_ORDER.length - 1; i >= 0; i--) {
+      if (hide.has(TAG_ORDER[i])) TAG_ORDER.splice(i, 1);
+    }
+  } catch (e) { /* ignore */ }
 }
 
 // ─── UPDATE / EDIT CUSTOM CATEGORY ──────────────────────
@@ -1035,28 +1064,34 @@ function loadFocusMode() {
   }
 }
 const TAG_LABELS = {
-  'deep-work': 'Deep Work',
-  'meeting': 'Meeting',
-  'exercise': 'Exercise',
-  'study': 'Study',
-  'hobby': 'Hobby',
+  'daily': 'Daily',
+  'math': 'Math',
+  'physics': 'Physics',
+  'bio': 'Bio',
+  'chem': 'Chem.',
+  'eng': 'Eng',
+  'mandarin': 'Mandarin',
 };
 const TAG_COLORS = {
-  'deep-work': { bg: 'var(--tag-deep-work-bg)', text: 'var(--tag-deep-work-text)' },
-  'meeting':   { bg: 'var(--tag-meeting-bg)',   text: 'var(--tag-meeting-text)' },
-  'exercise':  { bg: 'var(--tag-exercise-bg)',  text: 'var(--tag-exercise-text)' },
-  'study':     { bg: 'var(--tag-study-bg)',     text: 'var(--tag-study-text)' },
-  'hobby':     { bg: 'var(--tag-hobby-bg)',     text: 'var(--tag-hobby-text)' },
+  'daily':     { bg: 'var(--tag-daily-bg)',     text: 'var(--tag-daily-text)' },
+  'math':      { bg: 'var(--tag-math-bg)',      text: 'var(--tag-math-text)' },
+  'physics':   { bg: 'var(--tag-physics-bg)',   text: 'var(--tag-physics-text)' },
+  'bio':       { bg: 'var(--tag-bio-bg)',       text: 'var(--tag-bio-text)' },
+  'chem':      { bg: 'var(--tag-chem-bg)',      text: 'var(--tag-chem-text)' },
+  'eng':       { bg: 'var(--tag-eng-bg)',       text: 'var(--tag-eng-text)' },
+  'mandarin':  { bg: 'var(--tag-mandarin-bg)',  text: 'var(--tag-mandarin-text)' },
 };
 
 const CARD_COLORS_KEY = 'haven-card-colors';
 
 const DEFAULT_TAG_COLORS = {
-  'deep-work': { light: '#6366f1', dark: '#a5b4fc' },
-  'meeting':   { light: '#3b82f6', dark: '#93c5fd' },
-  'exercise':  { light: '#ef4444', dark: '#fca5a5' },
-  'study':     { light: '#10b981', dark: '#6ee7b7' },
-  'hobby':     { light: '#f59e0b', dark: '#fcd34d' },
+  'daily':     { light: '#0ea5e9', dark: '#7dd3fc' },
+  'math':      { light: '#3b82f6', dark: '#93c5fd' },
+  'physics':   { light: '#ef4444', dark: '#fca5a5' },
+  'bio':       { light: '#10b981', dark: '#6ee7b7' },
+  'chem':      { light: '#f59e0b', dark: '#fcd34d' },
+  'eng':       { light: '#8b5cf6', dark: '#c4b5fd' },
+  'mandarin':  { light: '#ec4899', dark: '#f9a8d4' },
 };
 
 let cardColors = {};
@@ -1109,6 +1144,13 @@ function initCustomTags() {
 }
 
 function addCustomTag(name, hexColor) {
+  if (typeof hasAccess === 'function' && !hasAccess('unlimited_tags')) {
+    const tagLimit = typeof premiumLimit === 'function' ? premiumLimit('customTags') : 0;
+    if (loadCustomTags().length >= tagLimit) {
+      requirePremium('unlimited_tags', { reason: tagLimit > 0 ? 'The Free plan includes ' + tagLimit + ' custom tags' : 'Custom tags are a Premium feature' });
+      return;
+    }
+  }
   const customTags = loadCustomTags();
   const id = 'c' + Date.now().toString(36);
   customTags.push({ id, name, color: hexColor });
@@ -1132,8 +1174,9 @@ function removeCustomTag(id) {
   delete TAG_COLORS[id];
   delete cardColors[id];
   saveCardColors(cardColors);
+  const fallbackTag = TAG_ORDER.find(t => t !== id) || '';
   for (const task of state.tasks) {
-    if (task.tag === id) task.tag = 'meeting';
+    if (task.tag === id) task.tag = fallbackTag;
   }
   saveState();
   injectCustomTagStyles();
@@ -1222,16 +1265,6 @@ function lightenColor(hex, amount) {
   return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
 }
 
-function darkenColor(hex, amount) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  const nr = Math.round(r * (1 - amount));
-  const ng = Math.round(g * (1 - amount));
-  const nb = Math.round(b * (1 - amount));
-  return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
-}
-
 function hexToHsv(hex) {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -1283,6 +1316,7 @@ function undo() {
 
 // ─── NOTIFICATIONS ─────────────────────────────────────────
 let notificationInterval = null;
+let notifBadgeInterval = null;
 let notifiedTaskIds = new Set();
 let _dailyBriefingNotifiedDate = '';
 
@@ -1323,7 +1357,8 @@ function scheduleReminderCheck() {
   notificationInterval = setInterval(checkReminders, 30000);
   setTimeout(checkReminders, 2000);
   setTimeout(_updateNotifBadge, 1000);
-  setInterval(_updateNotifBadge, 60000);
+  if (notifBadgeInterval) clearInterval(notifBadgeInterval);
+  notifBadgeInterval = setInterval(_updateNotifBadge, 60000);
   setTimeout(_sendDailyBrief, 3000);
 }
 function _sendDailyBrief() {
@@ -1614,92 +1649,239 @@ let pageAfterTaskSave = null;
 let pageAfterImport = null;
 
 // ─── ACTIVE PRESET AUTO-APPLY (for new/guest users) ──
+function loadAdminPresets() {
+  try {
+    var raw = localStorage.getItem('haven-admin-presets');
+    return raw ? (JSON.parse(raw) || []) : [];
+  } catch (e) { return []; }
+}
+
+function saveAdminPresets(presets) {
+  try { localStorage.setItem('haven-admin-presets', JSON.stringify(presets || [])); return true; }
+  catch (e) { return false; }
+}
+
+function getActivePresetId() {
+  try { return localStorage.getItem('haven-active-preset'); } catch (e) { return null; }
+}
+
+function setActivePreset(id) {
+  try {
+    if (id) localStorage.setItem('haven-active-preset', id);
+    else localStorage.removeItem('haven-active-preset');
+    if (typeof showToast === 'function') showToast(id ? 'Active preset set' : 'Active preset cleared', 'success', 2000);
+    document.dispatchEvent(new CustomEvent('admin:preset-changed'));
+    return true;
+  } catch (e) { return false; }
+}
+
+function clearActivePreset() { return setActivePreset(null); }
+
+function deletePreset(id) {
+  try {
+    var presets = loadAdminPresets().filter(function(p) { return p && p.id !== id; });
+    saveAdminPresets(presets);
+    if (getActivePresetId() === id) clearActivePreset();
+    if (typeof showToast === 'function') showToast('Preset deleted', 'success', 2000);
+    document.dispatchEvent(new CustomEvent('admin:preset-changed'));
+    return true;
+  } catch (e) { return false; }
+}
+
+function _presetReadJSON(key) {
+  try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : null; }
+  catch (e) { return null; }
+}
+
+function capturePresetData() {
+  return {
+    hubContent: _presetReadJSON('haven-hub-content'),
+    hubVisibility: _presetReadJSON('haven-hub-visibility'),
+    hubSectionOrder: _presetReadJSON('haven-schedule-hub-layout'),
+    customCategories: _presetReadJSON('haven-schedule-categories'),
+    customTags: _presetReadJSON('haven-custom-tags'),
+    subcategories: _presetReadJSON('haven-subcategories'),
+    cardColors: _presetReadJSON('haven-card-colors'),
+    renamedLabels: _presetReadJSON('haven-renamed-labels'),
+    settings: _presetReadJSON('haven-schedule-settings'),
+    images: {},
+    spotifyPlaylists: _presetReadJSON('haven-spotify-playlists'),
+    spotifyActive: (function() { try { return localStorage.getItem('haven-spotify-active'); } catch (e) { return null; } })()
+  };
+}
+
+function savePreset(name) {
+  if (!name || !String(name).trim()) return false;
+  name = String(name).trim();
+  try {
+    var presets = loadAdminPresets();
+    var data = capturePresetData();
+    if (!data.hubContent || !data.hubContent.bentoLayout || !data.hubContent.bentoLayout.length) {
+      if (typeof showToast === 'function') showToast('No bento layout found to save', 'error', 2500);
+      return false;
+    }
+    var now = new Date().toISOString();
+    var existing = null;
+    for (var i = 0; i < presets.length; i++) {
+      if (presets[i] && presets[i].name === name) { existing = i; break; }
+    }
+    if (existing >= 0) {
+      presets[existing].updatedAt = now;
+      presets[existing].data = data;
+    } else {
+      presets.push({
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: name,
+        createdAt: now,
+        updatedAt: now,
+        data: data
+      });
+    }
+    if (!saveAdminPresets(presets)) return false;
+    if (typeof showToast === 'function') showToast('Preset "' + name + '" saved', 'success', 2000);
+    document.dispatchEvent(new CustomEvent('admin:preset-changed'));
+    return true;
+  } catch (e) {
+    console.warn('[preset] save failed:', e);
+    return false;
+  }
+}
+
+function applyPresetData(data) {
+  if (!data) return false;
+  if (data.hubContent) {
+    try { localStorage.setItem('haven-hub-content', JSON.stringify(data.hubContent)); } catch (e) {}
+  }
+  if (data.hubVisibility) {
+    try { localStorage.setItem('haven-hub-visibility', JSON.stringify(data.hubVisibility)); } catch (e) {}
+  }
+  if (data.hubSectionOrder && data.hubSectionOrder.length) {
+    try { localStorage.setItem('haven-schedule-hub-layout', JSON.stringify(data.hubSectionOrder)); } catch (e) {}
+  }
+  if (data.customCategories && typeof saveCustomCategories === 'function') {
+    try { saveCustomCategories(data.customCategories); } catch (e) {}
+  }
+  if (data.customTags && typeof saveCustomTags === 'function') {
+    try { saveCustomTags(data.customTags); } catch (e) {}
+  }
+  if (data.subcategories && typeof saveSubcategories === 'function') {
+    try { saveSubcategories(data.subcategories); } catch (e) {}
+  }
+  if (data.cardColors && typeof saveCardColors === 'function') {
+    try { saveCardColors(data.cardColors); } catch (e) {}
+  }
+  if (data.renamedLabels && typeof saveRenamedLabels === 'function') {
+    try { saveRenamedLabels(data.renamedLabels); } catch (e) {}
+  }
+  if (data.settings) {
+    if (typeof state !== 'undefined') {
+      try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({
+          darkMode: data.settings.darkMode !== undefined ? data.settings.darkMode : null,
+          accentColor: data.settings.accentColor || null,
+          accentCustomColors: data.settings.accentCustomColors || [],
+          accentRemovedPresets: data.settings.accentRemovedPresets || [],
+          showWeekends: true,
+          showCompleted: true,
+          accessBubbles: {},
+          currentView: 'week'
+        }));
+      } catch (e) {}
+      if (data.settings.accentColor !== undefined) state.accentColor = data.settings.accentColor;
+      if (data.settings.darkMode !== undefined) state.darkMode = data.settings.darkMode;
+      if (data.settings.accentCustomColors) state.accentCustomColors = [].concat(data.settings.accentCustomColors);
+      if (data.settings.accentRemovedPresets) state.accentRemovedPresets = [].concat(data.settings.accentRemovedPresets);
+    }
+    if (typeof applyAccentColor === 'function') try { applyAccentColor(); } catch (e) {}
+    if (typeof applyTheme === 'function') try { applyTheme(); } catch (e) {}
+  }
+  if (data.images) {
+    Object.keys(data.images).forEach(function(k) {
+      try { localStorage.setItem(k, data.images[k]); } catch (e) {}
+    });
+  }
+  if (data.spotifyPlaylists) {
+    try { localStorage.setItem('haven-spotify-playlists', JSON.stringify(data.spotifyPlaylists)); } catch (e) {}
+  }
+  if (data.spotifyActive) {
+    try { localStorage.setItem('haven-spotify-active', data.spotifyActive); } catch (e) {}
+  }
+  return true;
+}
+
+function applyPresetToCurrentUser(id) {
+  try {
+    var presets = loadAdminPresets();
+    var preset = null;
+    for (var i = 0; i < presets.length; i++) {
+      if (presets[i] && presets[i].id === id) { preset = presets[i]; break; }
+    }
+    if (!preset || !preset.data) {
+      if (typeof showToast === 'function') showToast('Preset not found', 'error', 2500);
+      return false;
+    }
+    applyPresetData(preset.data);
+    if (typeof showToast === 'function') showToast('Applied preset "' + preset.name + '"', 'success', 2500);
+    return true;
+  } catch (e) {
+    console.warn('[preset] apply failed:', e);
+    return false;
+  }
+}
+
+function changeAdminPassword() {
+  var cur = prompt('Current admin password:');
+  if (cur === null) return false;
+  var stored;
+  try { stored = localStorage.getItem('haven-admin-password') || 'MjcwODEw'; }
+  catch (e) { stored = 'MjcwODEw'; }
+  function _b64(s) {
+    try { return btoa(unescape(encodeURIComponent(s))); } catch (e) { return btoa(s); }
+  }
+  if (_b64(cur) !== stored) {
+    if (typeof showToast === 'function') showToast('Current password is incorrect', 'error', 3000);
+    return false;
+  }
+  var nw = prompt('New password (min 3 chars):');
+  if (nw === null) return false;
+  if (!nw || nw.length < 3) {
+    if (typeof showToast === 'function') showToast('New password must be at least 3 characters', 'error', 3000);
+    return false;
+  }
+  var conf = prompt('Confirm new password:');
+  if (conf === null) return false;
+  if (nw !== conf) {
+    if (typeof showToast === 'function') showToast('Passwords do not match', 'error', 3000);
+    return false;
+  }
+  try { localStorage.setItem('haven-admin-password', _b64(nw)); }
+  catch (e) {
+    if (typeof showToast === 'function') showToast('Failed to save password', 'error', 3000);
+    return false;
+  }
+  if (typeof showToast === 'function') showToast('Password changed successfully', 'success', 2500);
+  document.dispatchEvent(new CustomEvent('admin:password-changed'));
+  return true;
+}
+
 function applyActivePresetIfNewUser() {
   // Only apply to new users who have no hub content yet
   try {
     var hubContent = localStorage.getItem('haven-hub-content');
     if (hubContent) return;
 
-    var activeId = localStorage.getItem('haven-active-preset');
+    var activeId = getActivePresetId();
     if (!activeId) return;
 
-    var presetsRaw = localStorage.getItem('haven-admin-presets');
-    if (!presetsRaw) return;
-
-    var presets = JSON.parse(presetsRaw);
-    var preset = presets.find(function(p) { return p.id === activeId; });
+    var presets = loadAdminPresets();
+    var preset = null;
+    for (var i = 0; i < presets.length; i++) {
+      if (presets[i] && presets[i].id === activeId) { preset = presets[i]; break; }
+    }
     if (!preset || !preset.data) return;
 
-    var data = preset.data;
-
-    // Apply hub content
-    if (data.hubContent) {
-      localStorage.setItem('haven-hub-content', JSON.stringify(data.hubContent));
-    }
-
-    // Apply hub visibility
-    if (data.hubVisibility) {
-      try { localStorage.setItem('haven-hub-visibility', JSON.stringify(data.hubVisibility)); } catch(e) {}
-    }
-
-    // Apply section order
-    if (data.hubSectionOrder && data.hubSectionOrder.length) {
-      try { localStorage.setItem('haven-schedule-hub-layout', JSON.stringify(data.hubSectionOrder)); } catch(e) {}
-    }
-
-    // Apply custom categories
-    if (data.customCategories && typeof saveCustomCategories === 'function') {
-      try { saveCustomCategories(data.customCategories); } catch(e) {}
-    }
-
-    // Apply custom tags
-    if (data.customTags && typeof saveCustomTags === 'function') {
-      try { saveCustomTags(data.customTags); } catch(e) {}
-    }
-
-    // Apply subcategories
-    if (data.subcategories && typeof saveSubcategories === 'function') {
-      try { saveSubcategories(data.subcategories); } catch(e) {}
-    }
-
-    // Apply card colors
-    if (data.cardColors && typeof saveCardColors === 'function') {
-      try { saveCardColors(data.cardColors); } catch(e) {}
-    }
-
-    // Apply renamed labels
-    if (data.renamedLabels && typeof saveRenamedLabels === 'function') {
-      try { saveRenamedLabels(data.renamedLabels); } catch(e) {}
-    }
-
-    // Apply settings
-    if (data.settings) {
-      if (typeof state !== 'undefined') {
-        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ darkMode: data.settings.darkMode !== undefined ? data.settings.darkMode : null, accentColor: data.settings.accentColor || null, accentCustomColors: data.settings.accentCustomColors || [], accentRemovedPresets: data.settings.accentRemovedPresets || [], showWeekends: true, showCompleted: true, accessBubbles: {}, currentView: "week" })); } catch(e) {}
-        if (data.settings.accentColor !== undefined) state.accentColor = data.settings.accentColor;
-        if (data.settings.darkMode !== undefined) state.darkMode = data.settings.darkMode;
-        if (data.settings.accentCustomColors) state.accentCustomColors = [...data.settings.accentCustomColors];
-        if (data.settings.accentRemovedPresets) state.accentRemovedPresets = [...data.settings.accentRemovedPresets];
-      if (typeof applyAccentColor === 'function') try { applyAccentColor(); } catch(e) {}
-      if (typeof applyTheme === 'function') try { applyTheme(); } catch(e) {}
-      }
-    }
-
-    // Apply images
-    if (data.images) {
-      Object.keys(data.images).forEach(function(k) {
-        try { localStorage.setItem(k, data.images[k]); } catch(e) {}
-      });
-    }
-
-    // Apply Spotify data
-    if (data.spotifyPlaylists) {
-      try { localStorage.setItem('haven-spotify-playlists', JSON.stringify(data.spotifyPlaylists)); } catch(e) {}
-    }
-    if (data.spotifyActive) {
-      try { localStorage.setItem('haven-spotify-active', data.spotifyActive); } catch(e) {}
-    }
-  } catch(e) {
+    applyPresetData(preset.data);
+  } catch (e) {
     console.warn('[preset] auto-apply failed:', e);
   }
 }
@@ -1768,7 +1950,7 @@ var CHIME_SOUNDS = {
 
 function getChimeFile() {
   var s = CHIME_SOUNDS[state.chimeSound];
-  return (s && s.file) || CHIME_SOUNDS.elegant.file;
+  return (s && s.file) || CHIME_SOUNDS.success.file;
 }
 
 function playChime() {
@@ -1861,25 +2043,76 @@ function forceFreeImageCache(limit) {
     if (!pre) return key;
     if (typeof key === 'string') {
       if (key.indexOf('haven-gsi-') === 0) return key;
-      if (key.indexOf('firestore_') === 0 || key.indexOf('firebase_') === 0) return key;
+      if (key.indexOf('haven-device-') === 0) return key;
+      if (key.indexOf('haven-admin-') === 0) return key;
+      if (key.indexOf('haven-cloud-') === 0) return key;
+      if (key.indexOf('sb-') === 0) return key;
+      if (key === 'haven-guest-default-template') return key;
+      if (key === 'haven-schedule-apikey') return key;
     }
     return pre + key;
   }
   localStorage.getItem = function(key) { return __origLS.getItem(_p(key)); };
   localStorage.setItem = function(key, val) {
     var pKey = _p(key);
-    try { __origLS.setItem(pKey, val); } catch (e) {
+    try {
+      __origLS.setItem(pKey, val);
+      return true;
+    } catch (e) {
       if (e.name === 'QuotaExceededError' || e.code === 22) {
         try {
-          if (forceFreeImageCache(10) > 0) __origLS.setItem(pKey, val);
+          if (forceFreeImageCache(10) > 0) {
+            __origLS.setItem(pKey, val);
+            return true;
+          }
         } catch (e2) { /* ignore */ }
+        _warnStorageFull();
       }
+      return false;
     }
   };
+  // A failed write used to be completely silent — the app reported success while
+  // the change was never stored. Tell the user once per session, and return a
+  // boolean so callers that care can check.
+  function _warnStorageFull() {
+    if (_warnStorageFull.warned) return;
+    _warnStorageFull.warned = true;
+    try { console.warn('[storage] write failed — browser storage is full'); } catch (e) { /* ignore */ }
+    try {
+      if (typeof showToast === 'function') {
+        showToast('Browser storage is full — some changes were not saved.', 'error', 6000);
+      }
+    } catch (e) { /* ignore */ }
+  }
   localStorage.removeItem = function(key) { return __origLS.removeItem(_p(key)); };
 })();
 
+// ─── ACCOUNT SWITCH GUARD ────────────────────────────────
+// Switching accounts flips state.currentUserId and then reloads, so every
+// unload-time saver (schedule state, hub canvas) would write the OUTGOING
+// account's in-memory data under the INCOMING account's prefix. Flush under
+// the outgoing prefix first, then block the unload savers until the reload
+// lands on the new account.
+var HAVEN_UNLOAD_BLOCKED = false;
+// False until loadState() has read the active account's storage. Pages that
+// never load state (login, setup) still hold the default in-memory objects,
+// and flushing those would overwrite the stored copy with empty defaults.
+var HAVEN_STATE_LOADED = false;
 
+function havenFlushAccountData() {
+  try { if (HAVEN_STATE_LOADED && typeof saveState === 'function') saveState(); } catch (e) { /* ignore */ }
+  try { if (typeof saveHubContent === 'function') saveHubContent(); } catch (e) { /* ignore */ }
+  try { if (typeof cloudFlush === 'function') cloudFlush(); } catch (e) { /* ignore */ }
+}
+
+function havenBlockUnloadSaves() {
+  HAVEN_UNLOAD_BLOCKED = true;
+}
+
+function havenBeginAccountSwitch() {
+  havenFlushAccountData();
+  HAVEN_UNLOAD_BLOCKED = true;
+}
 
 // Safe localStorage write with auto-cleanup on quota exceeded.
 // Returns true only when the value was actually verified as stored.
@@ -1907,7 +2140,7 @@ function safeSetItem(key, val) {
 const LANG = {
   en: {
     'settings.account':'My Account','settings.appearance':'Appearance','settings.ai':'AI & API','settings.data':'Data','settings.about':'About','settings.access':'Access Hub',
-    'appearance.title':'Appearance','appearance.desc':'Customize the theme, accent color, and visuals','appearance.dark':'Dark Mode','appearance.darkDesc':'Switch between dark and light theme','appearance.accent':'ACCENT COLOR','appearance.edit':'Edit Mode','appearance.editDesc':'Tap any image to customize throughout the app',
+    'appearance.title':'Appearance','appearance.desc':'Customize the theme and display','appearance.dark':'Dark Mode','appearance.darkDesc':'Switch between dark and light theme','appearance.accent':'ACCENT COLOR','appearance.edit':'Edit Mode','appearance.editDesc':'Tap any image to customize throughout the app',
     'account.title':'My Account','account.preferences':'PREFERENCES','account.language':'Language','account.langDesc':'UI language','account.timezone':'Timezone','account.tzDesc':'Detected from browser','account.weekStart':'Week starts on','account.timeFormat':'Time format',
     'account.dataPrivacy':'DATA & PRIVACY','account.export':'Export','account.exportDesc':'Download all your data as JSON','account.delete':'Delete all data','account.deleteDesc':'Permanently remove everything',
     'account.switch':'SWITCH ACCOUNT','account.google':'Sign in with Google','account.local':'Add local profile','account.signOut':'Sign Out',
@@ -1938,7 +2171,7 @@ const LANG = {
   },
   id: {
     'settings.account':'Akun Saya','settings.appearance':'Tampilan','settings.ai':'AI & API','settings.data':'Data','settings.about':'Tentang','settings.access':'Access Hub',
-    'appearance.title':'Tampilan','appearance.desc':'Sesuaikan tema, warna aksen, dan visual','appearance.dark':'Mode Gelap','appearance.darkDesc':'Beralih antara tema gelap dan terang','appearance.accent':'WARNA AKSEN','appearance.edit':'Mode Edit','appearance.editDesc':'Ketuk gambar untuk menyesuaikan di seluruh aplikasi',
+    'appearance.title':'Tampilan','appearance.desc':'Sesuaikan tema dan tampilan','appearance.dark':'Mode Gelap','appearance.darkDesc':'Beralih antara tema gelap dan terang','appearance.accent':'WARNA AKSEN','appearance.edit':'Mode Edit','appearance.editDesc':'Ketuk gambar untuk menyesuaikan di seluruh aplikasi',
     'account.title':'Akun Saya','account.preferences':'PREFERENSI','account.language':'Bahasa','account.langDesc':'Bahasa antarmuka','account.timezone':'Zona Waktu','account.tzDesc':'Terdeteksi dari browser','account.weekStart':'Mulai minggu pada','account.timeFormat':'Format waktu',
     'account.dataPrivacy':'DATA & PRIVASI','account.export':'Ekspor','account.exportDesc':'Unduh semua data sebagai JSON','account.delete':'Hapus semua data','account.deleteDesc':'Hapus permanen semua data',
     'account.switch':'GANTI AKUN','account.google':'Masuk dengan Google','account.local':'Tambah profil lokal','account.signOut':'Keluar',
@@ -1969,7 +2202,7 @@ const LANG = {
   },
   zh: {
     'settings.account':'\u6211\u7684\u8d26\u6237','settings.appearance':'\u5916\u89c2','settings.ai':'AI & API','settings.data':'\u6570\u636e','settings.about':'\u5173\u4e8e','settings.access':'Access Hub',
-    'appearance.title':'\u5916\u89c2','appearance.desc':'\u81ea\u5b9a\u4e49\u4e3b\u9898\u3001\u5f3a\u8c03\u8272\u548c\u89c6\u89c9\u6548\u679c','appearance.dark':'\u6df1\u8272\u6a21\u5f0f','appearance.darkDesc':'\u5207\u6362\u6df1\u8272\u548c\u6d45\u8272\u4e3b\u9898','appearance.accent':'\u5f3a\u8c03\u8272','appearance.edit':'\u7f16\u8f91\u6a21\u5f0f','appearance.editDesc':'\u70b9\u51fb\u4efb\u610f\u56fe\u7247\u53ef\u5728\u6574\u4e2a\u5e94\u7528\u4e2d\u81ea\u5b9a\u4e49',
+    'appearance.title':'\u5916\u89c2','appearance.desc':'\u81ea\u5b9a\u4e49\u4e3b\u9898\u548c\u663e\u793a','appearance.dark':'\u6df1\u8272\u6a21\u5f0f','appearance.darkDesc':'\u5207\u6362\u6df1\u8272\u548c\u6d45\u8272\u4e3b\u9898','appearance.accent':'\u5f3a\u8c03\u8272','appearance.edit':'\u7f16\u8f91\u6a21\u5f0f','appearance.editDesc':'\u70b9\u51fb\u4efb\u610f\u56fe\u7247\u53ef\u5728\u6574\u4e2a\u5e94\u7528\u4e2d\u81ea\u5b9a\u4e49',
     'account.title':'\u6211\u7684\u8d26\u6237','account.preferences':'\u504f\u597d\u8bbe\u7f6e','account.language':'\u8bed\u8a00','account.langDesc':'\u754c\u9762\u8bed\u8a00','account.timezone':'\u65f6\u533a','account.tzDesc':'\u4ece\u6d4f\u89c8\u5668\u68c0\u6d4b','account.weekStart':'\u4e00\u5468\u5f00\u59cb\u4e8e','account.timeFormat':'\u65f6\u95f4\u683c\u5f0f',
     'account.dataPrivacy':'\u6570\u636e\u548c\u9690\u79c1','account.export':'\u5bfc\u51fa','account.exportDesc':'\u4e0b\u8f7d\u6240\u6709\u6570\u636e\u4e3a JSON','account.delete':'\u5220\u9664\u6240\u6709\u6570\u636e','account.deleteDesc':'\u6c38\u4e45\u5220\u9664\u6240\u6709\u5185\u5bb9',
     'account.switch':'\u5207\u6362\u8d26\u6237','account.google':'\u4f7f\u7528 Google \u767b\u5f55','account.local':'\u6dfb\u52a0\u672c\u5730\u8d26\u6237','account.signOut':'\u9000\u51fa\u767b\u5f55',
@@ -2296,24 +2529,42 @@ var _ENG_TXT = {
 function tStr(text) {
   if (!text || typeof text !== 'string') return text;
   var trimmed = text.trim();
+  // A lookup that returns a raw key means the dictionary is missing that entry.
+  // Showing "common.start" to a user is worse than showing the original English.
+  function resolve(key) {
+    var val = t(key);
+    return _looksLikeI18nKey(val) ? null : val;
+  }
   // Check exact match
-  if (_ENG_TXT[trimmed]) return t(_ENG_TXT[trimmed]);
+  if (_ENG_TXT[trimmed]) {
+    var exact = resolve(_ENG_TXT[trimmed]);
+    if (exact !== null) return exact;
+    return text;
+  }
   // Check with a leading number: "5 tasks" -> translate "tasks"
   var numMatch = trimmed.match(/^(\d+)\s+(.+)/);
   if (numMatch) {
     var num = numMatch[1];
     var rest = numMatch[2];
-    if (_ENG_TXT[rest]) return num + ' ' + t(_ENG_TXT[rest]);
+    if (_ENG_TXT[rest]) {
+      var numbered = resolve(_ENG_TXT[rest]);
+      if (numbered !== null) return num + ' ' + numbered;
+      return text;
+    }
   }
-  // Check with trailing number: "tasks across all categories" -> full match already handled above
   // Check possessive: "Friend request sent to Name" -> translate "Friend request sent to"
   for (var key in _ENG_TXT) {
     if (trimmed.indexOf(key) === 0) {
-      var after = trimmed.slice(key.length);
-      return t(_ENG_TXT[key]) + after;
+      var prefix = resolve(_ENG_TXT[key]);
+      if (prefix !== null) return prefix + trimmed.slice(key.length);
+      return text;
     }
   }
   return text;
+}
+
+function _looksLikeI18nKey(val) {
+  return typeof val === 'string' && /^[a-z][a-zA-Z0-9]*\.[a-zA-Z0-9]+$/.test(val);
 }
 
 // Walk DOM text nodes and auto-translate known text
@@ -2420,7 +2671,7 @@ function trackTaskCreated(task) {
   }
 
   // Per-tag stats
-  const tag = task.tag || 'meeting';
+  const tag = task.tag || 'daily';
   if (!p.tags[tag]) {
     p.tags[tag] = { count: 0, times: [], durations: [], titles: [] };
   }
@@ -2459,7 +2710,7 @@ function trackTaskCreated(task) {
 function trackTaskCompleted(task) {
   if (!state.userProfile) loadUserProfile();
   const p = state.userProfile;
-  const tag = task.tag || 'meeting';
+  const tag = task.tag || 'daily';
   if (!p.completions[tag]) {
     p.completions[tag] = { count: 0, totalDurationDiff: 0, durations: [] };
   }
@@ -2782,6 +3033,15 @@ function toTimeStr(minutes) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+// Use this whenever minutes are written to a task. toTimeStr has no wrap-around,
+// so 1725 minutes becomes "28:45" — a time that does not exist, which <input type="time">
+// then silently blanks. toTimeStr itself must keep returning values past 24:00
+// because the AI prompt strings describe the grid as "05:00 - 29:00".
+function toClockStr(minutes) {
+  const wrapped = ((Math.round(minutes) % 1440) + 1440) % 1440;
+  return toTimeStr(wrapped);
+}
+
 function minutesToTime(minutes) { return toTimeStr(minutes); }
 
 function actualHourHeight() {
@@ -2823,9 +3083,24 @@ function isWeekend(d) {
 }
 
 function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Validates a colour before it is interpolated into a style attribute.
+// Values arriving from other users' profiles must never be trusted here.
+function safeColor(val, fallback) {
+  const v = String(val === null || val === undefined ? '' : val).trim();
+  if (/^#[0-9a-fA-F]{3,8}$/.test(v)) return v;
+  if (/^[a-zA-Z]{3,20}$/.test(v)) return v;
+  if (/^rgba?\([\d.\s,%]+\)$/.test(v)) return v;
+  if (/^var\(--[a-zA-Z0-9-]+\)$/.test(v)) return v;
+  return fallback || '#b4ccbc';
 }
 
 function popupAnimateOut(el, cb) {
@@ -2860,7 +3135,7 @@ function isWhiteboardTask(task) {
 }
 
 function getTagMeta(tag) {
-  const m = TAG_COLORS[tag] || TAG_COLORS.meeting;
+  const m = TAG_COLORS[tag] || TAG_COLORS.daily;
   const label = TAG_LABELS[tag] || tag;
   return { ...m, label };
 }
@@ -2920,6 +3195,7 @@ function loadState() {
   try {
     const tasks = localStorage.getItem(STORAGE_KEY);
     if (tasks) state.tasks = JSON.parse(tasks);
+    HAVEN_STATE_LOADED = true;
     const settings = localStorage.getItem(SETTINGS_KEY);
     if (settings) {
       const s = JSON.parse(settings);
@@ -3111,7 +3387,11 @@ function loadImages() {
       }
     }
     if (changed) try { applyImages(); } catch(e) {}
-  }).catch(function() {});
+  }).catch(function() {}).then(function() {
+    if (typeof cloudLoadImagesIntoState === 'function') {
+      try { cloudLoadImagesIntoState(); } catch (e) { /* cloud image sync unavailable */ }
+    }
+  });
 }
 
 // --- APPLY IMAGES TO DOM ---
@@ -3211,6 +3491,7 @@ function isCustomImage(key, url) {
 }
 
 function saveImages() {
+  if (typeof CLOUD_MODE !== 'undefined' && CLOUD_MODE) return;
   for (const key of Object.keys(state.images || {})) {
     const val = state.images[key];
     if (!val) continue;
@@ -3232,13 +3513,19 @@ function setImage(id, url) {
   // Primary: save to IndexedDB (unlimited storage)
   _imgDBPut(id, url).catch(function() {
     // IndexedDB failed, fall back to localStorage
+    if (typeof CLOUD_MODE !== 'undefined' && CLOUD_MODE) return;
     try { localStorage.setItem('haven-image-' + id, url); } catch(e) {
       console.warn('[img] storage quota exceeded for image:', id, e);
       if (typeof showToast === 'function') showToast('Could not save image: storage full. Try a smaller image.', 'error', 4000);
     }
   });
   // Best-effort localStorage cache (silent if full — IndexedDB has the image)
-  try { localStorage.setItem('haven-image-' + id, url); } catch(e) { /* ignore */ }
+  if (typeof CLOUD_MODE === 'undefined' || !CLOUD_MODE) {
+    try { localStorage.setItem('haven-image-' + id, url); } catch(e) { /* ignore */ }
+  }
+  if (typeof cloudUploadImage === 'function') {
+    try { cloudUploadImage(id, url); } catch (e) { /* cloud image upload unavailable */ }
+  }
   document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(function(el) {
     el.src = url;
     el.style.display = url ? 'block' : 'none';
@@ -3280,6 +3567,9 @@ function resetImage(id) {
   delete state.images[id];
   _imgDBDelete(id).catch(function() {});
   try { localStorage.removeItem('haven-image-' + id); } catch(e) { /* ignore */ }
+  if (typeof cloudDeleteImage === 'function') {
+    try { cloudDeleteImage(id); } catch (e) { /* cloud image delete unavailable */ }
+  }
   const url = DEFAULT_IMAGES[id] || '';
   document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => {
     el.src = url;
@@ -3358,9 +3648,12 @@ function openImagePicker(id) {
   if (preview) delete preview.dataset.pasted;
   if (urlInput) urlInput.value = url === DEFAULT_IMAGES[id] ? '' : url;
   if (status) status.textContent = 'Paste an image (Ctrl+V) or type a URL';
+  overlay.querySelectorAll('.image-picker-grid-item.selected').forEach(function(n) { n.classList.remove('selected'); });
   overlay.classList.remove('hidden');
   requestAnimationFrame(() => overlay.classList.add('active'));
-  if (urlInput) { urlInput.focus(); urlInput.select(); }
+  const hasUrl = !!(urlInput && urlInput.value);
+  imagePickerSwitchTab(hasUrl ? 'url' : 'upload');
+  if (hasUrl && urlInput) { urlInput.focus(); urlInput.select(); }
 }
 
 function closeImagePicker() {
@@ -3469,8 +3762,8 @@ function handleImagePickerPaste(e) {
   document.addEventListener('paste', function(e) {
     var _overlay = document.getElementById('imagePickerOverlay');
     if (!_overlay || _overlay.classList.contains('hidden')) return;
-    // Let the URL input handle its own paste
-    if (e.target && e.target.id === 'imagePickerUrl') return;
+    // Let the URL / search inputs handle their own paste
+    if (e.target && (e.target.id === 'imagePickerUrl' || e.target.id === 'imagePickerSearchInput')) return;
     // Prevent text from appearing in the contenteditable paste zone
     e.preventDefault();
     // Clear any residual text from the contenteditable paste zone
@@ -3478,6 +3771,81 @@ function handleImagePickerPaste(e) {
     if (_zone) _zone.innerHTML = '';
     handleImagePickerPaste(e);
   });
+})();
+
+(function initTextPasteGuard() {
+  function insertPlainText(el, text) {
+    try {
+      if (document.execCommand && document.execCommand('insertText', false, text)) return true;
+    } catch (e) {}
+    try {
+      var sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        var range = sel.getRangeAt(0);
+        range.deleteContents();
+        var node = document.createTextNode(text);
+        range.insertNode(node);
+        range.setStartAfter(node);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        return true;
+      }
+    } catch (e2) {}
+    return false;
+  }
+  document.addEventListener('paste', function(e) {
+    var overlay = document.getElementById('imagePickerOverlay');
+    if (overlay && !overlay.classList.contains('hidden')) return;
+    var t = e.target;
+    if (!t || !t.isContentEditable) return;
+    if (t.closest && t.closest('#imagePickerPasteZone, .image-picker-pastezone')) return;
+    var cd = e.clipboardData;
+    if (!cd) return;
+    var hasImage = false;
+    try {
+      var items = cd.items || [];
+      for (var i = 0; i < items.length; i++) {
+        if (items[i] && items[i].type && items[i].type.indexOf('image/') === 0) { hasImage = true; break; }
+      }
+      if (!hasImage) {
+        var html = '';
+        try { html = cd.getData('text/html') || ''; } catch (e2) {}
+        if (/<img[\s>]/i.test(html)) hasImage = true;
+      }
+    } catch (e3) { return; }
+    if (!hasImage) return;
+    var text = '';
+    try { text = cd.getData('text/plain') || ''; } catch (e4) {}
+    e.preventDefault();
+    if (text) {
+      insertPlainText(t, text);
+    } else if (typeof showToast === 'function') {
+      showToast('Images cannot be pasted into text fields', 'info', 2000);
+    }
+  }, true);
+})();
+
+(function initEnterBlur() {
+  var TEXT_TYPES = { text: 1, search: 1, url: 1, tel: 1, email: 1, password: 1, number: 1 };
+  document.addEventListener('keydown', function(e) {
+    if (!e || e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.isComposing) return;
+    var t = e.target;
+    if (!t) return;
+    var tag = t.tagName;
+    if (tag === 'INPUT' && TEXT_TYPES[(t.type || 'text').toLowerCase()]) {
+      t.blur();
+      return;
+    }
+    if (tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') return;
+    var ed = t.closest ? t.closest('[contenteditable]') : null;
+    if (!ed || !ed.isContentEditable) return;
+    if (ed.closest('#imagePickerPasteZone, .image-picker-pastezone, #glManifestoText, [data-save="notes"], [data-save="text"]')) return;
+    e.preventDefault();
+    ed.blur();
+  }, true);
 })();
 
 // Global drop listener for the image picker — handles drag & drop
@@ -3572,6 +3940,282 @@ function handleImagePickerReset() {
   closeImagePicker();
 }
 
+// ─── IMAGE PICKER TABS + BROWSE FREE PHOTOS ────────────────
+var _ipBrowse = {
+  mode: 'picsum', page: 1, query: '', loading: false, done: false,
+  observer: null, offset: 0, continueToken: '', source: 'commons'
+};
+
+function imagePickerSwitchTab(tab) {
+  var overlay = document.getElementById('imagePickerOverlay');
+  if (!overlay) return;
+  overlay.querySelectorAll('.image-picker-tab').forEach(function(btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-picker-tab') === tab);
+  });
+  overlay.querySelectorAll('.image-picker-tab-panel').forEach(function(panel) {
+    panel.classList.toggle('active', panel.getAttribute('data-picker-panel') === tab);
+  });
+  var card = overlay.querySelector('.image-picker-card');
+  if (card) card.classList.toggle('browse-mode', tab === 'browse');
+  var status = document.getElementById('imagePickerStatus');
+  if (status) {
+    if (tab === 'browse') { status.textContent = 'Click a photo, then Save'; status.style.color = ''; }
+    else { status.textContent = 'Paste an image (Ctrl+V) or type a URL'; status.style.color = ''; }
+  }
+  if (tab === 'browse') imagePickerBrowseEnsure();
+}
+
+function imagePickerBrowseEnsure() {
+  var grid = document.getElementById('imagePickerGrid');
+  if (!grid) return;
+  if (!grid.childElementCount && !_ipBrowse.loading && !_ipBrowse.done) {
+    imagePickerBrowseLoad();
+  }
+  if (!_ipBrowse.observer && 'IntersectionObserver' in window) {
+    var sentinel = document.getElementById('imagePickerGridSentinel');
+    if (sentinel) {
+      _ipBrowse.observer = new IntersectionObserver(function(entries) {
+        if (entries[0] && entries[0].isIntersecting) imagePickerBrowseLoad();
+      }, { root: null, rootMargin: '400px' });
+      _ipBrowse.observer.observe(sentinel);
+    }
+  }
+}
+
+function _ipSetStatus(msg) {
+  var status = document.getElementById('imagePickerGridStatus');
+  if (status) status.textContent = msg || '';
+}
+
+function imagePickerBrowseLoad() {
+  if (_ipBrowse.loading || _ipBrowse.done) return;
+  var grid = document.getElementById('imagePickerGrid');
+  if (!grid) return;
+  _ipSetStatus('Loading...');
+  _ipBrowse.loading = true;
+
+  if (_ipBrowse.mode === 'picsum') {
+    _loadPicsum(grid);
+    return;
+  }
+  if (_ipBrowse.source === 'commons') {
+    _loadCommons(grid, function() {
+      _ipBrowse.source = 'openverse';
+      _ipBrowse.page = 1;
+      _ipBrowse.offset = 0;
+      _ipBrowse.continueToken = '';
+      _ipBrowse.done = false;
+      _ipBrowse.loading = false;
+      _loadOpenverse(grid);
+    });
+    return;
+  }
+  _loadOpenverse(grid);
+}
+
+function _loadPicsum(grid) {
+  fetch('https://picsum.photos/v2/list?page=' + _ipBrowse.page + '&limit=30')
+    .then(function(r) {
+      if (!r.ok) throw new Error('http' + r.status);
+      return r.json();
+    })
+    .then(function(items) {
+      _ipBrowse.loading = false;
+      if (!Array.isArray(items) || !items.length) {
+        _ipBrowse.done = true;
+        _ipSetStatus('End of feed');
+        return;
+      }
+      items.forEach(function(it) { _buildPicsumItem(grid, it); });
+      _ipBrowse.page++;
+      _ipSetStatus('');
+    })
+    .catch(function() {
+      _ipBrowse.loading = false;
+      _ipSetStatus('Could not load photos. Scroll to retry.');
+    });
+}
+
+function _loadCommons(grid, onFail) {
+  var isFirst = _ipBrowse.page === 1;
+  var url = 'https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*'
+    + '&generator=search&gsrnamespace=6&gsrlimit=40'
+    + '&gsrsearch=' + encodeURIComponent(_ipBrowse.query)
+    + '&prop=imageinfo&iiprop=url|size|mime&iiurlwidth=400';
+  if (_ipBrowse.offset) url += '&gsroffset=' + _ipBrowse.offset;
+  if (_ipBrowse.continueToken) url += '&continue=' + encodeURIComponent(_ipBrowse.continueToken);
+
+  fetch(url)
+    .then(function(r) {
+      if (!r.ok) throw new Error('http' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      _ipBrowse.loading = false;
+      var pages = (data.query && data.query.pages) ? Object.values(data.query.pages) : [];
+      pages.sort(function(a, b) { return (a.index || 0) - (b.index || 0); });
+      var added = 0;
+      pages.forEach(function(p) { if (_buildCommonsItem(grid, p)) added++; });
+      if (data.continue && data.continue.gsroffset != null) {
+        _ipBrowse.offset = data.continue.gsroffset;
+        _ipBrowse.continueToken = data.continue.continue || '';
+        _ipBrowse.done = false;
+      } else {
+        _ipBrowse.done = true;
+      }
+      _ipBrowse.page++;
+      if (!added && isFirst) {
+        if (typeof onFail === 'function') { onFail(); return; }
+        _ipSetStatus('No photos found for "' + _ipBrowse.query + '"');
+        return;
+      }
+      if (_ipBrowse.done && added === 0) _ipSetStatus('No more results');
+      else _ipSetStatus('');
+    })
+    .catch(function() {
+      _ipBrowse.loading = false;
+      if (isFirst && typeof onFail === 'function') { onFail(); return; }
+      _ipSetStatus('Search hit a snag. Scroll or tap Search to retry.');
+    });
+}
+
+function _loadOpenverse(grid) {
+  var url = 'https://api.openverse.org/v1/images/?page_size=20&page=' + _ipBrowse.page
+    + '&q=' + encodeURIComponent(_ipBrowse.query);
+  fetch(url)
+    .then(function(r) {
+      if (r.status === 429) throw new Error('429');
+      if (r.status === 401) throw new Error('401');
+      if (!r.ok) throw new Error('http' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      _ipBrowse.loading = false;
+      var items = (data && data.results) || [];
+      if (!items.length) {
+        _ipBrowse.done = true;
+        _ipSetStatus(_ipBrowse.page === 1 ? 'No photos found for "' + _ipBrowse.query + '"' : '');
+        return;
+      }
+      items.forEach(function(it) { _buildOpenverseItem(grid, it); });
+      _ipBrowse.page++;
+      if (data.result_count && (_ipBrowse.page - 1) * 20 >= data.result_count) _ipBrowse.done = true;
+      _ipSetStatus('');
+    })
+    .catch(function(e) {
+      _ipBrowse.loading = false;
+      var m = e && e.message;
+      _ipSetStatus(
+        m === '429' || m === '401'
+          ? 'Rate limited — wait a second, then tap Search again.'
+          : 'Search failed. Tap Search to retry.'
+      );
+    });
+}
+
+function _buildPicsumItem(grid, it) {
+  var w = it.width || 800, h = it.height || 600;
+  var scale = Math.min(800 / w, 600 / h, 1);
+  var fullUrl = 'https://picsum.photos/id/' + it.id + '/' + Math.round(w * scale) + '/' + Math.round(h * scale);
+  var thumb = 'https://picsum.photos/id/' + it.id + '/300/' + Math.max(120, Math.round(300 * h / w));
+  _ipBrowseAppend(grid, thumb, fullUrl, it.author || 'Unsplash');
+  return true;
+}
+
+function _buildCommonsItem(grid, page) {
+  var info = page.imageinfo && page.imageinfo[0];
+  if (!info || !info.thumburl) return false;
+  var mime = info.mime || '';
+  if (mime && mime !== 'image/jpeg' && mime !== 'image/png' && mime !== 'image/webp' && mime !== 'image/gif') return false;
+  var thumb = info.thumburl;
+  var fullUrl = '';
+  if (info.responsiveUrls && info.responsiveUrls['2']) {
+    fullUrl = info.responsiveUrls['2'];
+  } else {
+    fullUrl = thumb.replace(/\/(\d+)px-/, '/800px-');
+    if (fullUrl === thumb) fullUrl = info.url || thumb;
+  }
+  var label = String(page.title || '').replace(/^File:/, '');
+  _ipBrowseAppend(grid, thumb, fullUrl, label);
+  return true;
+}
+
+function _buildOpenverseItem(grid, it) {
+  if (!it.url) return false;
+  _ipBrowseAppend(grid, it.thumbnail || it.url, it.url, it.title || 'Openverse');
+  return true;
+}
+
+function _ipBrowseAppend(grid, thumbUrl, fullUrl, label) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'image-picker-grid-item';
+  btn.title = label;
+  var img = document.createElement('img');
+  img.src = thumbUrl;
+  img.alt = label;
+  img.loading = 'lazy';
+  btn.appendChild(img);
+  btn.addEventListener('click', function() { imagePickerPickPhoto(fullUrl, btn); });
+  grid.appendChild(btn);
+}
+
+function imagePickerPickPhoto(fullUrl, btn) {
+  var grid = btn && btn.parentElement;
+  if (grid) {
+    grid.querySelectorAll('.image-picker-grid-item.selected').forEach(function(n) { n.classList.remove('selected'); });
+  }
+  if (btn) btn.classList.add('selected');
+  var preview = document.getElementById('imagePickerPreview');
+  var urlInput = document.getElementById('imagePickerUrl');
+  var status = document.getElementById('imagePickerStatus');
+  if (preview) {
+    preview.src = fullUrl;
+    preview.style.display = 'block';
+    delete preview.dataset.pasted;
+  }
+  if (urlInput) urlInput.value = fullUrl;
+  if (status) { status.textContent = 'Photo selected — click Save to apply'; status.style.color = 'var(--accent)'; }
+}
+
+function imagePickerSearch() {
+  var input = document.getElementById('imagePickerSearchInput');
+  var q = ((input && input.value) || '').trim();
+  if (!q) { imagePickerClearSearch(); return; }
+  var grid = document.getElementById('imagePickerGrid');
+  if (grid) grid.innerHTML = '';
+  _ipBrowse.mode = 'search';
+  _ipBrowse.source = 'commons';
+  _ipBrowse.query = q;
+  _ipBrowse.page = 1;
+  _ipBrowse.offset = 0;
+  _ipBrowse.continueToken = '';
+  _ipBrowse.done = false;
+  _ipBrowse.loading = false;
+  var clearBtn = document.getElementById('imagePickerSearchClear');
+  if (clearBtn) clearBtn.style.display = '';
+  _ipSetStatus('Searching...');
+  imagePickerBrowseLoad();
+}
+
+function imagePickerClearSearch() {
+  var input = document.getElementById('imagePickerSearchInput');
+  if (input) input.value = '';
+  var grid = document.getElementById('imagePickerGrid');
+  if (grid) grid.innerHTML = '';
+  _ipBrowse.mode = 'picsum';
+  _ipBrowse.source = 'commons';
+  _ipBrowse.query = '';
+  _ipBrowse.page = 1;
+  _ipBrowse.offset = 0;
+  _ipBrowse.continueToken = '';
+  _ipBrowse.done = false;
+  _ipBrowse.loading = false;
+  var clearBtn = document.getElementById('imagePickerSearchClear');
+  if (clearBtn) clearBtn.style.display = 'none';
+  imagePickerBrowseLoad();
+}
+
 
 // ─── THEME ──────────────────────────────────────────────────
 function darkenColor(hex, amount) {
@@ -3645,7 +4289,7 @@ function createTask(data) {
     date: data.date || '',
     startTime: data.startTime || '09:00',
     endTime: data.endTime || '10:00',
-    tag: data.tag || 'meeting',
+    tag: data.tag || 'daily',
     subcategory: data.subcategory || '',
     notes: data.notes || '',
     completed: false,
@@ -3744,7 +4388,7 @@ ${(() => {
   }
   return parts.length > 0 ? 'Known subcategories:\n' + parts.join('\n') : '';
 })()}
-Tag rules: "deep work"/"focus"/"heads down" = deep-work. "gym"/"workout"/"run"/"cardio"/"exercise" = exercise. "math"/"english"/"class"/"chemistry"/"physics"/"mandarin"/"study" = study. "design"/"movie"/"build"/"app"/"hobby" = hobby. Default tag = "meeting".
+Tag rules: "daily"/"chores"/"errands"/"routine"/"meals"/"exercise"/"shopping"/"cleaning"/"cooking" = daily. "math"/"algebra"/"calculus"/"geometry" = math. "physics"/"mechanics"/"thermo" = physics. "bio"/"biology"/"ecology" = bio. "chem"/"chemistry"/"organic" = chem. "english"/"essay"/"writing"/"reading" = eng. "mandarin"/"chinese"/"中文" = mandarin. Default tag = "daily".
 Default duration: 1 hour. Default time: 9 AM. "tomorrow" = next day. Day names = next occurrence. "morning" ≈ 9am, "afternoon" ≈ 2pm, "evening" ≈ 7pm.
 
 IMPORTANT: Choose a time slot that does NOT conflict with existing tasks shown above. If the user's requested time is taken, shift to the nearest free slot.
@@ -3782,7 +4426,7 @@ Return ONLY valid JSON. No markdown, no code fences, no extra text.`;
     }
     if (!p.title || !p.date || !p.startTime || !p.endTime) throw new Error('Incomplete data');
     if (isNaN(new Date(p.date + 'T' + p.startTime).getTime())) throw new Error('Invalid date');
-    return { title: p.title, date: p.date, startTime: p.startTime, endTime: p.endTime, tag: p.tag || 'meeting', subcategory: p.subcategory || '' };
+    return { title: p.title, date: p.date, startTime: p.startTime, endTime: p.endTime, tag: p.tag || 'daily', subcategory: p.subcategory || '' };
   });
 }
 
@@ -3913,6 +4557,7 @@ function renderAIUsage() {
 
 // ─── DATA EXPORT/IMPORT ────────────────────────────────────
 function exportData() {
+  if (typeof requirePremium === 'function' && !requirePremium('export', { reason: 'Exporting your data is a Premium feature' })) return;
   const sleepLogs = loadSleepLogs();
   let sleepTargets = null;
   let sleepRoutine = null;
@@ -3921,7 +4566,25 @@ function exportData() {
     const rawRoutine = localStorage.getItem(SLEEP_ROUTINE_KEY);
     if (rawRoutine) sleepRoutine = JSON.parse(rawRoutine);
   } catch (e) {}
-  const data = JSON.stringify({ tasks: state.tasks, sleepLogs: sleepLogs, sleepTargets: sleepTargets, sleepRoutine: sleepRoutine, version: 1 }, null, 2);
+  const readJSON = (key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw === null ? null : JSON.parse(raw);
+    } catch (e) { return null; }
+  };
+  const data = JSON.stringify({
+    tasks: state.tasks,
+    sleepLogs: sleepLogs,
+    sleepTargets: sleepTargets,
+    sleepRoutine: sleepRoutine,
+    goals: readJSON('haven-schedule-goals'),
+    finance: readJSON('haven-schedule-finance'),
+    piggybank: readJSON('haven-piggybank'),
+    wallet: readJSON('haven-wallet'),
+    activityCompletions: readJSON('haven-activities-completions'),
+    galleryLayout: readJSON('haven-gallery-layout'),
+    version: 2
+  }, null, 2);
   const blob = new Blob([data], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -3962,6 +4625,18 @@ function importData(e) {
       if (data.sleepRoutine && typeof data.sleepRoutine === 'object') {
         try { localStorage.setItem(SLEEP_ROUTINE_KEY, JSON.stringify(data.sleepRoutine)); } catch (e) {}
       }
+      // Restore the remaining data sections. Only keys actually present in the
+      // file are written, so an older backup can never wipe newer data.
+      const restoreKey = (value, key) => {
+        if (value === undefined || value === null) return;
+        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+      };
+      restoreKey(data.goals, 'haven-schedule-goals');
+      restoreKey(data.finance, 'haven-schedule-finance');
+      restoreKey(data.piggybank, 'haven-piggybank');
+      restoreKey(data.wallet, 'haven-wallet');
+      restoreKey(data.activityCompletions, 'haven-activities-completions');
+      restoreKey(data.galleryLayout, 'haven-gallery-layout');
       saveState();
       dom.importFileInput.value = '';
       if (typeof pageAfterImport === 'function') pageAfterImport();
@@ -4246,10 +4921,49 @@ function syncAccentBadges() {
   for (var i = 0; i < badges.length; i++) badges[i].style.background = acc;
 }
 
-function renderAccentPickerInSettings() {
-  var container = document.getElementById('settingsAccentColor');
+function renderDisplaySettingsInSettings() {
+  var container = document.getElementById('settingsDisplay');
   if (!container) return;
-  renderAccentColorPicker(container);
+  container.querySelectorAll('.display-settings-group').forEach(function(n) { n.remove(); });
+  var compactOn = !!state.compactMode;
+  var motionOn = state.animations === false;
+  var ambientOn = state.ambientEffects !== false;
+  var html = '<div class="set-group display-settings-group">' +
+    '<div class="set-row">' +
+      '<div class="set-row-left"><div class="set-row-label">Compact mode</div><div class="set-row-desc">Tighter spacing throughout the app</div></div>' +
+      '<button class="set-toggle' + (compactOn ? ' on' : '') + '" id="setDrawerCompactToggle"></button>' +
+    '</div>' +
+    '<div class="set-row">' +
+      '<div class="set-row-left"><div class="set-row-label">Reduce motion</div><div class="set-row-desc">Turn off motion effects across the app</div></div>' +
+      '<button class="set-toggle' + (motionOn ? ' on' : '') + '" id="setDrawerMotionToggle"></button>' +
+    '</div>' +
+    '<div class="set-row">' +
+      '<div class="set-row-left"><div class="set-row-label">Ambient effects</div><div class="set-row-desc">Soft background glows and gradients</div></div>' +
+      '<button class="set-toggle' + (ambientOn ? ' on' : '') + '" id="setDrawerAmbientToggle"></button>' +
+    '</div>' +
+  '</div>';
+  container.insertAdjacentHTML('beforeend', html);
+
+  document.getElementById('setDrawerCompactToggle').addEventListener('click', function() {
+    state.compactMode = !state.compactMode;
+    this.classList.toggle('on', state.compactMode);
+    applyBehaviorClasses();
+    saveState();
+  });
+  document.getElementById('setDrawerMotionToggle').addEventListener('click', function() {
+    var motionEnabled = state.animations !== false;
+    state.animations = !motionEnabled;
+    this.classList.toggle('on', state.animations === false);
+    applyBehaviorClasses();
+    saveState();
+  });
+  document.getElementById('setDrawerAmbientToggle').addEventListener('click', function() {
+    var ambientEnabled = state.ambientEffects !== false;
+    state.ambientEffects = !ambientEnabled;
+    this.classList.toggle('on', state.ambientEffects !== false);
+    applyAmbientEffects();
+    saveState();
+  });
 }
 function renderCardColorsInSettings() {
   const container = document.getElementById('settingsCardColors');
@@ -4385,7 +5099,7 @@ function openSettingsDrawer() {
   try { updateSettingsKeyStatus(); } catch (e) {}
   try { loadAIUsage(); } catch (e) {}
   try { renderAIUsage(); } catch (e) {}
-  try { renderAccentPickerInSettings(); } catch (e) {}
+  try { renderDisplaySettingsInSettings(); } catch (e) {}
   try { renderCardColorsInSettings(); } catch (e) {}
   try { renderBubbleConfigInSettings(); } catch (e) {}
   try { injectHubExportUI(); } catch (e) {}
@@ -5527,7 +6241,7 @@ function openNewTaskModal(date, startMins, opts) {
   state._selectedPriority = 3;
   if (opts && opts.tag && TAG_ORDER.includes(opts.tag)) state.lastQuickTag = opts.tag;
   const sr = roundToNearest(startMins, SNAP_MINUTES);
-  const defaultTag = state.lastQuickTag && TAG_ORDER.includes(state.lastQuickTag) ? state.lastQuickTag : (state.selectedTag || 'meeting');
+  const defaultTag = state.lastQuickTag && TAG_ORDER.includes(state.lastQuickTag) ? state.lastQuickTag : (state.selectedTag && TAG_ORDER.includes(state.selectedTag) ? state.selectedTag : (TAG_ORDER[0] || ''));
   dom.taskModalTitle.textContent = 'New Task';
   dom.taskTitle.value = (opts && opts.title) || '';
   dom.taskTitle.dispatchEvent(new Event('input'));
@@ -5567,7 +6281,7 @@ function openTaskModal(id) {
   setDropdownValue('tmReminderTrigger', 'tmReminderMenu', reminderVal);
   dom.taskDeleteBtn.classList.remove('hidden');
   document.getElementById('taskModalId').textContent = `#${id.slice(0, 6)}`;
-  renderTaskCategoryChips(task.tag || 'meeting');
+  renderTaskCategoryChips(task.tag && TAG_ORDER.includes(task.tag) ? task.tag : (TAG_ORDER[0] || ''));
   updatePriorityUI();
   showTaskModal();
 }
@@ -5607,7 +6321,9 @@ function renderTaskCategoryChips(selectedTag) {
     opt.textContent = label;
     select.appendChild(opt);
   }
-  select.value = selectedTag || TAG_ORDER[0];
+  if (selectedTag && TAG_ORDER.includes(selectedTag)) select.value = selectedTag;
+  else if (TAG_ORDER.length) select.value = TAG_ORDER[0];
+  else select.value = '';
   const activeChip = container.querySelector(`[data-tag="${select.value}"]`);
   if (activeChip) activeChip.classList.add('active');
 }
@@ -5640,7 +6356,10 @@ function handleTaskFormSubmit(e) {
   e.preventDefault();
   const catSelect = document.getElementById('taskCategorySelect');
   const selectedTag = catSelect ? catSelect.value : null;
-  const fallbackTag = selectedTag || (state.lastQuickTag && TAG_ORDER.includes(state.lastQuickTag) ? state.lastQuickTag : (state.selectedTag || 'meeting'));
+  const fallbackTag = (selectedTag && TAG_ORDER.includes(selectedTag)) ? selectedTag
+    : (state.lastQuickTag && TAG_ORDER.includes(state.lastQuickTag) ? state.lastQuickTag
+    : (state.selectedTag && TAG_ORDER.includes(state.selectedTag) ? state.selectedTag
+    : (TAG_ORDER[0] || '')));
   const data = {
     title: dom.taskTitle.value.trim(),
     date: dom.taskDate.value,
@@ -5766,6 +6485,7 @@ function resetAIChat() {
 }
 
 function showAIChat() {
+  if (typeof requirePremium === 'function' && !requirePremium('ai')) return;
   if (!dom.aiChatPanel) return;
   const provider = state.apiProvider || 'groq';
   const pLabel = PROVIDER_LABELS[provider] || 'Groq';
@@ -6042,7 +6762,7 @@ function executeActions(actions, responseText) {
       }
       const task = createTask(data);
       createdTaskIds.push(task.id);
-      const meta = getTagMeta(data.tag || 'meeting');
+      const meta = getTagMeta(data.tag || 'daily');
       actionSummary.push(`● <strong>${escapeHtml(data.title)}</strong> <span style="color:${meta.text}">${data.startTime}–${data.endTime}</span> on ${data.date}`);
     } else if (action.type === 'updateTask' && action.data.id) {
       updateTask(action.data.id, action.data.changes);
@@ -6127,7 +6847,7 @@ function executeActions(actions, responseText) {
         }
         const task = createTask(data);
         createdTaskIds.push(task.id);
-        const meta = getTagMeta(data.tag || 'meeting');
+        const meta = getTagMeta(data.tag || 'daily');
         actionSummary.push(`● <strong>${escapeHtml(data.title)}</strong> <span style="color:${meta.text}">${data.startTime}–${data.endTime}</span> on ${data.date}`);
       }
     }
@@ -6229,7 +6949,7 @@ function sendAIMessage() {
       // Plan mode: show plan and wait for confirmation
       const planLines = response.actions.map(a => {
         if (a.type === 'createTask') {
-          const meta = getTagMeta(a.data.tag || 'meeting');
+          const meta = getTagMeta(a.data.tag || 'daily');
           return `<span style="color:${meta.text}">●</span> <strong>${escapeHtml(a.data.title)}</strong> — ${a.data.date} ${a.data.startTime}–${a.data.endTime} <em style="color:var(--text-tertiary)">(${a.data.tag})</em>`;
         }
         if (a.type === 'clearAllTasks') return `⊘ Clear entire schedule`;
@@ -6312,7 +7032,12 @@ function renderMD(text) {
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(m, label, url) {
+      // Only http(s) links become anchors — blocks javascript: and data: URLs
+      // arriving from model output.
+      if (!/^https?:\/\//i.test(url)) return label;
+      return '<a href="' + url.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener">' + label + '</a>';
+    })
     .split(/\n{2,}/).map(function(b) {
       b = b.trim();
       if (!b) return '';
@@ -6338,7 +7063,7 @@ function appendAIMessage(role, html) {
   } else if (role === 'assistant') {
     var content = html;
     // Only render markdown if no HTML tags present (plain text responses)
-    if (content.indexOf('<') === -1 || content.indexOf('>') === -1) {
+    if (content.indexOf('<') === -1 && content.indexOf('>') === -1) {
       content = renderMD(content);
     }
     div.className = 'ai-message ai-message-assistant';
@@ -6677,10 +7402,10 @@ ${recentHistory || '(start fresh)'}
 ${attachedFile ? (attachedFile.isImage ? `[Image: ${attachedFile.name}]\n` : `[File: ${attachedFile.name}]\n${(attachedFile.data||'').slice(0,2000)}\n`) : ''}
 
 TASK RULES:
-- 30-min snap, no overlap, 15min buffer. Deep work→9-12, Exercise→6-8/5-7, Meetings→10-11/2-4(30min), Study→daily slot, Hobby→evenings/wknd
+- 30-min snap, no overlap, 15min buffer. Daily→morning/anytime, Math→morning, Physics→afternoon, Bio/Chem→flexible, Eng/Mandarin→evenings
 - Morning=6-12, afternoon=12-17, evening=17-21. Prefer learned patterns. If time taken, find nearest free slot.
-- Titles must be specific: "Deep work: [goal]", "[workout type]", "Study [subject] — [topic]". Never bare tag names.
-- "Schedule my week" → batchCreate ALL 5-7 days, balanced mix per day (1 deep work, 1 meeting, 1 exercise, optional study/hobby)
+- Titles must be specific: "Math: [concept]", "Physics — [topic]", "Daily: [task]". Never bare tag names.
+- "Schedule my week" → batchCreate ALL 5-7 days, balanced mix per day (1 daily, 1 math, optional physics/bio/chem/eng/mandarin)
 - Use rememberFact to store user preferences/facts. Process images to extract schedule info.
 
 TAGS: ${TAG_ORDER.map(t => `"${t}"=${TAG_LABELS[t]}`).join(', ')}
@@ -6692,7 +7417,7 @@ RESPOND with ONLY valid JSON (no markdown fences, no extra text):
 
 ACTIONS: createTask{title,date,startTime,endTime,tag,subcategory?} | updateTask{id,changes:{title?,date?,startTime?,endTime?,tag?,completed?}} | deleteTask{id} | clearAllTasks{} | clearDate{date} | clearCompletedTasks{} | deleteTasksByTag{tag} | deleteTasksByQuery{query} | rememberFact{key,fact} | moveTask{id,startTime,endTime} | batchCreate{tasks:[{title,date,startTime,endTime,tag,subcategory?}]}
 
-EXAMPLES: "Clear schedule"→clearAllTasks. "Delete gym tasks"→deleteTasksByTag:{tag:"exercise"}. "Move X to 2pm"→moveTask. "Schedule week"→batchCreate 5-7 days.
+EXAMPLES: "Clear schedule"→clearAllTasks. "Delete math tasks"→deleteTasksByTag:{tag:"math"}. "Move X to 2pm"→moveTask. "Schedule week"→batchCreate 5-7 days.
 
 ${(() => { try { const extra = localStorage.getItem('haven-ai-extra-instructions') || ''; return extra ? `EXTRA:\n${extra}\n` : ''; } catch (e) { return ''; } })()}
 IMPORTANT: Only valid JSON.`;
@@ -7503,7 +8228,12 @@ function initLogoLoginRedirect() {
   document.querySelectorAll('.hub-workspace-icon, .hub-workspace-name').forEach(function(el) {
     el.addEventListener('click', function(e) {
       e.stopPropagation();
-      window.location.href = 'login.html';
+      var anchor = el.closest ? el.closest('a[href]') : null;
+      if (anchor && anchor.getAttribute('href')) {
+        window.location.href = anchor.getAttribute('href');
+        return;
+      }
+      window.location.href = 'login.html?stay=1';
     });
   });
 }

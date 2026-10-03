@@ -186,11 +186,31 @@ function _normalizeStudy(list) {
 function _ensureStudy() {
   if (!hubContent) return [];
   if (!Array.isArray(hubContent.study)) hubContent.study = [];
-  hubContent.study = _normalizeStudy(hubContent.study);
+  hubContent.study.forEach(function(s, i) {
+    if (!s || typeof s !== 'object') hubContent.study[i] = s = { name: String(s || '') };
+    if (!s.id) s.id = _studyUid('sj');
+    if (!s.name) s.name = 'Subject';
+    if (typeof s.collapsed !== 'boolean') s.collapsed = !!s.collapsed;
+    if (typeof s.color !== 'string') s.color = s.color || '';
+    if (!Array.isArray(s.chapters)) s.chapters = [];
+    s.chapters.forEach(function(c, j) {
+      if (!c || typeof c !== 'object') s.chapters[j] = c = { name: String(c || '') };
+      if (!c.id) c.id = _studyUid('ch');
+      if (!c.name) c.name = 'Chapter';
+      if (typeof c.collapsed !== 'boolean') c.collapsed = !!c.collapsed;
+      if (!Array.isArray(c.items)) c.items = [];
+      c.items.forEach(function(it, k) {
+        if (!it || typeof it !== 'object') c.items[k] = it = { text: String(it || '') };
+        if (!it.id) it.id = _studyUid('si');
+        if (typeof it.text !== 'string') it.text = it.text || it.name || '';
+        it.done = !!it.done;
+      });
+    });
+  });
   return hubContent.study;
 }
 function _findStudy(sid, cid, iid) {
-  var subs = _ensureStudy();
+  var subs = (typeof hubContent !== 'undefined' && hubContent && Array.isArray(hubContent.study)) ? hubContent.study : [];
   var sj = null, ch = null, it = null;
   for (var i = 0; i < subs.length; i++) {
     if (subs[i].id === sid) { sj = subs[i]; break; }
@@ -218,6 +238,38 @@ function _studySubjectItems(sj) {
   (sj.chapters || []).forEach(function(c) { (c.items || []).forEach(function(it) { out.push(it); }); });
   return out;
 }
+function _moveStudyItem(dragId, leafId, zoneId, before) {
+  _ensureStudy();
+  var sp = String(dragId || '').split('|');
+  var src = _findStudy(sp[0], sp[1], sp[2]);
+  if (!src.ch || !src.it) return false;
+  if (leafId && leafId === dragId) return false;
+  var moving = src.it;
+  src.ch.items.splice(src.ch.items.indexOf(moving), 1);
+  if (leafId) {
+    var tp = String(leafId).split('|');
+    var tgt = _findStudy(tp[0], tp[1], tp[2]);
+    if (tgt.ch && tgt.it) {
+      var ti = tgt.ch.items.indexOf(tgt.it);
+      tgt.ch.items.splice(before ? ti : ti + 1, 0, moving);
+      tgt.sj.collapsed = false;
+      tgt.ch.collapsed = false;
+      return true;
+    }
+  }
+  if (zoneId) {
+    var zp = String(zoneId).split('|');
+    var dst = _findStudy(zp[0], zp[1]);
+    if (dst.ch) {
+      dst.ch.items.push(moving);
+      dst.sj.collapsed = false;
+      dst.ch.collapsed = false;
+      return true;
+    }
+  }
+  src.ch.items.push(moving);
+  return true;
+}
 function _closeStudyColorPopup() {
   if (typeof closeColorPopup === 'function') closeColorPopup();
   var p = document.querySelector('.w-st-color-pop');
@@ -244,6 +296,64 @@ let _textStyles = {};
 try { _textStyles = JSON.parse(localStorage.getItem(TEXT_STYLES_KEY) || '{}'); } catch(e) {}
 function _getTextStyle(uid) { return _textStyles[uid] || 'sans'; }
 function _setTextStyle(uid, style) { _textStyles[uid] = style; try { localStorage.setItem(TEXT_STYLES_KEY, JSON.stringify(_textStyles)); } catch(e) {} }
+function _loadStyleMap(key) {
+  try {
+    var raw = localStorage.getItem(key);
+    var parsed = raw ? JSON.parse(raw) : {};
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+  } catch(e) { return {}; }
+}
+function _reloadAllWidgetStyles() {
+  _clockStyles = _loadStyleMap(CLOCK_STYLES_KEY);
+  _weatherStyles = _loadStyleMap(WEATHER_STYLES_KEY);
+  _sleepStyles = _loadStyleMap(SLEEP_STYLES_KEY);
+  _expenseStyles = _loadStyleMap(EXPENSE_STYLES_KEY);
+  _headlinesStyles = _loadStyleMap(HEADLINES_STYLES_KEY);
+  _calStyles = _loadStyleMap(CAL_STYLES_KEY);
+  _todosStyles = _loadStyleMap(TODOS_STYLES_KEY);
+  _habitsStyles = _loadStyleMap(HABITS_STYLES_KEY);
+  _moodStyles = _loadStyleMap(MOOD_STYLES_KEY);
+  _waterStyles = _loadStyleMap(WATER_STYLES_KEY);
+  _timerStyles = _loadStyleMap(TIMER_STYLES_KEY);
+  _pomoStyles = _loadStyleMap(POMO_STYLES_KEY);
+  _notesStyles = _loadStyleMap(NOTES_STYLES_KEY);
+  _linksStyles = _loadStyleMap(LINKS_STYLES_KEY);
+  _quoteStyles = _loadStyleMap(QUOTE_STYLES_KEY);
+  _cdStyles = _loadStyleMap(CD_STYLES_KEY);
+  _priStyles = _loadStyleMap(PRI_STYLES_KEY);
+  _progStyles = _loadStyleMap(PROG_STYLES_KEY);
+  _goalsStyles = _loadStyleMap(GOALS_STYLES_KEY);
+  _imgStyles = _loadStyleMap(IMG_STYLES_KEY);
+  _hwStyles = _loadStyleMap(HW_STYLES_KEY);
+  _textStyles = _loadStyleMap(TEXT_STYLES_KEY);
+}
+function _persistStyleMap(map, key) {
+  try { localStorage.setItem(key, JSON.stringify(map)); } catch(e) {}
+}
+function _copyWidgetStyle(srcUid, dstUid) {
+  if (!srcUid || !dstUid || srcUid === dstUid) return;
+  var pairs = [
+    [_clockStyles, CLOCK_STYLES_KEY], [_weatherStyles, WEATHER_STYLES_KEY],
+    [_sleepStyles, SLEEP_STYLES_KEY], [_expenseStyles, EXPENSE_STYLES_KEY],
+    [_headlinesStyles, HEADLINES_STYLES_KEY], [_calStyles, CAL_STYLES_KEY],
+    [_todosStyles, TODOS_STYLES_KEY], [_habitsStyles, HABITS_STYLES_KEY],
+    [_moodStyles, MOOD_STYLES_KEY], [_waterStyles, WATER_STYLES_KEY],
+    [_timerStyles, TIMER_STYLES_KEY], [_pomoStyles, POMO_STYLES_KEY],
+    [_notesStyles, NOTES_STYLES_KEY], [_linksStyles, LINKS_STYLES_KEY],
+    [_quoteStyles, QUOTE_STYLES_KEY], [_cdStyles, CD_STYLES_KEY],
+    [_priStyles, PRI_STYLES_KEY], [_progStyles, PROG_STYLES_KEY],
+    [_goalsStyles, GOALS_STYLES_KEY], [_imgStyles, IMG_STYLES_KEY],
+    [_hwStyles, HW_STYLES_KEY], [_textStyles, TEXT_STYLES_KEY]
+  ];
+  for (var i = 0; i < pairs.length; i++) {
+    var map = pairs[i][0];
+    var key = pairs[i][1];
+    if (map && Object.prototype.hasOwnProperty.call(map, srcUid)) {
+      map[dstUid] = map[srcUid];
+      _persistStyleMap(map, key);
+    }
+  }
+}
 
 const HUB_VIS_KEY = 'haven-hub-visibility';
 const HUB_CONTENT_KEY = 'haven-hub-content';
@@ -639,14 +749,21 @@ const HUB_DEFAULTS = {
   homework: [],
   study: [],
   gallery: [
-    { label: 'Schedule', desc: 'Time-blocking grid with drag & drop, AI scheduling, and week/month/agenda views.', href: 'schedule.html', icon: 'calendar', color: 'var(--tag-deep-work-text)', bg: 'var(--tag-deep-work-bg)' },
-    { label: 'Progress', desc: 'Board, timeline, log, and charts tracking what you do and how you are doing.', href: 'progress.html', icon: 'chart', color: 'var(--tag-hobby-text)', bg: 'var(--tag-hobby-bg)' },
-    { label: 'Goals', desc: 'Track goals with progress bars, sub-tasks, and vision board.', href: 'goals.html', icon: 'star', color: 'var(--tag-deep-work-text)', bg: 'var(--tag-deep-work-bg)' }
+    { label: 'Schedule', desc: 'Time-blocking grid with drag & drop, AI scheduling, and week/month/agenda views.', href: 'schedule.html', icon: 'calendar', color: 'var(--tag-daily-text)', bg: 'var(--tag-daily-bg)' },
+    { label: 'Progress', desc: 'Board, timeline, log, and charts tracking what you do and how you are doing.', href: 'progress.html', icon: 'chart', color: 'var(--tag-mandarin-text)', bg: 'var(--tag-mandarin-bg)' },
+    { label: 'Goals', desc: 'Track goals with progress bars, sub-tasks, and vision board.', href: 'goals.html', icon: 'star', color: 'var(--tag-daily-text)', bg: 'var(--tag-daily-bg)' }
   ],
-  bentoLayout: [{t:'goals',x:24,y:24},{t:'images',x:24,y:264},{t:'priorities',x:364,y:24},{t:'quote',x:364,y:264},{t:'todos',x:24,y:504}]
+  bentoLayout: []
 };
 
 let hubContent = null;
+
+function _hubTodayKey(d) {
+  var t = d || new Date();
+  var m = String(t.getMonth() + 1).padStart(2, '0');
+  var day = String(t.getDate()).padStart(2, '0');
+  return t.getFullYear() + '-' + m + '-' + day;
+}
 
 
 function loadHubContent() {
@@ -928,7 +1045,7 @@ function _fitTextWidgets() {
   });
 }
 function renderHubBento() {
-  // Ensure images are loaded before rendering bubbles (only on first render)
+  try { if (typeof _reloadAllWidgetStyles === 'function') _reloadAllWidgetStyles(); } catch(e) {}
   if (typeof state !== 'undefined' && !state.images && typeof loadImages === 'function') loadImages();
   _loadTimerStates();
   _loadPomoStates();
@@ -970,6 +1087,13 @@ function renderHubBento() {
     Array.prototype.forEach.call(_prevIfr, function(f) { if ((f.getAttribute('src') || '').indexOf('open.spotify.com') !== -1) _prevSpIframes.push(f); });
   } catch(e) {}
 
+  // Release Leaflet maps and their polling intervals BEFORE the grid is wiped,
+  // otherwise these nodes are detached and can never be cleaned up again.
+  grid.querySelectorAll('.fr24-widget').forEach(function(el) {
+    if (el._flightInterval) clearInterval(el._flightInterval);
+    if (el._leafletMap) { el._leafletMap.remove(); el._leafletMap = null; }
+  });
+
   grid.innerHTML = '';
 
   function bubbleHtml(item) {
@@ -978,34 +1102,45 @@ function renderHubBento() {
     const resizeHandle = isEdit
       ? `<div class="bento-resize-edge" data-resize-axis="e" data-resize-bubble="${uid}"></div><div class="bento-resize-edge" data-resize-axis="s" data-resize-bubble="${uid}"></div><div class="bento-resize-handle" data-resize-axis="se" data-resize-bubble="${uid}"></div>`
       : '';
+    const STYLE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1" fill="currentColor"/><circle cx="17.5" cy="10.5" r="1" fill="currentColor"/><circle cx="8.5" cy="7.5" r="1" fill="currentColor"/><circle cx="6.5" cy="12.5" r="1" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.26-.29-.43-.68-.43-1.12A1.68 1.68 0 0 1 14.46 16h2.08A5.46 5.46 0 0 0 22 10.48C21.94 5.34 17.2 2 12 2z"/></svg>';
+    const TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    const GRIP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+    const COPY_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+    const _styleBtn = function(attrs, currentName) {
+      var lbl = currentName ? 'Style: ' + currentName : 'Style';
+      return '<button class="bento-tool-btn bento-tool-style" ' + attrs + ' title="Change style (' + lbl + ')">' + STYLE_SVG + '<span class="btool-label">' + escapeHtml(lbl) + '</span></button>';
+    };
     const editUI = isEdit
       ? `<div class="bento-toolbar">
-           <button class="bento-tool-btn bento-tool-move" data-move-bubble="${uid}" title="Drag to move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/><polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg></button>
-           <button class="bento-tool-btn" data-duplicate-bubble="${uid}" title="Duplicate"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg></button>
+           <button class="bento-tool-btn bento-tool-move" data-move-bubble="${uid}" title="Drag to move this widget">${GRIP_SVG}<span class="btool-label">Drag</span></button>
+           <button class="bento-tool-btn" data-duplicate-bubble="${uid}" title="Copy this widget">${COPY_SVG}<span class="btool-label">Copy</span></button>
          </div>
-         ${type === 'clock' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-clock-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'weather' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-weather-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'sleep-score' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-sleep-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'expense' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-expense-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'headlines' ? '<select class="bento-tool-btn bento-tool-style bento-tool-delete-right bento-headlines-select" data-headlines-source="' + uid + '" title="News source" style="right:40px">' + Object.keys(_HL_SOURCES).map(function(sk) { return '<option value="' + sk + '"' + (sk === _getHeadlineSource() ? ' selected' : '') + '>' + _HL_SOURCES[sk].name + '</option>'; }).join('') + '</select>' : ''}
-         ${type === 'calendar' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-cal-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'todos' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-todos-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'habits' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-habits-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'mood' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-mood-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'water' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-water-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'timer' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-timer-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'pomodoro' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-pomo-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'notes' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-notes-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'links' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-links-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'quote' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-quote-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'countdown' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-cd-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'priorities' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-pri-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'progress' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-prog-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'goals' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-goals-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-         ${type === 'images' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-img-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-           ${type === 'text' ? '<select class="bento-tool-btn bento-tool-style bento-tool-delete-right bento-text-font-select" data-text-font-select="' + uid + '" title="Change font" style="right:34px">' + TEXT_STYLE_LIST.map(function(f) { return '<option value="' + f + '"' + (f === _getTextStyle(uid) ? ' selected' : '') + '>' + f.charAt(0).toUpperCase() + f.slice(1) + '</option>'; }).join('') + '</select>' : ''}
-          ${type === 'homework' ? '<button class="bento-tool-btn bento-tool-style bento-tool-delete-right" data-hw-style-toggle="' + uid + '" title="Change style" style="right:34px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>' : ''}
-          <button class="bento-tool-btn bento-tool-delete bento-tool-delete-right" data-remove-bubble="${uid}" title="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>${resizeHandle}`
+         <div class="bento-toolbar-remove">
+          <button class="bento-tool-btn bento-tool-delete bento-tool-icon-only" data-remove-bubble="${uid}" title="Remove this widget" aria-label="Remove this widget">${TRASH_SVG}</button></div>
+         ${ (type === 'clock' || type === 'weather' || type === 'sleep-score' || type === 'expense' || type === 'headlines' || type === 'calendar' || type === 'todos' || type === 'habits' || type === 'mood' || type === 'water' || type === 'timer' || type === 'pomodoro' || type === 'notes' || type === 'links' || type === 'quote' || type === 'countdown' || type === 'priorities' || type === 'progress' || type === 'goals' || type === 'images' || type === 'text' || type === 'homework') ? `<div class="bento-toolbar-style">`
+          + (type === 'clock' ? _styleBtn('data-clock-style-toggle="' + uid + '"', _getClockStyle(uid)) : '')
+          + (type === 'weather' ? _styleBtn('data-weather-style-toggle="' + uid + '"', _getWeatherStyle(uid)) : '')
+          + (type === 'sleep-score' ? _styleBtn('data-sleep-style-toggle="' + uid + '"', _getSleepStyle(uid)) : '')
+          + (type === 'expense' ? _styleBtn('data-expense-style-toggle="' + uid + '"', _getExpenseStyle(uid)) : '')
+          + (type === 'headlines' ? '<select class="bento-tool-btn bento-tool-style bento-headlines-select" data-headlines-source="' + uid + '" title="News source">' + Object.keys(_HL_SOURCES).map(function(sk) { return '<option value="' + sk + '"' + (sk === _getHeadlineSource() ? ' selected' : '') + '>' + _HL_SOURCES[sk].name + '</option>'; }).join('') + '</select>' : '')
+          + (type === 'calendar' ? _styleBtn('data-cal-style-toggle="' + uid + '"', _getCalStyle(uid)) : '')
+          + (type === 'todos' ? _styleBtn('data-todos-style-toggle="' + uid + '"', _getTodosStyle(uid)) : '')
+          + (type === 'habits' ? _styleBtn('data-habits-style-toggle="' + uid + '"', _getHabitsStyle(uid)) : '')
+          + (type === 'mood' ? _styleBtn('data-mood-style-toggle="' + uid + '"', _getMoodStyle(uid)) : '')
+          + (type === 'water' ? _styleBtn('data-water-style-toggle="' + uid + '"', _getWaterStyle(uid)) : '')
+          + (type === 'timer' ? _styleBtn('data-timer-style-toggle="' + uid + '"', _getTimerStyle(uid)) : '')
+          + (type === 'pomodoro' ? _styleBtn('data-pomo-style-toggle="' + uid + '"', _getPomoStyle(uid)) : '')
+          + (type === 'notes' ? _styleBtn('data-notes-style-toggle="' + uid + '"', _getNotesStyle(uid)) : '')
+          + (type === 'links' ? _styleBtn('data-links-style-toggle="' + uid + '"', _getLinksStyle(uid)) : '')
+          + (type === 'quote' ? _styleBtn('data-quote-style-toggle="' + uid + '"', _getQuoteStyle(uid)) : '')
+          + (type === 'countdown' ? _styleBtn('data-cd-style-toggle="' + uid + '"', _getCdStyle(uid)) : '')
+          + (type === 'priorities' ? _styleBtn('data-pri-style-toggle="' + uid + '"', _getPriStyle(uid)) : '')
+          + (type === 'progress' ? _styleBtn('data-prog-style-toggle="' + uid + '"', _getProgStyle(uid)) : '')
+          + (type === 'goals' ? _styleBtn('data-goals-style-toggle="' + uid + '"', _getGoalsStyle(uid)) : '')
+          + (type === 'images' ? _styleBtn('data-img-style-toggle="' + uid + '"', _getImgStyle(uid)) : '')
+          + (type === 'text' ? '<select class="bento-tool-btn bento-tool-style bento-text-font-select" data-text-font-select="' + uid + '" title="Change font">' + TEXT_STYLE_LIST.map(function(f) { return '<option value="' + f + '"' + (f === _getTextStyle(uid) ? ' selected' : '') + '>' + f.charAt(0).toUpperCase() + f.slice(1) + '</option>'; }).join('') + '</select>' : '')
+          + (type === 'homework' ? _styleBtn('data-hw-style-toggle="' + uid + '"', _getHwStyle(uid)) : '')
+          + `</div>` : ''}${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
     const clampH = Math.min(h, MAX_CANVAS_HEIGHT - clampY);
@@ -1125,7 +1260,7 @@ function renderHubBento() {
         </div>`;
       }
       case 'habits': {
-        const todayKey = new Date().toISOString().slice(0,10);
+        const todayKey = _hubTodayKey();
         const habitDone = hubContent.habitData?.[todayKey] || {};
         var _habitsStyle = _getHabitsStyle(uid);
         var _habitsBody = '';
@@ -1416,7 +1551,7 @@ function renderHubBento() {
             <div class="spotify-widget">
               <div class="spotify-header">
                 <svg viewBox="0 0 24 24" fill="currentColor" style="width:12px;height:12px;flex-shrink:0"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
-                <span>${_spActivePlaylist.name}</span>
+                <span>${escapeHtml(_spActivePlaylist.name)}</span>
               </div>
               <iframe src="${_iframeSrc}" frameborder="0" allowtransparency="true" allow="encrypted-media; autoplay" referrerpolicy="no-referrer" style="display:block;width:100%;border:none"></iframe>
             </div>
@@ -1816,16 +1951,18 @@ function renderHubBento() {
             var _sjItems = _studySubjectItems(sj);
             var _sjC = _studyCounts(_sjItems);
             var _sjColor = sj.color || _stColor(sj.name);
+            var _sjChN = (sj.chapters || []).length;
+            var _sjStats = _sjChN + ' chapter' + (_sjChN === 1 ? '' : 's') + ' · ' + _sjC.total + ' subchapter' + (_sjC.total === 1 ? '' : 's');
             var _chaps = (sj.chapters || []).map(function(ch) {
               var _chC = _studyCounts(ch.items || []);
               var _items = (ch.items || []).map(function(it) {
-                return '<div class="w-st-leaf' + (it.done ? ' w-st-done' : '') + '"><span class="w-todo-box w-todo-box-sm' + (it.done ? ' w-todo-checked' : '') + '" data-st-toggle-item="' + sj.id + '|' + ch.id + '|' + it.id + '">' + (it.done ? _stCheckSvg() : '') + '</span><span class="w-item-text' + (it.done ? ' w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type subchapter…" data-edit="study-item" data-sid="' + sj.id + '" data-cid="' + ch.id + '" data-iid="' + it.id + '">' + e(it.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-item="' + sj.id + '|' + ch.id + '|' + it.id + '">×</button>' : '') + '</div>';
+                return '<div class="w-st-leaf' + (it.done ? ' w-st-done' : '') + '" data-st-leaf="' + sj.id + '|' + ch.id + '|' + it.id + '">' + (isEdit ? '<span class="w-st-drag" draggable="true" data-st-drag="' + sj.id + '|' + ch.id + '|' + it.id + '" title="Drag to reorder">⠿</span>' : '') + '<span class="w-todo-box w-todo-box-sm' + (it.done ? ' w-todo-checked' : '') + '" data-st-toggle-item="' + sj.id + '|' + ch.id + '|' + it.id + '">' + (it.done ? _stCheckSvg() : '') + '</span><span class="w-item-text' + (it.done ? ' w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type subchapter…" data-edit="study-item" data-sid="' + sj.id + '" data-cid="' + ch.id + '" data-iid="' + it.id + '">' + e(it.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-item="' + sj.id + '|' + ch.id + '|' + it.id + '">×</button>' : '') + '</div>';
               }).join('');
               var _chapOpen = !ch.collapsed;
-              return '<div class="w-st-chap"><div class="w-st-chap-head" data-st-toggle-chap="' + sj.id + '|' + ch.id + '"><span class="w-st-caret' + (_chapOpen ? ' open' : '') + '">▸</span><span class="w-st-chap-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Chapter name…" data-edit="study-chapter" data-sid="' + sj.id + '" data-cid="' + ch.id + '">' + e(ch.name) + '</span><span class="w-st-count">' + _chC.done + '/' + _chC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-chapter="' + sj.id + '|' + ch.id + '">×</button>' : '') + '</div>' + (_chapOpen ? '<div class="w-st-leaves">' + _items + '<button class="w-st-add-inline" data-st-add-item="' + sj.id + '|' + ch.id + '">+ Subchapter</button></div>' : '') + '</div>';
+              return '<div class="w-st-chap"><div class="w-st-chap-head" data-st-toggle-chap="' + sj.id + '|' + ch.id + '"><span class="w-st-caret' + (_chapOpen ? ' open' : '') + '">▸</span><span class="w-st-chap-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Chapter name…" data-edit="study-chapter" data-sid="' + sj.id + '" data-cid="' + ch.id + '">' + e(ch.name) + '</span><span class="w-st-count">' + _chC.done + '/' + _chC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-chapter="' + sj.id + '|' + ch.id + '">×</button>' : '') + '</div>' + (_chapOpen ? '<div class="w-st-leaves" data-st-drop-chap="' + sj.id + '|' + ch.id + '">' + _items + '<button class="w-st-add-inline" data-st-add-item="' + sj.id + '|' + ch.id + '">+ Subchapter</button></div>' : '') + '</div>';
             }).join('');
             var _subjOpen = !sj.collapsed;
-            return '<div class="w-st-subj"><div class="w-st-subj-head" data-st-toggle-subj="' + sj.id + '"><span class="w-st-caret' + (_subjOpen ? ' open' : '') + '">▸</span><span class="w-st-dot" style="background:' + _sjColor + '" data-st-color="' + sj.id + '" title="Change color"></span><span class="w-st-subj-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Subject name…" data-edit="study-subject" data-sid="' + sj.id + '">' + e(sj.name) + '</span><span class="w-st-count">' + _sjC.done + '/' + _sjC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-subject="' + sj.id + '">×</button>' : '') + '</div>' + (_subjOpen ? '<div class="w-st-subj-bar"><div class="w-st-subj-fill" style="width:' + _sjC.pct + '%;background:' + _sjColor + '"></div></div><div class="w-st-chaps">' + _chaps + '<button class="w-st-add-inline" data-st-add-chapter="' + sj.id + '">+ Chapter</button></div>' : '') + '</div>';
+            return '<div class="w-st-subj"><div class="w-st-subj-head" data-st-toggle-subj="' + sj.id + '"><span class="w-st-caret' + (_subjOpen ? ' open' : '') + '">▸</span><span class="w-st-dot" style="background:' + _sjColor + '" data-st-color="' + sj.id + '" title="Change color"></span><span class="w-st-subj-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Subject name…" data-edit="study-subject" data-sid="' + sj.id + '">' + e(sj.name) + '</span><span class="w-st-subj-stats">' + _sjStats + '</span><span class="w-st-count">' + _sjC.done + '/' + _sjC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-subject="' + sj.id + '">×</button>' : '') + '</div>' + (_subjOpen ? '<div class="w-st-subj-bar"><div class="w-st-subj-fill" style="width:' + _sjC.pct + '%;background:' + _sjColor + '"></div></div><div class="w-st-chaps">' + _chaps + '<button class="w-st-add-inline" data-st-add-chapter="' + sj.id + '">+ Chapter</button></div>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-st-add-subject><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add subject</button>';
         }
         return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg><span>Study</span></div><div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _stCounts.pct + '%"></div></div><span class="w-hw-prog-text">' + _stCounts.done + '/' + _stCounts.total + ' done (' + _stCounts.pct + '%)</span></div><div class="w-list w-st-list">' + _stBody + '</div></div>';
@@ -1837,12 +1974,6 @@ function renderHubBento() {
         </div>`;
     }
   }
-
-  // Clean up existing Leaflet maps before re-rendering
-  grid.querySelectorAll('.fr24-widget').forEach(function(el) {
-    if (el._flightInterval) clearInterval(el._flightInterval);
-    if (el._leafletMap) { el._leafletMap.remove(); el._leafletMap = null; }
-  });
 
   const visible = layout.filter(i => !i.hidden);
   visible.forEach((item, idx) => {
@@ -2027,7 +2158,7 @@ function renderHubBento() {
       copy.uid = 'bubble-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
       copy.x = src.x + 24;
       copy.y = src.y + 24;
-      // Duplicate image if present
+      try { if (typeof _copyWidgetStyle === 'function') _copyWidgetStyle(uid, copy.uid); } catch(e) {}
       if (copy.imageId) {
         var newId = copy.imageId;
         while (layout2.find(function(it) { return it.imageId === newId; }) || (hubContent.images && hubContent.images[newId])) {
@@ -2332,7 +2463,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-hw-style-toggle], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], [data-hw-due], [data-accent-popup], [data-st-toggle-subj], [data-st-toggle-chap], [data-st-toggle-item], [data-st-add-subject], [data-st-add-chapter], [data-st-add-item], [data-st-del-subject], [data-st-del-chapter], [data-st-del-item], [data-st-color], .cpop, .bento-toolbar, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .w-st-add-inline')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-hw-style-toggle], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], [data-hw-due], [data-accent-popup], [data-st-toggle-subj], [data-st-toggle-chap], [data-st-toggle-item], [data-st-add-subject], [data-st-add-chapter], [data-st-add-item], [data-st-del-subject], [data-st-del-chapter], [data-st-del-item], [data-st-color], .cpop, .bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .w-st-add-inline')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -2343,7 +2474,7 @@ function renderHubBento() {
       var editable = e.target.closest('[contenteditable]');
       if (editable) return; // allow default paste menu
       // Handles/buttons area -> snap preset menu handles this, skip bubble menu
-      if (e.target.closest('.bento-toolbar, .bento-tool-btn')) return;
+        if (e.target.closest('.bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn')) return;
       var bubble = e.target.closest('.bento-bubble');
       if (!bubble) { e.preventDefault(); return; }
       e.preventDefault();
@@ -2718,6 +2849,10 @@ function renderHubBento() {
       _calMonthCheck = cm;
     }, 1000);
     }
+  } else if (_clockInterval) {
+    // No clock widget left on the canvas — stop the 1s tick.
+    clearInterval(_clockInterval);
+    _clockInterval = null;
   }
 
   // ─── Weather fetcher (runs at most once) ──────
@@ -2898,6 +3033,161 @@ let _dockGrid = null;
 let _handleLastClickTime = 0;
 let _dragTooltip = null;
 
+function _dockAtPoint(x, y) {
+  var dock = document.querySelector('.bento-bubble-dock[data-bubble-dock]');
+  if (!dock || !dock.isConnected) return null;
+  var r = dock.getBoundingClientRect();
+  if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return dock;
+  return null;
+}
+
+function _setDockRemoveHover(dock, on) {
+  document.querySelectorAll('.bento-bubble-dock.dock-remove-hover').forEach(function(d) {
+    if (d !== dock) d.classList.remove('dock-remove-hover');
+  });
+  if (dock) dock.classList.toggle('dock-remove-hover', !!on);
+}
+
+function _removeBubbleByUid(uid) {
+  var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+  var found = layout.some(function(i) { return i.uid === uid; });
+  if (!found) return false;
+  pushUndoState();
+  hubContent.bentoLayout = layout.filter(function(i) { return i.uid !== uid; });
+  saveHubContent();
+  renderHubBento();
+  var grid2 = document.querySelector('.bento-grid');
+  if (grid2) syncBubbleDock(grid2);
+  updateUndoButtons();
+  if (typeof showToast === 'function') showToast('Widget removed — Undo to bring it back', 'success', 2500);
+  return true;
+}
+
+let _holdPending = null;
+let _holdWired = false;
+const HOLD_MS = 450;
+const HOLD_MOVE_PX = 9;
+
+function _holdExcluded(target) {
+  if (!target || !target.closest) return true;
+  return !!target.closest('button, a, input, select, textarea, iframe, [contenteditable], .bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .cpop, .bento-context-menu, .snap-preset-menu');
+}
+
+function _clearHoldPending() {
+  if (_holdPending && _holdPending.timer) clearTimeout(_holdPending.timer);
+  _holdPending = null;
+}
+
+function _beginHoldDrag(bubble, clientX, clientY) {
+  if (_bubbleDragData || !bubble || !bubble.isConnected) return;
+  if (typeof hubEditMode !== 'undefined' && !hubEditMode) return;
+  var gridEl = document.querySelector('.bento-grid');
+  if (!gridEl) return;
+  var gr = gridEl.getBoundingClientRect();
+  var br = bubble.getBoundingClientRect();
+  _bubbleDragData = {
+    bubble: bubble,
+    offsetX: clientX - br.left,
+    offsetY: clientY - br.top,
+    gridLeft: gr.left,
+    gridTop: gr.top,
+    startMouseX: clientX,
+    startMouseY: clientY,
+    originalX: parseInt(bubble.style.left) || 0,
+    originalY: parseInt(bubble.style.top) || 0,
+    active: true,
+    cancelled: false,
+    held: true,
+    dragLayout: JSON.parse(JSON.stringify(hubContent.bentoLayout))
+  };
+  bubble.classList.add('dragging');
+  bubble.classList.add('held-drag');
+  var _originGhost = document.createElement('div');
+  _originGhost.className = 'bento-drag-origin';
+  _originGhost.style.left = (bubble.offsetLeft || 0) + 'px';
+  _originGhost.style.top = (bubble.offsetTop || 0) + 'px';
+  _originGhost.style.width = bubble.offsetWidth + 'px';
+  _originGhost.style.height = bubble.offsetHeight + 'px';
+  gridEl.appendChild(_originGhost);
+  bubble.style.zIndex = '9999';
+  bubble.parentNode.appendChild(bubble);
+  if (!_dragTooltip) {
+    _dragTooltip = document.getElementById('bentoDragTooltip') || document.createElement('div');
+    if (!_dragTooltip.id) {
+      _dragTooltip.className = 'bento-drag-tooltip';
+      _dragTooltip.id = 'bentoDragTooltip';
+      document.body.appendChild(_dragTooltip);
+    }
+  }
+  if (_dragTooltip._hideTimer) clearTimeout(_dragTooltip._hideTimer);
+  _dragTooltip.textContent = 'Drag out to remove';
+  _dragTooltip.style.opacity = '1';
+  _dragTooltip.style.display = 'block';
+  _dragTooltip.style.left = (clientX + 16) + 'px';
+  _dragTooltip.style.top = (clientY - 12) + 'px';
+  if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+}
+
+function setupBubbleHoldToDrag(grid) {
+  if (_holdWired) return;
+  _holdWired = true;
+  if (!grid) grid = document.querySelector('.bento-grid');
+  if (!grid) return;
+
+  grid.addEventListener('mousedown', function(e) {
+    if (typeof hubEditMode !== 'undefined' && !hubEditMode) return;
+    if (e.button !== 0 || _bubbleDragData || _holdPending) return;
+    if (e.target.closest('.bento-tool-move')) return;
+    var bubble = e.target.closest('.bento-bubble');
+    if (!bubble || _holdExcluded(e.target)) return;
+    _holdPending = { bubble: bubble, x: e.clientX, y: e.clientY, kind: 'mouse', timer: null };
+    _holdPending.timer = setTimeout(function() {
+      var p = _holdPending;
+      _holdPending = null;
+      if (!p || _bubbleDragData) return;
+      if (!p.bubble.isConnected) return;
+      _beginHoldDrag(p.bubble, p.x, p.y);
+    }, HOLD_MS);
+  });
+
+  grid.addEventListener('touchstart', function(e) {
+    if (typeof hubEditMode !== 'undefined' && !hubEditMode) return;
+    if (e.touches.length !== 1 || _bubbleDragData || _holdPending) return;
+    if (e.target.closest('.bento-tool-move')) return;
+    var bubble = e.target.closest('.bento-bubble');
+    if (!bubble || _holdExcluded(e.target)) return;
+    var t = e.touches[0];
+    _holdPending = { bubble: bubble, x: t.clientX, y: t.clientY, kind: 'touch', timer: null };
+    _holdPending.timer = setTimeout(function() {
+      var p = _holdPending;
+      _holdPending = null;
+      if (!p || _bubbleDragData) return;
+      if (!p.bubble.isConnected) return;
+      _beginHoldDrag(p.bubble, p.x, p.y);
+    }, HOLD_MS);
+  }, { passive: true });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!_holdPending || _holdPending.kind !== 'mouse') return;
+    var dx = e.clientX - _holdPending.x;
+    var dy = e.clientY - _holdPending.y;
+    if (dx * dx + dy * dy > HOLD_MOVE_PX * HOLD_MOVE_PX) _clearHoldPending();
+  });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!_holdPending || _holdPending.kind !== 'touch') return;
+    if (e.touches.length !== 1) { _clearHoldPending(); return; }
+    var t = e.touches[0];
+    var dx = t.clientX - _holdPending.x;
+    var dy = t.clientY - _holdPending.y;
+    if (dx * dx + dy * dy > 144) _clearHoldPending();
+  }, { passive: true });
+
+  document.addEventListener('mouseup', _clearHoldPending);
+  document.addEventListener('touchend', _clearHoldPending);
+  document.addEventListener('touchcancel', _clearHoldPending);
+}
+
 function resetBentoInteractions() {
   // Only clear active state — NEVER reset initialization flags,
   // otherwise event listeners get duplicated on each edit toggle.
@@ -2907,8 +3197,10 @@ function resetBentoInteractions() {
   if (_dockDropPreview && _dockDropPreview.parentNode) _dockDropPreview.parentNode.removeChild(_dockDropPreview);
   _dockGhost = null; _dockDropPreview = null; _dockDragData = null;
   // Clean up dragging and selected classes from any stuck bubbles
-  document.querySelectorAll('.bento-bubble.dragging').forEach(function(el) { el.style.zIndex = ''; el.classList.remove('dragging'); });
+  document.querySelectorAll('.bento-bubble.dragging').forEach(function(el) { el.style.zIndex = ''; el.classList.remove('dragging'); el.classList.remove('held-drag'); el.classList.remove('drag-outside'); });
   document.querySelectorAll('.bento-bubble.selected').forEach(function(el) { el.classList.remove('selected'); });
+  _setDockRemoveHover(null, false);
+  _clearHoldPending();
 }
 
 function setupBubbleDragDrop() {
@@ -2918,6 +3210,8 @@ function setupBubbleDragDrop() {
 
   const grid = document.querySelector('.bento-grid');
   if (!grid) return;
+
+  setupBubbleHoldToDrag(grid);
 
   grid.addEventListener('mousedown', function(e) {
     // Drag can only be initiated from the 6-dots handle
@@ -2961,6 +3255,8 @@ function setupBubbleDragDrop() {
         _bubbleDragData.bubble.style.left = _bubbleDragData.originalX + 'px';
         _bubbleDragData.bubble.style.top = _bubbleDragData.originalY + 'px';
         _bubbleDragData.bubble.classList.remove('dragging');
+        _bubbleDragData.bubble.classList.remove('held-drag');
+        _bubbleDragData.bubble.classList.remove('drag-outside');
         _bubbleDragData.bubble.style.zIndex = '';
         // Remove origin ghost
         var _og = document.querySelector('.bento-drag-origin');
@@ -2971,6 +3267,8 @@ function setupBubbleDragDrop() {
       _bubbleDragData.cancelled = true;
       _bubbleDragData = null;
     }
+    _setDockRemoveHover(null, false);
+    _clearHoldPending();
     if (_bubbleResizeData) {
       _bubbleResizeData.bubble.style.width = _bubbleResizeData.originalW + 'px';
       _bubbleResizeData.bubble.style.height = _bubbleResizeData.originalH + 'px';
@@ -3075,13 +3373,22 @@ function setupBubbleDragDrop() {
       dragItem.y = newY;
       updateAddBtnPosition();
     }
+    var _overDockT = _dockAtPoint(t.clientX, t.clientY);
+    _bubbleDragData.overDock = !!_overDockT;
+    _setDockRemoveHover(_overDockT, !!_overDockT);
+    if (_dragTooltip && _overDockT) _dragTooltip.textContent = 'Drop to remove';
+    var _outT = _bubbleDragData.held && (t.clientX < gr.left - 24 || t.clientX > gr.right + 24 || t.clientY < gr.top - 24 || t.clientY > gr.bottom + 24);
+    _bubbleDragData.outsideDelete = !!_outT;
+    _bubbleDragData.bubble.classList.toggle('drag-outside', !!_outT);
+    if (_dragTooltip && _outT && !_overDockT) _dragTooltip.textContent = 'Release to remove';
   }, { passive: false });
 
   // Touch end handler for bubble drag
   document.addEventListener('touchend', function(e) {
-    if (!_bubbleDragData) return;
+    if (!_bubbleDragData) { _setDockRemoveHover(null, false); return; }
     if (!_bubbleDragData.active || _bubbleDragData.cancelled) {
       _bubbleDragData = null;
+      _setDockRemoveHover(null, false);
       return;
     }
     var _og = document.querySelector('.bento-drag-origin');
@@ -3090,6 +3397,27 @@ function setupBubbleDragDrop() {
     _bubbleDragData.bubble.classList.remove('dragging');
     _bubbleDragData.bubble.style.zIndex = '';
     const bubble = _bubbleDragData.bubble;
+    var _te = (e.changedTouches && e.changedTouches[0]) || null;
+    var _dropDockT = (_te ? _dockAtPoint(_te.clientX, _te.clientY) : null) || (_bubbleDragData.overDock ? document.querySelector('.bento-bubble-dock[data-bubble-dock]') : null);
+    _setDockRemoveHover(null, false);
+    if (_dropDockT) {
+      const uid = bubble.dataset.bubble;
+      _bubbleDragData = null;
+      _removeBubbleByUid(uid);
+      return;
+    }
+    if (_bubbleDragData.held) {
+      var _gxT = grid.getBoundingClientRect();
+      var _pxT = _te ? _te.clientX : null;
+      var _pyT = _te ? _te.clientY : null;
+      var _wasOut = _bubbleDragData.outsideDelete;
+      if ((_pxT !== null && (_pxT < _gxT.left - 24 || _pxT > _gxT.right + 24 || _pyT < _gxT.top - 24 || _pyT > _gxT.bottom + 24)) || (_pxT === null && _wasOut)) {
+        const uid = bubble.dataset.bubble;
+        _bubbleDragData = null;
+        _removeBubbleByUid(uid);
+        return;
+      }
+    }
     const gridRect = grid.getBoundingClientRect();
     let x = parseInt(bubble.style.left) || 0;
     let y = parseInt(bubble.style.top) || 0;
@@ -3120,6 +3448,8 @@ function setupBubbleDragDrop() {
     updateUndoButtons();
     refreshProgressWidget();
     _bubbleDragData = null;
+    bubble.classList.remove('held-drag');
+    bubble.classList.remove('drag-outside');
     bubble.classList.remove('selected');
     bubble.setAttribute('data-suppress-click', '1');
     setTimeout(function() { bubble.removeAttribute('data-suppress-click'); }, 50);
@@ -3177,10 +3507,18 @@ function setupBubbleDragDrop() {
       dragItem.y = newY;
       updateAddBtnPosition();
     }
+    var _overDock = _dockAtPoint(e.clientX, e.clientY);
+    _bubbleDragData.overDock = !!_overDock;
+    _setDockRemoveHover(_overDock, !!_overDock);
+    if (_dragTooltip && _overDock) _dragTooltip.textContent = 'Drop to remove';
+    var _outM = _bubbleDragData.held && (e.clientX < gr.left - 24 || e.clientX > gr.right + 24 || e.clientY < gr.top - 24 || e.clientY > gr.bottom + 24);
+    _bubbleDragData.outsideDelete = !!_outM;
+    _bubbleDragData.bubble.classList.toggle('drag-outside', !!_outM);
+    if (_dragTooltip && _outM && !_overDock) _dragTooltip.textContent = 'Release to remove';
   });
 
   document.addEventListener('mouseup', function(e) {
-    if (!_bubbleDragData) return;
+    if (!_bubbleDragData) { _setDockRemoveHover(null, false); return; }
     // If drag was never activated, it was a click — let it pass through
     if (!_bubbleDragData.active || _bubbleDragData.cancelled) {
       _bubbleDragData = null;
@@ -3195,6 +3533,29 @@ function setupBubbleDragDrop() {
     _bubbleDragData.bubble.classList.remove('dragging');
     _bubbleDragData.bubble.style.zIndex = '';
     const bubble = _bubbleDragData.bubble;
+    const dropDock = _dockAtPoint(e.clientX, e.clientY) || (_bubbleDragData.overDock ? document.querySelector('.bento-bubble-dock[data-bubble-dock]') : null);
+    _setDockRemoveHover(null, false);
+    if (dropDock) {
+      const uid = bubble.dataset.bubble;
+      var _og2 = document.querySelector('.bento-drag-origin');
+      if (_og2) _og2.remove();
+      if (_dragTooltip) { if (_dragTooltip._hideTimer) clearTimeout(_dragTooltip._hideTimer); _dragTooltip.style.opacity = '0'; _dragTooltip._hideTimer = setTimeout(function() { if (_dragTooltip) { _dragTooltip.style.display = 'none'; _dragTooltip._hideTimer = null; } }, 150); }
+      _bubbleDragData = null;
+      _removeBubbleByUid(uid);
+      return;
+    }
+    if (_bubbleDragData.held) {
+      var _gxM = grid.getBoundingClientRect();
+      if (e.clientX < _gxM.left - 24 || e.clientX > _gxM.right + 24 || e.clientY < _gxM.top - 24 || e.clientY > _gxM.bottom + 24) {
+        const uid = bubble.dataset.bubble;
+        var _og3 = document.querySelector('.bento-drag-origin');
+        if (_og3) _og3.remove();
+        if (_dragTooltip) { if (_dragTooltip._hideTimer) clearTimeout(_dragTooltip._hideTimer); _dragTooltip.style.opacity = '0'; _dragTooltip._hideTimer = setTimeout(function() { if (_dragTooltip) { _dragTooltip.style.display = 'none'; _dragTooltip._hideTimer = null; } }, 150); }
+        _bubbleDragData = null;
+        _removeBubbleByUid(uid);
+        return;
+      }
+    }
     const gridRect = grid.getBoundingClientRect();
     const bRect = bubble.getBoundingClientRect();
     const bw = bRect.width, bh = bRect.height;
@@ -3235,6 +3596,8 @@ function setupBubbleDragDrop() {
     updateUndoButtons();
     refreshProgressWidget();
     _bubbleDragData = null;
+    bubble.classList.remove('held-drag');
+    bubble.classList.remove('drag-outside');
     bubble.classList.remove('selected');
     bubble.setAttribute('data-suppress-click', '1');
     setTimeout(function() { bubble.removeAttribute('data-suppress-click'); }, 50);
@@ -3376,6 +3739,8 @@ function setupBubbleResize() {
     var tip = document.querySelector('.bento-resize-tooltip');
     if (tip) tip.style.display = 'none';
     _bubbleResizeData = null;
+    bubble.classList.remove('held-drag');
+    bubble.classList.remove('drag-outside');
     bubble.classList.remove('selected');
     bubble.setAttribute('data-suppress-click', '1');
     setTimeout(function() { bubble.removeAttribute('data-suppress-click'); }, 50);
@@ -3463,6 +3828,8 @@ function setupBubbleResize() {
     _fitTextWidgets();
     resizeTip.style.display = 'none';
     _bubbleResizeData = null;
+    bubble.classList.remove('held-drag');
+    bubble.classList.remove('drag-outside');
     bubble.classList.remove('selected');
     bubble.setAttribute('data-suppress-click', '1');
     setTimeout(function() { bubble.removeAttribute('data-suppress-click'); }, 50);
@@ -4195,6 +4562,14 @@ let _progressRefreshInterval = null;
 
 /* ─── Add bubble types ─────────────────────── */
 function addBubbleTypes(types, dropPos) {
+  if (typeof hasAccess === 'function' && !hasAccess('unlimited_tags')) {
+    const widgetLimit = typeof premiumLimit === 'function' ? premiumLimit('widgetsPerCanvas') : 8;
+    const currentLayout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
+    if (currentLayout.length >= widgetLimit) {
+      requirePremium('unlimited_tags', { reason: 'The Free plan fits ' + widgetLimit + ' widgets on one canvas' });
+      return;
+    }
+  }
   // Start from fresh normalized layout
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   // Get grid width for gap-finding
@@ -4450,7 +4825,11 @@ function _loadTimerStates() {
           _timerIntervals[k].startTs = Date.now();
         }
       }
-      _startTimerTick();
+      // Only tick when a timer is actually running — an idle tick rewrites
+      // localStorage five times per second, forever, on every page load.
+      for (var rk in _timerIntervals) {
+        if (rk !== '_tick' && _timerIntervals[rk].running) { _startTimerTick(); break; }
+      }
     }
   } catch(e) {}
 }
@@ -4569,12 +4948,14 @@ function renderBubbleDock(grid) {
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
   var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', expense:'Expense', text:'Text', crypto:'Crypto', homework:'Homework', study:'Study' };
+  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', expense:'Spending + balance', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', text:'Custom heading' };
+  var dockSizes = { goals:'280×420', priorities:'280×320', todos:'280×320', habits:'280×240', progress:'280×240', homework:'280×320', study:'280×420', water:'280×180', mood:'280×200', spotify:'280×420', strava:'280×420', flightradar:'280×420', images:'280×210', crypto:'280×300', expense:'280×320', clock:'280×160', weather:'280×260', calendar:'280×300', timer:'280×180', pomodoro:'280×180', 'sleep-score':'280×280', headlines:'280×260', countdown:'280×280', quote:'280×220', notes:'280×240', links:'280×240', text:'280×160' };
   var categories = [
-    { name:'Productivity', short:'Prod', types:['goals','priorities','todos','habits','progress','homework','study'] },
-    { name:'Wellness', short:'Well', types:['water','mood'] },
+    { name:'Productivity', short:'Productivity', types:['goals','priorities','todos','habits','progress','homework','study'] },
+    { name:'Wellness', short:'Wellness', types:['water','mood','sleep-score'] },
     { name:'Media', short:'Media', types:['spotify','strava','flightradar','images'] },
-    { name:'Finance', short:'Fin', types:['crypto','expense'] },
-    { name:'Utilities', short:'Utils', types:['clock','weather','calendar','timer','pomodoro','sleep-score','headlines','countdown'] },
+    { name:'Finance', short:'Finance', types:['crypto','expense'] },
+    { name:'Utilities', short:'Utilities', types:['clock','weather','calendar','timer','pomodoro','headlines','countdown'] },
     { name:'Content', short:'Content', types:['quote','notes','links','text'] }
   ];
   function applyFilters() {
@@ -4583,8 +4964,9 @@ function renderBubbleDock(grid) {
     dock.querySelectorAll('[data-dock-item-type]').forEach(function(it) {
       var t = it.dataset.dockItemType;
       var lbl = labels[t] || t;
+      var blurb = (blurbs[t] || '').toLowerCase();
       var catMatch = activeCat === 'all' || it.dataset.dockCategory === activeCat;
-      var searchMatch = !q || lbl.toLowerCase().indexOf(q) !== -1 || t.toLowerCase().indexOf(q) !== -1;
+      var searchMatch = !q || lbl.toLowerCase().indexOf(q) !== -1 || t.toLowerCase().indexOf(q) !== -1 || blurb.indexOf(q) !== -1;
       it.style.display = (catMatch && searchMatch) ? '' : 'none';
     });
   }
@@ -4600,7 +4982,9 @@ function renderBubbleDock(grid) {
       var t = it.dataset.dockItemType;
       var on = t === 'images' ? false : live.some(function(i) { return i.t === t; });
       it.classList.toggle('placed', on);
-      it.title = on ? labels[t] + ' (already added)' : 'Drag to add ' + labels[t];
+      it.title = on ? labels[t] + ' — already on canvas' : 'Click to add ' + labels[t] + ' • or drag onto canvas';
+      var badge = it.querySelector('.bdi-added');
+      if (badge) badge.style.display = on ? '' : 'none';
     });
   }
   dock._dockSync = updatePlacedStates;
@@ -4616,12 +5000,18 @@ function renderBubbleDock(grid) {
   searchIcon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
   var searchInput = document.createElement('input');
   searchInput.className = 'bds-input';
-  searchInput.placeholder = 'Search';
+  searchInput.placeholder = 'Search widgets…';
   searchInput.type = 'text';
   searchInput.setAttribute('data-dock-search', '');
   searchWrap.appendChild(searchIcon);
   searchWrap.appendChild(searchInput);
   topbar.appendChild(searchWrap);
+
+  var hint = document.createElement('span');
+  hint.className = 'bubble-dock-hint';
+  hint.textContent = 'Click to add • Drag to place • Drop here to remove';
+  hint.title = 'Click adds below your canvas. Drag places exactly where you drop. Drag a widget back here to remove it.';
+  topbar.appendChild(hint);
 
   var filters = document.createElement('div');
   filters.className = 'bubble-dock-filters';
@@ -4633,7 +5023,7 @@ function renderBubbleDock(grid) {
   categories.forEach(function(cat) {
     var pill = document.createElement('button');
     pill.className = 'bdf-pill';
-    pill.textContent = cat.short;
+    pill.textContent = cat.name;
     pill.dataset.filter = cat.name;
     pill.title = cat.name;
     filters.appendChild(pill);
@@ -4678,15 +5068,41 @@ function renderBubbleDock(grid) {
     item.dataset.dockItemType = t;
     item.dataset.dockCategory = entry.cat;
     item.dataset.dockLabel = labels[t];
-    item.title = placed ? labels[t] + ' (already added)' : 'Drag to add ' + labels[t];
+    item.title = placed ? labels[t] + ' — already on canvas' : 'Click to add ' + labels[t] + ' • or drag onto canvas';
+    item.setAttribute('role', 'button');
+    item.setAttribute('tabindex', placed ? '-1' : '0');
     var icon = document.createElement('span');
     icon.className = 'bdi-icon';
     icon.innerHTML = bubbleTypeIcon(t);
     var label = document.createElement('span');
     label.className = 'bdi-label';
     label.textContent = labels[t];
+    var desc = document.createElement('span');
+    desc.className = 'bdi-desc';
+    desc.textContent = blurbs[t] || '';
+    var dim = document.createElement('span');
+    dim.className = 'bdi-dim';
+    dim.textContent = dockSizes[t] || '';
+    var badge = document.createElement('span');
+    badge.className = 'bdi-added';
+    badge.textContent = '✓ Added';
+    badge.style.display = placed ? '' : 'none';
     item.appendChild(icon);
     item.appendChild(label);
+    item.appendChild(desc);
+    item.appendChild(dim);
+    item.appendChild(badge);
+    item.addEventListener('click', function(ev) {
+      if (item.classList.contains('placed')) return;
+      if (ev.target.closest('input,select,textarea')) return;
+      addBubbleTypes([t]);
+    });
+    item.addEventListener('keydown', function(ev) {
+      if ((ev.key === 'Enter' || ev.key === ' ') && !item.classList.contains('placed')) {
+        ev.preventDefault();
+        addBubbleTypes([t]);
+      }
+    });
     widgetGrid.appendChild(item);
   });
 
@@ -4859,7 +5275,7 @@ function showGalleryPopup(idx, anchor) {
     <input type="text" id="gpLabel" value="${escapeHtml(card.label)}" placeholder="Label">
     <input type="text" id="gpDesc" value="${escapeHtml(card.desc)}" placeholder="Description">
     <input type="text" id="gpHref" value="${escapeHtml(card.href)}" placeholder="Link URL">
-    <input type="text" id="gpColor" value="${card.color}" placeholder="Accent color (CSS var)">
+    <input type="text" id="gpColor" value="${escapeHtml(card.color)}" placeholder="Accent color (CSS var)">
     <div class="hub-edit-popup-actions">
       <button class="cancel" id="gpCancel">Cancel</button>
       <button class="primary" id="gpSave">Save</button>
@@ -5024,6 +5440,61 @@ function setupHubEditEvents() {
     }
   });
 
+  var _stDragId = null;
+  function _stClearDropMarks() {
+    document.querySelectorAll('.w-st-drop-before,.w-st-drop-after,.w-st-dragging').forEach(function(el) { el.classList.remove('w-st-drop-before'); el.classList.remove('w-st-drop-after'); el.classList.remove('w-st-dragging'); });
+  }
+  document.querySelector('.bento-grid')?.addEventListener('dragstart', function(e) {
+    var handle = e.target.closest('[data-st-drag]');
+    if (!handle) return;
+    _stDragId = handle.dataset.stDrag;
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', _stDragId); } catch (err) {}
+    var leaf = handle.closest('.w-st-leaf');
+    if (leaf) leaf.classList.add('w-st-dragging');
+  });
+  document.querySelector('.bento-grid')?.addEventListener('dragover', function(e) {
+    if (!_stDragId) return;
+    var leaf = e.target.closest('.w-st-leaf[data-st-leaf]');
+    var zone = e.target.closest('[data-st-drop-chap]');
+    if (!leaf && !zone) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    _stClearDropMarks();
+    if (leaf && leaf.dataset.stLeaf !== _stDragId) {
+      var r = leaf.getBoundingClientRect();
+      if (e.clientY < r.top + r.height / 2) leaf.classList.add('w-st-drop-before');
+      else leaf.classList.add('w-st-drop-after');
+    }
+  });
+  document.querySelector('.bento-grid')?.addEventListener('drop', function(e) {
+    if (!_stDragId) return;
+    var leaf = e.target.closest('.w-st-leaf[data-st-leaf]');
+    var zone = e.target.closest('[data-st-drop-chap]');
+    if (!leaf && !zone) { _stDragId = null; _stClearDropMarks(); return; }
+    var leafId = leaf ? leaf.dataset.stLeaf : null;
+    var zoneId = zone ? zone.dataset.stDropChap : null;
+    if (leafId && leafId === _stDragId) { _stDragId = null; _stClearDropMarks(); return; }
+    e.preventDefault();
+    var before = false;
+    if (leaf && leafId) {
+      var r = leaf.getBoundingClientRect();
+      before = e.clientY < r.top + r.height / 2;
+    }
+    if (_moveStudyItem(_stDragId, leafId, zoneId, before)) {
+      saveHubContent();
+      renderHubBento();
+    }
+    _stDragId = null;
+    _stClearDropMarks();
+  });
+  document.querySelector('.bento-grid')?.addEventListener('dragend', function(e) {
+    if (_stDragId !== null) {
+      _stDragId = null;
+      _stClearDropMarks();
+    }
+  });
+
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
     if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
     const delBtn = e.target.closest('[data-del]');
@@ -5088,7 +5559,7 @@ function setupHubEditEvents() {
 
   // Snap-presets submenu on right-click of bubble handle/button area in edit mode
   document.querySelector('.bento-grid')?.addEventListener('contextmenu', function(e) {
-    var handle = e.target.closest('.bento-toolbar, .bento-tool-btn');
+    var handle = e.target.closest('.bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn');
     if (!handle || !hubEditMode) return;
     e.preventDefault();
     var bubble = handle.closest('.bento-bubble');
@@ -5160,7 +5631,7 @@ function setupHubEditEvents() {
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
     if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
     const todoBox = e.target.closest('.w-todo-box');
-    if (todoBox) {
+    if (todoBox && !todoBox.closest('.w-hw-item') && !todoBox.closest('.w-st-leaf') && !todoBox.hasAttribute('data-st-toggle-item')) {
       const item = todoBox.closest('.w-item');
       if (!item) return;
       const idx = parseInt(item.dataset.idx);
@@ -5344,10 +5815,14 @@ function setupHubEditEvents() {
     if (habitToggle) {
       const idx = parseInt(habitToggle.dataset.habitToggle);
       if (!isNaN(idx)) {
-        const todayKey = new Date().toISOString().slice(0,10);
+        const todayKey = _hubTodayKey();
         if (!hubContent.habitData) hubContent.habitData = {};
         if (!hubContent.habitData[todayKey]) hubContent.habitData[todayKey] = {};
         hubContent.habitData[todayKey][idx] = !hubContent.habitData[todayKey][idx];
+        var _cut = _hubTodayKey(new Date(Date.now() - 60 * 86400000));
+        for (var _k in hubContent.habitData) {
+          if (Object.prototype.hasOwnProperty.call(hubContent.habitData, _k) && _k < _cut) delete hubContent.habitData[_k];
+        }
         saveHubContent();
         renderHubBento();
       }
@@ -5807,6 +6282,7 @@ window.captureHubSnapshot = function() {
 /* ─── Auto-save canvas on page unload ─────────── */
 (function initCanvasAutoSave() {
   window.addEventListener('beforeunload', function() {
+    if (typeof HAVEN_UNLOAD_BLOCKED !== 'undefined' && HAVEN_UNLOAD_BLOCKED) return;
     if (typeof saveHubContent === 'function') {
       try { saveHubContent(); } catch(e) {}
     }

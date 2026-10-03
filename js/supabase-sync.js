@@ -1,31 +1,32 @@
-// ─── FIRESTORE SYNC — Auto-sync all app data across devices ────────
-// Loaded AFTER gsi.js. Dynamically loads Firestore SDK if needed.
-// Syncs all haven-* localStorage keys to Firestore for the logged-in user.
-
-(function() {
-  var _origWarn = console.warn;
-  console.warn = function() {
-    var msg = arguments[0];
-    if (typeof msg === 'string' && msg.indexOf('enableMultiTabIndexedDbPersistence') !== -1) return;
-    return _origWarn.apply(console, arguments);
-  };
-})();
+/* ─── SUPABASE SYNC — Auto-sync all app data across devices ────────
+   Loaded AFTER gsi.js. Mirrors every haven-* localStorage key to a
+   single row per user in the app_data table, plus a profiles row. */
 
 var SYNC_ENABLED = false;
 var SYNC_DB = null;
 var SYNC_PENDING = false;
-var SYNC_STATUS = 'offline'; // offline | syncing | synced | error | noauth
+var SYNC_STATUS = 'offline';
 var SYNC_DEBOUNCE_TIMER = null;
-var SYNC_DEBOUNCE_MS = 3000; // 3 seconds after last change
+var SYNC_DEBOUNCE_MS = 3000;
 var SYNC_PULLED_ONCE = false;
 var SYNC_PULLING = false;
 var SYNC_PRESENCE_WIRED = false;
 var SYNC_STATS_DIRTY = false;
 
-// ─── Initialize ──────────────────────────────────────────
+/* Keys that must never leave the device. Everything here is either a secret or
+   device-specific state — uploading an API key to the cloud would expose it to
+   anyone able to read the row. */
+var CLOUD_EXCLUDED_KEYS = [
+  'haven-schedule-apikey',
+  'haven-schedule-chat',
+  'haven-admin-password',
+  'haven-admin-presets',
+  'haven-guest-default-template'
+];
+
 function initSync() {
-  if (typeof FIREBASE_CONFIG === 'undefined') {
-    console.warn('[sync] FIREBASE_CONFIG not found — sync disabled');
+  if (!isSupabaseConfigured()) {
+    console.warn('[sync] Supabase not configured — sync disabled');
     setSyncStatus('noauth');
     return;
   }
@@ -33,61 +34,50 @@ function initSync() {
     setSyncStatus('noauth');
     return;
   }
-
-  // Dynamically load Firestore SDK if not available
-  if (typeof firebase === 'undefined' || !firebase.firestore) {
-    loadFirestoreSDK().then(function() {
-      setupFirestore();
-    }).catch(function() {
-      console.warn('[sync] Failed to load Firestore SDK');
-      setSyncStatus('error');
-    });
-  } else {
-    setupFirestore();
+  if (typeof CLOUD_MODE !== 'undefined' && !CLOUD_MODE) {
+    var me = getCurrentLocalUser();
+    if (!me || !me.authUid) {
+      setSyncStatus('noauth');
+      return;
+    }
   }
+
+  var sb = getSupabaseDb();
+  if (!sb) {
+    console.warn('[sync] Supabase client unavailable');
+    setSyncStatus('error');
+    return;
+  }
+  setupSync(sb);
 }
 
-function setupFirestore() {
+function setupSync(sb) {
   try {
-    if (!firebase.apps.length) {
-      firebase.initializeApp(FIREBASE_CONFIG);
-    }
-    SYNC_DB = firebase.firestore();
+    SYNC_DB = sb;
     SYNC_ENABLED = true;
-
-    var isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
-    if (!isFileProtocol && SYNC_DB) {
-      SYNC_DB.enablePersistence({ synchronizeTabs: true }).catch(function(err) {
-        if (err.code === 'failed-precondition') {
-        } else if (err.code === 'unimplemented') {
-        }
-      });
-    }
-
     setSyncStatus('synced');
 
-    // Ensure the user's public profile + friend code exist in Firestore
-    syncUserProfileToFirestore();
+    syncUserProfileToSupabase();
+    syncUserStatsToSupabase();
 
-    // Push current task stats (total tasks, streak, completion rate)
-    syncUserStatsToFirestore();
-
-    // Presence: mark offline when the tab is hidden, online again when visible
     if (typeof document !== 'undefined' && !SYNC_PRESENCE_WIRED) {
       SYNC_PRESENCE_WIRED = true;
       document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'hidden') {
           setUserPresence('offline');
         } else {
-          syncUserProfileToFirestore();
+          syncUserProfileToSupabase();
         }
       });
     }
 
-    // Pull from cloud on init
+    if (typeof CLOUD_MODE !== 'undefined' && CLOUD_MODE) {
+      console.log('[sync] Cloud-only account — localStorage blob mirror disabled');
+      return;
+    }
+
     pullFromCloud();
 
-    // Set up periodic sync (every 30 seconds)
     setInterval(function() {
       if (SYNC_STATUS === 'syncing') return;
       pushToCloud();
@@ -100,75 +90,49 @@ function setupFirestore() {
   }
 }
 
-function loadFirestoreSDK() {
-  return new Promise(function(resolve, reject) {
-    if (typeof firebase !== 'undefined' && firebase.firestore) {
-      resolve();
-      return;
-    }
-
-    // Check if script is already loading
-    if (document.querySelector('script[src*="firebase-firestore-compat"]')) {
-      var check = setInterval(function() {
-        if (typeof firebase !== 'undefined' && firebase.firestore) {
-          clearInterval(check);
-          resolve();
-        }
-      }, 200);
-      setTimeout(function() { clearInterval(check); reject(new Error('Timeout')); }, 15000);
-      return;
-    }
-
-    // Also need firebase-app if not loaded
-    var scripts = [];
-    if (typeof firebase === 'undefined') {
-      scripts.push('https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js');
-    }
-    scripts.push('https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js');
-
-    var loaded = 0;
-    function onScriptLoad() {
-      loaded++;
-      if (loaded >= scripts.length) {
-        // Small delay for SDK initialization
-        setTimeout(resolve, 100);
-      }
-    }
-
-    scripts.forEach(function(src) {
-      var s = document.createElement('script');
-      s.src = src;
-      s.onload = onScriptLoad;
-      s.onerror = reject;
-      document.head.appendChild(s);
-    });
-  });
-}
-
-// ─── Pull data from Firestore → localStorage ─────────────
+/* ─── Pull data from Supabase → localStorage ───────────── */
 function pullFromCloud() {
   if (!SYNC_ENABLED || !SYNC_DB || !state.currentUserId) return;
-  if (SYNC_PULLED_ONCE) return;
-  if (SYNC_PULLING) return;
+  if (typeof CLOUD_MODE !== 'undefined' && CLOUD_MODE) return;
+  if (SYNC_PULLED_ONCE || SYNC_PULLING) return;
 
   SYNC_PULLING = true;
   setSyncStatus('syncing');
 
-  SYNC_DB.collection('users').doc(state.currentUserId)
-    .collection('app-data').doc('latest')
-    .get()
-    .then(function(doc) {
-      if (!doc.exists) {
+  SYNC_DB.from('app_data').select('data, synced_at').eq('user_id', state.currentUserId).maybeSingle()
+    .then(function(res) {
+      if (res.error) throw res.error;
+      var row = res.data;
+      if (!row || !row.data) {
         setSyncStatus('synced');
         SYNC_PULLED_ONCE = true;
         SYNC_PULLING = false;
         return;
       }
 
-      var cloudData = doc.data();
-      var cloudSyncedAt = cloudData._syncedAt || 0;
+      var cloudData = row.data;
+      var cloudSyncedAt = row.synced_at || cloudData._syncedAt || 0;
       var localSyncedAt = 0;
-      try { localSyncedAt = parseInt(localStorage.getItem('haven-synced-at') || '0'); } catch (e) {}
+      var stampRaw = null;
+      try { stampRaw = localStorage.getItem('haven-synced-at'); } catch (e) {}
+      if (stampRaw !== null && stampRaw !== undefined && stampRaw !== '') {
+        localSyncedAt = parseInt(stampRaw) || 0;
+      } else {
+        // The stamp used to be one device-wide value shared by every profile,
+        // so the account you switch into inherited the previous account's
+        // timestamp and its cloud copy never restored (then got overwritten by
+        // the push that followed). Adopt the legacy value only when this profile
+        // already owns local data — its own edits must not be reverted. A profile
+        // with nothing on this device starts at 0 and pulls its copy freely.
+        var legacy = 0;
+        try { legacy = parseInt(__origLS.getItem('haven-synced-at') || '0') || 0; } catch (e) {}
+        var ownsLocal = false;
+        try {
+          var pfx = state.currentUserId ? state.currentUserId + ':' : '';
+          ownsLocal = typeof _hasAccountData === 'function' && _hasAccountData(pfx + 'haven-');
+        } catch (e) {}
+        localSyncedAt = ownsLocal ? legacy : 0;
+      }
 
       if (cloudSyncedAt <= localSyncedAt) {
         setSyncStatus('synced');
@@ -177,22 +141,19 @@ function pullFromCloud() {
         return;
       }
 
-      // Cloud has newer data — merge into localStorage
       var restoredKeys = [];
       var SLEEP_GUARD_KEYS = ['haven-schedule-sleep', 'haven-schedule-sleep-targets', 'haven-schedule-sleep-routine'];
       for (var key in cloudData) {
         if (key === '_syncedAt' || key === '_version') continue;
         if (key.indexOf('haven-') !== 0) continue;
-        // Skip gallery images (too large for sync)
         if (key.indexOf('haven-image-') === 0 || key.indexOf('hub-image-') === 0) continue;
+        /* Never let an old cloud blob overwrite a local credential. */
+        if (CLOUD_EXCLUDED_KEYS.indexOf(key) !== -1) continue;
+        if (key.indexOf('haven-fr24-key-') === 0 || key.indexOf('haven-strava-') === 0) continue;
         try {
           var val = cloudData[key];
           if (val === null || typeof val === 'undefined') continue;
           if (SLEEP_GUARD_KEYS.indexOf(key) !== -1 && isEmptyCloudValue(val) && !isEmptyLocalValue(key)) continue;
-          // Push stores plain strings as-is and JSON values as native types.
-          // Pull must invert that: strings go back verbatim, otherwise stringify.
-          // Always stringifying would wrap plain strings (e.g. haven-spotify-active)
-          // in extra quotes ('"id"' instead of 'id') and break lookups.
           localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val));
           restoredKeys.push(key);
         } catch (e) { /* quota */ }
@@ -207,10 +168,7 @@ function pullFromCloud() {
         showToast('Data synced from cloud (' + restoredKeys.length + ' items)', 'info', 3000);
       }
 
-      // Reload in-memory state
       if (typeof loadState === 'function') loadState();
-      // Spotify keeps its own in-memory copy — refresh it so a restored
-      // active playlist shows up instead of the "No playlist linked" empty state.
       try {
         if (restoredKeys.indexOf('haven-spotify-playlists') !== -1 || restoredKeys.indexOf('haven-spotify-active') !== -1) {
           if (typeof spLoadState === 'function') spLoadState();
@@ -257,26 +215,17 @@ function isEmptyLocalValue(key) {
   }
 }
 
-// ─── Push localStorage → Firestore ──────────────────────
+/* ─── Push localStorage → Supabase ────────────────────── */
 function pushToCloud() {
   if (!SYNC_ENABLED || !SYNC_DB || !state.currentUserId) return false;
-  if (SYNC_PENDING) return false;
-  // Skip push if currently pulling from cloud (to prevent pull→push loop)
-  if (SYNC_PULLING) return false;
-  if (!SYNC_PULLED_ONCE) return false;
+  if (typeof CLOUD_MODE !== 'undefined' && CLOUD_MODE) return false;
+  if (SYNC_PENDING || SYNC_PULLING || !SYNC_PULLED_ONCE) return false;
 
   SYNC_PENDING = true;
 
   try {
-    var data = {
-      _syncedAt: Date.now(),
-      _version: 1
-    };
+    var data = { _syncedAt: Date.now(), _version: 1 };
 
-    // Collect this account's haven-* keys from localStorage.
-    // Keys are stored per-account as '{userId}:haven-...', so iterate the raw
-    // store and strip the active prefix; reading through the wrapped
-    // localStorage would double-prefix and return nulls.
     var prefix = state.currentUserId ? state.currentUserId + ':' : '';
     var rawLength = (typeof __origLS !== 'undefined' && __origLS.length !== undefined) ? __origLS.length : localStorage.length;
     var rawKeyAt = function(i) {
@@ -296,14 +245,13 @@ function pushToCloud() {
         continue;
       }
       if (key.indexOf('haven-') !== 0) continue;
-      // Skip gallery images (too large — stored in IndexedDB)
       if (key.indexOf('haven-image-') === 0 || key.indexOf('hub-image-') === 0) continue;
-      // Skip auth-related keys
       if (key.indexOf('haven-gsi-') === 0) continue;
-      // Skip device ID (per-device)
       if (key === 'haven-device-id' || key === 'haven-device-label') continue;
-      // Skip sync metadata
       if (key === 'haven-synced-at') continue;
+      /* Credentials must stay on this device. */
+      if (CLOUD_EXCLUDED_KEYS.indexOf(key) !== -1) continue;
+      if (key.indexOf('haven-fr24-key-') === 0 || key.indexOf('haven-strava-') === 0) continue;
 
       try {
         data[key] = JSON.parse(rawGet(prefix + key));
@@ -314,22 +262,27 @@ function pushToCloud() {
 
     setSyncStatus('syncing');
 
-    SYNC_DB.collection('users').doc(state.currentUserId)
-      .collection('app-data').doc('latest')
-      .set(data, { merge: false })
-      .then(function() {
-        localStorage.setItem('haven-synced-at', String(data._syncedAt));
-        setSyncStatus('synced');
-        SYNC_PENDING = false;
-        if (typeof showToast === 'function') {
-          showToast('Changes saved to cloud', 'success', 1500);
-        }
-      })
-      .catch(function(err) {
-        console.warn('[sync] Push failed:', err);
-        setSyncStatus('error');
-        SYNC_PENDING = false;
-      });
+    /* auth_uid is the owner column RLS checks; send it so the row is pinned to
+       this account and can never overwrite another account's blob. */
+    var owner = getCurrentLocalUser();
+    var row = {
+      user_id: state.currentUserId,
+      data: data,
+      synced_at: data._syncedAt,
+      version: 1
+    };
+    if (owner && owner.authUid) row.auth_uid = owner.authUid;
+
+    SYNC_DB.from('app_data').upsert(row, { onConflict: 'user_id' }).then(function(res) {
+      if (res.error) throw res.error;
+      localStorage.setItem('haven-synced-at', String(data._syncedAt));
+      setSyncStatus('synced');
+      SYNC_PENDING = false;
+    }).catch(function(err) {
+      console.warn('[sync] Push failed:', err);
+      setSyncStatus('error');
+      SYNC_PENDING = false;
+    });
 
     return true;
   } catch (e) {
@@ -340,7 +293,7 @@ function pushToCloud() {
   }
 }
 
-// ─── User profile sync (users/{id}) — powers the Friends page ──
+/* ─── User profile sync (profiles table) — powers Friends ── */
 function getCurrentLocalUser() {
   if (typeof localUsers === 'undefined' || !Array.isArray(localUsers)) return null;
   if (!state.currentUserId) return null;
@@ -350,48 +303,43 @@ function getCurrentLocalUser() {
   return null;
 }
 
-function generateProfileFriendCode(userId) {
-  return 'haven-' + userId.slice(-7);
-}
-
-// Write/refresh the current user's public profile so friends can find them
-function syncUserProfileToFirestore() {
+function syncUserProfileToSupabase() {
   if (!SYNC_ENABLED || !SYNC_DB || !state.currentUserId) return;
   var user = getCurrentLocalUser();
   var uid = state.currentUserId;
-  var name = user && user.name ? user.name : 'User';
-  var picture = user && user.picture ? user.picture : '';
-  var color = user && user._color ? user._color : '#b4ccbc';
+  var payload = {
+    id: uid,
+    display_name: user && user.name ? user.name : 'User',
+    photo_url: user && user.picture ? user.picture : '',
+    avatar_color: user && user._color ? user._color : '#b4ccbc',
+    friend_code: generateFriendCode(uid),
+    status: 'online',
+    last_seen: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  if (user && user.authUid) payload.auth_uid = user.authUid;
+  /* Email is never uploaded — see the note in js/supabase.js. */
 
-  var ref = SYNC_DB.collection('users').doc(uid);
-  ref.get().then(function(doc) {
-    var payload = {
-      displayName: name,
-      photoURL: picture,
-      avatarColor: color,
-      friendCode: generateProfileFriendCode(uid),
-      status: 'online',
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    if (!doc.exists) payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-    return ref.set(payload, { merge: true });
+  upsertProfileRow(SYNC_DB, payload).then(function(res) {
+    if (res.error) console.warn('[sync] Profile sync failed:', res.error);
   }).catch(function(err) {
     console.warn('[sync] Profile sync failed:', err);
   });
 }
 
-// Update the user's online status + last seen in Firestore
 function setUserPresence(status) {
   if (!SYNC_ENABLED || !SYNC_DB || !state.currentUserId) return;
+  var user = getCurrentLocalUser();
   try {
-    SYNC_DB.collection('users').doc(state.currentUserId).update({
-      status: status,
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(function() {});
+    ownProfileFilter(
+      SYNC_DB.from('profiles').update({ status: status, last_seen: new Date().toISOString() }),
+      state.currentUserId,
+      user && user.authUid ? user.authUid : ''
+    ).then(function() {}).catch(function() {});
   } catch (e) {}
 }
 
-// ─── User stats sync (users/{id}.stats) — powers friend cards ──
+/* ─── User stats sync (profiles.stats) — powers friend cards ── */
 function statDateKey(d) {
   var y = d.getFullYear();
   var m = String(d.getMonth() + 1).padStart(2, '0');
@@ -404,7 +352,6 @@ function statDateFromKey(key) {
   return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
 }
 
-// Compute total tasks, completion rate, and streaks from local data
 function computeUserStats() {
   var stats = { totalTasks: 0, currentStreak: 0, bestStreak: 0, completionRate: 0 };
   try {
@@ -422,7 +369,6 @@ function computeUserStats() {
     stats.totalTasks = tasks.length;
     stats.completionRate = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
 
-    // Build the set of days with at least one completed activity
     var daySet = {};
     try {
       var logRaw = localStorage.getItem('haven-activities-completions');
@@ -442,7 +388,6 @@ function computeUserStats() {
     var todayKey = statDateKey(now);
     var yesterdayKey = statDateKey(new Date(now.getTime() - 86400000));
 
-    // Current streak: count back from today (or yesterday if today has no completions yet)
     var anchor = daySet[todayKey] ? todayKey : (daySet[yesterdayKey] ? yesterdayKey : null);
     if (anchor) {
       var cur = 0;
@@ -454,7 +399,6 @@ function computeUserStats() {
       stats.currentStreak = cur;
     }
 
-    // Best streak: longest consecutive run of active days (DST-safe day compare)
     var best = 0;
     var run = 0;
     var prevKey = null;
@@ -475,29 +419,34 @@ function computeUserStats() {
   return stats;
 }
 
-// Write the current user's stats to Firestore so friends can see them
-function syncUserStatsToFirestore() {
+function syncUserStatsToSupabase() {
   if (!SYNC_ENABLED || !SYNC_DB || !state.currentUserId) return;
   var stats = computeUserStats();
+  var user = getCurrentLocalUser();
+  var payload = {
+    id: state.currentUserId,
+    stats: stats,
+    last_seen: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  /* Always carry auth_uid: without it this upsert would insert a second,
+     ownerless row for the same account instead of updating the real one. */
+  if (user && user.authUid) payload.auth_uid = user.authUid;
   try {
-    SYNC_DB.collection('users').doc(state.currentUserId).set({
-      stats: stats,
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true }).catch(function(err) {
+    upsertProfileRow(SYNC_DB, payload).then(function(res) {
+      if (res.error) console.warn('[sync] Stats sync failed:', res.error);
+    }).catch(function(err) {
       console.warn('[sync] Stats sync failed:', err);
     });
   } catch (e) {}
 }
 
-// ─── Watch for data changes via localStorage proxy ───────
+/* ─── Watch for data changes via localStorage proxy ─────── */
 function onDataChanged(rawKey) {
   if (!SYNC_ENABLED || !state.currentUserId) return;
-  // Ignore changes triggered by sync itself
-  if (SYNC_PULLING) return;
-  if (!rawKey) return;
+  if (typeof CLOUD_MODE !== 'undefined' && CLOUD_MODE) { if (typeof cloudSchedulePush === 'function') cloudSchedulePush(); return; }
+  if (SYNC_PULLING || !rawKey) return;
 
-  // rawKey is the physical store key, which may carry the per-account prefix.
-  // Normalize to the app-level key before filtering.
   var prefix = state.currentUserId ? state.currentUserId + ':' : '';
   var key = rawKey;
   if (prefix) {
@@ -507,29 +456,26 @@ function onDataChanged(rawKey) {
     return;
   }
 
-  // Ignore non-haven keys and metadata
   if (key.indexOf('haven-') !== 0) return;
   if (key === 'haven-synced-at') return;
   if (key.indexOf('haven-gsi-') === 0) return;
   if (key.indexOf('haven-image-') === 0 || key.indexOf('hub-image-') === 0) return;
 
-  // Track whether task stats changed so we can push them alongside the data sync
   if (key === 'haven-schedule-tasks' || key === 'haven-activities-completions') {
     SYNC_STATS_DIRTY = true;
   }
 
-  // Debounce: reset timer on each change
   if (SYNC_DEBOUNCE_TIMER) clearTimeout(SYNC_DEBOUNCE_TIMER);
   SYNC_DEBOUNCE_TIMER = setTimeout(function() {
     pushToCloud();
     if (SYNC_STATS_DIRTY) {
       SYNC_STATS_DIRTY = false;
-      syncUserStatsToFirestore();
+      syncUserStatsToSupabase();
     }
   }, SYNC_DEBOUNCE_MS);
 }
 
-// ─── Wrap localStorage.setItem to detect changes ─────────
+/* ─── Wrap localStorage.setItem to detect changes ───────── */
 (function patchLocalStorage() {
   if (localStorage.setItem.__patched) return;
   var origSetItem = localStorage.setItem.bind(localStorage);
@@ -545,9 +491,10 @@ function onDataChanged(rawKey) {
     origRemoveItem(key);
     onDataChanged(key);
   };
-  localStorage.removeItem.__patched = true;})();
+  localStorage.removeItem.__patched = true;
+})();
 
-// ─── Sync status indicator ───────────────────────────────
+/* ─── Sync status indicator ─────────────────────────────── */
 function setSyncStatus(status) {
   SYNC_STATUS = status;
   updateSyncIndicator();
@@ -575,29 +522,23 @@ function syncStatusLabel(status) {
   return labels[status] || 'Unknown';
 }
 
-// ─── Re-sync (called on account switch) ──────────────────
 function reSync() {
   SYNC_PULLED_ONCE = false;
   SYNC_PULLING = false;
   SYNC_ENABLED = false;
   SYNC_DB = null;
-  setTimeout(function() {
-    initSync();
-  }, 500);
+  setTimeout(function() { initSync(); }, 500);
 }
 
-// ─── Init on DOM ready ───────────────────────────────────
+/* ─── Init on DOM ready ─────────────────────────────────── */
 (function() {
-  // Patch __origLS if it exists (may load before shared.js)
   function patchOrigLS() {
-    if (typeof __origLS !== 'undefined' && __origLS.setItem && __origLS.setItem.__patched) {
-      return;
-    }
+    if (typeof __origLS !== 'undefined' && __origLS.setItem && __origLS.setItem.__patched) return;
     if (typeof __origLS !== 'undefined' && __origLS.setItem) {
       var origLSSet = __origLS.setItem;
       var origLSRemove = __origLS.removeItem;
       __origLS.setItem = function(key, value) {
-        try { origLSSet(key, value); } catch(e) { return; }
+        try { origLSSet(key, value); } catch (e) { return; }
         onDataChanged(key);
       };
       __origLS.removeItem = function(key) {

@@ -12,6 +12,13 @@ function getActivitiesWeekStart() {
   return addDays(getMonday(today), weekOffset * 7);
 }
 
+// --- ANALYTICS BUCKETS -----------------------------------------------------
+// "Study" covers every school subject; "Daily" is the non-study bucket.
+// Previously the Study column counted only Math and the Daily column was
+// labelled "Deep Work", so both columns reported the wrong thing.
+const STUDY_TAGS = ['math', 'physics', 'bio', 'chem', 'eng', 'mandarin'];
+function isStudyTag(tag) { return STUDY_TAGS.indexOf(tag) !== -1; }
+
 // --- DOM REFS -------------------------------------------------------------
 const boardInner = document.getElementById('tagsBoardInner');
 const tagsSummaryTotal = document.getElementById('tagsSummaryTotal');
@@ -51,7 +58,7 @@ function addCompletionEntry(taskId, taskTitle, tag, completedAt) {
   completionLog.unshift({
     taskId,
     title: taskTitle,
-    tag: tag || 'meeting',
+    tag: tag || (TAG_ORDER[0] || ''),
     completedAt: completedAt || new Date().toISOString(),
   });
   // Keep max 100 entries
@@ -116,7 +123,7 @@ function showTagSwitcher(taskId, anchorEl) {
   popover.style.cssText = 'position:absolute;z-index:100;background:var(--surface-container-high);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:4px;box-shadow:var(--shadow-lg);display:flex;gap:2px';
 
   for (const tag of TAG_ORDER) {
-    const c = TAG_COLORS[tag] || TAG_COLORS.meeting;
+    const c = TAG_COLORS[tag] || TAG_COLORS.daily;
     const btn = document.createElement('button');
     btn.style.cssText = `width:20px;height:20px;border-radius:50%;border:2px solid ${c.text};background:${c.text};cursor:pointer;transition:transform var(--t-fast);padding:0`;
     btn.title = TAG_LABELS[tag];
@@ -187,7 +194,7 @@ function renderTags() {
     html += `<div class="tag-column" data-board-tag="${tag}">
       <div class="tag-column-header">
         <span class="tag-column-dot"></span>
-        <span class="tag-column-name">${TAG_LABELS[tag]}</span>
+        <span class="tag-column-name">${escapeHtml(TAG_LABELS[tag])}</span>
         <span class="tag-column-count">${d.count}</span>
 
         ${!isBuiltin ? `<button class="tag-col-del" data-del-cat="${tag}" data-label="Delete"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>` : ''}
@@ -226,7 +233,7 @@ function renderTags() {
             </div>
           </div>`;
         }).join('')}
-        <button class="board-add-task" data-tag="${tag}" title="Add task to ${TAG_LABELS[tag]}">
+        <button class="board-add-task" data-tag="${tag}" title="Add task to ${escapeHtml(TAG_LABELS[tag])}">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add task
         </button>
@@ -254,7 +261,8 @@ function renderTags() {
     let kbits = [];
     const topTag = TAG_ORDER.map(t => ({ t, c: tagData[t]?.count || 0 })).sort((a, b) => b.c - a.c)[0];
     if (topTag && topTag.c > 0) kbits.push(`most active in ${TAG_LABELS[topTag.t]}`);
-    const doneAll = tagData[TAG_ORDER[0]]?.count > 0 && tagData[TAG_ORDER[0]].completed === tagData[TAG_ORDER[0]].count;
+    const firstTagData = TAG_ORDER[0] ? tagData[TAG_ORDER[0]] : null;
+    const doneAll = !!(firstTagData && firstTagData.count > 0 && firstTagData.completed === firstTagData.count);
     if (doneAll) kbits.push('deep work column fully cleared');
     const over = state.tasks.filter(t => !isWhiteboardTask(t) && t.completed).length;
     kbits.push(`${over} total completions`);
@@ -402,7 +410,7 @@ function renderTags() {
         const newName = input.value.trim();
         if (newName && newName !== oldName) {
           if (!BUILTIN_TAGS.includes(tag)) {
-            updateCustomCategory(tag, newName, (TAG_COLORS[tag] || TAG_COLORS.meeting).text);
+            updateCustomCategory(tag, newName, (TAG_COLORS[tag] || TAG_COLORS.daily).text);
           } else {
             renameTag(tag, newName);
           }
@@ -634,7 +642,7 @@ function setupBoardDragDrop() {
       
       updateTask(taskId, { tag: newTag });
       renderActivities();
-      showToast('Moved to <strong>' + TAG_LABELS[newTag] + '</strong>', 'success', 2000);
+      showToast('Moved to <strong>' + escapeHtml(TAG_LABELS[newTag]) + '</strong>', 'success', 2000);
     }, { passive: true });
   });
   
@@ -671,7 +679,7 @@ function setupBoardDragDrop() {
 
       updateTask(taskId, { tag: newTag });
       renderActivities();
-      showToast(`Moved to <strong>${TAG_LABELS[newTag]}</strong>`, 'success', 2000);
+      showToast(`Moved to <strong>${escapeHtml(TAG_LABELS[newTag])}</strong>`, 'success', 2000);
     });
   });
 }
@@ -936,7 +944,7 @@ function renderActivityChart() {
   for (const tag of activeTags) {
     const frac = tagTotals[tag] / grandTotal;
     const len = Math.max(frac * CIRC - 2.5, 1);
-    segs += `<circle class="act-pie-seg" data-tag="${tag}" cx="70" cy="70" r="${R}" fill="none" stroke-width="22" stroke-dasharray="${len} ${CIRC - len}" stroke-dashoffset="${-acc}" transform="rotate(-90 70 70)" data-mins="${tagTotals[tag]}" data-pct="${Math.round(frac * 100)}"><title>${TAG_LABELS[tag]}: ${formatDuration(tagTotals[tag])}</title></circle>`;
+    segs += `<circle class="act-pie-seg" data-tag="${tag}" cx="70" cy="70" r="${R}" fill="none" stroke-width="22" stroke-dasharray="${len} ${CIRC - len}" stroke-dashoffset="${-acc}" transform="rotate(-90 70 70)" data-mins="${tagTotals[tag]}" data-pct="${Math.round(frac * 100)}"><title>${escapeHtml(TAG_LABELS[tag])}: ${formatDuration(tagTotals[tag])}</title></circle>`;
     acc += frac * CIRC;
   }
   let bars = '';
@@ -950,7 +958,7 @@ function renderActivityChart() {
     let segs = '';
     for (const tag of sortedTags) {
       const pct = (dd.tagMins[tag] / dd.total) * 100;
-      segs += `<div class="act-chart-bar-segment" data-tag="${tag}" style="height:${pct}%" title="${TAG_LABELS[tag]}: ${formatDuration(dd.tagMins[tag])}"></div>`;
+      segs += `<div class="act-chart-bar-segment" data-tag="${tag}" style="height:${pct}%" title="${escapeHtml(TAG_LABELS[tag])}: ${formatDuration(dd.tagMins[tag])}"></div>`;
     }
     bars += `<div class="act-chart-bar-col${todayCls}">` +
       `<span class="act-chart-bar-val">${dd.total > 0 ? formatDuration(dd.total) : ''}</span>` +
@@ -1022,7 +1030,7 @@ function showChartTooltip(e, dayData, dayLabel) {
     var pct = Math.round((dayData.tagMins[tag] / dayData.total) * 100);
     html += '<div class="act-chart-tooltip-row">' +
       '<span class="act-chart-tooltip-dot" style="background:' + (TAG_COLORS[tag] ? TAG_COLORS[tag].text : '#888') + '"></span>' +
-      '<span>' + TAG_LABELS[tag] + '</span>' +
+      '<span>' + escapeHtml(TAG_LABELS[tag]) + '</span>' +
       '<span class="val">' + formatDuration(dayData.tagMins[tag]) + ' (' + pct + '%)</span>' +
       '</div>';
   }
@@ -1067,7 +1075,7 @@ function showPieTooltip(e, seg) {
   tip.className = 'act-chart-tooltip';
   tip.innerHTML = '<div class="act-chart-tooltip-row">' +
     '<span class="act-chart-tooltip-dot" style="background:' + (TAG_COLORS[tag] ? TAG_COLORS[tag].text : '#888') + '"></span>' +
-    '<span>' + ((typeof TAG_LABELS !== 'undefined' && TAG_LABELS[tag]) ? TAG_LABELS[tag] : tag) + '</span>' +
+    '<span>' + ((typeof TAG_LABELS !== 'undefined' && TAG_LABELS[tag]) ? escapeHtml(TAG_LABELS[tag]) : escapeHtml(tag)) + '</span>' +
     '<span class="val">' + formatDuration(mins) + ' (' + pct + '%)</span></div>';
   document.body.appendChild(tip);
   _chartTooltipEl = tip;
@@ -1234,7 +1242,8 @@ function init() {
   _analyticsThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 }
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+if (typeof havenBoot === 'function') havenBoot(init);
+else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
 
 
@@ -1257,18 +1266,25 @@ function getFilteredTasks() {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   let startDate = null;
+  let endDate = null;
 
   if (period === 'week') {
     startDate = getMonday(today);
+    endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 7);
   } else if (period === 'month') {
     startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   }
 
   return state.tasks.filter(t => {
     if (isWhiteboardTask(t)) return false;
-    if (startDate) {
+    if (startDate || endDate) {
       const d = new Date(t.date + 'T12:00:00');
-      if (d < startDate) return false;
+      // Both bounds matter. With only a lower bound, tasks dated in the future
+      // were counted as if they had already happened.
+      if (startDate && d < startDate) return false;
+      if (endDate && d >= endDate) return false;
     }
     return true;
   });
@@ -1337,20 +1353,21 @@ function renderSummary(tasks) {
   const el = (id) => document.getElementById(id);
   let totalMins = 0;
   let doneCount = 0;
-  let deepMins = 0;
+  let dailyMins = 0;
   let studyMins = 0;
 
   for (const t of tasks) {
     const dur = getTaskDuration(t);
     totalMins += dur;
     if (t.completed) doneCount++;
-    if (t.tag === 'deep-work') deepMins += dur;
-    if (t.tag === 'study') studyMins += dur;
+    if (t.tag === 'daily') dailyMins += dur;
+    if (isStudyTag(t.tag)) studyMins += dur;
   }
 
   el('statTime').textContent = formatHrs(totalMins);
   if (el('statTimeKpi')) el('statTimeKpi').textContent = formatHrs(totalMins);
-  if (el('statDeep')) el('statDeep').textContent = formatHrs(deepMins);
+  // statDeep is the Daily bucket; the id is kept for compatibility with the markup.
+  if (el('statDeep')) el('statDeep').textContent = formatHrs(dailyMins);
   if (el('statStudy')) el('statStudy').textContent = formatHrs(studyMins);
 
   const sub = el('statTasksSub');
@@ -1365,9 +1382,10 @@ function renderSummary(tasks) {
   const prev = getPreviousPeriodTasks(currentPeriod);
   const sumMins = (list) => list.reduce((s, t) => s + getTaskDuration(t), 0);
   const sumTag = (list, tag) => list.reduce((s, t) => s + (t.tag === tag ? getTaskDuration(t) : 0), 0);
+  const sumStudy = (list) => list.reduce((s, t) => s + (isStudyTag(t.tag) ? getTaskDuration(t) : 0), 0);
   setKpiTrend('statTimeTrend', totalMins, sumMins(prev));
-  setKpiTrend('statDeepTrend', deepMins, sumTag(prev, 'deep-work'));
-  setKpiTrend('statStudyTrend', studyMins, sumTag(prev, 'study'));
+  setKpiTrend('statDeepTrend', dailyMins, sumTag(prev, 'daily'));
+  setKpiTrend('statStudyTrend', studyMins, sumStudy(prev));
 }
 
 // ─── COMPLETION RATE ───────────────────────────────────────
@@ -1400,9 +1418,22 @@ function renderStreak(tasks) {
   const el = (id) => document.getElementById(id);
   const streakDaysEl = el('streakDays');
 
-  // Get last 7 days
-  const days = [];
+  // Streaks are computed from the FULL task history, never the period-filtered
+  // list — otherwise a run that crosses a week boundary always reads as broken.
+  const allTasks = (typeof state !== 'undefined' && Array.isArray(state.tasks)) ? state.tasks : tasks;
+  const activeDates = new Set();
+  for (const t of allTasks) {
+    if (t && t.date && !isWhiteboardTask(t)) activeDates.add(t.date);
+  }
+
   const now = new Date();
+  const dayKey = (offset) => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - offset);
+    return formatDate(d);
+  };
+
+  const days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
@@ -1413,12 +1444,8 @@ function renderStreak(tasks) {
     });
   }
 
-  // Check which days have tasks
-  const dayHasTasks = days.map(day => {
-    return tasks.some(t => t.date === day.date);
-  });
+  const dayHasTasks = days.map(day => activeDates.has(day.date));
 
-  // Render day dots
   streakDaysEl.innerHTML = days.map((day, i) => {
     const classes = ['an-streak-day'];
     if (dayHasTasks[i]) classes.push('active');
@@ -1426,31 +1453,32 @@ function renderStreak(tasks) {
     return `<div class="${classes.join(' ')}">${day.label}</div>`;
   }).join('');
 
-  // Calculate streaks (scoped to the 7-day window shown)
+  // Current streak. Today not being filled in yet must not break a run, so if
+  // today is empty we start counting from yesterday.
   let currentStreak = 0;
+  const startOffset = activeDates.has(dayKey(0)) ? 0 : 1;
+  for (let i = startOffset; i < 3650; i++) {
+    if (activeDates.has(dayKey(i))) currentStreak++;
+    else break;
+  }
+
+  // Best streak across all recorded history, not just the visible week.
   let bestStreak = 0;
-  let tempStreak = 0;
-  let daysActive = 0;
-
-  // Count from today backwards for current streak
-  for (let i = days.length - 1; i >= 0; i--) {
-    if (dayHasTasks[i]) {
-      currentStreak++;
-    } else {
-      break;
+  if (activeDates.size) {
+    const sorted = Array.from(activeDates).sort();
+    let run = 1;
+    bestStreak = 1;
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = new Date(sorted[i - 1] + 'T12:00:00');
+      const cur = new Date(sorted[i] + 'T12:00:00');
+      const gap = Math.round((cur - prev) / 86400000);
+      if (gap === 1) run++;
+      else if (gap > 1) run = 1;
+      if (run > bestStreak) bestStreak = run;
     }
   }
 
-  // Calculate best streak and total active days
-  for (let i = 0; i < days.length; i++) {
-    if (dayHasTasks[i]) {
-      tempStreak++;
-      daysActive++;
-      bestStreak = Math.max(bestStreak, tempStreak);
-    } else {
-      tempStreak = 0;
-    }
-  }
+  const daysActive = dayHasTasks.filter(Boolean).length;
 
   el('streakCurrent').textContent = currentStreak;
   el('streakBest').textContent = bestStreak;
@@ -1702,32 +1730,33 @@ function renderTable(tasks) {
   let html = '';
   for (const date of sortedDates.slice(0, 30)) {
     const dayTasks = dateMap[date];
-    const activeTasks = dayTasks.filter(t => !t.completed);
-    const doneCount = dayTasks.length - activeTasks.length;
+    const doneCount = dayTasks.filter(t => t.completed).length;
     let totalMins = 0;
-    let deepMins = 0;
+    let dailyMins = 0;
     let studyMins = 0;
 
-    for (const t of activeTasks) {
+    // Durations cover every task in the day, completed or not. Summing only the
+    // unfinished ones made the totals go DOWN as work got done.
+    for (const t of dayTasks) {
       const dur = getTaskDuration(t);
       totalMins += dur;
-      if (t.tag === 'deep-work') deepMins += dur;
-      if (t.tag === 'study') studyMins += dur;
+      if (t.tag === 'daily') dailyMins += dur;
+      if (isStudyTag(t.tag)) studyMins += dur;
     }
 
     const d = new Date(date + 'T12:00:00');
     const label = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const otherMins = totalMins - deepMins - studyMins;
+    const otherMins = totalMins - dailyMins - studyMins;
     const rowColor = totalMins > 0
-      ? getTagColorHex(deepMins >= studyMins ? 'deep-work' : 'study').text
+      ? getTagColorHex(dailyMins >= studyMins ? 'daily' : 'math').text
       : 'transparent';
 
     html += `<tr style="--row-accent:${rowColor}">
       <td>${label}</td>
-      <td class="num">${activeTasks.length}</td>
+      <td class="num">${dayTasks.length}</td>
       <td class="num">${doneCount ? doneCount : '–'}</td>
       <td class="num">${formatHrs(totalMins)}</td>
-      <td class="num">${formatHrs(deepMins)}</td>
+      <td class="num">${formatHrs(dailyMins)}</td>
       <td class="num">${formatHrs(studyMins)}</td>
       <td class="num">${formatHrs(otherMins)}</td>
     </tr>`;
@@ -1914,7 +1943,48 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 }
 
 // ─── MAIN RENDER ───────────────────────────────────────────
+function analyticsLockRegion() {
+  return document.getElementById('analyticsRegion');
+}
+
+/* The locked analytics panel keeps a blurred preview of the user's own charts
+   (see premiumLockPanel) instead of hiding the whole page, and the lock card is
+   inserted directly above it. */
+function renderAnalyticsLocked() {
+  const region = analyticsLockRegion();
+  if (!region) return;
+  if (typeof premiumLockPanel === 'function') {
+    premiumLockPanel(region, 'analytics');
+    return;
+  }
+  if (region.querySelector('.premium-lock-card')) return;
+  const card = document.createElement('div');
+  card.className = 'premium-lock-card';
+  card.innerHTML = '<h3>Advanced analytics is a Premium feature</h3>' +
+    '<p>Unlock every trend, streak and sleep insight across your full history.</p>' +
+    '<button class="premium-cta" type="button">Upgrade to Premium</button>';
+  const lockedCta = card.querySelector('.premium-cta');
+  if (lockedCta) lockedCta.addEventListener('click', function() { openPremiumSheet(null, 'analytics'); });
+  region.insertBefore(card, region.firstChild);
+}
+
 function renderAnalytics() {
+  const region = analyticsLockRegion();
+  if (typeof hasAccess === 'function' && !hasAccess('analytics')) {
+    renderAnalyticsUnlocked();
+    renderAnalyticsLocked();
+    return;
+  }
+  if (region && typeof premiumUnlockPanel === 'function') premiumUnlockPanel(region);
+  renderAnalyticsUnlocked();
+}
+
+/* Upgrading or cancelling updates the panel in place, with no reload. */
+document.addEventListener('premium:change', function() {
+  if (analyticsLockRegion()) renderAnalytics();
+});
+
+function renderAnalyticsUnlocked() {
   const tasks = getFilteredTasks();
   renderSummary(tasks);
   renderCompletion(tasks);

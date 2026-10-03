@@ -29,28 +29,48 @@ function getConversationId() {
   return generateConversationId(activeId, chatState.activeFriendId);
 }
 
+function mapConversationRow(r) {
+  return {
+    id: r.id,
+    data: {
+      participants: r.participants || [],
+      lastMessage: r.last_message || null,
+      unreadCount: r.unread_count || {},
+      lastRead: r.last_read || {},
+      typing: r.typing || {},
+      updatedAt: r.updated_at,
+      createdAt: r.created_at
+    }
+  };
+}
+
 // ─── GET OR CREATE CONVERSATION ──────────────────────────
 function getOrCreateConversation(friendId) {
   var activeId = getActiveUserId();
   if (!activeId || !friendId) return Promise.reject('Not authenticated');
 
   var convId = generateConversationId(activeId, friendId);
-  var db = getFirestoreDb();
-  if (!db) return Promise.reject('Firestore not initialized');
+  var sb = getSupabaseDb();
+  if (!sb) return Promise.reject('Supabase not initialized');
 
-  return db.collection('conversations').doc(convId).get().then(function(doc) {
-    if (doc.exists) return { id: doc.id, data: doc.data() };
+  return sb.from('conversations').select('*').eq('id', convId).maybeSingle().then(function(res) {
+    if (res.error) throw res.error;
+    if (res.data) return mapConversationRow(res.data);
 
-    return db.collection('conversations').doc(convId).set({
+    var now = new Date().toISOString();
+    return sb.from('conversations').insert({
+      id: convId,
       participants: [activeId, friendId],
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      lastMessage: null,
-      unreadCount: {},
-    }).then(function() {
-      return db.collection('conversations').doc(convId).get().then(function(newDoc) {
-        return { id: newDoc.id, data: newDoc.data() };
-      });
+      last_message: null,
+      unread_count: {},
+      created_at: now,
+      updated_at: now
+    }).then(function(ires) {
+      if (ires.error) throw ires.error;
+      return {
+        id: convId,
+        data: { participants: [activeId, friendId], lastMessage: null, unreadCount: {}, updatedAt: now }
+      };
     });
   });
 }
@@ -65,46 +85,43 @@ function subscribeToConversations() {
     chatState.convUnsubscribe = null;
   }
 
-  var db = getFirestoreDb();
-  if (!db) return;
+  var sb = getSupabaseDb();
+  if (!sb) return;
 
-  chatState.convUnsubscribe = db.collection('conversations')
-    .where('participants', 'array-contains', activeId)
-    .onSnapshot(function(snapshot) {
-      var convs = [];
-      snapshot.forEach(function(doc) {
-        var data = doc.data();
-        convs.push({ id: doc.id, data: data });
-      });
-      // Sort most recent first (avoids needing a composite index in the console)
-      convs.sort(function(a, b) {
-        var at = a.data.updatedAt && a.data.updatedAt.toDate ? a.data.updatedAt.toDate().getTime() : 0;
-        var bt = b.data.updatedAt && b.data.updatedAt.toDate ? b.data.updatedAt.toDate().getTime() : 0;
-        return bt - at;
-      });
+  loadConversations();
+  chatState.convUnsubscribe = sbWatch('conversations', function() { loadConversations(); });
+}
 
-      // Before updating, check for new unread messages to fire notifications
-      if (!chatState._isForeground && convs.length > 0) {
-        checkNewUnreadMessages(convs, activeId);
+function loadConversations() {
+  var sb = getSupabaseDb();
+  var activeId = getActiveUserId();
+  if (!sb || !activeId) return;
+
+  sb.from('conversations').select('*').contains('participants', [activeId]).then(function(res) {
+    if (res.error) {
+      console.warn('[chat] conversation load error:', res.error);
+      return;
+    }
+    var convs = (res.data || []).map(mapConversationRow);
+    convs.sort(function(a, b) { return tsMillis(b.data.updatedAt) - tsMillis(a.data.updatedAt); });
+
+    if (!chatState._isForeground && convs.length > 0) {
+      checkNewUnreadMessages(convs, activeId);
+    }
+
+    chatState.conversations = convs;
+    renderConversationList();
+
+    if (chatState.activeConversationId && chatState.activeFriendId) {
+      var activeConv = convs.find(function(c) { return c.id === chatState.activeConversationId; });
+      if (activeConv) {
+        checkUserTyping(activeConv.data, chatState.activeFriendId);
+        renderMessages();
       }
+    }
 
-      chatState.conversations = convs;
-      renderConversationList();
-
-      // Check typing indicator for active conversation
-      if (chatState.activeConversationId && chatState.activeFriendId) {
-        var activeConv = convs.find(function(c) { return c.id === chatState.activeConversationId; });
-        if (activeConv) {
-          checkUserTyping(activeConv.data, chatState.activeFriendId);
-          renderMessages();
-        }
-      }
-
-      // Also update global unread count badge
-      updateUnreadBadge();
-    }, function(err) {
-      console.warn('[chat] conversation subscription error:', err);
-    });
+    updateUnreadBadge();
+  });
 }
 
 // ─── SUBSCRIBE TO MESSAGES (real-time for active conversation) ──
@@ -114,31 +131,45 @@ function subscribeToMessages(conversationId) {
     chatState.msgUnsubscribe = null;
   }
 
-  var db = getFirestoreDb();
-  if (!db || !conversationId) return;
+  var sb = getSupabaseDb();
+  if (!sb || !conversationId) return;
 
-  chatState.msgUnsubscribe = db.collection('messages')
-    .where('conversationId', '==', conversationId)
-    .onSnapshot(function(snapshot) {
-      var msgs = [];
-      snapshot.forEach(function(doc) {
-        var data = doc.data();
-        msgs.push({ id: doc.id, data: data });
-      });
-      // Sort oldest first (avoids needing a composite index in the console)
-      msgs.sort(function(a, b) {
-        var at = a.data.createdAt && a.data.createdAt.toDate ? a.data.createdAt.toDate().getTime() : 0;
-        var bt = b.data.createdAt && b.data.createdAt.toDate ? b.data.createdAt.toDate().getTime() : 0;
-        return at - bt;
-      });
+  loadMessages(conversationId);
 
-      chatState.messages = msgs;
+  var channel = sb.channel('haven-messages-' + conversationId + '-' + Math.random().toString(36).slice(2));
+  channel.on('postgres_changes', {
+    event: '*', schema: 'public', table: 'messages', filter: 'conversation_id=eq.' + conversationId
+  }, function() { loadMessages(conversationId); }).subscribe();
+
+  chatState.msgUnsubscribe = function() {
+    try { sb.removeChannel(channel); } catch (e) {}
+  };
+}
+
+function loadMessages(conversationId) {
+  var sb = getSupabaseDb();
+  if (!sb || !conversationId) return;
+
+  sb.from('messages').select('*').eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true }).then(function(res) {
+      if (res.error) {
+        console.warn('[chat] messages load error:', res.error);
+        return;
+      }
+      chatState.messages = (res.data || []).map(function(r) {
+        return {
+          id: r.id,
+          data: {
+            conversationId: r.conversation_id,
+            from: r.sender_id,
+            text: r.text,
+            readBy: r.read_by || [],
+            createdAt: r.created_at
+          }
+        };
+      });
       renderMessages();
-
-      // Mark as read when viewing
       markConversationAsRead(conversationId);
-    }, function(err) {
-      console.warn('[chat] messages subscription error:', err);
     });
 }
 
@@ -148,42 +179,37 @@ function sendMessage(text) {
   var convId = getConversationId();
   if (!activeId || !convId || !text.trim()) return;
 
-  var db = getFirestoreDb();
-  if (!db) return;
+  var sb = getSupabaseDb();
+  if (!sb) return;
 
-  var msg = {
-    conversationId: convId,
-    from: activeId,
-    text: text.trim(),
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    readBy: [activeId],
-  };
-
-  // Add message and update conversation metadata in a batch
-  var batch = db.batch();
-
-  var msgRef = db.collection('messages').doc();
-  batch.set(msgRef, msg);
-
-  // Update conversation's lastMessage and increment unread for the other user
-  var convRef = db.collection('conversations').doc(convId);
+  var trimmed = text.trim();
+  var now = new Date().toISOString();
   var otherUserId = chatState.activeFriendId;
 
-  batch.update(convRef, {
-    lastMessage: {
-      text: text.trim(),
-      from: activeId,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    },
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-    ['unreadCount.' + otherUserId]: firebase.firestore.FieldValue.increment(1),
-  });
+  var conv = chatState.conversations.find(function(c) { return c.id === convId; });
+  var unread = Object.assign({}, (conv && conv.data.unreadCount) || {});
+  unread[otherUserId] = (unread[otherUserId] || 0) + 1;
 
-  batch.commit().catch(function(err) {
+  sb.from('messages').insert({
+    conversation_id: convId,
+    sender_id: activeId,
+    text: trimmed,
+    read_by: [activeId],
+    created_at: now
+  }).then(function(res) {
+    if (res.error) {
+      console.warn('[chat] send message error:', res.error);
+      return;
+    }
+    return sb.from('conversations').update({
+      last_message: { text: trimmed, from: activeId, timestamp: now },
+      updated_at: now,
+      unread_count: unread
+    }).eq('id', convId);
+  }).catch(function(err) {
     console.warn('[chat] send message error:', err);
   });
 
-  // Clear input
   var input = document.getElementById('chatMsgInput');
   if (input) {
     input.value = '';
@@ -196,15 +222,21 @@ function markConversationAsRead(conversationId) {
   var activeId = getActiveUserId();
   if (!activeId || !conversationId) return;
 
-  var db = getFirestoreDb();
-  if (!db) return;
+  var sb = getSupabaseDb();
+  if (!sb) return;
 
-  // Track read status using a subcollection or field
-  var convRef = db.collection('conversations').doc(conversationId);
-  convRef.update({
-    ['unreadCount.' + activeId]: 0,
-    ['lastRead.' + activeId]: firebase.firestore.FieldValue.serverTimestamp(),
-  }).catch(function() {});
+  var conv = chatState.conversations.find(function(c) { return c.id === conversationId; });
+  var unread = Object.assign({}, (conv && conv.data.unreadCount) || {});
+  if (!unread[activeId]) return;
+
+  unread[activeId] = 0;
+  var lastRead = Object.assign({}, (conv && conv.data.lastRead) || {});
+  lastRead[activeId] = new Date().toISOString();
+
+  sb.from('conversations').update({
+    unread_count: unread,
+    last_read: lastRead
+  }).eq('id', conversationId).then(function() {}).catch(function() {});
 }
 
 // ─── GET UNREAD COUNT FOR A CONVERSATION ─────────────────
@@ -237,7 +269,6 @@ function updateUnreadBadge() {
     badge.style.display = 'none';
   }
 
-  // Also update document title if needed
   var baseTitle = document.title.replace(/^\(\d+\)\s*/, '');
   if (total > 0) {
     document.title = '(' + total + ') ' + baseTitle;
@@ -252,11 +283,9 @@ function openChatPanel(friendId, friendName) {
   chatState.activeFriendId = friendId;
   chatState.activeFriendName = friendName || 'Friend';
 
-  // Get or create conversation
   getOrCreateConversation(friendId).then(function(conv) {
     chatState.activeConversationId = conv.id;
 
-    // Show panel
     var panel = document.getElementById('chatPanel');
     var overlay = document.getElementById('chatOverlay');
     if (!panel) return;
@@ -271,14 +300,11 @@ function openChatPanel(friendId, friendName) {
 
     chatState.panelOpen = true;
 
-    // Set friend name in header
     var nameEl = document.getElementById('chatFriendName');
     if (nameEl) nameEl.textContent = friendName;
 
-    // Subscribe to messages
     subscribeToMessages(conv.id);
 
-    // Focus input
     setTimeout(function() {
       var input = document.getElementById('chatMsgInput');
       if (input) input.focus();
@@ -306,7 +332,6 @@ function closeChatPanel() {
   chatState.messages = [];
   chatState.otherUserTyping = false;
 
-  // Clear typing indicator when closing (before nulling activeConversationId)
   clearTyping();
 
   if (chatState._typingTimer) {
@@ -357,7 +382,6 @@ function renderConversationList() {
 
   container.innerHTML = html;
 
-  // Fetch display names for each conversation partner
   container.querySelectorAll('[data-conv-avatar]').forEach(function(el) {
     var otherId = el.dataset.convAvatar;
     var nameEl = el.closest('.chat-conv-item').querySelector('[data-conv-name]');
@@ -370,7 +394,6 @@ function renderConversationList() {
     });
   });
 
-  // Click handler
   container.querySelectorAll('.chat-conv-item').forEach(function(item) {
     item.addEventListener('click', function() {
       var otherId = item.dataset.otherId;
@@ -395,7 +418,6 @@ function renderMessages() {
       '<p>No messages yet</p>' +
       '<span>Send a message to start chatting</span></div>';
 
-    // Show typing indicator even in empty state
     if (chatState.otherUserTyping) {
       emptyHtml += '<div class="chat-typing-indicator">' +
         '<span class="chat-typing-dot"></span>' +
@@ -423,7 +445,6 @@ function renderMessages() {
     '</div>';
   }
 
-  // Append typing indicator if other user is typing
   if (chatState.otherUserTyping && chatState.messages.length > 0) {
     html += '<div class="chat-typing-indicator">' +
       '<span class="chat-typing-dot"></span>' +
@@ -434,15 +455,14 @@ function renderMessages() {
   }
 
   container.innerHTML = html;
-
-  // Scroll to bottom
   container.scrollTop = container.scrollHeight;
 }
 
 // ─── FORMAT TIMESTAMP ─────────────────────────────────────
 function formatTimestamp(timestamp) {
-  if (!timestamp) return '';
-  var date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+  var ms = tsMillis(timestamp);
+  if (!ms) return '';
+  var date = new Date(ms);
   var now = new Date();
   var diff = now - date;
   var minutes = Math.floor(diff / 60000);
@@ -461,18 +481,15 @@ function formatTimestamp(timestamp) {
   return (date.getMonth() + 1) + '/' + date.getDate() + ' ' + h12 + ':' + String(m).padStart(2, '0') + ampm;
 }
 
-// ─── FETCH USER NAME FROM FIRESTORE ──────────────────────
+// ─── FETCH USER NAME FROM SUPABASE ───────────────────────
 function fetchUserName(userId, callback) {
-  var db = getFirestoreDb();
-  if (!db || !userId) { callback('Unknown', '#b4ccbc'); return; }
+  var sb = getSupabaseDb();
+  if (!sb || !userId) { callback('Unknown', '#b4ccbc'); return; }
 
-  db.collection('users').doc(userId).get().then(function(doc) {
-    if (doc.exists) {
-      var data = doc.data();
-      callback(data.displayName || 'Unknown', data.avatarColor || '#b4ccbc');
-    } else {
-      callback('Unknown', '#b4ccbc');
-    }
+  sb.from('profiles_public').select('*').eq('id', userId).maybeSingle().then(function(res) {
+    if (res.error || !res.data) { callback('Unknown', '#b4ccbc'); return; }
+    var p = mapProfileRow(res.data);
+    callback(p.displayName || 'Unknown', p.avatarColor || '#b4ccbc');
   }).catch(function() {
     callback('Unknown', '#b4ccbc');
   });
@@ -484,17 +501,18 @@ function emitTyping() {
   var convId = chatState.activeConversationId;
   if (!activeId || !convId) return;
 
-  var db = getFirestoreDb();
-  if (!db) return;
+  var sb = getSupabaseDb();
+  if (!sb) return;
 
-  // Throttle writes: at most once every 2 seconds per conversation
   var now = Date.now();
   if (now - chatState._typingEmitTimer < 2000) return;
   chatState._typingEmitTimer = now;
 
-  db.collection('conversations').doc(convId).update({
-    ['typing.' + activeId]: firebase.firestore.FieldValue.serverTimestamp(),
-  }).catch(function() {});
+  var conv = chatState.conversations.find(function(c) { return c.id === convId; });
+  var typing = Object.assign({}, (conv && conv.data.typing) || {});
+  typing[activeId] = new Date().toISOString();
+
+  sb.from('conversations').update({ typing: typing }).eq('id', convId).then(function() {}).catch(function() {});
 }
 
 function clearTyping() {
@@ -504,31 +522,30 @@ function clearTyping() {
 
   chatState._typingEmitTimer = 0;
 
-  var db = getFirestoreDb();
-  if (!db) return;
+  var sb = getSupabaseDb();
+  if (!sb) return;
 
-  db.collection('conversations').doc(convId).update({
-    ['typing.' + activeId]: firebase.firestore.FieldValue.delete(),
-  }).catch(function() {});
+  var conv = chatState.conversations.find(function(c) { return c.id === convId; });
+  var typing = Object.assign({}, (conv && conv.data.typing) || {});
+  if (!typing[activeId]) return;
+  delete typing[activeId];
+
+  sb.from('conversations').update({ typing: typing }).eq('id', convId).then(function() {}).catch(function() {});
 }
 
 function onChatInput() {
   var input = document.getElementById('chatMsgInput');
   if (!input) return;
 
-  // Auto-resize textarea
   input.style.height = 'auto';
   input.style.height = Math.min(input.scrollHeight, 120) + 'px';
 
-  // Emit typing indicator
   emitTyping();
 
-  // Clear previous debounce timer
   if (chatState._typingTimer) {
     clearTimeout(chatState._typingTimer);
   }
 
-  // After 2 seconds of no input, clear typing indicator
   chatState._typingTimer = setTimeout(function() {
     clearTyping();
     chatState._typingTimer = null;
@@ -547,40 +564,27 @@ function checkUserTyping(convData, otherUserId) {
     return;
   }
 
-  var ts = typing[otherUserId];
-  // If it's a Firestore Timestamp, convert to Date
-  if (ts && ts.toDate) {
-    var date = ts.toDate();
-    var elapsed = Date.now() - date.getTime();
-    // Consider typing valid for up to 4 seconds
-    chatState.otherUserTyping = elapsed < 4000;
-  } else {
-    // If it's a boolean or other truthy value
-    chatState.otherUserTyping = true;
-  }
+  var ms = tsMillis(typing[otherUserId]);
+  chatState.otherUserTyping = ms ? (Date.now() - ms < 4000) : true;
 }
 
 // ─── SETUP CHAT PANEL EVENT LISTENERS ─────────────────────
 function setupChatPanel() {
-  // Close overlay click
   var overlay = document.getElementById('chatOverlay');
   if (overlay) {
     overlay.addEventListener('click', closeChatPanel);
   }
 
-  // Close button
   var closeBtn = document.getElementById('chatCloseBtn');
   if (closeBtn) {
     closeBtn.addEventListener('click', closeChatPanel);
   }
 
-  // Close button 2
   var closeBtn2 = document.getElementById('chatCloseBtn2');
   if (closeBtn2) {
     closeBtn2.addEventListener('click', closeChatPanel);
   }
 
-  // Send message
   var sendBtn = document.getElementById('chatSendBtn');
   var input = document.getElementById('chatMsgInput');
 
@@ -589,7 +593,6 @@ function setupChatPanel() {
     var text = input.value.trim();
     if (!text) return;
     sendMessage(text);
-    // Clear typing when message is sent
     clearTyping();
     if (chatState._typingTimer) {
       clearTimeout(chatState._typingTimer);
@@ -609,10 +612,8 @@ function setupChatPanel() {
       }
     });
 
-    // Typing indicator + auto-resize
     input.addEventListener('input', onChatInput);
 
-    // Clear typing on blur
     input.addEventListener('blur', function() {
       if (chatState._typingTimer) {
         clearTimeout(chatState._typingTimer);
@@ -634,7 +635,6 @@ function checkNewUnreadMessages(convs, activeId) {
     var prevUnread = chatState._prevUnreadCounts[conv.id] || 0;
 
     if (currentUnread > prevUnread) {
-      // New messages in this conversation — fetch sender info
       var lastMsg = conv.data.lastMessage;
       if (lastMsg && lastMsg.from !== activeId) {
         fetchUserName(lastMsg.from, function(senderName) {
@@ -667,20 +667,16 @@ function initChat() {
   var activeId = getActiveUserId();
   if (!activeId) return;
 
-  initFirestore();
   subscribeToConversations();
   setupChatPanel();
 
-  // Request notification permission for chat alerts
   if (typeof requestNotifPermission === 'function') {
     requestNotifPermission();
   }
 
-  // Track page visibility for background notification logic
   document.addEventListener('visibilitychange', function() {
     chatState._isForeground = document.visibilityState === 'visible';
 
-    // When coming back to foreground, update prevUnreadCounts to avoid re-notifying
     if (chatState._isForeground) {
       for (var i = 0; i < chatState.conversations.length; i++) {
         var conv = chatState.conversations[i];
@@ -689,7 +685,6 @@ function initChat() {
     }
   });
 
-  // Also track window blur/focus for more accurate foreground detection
   window.addEventListener('focus', function() {
     chatState._isForeground = true;
     for (var i = 0; i < chatState.conversations.length; i++) {
@@ -701,11 +696,9 @@ function initChat() {
     chatState._isForeground = false;
   });
 
-  // Set initial state
   chatState._isForeground = document.visibilityState === 'visible' && document.hasFocus();
 }
 
-// Expose globals
 window.openChatPanel = openChatPanel;
 window.closeChatPanel = closeChatPanel;
 window.initChat = initChat;

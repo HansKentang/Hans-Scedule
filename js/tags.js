@@ -197,5 +197,6 @@ function init() {
   updateTagTotal();
 }
 
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+if (typeof havenBoot === 'function') havenBoot(init);
+else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();

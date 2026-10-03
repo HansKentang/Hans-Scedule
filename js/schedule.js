@@ -201,6 +201,13 @@ let lastDroppedTaskId = null;
 let weekSelected = new Set();
 let weekFocusedId = null;
 let weekPrefs = { workHours: false, hideDone: false, didAutoScroll: false };
+
+// The grid's first and last rendered hour. Work-hours mode starts the grid at 7am
+// rather than 5am, so every position calculation must read these instead of
+// assuming START_HOUR — otherwise cards, the now-line and drag maths all sit two
+// hours too low whenever that mode is on.
+let _gridStartHour = (typeof START_HOUR !== 'undefined') ? START_HOUR : 5;
+let _gridEndHour = _gridStartHour + ((typeof VISIBLE_HOURS !== 'undefined') ? VISIBLE_HOURS : 24);
 try {
   const p = JSON.parse(localStorage.getItem('haven-week-prefs') || '{}');
   if (p.workHours) weekPrefs.workHours = true;
@@ -345,6 +352,8 @@ function renderWeekView() {
   const workOnly = weekPrefs.workHours;
   const hStart = workOnly ? 7 : START_HOUR;
   const hEnd = workOnly ? 21 : START_HOUR + VISIBLE_HOURS;
+  _gridStartHour = hStart;
+  _gridEndHour = hEnd;
   dom.grid.style.gridTemplateColumns = `var(--time-axis-width) repeat(${colCount}, 1fr)`;
   dom.grid.style.gridTemplateRows = '';
 
@@ -493,7 +502,7 @@ function renderMobileDayView() {
       const rect = this.getBoundingClientRect();
       const yOffset = e.clientY - rect.top;
       const hourHeight = rect.height;
-      const rawMins = (yOffset / hourHeight) * 60 + START_HOUR * 60;
+      const rawMins = (yOffset / hourHeight) * 60 + _gridStartHour * 60;
       const snapped = roundToNearest(Math.max(START_HOUR * 60, Math.min(rawMins, (START_HOUR + VISIBLE_HOURS) * 60 - SNAP_MINUTES)), SNAP_MINUTES);
       const date = this.dataset.date || mobileDayDate || formatDate(new Date());
       openNewTaskModal(date, snapped);
@@ -1229,7 +1238,7 @@ function renderAgendaView() {
     } else {
       tasks.sort((a, b) => parseTime(a.startTime) - parseTime(b.startTime));
       for (const task of tasks) {
-        const meta = TAG_COLORS[task.tag] || TAG_COLORS.meeting;
+        const meta = TAG_COLORS[task.tag] || TAG_COLORS.daily;
         const doneCls = task.completed ? 'agenda-task-done' : '';
         const repeatIcon = task.repeat && task.repeat.type !== 'none' ? ' ⟳' : '';
         html += `<div class="agenda-task ${doneCls}" data-task-id="${task.id}">
@@ -1379,12 +1388,12 @@ function renderTasks() {
     for (let i = 0; i < taskEntries.length; i++) {
       const { task, start: startM, end: endM } = taskEntries[i];
       const dur = Math.max(endM - startM, SNAP_MINUTES);
-      const top = ((startM - START_HOUR * 60) / 60) * actualHH;
+      const top = ((startM - _gridStartHour * 60) / 60) * actualHH;
       const height = (dur / 60) * actualHH;
       const zIdx = `;z-index:${5 + i}`;
       const restoreZ = 5 + i;
 
-      const meta = TAG_COLORS[task.tag] || TAG_COLORS.meeting;
+      const meta = TAG_COLORS[task.tag] || TAG_COLORS.daily;
       const cls = ['calendar-task', `tag-${task.tag}`];
       if (isFirstTaskRender) cls.push('task-intro');
       if (task.id === lastDroppedTaskId) cls.push('task-settle');
@@ -1426,7 +1435,7 @@ function renderTasks() {
             <span class="task-time">${shortTime}</span>
           </div>
           <div class="task-meta">
-            <span class="task-tag-chip" style="--chip-accent:${(TAG_COLORS[task.tag] || TAG_COLORS.meeting).text}">${escapeHtml(tagLabelText)}</span>
+            <span class="task-tag-chip" style="--chip-accent:${(TAG_COLORS[task.tag] || TAG_COLORS.daily).text}">${escapeHtml(tagLabelText)}</span>
             <span class="task-duration">${durText}</span>
           </div>
           ${task.notes ? `<div class="task-notes">${escapeHtml(task.notes)}</div>` : ''}
@@ -1566,8 +1575,8 @@ function renderCurrentTime() {
   if (!col) return;
   const mins = now.getHours() * 60 + now.getMinutes();
   const actualHH = dom.grid.querySelector('.day-column')?.getBoundingClientRect().height || HOUR_HEIGHT;
-  const top = ((mins - START_HOUR * 60) / 60) * actualHH;
-  if (mins >= START_HOUR * 60 && mins < (START_HOUR + VISIBLE_HOURS) * 60) {
+  const top = ((mins - _gridStartHour * 60) / 60) * actualHH;
+  if (mins >= _gridStartHour * 60 && mins < _gridEndHour * 60) {
     const line = document.createElement('div');
     line.className = 'current-time-line';
     line.style.top = `${top}px`;
@@ -1578,11 +1587,13 @@ function renderCurrentTime() {
 
 
 const QUICK_ADD_TITLES = {
-  'deep-work': 'Deep Work Session',
-  'meeting': 'Meeting',
-  'exercise': 'Workout Session',
-  'study': 'Study Session',
-  'hobby': 'Hobby Time',
+  'daily': 'Daily Task',
+  'math': 'Math Session',
+  'physics': 'Physics Session',
+  'bio': 'Bio Session',
+  'chem': 'Chem Session',
+  'eng': 'Eng Session',
+  'mandarin': 'Mandarin Session',
 };
 
 // ─── UNIFIED DRAG AND DROP ────────────────────────────────
@@ -1693,7 +1704,7 @@ function activateGridDrag() {
     ghostTag = gridDrag.tag;
   }
   if (ghostTag) {
-    const meta = TAG_COLORS[ghostTag] || TAG_COLORS.meeting;
+    const meta = TAG_COLORS[ghostTag] || TAG_COLORS.daily;
     ghost.style.setProperty('--task-accent', meta.text);
     if (gridDrag.type === 'quickadd') {
       ghost.style.background = meta.bg;
@@ -1724,7 +1735,7 @@ function buildCardGhost(srcCard, rect) {
 
 // Preview for tasks/quick-adds that have no card yet
 function buildNewTaskGhost(drag, refWidth) {
-  const meta = TAG_COLORS[drag.tag] || TAG_COLORS.meeting;
+  const meta = TAG_COLORS[drag.tag] || TAG_COLORS.daily;
   const mins = drag.duration || 60;
   const ghost = document.createElement('div');
   ghost.className = 'grid-drag-ghost calendar-task';
@@ -1785,13 +1796,13 @@ function captureDayColumns() {
 
 function getDragHlColor() {
   if (gridDrag) {
-    if (gridDrag.type === 'quickadd' && gridDrag.tag) return (TAG_COLORS[gridDrag.tag] || TAG_COLORS.meeting).text;
+    if (gridDrag.type === 'quickadd' && gridDrag.tag) return (TAG_COLORS[gridDrag.tag] || TAG_COLORS.daily).text;
     if (gridDrag.type === 'reschedule') {
       const task = getTask(gridDrag.taskId);
-      if (task) return (TAG_COLORS[task.tag] || TAG_COLORS.meeting).text;
+      if (task) return (TAG_COLORS[task.tag] || TAG_COLORS.daily).text;
     }
   }
-  return TAG_COLORS.meeting.text;
+  return TAG_COLORS.daily.text;
 }
 
 function magneticSnap(date, snap, excludeId) {
@@ -1822,7 +1833,7 @@ function showDropPreview(col, spanStart, spanEnd, hlColor, label, snapped) {
     col.appendChild(el);
   }
   const actualHH = col.getBoundingClientRect().height;
-  const originM = Number(col.dataset.time || START_HOUR * 60);
+  const originM = Number(col.dataset.time || _gridStartHour * 60);
   const top = ((spanStart - originM) / 60) * actualHH;
   const height = ((spanEnd - spanStart) / 60) * actualHH;
   el.style.top = `${top}px`;
@@ -1893,7 +1904,7 @@ function onDragMove(e) {
     const yOffset = pos.y - (gridDrag.offY || 0) - colRect.top;
     const actualHourHeight = colRect.height;
     // refCol is the day's first hour cell, so yOffset maps straight onto the whole day
-    const dayStartM = Number(refCol.dataset.time || START_HOUR * 60);
+    const dayStartM = Number(refCol.dataset.time || _gridStartHour * 60);
     const dayEndM = matched.endM || dayStartM + VISIBLE_HOURS * 60;
     const rawMinutes = (yOffset / actualHourHeight) * 60 + dayStartM;
     const clampLo = dayStartM;
@@ -1911,18 +1922,18 @@ function onDragMove(e) {
     const dragEndM = gridDrag.dragEndM ?? (gridDrag.dropTime + (gridDrag.duration || 60));
     const durMins = dragEndM - (gridDrag.dragStartM ?? gridDrag.dropTime);
     const spanStart = snap;
-    const spanEnd = Math.min(spanStart + durMins, (START_HOUR + VISIBLE_HOURS) * 60);
+    const spanEnd = Math.min(spanStart + durMins, _gridEndHour * 60);
 
     // Single card-like preview at the drop position (replaces old overlay + line)
     previewConflicts(matchedDate, spanStart, spanEnd, gridDrag.taskId || null);
     const dragTask = gridDrag.taskId ? getTask(gridDrag.taskId) : null;
-    const hlColor = dragTask ? (TAG_COLORS[dragTask.tag] || TAG_COLORS.meeting).text : 'var(--accent)';
-    const rangeLabel = formatCompactTime(toTimeStr(spanStart), toTimeStr(spanEnd));
+    const hlColor = dragTask ? (TAG_COLORS[dragTask.tag] || TAG_COLORS.daily).text : 'var(--accent)';
+    const rangeLabel = formatCompactTime(toClockStr(spanStart), toClockStr(spanEnd));
     showDropPreview(refCol, spanStart, spanEnd, hlColor, rangeLabel, mag.snapped);
 
     // Show live time tooltip
     const dayLabel = new Date(matchedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' });
-    showDragTooltip(e, snap, durMins, mag.snapped, dayLabel + ' ' + formatCompactTime(toTimeStr(spanStart), toTimeStr(spanEnd)));
+    showDragTooltip(e, snap, durMins, mag.snapped, dayLabel + ' ' + formatCompactTime(toClockStr(spanStart), toClockStr(spanEnd)));
   } else {
     gridDrag.dropDate = null;
     gridDrag.dropTime = null;
@@ -2009,7 +2020,7 @@ function onDragEnd() {
     return;
   }
 
-  const endBoundary = (START_HOUR + VISIBLE_HOURS) * 60;
+  const endBoundary = _gridEndHour * 60;
   const rawDur = gridDrag.type === 'quickadd' || gridDrag.type === 'unsched' ? (gridDrag.duration || 60) : (gridDrag.dragEndM - gridDrag.dragStartM || gridDrag.duration || 60);
   const dur = Math.min(rawDur, endBoundary - gridDrag.dropTime);
   const dropEndMins = gridDrag.dropTime + dur;
@@ -2024,8 +2035,8 @@ function onDragEnd() {
   repelConflicts(gridDrag.dropDate, gridDrag.dropTime, dropEndMins, excludeId);
 
   if (gridDrag.type === 'reschedule') {
-    const start = toTimeStr(gridDrag.dropTime);
-    const end = toTimeStr(dropEndMins);
+    const start = toClockStr(gridDrag.dropTime);
+    const end = toClockStr(dropEndMins);
     const task = getTask(gridDrag.taskId);
     if (task && (gridDrag.dropDate !== gridDrag.startDate || start !== gridDrag.startTime)) {
       task.date = gridDrag.dropDate;
@@ -2037,8 +2048,8 @@ function onDragEnd() {
     const created = createTask({
       title: gridDrag.title || QUICK_ADD_TITLES[gridDrag.tag] || 'New Task',
       date: gridDrag.dropDate,
-      startTime: toTimeStr(gridDrag.dropTime),
-      endTime: toTimeStr(dropEndMins),
+      startTime: toClockStr(gridDrag.dropTime),
+      endTime: toClockStr(dropEndMins),
       tag: gridDrag.tag,
     });
     if (created && created.id) lastDroppedTaskId = created.id;
@@ -2046,8 +2057,8 @@ function onDragEnd() {
     const task = getTask(gridDrag.taskId);
     if (task) {
       task.date = gridDrag.dropDate;
-      task.startTime = toTimeStr(gridDrag.dropTime);
-      task.endTime = toTimeStr(dropEndMins);
+      task.startTime = toClockStr(gridDrag.dropTime);
+      task.endTime = toClockStr(dropEndMins);
       lastDroppedTaskId = task.id;
     }
   }
@@ -2062,7 +2073,7 @@ function onDragEnd() {
 // ─── REPEL: push conflicting tasks down on drop ────────────
 function repelConflicts(date, startMins, endMins, excludeId, depth) {
   if (depth > 10) return; // safety: prevent infinite cascade
-  const endBoundary = (START_HOUR + VISIBLE_HOURS) * 60;
+  const endBoundary = _gridEndHour * 60;
 
   for (const task of state.tasks) {
     if (task.id === excludeId || isWhiteboardTask(task) || task.completed) continue;
@@ -2078,8 +2089,8 @@ function repelConflicts(date, startMins, endMins, excludeId, depth) {
     const newEnd = Math.min(endMins + duration, endBoundary);
 
     if (Math.abs(newStart - tStart) >= 1) {
-      task.startTime = toTimeStr(newStart);
-      task.endTime = toTimeStr(newEnd);
+      task.startTime = toClockStr(newStart);
+      task.endTime = toClockStr(newEnd);
       repelConflicts(date, newStart, newEnd, task.id, (depth || 0) + 1);
     }
   }
@@ -2140,8 +2151,8 @@ function onResizeMove(e) {
   // Calculate new end time from mouse Y position relative to column
   const pos = getEventPos(e);
   const yOffset = pos.y - startTop;
-  const rawEndM = (yOffset / hourHeight) * 60 + START_HOUR * 60;
-  const clamped = Math.max(startM + SNAP_MINUTES, Math.min(rawEndM, (START_HOUR + VISIBLE_HOURS) * 60));
+  const rawEndM = (yOffset / hourHeight) * 60 + _gridStartHour * 60;
+  const clamped = Math.max(startM + SNAP_MINUTES, Math.min(rawEndM, _gridEndHour * 60));
   const snapped = roundToNearest(clamped, SNAP_MINUTES);
   const newDur = Math.max(snapped - startM, SNAP_MINUTES);
   const newHeight = (newDur / 60) * hourHeight;
@@ -2160,10 +2171,10 @@ function onResizeMove(e) {
     const delta = document.createElement('div');
     delta.id = 'resizeDeltaHighlight';
     delta.className = 'resize-delta-highlight';
-    const dTop = ((deltaStart - START_HOUR * 60) / 60) * hourHeight;
+    const dTop = ((deltaStart - _gridStartHour * 60) / 60) * hourHeight;
     const dHeight = ((deltaEnd - deltaStart) / 60) * hourHeight;
     delta.style.cssText = `top:${dTop}px;height:${dHeight}px`;
-    const meta = TAG_COLORS[resizeState.task.tag] || TAG_COLORS.meeting;
+    const meta = TAG_COLORS[resizeState.task.tag] || TAG_COLORS.daily;
     delta.style.setProperty('--hl-color', meta.text);
     col.appendChild(delta);
   }
@@ -2189,8 +2200,8 @@ function onResizeEnd(e) {
   // Calculate final end time
   const pos = getEventPos(e);
   const yOffset = pos.y - startTop;
-  const rawEndM = (yOffset / hourHeight) * 60 + START_HOUR * 60;
-  const snapped = roundToNearest(Math.max(startM + SNAP_MINUTES, Math.min(rawEndM, (START_HOUR + VISIBLE_HOURS) * 60)), SNAP_MINUTES);
+  const rawEndM = (yOffset / hourHeight) * 60 + _gridStartHour * 60;
+  const snapped = roundToNearest(Math.max(startM + SNAP_MINUTES, Math.min(rawEndM, _gridEndHour * 60)), SNAP_MINUTES);
   const newEndM = startM + Math.max(snapped - startM, SNAP_MINUTES);
 
   // Only update if changed significantly (>= 5 min difference)
@@ -2198,7 +2209,7 @@ function onResizeEnd(e) {
   if (task) {
     const oldEndM = gridEndTime(task.startTime, task.endTime);
     if (Math.abs(newEndM - oldEndM) >= 5) {
-      updateTask(taskId, { endTime: toTimeStr(newEndM) });
+      updateTask(taskId, { endTime: toClockStr(newEndM) });
     }
   }
 
@@ -2731,7 +2742,7 @@ function startPomodoro() {
   if (!pomodoroState) {
     // Find a task for this pomodoro
     const today = formatDate(new Date());
-    const focusTask = state.tasks.find(t => t.date === today && !t.completed && (t.tag === 'deep-work' || t.title.toLowerCase().includes('focus')));
+    const focusTask = state.tasks.find(t => t.date === today && !t.completed && (t.tag === 'daily' || t.title.toLowerCase().includes('focus')));
     const taskTitle = focusTask ? focusTask.title : 'Deep Work Session';
     createPomodoroSession(focusTask?.id || null, taskTitle, 25);
   }
@@ -2953,7 +2964,7 @@ function showSubcategoryBubble(tag) {
 
   const subcats = loadSubcategories();
   const subs = subcats[tag] || [];
-  const col = TAG_COLORS[tag] || TAG_COLORS.meeting;
+  const col = TAG_COLORS[tag] || TAG_COLORS.daily;
 
   const bar = document.createElement('div');
   bar.className = 'sch-sc-bar';
@@ -3075,13 +3086,13 @@ function renderSchTemplates() {
   let html = '';
   for (const tag of TAG_ORDER) {
     const subs = subcats[tag] || [];
-    const col = TAG_COLORS[tag] || TAG_COLORS.meeting;
+    const col = TAG_COLORS[tag] || TAG_COLORS.daily;
     const accent = col.text;
     const isOpen = state._openPmTag === tag;
     const isBuiltin = BUILTIN_TAGS.includes(tag);
     html += `<div class="sch-pm-chip${isOpen ? ' active' : ''}" data-pm-tag="${tag}"
       style="--chip-accent:${accent}" role="button" tabindex="0">
-      <span class="sch-pm-chip-label">${TAG_LABELS[tag]}</span>
+      <span class="sch-pm-chip-label">${escapeHtml(TAG_LABELS[tag])}</span>
       ${subs.length > 0 ? `<span class="sch-pm-chip-count">${subs.length}</span>` : ''}
     </div>`;
   }
@@ -3133,7 +3144,7 @@ function renderSchTemplates() {
         const newName = input.value.trim();
         if (newName && newName !== oldName) {
           if (!BUILTIN_TAGS.includes(tag)) {
-            updateCustomCategory(tag, newName, (TAG_COLORS[tag] || TAG_COLORS.meeting).text);
+            updateCustomCategory(tag, newName, (TAG_COLORS[tag] || TAG_COLORS.daily).text);
           } else {
             renameTag(tag, newName);
           }
@@ -3155,7 +3166,7 @@ function renderSchTemplates() {
 }
 
 // ─── INITIALIZATION ─────────────────────────────────────────
-(function initSchedule() {
+function initSchedule() {
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initSchedule);
     return;
@@ -3187,11 +3198,15 @@ function renderSchTemplates() {
   }
   scheduleReminderCheck();
   requestNotifPermission();
-  window.addEventListener('beforeunload', function() { saveState(); });
+  window.addEventListener('beforeunload', function() {
+    if (typeof HAVEN_UNLOAD_BLOCKED !== 'undefined' && HAVEN_UNLOAD_BLOCKED) return;
+    saveState();
+  });
 
 
   /* ─── Screenshot week (enhanced) ────────────── */
   window.captureWeekScreenshot = function() {
+    if (typeof requirePremium === 'function' && !requirePremium('export', { reason: 'Week screenshots are a Premium feature' })) return;
     if (!state || !state.tasks) return;
     var weekStart = state.currentWeekStart;
     if (!weekStart) weekStart = getMonday(new Date());
@@ -3445,7 +3460,7 @@ function renderSchTemplates() {
         var val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
         if (val) return val;
         // Fallback defaults
-        var defaults = { 'deep-work': '#6366f1', 'meeting': '#3b82f6', 'exercise': '#ef4444', 'study': '#10b981', 'hobby': '#f59e0b' };
+        var defaults = { 'daily': '#0ea5e9', 'math': '#3b82f6', 'physics': '#ef4444', 'bio': '#10b981', 'chem': '#f59e0b', 'eng': '#8b5cf6', 'mandarin': '#ec4899' };
         return defaults[tag] || fallback;
       }
       return c;
@@ -3634,6 +3649,7 @@ function renderSchTemplates() {
 
   /* ─── Copy week to next week ──────────────── */
   window.copyWeekToNext = function() {
+    if (typeof requirePremium === 'function' && !requirePremium('export', { reason: 'Copying a week is a Premium feature' })) return;
     if (typeof showToast !== 'function') return;
     var ws = state.currentWeekStart;
     if (!ws) { showToast('No week loaded', 'error'); return; }
@@ -3662,6 +3678,10 @@ function renderSchTemplates() {
     });
     if (typeof pageAfterTaskSave === 'function') pageAfterTaskSave();
     renderCalendar();
-    showToast('Copied ' + copied + ' task' + (copied > 1 ? 's' : '') + ' to next week', 'success', 3000);
+    showToast('Copied ' + copied + ' task' + (copied !== 1 ? 's' : '') + ' to next week', 'success', 3000);
   };
-})();
+}
+
+if (typeof havenBoot === 'function') havenBoot(initSchedule);
+else if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initSchedule);
+else initSchedule();

@@ -10,7 +10,7 @@ const target = `  // Reset subcategory dropdown
 const replacement = `  // Reset and populate subcategory dropdown with default tag
   const subcatEl = document.getElementById('tplAddSubcategory');
   if (subcatEl) {
-    const defaultTag = document.querySelector('#tplAddTagPills .tf-tag.active')?.dataset?.tag || 'deep-work';
+    const defaultTag = document.querySelector('#tplAddTagPills .tf-tag.active')?.dataset?.tag || 'study';
     const defaultSubs = typeof SUBCATEGORIES !== 'undefined' ? (SUBCATEGORIES[defaultTag] || []) : [];
     subcatEl.innerHTML = '<option value="">None</option>' + defaultSubs.map(function(s) { return '<option value="' + s + '">' + s + '</option>'; }).join('');
     subcatEl.value = '';

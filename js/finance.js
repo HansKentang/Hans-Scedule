@@ -408,7 +408,9 @@ function initFinance() {
   initAdvancedCharts();
 }
 
-if (document.readyState === 'loading') {
+if (typeof havenBoot === 'function') {
+  havenBoot(initFinance);
+} else if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initFinance);
 } else {
   initFinance();

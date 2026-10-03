@@ -105,16 +105,16 @@
         <p>Your data is stored in two places:</p>
         <ul>
           <li><strong>On your device:</strong> most app data lives locally in your browser (localStorage and IndexedDB) so the app works even offline.</li>
-          <li><strong>In the cloud:</strong> when you sign in, your content is synced to Google Firebase Firestore under our Firebase project to make it available across your devices. Firebase stores it in the Google Cloud region(s) configured for the project.</li>
+          <li><strong>In the cloud:</strong> when you sign in, your content is synced to our Supabase project (Postgres) to make it available across your devices. Supabase stores it in the region(s) configured for the project.</li>
         </ul>
-        <p>Data in transit is protected with HTTPS/TLS. Access to our Firebase project is restricted to the app&rsquo;s service accounts. Images you add to widgets or the gallery are stored as local caches on your device and synced alongside your content.</p>
+        <p>Data in transit is protected with HTTPS/TLS. Access to our Supabase project is governed by row-level security policies. Images you add to widgets or the gallery are stored as local caches on your device and synced alongside your content.</p>
       </section>
 
       <section id="third-party">
         <h2><span class="num">05</span>Third-Party Services</h2>
         <p>The app relies on the following processors and embedded services:</p>
         <ul>
-          <li><strong>Google Firebase (Authentication &amp; Firestore)</strong> — account sign-in and cross-device sync. Google processes authentication data under the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a> and Firebase terms.</li>
+          <li><strong>Supabase (Authentication &amp; Postgres)</strong> — account sign-in and cross-device sync. Supabase processes authentication data under the <a href="https://supabase.com/privacy" target="_blank" rel="noopener">Supabase Privacy Policy</a>.</li>
           <li><strong>Google Sign-In</strong> — optional federated login; subject to the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</li>
           <li><strong>Google Fonts</strong> — serves the app&rsquo;s typefaces; requests may reveal your IP address to Google.</li>
           <li><strong>Spotify embed</strong> — the sidebar player is an embedded Spotify widget governed by the <a href="https://www.spotify.com/legal/privacy-policy/" target="_blank" rel="noopener">Spotify Privacy Policy</a>.</li>

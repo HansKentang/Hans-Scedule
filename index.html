@@ -495,10 +495,13 @@
   </script>
   <script src="js/shared.js"></script>
   <script src="js/settings.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/gsi.js"></script>
-  <script src="js/firestore-sync.js"></script>
+  <script src="js/supabase-sync.js"></script>
+  <script src="js/cloud-store.js"></script>
+  <script src="js/premium-config.js"></script>
+  <script src="js/premium.js"></script>
 
   <script src="js/hub-visuals.js"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
@@ -540,7 +543,8 @@
     // ════════════════════════════════════════════════════════════
 
 function init() {
-      if (typeof HUB_MOBILE_DISABLED !== 'undefined' && HUB_MOBILE_DISABLED && window.innerWidth < 768) {
+      const hubDisabledOnThisDevice = typeof HUB_MOBILE_DISABLED !== 'undefined' && HUB_MOBILE_DISABLED && window.innerWidth < 768;
+      if (hubDisabledOnThisDevice) {
         document.documentElement.classList.add('hub-mobile-disabled');
       }
       loadState();
@@ -590,20 +594,23 @@ function init() {
       const observer = new MutationObserver(() => {});
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
-      initHubLayout();
-      initHubEditMode();
-      try { renderHubBento(); } catch(e) { console.error('renderHubBento error:', e); }
+      // The bento canvas is hidden below 768px. Don't start its renderers or
+      // fetchers — otherwise they keep running invisibly, draining battery and data.
+      if (!hubDisabledOnThisDevice) {
+        initHubLayout();
+        initHubEditMode();
+        try { renderHubBento(); } catch(e) { console.error('renderHubBento error:', e); }
+      }
 
       // Save hub content when leaving the page
       window.addEventListener('beforeunload', function() {
+        if (typeof HAVEN_UNLOAD_BLOCKED !== 'undefined' && HAVEN_UNLOAD_BLOCKED) return;
         if (typeof saveHubContent === 'function') saveHubContent();
       });
 
     }
 
-    if (document.readyState === 'loading')
-      document.addEventListener('DOMContentLoaded', () => { try { init(); } catch(e) { console.error('init() failed:', e); } });
-    else { try { init(); } catch(e) { console.error('init() failed:', e); } }
+    havenBoot(() => { try { init(); } catch(e) { console.error('init() failed:', e); } });
   </script>
 
   <!-- Sleep Log Modal -->
@@ -1361,9 +1368,15 @@ function init() {
       </h3>
       <div style="flex:1;overflow-y:auto;padding:var(--space-5) var(--space-6) var(--space-6)">
       <img id="imagePickerPreview" class="image-picker-preview" src="" alt="">
+      <div class="image-picker-tabs">
+        <button type="button" class="image-picker-tab active" data-picker-tab="upload" onclick="imagePickerSwitchTab('upload')">Upload</button>
+        <button type="button" class="image-picker-tab" data-picker-tab="url" onclick="imagePickerSwitchTab('url')">URL</button>
+        <button type="button" class="image-picker-tab" data-picker-tab="browse" onclick="imagePickerSwitchTab('browse')">Browse</button>
+      </div>
+      <div class="image-picker-tab-panel active" data-picker-panel="upload">
       <div class="image-picker-pastezone" id="imagePickerPasteZone" tabindex="0" contenteditable="true" onpaste="handleImagePickerPaste(event)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        <div>Paste image (Ctrl+V) or drag & drop</div>
+        <div>Paste image (Ctrl+V) or drag &amp; drop</div>
       </div>
       <div class="image-picker-file-row">
         <input type="file" id="imagePickerFileInput" accept="image/*" onchange="handleImagePickerFile(event)" style="display:none">
@@ -1372,7 +1385,21 @@ function init() {
           Choose from gallery
         </button>
       </div>
+      </div>
+      <div class="image-picker-tab-panel" data-picker-panel="url">
       <input type="text" id="imagePickerUrl" class="image-picker-url" placeholder="Or paste an image URL..." autocomplete="off" oninput="handleImagePickerUrlInput()">
+      </div>
+      <div class="image-picker-tab-panel" data-picker-panel="browse">
+        <div class="image-picker-browse-bar">
+          <input type="text" id="imagePickerSearchInput" placeholder="Search free photos..." autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();imagePickerSearch()}">
+          <button type="button" class="drawer-btn primary" onclick="imagePickerSearch()">Search</button>
+          <button type="button" class="drawer-btn" id="imagePickerSearchClear" onclick="imagePickerClearSearch()" style="display:none">Clear</button>
+        </div>
+        <div class="image-picker-grid" id="imagePickerGrid"></div>
+        <div id="imagePickerGridSentinel" style="height:1px"></div>
+        <div class="image-picker-grid-loading" id="imagePickerGridStatus"></div>
+        <div class="image-picker-credit">Photos via Wikimedia Commons &amp; Lorem Picsum</div>
+      </div>
       <div id="imagePickerStatus" class="image-picker-status">Paste an image or type a URL</div>
       <div class="img-fit-row" id="imagePickerFitRow">
         <span class="img-fit-label">Fit:</span>
@@ -1436,10 +1463,10 @@ function init() {
               <span class="drawer-section-title">Tag Colors</span>
             </div>
           </div>
-          <div class="drawer-section" id="settingsAccentColor">
+          <div class="drawer-section" id="settingsDisplay">
             <div class="drawer-section-header">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-              <span class="drawer-section-title">Accent Color</span>
+              <span class="drawer-section-title">Display</span>
             </div>
           </div>
           <div class="drawer-section" id="settingsImageManager">
@@ -1555,7 +1582,7 @@ function init() {
       </div>
     </div>
   </div>
-  <script>spInit();</script>
+  <script>if (typeof havenBoot === 'function') havenBoot(spInit); else spInit();</script>
 
 
 
