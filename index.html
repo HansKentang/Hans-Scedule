@@ -601,6 +601,7 @@ function init() {
         initHubEditMode();
         try { renderHubBento(); } catch(e) { console.error('renderHubBento error:', e); }
       }
+      try { if (typeof updateHub === 'function') updateHub(); } catch(e) { console.error('updateHub error:', e); }
 
       // Save hub content when leaving the page
       window.addEventListener('beforeunload', function() {
