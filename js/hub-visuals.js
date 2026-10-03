@@ -167,6 +167,20 @@ try { _hwStyles = JSON.parse(localStorage.getItem(HW_STYLES_KEY) || '{}'); } cat
 function _getHwStyle(uid) { return _hwStyles[uid] || 'default'; }
 function _setHwStyle(uid, style) { _hwStyles[uid] = style; try { localStorage.setItem(HW_STYLES_KEY, JSON.stringify(_hwStyles)); } catch(e) {} }
 
+const ALARM_STYLES_KEY = 'haven-alarm-styles';
+const ALARM_STYLE_LIST = ['digital','compact','card'];
+let _alarmStyles = {};
+try { _alarmStyles = JSON.parse(localStorage.getItem(ALARM_STYLES_KEY) || '{}'); } catch(e) {}
+function _getAlarmStyle(uid) { return _alarmStyles[uid] || 'digital'; }
+function _setAlarmStyle(uid, style) { _alarmStyles[uid] = style; try { localStorage.setItem(ALARM_STYLES_KEY, JSON.stringify(_alarmStyles)); } catch(e) {} }
+
+const TODAY_STYLES_KEY = 'haven-today-styles';
+const TODAY_STYLE_LIST = ['default','compact','progress'];
+let _todayStyles = {};
+try { _todayStyles = JSON.parse(localStorage.getItem(TODAY_STYLES_KEY) || '{}'); } catch(e) {}
+function _getTodayStyle(uid) { return _todayStyles[uid] || 'default'; }
+function _setTodayStyle(uid, style) { _todayStyles[uid] = style; try { localStorage.setItem(TODAY_STYLES_KEY, JSON.stringify(_todayStyles)); } catch(e) {} }
+
 function _studyUid(p) { return (p || 'st') + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36); }
 function _normalizeStudy(list) {
   if (!Array.isArray(list)) return [];
@@ -326,6 +340,8 @@ function _reloadAllWidgetStyles() {
   _imgStyles = _loadStyleMap(IMG_STYLES_KEY);
   _hwStyles = _loadStyleMap(HW_STYLES_KEY);
   _textStyles = _loadStyleMap(TEXT_STYLES_KEY);
+  _alarmStyles = _loadStyleMap(ALARM_STYLES_KEY);
+  _todayStyles = _loadStyleMap(TODAY_STYLES_KEY);
 }
 function _persistStyleMap(map, key) {
   try { localStorage.setItem(key, JSON.stringify(map)); } catch(e) {}
@@ -343,7 +359,8 @@ function _copyWidgetStyle(srcUid, dstUid) {
     [_quoteStyles, QUOTE_STYLES_KEY], [_cdStyles, CD_STYLES_KEY],
     [_priStyles, PRI_STYLES_KEY], [_progStyles, PROG_STYLES_KEY],
     [_goalsStyles, GOALS_STYLES_KEY], [_imgStyles, IMG_STYLES_KEY],
-    [_hwStyles, HW_STYLES_KEY], [_textStyles, TEXT_STYLES_KEY]
+    [_hwStyles, HW_STYLES_KEY], [_textStyles, TEXT_STYLES_KEY],
+    [_alarmStyles, ALARM_STYLES_KEY], [_todayStyles, TODAY_STYLES_KEY]
   ];
   for (var i = 0; i < pairs.length; i++) {
     var map = pairs[i][0];
@@ -1117,7 +1134,7 @@ function renderHubBento() {
          </div>
          <div class="bento-toolbar-remove">
           <button class="bento-tool-btn bento-tool-delete bento-tool-icon-only" data-remove-bubble="${uid}" title="Remove this widget" aria-label="Remove this widget">${TRASH_SVG}</button></div>
-         ${ (type === 'clock' || type === 'weather' || type === 'sleep-score' || type === 'expense' || type === 'headlines' || type === 'calendar' || type === 'todos' || type === 'habits' || type === 'mood' || type === 'water' || type === 'timer' || type === 'pomodoro' || type === 'notes' || type === 'links' || type === 'quote' || type === 'countdown' || type === 'priorities' || type === 'progress' || type === 'goals' || type === 'images' || type === 'text' || type === 'homework') ? `<div class="bento-toolbar-style">`
+          ${ (type === 'clock' || type === 'weather' || type === 'sleep-score' || type === 'expense' || type === 'headlines' || type === 'calendar' || type === 'todos' || type === 'today' || type === 'habits' || type === 'mood' || type === 'water' || type === 'timer' || type === 'alarm' || type === 'pomodoro' || type === 'notes' || type === 'links' || type === 'quote' || type === 'countdown' || type === 'priorities' || type === 'progress' || type === 'goals' || type === 'images' || type === 'text' || type === 'homework') ? `<div class="bento-toolbar-style">`
           + (type === 'clock' ? _styleBtn('data-clock-style-toggle="' + uid + '"', _getClockStyle(uid)) : '')
           + (type === 'weather' ? _styleBtn('data-weather-style-toggle="' + uid + '"', _getWeatherStyle(uid)) : '')
           + (type === 'sleep-score' ? _styleBtn('data-sleep-style-toggle="' + uid + '"', _getSleepStyle(uid)) : '')
@@ -1125,10 +1142,12 @@ function renderHubBento() {
           + (type === 'headlines' ? '<select class="bento-tool-btn bento-tool-style bento-headlines-select" data-headlines-source="' + uid + '" title="News source">' + Object.keys(_HL_SOURCES).map(function(sk) { return '<option value="' + sk + '"' + (sk === _getHeadlineSource() ? ' selected' : '') + '>' + _HL_SOURCES[sk].name + '</option>'; }).join('') + '</select>' : '')
           + (type === 'calendar' ? _styleBtn('data-cal-style-toggle="' + uid + '"', _getCalStyle(uid)) : '')
           + (type === 'todos' ? _styleBtn('data-todos-style-toggle="' + uid + '"', _getTodosStyle(uid)) : '')
+          + (type === 'today' ? _styleBtn('data-today-style-toggle="' + uid + '"', _getTodayStyle(uid)) : '')
           + (type === 'habits' ? _styleBtn('data-habits-style-toggle="' + uid + '"', _getHabitsStyle(uid)) : '')
           + (type === 'mood' ? _styleBtn('data-mood-style-toggle="' + uid + '"', _getMoodStyle(uid)) : '')
           + (type === 'water' ? _styleBtn('data-water-style-toggle="' + uid + '"', _getWaterStyle(uid)) : '')
           + (type === 'timer' ? _styleBtn('data-timer-style-toggle="' + uid + '"', _getTimerStyle(uid)) : '')
+          + (type === 'alarm' ? _styleBtn('data-alarm-style-toggle="' + uid + '"', _getAlarmStyle(uid)) : '')
           + (type === 'pomodoro' ? _styleBtn('data-pomo-style-toggle="' + uid + '"', _getPomoStyle(uid)) : '')
           + (type === 'notes' ? _styleBtn('data-notes-style-toggle="' + uid + '"', _getNotesStyle(uid)) : '')
           + (type === 'links' ? _styleBtn('data-links-style-toggle="' + uid + '"', _getLinksStyle(uid)) : '')
@@ -1261,6 +1280,41 @@ function renderHubBento() {
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>To Do's</span></div>
           <div class="w-list">${_todosItems}<button class="w-add-btn" data-add="todos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to-do</button></div>
+        </div>`;
+      }
+      case 'today': {
+        var _todayStr = formatDate(new Date());
+        var _tdAll = (typeof state !== 'undefined' && state && Array.isArray(state.tasks)) ? state.tasks : [];
+        var _tdTasks = _tdAll.filter(function(t) { return t && t.date === _todayStr && !isWhiteboardTask(t); });
+        _tdTasks.sort(function(a, b) { return parseTime(a.startTime || '99:99') - parseTime(b.startTime || '99:99'); });
+        var _tdDone = _tdTasks.filter(function(t) { return t.completed; }).length;
+        var _tdStyle = _getTodayStyle(uid);
+        var _tdCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        var _tdRow = function(t, compact) {
+          var _tid = String(t.id);
+          var _ttime = (t.startTime && typeof formatTimeRange === 'function') ? formatTimeRange(t.startTime, t.endTime) : (t.startTime || '');
+          var _tchip = '';
+          if (t.tag && !compact) {
+            var _tc = (typeof TAG_COLORS !== 'undefined' && TAG_COLORS[t.tag]) ? TAG_COLORS[t.tag].text : 'var(--text-tertiary)';
+            var _tl = (typeof TAG_LABELS !== 'undefined' && TAG_LABELS[t.tag]) ? TAG_LABELS[t.tag] : t.tag;
+            _tchip = '<span class="w-today-tag" style="color:' + e(_tc) + '">' + e(_tl) + '</span>';
+          }
+          return '<div class="w-item' + (compact ? ' w-item-compact' : '') + (t.completed ? ' w-item-done' : '') + '"><span class="w-todo-box ' + (compact ? 'w-todo-box-sm ' : '') + (t.completed ? 'w-todo-checked' : '') + '" data-today-toggle="' + e(_tid) + '">' + (t.completed ? _tdCheck : '') + '</span><span class="w-today-main"><span class="w-today-title' + (t.completed ? ' w-todo-done' : '') + '">' + e(t.title || 'Untitled') + '</span><span class="w-today-meta">' + e(_ttime) + _tchip + '</span></span></div>';
+        };
+        var _tdItems = '';
+        if (_tdStyle === 'compact') {
+          _tdItems = _tdTasks.map(function(t) { return _tdRow(t, true); }).join('');
+        } else if (_tdStyle === 'progress') {
+          var _tdPct = _tdTasks.length ? Math.round((_tdDone / _tdTasks.length) * 100) : 0;
+          _tdItems = '<div class="w-todos-progress"><div class="w-todos-prog-bar"><div class="w-todos-prog-fill" style="width:' + _tdPct + '%"></div></div><span class="w-todos-prog-text">' + _tdDone + '/' + _tdTasks.length + ' done (' + _tdPct + '%)</span></div>' + _tdTasks.map(function(t) { return _tdRow(t, false); }).join('');
+        } else {
+          _tdItems = _tdTasks.map(function(t) { return _tdRow(t, false); }).join('');
+        }
+        if (!_tdTasks.length) _tdItems = '<div class="w-today-empty">No tasks today</div>';
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg><span>Today</span><span class="w-today-count">${_tdDone}/${_tdTasks.length}</span></div>
+          <div class="w-list"><div class="w-today-wrap" data-today-uid="${uid}">${_tdItems}</div><div class="w-today-add-row"><input class="w-today-add-input" data-today-add="${uid}" placeholder="Add for today…" maxlength="80" autocomplete="off"><button class="w-add-btn" data-today-add-btn="${uid}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button></div></div>
         </div>`;
       }
       case 'habits': {
@@ -1529,6 +1583,26 @@ function renderHubBento() {
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Pomodoro</span></div>
           ${_pomoBody}
+        </div>`;
+      }
+      case 'alarm': {
+        var _al = _alarmCfg(item);
+        var _alOn = _al.enabled !== false && !!_al.time;
+        var _alStyle = _getAlarmStyle(uid);
+        var _alHead = '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Alarm</span><button class="w-alarm-toggle' + (_alOn ? ' on' : '') + '" data-alarm-toggle="' + uid + '">' + (_alOn ? 'On' : 'Off') + '</button></div>';
+        var _alInputs = '<div class="w-alarm-row"><input type="time" class="w-alarm-time-input" data-alarm-time="' + uid + '" value="' + e(_al.time || '') + '"><input type="text" class="w-alarm-label-input" data-alarm-label="' + uid + '" value="' + e(_al.label || '') + '" placeholder="Label" maxlength="40" autocomplete="off"></div>';
+        var _alBody = '';
+        if (_alStyle === 'compact') {
+          _alBody = '<div class="w-alarm-wrap w-alarm-compact" data-alarm-uid="' + uid + '"><div class="w-alarm-compact-top"><span class="w-alarm-big-sm">' + e(_al.time || '--:--') + '</span><span class="w-alarm-status">' + e(_alarmStatusText(_al)) + '</span></div>' + _alInputs + '</div>';
+        } else if (_alStyle === 'card') {
+          _alBody = '<div class="w-alarm-wrap w-alarm-card" data-alarm-uid="' + uid + '"><div class="w-alarm-card-label">' + e(_al.label || 'Alarm') + '</div><div class="w-alarm-big">' + e(_al.time || '--:--') + '</div><div class="w-alarm-status">' + e(_alarmStatusText(_al)) + '</div>' + _alInputs + '</div>';
+        } else {
+          _alBody = '<div class="w-alarm-wrap" data-alarm-uid="' + uid + '"><div class="w-alarm-display"><span class="w-alarm-big">' + e(_al.time || '--:--') + '</span><span class="w-alarm-name">' + e(_al.label || 'Alarm') + '</span></div><div class="w-alarm-status">' + e(_alarmStatusText(_al)) + '</div>' + _alInputs + '</div>';
+        }
+        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
+          ${editUI}
+          ${_alHead}
+          ${_alBody}
         </div>`;
       }
       case 'spotify':
@@ -2259,6 +2333,30 @@ function renderHubBento() {
     });
   });
 
+  grid.querySelectorAll('[data-today-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.todayStyleToggle;
+      var cur = _getTodayStyle(uid);
+      var idx = TODAY_STYLE_LIST.indexOf(cur);
+      var next = TODAY_STYLE_LIST[(idx + 1) % TODAY_STYLE_LIST.length];
+      _setTodayStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
+  grid.querySelectorAll('[data-alarm-style-toggle]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var uid = this.dataset.alarmStyleToggle;
+      var cur = _getAlarmStyle(uid);
+      var idx = ALARM_STYLE_LIST.indexOf(cur);
+      var next = ALARM_STYLE_LIST[(idx + 1) % ALARM_STYLE_LIST.length];
+      _setAlarmStyle(uid, next);
+      renderHubBento();
+    });
+  });
+
   // Wire habits style toggle buttons
   grid.querySelectorAll('[data-habits-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
@@ -2467,7 +2565,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-hw-style-toggle], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], [data-hw-due], [data-accent-popup], [data-st-toggle-subj], [data-st-toggle-chap], [data-st-toggle-item], [data-st-add-subject], [data-st-add-chapter], [data-st-add-item], [data-st-del-subject], [data-st-del-chapter], [data-st-del-item], [data-st-color], .cpop, .bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .w-st-add-inline')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-hw-style-toggle], [data-alarm-style-toggle], [data-today-style-toggle], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], [data-hw-due], [data-accent-popup], [data-st-toggle-subj], [data-st-toggle-chap], [data-st-toggle-item], [data-st-add-subject], [data-st-add-chapter], [data-st-add-item], [data-st-del-subject], [data-st-del-chapter], [data-st-del-item], [data-st-color], .cpop, .bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .w-st-add-inline')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -2563,7 +2661,9 @@ function renderHubBento() {
 
   if (visible.length > 0) {
     var lowest = visible.reduce(function(max, i) { return Math.max(max, i.y + (i.h || 240)); }, 0);
-    grid.style.minHeight = Math.min(Math.max(800, lowest + 480), MAX_CANVAS_HEIGHT) + 'px';
+    var trailing = isEdit ? 480 : 24;
+    var floor = isEdit ? 800 : 0;
+    grid.style.minHeight = Math.min(Math.max(floor, lowest + trailing), MAX_CANVAS_HEIGHT) + 'px';
   } else if (!isEdit) {
     grid.style.minHeight = '400px';
     grid.insertAdjacentHTML('beforeend', '<div class="bento-empty-state"><div class="bento-empty-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="32" height="32" rx="4"/><line x1="24" y1="18" x2="24" y2="30"/><line x1="18" y1="24" x2="30" y2="24"/></svg></div><div class="bento-empty-title">Canvas is empty</div><div class="bento-empty-desc">Toggle edit mode and click <strong>Add Bubble</strong> to populate your canvas</div></div>');
@@ -2944,6 +3044,60 @@ function renderHubBento() {
   } else if (_progressRefreshInterval) {
     clearInterval(_progressRefreshInterval);
     _progressRefreshInterval = null;
+  }
+
+  var _needsLive = !!(grid.querySelector('.w-alarm-wrap') || grid.querySelector('.w-today-wrap'));
+  if (_needsLive && !_hubLiveTick) {
+    _hubLiveDay = _hubTodayKey();
+    _hubLiveTick = setInterval(function() {
+      if (_bubbleDragData || _bubbleResizeData) return;
+      var ae = document.activeElement;
+      var typing = ae && ae !== document.body && (ae.isContentEditable || (ae.tagName && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)));
+      if (typing) { _checkAlarms(true); return; }
+      if (_hubTodayKey() !== _hubLiveDay) { _hubLiveDay = _hubTodayKey(); renderHubBento(); return; }
+      _checkAlarms(false);
+    }, 30000);
+  } else if (!_needsLive && _hubLiveTick) {
+    clearInterval(_hubLiveTick);
+    _hubLiveTick = null;
+  }
+
+  if (grid && !grid._alarmWired) {
+    grid._alarmWired = true;
+    grid.addEventListener('change', function(ev) {
+      var _tgt = ev.target && ev.target.closest ? ev.target : null;
+      if (!_tgt) return;
+      var _at = _tgt.closest ? _tgt.closest('[data-alarm-time]') : null;
+      if (_at) {
+        var _ai = _alarmItem(_at.dataset.alarmTime);
+        if (_ai) {
+          if (!_ai.alarm || typeof _ai.alarm !== 'object') _ai.alarm = {};
+          _ai.alarm.time = /^\d{2}:\d{2}$/.test(_at.value) ? _at.value : '';
+          if (_ai.alarm.enabled === false && _ai.alarm.time) _ai.alarm.enabled = true;
+          _ai.alarm.lastFired = '';
+          saveHubContent();
+          renderHubBento();
+        }
+        return;
+      }
+      var _al2 = _tgt.closest ? _tgt.closest('[data-alarm-label]') : null;
+      if (_al2) {
+        var _ai2 = _alarmItem(_al2.dataset.alarmLabel);
+        if (_ai2) {
+          if (!_ai2.alarm || typeof _ai2.alarm !== 'object') _ai2.alarm = {};
+          _ai2.alarm.label = String(_al2.value || '').slice(0, 40);
+          saveHubContent();
+        }
+        return;
+      }
+    });
+    grid.addEventListener('keydown', function(ev) {
+      if (ev.key !== 'Enter') return;
+      var _tin = ev.target && ev.target.closest ? ev.target.closest('[data-today-add]') : null;
+      if (!_tin) return;
+      ev.preventDefault();
+      _todayQuickAdd(_tin.value);
+    });
   }
 
   setupBubbleDragDrop();
@@ -3904,6 +4058,7 @@ function bubbleTypeIcon(t) {
     priorities: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
     quote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>',
     todos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>',
+    today: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>',
     habits: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
     notes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
     links: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
@@ -3912,6 +4067,7 @@ function bubbleTypeIcon(t) {
     weather: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
     calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
     timer: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><line x1="22" y1="2" x2="18" y2="6"/></svg>',
+    alarm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
     pomodoro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M2 12h2"/><path d="M20 12h2"/></svg>',
     spotify: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="22"/><line x1="2" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="22" y2="12"/></svg>',
     strava: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 2L21 12l-5.5 0L10 2z"/><path d="M10.5 12L6 2l-5.5 0L6 12z"/></svg>',
@@ -4758,7 +4914,7 @@ function addBubbleTypes(types, dropPos) {
     }
     item.w = snap(280);
     item.h = (function() {
-      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,pomodoro:180,weather:260,headlines:260,'sleep-score':280,water:180,mood:200,countdown:280,expense:320,notes:240,links:240,quote:220,priorities:320,todos:320,habits:240,progress:240,goals:420,text:160,crypto:300,homework:320,study:420};
+      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,alarm:220,pomodoro:180,weather:260,headlines:260,'sleep-score':280,water:180,mood:200,countdown:280,expense:320,notes:240,links:240,quote:220,priorities:320,todos:320,today:320,habits:240,progress:240,goals:420,text:160,crypto:300,homework:320,study:420};
       return snap(sizes[item.t] || 280);
     })();
     // If a drop position is provided, use it; otherwise find a gap
@@ -4839,6 +4995,71 @@ function findBentoGap(layout, bubbleW, bubbleH, gridWidth) {
 }
 
 /* ─── Timer / Pomodoro helpers ────────────────── */
+var _hubLiveTick = null;
+var _hubLiveDay = '';
+function _alarmCfg(item) {
+  var d = { time:'', label:'', enabled:true, lastFired:'' };
+  var a = item && item.alarm;
+  if (a && typeof a === 'object') {
+    if (typeof a.time === 'string') d.time = a.time;
+    if (typeof a.label === 'string') d.label = a.label;
+    if (a.enabled === false) d.enabled = false;
+    if (typeof a.lastFired === 'string') d.lastFired = a.lastFired;
+  }
+  return d;
+}
+function _alarmItem(uid) {
+  if (!hubContent || !Array.isArray(hubContent.bentoLayout)) return null;
+  return hubContent.bentoLayout.find(function(i) { return i && i.uid === uid && i.t === 'alarm'; }) || null;
+}
+function _alarmStatusText(al) {
+  if (!al.time || !/^\d{2}:\d{2}$/.test(al.time)) return 'Set a time below';
+  if (al.enabled === false) return 'Off';
+  var now = new Date();
+  var cur = now.getHours() * 60 + now.getMinutes();
+  var at = parseInt(al.time.slice(0, 2), 10) * 60 + parseInt(al.time.slice(3), 10);
+  if (cur < at) {
+    var diff = at - cur;
+    var h = Math.floor(diff / 60);
+    var m = diff % 60;
+    return 'Rings today in ' + (h ? h + 'h ' : '') + m + 'm';
+  }
+  return 'Rings tomorrow at ' + al.time;
+}
+function _todayQuickAdd(title) {
+  title = String(title || '').trim();
+  if (!title) return;
+  if (typeof createTask !== 'function' || typeof formatDate !== 'function') return;
+  createTask({ title: title, date: formatDate(new Date()) });
+  renderHubBento();
+  if (typeof updateHub === 'function') { try { updateHub(); } catch(_err) {} }
+}
+function _checkAlarms(quiet) {
+  if (!hubContent || !Array.isArray(hubContent.bentoLayout)) return;
+  var now = new Date();
+  var hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  var todayKey = _hubTodayKey();
+  var saved = false;
+  var fired = false;
+  hubContent.bentoLayout.forEach(function(it) {
+    if (!it || it.t !== 'alarm' || !it.alarm || it.alarm.enabled === false) return;
+    var tm = it.alarm.time;
+    if (typeof tm !== 'string' || !/^\d{2}:\d{2}$/.test(tm)) return;
+    if (it.alarm.lastFired === todayKey) return;
+    if (hm < tm) return;
+    var late = (now.getHours() * 60 + now.getMinutes()) - (parseInt(tm.slice(0, 2), 10) * 60 + parseInt(tm.slice(3), 10));
+    it.alarm.lastFired = todayKey;
+    saved = true;
+    if (late > 30) return;
+    fired = true;
+    var lbl = it.alarm.label || 'Alarm';
+    if (typeof playChime === 'function') { try { playChime(); } catch(_e1) {} }
+    if (typeof showToast === 'function') { try { showToast(lbl + ' — ' + tm, 'success', 6000); } catch(_e2) {} }
+    if (typeof _sendNotification === 'function') { try { _sendNotification(lbl, 'Alarm · ' + tm, { tag: 'alarm-' + todayKey + '-' + tm }); } catch(_e3) {} }
+  });
+  if (saved) saveHubContent();
+  if (fired && !quiet) renderHubBento();
+}
 function _timerState(uid) {
   if (!_timerIntervals[uid]) _timerIntervals[uid] = { elapsed: 0, running: false, startTs: null, target: 0, mode: 'countdown' };
   return _timerIntervals[uid];
@@ -5109,28 +5330,120 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', expense:'Expense', text:'Text', crypto:'Crypto', homework:'Homework', study:'Study' };
-  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', expense:'Spending + balance', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', text:'Custom heading' };
-  var dockSizes = { goals:'280×420', priorities:'280×320', todos:'280×320', habits:'280×240', progress:'280×240', homework:'280×320', study:'280×420', water:'280×180', mood:'280×200', spotify:'280×420', strava:'280×420', flightradar:'280×420', images:'280×210', crypto:'280×300', expense:'280×320', clock:'280×160', weather:'280×260', calendar:'280×300', timer:'280×180', pomodoro:'280×180', 'sleep-score':'280×280', headlines:'280×260', countdown:'280×280', quote:'280×220', notes:'280×240', links:'280×240', text:'280×160' };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', today:'Today', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', alarm:'Alarm', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', expense:'Expense', text:'Text', crypto:'Crypto', homework:'Homework', study:'Study' };
+  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', expense:'Spending + balance', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Daily time alarm', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', text:'Custom heading' };
   var categories = [
-    { name:'Productivity', short:'Productivity', types:['goals','priorities','todos','habits','progress','homework','study'] },
+    { name:'Productivity', short:'Productivity', types:['goals','priorities','todos','today','habits','progress','homework','study'] },
     { name:'Wellness', short:'Wellness', types:['water','mood','sleep-score'] },
     { name:'Media', short:'Media', types:['spotify','strava','flightradar','images'] },
     { name:'Finance', short:'Finance', types:['crypto','expense'] },
-    { name:'Utilities', short:'Utilities', types:['clock','weather','calendar','timer','pomodoro','headlines','countdown'] },
+    { name:'Utilities', short:'Utilities', types:['clock','weather','calendar','timer','alarm','pomodoro','headlines','countdown'] },
     { name:'Content', short:'Content', types:['quote','notes','links','text'] }
   ];
+  var _ciHead = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
+  var catIcons = {
+    all: _ciHead + '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+    Productivity: _ciHead + '<rect x="3" y="4" width="18" height="16" rx="2"/><polyline points="8 12 11 15 16 9"/></svg>',
+    Wellness: _ciHead + '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>',
+    Media: _ciHead + '<circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16 10 8"/></svg>',
+    Finance: _ciHead + '<circle cx="12" cy="12" r="9"/><path d="M12 6.5v11M14.8 9.2c-.6-.9-1.6-1.4-2.8-1.4-1.6 0-2.8.9-2.8 2.3 0 3.2 5.6 1.6 5.6 4.9 0 1.4-1.2 2.3-2.8 2.3-1.2 0-2.2-.5-2.8-1.4"/></svg>',
+    Utilities: _ciHead + '<line x1="4" y1="7" x2="20" y2="7"/><circle cx="15" cy="7" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="17" r="2"/></svg>',
+    Content: _ciHead + '<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>'
+  };
+  function dockItemMatches(t, q) {
+    if (!q) return true;
+    var lbl = (labels[t] || t).toLowerCase();
+    return lbl.indexOf(q) !== -1 || t.toLowerCase().indexOf(q) !== -1 || (blurbs[t] || '').toLowerCase().indexOf(q) !== -1;
+  }
   function applyFilters() {
-    var q = (dock.querySelector('.bds-input')?.value || '').toLowerCase().trim();
-    var activeCat = dock.querySelector('.bdf-pill.active')?.dataset?.filter || 'all';
-    dock.querySelectorAll('[data-dock-item-type]').forEach(function(it) {
-      var t = it.dataset.dockItemType;
-      var lbl = labels[t] || t;
-      var blurb = (blurbs[t] || '').toLowerCase();
-      var catMatch = activeCat === 'all' || it.dataset.dockCategory === activeCat;
-      var searchMatch = !q || lbl.toLowerCase().indexOf(q) !== -1 || t.toLowerCase().indexOf(q) !== -1 || blurb.indexOf(q) !== -1;
-      it.style.display = (catMatch && searchMatch) ? '' : 'none';
+    var rawQ = (dock.querySelector('.bds-input') || {}).value || '';
+    var q = String(rawQ).toLowerCase().trim();
+    if (!dock._dockCat) {
+      var anyBox = false;
+      var allHits = [];
+      categories.forEach(function(cat) {
+        cat.types.forEach(function(t) { if (dockItemMatches(t, q)) allHits.push(t); });
+      });
+      catsEl.querySelectorAll('[data-dock-catbox]').forEach(function(box) {
+        if (box.dataset.dockCatbox === 'all') {
+          var showAll = !q || 'all'.indexOf(q) !== -1 || allHits.length > 0;
+          box.style.display = showAll ? '' : 'none';
+          if (showAll) anyBox = true;
+          var cntAll = box.querySelector('.bdc-count');
+          if (cntAll) cntAll.textContent = q ? allHits.length + ' found' : totalTypes + ' widgets';
+          return;
+        }
+        var cat = null;
+        for (var ci = 0; ci < categories.length; ci++) {
+          if (categories[ci].name === box.dataset.dockCatbox) cat = categories[ci];
+        }
+        if (!cat) return;
+        var hits = cat.types.filter(function(t) { return dockItemMatches(t, q); });
+        var show = !q || cat.name.toLowerCase().indexOf(q) !== -1 || hits.length > 0;
+        box.style.display = show ? '' : 'none';
+        if (show) anyBox = true;
+        var cnt = box.querySelector('.bdc-count');
+        if (cnt) cnt.textContent = q ? hits.length + ' found' : cat.types.length + ' widgets';
+      });
+      var catsEmpty = catsEl.querySelector('[data-cats-empty]');
+      if (catsEmpty) catsEmpty.style.display = anyBox ? 'none' : '';
+    } else {
+      var anyTile = false;
+      dock.querySelectorAll('[data-dock-section]').forEach(function(sec) {
+        if (sec.dataset.dockSection !== dock._dockCat) { sec.style.display = 'none'; return; }
+        var secVis = false;
+        sec.querySelectorAll('[data-dock-item-type]').forEach(function(it) {
+          var show = dockItemMatches(it.dataset.dockItemType, q);
+          it.style.display = show ? '' : 'none';
+          if (show) secVis = true;
+        });
+        sec.style.display = secVis ? '' : 'none';
+        if (secVis) anyTile = true;
+      });
+      var gridEmpty = widgetGrid.querySelector('[data-dock-empty]');
+      if (gridEmpty) gridEmpty.style.display = anyTile ? 'none' : '';
+    }
+  }
+  function dockRestoreTiles() {
+    widgetGrid.querySelectorAll('[data-dock-item-type]').forEach(function(it) {
+      if (it._homeSec && it.parentNode !== it._homeSec) it._homeSec.appendChild(it);
     });
+  }
+  function dockCollectAll() {
+    dockRestoreTiles();
+    var all = null;
+    widgetGrid.querySelectorAll('[data-dock-section]').forEach(function(s) {
+      if (s.dataset.dockSection === 'all') all = s;
+    });
+    if (!all) return;
+    categories.forEach(function(cat) {
+      var sec = null;
+      widgetGrid.querySelectorAll('[data-dock-section]').forEach(function(s) {
+        if (s.dataset.dockSection === cat.name) sec = s;
+      });
+      if (!sec) return;
+      sec.querySelectorAll('[data-dock-item-type]').forEach(function(it) {
+        all.appendChild(it);
+      });
+    });
+  }
+  function dockShowCats() {
+    dock._dockCat = null;
+    dockRestoreTiles();
+    catsEl.style.display = '';
+    subhead.style.display = 'none';
+    widgetGrid.style.display = 'none';
+    applyFilters();
+  }
+  function dockShowCat(name) {
+    dock._dockCat = name;
+    if (name === 'all') dockCollectAll(); else dockRestoreTiles();
+    catsEl.style.display = 'none';
+    subhead.style.display = '';
+    widgetGrid.style.display = '';
+    var t = subhead.querySelector('[data-subhead-title]');
+    if (t) t.textContent = name === 'all' ? 'All widgets' : name;
+    applyFilters();
   }
 
   function isPlacedType(t) { return t === 'images' ? false : has(t); }
@@ -5169,28 +5482,46 @@ function renderBubbleDock(grid) {
   searchWrap.appendChild(searchInput);
   topbar.appendChild(searchWrap);
 
-  var hint = document.createElement('span');
-  hint.className = 'bubble-dock-hint';
-  hint.textContent = 'Click to add • Drag to place • Drop here to remove';
-  hint.title = 'Click adds below your canvas. Drag places exactly where you drop. Drag a widget back here to remove it.';
-  topbar.appendChild(hint);
+  dock.title = 'Click to add • Drag to place • Drop here to remove';
+  var body = document.createElement('div');
+  body.className = 'bubble-dock-body';
 
-  var filters = document.createElement('div');
-  filters.className = 'bubble-dock-filters';
-  var allPill = document.createElement('button');
-  allPill.className = 'bdf-pill active';
-  allPill.textContent = 'All';
-  allPill.dataset.filter = 'all';
-  filters.appendChild(allPill);
+  var catsEl = document.createElement('div');
+  catsEl.className = 'bubble-dock-cats';
+  var totalTypes = 0;
+  categories.forEach(function(cat) { totalTypes += cat.types.length; });
+  var allBox = document.createElement('button');
+  allBox.type = 'button';
+  allBox.className = 'bdc-box';
+  allBox.dataset.dockCatbox = 'all';
+  allBox.title = 'All widgets';
+  allBox.innerHTML = '<span class="bdc-ico">' + catIcons.all + '</span><span class="bdc-name">All</span><span class="bdc-count">' + totalTypes + ' widgets</span>';
+  allBox.addEventListener('click', function() { dockShowCat('all'); });
+  catsEl.appendChild(allBox);
   categories.forEach(function(cat) {
-    var pill = document.createElement('button');
-    pill.className = 'bdf-pill';
-    pill.textContent = cat.name;
-    pill.dataset.filter = cat.name;
-    pill.title = cat.name;
-    filters.appendChild(pill);
+    var box = document.createElement('button');
+    box.type = 'button';
+    box.className = 'bdc-box';
+    box.dataset.dockCatbox = cat.name;
+    box.title = cat.name;
+    box.innerHTML = '<span class="bdc-ico">' + (catIcons[cat.name] || '') + '</span><span class="bdc-name">' + cat.short + '</span><span class="bdc-count">' + cat.types.length + ' widgets</span>';
+    box.addEventListener('click', function() { dockShowCat(cat.name); });
+    catsEl.appendChild(box);
   });
-  topbar.appendChild(filters);
+  var catsEmpty = document.createElement('div');
+  catsEmpty.className = 'bubble-dock-empty';
+  catsEmpty.setAttribute('data-cats-empty', '');
+  catsEmpty.textContent = 'No categories match your search.';
+  catsEmpty.style.display = 'none';
+  catsEl.appendChild(catsEmpty);
+  body.appendChild(catsEl);
+
+  var subhead = document.createElement('div');
+  subhead.className = 'bubble-dock-subhead';
+  subhead.style.display = 'none';
+  subhead.innerHTML = '<button type="button" class="bds-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Categories</span></button><span class="bds-sub-title" data-subhead-title></span>';
+  subhead.querySelector('.bds-back').addEventListener('click', dockShowCats);
+  body.appendChild(subhead);
 
   var closeBtn = document.createElement('button');
   closeBtn.className = 'bubble-dock-close';
@@ -5209,77 +5540,75 @@ function renderBubbleDock(grid) {
 
   dock.appendChild(topbar);
 
-  // Widget grid — flat grid, all visible at once
   var widgetGrid = document.createElement('div');
   widgetGrid.className = 'bubble-dock-grid';
   widgetGrid.setAttribute('data-dock-items', '');
+  widgetGrid.style.display = 'none';
 
-  var allTypes = [];
   categories.forEach(function(cat) {
+    var section = document.createElement('div');
+    section.className = 'bubble-dock-section';
+    section.dataset.dockSection = cat.name;
+    section.style.display = 'none';
     cat.types.forEach(function(t) {
-      allTypes.push({ type: t, cat: cat.name, catShort: cat.short });
-    });
-  });
-
-  allTypes.forEach(function(entry) {
-    var t = entry.type;
-    var placed = isPlacedType(t);
-    var item = document.createElement('div');
-    item.className = 'bubble-dock-item' + (placed ? ' placed' : '');
-    item.dataset.bubbleDockType = t;
-    item.dataset.dockItemType = t;
-    item.dataset.dockCategory = entry.cat;
-    item.dataset.dockLabel = labels[t];
-    item.title = placed ? labels[t] + ' — already on canvas' : 'Click to add ' + labels[t] + ' • or drag onto canvas';
-    item.setAttribute('role', 'button');
-    item.setAttribute('tabindex', placed ? '-1' : '0');
-    var icon = document.createElement('span');
-    icon.className = 'bdi-icon';
-    icon.innerHTML = bubbleTypeIcon(t);
-    var label = document.createElement('span');
-    label.className = 'bdi-label';
-    label.textContent = labels[t];
-    var desc = document.createElement('span');
-    desc.className = 'bdi-desc';
-    desc.textContent = blurbs[t] || '';
-    var dim = document.createElement('span');
-    dim.className = 'bdi-dim';
-    dim.textContent = dockSizes[t] || '';
-    var badge = document.createElement('span');
-    badge.className = 'bdi-added';
-    badge.textContent = '✓ Added';
-    badge.style.display = placed ? '' : 'none';
-    item.appendChild(icon);
-    item.appendChild(label);
-    item.appendChild(desc);
-    item.appendChild(dim);
-    item.appendChild(badge);
-    item.addEventListener('click', function(ev) {
-      if (item.classList.contains('placed')) return;
-      if (ev.target.closest('input,select,textarea')) return;
-      addBubbleTypes([t]);
-    });
-    item.addEventListener('keydown', function(ev) {
-      if ((ev.key === 'Enter' || ev.key === ' ') && !item.classList.contains('placed')) {
-        ev.preventDefault();
+      var placed = isPlacedType(t);
+      var item = document.createElement('div');
+      item.className = 'bubble-dock-item' + (placed ? ' placed' : '');
+      item.dataset.bubbleDockType = t;
+      item.dataset.dockItemType = t;
+      item.dataset.dockCategory = cat.name;
+      item.dataset.dockLabel = labels[t];
+      item.title = placed ? labels[t] + ' — already on canvas' : 'Click to add ' + labels[t] + ' • or drag onto canvas';
+      item.setAttribute('role', 'button');
+      item.setAttribute('tabindex', placed ? '-1' : '0');
+      var icon = document.createElement('span');
+      icon.className = 'bdi-icon';
+      icon.innerHTML = bubbleTypeIcon(t);
+      var label = document.createElement('span');
+      label.className = 'bdi-label';
+      label.textContent = labels[t];
+      var badge = document.createElement('span');
+      badge.className = 'bdi-added';
+      badge.textContent = '✓ Added';
+      badge.style.display = placed ? '' : 'none';
+      item.appendChild(icon);
+      item.appendChild(label);
+      item.appendChild(badge);
+      item.addEventListener('click', function(ev) {
+        if (item.classList.contains('placed')) return;
+        if (ev.target.closest('input,select,textarea')) return;
         addBubbleTypes([t]);
-      }
+      });
+      item.addEventListener('keydown', function(ev) {
+        if ((ev.key === 'Enter' || ev.key === ' ') && !item.classList.contains('placed')) {
+          ev.preventDefault();
+          addBubbleTypes([t]);
+        }
+      });
+      item._homeSec = section;
+      section.appendChild(item);
     });
-    widgetGrid.appendChild(item);
+    widgetGrid.appendChild(section);
   });
 
-  dock.appendChild(widgetGrid);
+  var allSection = document.createElement('div');
+  allSection.className = 'bubble-dock-section';
+  allSection.dataset.dockSection = 'all';
+  allSection.style.display = 'none';
+  widgetGrid.appendChild(allSection);
 
-  // Filter toggle
-  filters.addEventListener('click', function(e) {
-    var pill = e.target.closest('.bdf-pill');
-    if (!pill) return;
-    filters.querySelectorAll('.bdf-pill').forEach(function(p) { p.classList.remove('active'); });
-    pill.classList.add('active');
-    applyFilters();
-  });
+  var gridEmpty = document.createElement('div');
+  gridEmpty.className = 'bubble-dock-empty';
+  gridEmpty.setAttribute('data-dock-empty', '');
+  gridEmpty.textContent = 'No widgets match your search.';
+  gridEmpty.style.display = 'none';
+  widgetGrid.appendChild(gridEmpty);
 
-  // Search filter
+  body.appendChild(widgetGrid);
+  dock.appendChild(body);
+
+  dock._dockCat = null;
+
   searchInput.addEventListener('input', applyFilters);
 
   grid.parentNode.insertBefore(dock, grid.nextSibling);
@@ -5323,7 +5652,7 @@ function initBubbleDockDrag(dock) {
 
   function _defWidgetSize(type) {
     var defSizes = {
-      goals:{w:280,h:420},priorities:{w:280,h:320},todos:{w:280,h:320},
+      goals:{w:280,h:420},priorities:{w:280,h:320},todos:{w:280,h:320},today:{w:280,h:320},
       habits:{w:280,h:240},progress:{w:280,h:240},clock:{w:280,h:160},
       weather:{w:280,h:260},calendar:{w:280,h:300},timer:{w:280,h:180},
       pomodoro:{w:280,h:180},spotify:{w:280,h:420},strava:{w:280,h:420},
@@ -5659,6 +5988,35 @@ function setupHubEditEvents() {
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
     if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
+    const alarmToggle = e.target.closest('[data-alarm-toggle]');
+    if (alarmToggle) {
+      var _auid = alarmToggle.dataset.alarmToggle;
+      var _aitem = _alarmItem(_auid);
+      if (_aitem) {
+        if (!_aitem.alarm || typeof _aitem.alarm !== 'object') _aitem.alarm = {};
+        _aitem.alarm.enabled = _aitem.alarm.enabled === false ? true : false;
+        saveHubContent();
+        renderHubBento();
+      }
+      return;
+    }
+    const todayToggle = e.target.closest('[data-today-toggle]');
+    if (todayToggle) {
+      var _tid = todayToggle.dataset.todayToggle;
+      if (_tid && typeof toggleComplete === 'function') {
+        toggleComplete(_tid);
+        renderHubBento();
+        if (typeof updateHub === 'function') { try { updateHub(); } catch(_err) {} }
+      }
+      return;
+    }
+    const todayAddBtn = e.target.closest('[data-today-add-btn]');
+    if (todayAddBtn) {
+      var _tbubble = todayAddBtn.closest('.bento-bubble');
+      var _tinput = _tbubble ? _tbubble.querySelector('[data-today-add]') : null;
+      _todayQuickAdd(_tinput ? _tinput.value : '');
+      return;
+    }
     const delBtn = e.target.closest('[data-del]');
     if (!delBtn || !hubEditMode) return;
     const field = delBtn.dataset.del;

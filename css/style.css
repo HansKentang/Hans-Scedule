@@ -5234,6 +5234,35 @@ html.light .hub-db-header .hub-db-count strong {
   text-decoration: line-through;
   color: var(--text-tertiary);
 }
+.w-alarm-wrap { display:flex; flex-direction:column; gap:8px; }
+.w-alarm-display { display:flex; align-items:baseline; gap:8px; min-width:0; }
+.w-alarm-big { font-size:1.9rem; font-weight:600; letter-spacing:-0.02em; color:var(--text-primary); font-variant-numeric:tabular-nums; }
+.w-alarm-name { font-size:0.75rem; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.w-alarm-status { font-size:0.68rem; color:var(--text-tertiary); }
+.w-alarm-row { display:flex; gap:6px; }
+.w-alarm-time-input { flex:0 0 auto; padding:6px 8px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-primary); font-size:0.75rem; color-scheme:light dark; }
+.w-alarm-label-input { flex:1; min-width:0; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-primary); font-size:0.75rem; outline:none; }
+.w-alarm-label-input:focus { border-color:var(--accent); }
+.w-alarm-toggle { margin-left:auto; font-size:0.62rem; font-weight:600; padding:3px 10px; border-radius:20px; border:1px solid var(--border-color); background:none; color:var(--text-tertiary); cursor:pointer; flex-shrink:0; }
+.w-alarm-toggle.on { border-color:var(--accent); color:var(--accent); background:var(--accent-subtle); }
+.w-today-count { margin-left:auto; font-size:0.65rem; color:var(--text-tertiary); font-variant-numeric:tabular-nums; flex-shrink:0; }
+.w-today-wrap { display:flex; flex-direction:column; }
+.w-today-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+.w-today-title { font-size:0.78rem; font-weight:500; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.w-today-meta { font-size:0.62rem; color:var(--text-tertiary); display:flex; align-items:center; gap:6px; }
+.w-today-tag { font-weight:600; }
+.w-today-empty { font-size:0.75rem; color:var(--text-tertiary); text-align:center; padding:12px 0; }
+.w-today-add-row { display:flex; gap:6px; margin-top:6px; }
+.w-today-add-input { flex:1; min-width:0; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-primary); font-size:0.72rem; outline:none; }
+.w-today-add-input:focus { border-color:var(--accent); }
+.w-today-add-row .w-add-btn { flex:0 0 auto; margin:0; }
+.w-alarm-compact-top { display:flex; align-items:baseline; gap:8px; }
+.w-alarm-big-sm { font-size:1.25rem; font-weight:600; color:var(--text-primary); font-variant-numeric:tabular-nums; }
+.w-alarm-compact .w-alarm-row { flex-direction:column; }
+.w-alarm-card { align-items:center; text-align:center; }
+.w-alarm-card-label { font-size:0.85rem; font-weight:600; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.w-alarm-card .w-alarm-big { font-size:2.4rem; }
+.w-alarm-card .w-alarm-row { width:100%; }
 .w-habit-grid {
   display: flex;
   flex-wrap: wrap;
@@ -9063,12 +9092,30 @@ html.light .hub-add-popup {
 .bds-input::placeholder { color:var(--text-tertiary); }
 .bubble-dock-hint { font-size:0.58rem; color:var(--text-tertiary); white-space:nowrap; flex-shrink:0; padding:0 4px; }
 
-/* Filter pills */
-.bubble-dock-filters { display:flex; gap:3px; flex:1; overflow-x:auto; scrollbar-width:none; }
-.bubble-dock-filters::-webkit-scrollbar { display:none; }
-.bdf-pill { padding:2px 7px; border-radius:4px; border:none; font-size:0.55rem; font-weight:500; background:var(--surface-container-high); color:var(--text-tertiary); cursor:pointer; white-space:nowrap; transition:all var(--t-fast); flex-shrink:0; }
-.bdf-pill:hover { background:color-mix(in srgb, var(--primary) 8%, var(--surface-container-high)); color:var(--text-primary); }
-.bdf-pill.active { background:var(--primary); color:var(--on-primary); }
+.bubble-dock-topbar .bubble-dock-done { margin-left:auto; }
+
+/* Compact body: category rail + grouped tiles */
+.bubble-dock-body { display:flex; flex-direction:column; gap:6px; min-height:0; align-items:stretch; }
+
+/* Category strip (level 1): 1 row */
+.bubble-dock-cats { display:grid; grid-auto-flow:column; grid-template-rows:1fr; grid-auto-columns:minmax(140px, 1fr); gap:8px; flex:1; min-width:0; overflow-x:auto; overflow-y:hidden; max-height:120px; padding:2px; scrollbar-width:thin; }
+.bdc-box { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:90px; min-width:140px; padding:12px 8px; border-radius:14px; border:1px solid var(--border-subtle); background:var(--surface-container-high); cursor:pointer; font-family:inherit; transition:all var(--t-fast); }
+.bdc-box:hover { border-color:var(--primary); background:color-mix(in srgb, var(--primary) 10%, var(--surface-container-high)); transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.12); }
+.bdc-box:active { transform:scale(0.97); }
+.bdc-box:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+.bdc-ico { display:flex; color:var(--text-secondary); }
+.bdc-box:hover .bdc-ico { color:var(--primary); }
+.bdc-ico svg { width:30px; height:30px; }
+.bdc-name { font-size:0.66rem; font-weight:700; color:var(--text-primary); }
+.bdc-count { font-size:0.55rem; color:var(--text-tertiary); }
+.bubble-dock-empty { flex:0 0 100%; text-align:center; font-size:0.62rem; color:var(--text-tertiary); padding:14px 0; }
+
+/* Subcategory head (level 2) */
+.bubble-dock-subhead { display:flex; align-items:center; gap:8px; padding:2px; margin-bottom:6px; }
+.bds-back { display:inline-flex; align-items:center; gap:4px; border:none; background:var(--surface-container-high); color:var(--text-secondary); font-family:var(--font-sans); font-size:0.6rem; font-weight:600; padding:4px 10px; border-radius:20px; cursor:pointer; transition:all var(--t-fast); }
+.bds-back:hover { color:var(--on-primary); background:var(--primary); }
+.bds-back svg { width:12px; height:12px; }
+.bds-sub-title { font-size:0.66rem; font-weight:700; color:var(--text-primary); }
 
 /* Close button */
 .bubble-dock-close { width:20px; height:20px; border-radius:4px; border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.9rem; line-height:1; padding:0; flex-shrink:0; transition:all var(--t-fast); }
@@ -9082,38 +9129,37 @@ html.light .hub-add-popup {
 /* The floating Done button would paint on top of the open dock — hide it while the dock is visible */
 .bento-grid:has(+ .bento-bubble-dock[data-bubble-dock]) .bento-edit-done-btn { display:none; }
 
-/* Widget grid — 2-row scrollable picker */
+/* Widget strip (level 2): 2 rows */
 .bubble-dock-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  max-height: 198px;
-  padding: 2px 0;
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0 4px;
   scrollbar-width: thin;
-  align-content: flex-start;
+  flex: 1;
+  min-width: 0;
 }
 .bubble-dock-grid::-webkit-scrollbar { height: 3px; }
 .bubble-dock-grid::-webkit-scrollbar-thumb { background: var(--outline-variant); border-radius: 3px; }
+.bubble-dock-section { display:grid; grid-template-rows:repeat(2, auto); grid-auto-flow:column; grid-auto-columns:78px; gap:6px; align-content:start; justify-content:start; }
 
-/* Item (icon + label + desc in grid cell) */
+/* Item (icon + name tile) */
 .bubble-dock-item {
-  width: 108px;
-  height: 88px;
+  width: 78px;
+  height: 64px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--border-subtle);
   background: var(--surface-container-high);
   cursor: pointer;
   user-select: none;
   transition: all var(--t-fast);
   position: relative;
-  gap: 2px;
-  padding: 8px 6px 6px;
+  gap: 3px;
+  padding: 6px 4px 5px;
   flex-shrink: 0;
 }
 .bubble-dock-item:hover {
@@ -9128,7 +9174,7 @@ html.light .hub-add-popup {
 .bubble-dock-item .bdi-icon svg { width:22px; height:22px; }
 .bubble-dock-item:hover .bdi-icon { color: var(--primary); }
 .bubble-dock-item .bdi-label {
-  font-size: 0.64rem;
+  font-size: 0.58rem;
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.1;
@@ -9136,7 +9182,7 @@ html.light .hub-add-popup {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 96px;
+  max-width: 70px;
   transition: color var(--t-fast);
 }
 .bubble-dock-item .bdi-desc {
