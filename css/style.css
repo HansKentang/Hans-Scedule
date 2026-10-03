@@ -3174,6 +3174,7 @@ html.dark .hub-hero-decor {
 }
 
 .hub-sidebar-footer {
+  position: relative;
   border-top: 1px solid var(--border-color);
   display: flex; flex-direction: column;
 }
@@ -3192,22 +3193,25 @@ section.page-hero #gsiContainer .gsi-avatar-dropdown, section.mono-hero #gsiCont
 }
 
 .hub-sidebar-footer .hub-footer-btns {
-  padding: 6px 10px;
-  display: flex; gap: 3px;
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  gap: 4px; padding: 10px 10px 4px; align-items: stretch;
 }
 .hub-sidebar-footer .btn {
-  flex: 1; justify-content: center;
-  font-size: 0.68rem; padding: 3px 4px; gap: 3px;
-  border-radius: 5px; white-space: nowrap; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; min-width: 0; min-height: 54px; padding: 8px 2px 7px;
+  font-size: 0.64rem; font-weight: 500; line-height: 1;
+  border-radius: 9px; white-space: nowrap; overflow: hidden;
 }
-.hub-sidebar-footer .btn svg { flex-shrink: 0; }
-.hub-sidebar-footer .btn span { overflow: hidden; text-overflow: ellipsis; }
-.hub-sidebar-footer .btn:hover { background: var(--accent-soft); }
+.hub-sidebar-footer .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.hub-sidebar-footer .btn span { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.hub-sidebar-footer .btn:hover { background: var(--accent-soft); color: var(--text-primary); }
+.hub-sidebar-footer .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hub-sidebar-footer .btn.active { background: var(--accent-soft); color: var(--text-primary); }
+.hub-sidebar-footer .sync-dot { position: absolute; top: 6px; right: 10px; margin: 0; }
 .sidebar-legal {
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 6px 10px 8px;
-  border-top: 1px solid var(--border-subtle);
-  font-size: 0.62rem;
+  padding: 3px 10px 9px;
+  font-size: 0.6rem; opacity: 0.7;
 }
 .sidebar-legal a {
   color: var(--text-tertiary); text-decoration: none;
@@ -3215,6 +3219,8 @@ section.page-hero #gsiContainer .gsi-avatar-dropdown, section.mono-hero #gsiCont
 }
 .sidebar-legal a:hover { color: var(--text-primary); }
 .sidebar-legal span { color: var(--text-tertiary); opacity: 0.5; }
+html[data-disabled-pages~="premium.html"] a[href="premium.html"],
+html[data-disabled-pages~="friends.html"] a[href="friends.html"] { display: none !important; }
 
 /* ─── SIDEBAR IMAGES SECTION (drawer front) ─── */
 .hub-sidebar-images {
@@ -3337,49 +3343,6 @@ html.sidebar-edit-mode .hub-sidebar-image-remove {
 }
 .hub-sidebar-image-hidden:hover {
   opacity: 0.5;
-}
-
-/* ─── SIDEBAR FOOTER DRAG ─────────────────────────── */
-.hub-footer-btns {
-  position: relative;
-}
-.hub-footer-btns > button {
-  position: relative;
-}
-.sidebar-footer-handle {
-  position: absolute; left: -4px; top: 50%;
-  transform: translateY(-50%);
-  width: 16px; height: 16px; font-size: 0.5rem;
-  display: flex; align-items: center; justify-content: center;
-  cursor: grab; color: var(--text-tertiary);
-  opacity: 0; transition: opacity 150ms ease;
-  z-index: 1; border-radius: 3px;
-}
-html.sidebar-edit-mode .sidebar-footer-handle {
-  opacity: 0.35;
-}
-html.sidebar-edit-mode .sidebar-footer-handle:hover {
-  opacity: 1;
-  background: var(--accent-soft);
-  color: var(--text-primary);
-}
-html.sidebar-edit-mode .hub-footer-btns > button {
-  padding-left: 14px;
-}
-/* Footer drop indicator — vertical bar between buttons */
-.hub-footer-btns > button.snav-drag-over::before {
-  content: ''; position: absolute;
-  left: -4px; top: 2px; bottom: 2px;
-  width: 3px;
-  background: var(--accent);
-  border-radius: 2px; z-index: 5;
-  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 40%, transparent);
-}
-.hub-footer-btns > button.snav-drag-over::after {
-  content: ''; position: absolute;
-  inset: 0; border-radius: 5px;
-  background: color-mix(in srgb, var(--accent) 6%, transparent);
-  pointer-events: none;
 }
 
 /* ─── SIDEBAR IMAGE LIGHTBOX ──────────────────────── */
@@ -4129,10 +4092,10 @@ html.light .hub-bottom-nav {
   .hub-snav-item .snav-label,
   .hub-sidebar-footer .btn span { display: none; }
   .hub-snav-item { justify-content: center; padding: var(--space-1); }
-  .hub-sidebar-footer .hub-footer-btns { padding: 4px 4px; gap: 2px; flex-wrap: wrap; justify-content: center; }
-  .hub-sidebar-footer .btn { padding: 2px; min-width: 0; flex: 0 0 auto; width: 24px; height: 24px; }
-  .hub-sidebar-footer .btn svg { width: 11px; height: 11px; }
-  .hub-sidebar-footer .sync-dot { width: 6px; height: 6px; }
+  .hub-sidebar-footer .hub-footer-btns { display: flex; flex-wrap: wrap; justify-content: center; padding: 4px; gap: 2px; }
+  .hub-sidebar-footer .btn { flex-direction: row; min-height: 0; min-width: 0; flex: 0 0 auto; width: 26px; height: 26px; padding: 2px; }
+  .hub-sidebar-footer .btn svg { width: 12px; height: 12px; }
+  .hub-sidebar-footer .sync-dot { top: 3px; right: 3px; width: 6px; height: 6px; }
 }
 
 @media (max-width: 640px) {
@@ -9090,7 +9053,7 @@ html.light .hub-add-popup {
 .bubble-dock-filters::-webkit-scrollbar { display:none; }
 .bdf-pill { padding:2px 7px; border-radius:4px; border:none; font-size:0.55rem; font-weight:500; background:var(--surface-container-high); color:var(--text-tertiary); cursor:pointer; white-space:nowrap; transition:all var(--t-fast); flex-shrink:0; }
 .bdf-pill:hover { background:color-mix(in srgb, var(--primary) 8%, var(--surface-container-high)); color:var(--text-primary); }
-.bdf-pill.active { background:var(--primary); color:#fff; }
+.bdf-pill.active { background:var(--primary); color:var(--on-primary); }
 
 /* Close button */
 .bubble-dock-close { width:20px; height:20px; border-radius:4px; border:none; background:transparent; color:var(--text-tertiary); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.9rem; line-height:1; padding:0; flex-shrink:0; transition:all var(--t-fast); }
@@ -9182,7 +9145,7 @@ html.light .hub-add-popup {
 .bubble-dock-item .bdi-added {
   position:absolute; top:5px; right:5px;
   font-size:0.5rem; font-weight:700;
-  background:var(--primary); color:#fff;
+  background:var(--primary); color:var(--on-primary);
   padding:1px 6px; border-radius:20px;
   line-height:1.4; letter-spacing:0.02em;
 }
@@ -9224,6 +9187,7 @@ html.light .hub-add-popup {
   transition:left 80ms ease, top 80ms ease, width 80ms ease, height 80ms ease;
 }
 .bento-img-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
+.bento-img-wrap video { width:100%; height:100%; object-fit:cover; display:block; background:#000; }
 .bento-img-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; width:100%; height:100%; min-height:100px; border:2px dashed var(--border-color); border-radius:var(--radius-lg); background:var(--surface-container); color:var(--text-tertiary); cursor:pointer; transition:all var(--t-fast); text-align:center; padding:12px; box-sizing:border-box; }
 .bento-img-placeholder:hover { border-color:var(--primary); color:var(--primary); background:color-mix(in srgb, var(--primary) 6%, transparent); }
 .bento-img-placeholder svg { width:24px; height:24px; opacity:0.5; }
@@ -9238,6 +9202,19 @@ html.light .hub-add-popup {
    handlers already open the picker for placeholders in edit mode). */
 .page-hero > .img-empty-placeholder,
 .mono-hero > .img-empty-placeholder { z-index: 2; }
+/* Hero content must paint above the empty-image placeholder (z-index 2)
+   when no hero image is set — otherwise the account avatar is hidden.
+   Full-cover wrappers ignore pointer events so placeholder clicks that
+   open the image picker still work; the avatar re-enables them. */
+.gl-hero-inner,
+.fr-hero-inner { z-index: 3; pointer-events: none; }
+section.mono-hero.has-image > .mono-hero-row { z-index: 3; }
+.page-hero > div:has(#gsiContainer) { position: relative; z-index: 3; pointer-events: none; }
+.gl-hero-inner #gsiContainer,
+.fr-hero-inner #gsiContainer,
+.page-hero > div:has(#gsiContainer) #gsiContainer { position: relative; z-index: 4; pointer-events: auto; }
+section.page-hero #gsiContainer,
+section.mono-hero #gsiContainer { position: relative; z-index: 3; }
 /* Match the soft glow used by sidebar image cards on hover. */
 .page-hero > .img-empty-placeholder:hover,
 .mono-hero > .img-empty-placeholder:hover {
@@ -10879,7 +10856,8 @@ html.light .hub-add-popup {
   .hub-sidebar.open .hub-sidebar-section-label,
   .hub-sidebar.open .hub-sidebar-footer .btn span { display: block; }
   .hub-sidebar.open .hub-snav-item { justify-content: flex-start; padding: var(--space-1) var(--space-2); }
-  .hub-sidebar.open .hub-sidebar-footer .btn { padding: var(--space-2); }
+  .hub-sidebar.open .hub-footer-btns { display: grid; padding: 10px 10px 4px; gap: 4px; }
+  .hub-sidebar.open .hub-sidebar-footer .btn { width: auto; height: auto; min-height: 54px; flex-direction: column; padding: 8px 2px 7px; }
 
   .hub-mobile-bottom-nav {
     display: flex !important;

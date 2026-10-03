@@ -11,6 +11,24 @@ const API_MODEL_STORAGE = 'haven-schedule-model';
 const ROUTINE_STORAGE = 'haven-schedule-routine';
 const CHAT_HISTORY_KEY = 'haven-schedule-chat';
 
+const DISABLED_PAGES = ['premium.html', 'friends.html'];
+function isPageDisabled(page) {
+  if (!DISABLED_PAGES || DISABLED_PAGES.length === 0) return false;
+  var p = page || (location.pathname.split('/').pop() || 'index.html');
+  return DISABLED_PAGES.indexOf(p) !== -1;
+}
+function hasPreviewBypass() {
+  try {
+    if (/(?:\?|&)preview\b/.test(location.search)) return true;
+    if (String(location.hash || '').indexOf('preview') !== -1) return true;
+  } catch (e) {}
+  return false;
+}
+try {
+  document.documentElement.setAttribute('data-disabled-pages', DISABLED_PAGES.join(' '));
+  if (!hasPreviewBypass() && isPageDisabled()) location.replace('index.html');
+} catch (e) {}
+
 const IS_MAC = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 const MOD_KEY = IS_MAC ? '⌘' : 'Ctrl';
 const ALT_KEY = IS_MAC ? '⌥' : 'Alt';
@@ -3507,6 +3525,97 @@ function getImage(id) {
   return DEFAULT_IMAGES[id] || '';
 }
 
+// --- VIDEO + GIF SUPPORT (hub image widget) ---
+var VIDEO_UPLOAD_MAX = 12 * 1024 * 1024;
+function isVideoUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  if (url.indexOf('data:video/') === 0) return true;
+  var clean = url.split('?')[0].split('#')[0];
+  return /\.(mp4|webm|ogv|ogg|mov|m4v)$/i.test(clean);
+}
+function setPickerPreview(url) {
+  var preview = document.getElementById('imagePickerPreview');
+  if (!preview) return;
+  var vid = document.getElementById('imagePickerVideoPreview');
+  if (isVideoUrl(url)) {
+    preview.style.display = 'none';
+    if (!vid) {
+      vid = document.createElement('video');
+      vid.id = 'imagePickerVideoPreview';
+      vid.className = preview.className || 'image-picker-preview';
+      vid.autoplay = true; vid.muted = true; vid.loop = true; vid.playsInline = true;
+      vid.setAttribute('muted', '');
+      vid.preload = 'auto';
+      vid.style.background = '#000';
+      preview.parentNode.insertBefore(vid, preview.nextSibling);
+    }
+    vid.src = url;
+    vid.style.display = 'block';
+    try { var _pp = vid.play(); if (_pp && _pp.catch) _pp.catch(function() {}); } catch (e) {}
+  } else {
+    if (vid) {
+      try { vid.pause(); } catch (e) {}
+      vid.removeAttribute('src');
+      try { vid.load(); } catch (e) {}
+      vid.style.display = 'none';
+    }
+    preview.src = url || '';
+    preview.style.display = url ? 'block' : 'none';
+  }
+}
+function finishPickerDataUrl(dataUrl) {
+  var preview = document.getElementById('imagePickerPreview');
+  var status = document.getElementById('imagePickerStatus');
+  var urlInput = document.getElementById('imagePickerUrl');
+  setPickerPreview(dataUrl);
+  if (preview) preview.dataset.pasted = dataUrl;
+  if (status) { status.textContent = 'Loaded — click Save to apply'; status.style.color = 'var(--primary)'; }
+  if (urlInput) urlInput.value = '';
+}
+// Keeps the hub image-widget media element in sync (img <-> video swap)
+function syncWidgetMedia(id, url) {
+  var isVid = isVideoUrl(url);
+  document.querySelectorAll('.bento-img-wrap [data-image-id="' + id + '"]').forEach(function(media) {
+    var curIsVid = media.tagName === 'VIDEO';
+    var wrap = media.closest('.bento-img-wrap');
+    if (curIsVid === isVid) {
+      if (url) media.src = url;
+      media.style.display = url ? 'block' : 'none';
+    } else if (isVid) {
+      var v = document.createElement('video');
+      v.setAttribute('data-image-id', id);
+      v.setAttribute('muted', '');
+      v.setAttribute('playsinline', '');
+      v.autoplay = true; v.muted = true; v.loop = true; v.playsInline = true;
+      v.preload = 'auto';
+      v.src = url;
+      v.style.cssText = media.style.cssText;
+      v.style.display = 'block';
+      v.style.background = '#000';
+      v.onerror = function() {
+        v.style.display = 'none';
+        var _w = v.closest('.bento-img-wrap');
+        var _ph = _w && _w.querySelector('.bento-img-placeholder');
+        if (_ph) _ph.style.display = 'flex';
+      };
+      media.replaceWith(v);
+      try { var _vp = v.play(); if (_vp && _vp.catch) _vp.catch(function() {}); } catch (e) {}
+    } else {
+      var img = document.createElement('img');
+      img.setAttribute('data-image-id', id);
+      img.src = url || ''; img.alt = '';
+      img.style.cssText = media.style.cssText;
+      img.style.display = url ? 'block' : 'none';
+      try { media.pause(); } catch (e) {}
+      media.replaceWith(img);
+    }
+    if (wrap) {
+      var placeholder = wrap.querySelector('.bento-img-placeholder');
+      if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
+    }
+  });
+}
+
 function setImage(id, url) {
   if (!state.images) loadImages();
   state.images[id] = url;
@@ -3527,6 +3636,7 @@ function setImage(id, url) {
     try { cloudUploadImage(id, url); } catch (e) { /* cloud image upload unavailable */ }
   }
   document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(function(el) {
+    if (el.closest('.bento-img-wrap') && isVideoUrl(url)) return;
     el.src = url;
     el.style.display = url ? 'block' : 'none';
     var wrap = el.closest('.bento-img-wrap, .gl-vision-img-wrap');
@@ -3542,6 +3652,7 @@ function setImage(id, url) {
       }
     }
   });
+  syncWidgetMedia(id, url);
   try { updateVisualsPulse(); } catch(e) {}
 
   // If this is a sidebar image, also update sidebar config (mirrors resetImage sync)
@@ -3580,6 +3691,7 @@ function resetImage(id) {
       if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
     }
   });
+  syncWidgetMedia(id, url);
 
   // If this is a sidebar image, also update sidebar config
   if (id && id.indexOf('sidebar-') === 0) {
@@ -3643,11 +3755,11 @@ function openImagePicker(id) {
   const status = document.getElementById('imagePickerStatus');
   if (!overlay) return;
   const url = getImage(id);
-  if (preview) { preview.src = url; preview.style.display = url ? 'block' : 'none'; }
+  setPickerPreview(url);
   // Clear stale pasted data from previous session
   if (preview) delete preview.dataset.pasted;
   if (urlInput) urlInput.value = url === DEFAULT_IMAGES[id] ? '' : url;
-  if (status) status.textContent = 'Paste an image (Ctrl+V) or type a URL';
+  if (status) status.textContent = 'Paste an image, GIF or video (Ctrl+V) or type a URL';
   overlay.querySelectorAll('.image-picker-grid-item.selected').forEach(function(n) { n.classList.remove('selected'); });
   overlay.classList.remove('hidden');
   requestAnimationFrame(() => overlay.classList.add('active'));
@@ -3661,6 +3773,7 @@ function closeImagePicker() {
   const overlay = document.getElementById('imagePickerOverlay');
   if (!overlay) return;
   overlay.classList.remove('active');
+  setPickerPreview('');
   setTimeout(() => overlay.classList.add('hidden'), 200);
   _pickerImageId = null;
 }
@@ -3697,25 +3810,23 @@ function handleImagePickerFile(e) {
   const preview = document.getElementById('imagePickerPreview');
   const file = e.target.files?.[0];
   if (!file) return;
-  if (!file.type.startsWith('image/')) {
-    if (status) { status.textContent = 'Not an image file'; status.style.color = '#ef4444'; }
+  const isVid = file.type.startsWith('video/');
+  const isGif = file.type === 'image/gif';
+  if (!file.type.startsWith('image/') && !isVid) {
+    if (status) { status.textContent = 'Not an image or video file'; status.style.color = '#ef4444'; }
     return;
   }
-  if (file.size > 2 * 1024 * 1024) {
-    if (status) { status.textContent = 'Image too large (max 2MB)'; status.style.color = '#ef4444'; }
+  const maxSize = isVid ? VIDEO_UPLOAD_MAX : 2 * 1024 * 1024;
+  if (file.size > maxSize) {
+    if (status) { status.textContent = isVid ? 'Video too large (max 12MB)' : 'Image too large (max 2MB)'; status.style.color = '#ef4444'; }
     return;
   }
-  if (status) { status.textContent = 'Processing image...'; status.style.color = 'var(--text-tertiary)'; }
+  if (status) { status.textContent = 'Processing...'; status.style.color = 'var(--text-tertiary)'; }
   const reader = new FileReader();
   reader.onload = function(ev) {
-    resizeImageDataUrl(ev.target.result, 800, 800, 0.78).then(function(resizedUrl) {
-      if (preview) preview.src = resizedUrl;
-      if (preview) preview.style.display = 'block';
-      if (preview) preview.dataset.pasted = resizedUrl;
-      if (status) { status.textContent = 'Image loaded — click Save to apply'; status.style.color = 'var(--primary)'; }
-      var _urlInput = document.getElementById('imagePickerUrl');
-      if (_urlInput) _urlInput.value = '';
-    });
+    // GIFs and videos are stored as-is to preserve animation/motion
+    if (isVid || isGif) { finishPickerDataUrl(ev.target.result); return; }
+    resizeImageDataUrl(ev.target.result, 800, 800, 0.78).then(finishPickerDataUrl);
   };
   reader.readAsDataURL(file);
   e.target.value = '';
@@ -3728,28 +3839,28 @@ function handleImagePickerPaste(e) {
   const items = clipboardData?.items;
   if (!items) return;
   for (let i = 0; i < items.length; i++) {
-    if (items[i].type.startsWith('image/')) {
+    const itemType = items[i].type || '';
+    if (itemType.startsWith('image/') || itemType.startsWith('video/')) {
       e.preventDefault();
       const blob = items[i].getAsFile();
       if (!blob) return;
-      if (blob.size > 2 * 1024 * 1024) {
-        if (status) status.textContent = 'Image too large (max 2MB)';
+      const blobIsVid = (blob.type || '').startsWith('video/');
+      const blobIsGif = blob.type === 'image/gif';
+      const maxSize = blobIsVid ? VIDEO_UPLOAD_MAX : 2 * 1024 * 1024;
+      if (blob.size > maxSize) {
+        if (status) status.textContent = blobIsVid ? 'Video too large (max 12MB)' : 'Image too large (max 2MB)';
         return;
       }
-      if (status) { status.textContent = "Processing image..."; status.style.color = "var(--text-tertiary)"; }
+      if (status) { status.textContent = "Processing..."; status.style.color = "var(--text-tertiary)"; }
       const reader = new FileReader();
       reader.onload = function(ev) {
         var fullDataUrl = ev.target.result;
+        if (blobIsVid || blobIsGif) {
+          finishPickerDataUrl(fullDataUrl);
+          return;
+        }
         // Resize to max 800px to keep localStorage usage manageable
-        resizeImageDataUrl(fullDataUrl, 800, 800, 0.78).then(function(resizedUrl) {
-          if (preview) preview.src = resizedUrl;
-          if (preview) preview.style.display = "block";
-          if (preview) preview.dataset.pasted = resizedUrl;
-          if (status) { status.textContent = "Image loaded — click Save to apply"; status.style.color = "var(--primary)"; }
-          // Clear URL input so pasted image takes priority in handleImagePickerSave
-          var _urlInput = document.getElementById("imagePickerUrl");
-          if (_urlInput) _urlInput.value = "";
-        });
+        resizeImageDataUrl(fullDataUrl, 800, 800, 0.78).then(finishPickerDataUrl);
       };
       reader.readAsDataURL(blob);
       return;
@@ -3869,27 +3980,27 @@ function handleImagePickerPaste(e) {
     var files = e.dataTransfer?.files;
     if (!files || files.length === 0) return;
     var file = files[0];
-    if (!file.type.startsWith('image/')) {
+    var dropIsVid = (file.type || '').startsWith('video/');
+    var dropIsGif = file.type === 'image/gif';
+    if (!file.type.startsWith('image/') && !dropIsVid) {
       var _st = document.getElementById('imagePickerStatus');
-      if (_st) { _st.textContent = 'Not an image file'; _st.style.color = '#ef4444'; }
+      if (_st) { _st.textContent = 'Not an image or video file'; _st.style.color = '#ef4444'; }
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
+    var dropMax = dropIsVid ? VIDEO_UPLOAD_MAX : 2 * 1024 * 1024;
+    if (file.size > dropMax) {
       var _st2 = document.getElementById('imagePickerStatus');
-      if (_st2) { _st2.textContent = 'Image too large (max 2MB)'; _st2.style.color = '#ef4444'; }
+      if (_st2) { _st2.textContent = dropIsVid ? 'Video too large (max 12MB)' : 'Image too large (max 2MB)'; _st2.style.color = '#ef4444'; }
       return;
     }
     var _preview = document.getElementById('imagePickerPreview');
     var _status = document.getElementById('imagePickerStatus');
     var _urlInput = document.getElementById('imagePickerUrl');
-    if (_status) { _status.textContent = 'Processing image...'; _status.style.color = 'var(--text-tertiary)'; }
+    if (_status) { _status.textContent = 'Processing...'; _status.style.color = 'var(--text-tertiary)'; }
     var reader = new FileReader();
     reader.onload = function(ev) {
-      resizeImageDataUrl(ev.target.result, 800, 800, 0.78).then(function(rUrl) {
-        if (_preview) { _preview.src = rUrl; _preview.style.display = 'block'; _preview.dataset.pasted = rUrl; }
-        if (_status) { _status.textContent = 'Image loaded — click Save to apply'; _status.style.color = 'var(--primary)'; }
-        if (_urlInput) _urlInput.value = '';
-      });
+      if (dropIsVid || dropIsGif) { finishPickerDataUrl(ev.target.result); return; }
+      resizeImageDataUrl(ev.target.result, 800, 800, 0.78).then(finishPickerDataUrl);
     };
     reader.readAsDataURL(file);
   });
@@ -3901,11 +4012,11 @@ function handleImagePickerUrlInput() {
   const status = document.getElementById('imagePickerStatus');
   const val = urlInput?.value?.trim() || '';
   if (!val) {
-    if (preview) { preview.src = ''; preview.style.display = 'none'; }
-    if (status) { status.textContent = 'Paste an image (Ctrl+V) or type a URL'; status.style.color = ''; }
+    setPickerPreview('');
+    if (status) { status.textContent = 'Paste an image, GIF or video (Ctrl+V) or type a URL'; status.style.color = ''; }
     return;
   }
-  if (preview) { preview.src = val; preview.style.display = 'block'; }
+  setPickerPreview(val);
   if (status) status.textContent = 'URL loaded — click Save to apply';
 }
 
@@ -3916,6 +4027,15 @@ function handleImagePickerSave() {
   const urlInput = document.getElementById('imagePickerUrl');
   const status = document.getElementById('imagePickerStatus');
   const urlVal = urlInput?.value?.trim() || '';
+  const finalUrl = urlVal || (preview?.dataset.pasted) || '';
+  if (finalUrl && isVideoUrl(finalUrl) && !document.querySelector('.bento-img-wrap [data-image-id="' + id + '"]')) {
+    if (status) { status.textContent = 'Videos only work in the image widget — pick an image instead'; status.style.color = '#ef4444'; }
+    return;
+  }
+  if (urlVal && /^https?:/i.test(urlVal) && !isVideoUrl(urlVal) && /\.(gif|jpe?g|png|webp|bmp|svg)(\?|#|$)/i.test(urlVal.split('?')[0].split('#')[0]) === false && document.querySelector('.bento-img-wrap [data-image-id="' + id + '"]')) {
+    if (status) { status.textContent = 'That link is not a direct image or video file — use a .jpg/.gif/.mp4/.webm link'; status.style.color = '#ef4444'; }
+    return;
+  }
   if (urlVal) {
     setImage(id, urlVal);
   } else if (preview?.dataset.pasted) {
@@ -5353,6 +5473,7 @@ function loadSidebarConfig() {
       // Ensure every page has at least one image
       if (!config.images) config.images = [];
       var _needsSave = false;
+      if (config.footerOrder) { delete config.footerOrder; _needsSave = true; }
       var defaultPages = ['index','schedule','activities','analytics','goals','finance','tags','gallery'];
       for (var p = 0; p < defaultPages.length; p++) {
         var pageName = defaultPages[p];
@@ -5384,7 +5505,7 @@ function loadSidebarConfig() {
   } catch {}
   // Fresh start
   return {
-    order: [], visibility: {}, customLinks: [], footerOrder: [], _v: 2,
+    order: [], visibility: {}, customLinks: [], _v: 2,
     images: SIDEBAR_IMAGE_DEFAULTS.map(function(d) { return { id: d.id, label: d.label, page: d.page, url: d.url }; })
   };
 }
@@ -5395,6 +5516,22 @@ function saveSidebarConfig(config) {
     localStorage.setItem(SIDEBAR_CONFIG_KEY, str);
   } catch(e) {
     if (typeof showToast === 'function') showToast('Could not save: localStorage might be full', 'error');
+  }
+}
+
+function decorateSidebarFooter() {
+  var meta = {
+    themeBtnSidebar: ['Toggle light / dark theme', 'Toggle theme'],
+    aiChatBtnSidebar: ['Open settings', 'Open settings'],
+    settingsBtnSidebar: ['Open settings', 'Open settings'],
+    bcVisualsBtn: ['Customize visuals', 'Customize visuals']
+  };
+  for (var id in meta) {
+    if (!Object.prototype.hasOwnProperty.call(meta, id)) continue;
+    var btn = document.getElementById(id);
+    if (!btn) continue;
+    btn.setAttribute('title', meta[id][0]);
+    btn.setAttribute('aria-label', meta[id][1]);
   }
 }
 
@@ -5449,18 +5586,7 @@ function applySidebarConfig() {
     item.classList.toggle('active', item.getAttribute('href') === currentPage);
   });
 
-  // Apply footer button order
-  const btns = document.querySelector('.hub-footer-btns');
-  if (btns && config.footerOrder && config.footerOrder.length > 0) {
-    const btnMap = {};
-    btns.querySelectorAll(':scope > button').forEach(btn => {
-      if (btn.id) btnMap[btn.id] = btn;
-    });
-    for (const id of config.footerOrder) {
-      const btn = btnMap[id];
-      if (btn) btns.appendChild(btn);
-    }
-  }
+  decorateSidebarFooter();
 
   // Render image section
   renderSidebarImages();
@@ -5522,27 +5648,12 @@ function renderSidebarEditControls() {
   // Setup drag events
   setupSidebarDrag();
 
-  // Add drag handles to footer action buttons only
-  const footerBtns = document.querySelector('.hub-footer-btns');
-  if (footerBtns) {
-    footerBtns.querySelectorAll(':scope > button').forEach(btn => {
-      if (btn.querySelector('.sidebar-footer-handle')) return;
-      const handle = document.createElement('span');
-      handle.className = 'snav-drag-handle sidebar-footer-handle';
-      handle.innerHTML = '⠿';
-      handle.draggable = true;
-      handle.title = 'Drag to reorder';
-      btn.prepend(handle);
-    });
-    setupSidebarFooterDrag();
-  }
-
   // Show image edit controls (remove buttons + add button)
   renderSidebarImageEditControls();
 }
 
 function removeSidebarEditControls() {
-  document.querySelectorAll('.snav-drag-handle, .snav-hide-btn, .sidebar-footer-handle').forEach(el => el.remove());
+  document.querySelectorAll('.snav-drag-handle, .snav-hide-btn').forEach(el => el.remove());
   // Reset opacity on hidden items
   document.querySelectorAll('.hub-snav-item').forEach(item => {
     item.style.opacity = '';
@@ -5601,45 +5712,6 @@ function persistSidebarOrder() {
   stagger.querySelectorAll('.hub-snav-item').forEach(item => {
     const href = item.getAttribute('href');
     if (href) config.order.push(href);
-  });
-  saveSidebarConfig(config);
-}
-
-/* ─── Sidebar footer drag reorder ──────────── */
-function setupSidebarFooterDrag() {
-  const btns = document.querySelector('.hub-footer-btns');
-  if (!btns) return;
-  const handles = btns.querySelectorAll('.sidebar-footer-handle');
-  handles.forEach(handle => {
-    handle.addEventListener('dragstart', function(e) {
-      sidebarDragSrc = this.closest('button');
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    handle.addEventListener('dragend', function() {
-      sidebarDragSrc = null;
-      btns.querySelectorAll('.snav-drag-over').forEach(el => el.classList.remove('snav-drag-over'));
-    });
-  });
-  btns.querySelectorAll(':scope > button').forEach(btn => {
-    btn.addEventListener('dragover', function(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
-    btn.addEventListener('dragenter', function(e) { e.preventDefault(); if (this !== sidebarDragSrc) this.classList.add('snav-drag-over'); });
-    btn.addEventListener('dragleave', function() { this.classList.remove('snav-drag-over'); });
-    btn.addEventListener('drop', function(e) {
-      e.preventDefault(); this.classList.remove('snav-drag-over');
-      if (!sidebarDragSrc || this === sidebarDragSrc) return;
-      btns.insertBefore(sidebarDragSrc, this);
-      persistSidebarFooterOrder();
-    });
-  });
-}
-
-function persistSidebarFooterOrder() {
-  const btns = document.querySelector('.hub-footer-btns');
-  if (!btns) return;
-  const config = loadSidebarConfig();
-  config.footerOrder = [];
-  btns.querySelectorAll(':scope > button').forEach(btn => {
-    config.footerOrder.push(btn.id);
   });
   saveSidebarConfig(config);
 }

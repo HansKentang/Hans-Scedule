@@ -73,8 +73,14 @@ function hasAccess(featureKey) {
   return isPremium();
 }
 
+function premiumSuspended() {
+  if (typeof hasPreviewBypass === 'function' && hasPreviewBypass()) return false;
+  return (typeof DISABLED_PAGES !== 'undefined' && DISABLED_PAGES.indexOf('premium.html') !== -1);
+}
+
 /* Guard a gated action. Returns true when the caller should continue. */
 function requirePremium(featureKey, opts) {
+  if (premiumSuspended()) return false;
   if (hasAccess(featureKey)) return true;
   openPremiumSheet(opts && opts.reason ? opts.reason : null, featureKey);
   return false;
@@ -751,6 +757,7 @@ function premiumSheetFocusables(root) {
 }
 
 function openPremiumSheet(reason, featureKey) {
+  if (premiumSuspended()) return;
   closePremiumSheet();
   _premiumSheetView = 'plans';
   _premiumSheetResult = null;
