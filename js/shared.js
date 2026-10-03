@@ -3404,7 +3404,10 @@ function loadImages() {
         changed = true;
       }
     }
-    if (changed) try { applyImages(); } catch(e) {}
+    if (changed) {
+      try { applyImages(); } catch(e) {}
+      try { refreshSidebarImages(); } catch(e) {}
+    }
   }).catch(function() {}).then(function() {
     if (typeof cloudLoadImagesIntoState === 'function') {
       try { cloudLoadImagesIntoState(); } catch (e) { /* cloud image sync unavailable */ }
@@ -3669,6 +3672,7 @@ function setImage(id, url) {
         }
       }
       saveSidebarConfig(cfg);
+      refreshSidebarImages();
     }
   }
 }
@@ -3712,6 +3716,7 @@ function resetImage(id) {
         }
       }
       saveSidebarConfig(cfg);
+      refreshSidebarImages();
     }
   }
 }
@@ -5717,6 +5722,13 @@ function persistSidebarOrder() {
 }
 
 /* ─── Sidebar image section ────────────────── */
+function refreshSidebarImages() {
+  if (!document.querySelector('.hub-sidebar-images')) return;
+  try {
+    if (typeof renderSidebarImages === 'function') renderSidebarImages();
+    if (typeof sidebarEditMode !== 'undefined' && sidebarEditMode && typeof renderSidebarImageEditControls === 'function') renderSidebarImageEditControls();
+  } catch(e) {}
+}
 function renderSidebarImages() {
   const container = document.querySelector('.hub-sidebar-images');
   if (!container) return;

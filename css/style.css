@@ -5235,16 +5235,32 @@ html.light .hub-db-header .hub-db-count strong {
   color: var(--text-tertiary);
 }
 .w-alarm-wrap { display:flex; flex-direction:column; gap:8px; }
-.w-alarm-display { display:flex; align-items:baseline; gap:8px; min-width:0; }
-.w-alarm-big { font-size:1.9rem; font-weight:600; letter-spacing:-0.02em; color:var(--text-primary); font-variant-numeric:tabular-nums; }
-.w-alarm-name { font-size:0.75rem; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .w-alarm-status { font-size:0.68rem; color:var(--text-tertiary); }
-.w-alarm-row { display:flex; gap:6px; }
-.w-alarm-time-input { flex:0 0 auto; padding:6px 8px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-primary); font-size:0.75rem; color-scheme:light dark; }
+.w-alarm-list { display:flex; flex-direction:column; gap:8px; }
+.w-alarm-item { display:flex; flex-direction:column; gap:6px; padding:8px; border:1px solid var(--border-subtle); border-radius:10px; background:transparent; }
+.w-alarm-item.ringing { border-color:var(--accent); background:var(--accent-subtle); animation:w-alarm-pulse 1.2s ease-in-out infinite; }
+@keyframes w-alarm-pulse { 0%,100% { box-shadow:0 0 0 0 transparent; } 50% { box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); } }
+.w-alarm-row { display:flex; gap:6px; align-items:center; }
+.w-alarm-time-input { flex:1; min-width:0; padding:6px 8px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-primary); font-size:0.8rem; color-scheme:light dark; }
 .w-alarm-label-input { flex:1; min-width:0; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-primary); font-size:0.75rem; outline:none; }
 .w-alarm-label-input:focus { border-color:var(--accent); }
+.w-alarm-label-row { width:100%; }
+.w-alarm-opts { flex-wrap:wrap; }
+.w-alarm-mini-select { flex:1; min-width:0; padding:5px 6px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-secondary); font-size:0.65rem; outline:none; cursor:pointer; }
+.w-alarm-preview { flex:0 0 auto; font-size:0.62rem; font-weight:600; padding:5px 10px; border-radius:8px; border:1px solid var(--border-color); background:none; color:var(--text-secondary); cursor:pointer; }
+.w-alarm-preview:hover { border-color:var(--accent); color:var(--accent); }
+.w-alarm-vol { flex:1; min-width:60px; accent-color:var(--accent); cursor:pointer; }
 .w-alarm-toggle { margin-left:auto; font-size:0.62rem; font-weight:600; padding:3px 10px; border-radius:20px; border:1px solid var(--border-color); background:none; color:var(--text-tertiary); cursor:pointer; flex-shrink:0; }
 .w-alarm-toggle.on { border-color:var(--accent); color:var(--accent); background:var(--accent-subtle); }
+.w-alarm-del { flex:0 0 auto; width:22px; height:22px; border-radius:6px; border:none; background:none; color:var(--text-tertiary); font-size:0.9rem; line-height:1; cursor:pointer; }
+.w-alarm-del:hover { color:var(--text-primary); background:var(--surface-container-high); }
+.w-alarm-ringing { display:flex; align-items:center; gap:6px; font-size:0.68rem; font-weight:600; color:var(--accent); }
+.w-alarm-snooze { font-size:0.62rem; font-weight:600; padding:4px 10px; border-radius:20px; border:1px solid var(--accent); background:none; color:var(--accent); cursor:pointer; }
+.w-alarm-dismiss { border-color:var(--border-color); color:var(--text-tertiary); }
+.w-alarm-compact .w-alarm-item { padding:5px 6px; gap:4px; }
+.w-alarm-compact .w-alarm-label-input { font-size:0.68rem; padding:4px 8px; }
+.w-alarm-card .w-alarm-item { background:var(--surface-container-low); border-radius:14px; padding:10px; align-items:stretch; text-align:left; }
+.w-alarm-card .w-alarm-label-row { font-weight:600; text-align:center; }
 .w-today-count { margin-left:auto; font-size:0.65rem; color:var(--text-tertiary); font-variant-numeric:tabular-nums; flex-shrink:0; }
 .w-today-wrap { display:flex; flex-direction:column; }
 .w-today-main { flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
@@ -5256,13 +5272,6 @@ html.light .hub-db-header .hub-db-count strong {
 .w-today-add-input { flex:1; min-width:0; padding:6px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--surface-container-high); color:var(--text-primary); font-size:0.72rem; outline:none; }
 .w-today-add-input:focus { border-color:var(--accent); }
 .w-today-add-row .w-add-btn { flex:0 0 auto; margin:0; }
-.w-alarm-compact-top { display:flex; align-items:baseline; gap:8px; }
-.w-alarm-big-sm { font-size:1.25rem; font-weight:600; color:var(--text-primary); font-variant-numeric:tabular-nums; }
-.w-alarm-compact .w-alarm-row { flex-direction:column; }
-.w-alarm-card { align-items:center; text-align:center; }
-.w-alarm-card-label { font-size:0.85rem; font-weight:600; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-.w-alarm-card .w-alarm-big { font-size:2.4rem; }
-.w-alarm-card .w-alarm-row { width:100%; }
 .w-habit-grid {
   display: flex;
   flex-wrap: wrap;

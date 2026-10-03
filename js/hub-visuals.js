@@ -1586,23 +1586,35 @@ function renderHubBento() {
         </div>`;
       }
       case 'alarm': {
-        var _al = _alarmCfg(item);
-        var _alOn = _al.enabled !== false && !!_al.time;
+        var _alist = _alarmList(item);
         var _alStyle = _getAlarmStyle(uid);
-        var _alHead = '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Alarm</span><button class="w-alarm-toggle' + (_alOn ? ' on' : '') + '" data-alarm-toggle="' + uid + '">' + (_alOn ? 'On' : 'Off') + '</button></div>';
-        var _alInputs = '<div class="w-alarm-row"><input type="time" class="w-alarm-time-input" data-alarm-time="' + uid + '" value="' + e(_al.time || '') + '"><input type="text" class="w-alarm-label-input" data-alarm-label="' + uid + '" value="' + e(_al.label || '') + '" placeholder="Label" maxlength="40" autocomplete="off"></div>';
+        var _alHead = '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Alarms</span><span class="w-today-count">' + _alist.filter(function(a) { return a.enabled !== false; }).length + '/' + _alist.length + '</span></div>';
+        var _alRows = _alist.map(function(a) {
+          var _ring = !!a.ringing;
+          var _rep = '<select class="w-alarm-mini-select" data-alarm-repeat title="Repeat"><option value="once"' + (a.repeat !== 'daily' ? ' selected' : '') + '>Once</option><option value="daily"' + (a.repeat === 'daily' ? ' selected' : '') + '>Daily</option></select>';
+          var _snd = '<select class="w-alarm-mini-select" data-alarm-sound title="Sound">' + _alarmSoundOptions(a.sound) + '</select>';
+          var _ringHtml = _ring ? '<div class="w-alarm-ringing"><span>Ringing…</span><button class="w-alarm-snooze" data-alarm-snooze>Snooze 5m</button><button class="w-alarm-snooze w-alarm-dismiss" data-alarm-dismiss>Dismiss</button></div>' : '';
+          return '<div class="w-alarm-item' + (_ring ? ' ringing' : '') + '" data-alarm-id="' + e(a.id) + '">'
+            + '<div class="w-alarm-row"><input type="time" class="w-alarm-time-input" data-alarm-time value="' + e(a.time || '') + '"><button class="w-alarm-toggle' + (a.enabled !== false ? ' on' : '') + '" data-alarm-toggle>' + (a.enabled !== false ? 'On' : 'Off') + '</button><button class="w-alarm-del" data-alarm-del title="Delete alarm">×</button></div>'
+            + '<input type="text" class="w-alarm-label-input w-alarm-label-row" data-alarm-label value="' + e(a.label || '') + '" placeholder="Label" maxlength="40" autocomplete="off">'
+            + '<div class="w-alarm-row w-alarm-opts">' + _rep + _snd + '<button class="w-alarm-preview" data-alarm-preview title="Preview sound">Test</button><input type="range" class="w-alarm-vol" data-alarm-vol min="0" max="100" value="' + a.volume + '" title="Volume"></div>'
+            + _ringHtml + '</div>';
+        }).join('');
+        if (!_alist.length) _alRows = '<div class="w-today-empty">No alarms yet</div>';
+        var _alStatus = '<div class="w-alarm-status">' + e(_alarmsStatusText(_alist)) + '</div>';
         var _alBody = '';
         if (_alStyle === 'compact') {
-          _alBody = '<div class="w-alarm-wrap w-alarm-compact" data-alarm-uid="' + uid + '"><div class="w-alarm-compact-top"><span class="w-alarm-big-sm">' + e(_al.time || '--:--') + '</span><span class="w-alarm-status">' + e(_alarmStatusText(_al)) + '</span></div>' + _alInputs + '</div>';
+          _alBody = '<div class="w-alarm-wrap w-alarm-compact" data-alarm-uid="' + uid + '">' + _alStatus + '<div class="w-alarm-list">' + _alRows + '</div></div>';
         } else if (_alStyle === 'card') {
-          _alBody = '<div class="w-alarm-wrap w-alarm-card" data-alarm-uid="' + uid + '"><div class="w-alarm-card-label">' + e(_al.label || 'Alarm') + '</div><div class="w-alarm-big">' + e(_al.time || '--:--') + '</div><div class="w-alarm-status">' + e(_alarmStatusText(_al)) + '</div>' + _alInputs + '</div>';
+          _alBody = '<div class="w-alarm-wrap w-alarm-card" data-alarm-uid="' + uid + '">' + _alStatus + '<div class="w-alarm-list">' + _alRows + '</div></div>';
         } else {
-          _alBody = '<div class="w-alarm-wrap" data-alarm-uid="' + uid + '"><div class="w-alarm-display"><span class="w-alarm-big">' + e(_al.time || '--:--') + '</span><span class="w-alarm-name">' + e(_al.label || 'Alarm') + '</span></div><div class="w-alarm-status">' + e(_alarmStatusText(_al)) + '</div>' + _alInputs + '</div>';
+          _alBody = '<div class="w-alarm-wrap" data-alarm-uid="' + uid + '">' + _alStatus + '<div class="w-alarm-list">' + _alRows + '</div></div>';
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           ${_alHead}
           ${_alBody}
+          <div class="w-list"><button class="w-add-btn" data-alarm-add="${uid}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Alarm</button></div>
         </div>`;
       }
       case 'spotify':
@@ -3067,27 +3079,71 @@ function renderHubBento() {
     grid.addEventListener('change', function(ev) {
       var _tgt = ev.target && ev.target.closest ? ev.target : null;
       if (!_tgt) return;
+      var _arow = _tgt.closest ? _tgt.closest('[data-alarm-id]') : null;
+      var _abub = _tgt.closest ? _tgt.closest('.bento-bubble') : null;
+      var _auid2 = _abub ? _abub.dataset.bubble : null;
+      var _aid2 = _arow ? _arow.dataset.alarmId : null;
       var _at = _tgt.closest ? _tgt.closest('[data-alarm-time]') : null;
-      if (_at) {
-        var _ai = _alarmItem(_at.dataset.alarmTime);
-        if (_ai) {
-          if (!_ai.alarm || typeof _ai.alarm !== 'object') _ai.alarm = {};
-          _ai.alarm.time = /^\d{2}:\d{2}$/.test(_at.value) ? _at.value : '';
-          if (_ai.alarm.enabled === false && _ai.alarm.time) _ai.alarm.enabled = true;
-          _ai.alarm.lastFired = '';
-          saveHubContent();
-          renderHubBento();
+      if (_at && _auid2 && _aid2) {
+        var _ap2 = _alarmItem(_auid2);
+        var _al2 = _alarmList(_ap2);
+        for (var _k = 0; _k < _al2.length; _k++) {
+          if (_al2[_k].id === _aid2) {
+            _al2[_k].time = /^\d{2}:\d{2}$/.test(_at.value) ? _at.value : '';
+            if (_al2[_k].enabled === false && _al2[_k].time) _al2[_k].enabled = true;
+            _al2[_k].lastFired = '';
+            _al2[_k].ringing = 0;
+            _al2[_k].snoozeUntil = 0;
+          }
         }
+        _alarmPersist(_auid2, _al2);
+        renderHubBento();
         return;
       }
-      var _al2 = _tgt.closest ? _tgt.closest('[data-alarm-label]') : null;
-      if (_al2) {
-        var _ai2 = _alarmItem(_al2.dataset.alarmLabel);
-        if (_ai2) {
-          if (!_ai2.alarm || typeof _ai2.alarm !== 'object') _ai2.alarm = {};
-          _ai2.alarm.label = String(_al2.value || '').slice(0, 40);
-          saveHubContent();
+      var _albl = _tgt.closest ? _tgt.closest('[data-alarm-label]') : null;
+      if (_albl && _auid2 && _aid2) {
+        var _ap3 = _alarmItem(_auid2);
+        var _al3 = _alarmList(_ap3);
+        for (var _k2 = 0; _k2 < _al3.length; _k2++) {
+          if (_al3[_k2].id === _aid2) _al3[_k2].label = String(_albl.value || '').slice(0, 40);
         }
+        _alarmPersist(_auid2, _al3);
+        return;
+      }
+      var _arep = _tgt.closest ? _tgt.closest('[data-alarm-repeat]') : null;
+      if (_arep && _auid2 && _aid2) {
+        var _ap4 = _alarmItem(_auid2);
+        var _al4 = _alarmList(_ap4);
+        for (var _k3 = 0; _k3 < _al4.length; _k3++) {
+          if (_al4[_k3].id === _aid2) {
+            _al4[_k3].repeat = _arep.value === 'daily' ? 'daily' : 'once';
+            _al4[_k3].lastFired = '';
+            _al4[_k3].ringing = 0;
+            _al4[_k3].snoozeUntil = 0;
+          }
+        }
+        _alarmPersist(_auid2, _al4);
+        renderHubBento();
+        return;
+      }
+      var _asnd = _tgt.closest ? _tgt.closest('[data-alarm-sound]') : null;
+      if (_asnd && _auid2 && _aid2) {
+        var _ap5 = _alarmItem(_auid2);
+        var _al5 = _alarmList(_ap5);
+        for (var _k4 = 0; _k4 < _al5.length; _k4++) {
+          if (_al5[_k4].id === _aid2) _al5[_k4].sound = String(_asnd.value || '');
+        }
+        _alarmPersist(_auid2, _al5);
+        return;
+      }
+      var _avol = _tgt.closest ? _tgt.closest('[data-alarm-vol]') : null;
+      if (_avol && _auid2 && _aid2) {
+        var _ap6 = _alarmItem(_auid2);
+        var _al6 = _alarmList(_ap6);
+        for (var _k5 = 0; _k5 < _al6.length; _k5++) {
+          if (_al6[_k5].id === _aid2) _al6[_k5].volume = Math.max(0, Math.min(100, parseInt(_avol.value, 10) || 0));
+        }
+        _alarmPersist(_auid2, _al6);
         return;
       }
     });
@@ -4997,34 +5053,111 @@ function findBentoGap(layout, bubbleW, bubbleH, gridWidth) {
 /* ─── Timer / Pomodoro helpers ────────────────── */
 var _hubLiveTick = null;
 var _hubLiveDay = '';
-function _alarmCfg(item) {
-  var d = { time:'', label:'', enabled:true, lastFired:'' };
-  var a = item && item.alarm;
-  if (a && typeof a === 'object') {
-    if (typeof a.time === 'string') d.time = a.time;
-    if (typeof a.label === 'string') d.label = a.label;
-    if (a.enabled === false) d.enabled = false;
-    if (typeof a.lastFired === 'string') d.lastFired = a.lastFired;
-  }
-  return d;
-}
 function _alarmItem(uid) {
   if (!hubContent || !Array.isArray(hubContent.bentoLayout)) return null;
   return hubContent.bentoLayout.find(function(i) { return i && i.uid === uid && i.t === 'alarm'; }) || null;
 }
-function _alarmStatusText(al) {
-  if (!al.time || !/^\d{2}:\d{2}$/.test(al.time)) return 'Set a time below';
-  if (al.enabled === false) return 'Off';
+function _alarmNewId() {
+  return 'a' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
+}
+function _alarmNorm(a) {
+  var d = { id: _alarmNewId(), time: '', label: '', enabled: true, repeat: 'once', sound: '', volume: 80, lastFired: '', ringing: 0, snoozeUntil: 0 };
+  if (a && typeof a === 'object') {
+    if (typeof a.id === 'string' && a.id) d.id = a.id;
+    if (typeof a.time === 'string') d.time = a.time;
+    if (typeof a.label === 'string') d.label = a.label.slice(0, 40);
+    if (a.enabled === false) d.enabled = false;
+    if (a.repeat === 'daily') d.repeat = 'daily';
+    if (typeof a.sound === 'string') d.sound = a.sound;
+    if (isFinite(a.volume)) d.volume = Math.max(0, Math.min(100, Math.round(a.volume)));
+    if (typeof a.lastFired === 'string') d.lastFired = a.lastFired;
+    if (isFinite(a.ringing)) d.ringing = a.ringing;
+    if (isFinite(a.snoozeUntil)) d.snoozeUntil = a.snoozeUntil;
+  }
+  return d;
+}
+function _alarmList(pitem) {
+  if (!pitem) return [];
+  if (Array.isArray(pitem.alarms)) return pitem.alarms.map(_alarmNorm);
+  if (pitem.alarm && typeof pitem.alarm === 'object') return [_alarmNorm(pitem.alarm)];
+  return [];
+}
+function _alarmGet(pitem, id) {
+  var list = _alarmList(pitem);
+  for (var i = 0; i < list.length; i++) { if (list[i].id === id) return list[i]; }
+  return null;
+}
+function _alarmPersist(uid, list) {
+  var pitem = _alarmItem(uid);
+  if (!pitem) return null;
+  delete pitem.alarm;
+  pitem.alarms = list;
+  saveHubContent();
+  return pitem;
+}
+function _alarmSoundFile(key) {
+  if (key && typeof CHIME_SOUNDS !== 'undefined' && CHIME_SOUNDS[key]) return CHIME_SOUNDS[key].file;
+  if (typeof getChimeFile === 'function') return getChimeFile();
+  return 'sounds/chime-success.mp3';
+}
+function _playAlarmSound(key, vol) {
+  if (typeof state !== 'undefined' && state.soundEnabled === false) return;
+  try {
+    var a = new Audio(_alarmSoundFile(key));
+    var v = isFinite(vol) ? vol : 80;
+    a.volume = Math.max(0, Math.min(1, v / 100));
+    var pr = a.play();
+    if (pr && pr.catch) pr.catch(function() {});
+  } catch(e) {}
+}
+function _alarmSoundOptions(sel) {
+  var out = '<option value="">Default chime</option>';
+  if (typeof CHIME_SOUNDS !== 'undefined') {
+    Object.keys(CHIME_SOUNDS).forEach(function(k) {
+      out += '<option value="' + k + '"' + (sel === k ? ' selected' : '') + '>' + CHIME_SOUNDS[k].label + '</option>';
+    });
+  }
+  return out;
+}
+function _alarmsStatusText(list) {
   var now = new Date();
   var cur = now.getHours() * 60 + now.getMinutes();
-  var at = parseInt(al.time.slice(0, 2), 10) * 60 + parseInt(al.time.slice(3), 10);
-  if (cur < at) {
-    var diff = at - cur;
+  var todayKey = _hubTodayKey();
+  var armed = (list || []).filter(function(a) {
+    if (!a || a.enabled === false) return false;
+    if (!/^\d{2}:\d{2}$/.test(a.time || '')) return false;
+    if (a.lastFired === todayKey) return false;
+    return true;
+  });
+  if (!armed.length) return (list && list.length) ? 'All done for today' : 'Add an alarm below';
+  var upcoming = null;
+  armed.forEach(function(a) {
+    var at = parseInt(a.time.slice(0, 2), 10) * 60 + parseInt(a.time.slice(3), 10);
+    if (at > cur && (upcoming === null || at < upcoming)) upcoming = at;
+  });
+  if (upcoming !== null) {
+    var diff = upcoming - cur;
     var h = Math.floor(diff / 60);
     var m = diff % 60;
-    return 'Rings today in ' + (h ? h + 'h ' : '') + m + 'm';
+    var hh = String(Math.floor(upcoming / 60)).padStart(2, '0');
+    var mm2 = String(upcoming % 60).padStart(2, '0');
+    return 'Next ' + hh + ':' + mm2 + ' in ' + (h ? h + 'h ' : '') + m + 'm';
   }
-  return 'Rings tomorrow at ' + al.time;
+  var earliest = null;
+  armed.forEach(function(a) {
+    var at = parseInt(a.time.slice(0, 2), 10) * 60 + parseInt(a.time.slice(3), 10);
+    if (earliest === null || at < earliest) earliest = at;
+  });
+  var eh = String(Math.floor(earliest / 60)).padStart(2, '0');
+  var em = String(earliest % 60).padStart(2, '0');
+  var anyDaily = armed.some(function(a) { return a.repeat === 'daily'; });
+  return anyDaily ? 'Next ' + eh + ':' + em + ' tomorrow' : 'Done for today';
+}
+function _fireAlarm(a) {
+  var lbl = a.label || 'Alarm';
+  _playAlarmSound(a.sound, a.volume);
+  if (typeof showToast === 'function') { try { showToast(lbl + ' — ' + a.time, 'success', 8000); } catch(_e1) {} }
+  if (typeof _sendNotification === 'function') { try { _sendNotification(lbl, 'Alarm · ' + a.time, { tag: 'alarm-' + a.id + '-' + _hubTodayKey() }); } catch(_e2) {} }
 }
 function _todayQuickAdd(title) {
   title = String(title || '').trim();
@@ -5037,25 +5170,41 @@ function _todayQuickAdd(title) {
 function _checkAlarms(quiet) {
   if (!hubContent || !Array.isArray(hubContent.bentoLayout)) return;
   var now = new Date();
-  var hm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  var nowMins = now.getHours() * 60 + now.getMinutes();
+  var nowTs = Date.now();
   var todayKey = _hubTodayKey();
   var saved = false;
   var fired = false;
   hubContent.bentoLayout.forEach(function(it) {
-    if (!it || it.t !== 'alarm' || !it.alarm || it.alarm.enabled === false) return;
-    var tm = it.alarm.time;
-    if (typeof tm !== 'string' || !/^\d{2}:\d{2}$/.test(tm)) return;
-    if (it.alarm.lastFired === todayKey) return;
-    if (hm < tm) return;
-    var late = (now.getHours() * 60 + now.getMinutes()) - (parseInt(tm.slice(0, 2), 10) * 60 + parseInt(tm.slice(3), 10));
-    it.alarm.lastFired = todayKey;
-    saved = true;
-    if (late > 30) return;
-    fired = true;
-    var lbl = it.alarm.label || 'Alarm';
-    if (typeof playChime === 'function') { try { playChime(); } catch(_e1) {} }
-    if (typeof showToast === 'function') { try { showToast(lbl + ' — ' + tm, 'success', 6000); } catch(_e2) {} }
-    if (typeof _sendNotification === 'function') { try { _sendNotification(lbl, 'Alarm · ' + tm, { tag: 'alarm-' + todayKey + '-' + tm }); } catch(_e3) {} }
+    if (!it || it.t !== 'alarm') return;
+    var list = _alarmList(it);
+    var touched = false;
+    list.forEach(function(a) {
+      if (a.ringing && !a.snoozeUntil && nowTs - a.ringing > 10 * 60 * 1000) { a.ringing = 0; touched = true; }
+      if (a.enabled === false) return;
+      if (!/^\d{2}:\d{2}$/.test(a.time || '')) return;
+      if (a.snoozeUntil && nowTs >= a.snoozeUntil) {
+        a.snoozeUntil = 0;
+        a.ringing = nowTs;
+        touched = true;
+        fired = true;
+        _fireAlarm(a);
+        return;
+      }
+      if (a.lastFired === todayKey) return;
+      var at = parseInt(a.time.slice(0, 2), 10) * 60 + parseInt(a.time.slice(3), 10);
+      if (nowMins < at) return;
+      var late = nowMins - at;
+      a.lastFired = todayKey;
+      a.ringing = nowTs;
+      a.snoozeUntil = 0;
+      touched = true;
+      if (a.repeat !== 'daily') a.enabled = false;
+      if (late > 30) return;
+      fired = true;
+      _fireAlarm(a);
+    });
+    if (touched) { it.alarms = list; delete it.alarm; saved = true; }
   });
   if (saved) saveHubContent();
   if (fired && !quiet) renderHubBento();
@@ -5331,7 +5480,7 @@ function renderBubbleDock(grid) {
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
   var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', today:'Today', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', alarm:'Alarm', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', expense:'Expense', text:'Text', crypto:'Crypto', homework:'Homework', study:'Study' };
-  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', expense:'Spending + balance', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Daily time alarm', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', text:'Custom heading' };
+  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', expense:'Spending + balance', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Alarms with sound + snooze', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', text:'Custom heading' };
   var categories = [
     { name:'Productivity', short:'Productivity', types:['goals','priorities','todos','today','habits','progress','homework','study'] },
     { name:'Wellness', short:'Wellness', types:['water','mood','sleep-score'] },
@@ -5990,14 +6139,85 @@ function setupHubEditEvents() {
     if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
     const alarmToggle = e.target.closest('[data-alarm-toggle]');
     if (alarmToggle) {
-      var _auid = alarmToggle.dataset.alarmToggle;
-      var _aitem = _alarmItem(_auid);
-      if (_aitem) {
-        if (!_aitem.alarm || typeof _aitem.alarm !== 'object') _aitem.alarm = {};
-        _aitem.alarm.enabled = _aitem.alarm.enabled === false ? true : false;
-        saveHubContent();
+      var _arow = alarmToggle.closest('[data-alarm-id]');
+      var _abub = alarmToggle.closest('.bento-bubble');
+      var _auid = _abub ? _abub.dataset.bubble : null;
+      var _aid = _arow ? _arow.dataset.alarmId : null;
+      var _apitem = _auid ? _alarmItem(_auid) : null;
+      var _alist = _alarmList(_apitem);
+      var _a = null;
+      for (var _ai3 = 0; _ai3 < _alist.length; _ai3++) { if (_alist[_ai3].id === _aid) _a = _alist[_ai3]; }
+      if (_a) {
+        _a.enabled = _a.enabled === false ? true : false;
+        if (_a.enabled !== false && _a.lastFired === _hubTodayKey()) _a.lastFired = '';
+        _alarmPersist(_auid, _alist);
         renderHubBento();
       }
+      return;
+    }
+    const alarmDel = e.target.closest('[data-alarm-del]');
+    if (alarmDel) {
+      var _drow = alarmDel.closest('[data-alarm-id]');
+      var _dbub = alarmDel.closest('.bento-bubble');
+      var _duid = _dbub ? _dbub.dataset.bubble : null;
+      var _did = _drow ? _drow.dataset.alarmId : null;
+      var _dpitem = _duid ? _alarmItem(_duid) : null;
+      var _dlist = _alarmList(_dpitem).filter(function(x) { return x.id !== _did; });
+      _alarmPersist(_duid, _dlist);
+      renderHubBento();
+      return;
+    }
+    const alarmAdd = e.target.closest('[data-alarm-add]');
+    if (alarmAdd) {
+      var _nuid = alarmAdd.dataset.alarmAdd;
+      var _npitem = _alarmItem(_nuid);
+      var _nlist = _alarmList(_npitem);
+      if (_nlist.length >= 5) {
+        if (typeof showToast === 'function') showToast('Max 5 alarms per widget', 'info', 2500);
+        return;
+      }
+      _nlist.push(_alarmNorm({ time: '', label: '', enabled: true }));
+      _alarmPersist(_nuid, _nlist);
+      renderHubBento();
+      return;
+    }
+    const alarmSnooze = e.target.closest('[data-alarm-snooze]');
+    if (alarmSnooze) {
+      var _srow = alarmSnooze.closest('[data-alarm-id]');
+      var _sbub = alarmSnooze.closest('.bento-bubble');
+      var _suid = _sbub ? _sbub.dataset.bubble : null;
+      var _sid = _srow ? _srow.dataset.alarmId : null;
+      var _spitem = _suid ? _alarmItem(_suid) : null;
+      var _slist = _alarmList(_spitem);
+      for (var _si = 0; _si < _slist.length; _si++) {
+        if (_slist[_si].id === _sid) { _slist[_si].snoozeUntil = Date.now() + 5 * 60 * 1000; }
+      }
+      _alarmPersist(_suid, _slist);
+      if (typeof showToast === 'function') showToast('Snoozed 5 minutes', 'info', 2500);
+      renderHubBento();
+      return;
+    }
+    const alarmDismiss = e.target.closest('[data-alarm-dismiss]');
+    if (alarmDismiss) {
+      var _xrow = alarmDismiss.closest('[data-alarm-id]');
+      var _xbub = alarmDismiss.closest('.bento-bubble');
+      var _xuid = _xbub ? _xbub.dataset.bubble : null;
+      var _xid = _xrow ? _xrow.dataset.alarmId : null;
+      var _xpitem = _xuid ? _alarmItem(_xuid) : null;
+      var _xlist = _alarmList(_xpitem);
+      for (var _xi = 0; _xi < _xlist.length; _xi++) {
+        if (_xlist[_xi].id === _xid) { _xlist[_xi].ringing = 0; _xlist[_xi].snoozeUntil = 0; }
+      }
+      _alarmPersist(_xuid, _xlist);
+      renderHubBento();
+      return;
+    }
+    const alarmPreview = e.target.closest('[data-alarm-preview]');
+    if (alarmPreview) {
+      var _prow = alarmPreview.closest('[data-alarm-id]');
+      var _psel = _prow ? _prow.querySelector('[data-alarm-sound]') : null;
+      var _pvol = _prow ? _prow.querySelector('[data-alarm-vol]') : null;
+      _playAlarmSound(_psel ? _psel.value : '', _pvol ? parseInt(_pvol.value, 10) : 80);
       return;
     }
     const todayToggle = e.target.closest('[data-today-toggle]');

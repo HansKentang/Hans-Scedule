@@ -483,7 +483,7 @@ function cloudLoadImagesIntoState() {
       if (state.images[removedId]) { state.images[removedId] = ''; changed = true; }
       if (typeof _imgDBDelete === 'function') { try { _imgDBDelete(removedId); } catch (e) {} }
     });
-    if (changed) { try { if (typeof applyImages === 'function') applyImages(); } catch (e) {} }
+    if (changed) { try { if (typeof applyImages === 'function') applyImages(); } catch (e) {} try { if (typeof refreshSidebarImages === 'function') refreshSidebarImages(); } catch (e) {} }
   });
 }
 
