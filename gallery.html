@@ -234,13 +234,14 @@
       transform: translateY(-2px) scale(0.99);
       transition-duration: 80ms;
     }
-    .gal-item img {
+    .gal-item img, .gal-item video {
       width: 100%; height: auto;
       display: block;
       border-radius: 16px;
       transition: filter 0.35s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .gal-item:hover img { filter: brightness(0.85); transform: scale(1.03); }
+    .gal-item video { height: 100%; object-fit: cover; background: #000; }
+    .gal-item:hover img, .gal-item:hover video { filter: brightness(0.85); transform: scale(1.03); }
     /* Lazy load fade-in */
     .gal-item img.lazy {
       opacity: 0;

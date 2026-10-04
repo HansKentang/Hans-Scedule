@@ -3426,10 +3426,19 @@ function updateVisualsPulse() {
 }
 function applyImages() {
   var _isLanding = location.pathname.split('/').pop() === 'landing.html';
-  document.querySelectorAll("img[data-image-id]").forEach(function(el) {
-    var _id = el.dataset.imageId;
-    if (_id) {
-      var url = getImage(_id);
+  document.querySelectorAll('img[data-image-id], video[data-image-id]').forEach(function(el) {
+    var _id = (el.dataset && el.dataset.imageId) || '';
+    if (!_id) return;
+    var _inWrap = el.closest && el.closest('.bento-img-wrap, .gl-vision-img-wrap');
+    if (!_inWrap) {
+      var _u = getImage(_id);
+      setMediaSrc(el, _id, _u);
+      return;
+    }
+    if (el.tagName !== 'IMG' && el.tagName !== 'VIDEO') return;
+    var _eid = el.dataset.imageId;
+    if (_eid) {
+      var url = getImage(_eid);
       if (url) {
         el.src = url;
         el.style.display = "block";
@@ -3439,7 +3448,6 @@ function applyImages() {
           var placeholder = wrap.querySelector(".bento-img-placeholder, .gl-vision-img-placeholder");
           if (placeholder) placeholder.style.display = "none";
         }
-        // Remove any .img-empty-placeholder sibling when image is set
         var _parent = el.parentElement;
         if (_parent) {
           var _emptyPh = _parent.querySelector(".img-empty-placeholder");
@@ -3456,7 +3464,7 @@ function applyImages() {
           if (parent && !parent.querySelector(".img-empty-placeholder")) {
             var ph = document.createElement("div");
             ph.className = "img-empty-placeholder";
-            ph.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visual to add image</span>';
+ph.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visual to add image or video</span>';
             parent.insertBefore(ph, el);
           }
         } else {
@@ -3619,6 +3627,69 @@ function syncWidgetMedia(id, url) {
   });
 }
 
+function setMediaSrc(el, id, url) {
+  if (!el || !el.isConnected) return null;
+  if (el.closest) {
+    var w = el.closest('.bento-img-wrap, .gl-vision-img-wrap');
+    if (w) return el;
+  }
+  var wantVideo = !!url && isVideoUrl(url);
+  var target = el;
+  if ((el.tagName === 'VIDEO') !== wantVideo) {
+    target = document.createElement(wantVideo ? 'video' : 'img');
+    target.setAttribute('data-image-id', id);
+    if (el.className) target.className = el.className;
+    var css = '';
+    try { css = el.style.cssText; } catch(e) {}
+    if (css) { try { target.style.cssText = css; } catch(e2) {} }
+    if (!wantVideo && el.getAttribute) {
+      var a = el.getAttribute('alt');
+      if (a !== null) target.setAttribute('alt', a);
+    }
+    if (wantVideo) {
+      target.autoplay = true; target.muted = true; target.loop = true; target.playsInline = true;
+      target.setAttribute('muted', ''); target.setAttribute('playsinline', '');
+      target.preload = 'auto';
+    }
+    el.replaceWith(target);
+  }
+  if (wantVideo) {
+    target.src = url;
+    target.style.display = 'block';
+    try { var p = target.play(); if (p && p.catch) p.catch(function() {}); } catch(e3) {}
+  } else if (target.tagName === 'IMG') {
+    if (url) {
+      target.src = url;
+      target.style.display = 'block';
+      target.removeAttribute('data-empty-img');
+      var pr = target.parentElement;
+      if (pr) {
+        var eph = pr.querySelector('.img-empty-placeholder');
+        if (eph) eph.remove();
+      }
+    } else {
+      target.src = '';
+      target.style.display = 'none';
+      target.setAttribute('data-empty-img', '');
+      var isLanding = false;
+      try { isLanding = location.pathname.split('/').pop() === 'landing.html'; } catch(e4) {}
+      if (!isLanding) {
+        var par = target.parentElement;
+        if (par && !par.querySelector('.img-empty-placeholder')) {
+          var ph = document.createElement('div');
+          ph.className = 'img-empty-placeholder';
+          ph.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:20px;height:20px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visual to add image</span>';
+          par.insertBefore(ph, target);
+        }
+      }
+    }
+  } else {
+    try { target.removeAttribute('src'); } catch(e5) {}
+    target.style.display = 'none';
+  }
+  return target;
+}
+
 function setImage(id, url) {
   if (!state.images) loadImages();
   state.images[id] = url;
@@ -3638,22 +3709,8 @@ function setImage(id, url) {
   if (typeof cloudUploadImage === 'function') {
     try { cloudUploadImage(id, url); } catch (e) { /* cloud image upload unavailable */ }
   }
-  document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(function(el) {
-    if (el.closest('.bento-img-wrap') && isVideoUrl(url)) return;
-    el.src = url;
-    el.style.display = url ? 'block' : 'none';
-    var wrap = el.closest('.bento-img-wrap, .gl-vision-img-wrap');
-    if (wrap) {
-      var placeholder = wrap.querySelector('.bento-img-placeholder, .gl-vision-img-placeholder');
-      if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
-    }
-    if (url) {
-      var _parent = el.parentElement;
-      if (_parent) {
-        var _emptyPh = _parent.querySelector('.img-empty-placeholder');
-        if (_emptyPh) _emptyPh.remove();
-      }
-    }
+  document.querySelectorAll('img[data-image-id="' + id + '"], video[data-image-id="' + id + '"]').forEach(function(el) {
+    setMediaSrc(el, id, url);
   });
   syncWidgetMedia(id, url);
   try { updateVisualsPulse(); } catch(e) {}
@@ -3666,7 +3723,7 @@ function setImage(id, url) {
       if (cfg.images) {
         for (var i = 0; i < cfg.images.length; i++) {
           if ((cfg.images[i].page || '') === pageName) {
-            cfg.images[i].url = url;
+            if (!isVideoUrl(url) || url.length <= 500000 || !/^data:/i.test(url)) cfg.images[i].url = url;
             break;
           }
         }
@@ -3686,14 +3743,8 @@ function resetImage(id) {
     try { cloudDeleteImage(id); } catch (e) { /* cloud image delete unavailable */ }
   }
   const url = DEFAULT_IMAGES[id] || '';
-  document.querySelectorAll(`img[data-image-id="${id}"]`).forEach(el => {
-    el.src = url;
-    el.style.display = url ? 'block' : 'none';
-    const wrap = el.closest('.bento-img-wrap, .gl-vision-img-wrap');
-    if (wrap) {
-      const placeholder = wrap.querySelector('.bento-img-placeholder, .gl-vision-img-placeholder');
-      if (placeholder) placeholder.style.display = url ? 'none' : 'flex';
-    }
+  document.querySelectorAll('img[data-image-id="' + id + '"], video[data-image-id="' + id + '"]').forEach(function(el) {
+    setMediaSrc(el, id, url);
   });
   syncWidgetMedia(id, url);
 
@@ -3816,7 +3867,7 @@ function handleImagePickerFile(e) {
   const file = e.target.files?.[0];
   if (!file) return;
   const isVid = file.type.startsWith('video/');
-  const isGif = file.type === 'image/gif';
+  const isAnim = file.type === 'image/gif' || file.type === 'image/webp' || file.type === 'image/apng';
   if (!file.type.startsWith('image/') && !isVid) {
     if (status) { status.textContent = 'Not an image or video file'; status.style.color = '#ef4444'; }
     return;
@@ -3830,32 +3881,47 @@ function handleImagePickerFile(e) {
   const reader = new FileReader();
   reader.onload = function(ev) {
     // GIFs and videos are stored as-is to preserve animation/motion
-    if (isVid || isGif) { finishPickerDataUrl(ev.target.result); return; }
+    if (isVid || isAnim) { finishPickerDataUrl(ev.target.result); return; }
     resizeImageDataUrl(ev.target.result, 800, 800, 0.78).then(finishPickerDataUrl);
   };
   reader.readAsDataURL(file);
   e.target.value = '';
 }
 
+function isAnimImageUrl(u) {
+  if (/^data:image\/(gif|webp|apng)/i.test(u)) return true;
+  return /^https?:\/\/[^'"<>\s]+$/i.test(u) && /\.(gif|webp|apng)(\?|#|$)/i.test(u);
+}
+function extractPastedGifUrl(clipboardData) {
+  var html = '';
+  try { html = clipboardData ? (clipboardData.getData('text/html') || '') : ''; } catch(err) { html = ''; }
+  if (html) {
+    var m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (m && m[1]) {
+      var s = m[1].replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+      if (isAnimImageUrl(s)) return s;
+    }
+  }
+  var txt = '';
+  try { txt = clipboardData ? (clipboardData.getData('text/plain') || '').trim() : ''; } catch(err2) { txt = ''; }
+  if (txt && isAnimImageUrl(txt)) return txt;
+  return '';
+}
 function handleImagePickerPaste(e) {
   const status = document.getElementById('imagePickerStatus');
   const preview = document.getElementById('imagePickerPreview');
   const clipboardData = e.clipboardData || window.clipboardData;
-  var htmlGif = '';
-  try { htmlGif = clipboardData ? (clipboardData.getData('text/html') || '') : ''; } catch(err) { htmlGif = ''; }
-  if (htmlGif) {
-    var m = htmlGif.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (m && m[1]) {
-      var gifSrc = m[1];
-      var gifFile = /^https?:\/\//i.test(gifSrc) && /\.gif(\?|#|$)/i.test(gifSrc);
-      var gifData = /^data:image\/gif/i.test(gifSrc);
-      if (gifFile || gifData) {
-        e.preventDefault();
-        if (status) { status.textContent = 'Processing...'; status.style.color = 'var(--text-tertiary)'; }
-        finishPickerDataUrl(gifSrc);
-        return;
-      }
-    }
+  var gifSrc = extractPastedGifUrl(clipboardData);
+  try {
+    var dbgTypes = [];
+    if (clipboardData && clipboardData.types) for (var di = 0; di < clipboardData.types.length; di++) dbgTypes.push(clipboardData.types[di]);
+    console.log('[paste-debug] types=' + JSON.stringify(dbgTypes) + ' gif=' + (gifSrc ? gifSrc.slice(0, 120) : 'none'));
+  } catch(dbgErr) {}
+  if (gifSrc) {
+    e.preventDefault();
+    finishPickerDataUrl(gifSrc);
+    if (status) { status.textContent = 'Animated image ready — click Save to apply'; status.style.color = 'var(--primary)'; }
+    return;
   }
   const items = clipboardData?.items;
   if (!items) return;
@@ -3866,7 +3932,7 @@ function handleImagePickerPaste(e) {
       const blob = items[i].getAsFile();
       if (!blob) return;
       const blobIsVid = (blob.type || '').startsWith('video/');
-      const blobIsGif = blob.type === 'image/gif';
+      const blobIsAnim = blob.type === 'image/gif' || blob.type === 'image/webp' || blob.type === 'image/apng';
       const maxSize = blobIsVid ? VIDEO_UPLOAD_MAX : 2 * 1024 * 1024;
       if (blob.size > maxSize) {
         if (status) status.textContent = blobIsVid ? 'Video too large (max 12MB)' : 'Image too large (max 2MB)';
@@ -3876,7 +3942,7 @@ function handleImagePickerPaste(e) {
       const reader = new FileReader();
       reader.onload = function(ev) {
         var fullDataUrl = ev.target.result;
-        if (blobIsVid || blobIsGif) {
+        if (blobIsVid || blobIsAnim) {
           finishPickerDataUrl(fullDataUrl);
           return;
         }
@@ -4002,7 +4068,7 @@ function handleImagePickerPaste(e) {
     if (!files || files.length === 0) return;
     var file = files[0];
     var dropIsVid = (file.type || '').startsWith('video/');
-    var dropIsGif = file.type === 'image/gif';
+    var dropIsAnim = file.type === 'image/gif' || file.type === 'image/webp' || file.type === 'image/apng';
     if (!file.type.startsWith('image/') && !dropIsVid) {
       var _st = document.getElementById('imagePickerStatus');
       if (_st) { _st.textContent = 'Not an image or video file'; _st.style.color = '#ef4444'; }
@@ -4020,7 +4086,7 @@ function handleImagePickerPaste(e) {
     if (_status) { _status.textContent = 'Processing...'; _status.style.color = 'var(--text-tertiary)'; }
     var reader = new FileReader();
     reader.onload = function(ev) {
-      if (dropIsVid || dropIsGif) { finishPickerDataUrl(ev.target.result); return; }
+      if (dropIsVid || dropIsAnim) { finishPickerDataUrl(ev.target.result); return; }
       resizeImageDataUrl(ev.target.result, 800, 800, 0.78).then(finishPickerDataUrl);
     };
     reader.readAsDataURL(file);
@@ -4049,9 +4115,8 @@ function handleImagePickerSave() {
   const status = document.getElementById('imagePickerStatus');
   const urlVal = urlInput?.value?.trim() || '';
   const finalUrl = urlVal || (preview?.dataset.pasted) || '';
-  if (finalUrl && isVideoUrl(finalUrl) && !document.querySelector('.bento-img-wrap [data-image-id="' + id + '"]')) {
-    if (status) { status.textContent = 'Videos only work in the image widget — pick an image instead'; status.style.color = '#ef4444'; }
-    return;
+  if (finalUrl && isVideoUrl(finalUrl) && document.querySelector('.gl-vision-img-wrap [data-image-id="' + id + '"], .gal-item [data-image-id="' + id + '"]')) {
+    if (status) { status.textContent = 'Video ready — click Save to apply'; status.style.color = 'var(--primary)'; }
   }
   if (urlVal && /^https?:/i.test(urlVal) && !isVideoUrl(urlVal) && /\.(gif|jpe?g|png|webp|bmp|svg)(\?|#|$)/i.test(urlVal.split('?')[0].split('#')[0]) === false && document.querySelector('.bento-img-wrap [data-image-id="' + id + '"]')) {
     if (status) { status.textContent = 'That link is not a direct image or video file — use a .jpg/.gif/.mp4/.webm link'; status.style.color = '#ef4444'; }
@@ -5812,7 +5877,15 @@ function renderSidebarImages() {
       if (img.hidden) item.classList.add('hub-sidebar-image-hidden');
       item.dataset.imageId = img.id;
       const label = img.label || img.id;
-      item.innerHTML = (url ? '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">' : '<div class="hub-sidebar-image-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;opacity:0.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visual to add image</span></div>') +
+      var mediaHtml = '';
+      if (url) {
+        mediaHtml = isVideoUrl(url)
+          ? '<video src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '" autoplay muted loop playsinline preload="auto"></video>'
+          : '<img src="' + url + '" alt="' + label + '" data-image-id="' + sidebarId + '">';
+      } else {
+        mediaHtml = '<div class="hub-sidebar-image-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:16px;height:16px;opacity:0.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Use visual to add image</span></div>';
+      }
+      item.innerHTML = mediaHtml +
         '<span class="hub-sidebar-image-label">' + label + '</span>';
       // Click: in Visuals edit mode → image picker
       item.addEventListener('click', function() {
@@ -5914,6 +5987,12 @@ function showSidebarImagePastePopup() {
   // Paste from clipboard — capture paste event
   if (input) {
     input.addEventListener('paste', function(e) {
+      var gifUrl = extractPastedGifUrl(e.clipboardData);
+      if (gifUrl) {
+        e.preventDefault();
+        input.value = gifUrl;
+        return;
+      }
       var items = e.clipboardData.items;
       for (var i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
@@ -5973,7 +6052,9 @@ function openImageLightbox(url, label) {
   overlay.innerHTML = '<div class="sidebar-lightbox-backdrop"></div>' +
     '<div class="sidebar-lightbox-content">' +
     '<button class="sidebar-lightbox-close">' + '\u00D7' + '</button>' +
-    '<img src="' + url + '" alt="' + (label || '') + '">' +
+    (isVideoUrl(url)
+      ? '<video src="' + url + '" alt="' + (label || '') + '" controls autoplay muted loop playsinline preload="auto"></video>'
+      : '<img src="' + url + '" alt="' + (label || '') + '">') +
     '</div>';
   document.body.appendChild(overlay);
   requestAnimationFrame(function() { overlay.classList.add('active'); });
@@ -6069,6 +6150,12 @@ function showSidebarImageReplacePopup(imgId) {
   document.getElementById('sidebarPasteCancel').addEventListener('click', function() { popup.remove(); });
   if (input) {
     input.addEventListener('paste', function(e) {
+      var gifUrl = extractPastedGifUrl(e.clipboardData);
+      if (gifUrl) {
+        e.preventDefault();
+        input.value = gifUrl;
+        return;
+      }
       var items = e.clipboardData.items;
       for (var i = 0; i < items.length; i++) {
         if (items[i].type.indexOf('image') !== -1) {
@@ -6280,11 +6367,11 @@ document.addEventListener('click', function(e) {
 
   if (!state.editMode) return;
   if (document.documentElement.classList.contains('hub-edit')) return;
-  let img = e.target.closest('img[data-image-id]');
+  let img = e.target.closest('img[data-image-id], video[data-image-id]');
   if (!img) {
     var scope = e.target.closest('.img-empty-placeholder');
     scope = (scope && scope.parentElement) || e.target.parentElement;
-    if (scope) img = scope.querySelector('img[data-image-id]');
+    if (scope) img = scope.querySelector('img[data-image-id], video[data-image-id]');
   }
   if (!img) return;
   openImagePicker(img.dataset.imageId);

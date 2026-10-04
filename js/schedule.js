@@ -200,7 +200,7 @@ let resizeState = null;
 let lastDroppedTaskId = null;
 let weekSelected = new Set();
 let weekFocusedId = null;
-let weekPrefs = { workHours: false, hideDone: false, didAutoScroll: false };
+let weekPrefs = { workHours: false, hideDone: false, didAutoScroll: false, density: '' };
 
 // The grid's first and last rendered hour. Work-hours mode starts the grid at 7am
 // rather than 5am, so every position calculation must read these instead of
@@ -212,9 +212,66 @@ try {
   const p = JSON.parse(localStorage.getItem('haven-week-prefs') || '{}');
   if (p.workHours) weekPrefs.workHours = true;
   if (p.hideDone) weekPrefs.hideDone = true;
+  if (p.density) weekPrefs.density = p.density;
 } catch (e) {}
 function saveWeekPrefs() {
-  try { localStorage.setItem('haven-week-prefs', JSON.stringify({ workHours: weekPrefs.workHours, hideDone: weekPrefs.hideDone })); } catch (e) {}
+  try { localStorage.setItem('haven-week-prefs', JSON.stringify({ workHours: weekPrefs.workHours, hideDone: weekPrefs.hideDone, density: weekPrefs.density })); } catch (e) {}
+}
+// ─── SCHEDULE OPTIONS (row height + weekends) ──────────────
+// Density rides on --hour-height (css/style.css:109), which both .time-slot and
+// .hour-slot already read — so the grid re-measures itself and drag maths follows.
+// Scoped to min-width 768px so the small-screen breakpoints keep control.
+const SCH_DENSITY_CLASSES = ['sch-density-compact', 'sch-density-normal', 'sch-density-roomy'];
+function applyScheduleDensity(key) {
+  const root = document.documentElement;
+  SCH_DENSITY_CLASSES.forEach(c => root.classList.remove(c));
+  const use = SCH_DENSITY_CLASSES.includes('sch-density-' + key) ? key : 'normal';
+  root.classList.add('sch-density-' + use);
+  document.querySelectorAll('#schOptDensity .sch-opt-seg-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.density === use);
+  });
+}
+function syncScheduleOptionsUI() {
+  const tg = document.getElementById('schOptWeekends');
+  if (tg) tg.classList.toggle('on', state.showWeekends !== false);
+  applyScheduleDensity(weekPrefs.density);
+}
+function initScheduleOptions() {
+  const btn = document.getElementById('schOptionsBtn');
+  const pop = document.getElementById('schOptionsPopup');
+  if (!btn || !pop) return;
+
+  function closeOptions() {
+    pop.classList.add('hidden');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const opening = pop.classList.contains('hidden');
+    pop.classList.toggle('hidden', !opening);
+    btn.setAttribute('aria-expanded', String(opening));
+    if (opening) syncScheduleOptionsUI();
+  });
+  document.addEventListener('click', (e) => {
+    if (!pop.classList.contains('hidden') && !pop.contains(e.target) && !btn.contains(e.target)) closeOptions();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeOptions(); });
+
+  document.getElementById('schOptDensity')?.addEventListener('click', (e) => {
+    const b = e.target.closest('.sch-opt-seg-btn');
+    if (!b) return;
+    weekPrefs.density = b.dataset.density;
+    saveWeekPrefs();
+    applyScheduleDensity(weekPrefs.density);
+  });
+
+  document.getElementById('schOptWeekends')?.addEventListener('click', function () {
+    state.showWeekends = state.showWeekends === false;
+    this.classList.toggle('on', state.showWeekends);
+    if (typeof saveState === 'function') saveState();
+    renderCalendar();
+    updateWeekToolbar();
+  });
 }
 function getTagDur(tag) {
   try {
@@ -3186,7 +3243,9 @@ function initSchedule() {
   $$('.view-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.view === currentView));
   const pillMgr = document.getElementById('schPillManager');
   if (pillMgr) pillMgr.style.display = currentView === 'month' ? 'none' : '';
+  applyScheduleDensity(weekPrefs.density);
   renderCalendar();
+  initScheduleOptions();
   bindEvents();
   updateApiStatus();
   updateHolidayToggle();

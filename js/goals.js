@@ -1008,8 +1008,22 @@ function init() {
   new MutationObserver(() => applyPageTheme()).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   loadGoals();
 
-  document.querySelectorAll('img[data-image-id]').forEach(el => {
+  document.querySelectorAll('img[data-image-id], video[data-image-id]').forEach(el => {
     const url = getImage(el.dataset.imageId) || '';
+    const isVid = isVideoUrl(url);
+    if ((el.tagName === 'VIDEO') !== isVid) {
+      const target = document.createElement(isVid ? 'video' : 'img');
+      target.setAttribute('data-image-id', el.dataset.imageId);
+      if (el.className) target.className = el.className;
+      try { target.style.cssText = el.style.cssText; } catch(e) {}
+      if (isVid) {
+        target.autoplay = true; target.muted = true; target.loop = true; target.playsInline = true;
+        target.setAttribute('muted', ''); target.setAttribute('playsinline', '');
+        target.preload = 'auto';
+      }
+      el.replaceWith(target);
+      el = target;
+    }
     el.src = url;
     if (url) {
       el.style.display = 'block';
@@ -1018,11 +1032,26 @@ function init() {
         const ph = wrap.querySelector('.gl-vision-img-placeholder');
         if (ph) ph.style.display = 'none';
       }
+      if (isVid) { try { var p = el.play(); if (p && p.catch) p.catch(function(){}); } catch(e) {} }
     }
   });
 
   window._onImageSaved = function(id, url) {
-    document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(el => {
+    document.querySelectorAll('img[data-image-id="' + id + '"], video[data-image-id="' + id + '"]').forEach(el => {
+      const isVid = isVideoUrl(url);
+      if ((el.tagName === 'VIDEO') !== isVid) {
+        const target = document.createElement(isVid ? 'video' : 'img');
+        target.setAttribute('data-image-id', id);
+        if (el.className) target.className = el.className;
+        try { target.style.cssText = el.style.cssText; } catch(e) {}
+        if (isVid) {
+          target.autoplay = true; target.muted = true; target.loop = true; target.playsInline = true;
+          target.setAttribute('muted', ''); target.setAttribute('playsinline', '');
+          target.preload = 'auto';
+        }
+        el.replaceWith(target);
+        el = target;
+      }
       el.src = url || '';
       el.style.display = url ? 'block' : 'none';
       const wrap = el.closest('.gl-vision-img-wrap');
@@ -1030,6 +1059,7 @@ function init() {
         const ph = wrap.querySelector('.gl-vision-img-placeholder');
         if (ph) ph.style.display = url ? 'none' : 'flex';
       }
+      if (isVid && url) { try { var p = el.play(); if (p && p.catch) p.catch(function(){}); } catch(e) {} }
     });
   };
 
@@ -1090,8 +1120,8 @@ function init() {
 
 document.addEventListener('click', function(e) {
   if (!state.editMode) return;
-  const imgEl = e.target.closest('img[data-image-id]');
-  if (imgEl) openImagePicker(imgEl.dataset.imageId);
+  const mediaEl = e.target.closest('img[data-image-id], video[data-image-id]');
+  if (mediaEl) openImagePicker(mediaEl.dataset.imageId);
 });
 
 document.getElementById('exportBtn')?.addEventListener('click', exportData);

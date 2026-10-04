@@ -282,14 +282,18 @@ function renderGallery() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
           </svg>
-          <span>Use visual to add image</span>
+          <span>Use visual to add image or video</span>
           ${handle}
         </div>`;
     } else {
+      const isVid = isVideoUrl(url);
+      const mediaEl = isVid
+        ? `<video data-image-id="${id}" src="${escapeHtml(url || '')}" autoplay muted loop playsinline preload="auto" style="width:100%;height:100%;object-fit:cover;display:block;background:#000"></video>`
+        : `<img data-image-id="${id}" src="${escapeHtml(url || '')}" alt="" loading="lazy">`;
       html += `
         <div class="gal-item" data-gallery-id="${id}" style="${style}">
           <div class="gal-item-overlay"><button class="gal-save-btn" data-action="save" data-gallery-id="${id}">Save</button></div>
-          <img data-image-id="${id}" src="${escapeHtml(url || '')}" alt="" loading="lazy">
+          ${mediaEl}
           <div class="gal-item-caption">${escapeHtml(captionText)}</div>
           <div class="gal-item-remove" data-action="remove" data-gallery-id="${id}" title="Remove image">×</div>
           ${dupBtn}
@@ -306,10 +310,14 @@ function renderGallery() {
     img.addEventListener('load', onGalImageLoad);
     if (img.complete && img.naturalWidth) onGalImageLoad.call(img);
   });
+  canvas.querySelectorAll('.gal-item video[data-image-id]').forEach(vid => {
+    vid.addEventListener('loadedmetadata', onGalVideoLoad);
+    if (vid.readyState >= 1) onGalVideoLoad.call(vid);
+  });
 
   // ─── CLICK HANDLERS ───────────────────────────
   // Click on image opens picker
-  canvas.querySelectorAll('.gal-item img').forEach(el => {
+  canvas.querySelectorAll('.gal-item img, .gal-item video').forEach(el => {
     el.addEventListener('click', function(e) {
       e.stopPropagation();
       const card = this.closest('.gal-item');
@@ -437,6 +445,39 @@ function onGalImageLoad() {
   }
   // New image (or first load): size to natural aspect ratio, capped
   let w = Math.round(Math.max(GAL_MIN_W, Math.min(nw, GAL_MAX_W)));
+  let h = Math.round(w / ar);
+  if (h > GAL_MAX_H) { h = GAL_MAX_H; w = Math.round(h * ar); }
+  w = Math.max(80, w);
+  item.w = w; item.h = h; item.ar = ar;
+  saveGalleryLayout(layout);
+  card.style.width = w + 'px';
+  card.style.height = h + 'px';
+  updateCanvasSize();
+  scheduleGalleryReflow();
+}
+
+function onGalVideoLoad() {
+  const vid = this;
+  const card = vid.closest('.gal-item');
+  if (!card) return;
+  const id = card.dataset.galleryId;
+  const layout = getGalleryLayout();
+  const item = layout.find(i => i.id === id);
+  if (!item) return;
+  const vw = vid.videoWidth, vh = vid.videoHeight;
+  if (!vw || !vh) return;
+  const ar = vw / vh;
+  if (Math.abs((item.ar || GAL_DEFAULT_AR) - ar) < 0.001) {
+    const wantH = Math.max(80, Math.round(item.w / ar));
+    if (Math.abs(item.h - wantH) > 1) {
+      item.h = wantH;
+      saveGalleryLayout(layout);
+      card.style.height = wantH + 'px';
+      updateCanvasSize();
+    }
+    return;
+  }
+  let w = Math.round(Math.max(GAL_MIN_W, Math.min(vw, GAL_MAX_W)));
   let h = Math.round(w / ar);
   if (h > GAL_MAX_H) { h = GAL_MAX_H; w = Math.round(h * ar); }
   w = Math.max(80, w);
@@ -675,7 +716,7 @@ function init() {
   cleanupOldPicsumDefaults();
 
   // Load hero images
-  document.querySelectorAll('img[data-image-id]').forEach(el => {
+  document.querySelectorAll('img[data-image-id], video[data-image-id]').forEach(el => {
     el.src = getImage(el.dataset.imageId) || '';
   });
 
@@ -729,9 +770,9 @@ function init() {
   // In edit mode, clicking any image opens the picker
   document.addEventListener('click', function(e) {
     if (!state.editMode) return;
-    const imgEl = e.target.closest('img[data-image-id]');
-    if (imgEl && !e.target.closest('.gal-item-remove')) {
-      openImagePicker(imgEl.dataset.imageId);
+    const mediaEl = e.target.closest('img[data-image-id], video[data-image-id]');
+    if (mediaEl && !e.target.closest('.gal-item-remove')) {
+      openImagePicker(mediaEl.dataset.imageId);
     }
   });
 

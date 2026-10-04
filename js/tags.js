@@ -179,7 +179,7 @@ function setupPage() {
 function init() {
   loadState();
   applyTheme();
-  document.querySelectorAll('img[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
+  document.querySelectorAll('img[data-image-id], video[data-image-id]').forEach(el => { el.src = getImage(el.dataset.imageId) || ''; });
   renderTags();
   setupPage();
   document.getElementById('exportBtn')?.addEventListener('click', exportData);

@@ -43,6 +43,12 @@
       border-bottom: 1px solid var(--border-color);
       background: var(--bg-primary); flex-shrink: 0;
       min-height: 44px;
+      /* Must be positioned with an explicit z-index: .hub-anim-in animates
+         opacity, which makes this header a stacking context, so the options
+         popup's own z-index would otherwise be trapped below the calendar
+         (day-column / calendar-task / pill-manager) and get painted over.
+         Sits above --z-task (30), below --z-dragging (100). */
+      position: relative; z-index: 60;
     }
     .sch-header-left { display: flex; align-items: center; gap: var(--space-4); position: relative; }
     .sch-header-left h2 { font-size: 0.85rem; font-weight: 600; letter-spacing: -0.01em; }
@@ -62,6 +68,17 @@
     .sch-holiday-badge:focus-visible { box-shadow: var(--focus-ring); }
     .sch-api-badge #taskCount { font-weight: 600; color: var(--text-primary); font-size: 0.68rem; }
     /* active = holiday mode on â€” keep neutral, accent only on hover */
+
+    /* Toolbar content is ~872px wide, but .hub-main clips horizontally
+       (overflow-x: hidden), so between 768px and ~1140px the right-hand
+       buttons and their popovers were cut off. Truncate the month label and
+       drop the two secondary badges (same two the <=767px rules already
+       hide) so the row always fits. */
+    @media (min-width: 768px) and (max-width: 1140px) {
+      .sch-header-left { min-width: 0; gap: var(--space-2); }
+      .sch-header-left h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .sch-header-right .sch-api-badge:not(#taskCountBadge) { display: none; }
+    }
 
     /* Calendar container */
     #calendarContainer { flex: 1; overflow: auto; position: relative; display: flex; flex-direction: column; }
@@ -861,6 +878,26 @@
           <button class="sch-icon-btn" id="nowBtn" title="Scroll to now"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
           <button class="sch-icon-btn" id="workHoursBtn" title="Toggle work hours (7am-9pm) / full day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="10" rx="2"/><line x1="6" y1="7" x2="6" y2="17"/><line x1="10" y1="7" x2="10" y2="17"/><line x1="14" y1="7" x2="14" y2="17"/><line x1="18" y1="7" x2="18" y2="17"/></svg></button>
           <button class="sch-icon-btn" id="hideDoneBtn" title="Hide/show completed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <span class="sch-options-wrap">
+            <button class="sch-icon-btn" id="schOptionsBtn" title="Schedule options" aria-label="Schedule options" aria-haspopup="true" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></button>
+            <div class="sch-options-popup hidden" id="schOptionsPopup" role="dialog" aria-label="Schedule options">
+              <div>
+                <div class="sch-opt-label">Row height</div>
+                <div class="sch-opt-seg" id="schOptDensity" role="group" aria-label="Row height">
+                  <button type="button" class="sch-opt-seg-btn" data-density="compact">Compact</button>
+                  <button type="button" class="sch-opt-seg-btn" data-density="normal">Normal</button>
+                  <button type="button" class="sch-opt-seg-btn" data-density="roomy">Roomy</button>
+                </div>
+              </div>
+              <div class="sch-opt-row">
+                <div class="sch-opt-row-left">
+                  <div class="sch-opt-row-label">Show weekends</div>
+                  <div class="sch-opt-row-desc">Include Saturday and Sunday</div>
+                </div>
+                <button type="button" class="set-toggle" id="schOptWeekends" role="switch" aria-label="Show weekends"></button>
+              </div>
+            </div>
+          </span>
           <span class="sch-api-badge" id="apiStatus">
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
             <span id="apiStatusText" data-i18n="sch.apiNoKey">No key</span>

@@ -1209,9 +1209,9 @@ function init() {
   applyTheme();
   applyPageTheme();
   loadCompletionLog();
-  document.querySelectorAll('img[data-image-id]').forEach(el => { const url = getImage(el.dataset.imageId) || ''; el.src = url; el.style.display = url ? 'block' : 'none'; });
+  document.querySelectorAll('img[data-image-id], video[data-image-id]').forEach(el => { const url = getImage(el.dataset.imageId) || ''; el.src = url; el.style.display = url ? 'block' : 'none'; });
   window._onImageSaved = function(id, url) {
-    document.querySelectorAll('img[data-image-id="' + id + '"]').forEach(el => {
+    document.querySelectorAll('img[data-image-id="' + id + '"], video[data-image-id="' + id + '"]').forEach(el => {
       el.src = url || '';
       el.style.display = url ? 'block' : 'none';
     });
