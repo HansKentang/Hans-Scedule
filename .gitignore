@@ -1,2 +1,8 @@
 ﻿node_modules/
 nul
+
+.workbuddy-ai/
+notes/
+.tmp-*/
+__*.html
+.backup-*/
