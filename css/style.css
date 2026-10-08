@@ -5495,8 +5495,6 @@ html.hub-edit .bento-bubble .w-st-add-inline { display: block; }
   width: 10px;
   height: 10px;
 }
-.w-todo-checked .w-todo-box { background:var(--primary); border-color:var(--primary); }
-.w-todo-checked .w-todo-box:hover { background:color-mix(in srgb, var(--primary) 80%, #fff); border-color:var(--primary); }
 .w-todo-checked {
   background: var(--primary);
   border-color: var(--primary);
@@ -14128,9 +14126,11 @@ body.notes-modal-open { overflow: hidden; }
 .wk-ghead, .wk-grow { display: flex; align-items: center; gap: 6px; }
 /* Both stay in flow, so the day header and the slot rows read as one table. */
 .wk-ghead { flex: 0 0 auto; }
-/* Rows share the leftover height but stop at 40px — uncapped they stretch into
-   24x72 pills at four rows, which is not what a timetable looks like. */
-.wk-grow { flex: 1 1 0; min-height: 26px; max-height: 40px; }
+/* Rows share the leftover height but stop at 48px. Uncapped they stretch into
+   24x72 pills at four rows, which is not what a timetable looks like; capped too
+   low (40px) four rows paint 160px of a 400px tile and the rest reads as a broken
+   card. 48px is roughly square at the default 280px tile. */
+.wk-grow { flex: 1 1 0; min-height: 26px; max-height: 48px; }
 .wk-gslot {
   flex: 0 0 16px;
   min-width: 0;

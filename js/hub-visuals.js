@@ -6712,7 +6712,7 @@ function _weekplanEnsure() {
         ? { tag: typeof it.tag === 'string' ? it.tag : '', done: !!it.done }
         : { tag: '', done: false });
     }
-    while (clean.length && !clean[clean.length - 1].tag) clean.pop();
+    _weekplanTrim(clean);
     wp.days[k] = clean;
   }
   return wp;
@@ -6796,6 +6796,14 @@ function _weekplanSubjects() {
   return out;
 }
 
+/* Drop trailing empty boxes. They are invisible, so this changes no layout, and
+   it stops the stored payload growing a tail of blanks as the user clears boxes.
+   Interior empties are kept — those are real positions the grid must not shift. */
+function _weekplanTrim(list) {
+  while (list.length && !(list[list.length - 1] && list[list.length - 1].tag)) list.pop();
+  return list;
+}
+
 function _weekplanHas(days, dayId, tag) {
   var list = (days && days[dayId]) || [];
   for (var i = 0; i < list.length; i++) if (list[i] && list[i].tag === tag) return true;
@@ -6821,7 +6829,7 @@ function _weekplanAdd(dayId, tag) {
   var list = wp.days[dayId];
   if (!list || !tag) return false;
   for (var i = 0; i < list.length; i++) {
-    if (list[i].tag === tag) { list[i] = { tag: '', done: false }; return true; }
+    if (list[i].tag === tag) { list[i] = { tag: '', done: false }; _weekplanTrim(list); return true; }
   }
   for (var j = 0; j < list.length; j++) {
     if (!list[j].tag) { list[j] = { tag: tag, done: false }; return true; }
@@ -6841,7 +6849,7 @@ function _weekplanSet(dayId, idx, tag) {
   var list = wp.days[dayId];
   if (!list || !tag || !(idx >= 0)) return false;
   var cur = list[idx];
-  if (cur && cur.tag === tag) { list[idx] = { tag: '', done: false }; return true; }
+  if (cur && cur.tag === tag) { list[idx] = { tag: '', done: false }; _weekplanTrim(list); return true; }
   for (var i = 0; i < list.length; i++) {
     if (list[i] && list[i].tag === tag) list[i] = { tag: '', done: false };
   }
