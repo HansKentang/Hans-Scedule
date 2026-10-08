@@ -113,7 +113,11 @@ const NOTES_PREFS_KEY = 'haven-notes-prefs';
 const NOTES_SIZE_LIST = ['sm','md','lg'];
 const NOTES_FONT_LIST = ['sans','serif','mono'];
 const NOTES_COLOR_LIST = ['','blue','teal','amber','rose','violet'];
-const NOTES_DEFAULT_PREFS = { size:'md', font:'sans', lines:2, time:true };
+/* 'recent' groups pinned notes at the top, which is right for a glanceable tile
+   but useless when you are hunting for one specific note — hence the other
+   three, which sort the whole list and ignore the pin. */
+const NOTES_SORT_LIST = ['recent','oldest','alpha','created'];
+const NOTES_DEFAULT_PREFS = { size:'md', font:'sans', lines:2, time:true, sort:'recent', done:true };
 let _notesPrefs = {};
 try { _notesPrefs = JSON.parse(localStorage.getItem(NOTES_PREFS_KEY) || '{}'); } catch(e) {}
 function _getNotesPrefs(uid) {
@@ -122,7 +126,9 @@ function _getNotesPrefs(uid) {
     size: NOTES_SIZE_LIST.indexOf(p.size) !== -1 ? p.size : NOTES_DEFAULT_PREFS.size,
     font: NOTES_FONT_LIST.indexOf(p.font) !== -1 ? p.font : NOTES_DEFAULT_PREFS.font,
     lines: (typeof p.lines === 'number' && p.lines >= 1 && p.lines <= 6) ? Math.round(p.lines) : NOTES_DEFAULT_PREFS.lines,
-    time: p.time === undefined ? NOTES_DEFAULT_PREFS.time : !!p.time
+    time: p.time === undefined ? NOTES_DEFAULT_PREFS.time : !!p.time,
+    sort: NOTES_SORT_LIST.indexOf(p.sort) !== -1 ? p.sort : NOTES_DEFAULT_PREFS.sort,
+    done: p.done === undefined ? NOTES_DEFAULT_PREFS.done : !!p.done
   };
 }
 function _setNotesPrefs(uid, patch) {
@@ -1422,9 +1428,21 @@ function _notesFind(id) {
   return null;
 }
 
-/* Pinned first, then most recently touched. */
-function _notesSorted() {
+/* Pinned first, then most recently touched — unless the tile asks for a flat
+   order, in which case the pin is ignored so the sequence is predictable. */
+function _notesSorted(uid) {
+  var mode = (uid ? _getNotesPrefs(uid).sort : 'recent') || 'recent';
   return _notesData().slice().sort(function(a, b) {
+    if (mode === 'alpha') {
+      /* sort by the label the tile actually shows (title, else first line) —
+         sorting by a hidden field makes the order look random */
+      var an = _notesLabel(a).toLowerCase();
+      var bn = _notesLabel(b).toLowerCase();
+      if (an !== bn) return an < bn ? -1 : 1;
+      return (b.updated || 0) - (a.updated || 0);
+    }
+    if (mode === 'oldest') return (a.updated || 0) - (b.updated || 0);
+    if (mode === 'created') return (b.created || 0) - (a.created || 0);
     if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
     return (b.updated || 0) - (a.updated || 0);
   });
@@ -1467,6 +1485,56 @@ function _notesRemove(id) {
     if (list[i].id === id) { list.splice(i, 1); _notesSave(); return true; }
   }
   return false;
+}
+
+/* Delete used to be a blocking confirm() with no way back. An undo toast is the
+   better trade: no interruption in the common case, a real recovery path for the
+   mis-click. The window is deliberately long — a note is worth more than the
+   screen space, and it is the only thing standing between a slip and data loss.
+   Note the note goes back at its original index, not on top: restoring it to the
+   wrong place reads as a second bug. */
+function _notesRemoveWithUndo(id) {
+  var list = _notesData();
+  var idx = -1;
+  for (var i = 0; i < list.length; i++) { if (list[i].id === id) { idx = i; break; } }
+  if (idx < 0) return false;
+  var snapshot = JSON.parse(JSON.stringify(list[idx]));
+  list.splice(idx, 1);
+  _notesSave();
+  _notesUndoToast(snapshot, idx);
+  return true;
+}
+
+function _notesUndoToast(note, index) {
+  var old = document.querySelector('.notes-undo');
+  if (old) old.remove();
+  var el = document.createElement('div');
+  el.className = 'notes-undo';
+  el.innerHTML = '<span class="notes-undo-txt">Note deleted</span>'
+    + '<button type="button" class="notes-undo-btn">Undo</button>';
+  document.body.appendChild(el);
+
+  var spent = false;
+  function retire() {
+    if (spent) return;
+    spent = true;
+    clearTimeout(timer);
+    el.classList.add('out');
+    setTimeout(function() { el.remove(); }, 220);
+  }
+  var timer = setTimeout(retire, 9000);
+
+  el.querySelector('.notes-undo-btn').addEventListener('click', function() {
+    if (spent) return;
+    spent = true;
+    clearTimeout(timer);
+    var list = _notesData();
+    list.splice(Math.max(0, Math.min(index, list.length)), 0, note);
+    _notesSave();
+    if (typeof renderHubBento === 'function') renderHubBento();
+    el.remove();
+    if (typeof showToast === 'function') showToast('Note restored', 'success', 1400);
+  });
 }
 
 function _notesDuplicate(id) {
@@ -1592,6 +1660,10 @@ function _notesCardsHtml(list, prefs, uid, interactive, modifier) {
     for (var j = 0; j < lines.length; j++) {
       var L = lines[j];
       if (L.kind === 'gap') continue;
+      /* "Show completed" off drops ticked lines entirely — they must not count
+         toward the preview cap either, or hiding them would show less content
+         instead of different content. */
+      if (!prefs.done && L.kind === 'check' && L.checked) continue;
       if (used >= prefs.lines) { hidden++; continue; }
       used++;
       rows += _notesLineHtml(L, uid, n.id, interactive);
@@ -1650,6 +1722,7 @@ function _notesChecklistHtml(list, prefs, uid, interactive) {
     var rows = '';
     for (var j = 0; j < lines.length && count < max; j++) {
       if (lines[j].kind !== 'check') continue;
+      if (!prefs.done && lines[j].checked) continue;
       rows += _notesLineHtml(lines[j], uid, n.id, interactive);
       count++;
     }
@@ -2097,7 +2170,7 @@ function renderHubBento() {
       case 'notes': {
         var _nStyle = _getNotesStyle(uid);
         var _nPrefs = _getNotesPrefs(uid);
-        var _nList = _notesSorted();
+        var _nList = _notesSorted(uid);
         var _nCounts = _notesCounts(_nList);
         var _nExtra = _nStyle === 'checklist' ? 0 : Math.max(0, _nList.length - NOTES_RENDER_CAP);
         var _nWrapCls = 'w-notes-wrap w-notes-' + _nStyle + ' w-notes-sz-' + _nPrefs.size + ' w-notes-ff-' + _nPrefs.font;
@@ -5037,11 +5110,11 @@ function _notesWireModal(m) {
   if (del) del.addEventListener('click', function() {
     var n = _notesFind(_notesEdit.id);
     if (!n) return;
-    if (typeof confirm === 'function' && !confirm('Delete this note?')) return;
     _notesEdit.dirty = true;
-    _notesRemove(_notesEdit.id);
+    /* No blocking confirm: a dialog on every delete is a tax on the common case,
+       and the undo toast already covers the mis-click. */
+    _notesRemoveWithUndo(_notesEdit.id);
     closeNotesEditor();
-    if (typeof showToast === 'function') showToast('Note deleted', 'info', 1400);
   });
 
   var colors = m.querySelector('#notesModalColors');
@@ -5163,13 +5236,15 @@ var _NOTES_OPT_GROUPS = [
   { key:'size',  label:'Text size', vals: NOTES_SIZE_LIST, names: ['S','M','L'] },
   { key:'font',  label:'Font',      vals: NOTES_FONT_LIST, names: ['Sans','Serif','Mono'] },
   { key:'lines', label:'Lines each',vals: [1,2,3,4,5,6], names: ['1','2','3','4','5','6'] },
-  { key:'time',  label:'Timestamps',vals: [1,0], names: ['On','Off'] }
+  { key:'time',  label:'Timestamps',vals: [1,0], names: ['On','Off'] },
+  { key:'sort',  label:'Order',     vals: NOTES_SORT_LIST, names: ['Recent','Oldest','A–Z','Created'] },
+  { key:'done',  label:'Done tasks',vals: [1,0], names: ['Show','Hide'] }
 ];
 
 function _notesPaintOptions(panel, uid) {
   var style = _getNotesStyle(uid);
   var prefs = _getNotesPrefs(uid);
-  var current = { style: style, size: prefs.size, font: prefs.font, lines: prefs.lines, time: prefs.time ? 1 : 0 };
+  var current = { style: style, size: prefs.size, font: prefs.font, lines: prefs.lines, time: prefs.time ? 1 : 0, sort: prefs.sort, done: prefs.done ? 1 : 0 };
   Array.prototype.forEach.call(panel.querySelectorAll('[data-notes-opt]'), function(chip) {
     var kind = chip.dataset.notesOpt;
     var val = chip.dataset.notesVal;
@@ -5193,6 +5268,8 @@ function _notesWireOptions(panel, uid) {
     else if (kind === 'font') _setNotesPrefs(uid, { font: val });
     else if (kind === 'lines') _setNotesPrefs(uid, { lines: parseInt(val, 10) || 2 });
     else if (kind === 'time') _setNotesPrefs(uid, { time: val === '1' });
+    else if (kind === 'sort') _setNotesPrefs(uid, { sort: val });
+    else if (kind === 'done') _setNotesPrefs(uid, { done: val === '1' });
     _notesPaintOptions(panel, uid);
     if (typeof renderHubBento === 'function') renderHubBento();
   });
@@ -7197,7 +7274,7 @@ function _weatherSearchAndRender(widget, q) {
     return;
   }
   list.innerHTML = '<div class="weather-loc-status">Searching...</div>';
-  fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=5&language=en&format=json').then(function(r) { return r.json(); }).then(function(data) {
+  (typeof _fetchJsonTimeout === 'function' ? _fetchJsonTimeout('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=5&language=en&format=json', 9000) : fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(q) + '&count=5&language=en&format=json').then(function(r) { return r.json(); })).then(function(data) {
     var res = (data && data.results) || [];
     if (!res.length) {
       list.innerHTML = '<div class="weather-loc-status">No matches found.</div>';
@@ -7211,6 +7288,21 @@ function _weatherSearchAndRender(widget, q) {
     list.innerHTML = '<div class="weather-loc-status">Search failed. Check connection.</div>';
   });
 }
+function _fetchJsonTimeout(url, ms) {
+  var ctrl = null;
+  var timer = null;
+  try {
+    if (typeof AbortController !== 'undefined') {
+      ctrl = new AbortController();
+      timer = setTimeout(function() { try { ctrl.abort(); } catch(e) {} }, ms || 9000);
+    }
+  } catch(e) { ctrl = null; }
+  var opts = ctrl ? { signal: ctrl.signal } : {};
+  return fetch(url, opts).then(function(r) {
+    if (!r || !r.ok) throw new Error('http-' + (r && r.status));
+    return r.json();
+  }).finally(function() { if (timer) clearTimeout(timer); });
+}
 function _loadWeatherForCoords(lat, lon, locName, widgets) {
   var list = Array.prototype.slice.call(widgets || []);
   if (!list.length) return;
@@ -7223,8 +7315,8 @@ function _loadWeatherForCoords(lat, lon, locName, widgets) {
     list.forEach(function(w) { updateWeatherWidget(w, _weatherLastData); });
     return;
   }
-  var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current_weather=true&current=temperature_2m,apparent_temperature,is_day,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=2';
-  fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,apparent_temperature,is_day,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=2';
+  _fetchJsonTimeout(url, 10000).then(function(data) {
     if (!data || (!data.current && !data.current_weather)) throw new Error('bad');
     var cur = data.current || {};
     var legacy = data.current_weather || {};
@@ -7270,8 +7362,21 @@ function _loadWeatherForCoords(lat, lon, locName, widgets) {
     try { localStorage.setItem(cacheKey, JSON.stringify({ts: Date.now(), data: wd})); } catch(e) {}
     list.forEach(function(w) { updateWeatherWidget(w, wd); });
   }).catch(function() {
+    if (cached && cached.data && cached.data.temp != null) {
+      _weatherLastData = cached.data;
+      list.forEach(function(w) { updateWeatherWidget(w, cached.data); });
+      return;
+    }
     list.forEach(function(w) { w.innerHTML = _weatherErrHtml('Could not load weather'); });
   });
+}
+function _weatherCoordsFromJson(d) {
+  if (!d || typeof d !== 'object') return null;
+  var lat = parseFloat(d.latitude != null ? d.latitude : d.lat);
+  var lon = parseFloat(d.longitude != null ? d.longitude : d.lon);
+  if (!isFinite(lat) || !isFinite(lon)) return null;
+  var name = [d.city, d.region, d.country_name || d.country].filter(Boolean).join(', ');
+  return { lat: lat, lon: lon, name: name };
 }
 function _fetchWeatherByIP(widgets) {
   var list = Array.prototype.slice.call(widgets || []);
@@ -7279,21 +7384,23 @@ function _fetchWeatherByIP(widgets) {
   list.forEach(function(w) {
     w.innerHTML = '<div class="weather-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Detecting location...</span></div>';
   });
-  fetch('https://ipapi.co/json/').then(function(r) { return r.json(); }).then(function(d) {
-    var lat = d ? parseFloat(d.latitude != null ? d.latitude : d.lat) : NaN;
-    var lon = d ? parseFloat(d.longitude != null ? d.longitude : d.lon) : NaN;
-    if (!isFinite(lat) || !isFinite(lon)) throw new Error('no-coords');
-    var name = [d.city, d.country_name || d.country].filter(Boolean).join(', ');
-    _loadWeatherForCoords(lat, lon, name, list);
-  }).catch(function() {
-    fetch('https://ip-api.com/json/?fields=status,message,lat,lon,city,country').then(function(r) { return r.json(); }).then(function(d2) {
-      if (!d2 || d2.status !== 'success' || !isFinite(d2.lat) || !isFinite(d2.lon)) throw new Error('no-coords');
-      var name2 = [d2.city, d2.country].filter(Boolean).join(', ');
-      _loadWeatherForCoords(d2.lat, d2.lon, name2, list);
-    }).catch(function() {
+  var providers = ['https://ipwho.is/', 'https://ip-api.com/json/?fields=status,message,lat,lon,city,country', 'https://ipapi.co/json/'];
+  var i = 0;
+  function tryNext() {
+    if (i >= providers.length) {
       list.forEach(function(w) { w.innerHTML = _weatherErrHtml('Could not detect location'); });
-    });
-  });
+      return;
+    }
+    var u = providers[i++];
+    _fetchJsonTimeout(u, 7000).then(function(d) {
+      if (d && d.status === 'fail') throw new Error('no-coords');
+      if (d && d.success === false) throw new Error('no-coords');
+      var c = _weatherCoordsFromJson(d);
+      if (!c) throw new Error('no-coords');
+      _loadWeatherForCoords(c.lat, c.lon, c.name, list);
+    }).catch(tryNext);
+  }
+  tryNext();
 }
 function _fetchWeather(grid) {
   var weatherWidgets = grid.querySelectorAll('.weather-widget[data-weather-uid]');
@@ -7309,21 +7416,32 @@ function _fetchWeather(grid) {
     _loadWeatherForCoords(saved.lat, saved.lon, saved.name, weatherWidgets);
     return;
   }
+  var _geoDone = false;
+  function _geoFallback() {
+    if (_geoDone) return;
+    _geoDone = true;
+    _fetchWeatherByIP(weatherWidgets);
+  }
   if (typeof navigator !== 'undefined' && navigator.geolocation && navigator.geolocation.getCurrentPosition) {
     try {
+      var _geoTimer = setTimeout(_geoFallback, 9000);
       navigator.geolocation.getCurrentPosition(function(pos) {
+        if (_geoDone) return;
+        _geoDone = true;
+        clearTimeout(_geoTimer);
         var lat = pos.coords.latitude;
         var lon = pos.coords.longitude;
         var prev = _getSavedWeatherLoc();
         _loadWeatherForCoords(lat, lon, prev ? prev.name : 'Current location', weatherWidgets);
       }, function() {
-        _fetchWeatherByIP(weatherWidgets);
+        clearTimeout(_geoTimer);
+        _geoFallback();
       }, {timeout: 8000, enableHighAccuracy: false});
     } catch(e) {
-      _fetchWeatherByIP(weatherWidgets);
+      _geoFallback();
     }
   } else {
-    _fetchWeatherByIP(weatherWidgets);
+    _geoFallback();
   }
 }
 
