@@ -2219,6 +2219,8 @@ function renderHubBento() {
         var _todosPct = _todosTotal ? Math.round((_todosDone / _todosTotal) * 100) : 0;
         var _tdRow = function(t, i, cls) { return _tdTaskRow(t, i, isEdit, e, cls); };
         var _tdAdd = '<button class="w-add-btn" data-add="todos">' + _TD_PLUS_SVG + 'Add to-do</button>';
+        var _tdOrder = hubContent.todos.map(function(_, i) { return i; });
+        if (!isEdit) _tdOrder.sort(function(a, b) { return ((hubContent.todos[a] && hubContent.todos[a].done) ? 1 : 0) - ((hubContent.todos[b] && hubContent.todos[b].done) ? 1 : 0); });
         var _todosBody = '';
 
         /* Empty: emit nothing but the shell so _applyEmptyState() supplies the CTA.
@@ -2246,13 +2248,13 @@ function renderHubBento() {
               + (_tdRest || '<span class="w-td-allclear">All done</span>')
               + '</div></div>' + _tdAdd;
           } else if (_todosStyle === 'timeline') {
-            _todosBody = '<div class="w-td-rail">' + hubContent.todos.map(function(t, i) { return _tdRow(t, i, 'w-td-node'); }).join('') + '</div>' + _tdAdd;
+            _todosBody = '<div class="w-td-rail">' + _tdOrder.map(function(i) { return _tdRow(hubContent.todos[i], i, 'w-td-node'); }).join('') + '</div>' + _tdAdd;
           } else if (_todosStyle === 'chips') {
-            _todosBody = '<div class="w-td-chips">' + hubContent.todos.map(function(t, i) { return _tdRow(t, i, 'w-td-chip'); }).join('') + '</div>' + _tdAdd;
+            _todosBody = '<div class="w-td-chips">' + _tdOrder.map(function(i) { return _tdRow(hubContent.todos[i], i, 'w-td-chip'); }).join('') + '</div>' + _tdAdd;
           } else if (_todosStyle === 'board') {
-            _todosBody = '<div class="w-td-board">' + hubContent.todos.map(function(t, i) { return _tdRow(t, i, 'w-td-tile'); }).join('') + '</div>' + _tdAdd;
+            _todosBody = '<div class="w-td-board">' + _tdOrder.map(function(i) { return _tdRow(hubContent.todos[i], i, 'w-td-tile'); }).join('') + '</div>' + _tdAdd;
           } else {
-            _todosBody = '<div class="w-list w-td-list">' + hubContent.todos.map(function(t, i) { return _tdRow(t, i, ''); }).join('') + _tdAdd + '</div>';
+            _todosBody = '<div class="w-list w-td-list">' + _tdOrder.map(function(i) { return _tdRow(hubContent.todos[i], i, ''); }).join('') + _tdAdd + '</div>';
           }
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
@@ -2269,17 +2271,19 @@ function renderHubBento() {
         var _tdReset = (typeof _todayResetText === 'function') ? _todayResetText() : '';
         var _tdCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         var _tdItems = '';
+        var _ttOrder = _ttList.map(function(_, i) { return i; });
+        if (!isEdit) _ttOrder.sort(function(a, b) { return ((_ttList[a] && _ttList[a].done) ? 1 : 0) - ((_ttList[b] && _ttList[b].done) ? 1 : 0); });
         if (_tdStyle === 'progress') {
           var _tdPct = _tdTotal ? Math.round((_tdDone / _tdTotal) * 100) : 0;
-          _tdItems = '<div class="w-todos-progress"><div class="w-todos-prog-bar"><div class="w-todos-prog-fill" style="width:' + _tdPct + '%"></div></div><span class="w-todos-prog-text">' + _tdDone + '/' + _tdTotal + ' done (' + _tdPct + '%)</span></div>' + _ttList.map(function(t, i) {
+          _tdItems = '<div class="w-todos-progress"><div class="w-todos-prog-bar"><div class="w-todos-prog-fill" style="width:' + _tdPct + '%"></div></div><span class="w-todos-prog-text">' + _tdDone + '/' + _tdTotal + ' done (' + _tdPct + '%)</span></div>' + _ttOrder.map(function(i) { var t = _ttList[i];
             return '<div class="w-item' + (t.done ? ' w-item-done' : '') + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-tt-drag="' + i + '">⠿</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '" data-tt-toggle="' + i + '">' + (t.done ? _tdCheck : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todayTodos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todayTodos" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('');
         } else if (_tdStyle === 'compact') {
-          _tdItems = _ttList.map(function(t, i) {
+          _tdItems = _ttOrder.map(function(i) { var t = _ttList[i];
             return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-tt-drag="' + i + '">⠿</span>' : '') + '<span class="w-todo-box w-todo-box-sm ' + (t.done ? 'w-todo-checked' : '') + '" data-tt-toggle="' + i + '">' + (t.done ? _tdCheck : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todayTodos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todayTodos" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('');
         } else {
-          _tdItems = _ttList.map(function(t, i) {
+          _tdItems = _ttOrder.map(function(i) { var t = _ttList[i];
             return '<div class="w-item" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-tt-drag="' + i + '">⠿</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '" data-tt-toggle="' + i + '">' + (t.done ? _tdCheck : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todayTodos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todayTodos" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('');
         }
