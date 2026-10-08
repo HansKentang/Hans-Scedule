@@ -273,6 +273,125 @@ function initScheduleOptions() {
     updateWeekToolbar();
   });
 }
+
+// ─── TASK CARD SKINS ──────────────────────────────────────
+// Mirrors the hub canvas skins (HUB_SKINS in hub-visuals.js) but drives
+// .calendar-task instead of .bento-bubble. Each id maps to a [data-task-skin]
+// token block in css/style.css; adding a skin = one entry here + one block.
+const TASK_CARD_SKINS = [
+  { id: 'tinted',  name: 'Tinted',  blurb: 'Soft tag wash' },
+  { id: 'outline', name: 'Outline', blurb: 'Clean card, coloured edge' },
+  { id: 'glass',   name: 'Frosted', blurb: 'Translucent tint' },
+  { id: 'paper',   name: 'Paper',   blurb: 'Warm cream, serif' },
+  { id: 'notch',   name: 'Notch',   blurb: 'Corner cut away' }
+];
+const TASK_CARD_SKIN_KEY = 'haven-task-card-skin';
+
+function taskCardSkinById(id) {
+  for (let i = 0; i < TASK_CARD_SKINS.length; i++) {
+    if (TASK_CARD_SKINS[i].id === id) return TASK_CARD_SKINS[i];
+  }
+  return TASK_CARD_SKINS[0];
+}
+function readTaskCardSkin() {
+  let id = TASK_CARD_SKINS[0].id;
+  try {
+    const v = localStorage.getItem(TASK_CARD_SKIN_KEY);
+    if (v) id = taskCardSkinById(v).id;
+  } catch (e) {}
+  return id;
+}
+function applyTaskCardSkin(id) {
+  const use = id || readTaskCardSkin();
+  const host = document.getElementById('calendarContainer');
+  if (host) {
+    // The default skin ships no tokens, so drop the attribute entirely —
+    // same as _paintHubSkin() does for 'default'.
+    if (use === TASK_CARD_SKINS[0].id) host.removeAttribute('data-task-skin');
+    else host.setAttribute('data-task-skin', use);
+  }
+  document.querySelectorAll('.tcard-preview').forEach(el => {
+    el.classList.toggle('is-active', el.getAttribute('data-skin-id') === use);
+  });
+}
+
+// The preview mini reuses the real .calendar-task / .task-* classes so the
+// [data-task-skin] consumer rules style it — a preview can never drift from
+// the live card. Only the grid's absolute positioning is undone (see CSS).
+function taskCardSkinPreviewHtml(id) {
+  const s = taskCardSkinById(id);
+  // applyTaskCardSkin() removes the attribute entirely for the default skin, so
+  // the preview must omit it too or the mini would be styled differently from a
+  // real default card.
+  const skinAttr = s.id === TASK_CARD_SKINS[0].id ? '' : ' data-task-skin="' + s.id + '"';
+  return '<button type="button" class="tcard-preview" data-skin-id="' + s.id + '">' +
+      '<span class="tcard-mini-wrap"' + skinAttr + '>' +
+        '<span class="tcard-mini calendar-task tag-chem" style="--task-accent: var(--tag-chem-text)">' +
+          '<span class="task-body">' +
+            '<span class="task-row">' +
+              '<span class="task-check"></span>' +
+              '<span class="task-title">Chem lab</span>' +
+              '<span class="task-time">8:00</span>' +
+            '</span>' +
+            '<span class="task-meta">' +
+              '<span class="task-tag-chip" style="--chip-accent: var(--tag-chem-text)">chem</span>' +
+            '</span>' +
+          '</span>' +
+        '</span>' +
+      '</span>' +
+      '<span class="tcard-preview-name">' + escapeHtml(s.name) + '</span>' +
+      '<span class="tcard-preview-blurb">' + escapeHtml(s.blurb) + '</span>' +
+    '</button>';
+}
+
+function showTaskCardStylePanel() {
+  const existing = document.getElementById('schCardStylePanel');
+  if (existing) {
+    existing.remove();
+    const prev = document.getElementById('schCardStyleOverlay');
+    if (prev) prev.remove();
+    return;
+  }
+
+  // Transparent catcher, deliberately not .hub-popup-overlay: that one paints a
+  // dark wash plus a backdrop blur, which would hide the very cards the panel
+  // exists to preview. Same reason the hub's style panel uses .skin-catcher.
+  const overlay = document.createElement('div');
+  overlay.className = 'skin-catcher';
+  overlay.id = 'schCardStyleOverlay';
+  document.body.appendChild(overlay);
+
+  let cards = '';
+  for (let i = 0; i < TASK_CARD_SKINS.length; i++) cards += taskCardSkinPreviewHtml(TASK_CARD_SKINS[i].id);
+
+  const panel = document.createElement('div');
+  panel.className = 'canvas-guide-panel tcard-panel';
+  panel.id = 'schCardStylePanel';
+  panel.innerHTML =
+    '<div class="canvas-guide-header">' +
+      '<span>Task card style</span>' +
+      '<button class="canvas-guide-close" id="schCardStyleClose">\u00D7</button>' +
+    '</div>' +
+    '<div class="canvas-guide-body">' +
+      '<div class="tcard-grid">' + cards + '</div>' +
+    '</div>';
+  document.body.appendChild(panel);
+
+  const close = function () { panel.remove(); overlay.remove(); };
+  overlay.addEventListener('click', close);
+  document.getElementById('schCardStyleClose').addEventListener('click', close);
+
+  panel.addEventListener('click', function (ev) {
+    const card = ev.target && ev.target.closest ? ev.target.closest('.tcard-preview') : null;
+    if (!card) return;
+    const id = card.getAttribute('data-skin-id');
+    try { localStorage.setItem(TASK_CARD_SKIN_KEY, id); } catch (e) {}
+    applyTaskCardSkin(id);
+  });
+
+  applyTaskCardSkin();
+}
+
 function getTagDur(tag) {
   try {
     const m = JSON.parse(localStorage.getItem('haven-tag-durations') || '{}');
@@ -2453,6 +2572,7 @@ function bindEvents() {
   document.getElementById('accessAIChat')?.addEventListener('click', () => { toggleAccessHub(); if (typeof showAIChat === 'function') showAIChat(); });
   document.getElementById('accessScreenshot')?.addEventListener('click', () => { toggleAccessHub(); setTimeout(captureWeekScreenshot, 200); });
   document.getElementById('accessCopyWeek')?.addEventListener('click', () => { toggleAccessHub(); copyWeekToNext(); });
+  document.getElementById('accessCardStyle')?.addEventListener('click', () => { toggleAccessHub(); if (typeof showTaskCardStylePanel === 'function') showTaskCardStylePanel(); });
 
   // Close Access Hub on outside click
   document.addEventListener('click', (e) => {
@@ -3244,6 +3364,7 @@ function initSchedule() {
   const pillMgr = document.getElementById('schPillManager');
   if (pillMgr) pillMgr.style.display = currentView === 'month' ? 'none' : '';
   applyScheduleDensity(weekPrefs.density);
+  applyTaskCardSkin();
   renderCalendar();
   initScheduleOptions();
   bindEvents();

@@ -346,7 +346,7 @@
                 </div>
 
                 <!-- Weekly sleep chart (canvas) -->
-                <div class="s-schedule-label">This Week's Sleep</div>
+                <div class="s-schedule-label">Last 7 Nights</div>
                 <div class="sleep-chart-wrap">
                   <canvas id="sleepChart"></canvas>
                 </div>
@@ -621,8 +621,8 @@ function init() {
   </script>
 
   <!-- Sleep Log Modal -->
-  <div id="sleepLogOverlay" class="sl-overlay hidden" onclick="if(event.target===this)closeSleepLogModal()">
-    <div id="sleepLogModal" class="sl-modal" onclick="event.stopPropagation()">
+  <div id="sleepLogOverlay" class="sl-overlay hidden">
+    <div id="sleepLogModal" class="sl-modal" role="dialog" aria-modal="true" aria-labelledby="slTitle" tabindex="-1">
       <div class="sl-header">
         <div class="sl-header-left">
           <div class="sl-icon">
@@ -630,61 +630,89 @@ function init() {
               <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
             </svg>
           </div>
-          <h3>Log Sleep</h3>
+          <div class="sl-header-text">
+            <h3 id="slTitle">Log Sleep</h3>
+            <p class="sl-subtitle" id="slSubtitle">How did you sleep?</p>
+          </div>
         </div>
-        <button class="sl-close" onclick="closeSleepLogModal()" aria-label="Close">
+        <button class="sl-close" type="button" onclick="closeSleepLogModal()" aria-label="Close">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="sl-body">
-        <div class="sl-field">
-          <label for="sleepDate">Date</label>
-          <input type="date" id="sleepDate" class="sl-input">
-        </div>
-        <div class="sl-row-2">
-          <div class="sl-field">
-            <label for="sleepBedtime">Bedtime</label>
-            <input type="time" id="sleepBedtime" class="sl-input" value="23:00" oninput="previewSleepDuration()">
+
+        <section class="sl-section">
+          <div class="sl-section-head">
+            <span class="sl-section-title">When</span>
+            <div class="sl-quickdates" id="slQuickDates">
+              <button type="button" class="sl-qd" data-sleep-day="0">Today</button>
+              <button type="button" class="sl-qd" data-sleep-day="-1">Yesterday</button>
+            </div>
           </div>
           <div class="sl-field">
-            <label for="sleepWakeTime">Wake Time</label>
-            <input type="time" id="sleepWakeTime" class="sl-input" value="07:00" oninput="previewSleepDuration()">
+            <label for="sleepDate">Date</label>
+            <input type="date" id="sleepDate" class="sl-input">
+            <p class="sl-hint" id="slDateHint"></p>
           </div>
-        </div>
-        <div class="sl-dur-preview" id="sDurPreview">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span>Duration: <strong id="sDurPreviewVal">8h 00m</strong></span>
-        </div>
-        <div class="sl-field">
-          <label>Sleep Quality</label>
-          <div class="sl-quality-row">
-            <span class="sl-q-label">Poor</span>
-            <input type="range" id="sleepQuality" min="1" max="5" value="3" class="sl-quality-slider" oninput="onQualitySlider(this.value)">
-            <span class="sl-q-label">Great</span>
+          <div class="sl-row-2">
+            <div class="sl-field">
+              <label for="sleepBedtime">Bedtime</label>
+              <input type="time" id="sleepBedtime" class="sl-input" value="23:00" oninput="previewSleepDuration()">
+            </div>
+            <div class="sl-field">
+              <label for="sleepWakeTime">Wake time</label>
+              <input type="time" id="sleepWakeTime" class="sl-input" value="07:00" oninput="previewSleepDuration()">
+            </div>
           </div>
-          <div class="sl-quality-display" id="sleepQualityDisplay">
-            <span class="sl-q-emoji">&#128564;</span>
-            <span class="sl-q-text">Okay</span>
+          <div class="sl-dur-preview" id="sDurPreview" role="status" aria-live="polite">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="sl-dur-text">In bed <strong id="sDurPreviewVal">8h 00m</strong></span>
+            <span class="sl-dur-delta" id="sDurDelta"></span>
           </div>
-        </div>
-        <div class="sl-field">
-          <label>How did you feel?</label>
+        </section>
+
+        <section class="sl-section">
+          <div class="sl-section-head">
+            <span class="sl-section-title">Sleep quality</span>
+            <span class="sl-section-note" id="slQualityNote">Good</span>
+          </div>
+          <input type="range" id="sleepQuality" min="1" max="5" value="3" class="sl-quality-slider sl-sr-only" tabindex="-1" aria-hidden="true" oninput="onQualitySlider(this.value)">
+          <div class="sl-quality-picker" id="slQualityPicker" role="radiogroup" aria-label="Sleep quality">
+            <button type="button" class="sl-q-opt" role="radio" aria-checked="false" data-quality="1"><span class="sl-q-ico">&#128547;</span><span class="sl-q-name">Poor</span></button>
+            <button type="button" class="sl-q-opt" role="radio" aria-checked="false" data-quality="2"><span class="sl-q-ico">&#128533;</span><span class="sl-q-name">Fair</span></button>
+            <button type="button" class="sl-q-opt" role="radio" aria-checked="false" data-quality="3"><span class="sl-q-ico">&#128528;</span><span class="sl-q-name">Good</span></button>
+            <button type="button" class="sl-q-opt" role="radio" aria-checked="false" data-quality="4"><span class="sl-q-ico">&#128522;</span><span class="sl-q-name">Great</span></button>
+            <button type="button" class="sl-q-opt" role="radio" aria-checked="false" data-quality="5"><span class="sl-q-ico">&#128516;</span><span class="sl-q-name">Excellent</span></button>
+          </div>
+        </section>
+
+        <section class="sl-section">
+          <div class="sl-section-head">
+            <span class="sl-section-title">How did you feel?</span>
+            <span class="sl-section-note">Optional, pick any</span>
+          </div>
           <div class="sl-mood-chips" id="sleepMoodChips">
-            <button class="sl-mood-chip" data-mood="restful">Restful</button>
-            <button class="sl-mood-chip" data-mood="restless">Restless</button>
-            <button class="sl-mood-chip" data-mood="dreams">Dreams</button>
-            <button class="sl-mood-chip" data-mood="tired">Woke Tired</button>
-            <button class="sl-mood-chip" data-mood="insomnia">Insomnia</button>
+            <button type="button" class="sl-mood-chip" data-mood="restful" aria-pressed="false">Restful</button>
+            <button type="button" class="sl-mood-chip" data-mood="restless" aria-pressed="false">Restless</button>
+            <button type="button" class="sl-mood-chip" data-mood="dreams" aria-pressed="false">Dreams</button>
+            <button type="button" class="sl-mood-chip" data-mood="tired" aria-pressed="false">Woke tired</button>
+            <button type="button" class="sl-mood-chip" data-mood="insomnia" aria-pressed="false">Insomnia</button>
           </div>
-        </div>
-        <div class="sl-field">
-          <label for="sleepNotes">Notes <span class="sl-label-hint">(optional)</span></label>
-          <textarea id="sleepNotes" class="sl-input sl-textarea" rows="2" placeholder="How was your sleep?"></textarea>
-        </div>
+        </section>
+
+        <section class="sl-section">
+          <div class="sl-section-head">
+            <span class="sl-section-title">Notes</span>
+            <span class="sl-section-note">Optional</span>
+          </div>
+          <textarea id="sleepNotes" class="sl-input sl-textarea" rows="2" placeholder="Anything worth remembering?"></textarea>
+        </section>
+
       </div>
       <div class="sl-footer">
-        <button class="sl-btn sl-btn-cancel" onclick="closeSleepLogModal()">Cancel</button>
-        <button class="sl-btn sl-btn-save" onclick="handleSleepLogSave()">Save</button>
+        <button type="button" class="sl-btn sl-btn-delete hidden" id="slDeleteBtn" onclick="deleteSleepLogFromModal()">Delete</button>
+        <button type="button" class="sl-btn sl-btn-cancel" onclick="closeSleepLogModal()">Cancel</button>
+        <button type="button" class="sl-btn sl-btn-save" id="slSaveBtn" onclick="handleSleepLogSave()">Save</button>
       </div>
     </div>
   </div>
@@ -835,9 +863,9 @@ function init() {
       if (!canvas) return;
       var container = canvas.parentElement;
       var now = new Date();
-      var ws = getMonday(now);
+      var ws = addDays(now, -6); // last 7 nights ending today, not the Mon-start calendar week
       var todayStr = formatDate(now);
-      var dayLabels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      var dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
       var targets = loadSleepTargets();
 
       var entries = [];
@@ -848,7 +876,7 @@ function init() {
         var log = getSleepLog(ds);
         if (log && log.duration) hasAny = true;
         entries.push({
-          label: dayLabels[i],
+          label: dayLabels[d.getDay()],
           dayNum: d.getDate(),
           isToday: ds === todayStr,
           hasData: !!log && !!log.duration,
@@ -862,7 +890,7 @@ function init() {
 
       var rect = container.getBoundingClientRect();
       var W = rect.width;
-      if (W < 50) { W = 600; }
+      if (W < 50) return; // not laid out yet (hidden tab / section) — re-rendered on tab show + resize
       var H = 180;
       var dpr = window.devicePixelRatio || 1;
       canvas.width = W * dpr;
@@ -1153,6 +1181,7 @@ function init() {
       container.querySelectorAll('.sleep-tab-content').forEach(c => c.classList.remove('active'));
       const content = container.querySelector('[data-sleep-tab-content="' + tabName + '"]');
       if (content) content.classList.add('active');
+      if (tabName === 'overview') renderSleepChart(loadSleepLogs());
     });
 
     // ── Targets editor ──
@@ -1209,7 +1238,9 @@ function init() {
         var dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
         var moodTags = '';
         if (log.mood && Array.isArray(log.mood) && log.mood.length) {
-          moodTags = log.mood.map(function(m) { return '<span class="sleep-history-tag mood-' + m + '">' + m.charAt(0).toUpperCase() + m.slice(1) + '</span>'; }).join('');
+          moodTags = log.mood.filter(function(m) { return SLEEP_MOOD_SET[m]; }).map(function(m) {
+            return '<span class="sleep-history-tag mood-' + m + '">' + escapeHtml(m.charAt(0).toUpperCase() + m.slice(1)) + '</span>';
+          }).join('');
         }
         html += '<div class="sleep-history-item">';
         html += '<span class="sleep-history-date">' + dateLabel + '</span>';
@@ -1221,13 +1252,26 @@ function init() {
         html += '</span>';
         html += '<span class="sleep-history-tags">' + moodTags + '</span>';
         html += '<span class="sleep-history-actions">';
-        html += '<button class="edit" title="Edit" onclick="editSleepLog(\'' + log.id + '\')">\u270E</button>';
-        html += '<button class="del" title="Delete" onclick="deleteSleepLogEntry(\'' + log.id + '\')">\u2715</button>';
+        html += '<button class="edit" type="button" title="Edit" data-sleep-edit="' + escapeHtml(String(log.id)) + '">\u270E</button>';
+        html += '<button class="del" type="button" title="Delete" data-sleep-del="' + escapeHtml(String(log.id)) + '">\u2715</button>';
         html += '</span>';
         html += '</div>';
       }
       container.innerHTML = html;
     }
+
+    var SLEEP_MOOD_SET = { restful: 1, restless: 1, dreams: 1, tired: 1, insomnia: 1 };
+
+    (function() {
+      var list = document.getElementById('sleepHistoryList');
+      if (!list) return;
+      list.addEventListener('click', function(e) {
+        var editBtn = e.target.closest('[data-sleep-edit]');
+        if (editBtn) { editSleepLog(editBtn.getAttribute('data-sleep-edit')); return; }
+        var delBtn = e.target.closest('[data-sleep-del]');
+        if (delBtn) { deleteSleepLogEntry(delBtn.getAttribute('data-sleep-del')); }
+      });
+    })();
 
     function deleteSleepLogEntry(id) {
       if (!confirm('Delete this sleep log?')) return;
@@ -1252,30 +1296,111 @@ function init() {
     // ── Sleep Log Modal ──
     var sleepSelectedQuality = 3;
     var sleepLogEditId = null;
-    var sleepQualityEmojis = ['\uD83D\uDE34', '\uD83D\uDE0C', '\uD83D\uDE34', '\uD83D\uDE0A', '\uD83D\uDE0D'];
-    var sleepQualityLabels = ['Poor', 'Fair', 'Okay', 'Good', 'Great'];
+    var _slLastFocus = null;
+    var SLEEP_Q_FALLBACK_LABELS = ['Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+
+    function _slQName(v) {
+      v = Math.min(5, Math.max(1, parseInt(v, 10) || 3));
+      if (typeof SLEEP_QUALITY_LABELS !== 'undefined' && SLEEP_QUALITY_LABELS[v]) return SLEEP_QUALITY_LABELS[v];
+      return SLEEP_Q_FALLBACK_LABELS[v - 1];
+    }
+
+    function _slDateStr(offsetDays) {
+      var d = new Date();
+      if (offsetDays) d.setDate(d.getDate() + offsetDays);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function _slFocusables() {
+      var modal = document.getElementById('sleepLogModal');
+      if (!modal) return [];
+      var nodes = modal.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])');
+      return Array.prototype.filter.call(nodes, function(el) {
+        return !el.disabled && el.getAttribute('aria-hidden') !== 'true' && el.offsetParent !== null;
+      });
+    }
+
+    function _slOnKeydown(e) {
+      if (e.key === 'Escape' || e.key === 'Esc') { e.preventDefault(); closeSleepLogModal(); return; }
+      if (e.key !== 'Tab') return;
+      var f = _slFocusables();
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+
+    function _slShow(overlay, modal) {
+      overlay.classList.remove('hidden');
+      modal.classList.remove('hidden');
+      document.documentElement.classList.add('sl-open');
+      document.addEventListener('keydown', _slOnKeydown, true);
+      setTimeout(function() { try { modal.focus(); } catch (e) {} }, 30);
+    }
+
+    function _slApplyMode() {
+      var editing = !!sleepLogEditId;
+      var title = document.getElementById('slTitle');
+      var sub = document.getElementById('slSubtitle');
+      var del = document.getElementById('slDeleteBtn');
+      var save = document.getElementById('slSaveBtn');
+      if (title) title.textContent = editing ? 'Edit Sleep' : 'Log Sleep';
+      if (sub) sub.textContent = editing ? 'Update this night' : 'How did you sleep?';
+      if (del) del.classList.toggle('hidden', !editing);
+      if (save) { save.disabled = false; save.textContent = editing ? 'Update' : 'Save'; }
+    }
+
+    function _slSyncQuickDates() {
+      var dEl = document.getElementById('sleepDate');
+      var cur = dEl ? dEl.value : '';
+      document.querySelectorAll('#slQuickDates .sl-qd').forEach(function(b) {
+        b.classList.toggle('active', cur === _slDateStr(parseInt(b.dataset.sleepDay, 10)));
+      });
+    }
+
+    function _slSyncDateHint() {
+      var dEl = document.getElementById('sleepDate');
+      var hint = document.getElementById('slDateHint');
+      var date = dEl ? dEl.value : '';
+      if (hint) {
+        var existing = date ? getSleepLog(date) : null;
+        if (existing && (!sleepLogEditId || existing.id !== sleepLogEditId)) {
+          hint.textContent = 'A log already exists for this date \u2014 saving will replace it.';
+          hint.className = 'sl-hint sl-hint-warn';
+        } else if (date === _slDateStr(0)) {
+          hint.textContent = 'Tonight \u2014 you can edit this later.';
+          hint.className = 'sl-hint';
+        } else if (date === _slDateStr(-1)) {
+          hint.textContent = 'Last night.';
+          hint.className = 'sl-hint';
+        } else {
+          hint.textContent = '';
+          hint.className = 'sl-hint';
+        }
+      }
+      _slSyncQuickDates();
+    }
 
     function openSleepLogModal() {
       var overlay = document.getElementById('sleepLogOverlay');
       var modal = document.getElementById('sleepLogModal');
       if (!overlay || !modal) return;
+      _slLastFocus = document.activeElement;
       sleepLogEditId = null;
-      sleepSelectedQuality = 3;
       var dEl = document.getElementById('sleepDate');
-      if (dEl) { var now = new Date(); dEl.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0'); }
+      if (dEl) dEl.value = _slDateStr(0);
       var btEl = document.getElementById('sleepBedtime');
       if (btEl) btEl.value = '23:00';
       var wtEl = document.getElementById('sleepWakeTime');
       if (wtEl) wtEl.value = '07:00';
       var notesEl = document.getElementById('sleepNotes');
       if (notesEl) notesEl.value = '';
-      document.querySelectorAll('.sl-mood-chip').forEach(function(c) { c.classList.remove('active'); });
-      var slider = document.getElementById('sleepQuality');
-      if (slider) slider.value = 3;
+      document.querySelectorAll('.sl-mood-chip').forEach(function(c) { c.classList.remove('active'); c.setAttribute('aria-pressed', 'false'); });
       onQualitySlider(3);
+      _slApplyMode();
+      _slSyncDateHint();
       previewSleepDuration();
-      overlay.classList.remove('hidden');
-      modal.classList.remove('hidden');
+      _slShow(overlay, modal);
     }
 
     function closeSleepLogModal() {
@@ -1284,12 +1409,22 @@ function init() {
       if (overlay) overlay.classList.add('hidden');
       if (modal) modal.classList.add('hidden');
       sleepLogEditId = null;
+      document.documentElement.classList.remove('sl-open');
+      document.removeEventListener('keydown', _slOnKeydown, true);
+      if (_slLastFocus && typeof _slLastFocus.focus === 'function') {
+        try { _slLastFocus.focus(); } catch (e) {}
+      }
+      _slLastFocus = null;
     }
 
     function editSleepLog(id) {
       var logs = loadSleepLogs();
       var log = logs.find(function(l) { return l.id === id; });
       if (!log) return;
+      var overlay = document.getElementById('sleepLogOverlay');
+      var modal = document.getElementById('sleepLogModal');
+      if (!overlay || !modal) return;
+      _slLastFocus = document.activeElement;
       sleepLogEditId = id;
       var dEl = document.getElementById('sleepDate');
       if (dEl) dEl.value = log.date;
@@ -1299,66 +1434,165 @@ function init() {
       if (wtEl) wtEl.value = log.wakeTime;
       var notesEl = document.getElementById('sleepNotes');
       if (notesEl) notesEl.value = log.notes || '';
-      sleepSelectedQuality = log.quality;
-      var slider = document.getElementById('sleepQuality');
-      if (slider) slider.value = log.quality;
       onQualitySlider(log.quality);
       document.querySelectorAll('.sl-mood-chip').forEach(function(c) {
-        c.classList.toggle('active', log.mood && log.mood.indexOf(c.dataset.mood) !== -1);
+        var on = !!(log.mood && log.mood.indexOf(c.dataset.mood) !== -1);
+        c.classList.toggle('active', on);
+        c.setAttribute('aria-pressed', on ? 'true' : 'false');
       });
+      _slApplyMode();
+      _slSyncDateHint();
       previewSleepDuration();
-      var overlay = document.getElementById('sleepLogOverlay');
-      var modal = document.getElementById('sleepLogModal');
-      if (overlay) overlay.classList.remove('hidden');
-      if (modal) modal.classList.remove('hidden');
+      _slShow(overlay, modal);
+    }
+
+    function deleteSleepLogFromModal() {
+      if (!sleepLogEditId) return;
+      if (!confirm('Delete this sleep log?')) return;
+      deleteSleepLog(sleepLogEditId);
+      closeSleepLogModal();
+      if (typeof renderSleepHub === 'function') renderSleepHub();
+      showToast('Sleep log deleted', 'info', 1500);
     }
 
     function handleSleepLogSave() {
-      var date = document.getElementById('sleepDate').value;
-      var bedtime = document.getElementById('sleepBedtime').value;
-      var wakeTime = document.getElementById('sleepWakeTime').value;
-      var notes = document.getElementById('sleepNotes').value.trim();
+      var dateEl = document.getElementById('sleepDate');
+      var btEl = document.getElementById('sleepBedtime');
+      var wtEl = document.getElementById('sleepWakeTime');
+      var notesEl = document.getElementById('sleepNotes');
+      var date = dateEl ? dateEl.value : '';
+      var bedtime = btEl ? btEl.value : '';
+      var wakeTime = wtEl ? wtEl.value : '';
+      var notes = notesEl ? notesEl.value.trim() : '';
+
+      if (!date) { showToast('Pick a date first', 'error', 2000); if (dateEl) dateEl.focus(); return; }
+      if (typeof isValidSleepDate === 'function' && !isValidSleepDate(date)) { showToast('That date looks wrong', 'error', 2000); return; }
+      if (bedtime === wakeTime) { showToast('Bedtime and wake time are the same', 'error', 2600); return; }
+      var dur = calculateSleepDuration(bedtime, wakeTime);
+      if (!dur || dur > 1440) { showToast('Check the times \u2014 that is not a valid night', 'error', 2600); return; }
+
+      var saveBtn = document.getElementById('slSaveBtn');
+      if (saveBtn && saveBtn.disabled) return;
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving\u2026'; }
+
       var mood = [];
       document.querySelectorAll('.sl-mood-chip.active').forEach(function(c) { mood.push(c.dataset.mood); });
-      var slider = document.getElementById('sleepQuality');
-      if (slider) sleepSelectedQuality = parseInt(slider.value);
-      if (!date) { showToast('Pick a date first', 'error', 2000); return; }
-      var saved = null;
-      if (sleepLogEditId) {
-        saved = updateSleepLog(sleepLogEditId, { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
-      } else {
-        saved = addSleepLog({ date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood });
+      var payload = { date: date, bedtime: bedtime, wakeTime: wakeTime, quality: sleepSelectedQuality, notes: notes, mood: mood };
+      var wasEdit = !!sleepLogEditId;
+      var saved = wasEdit ? updateSleepLog(sleepLogEditId, payload) : addSleepLog(payload);
+
+      if (!saved) {
+        if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = wasEdit ? 'Update' : 'Save'; }
+        showToast('Could not save \u2014 storage may be full', 'error', 3000);
+        return;
       }
-      if (!saved) { showToast('Could not save — storage may be full', 'error', 3000); return; }
       closeSleepLogModal();
-      renderSleepHub();
-      showToast('Sleep saved for ' + date, 'success', 2000);
+      if (typeof renderSleepHub === 'function') renderSleepHub();
+      showToast(wasEdit ? 'Sleep updated' : 'Sleep saved for ' + date, 'success', 2000);
     }
 
     function onQualitySlider(val) {
-      sleepSelectedQuality = parseInt(val);
-      var emojiSpan = document.querySelector('#sleepQualityDisplay .sl-q-emoji');
-      var textSpan = document.querySelector('#sleepQualityDisplay .sl-q-text');
-      if (emojiSpan) emojiSpan.textContent = sleepQualityEmojis[sleepSelectedQuality - 1];
-      if (textSpan) textSpan.textContent = sleepQualityLabels[sleepSelectedQuality - 1];
+      var v = parseInt(val, 10);
+      if (!Number.isFinite(v)) v = 3;
+      v = Math.min(5, Math.max(1, v));
+      sleepSelectedQuality = v;
+      var slider = document.getElementById('sleepQuality');
+      if (slider && parseInt(slider.value, 10) !== v) slider.value = v;
+      var note = document.getElementById('slQualityNote');
+      if (note) note.textContent = _slQName(v);
+      var opts = document.querySelectorAll('#slQualityPicker .sl-q-opt');
+      for (var i = 0; i < opts.length; i++) {
+        var on = parseInt(opts[i].dataset.quality, 10) === v;
+        opts[i].classList.toggle('active', on);
+        opts[i].setAttribute('aria-checked', on ? 'true' : 'false');
+        opts[i].tabIndex = on ? 0 : -1;
+      }
+    }
+
+    function _slFocusQuality() {
+      var opt = document.querySelector('#slQualityPicker .sl-q-opt.active');
+      if (opt) { try { opt.focus(); } catch (e) {} }
     }
 
     function previewSleepDuration() {
       var bt = document.getElementById('sleepBedtime');
       var wt = document.getElementById('sleepWakeTime');
       var el = document.getElementById('sDurPreviewVal');
+      var deltaEl = document.getElementById('sDurDelta');
       if (!bt || !wt || !el) return;
       var dur = calculateSleepDuration(bt.value, wt.value);
       el.textContent = formatSleepMinutes(dur);
+      if (!deltaEl) return;
+      if (!dur) { deltaEl.textContent = ''; deltaEl.className = 'sl-dur-delta'; return; }
+      if (dur >= 1440) {
+        deltaEl.textContent = 'Same time \u2014 check that';
+        deltaEl.className = 'sl-dur-delta sl-dur-warn';
+        return;
+      }
+      var target = 480;
+      try { var t = loadSleepTargets(); if (t && t.targetDuration) target = t.targetDuration; } catch (e) {}
+      var diff = dur - target;
+      if (Math.abs(diff) < 15) {
+        deltaEl.textContent = 'On target';
+        deltaEl.className = 'sl-dur-delta sl-dur-ok';
+      } else if (diff > 0) {
+        deltaEl.textContent = '+' + formatSleepMinutes(diff) + ' vs target';
+        deltaEl.className = 'sl-dur-delta';
+      } else {
+        deltaEl.textContent = formatSleepMinutes(-diff) + ' short of target';
+        deltaEl.className = 'sl-dur-delta sl-dur-warn';
+      }
     }
 
-    document.getElementById('sleepLogOverlay').addEventListener('click', function(e) {
-      if (e.target === this) closeSleepLogModal();
-    });
-    document.addEventListener('click', function(e) {
-      var chip = e.target.closest('.sl-mood-chip');
-      if (chip) chip.classList.toggle('active');
-    });
+    (function _slInit() {
+      var overlay = document.getElementById('sleepLogOverlay');
+      var modal = document.getElementById('sleepLogModal');
+      if (!overlay || !modal) return;
+
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) closeSleepLogModal(); });
+      modal.addEventListener('click', function(e) { e.stopPropagation(); });
+
+      var chips = document.getElementById('sleepMoodChips');
+      if (chips) {
+        chips.addEventListener('click', function(e) {
+          var chip = e.target.closest('.sl-mood-chip');
+          if (!chip) return;
+          var on = chip.classList.toggle('active');
+          chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+      }
+
+      var picker = document.getElementById('slQualityPicker');
+      if (picker) {
+        picker.addEventListener('click', function(e) {
+          var opt = e.target.closest('.sl-q-opt');
+          if (!opt) return;
+          onQualitySlider(opt.dataset.quality);
+          try { opt.focus(); } catch (err) {}
+        });
+        picker.addEventListener('keydown', function(e) {
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); onQualitySlider(Math.min(5, sleepSelectedQuality + 1)); _slFocusQuality(); }
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); onQualitySlider(Math.max(1, sleepSelectedQuality - 1)); _slFocusQuality(); }
+        });
+      }
+
+      var qd = document.getElementById('slQuickDates');
+      if (qd) {
+        qd.addEventListener('click', function(e) {
+          var b = e.target.closest('.sl-qd');
+          if (!b) return;
+          var dEl = document.getElementById('sleepDate');
+          if (dEl) dEl.value = _slDateStr(parseInt(b.dataset.sleepDay, 10) || 0);
+          _slSyncDateHint();
+        });
+      }
+
+      var dEl = document.getElementById('sleepDate');
+      if (dEl) {
+        dEl.addEventListener('change', _slSyncDateHint);
+        dEl.addEventListener('input', _slSyncDateHint);
+      }
+    })();
   </script>
 
   <!-- Image Picker -->

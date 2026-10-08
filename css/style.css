@@ -2060,7 +2060,11 @@ html.dark .current-time-line { opacity: 0.5; }
 }
 .calendar-task .task-title {
   font-size: 0.92rem; font-weight: 600;
-  white-space: normal; overflow: visible; text-overflow: unset;
+  /* overflow must stay hidden or -webkit-line-clamp silently does nothing and a
+     narrow card grows to 3+ lines. overflow-wrap (not word-break) so a title
+     wraps between words and only breaks inside one when it cannot fit at all —
+     word-break: break-word was splitting "problem" into "probl / em". */
+  white-space: normal; overflow: hidden; text-overflow: ellipsis;
   line-height: 1.3;
   letter-spacing: -0.015em;
   color: var(--text-primary);
@@ -2070,7 +2074,7 @@ html.dark .current-time-line { opacity: 0.5; }
   border-radius: 4px;
   transition: background 150ms ease;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .calendar-task .task-title:hover {
   background: color-mix(in srgb, var(--task-accent) 10%, transparent);
@@ -2126,11 +2130,22 @@ html.dark .current-time-line { opacity: 0.5; }
   font-size: 0.6rem; font-weight: 500;
   color: var(--text-secondary);
   margin-left: auto;
-  flex-shrink: 0;
   line-height: 1;
   padding-left: 8px;
   letter-spacing: 0.01em;
   opacity: 0.7;
+  /* The time used to be flex-shrink:0 and at 7 columns its string is nearly as
+     wide as the card, so it starved the title down to a single letter. Capping
+     it at ~a third of the row guarantees the title the majority — and unlike
+     wrapping the time onto its own line, this costs no extra height, so cards
+     do not grow past their time slot. The card's own position and height
+     already convey when it is and how long it lasts. */
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 34%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .calendar-task .task-meta {
   display: flex; align-items: center; gap: 8px;
@@ -2219,6 +2234,213 @@ html.dark .current-time-line { opacity: 0.5; }
 .calendar-task.task-sm .task-duration { font-size: 0.5rem; }
 .calendar-task.task-sm .task-check { width: 11px; height: 11px; margin-top: 0; border-width: 2px; }
 .calendar-task.task-sm .task-check.checked::after { width: 4.5px; height: 2.5px; top: 2px; left: 1.5px; }
+
+/* ─── SCHEDULE TASK-CARD SKINS ──────────────────────────────
+   Mirrors the hub canvas skins (HUB_SKINS / [data-hub-skin]) but for the
+   schedule grid's .calendar-task cards. Each skin declares --tcard-* tokens on
+   [data-task-skin="<id>"]; the consumer rules below read them. Every default
+   reproduces the untouched card exactly, so a skin setting none of them looks
+   identical to today. The attribute is written to #calendarContainer by
+   applyTaskCardSkin() in js/schedule.js and covers week / month / agenda.
+   The live rules need !important: .calendar-task sets its own background,
+   border, radius, padding and shadow, and .task-sm / .task-xs re-set padding
+   further down this file. */
+
+[data-task-skin] .calendar-task {
+  background: var(--tcard-bg,
+      color-mix(in srgb, var(--task-accent) var(--tcard-wash, 18%), var(--tcard-wash-base, #ffffff))) !important;
+  border: var(--tcard-border, none) !important;
+  border-radius: var(--tcard-radius, 14px) !important;
+  padding: var(--tcard-pad, 7px 11px) !important;
+  box-shadow: var(--tcard-shadow, 0 3px 14px rgba(0,0,0,0.07)) !important;
+  clip-path: var(--tcard-clip, none);
+  font-family: var(--tcard-font, var(--font-family));
+}
+
+/* The app's own dark card rule mixes 25% accent into #2a2a2a. A skin's
+   background is !important, so any skin leaning on the default wash has to
+   follow the theme or it renders as a pale light-theme block on a dark canvas. */
+html.dark [data-task-skin] .calendar-task {
+  --tcard-wash: 25%;
+  --tcard-wash-base: #2a2a2a;
+}
+
+/* Hover feedback. The base and dark rules normally change the card background
+   on hover, but a skin's background is !important and would win — so lift the
+   shadow instead, which reads the same for every skin. */
+[data-task-skin] .calendar-task:hover:not(.dragging):not(.pressing):not(:active) {
+  box-shadow: var(--tcard-shadow-hover, 0 8px 22px rgba(0,0,0,0.18)) !important;
+}
+
+/* Inner layout — a skin may stack the time under the title, drop the checkbox,
+   retitle in small caps, or hide the meta row. */
+[data-task-skin] .calendar-task .task-row {
+  flex-direction: var(--tcard-row-dir, row);
+  align-items: var(--tcard-row-align, center);
+  gap: var(--tcard-row-gap, 7px);
+}
+[data-task-skin] .calendar-task .task-title {
+  font-size: var(--tcard-title-size, 0.92rem);
+  font-weight: var(--tcard-title-weight, 600);
+  letter-spacing: var(--tcard-title-space, -0.015em);
+  text-transform: var(--tcard-title-case, none);
+  color: var(--tcard-title-color, var(--text-primary));
+}
+[data-task-skin] .calendar-task .task-time {
+  margin-left: var(--tcard-time-margin, auto);
+  padding-left: var(--tcard-time-pad, 8px);
+  color: var(--tcard-time-color, var(--text-secondary));
+  opacity: var(--tcard-time-opacity, 0.7);
+}
+[data-task-skin] .calendar-task .task-check { display: var(--tcard-check-display, inline-flex); }
+[data-task-skin] .calendar-task .task-meta { display: var(--tcard-meta-display, flex); }
+[data-task-skin] .calendar-task:not(.task-xs):not(.task-sm) .task-meta {
+  border-top: var(--tcard-meta-rule, 1px solid color-mix(in srgb, var(--task-accent) 22%, transparent));
+}
+
+/* Small-card compensation: the skin rules above are more specific than
+   .calendar-task.task-sm / .task-xs, so re-apply their sizes here or every
+   short task would balloon to full card size. */
+[data-task-skin] .calendar-task.task-sm { padding: var(--tcard-pad-sm, 3px 10px) !important; }
+[data-task-skin] .calendar-task.task-xs { padding: var(--tcard-pad-xs, 2px 8px) !important; }
+[data-task-skin] .calendar-task.task-sm .task-title { font-size: var(--tcard-title-size-sm, 0.72rem); }
+[data-task-skin] .calendar-task.task-xs .task-title { font-size: var(--tcard-title-size-xs, 0.68rem); }
+[data-task-skin] .calendar-task.task-sm .task-time { font-size: var(--tcard-time-size-sm, 0.55rem); }
+[data-task-skin] .calendar-task.task-xs .task-time { font-size: var(--tcard-time-size-xs, 0.5rem); }
+
+/* A custom property's var() references resolve on the element that DECLARES
+   it, and --task-accent only exists on .calendar-task. So any token whose value
+   mentions --task-accent must be declared on a card-scoped selector
+   ([data-task-skin="x"] .calendar-task) — declared on the wrapper it would be
+   invalid and silently fall back to the default. Static tokens stay on the
+   wrapper. That is why several skins below have a companion rule. */
+
+/* ---- Tinted — the original soft tag wash (default). Needs no rule: the
+        consumer's own fallback already computes the 18% mix on the card. ---- */
+[data-task-skin="tinted"] {
+  --tcard-radius: 14px;
+  --tcard-pad: 7px 11px;
+  --tcard-shadow: 0 3px 14px rgba(0,0,0,0.07);
+}
+
+/* ---- Outline — clean neutral card, coloured border ---- */
+[data-task-skin="outline"] {
+  --tcard-bg: var(--bg-card);
+  --tcard-radius: 10px;
+  --tcard-pad: 6px 10px;
+  --tcard-shadow: none;
+}
+[data-task-skin="outline"] .calendar-task {
+  --tcard-border: 1.5px solid color-mix(in srgb, var(--task-accent) 70%, transparent);
+}
+
+/* ---- Frosted — translucent tint, deliberately WITHOUT backdrop-filter. The
+        blur smeared the grid lines and any card behind it, which reads as a
+        rendering fault in a dense grid. A stronger tint mixed into the
+        theme-aware card surface keeps it distinct and needs no dark variant. ---- */
+[data-task-skin="glass"] {
+  --tcard-radius: 12px;
+  --tcard-pad: 7px 11px;
+  --tcard-shadow: 0 4px 18px rgba(0,0,0,0.10);
+}
+[data-task-skin="glass"] .calendar-task {
+  --tcard-bg: color-mix(in srgb, var(--task-accent) 22%, var(--bg-card));
+  --tcard-border: 1px solid color-mix(in srgb, var(--task-accent) 38%, transparent);
+}
+
+/* ---- Paper — warm cream, serif ---- */
+[data-task-skin="paper"] {
+  --tcard-radius: 4px;
+  --tcard-pad: 7px 11px;
+  --tcard-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --tcard-font: var(--font-serif, Georgia, serif);
+  --tcard-title-weight: 500;
+}
+[data-task-skin="paper"] .calendar-task {
+  --tcard-bg: color-mix(in srgb, var(--task-accent) 11%, #fdf6e3);
+  --tcard-border: 1px solid color-mix(in srgb, var(--task-accent) 30%, #e6dcc4);
+}
+
+/* ---- Notch — top-left corner cut away ---- */
+[data-task-skin="notch"] {
+  --tcard-radius: 0;
+  --tcard-pad: 7px 11px;
+  --tcard-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  --tcard-clip: polygon(14px 0, 100% 0, 100% 100%, 0 100%, 0 14px);
+}
+[data-task-skin="notch"] .calendar-task {
+  --tcard-bg: color-mix(in srgb, var(--task-accent) 20%, #ffffff);
+}
+
+/* Dark variants for the skins that hard-code a light mix base. Declared on the
+   card (so --task-accent resolves) and prefixed with html.dark so they beat the
+   light declaration. Skins using --bg-card / the raw accent are already
+   theme-aware and need no variant. */
+html.dark [data-task-skin="notch"] .calendar-task { --tcard-bg: color-mix(in srgb, var(--task-accent) 26%, #2a2a2a); }
+html.dark [data-task-skin="paper"] .calendar-task { --tcard-bg: color-mix(in srgb, var(--task-accent) 14%, #2a2721); }
+
+/* Card-style panel + live previews. The mini deliberately carries the real
+   .calendar-task class so the same [data-task-skin] consumer rules style it —
+   a preview therefore always matches the live card. .tcard-mini only undoes
+   the absolute positioning the grid puts on real cards. */
+/* Docked right, same placement as the hub's .skin-panel — the point of a style
+   picker is watching the real cards restyle while you click, so the panel must
+   neither cover the grid nor dim it. Needs the compound selector to beat
+   .canvas-guide-panel's centring (top/left:50% + translate(-50%,-50%)). */
+.tcard-panel.canvas-guide-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  bottom: 96px;   /* clears the access FAB (20px inset + ~56px button) */
+  left: auto;
+  transform: none;
+  width: 420px;
+  max-width: calc(100vw - 32px);
+  max-height: none;  /* height comes from top + bottom */
+  animation: panelInRight 250ms cubic-bezier(0.16,1,0.3,1) both;
+}
+/* Two columns rather than three: at 420px a third column squeezes the previews
+   below the width they need to read as real cards. */
+.tcard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+/* Narrow screens cannot afford a side column, so it floats above the FAB and
+   deliberately leaves a gap — the FAB stays tappable, so Card style still
+   toggles the panel shut. */
+@media (max-width: 768px) {
+  .tcard-panel.canvas-guide-panel {
+    top: auto;
+    right: 12px;
+    left: 12px;
+    bottom: calc(env(safe-area-inset-bottom, 8px) + 122px);
+    width: auto;
+    max-width: none;
+    max-height: 50vh;
+    animation: panelInUp 250ms cubic-bezier(0.16,1,0.3,1) both;
+  }
+}
+.tcard-preview {
+  display: flex; flex-direction: column; align-items: stretch; text-align: left;
+  padding: 9px; border-radius: 12px;
+  border: 1px solid transparent; background: var(--bg-secondary);
+  cursor: pointer; font-family: var(--font-family);
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.tcard-preview:hover { border-color: var(--border-color); transform: translateY(-1px); }
+.tcard-preview.is-active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.tcard-preview-name { font-size: 0.7rem; font-weight: 600; color: var(--text-primary); margin-top: 7px; }
+.tcard-preview-blurb { font-size: 0.6rem; line-height: 1.3; color: var(--text-tertiary); }
+.tcard-mini-wrap { display: block; }
+.tcard-mini.calendar-task {
+  position: relative; left: auto; top: auto; width: auto;
+  /* display is required: the preview uses a <span>, and height is ignored on an
+     inline box — without this the mini grew to fit its content and the meta row
+     spilled past the card edge. */
+  display: flex; flex-direction: column;
+  height: 72px; min-height: 72px;
+  overflow: hidden;
+  cursor: pointer; touch-action: auto;
+}
+.tcard-mini .task-check { pointer-events: none; }
 
 /* ─── RESIZING STATE ────────────────────────────────────── */
 .calendar-task.resizing {
@@ -4337,12 +4559,13 @@ html.light .hub-bottom-nav {
   /* Add compact view toggle in header-left area on mobile */
   /* View toggles visible on mobile in header-center */
   /* Mobile view toggle as a select/dropdown in header */
-.sch-header-center .view-toggle-btn { width: 26px; height: 26px; }.65rem;
-    font-family: var(--font-family);
-    cursor: pointer;
-    outline: none;
-    margin-left: auto;
-  }
+  .sch-header-center .view-toggle-btn { width: 26px; height: 26px; }
+  /* The declarations that used to sit here (font-size/font-family/cursor/
+     outline/margin-left:auto) belonged to the mobile view <select> those three
+     comments describe. The element was removed but its selector line was not,
+     leaving orphaned declarations plus a stray closing brace — which closed the
+     enclosing @media block 98 lines early. Removed; see the repair note at the
+     end of this media block. */
 
   /* ─── UNDO TOAST MOBILE ── */
   .undo-toast {
@@ -4353,6 +4576,7 @@ html.light .hub-bottom-nav {
   }
 
   /* ─── GALLERY CARDS MOBILE ── */
+  .hub-gallery {
     grid-template-columns: 1fr !important;
     gap: var(--space-3) !important;
     padding: 0 var(--space-3) !important;
@@ -4441,6 +4665,15 @@ html.light .hub-bottom-nav {
   .hub-section-header { padding: var(--space-1) var(--space-2); }
   .hub-section-label { font-size: 0.65rem; }
 }
+
+/* Repair note (2026-10-05). This @media (max-width: 640px) block used to close
+   98 lines early, at the orphaned declarations in SCHEDULE HEADER MOBILE — so
+   everything below them (undo toast, task modal, cat popup, help modal, agenda
+   and month views, bottom nav) was applying at DESKTOP widths too, and the file
+   carried two stray closing braces. Two lost selector lines caused it: one for
+   a removed mobile view <select>, one for .hub-gallery. Both are restored above.
+   If a future patch script strips a selector again, re-check the brace balance
+   with: count { and } after stripping comments — they must be equal. */
 
 /* ─── CHAT UNREAD BADGE (sidebar nav) ───────────────── */
 .chat-nav-badge {
@@ -5427,11 +5660,79 @@ html.hub-edit .bento-bubble .w-st-add-inline { display: block; }
 .w-notes-wrap {
   padding: 2px 0;
 }
-.w-notes-wrap .hub-editable {
+
+/* ─── Shared widget empty state ───────────────────────── */
+/* One look for "nothing here yet" across every hub widget. Replaces a blank card
+   (priorities, habits, links, reading) and ~15 one-off spellings. Fills the tile so
+   an empty widget does not read as a broken one. */
+/* `.w-head` lives inside `.bento-scroll`, so min-height:100% on the empty state
+   overflows by the header height. Scoping a flex column to scroll bodies that
+   actually contain an empty state lets it take exactly the leftover room, without
+   changing the flow of any other widget. */
+.bento-scroll:has(> .w-empty) {
+  display: flex;
+  flex-direction: column;
+}
+.w-empty {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 5px;
+  box-sizing: border-box;
+  padding: 12px 8px;
+}
+.w-empty-ico {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--surface-container-high);
+  color: var(--text-tertiary);
+  margin-bottom: 3px;
+}
+.w-empty-ico svg { width: 17px; height: 17px; }
+.w-empty-title {
+  margin: 0;
   font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text-secondary);
+}
+.w-empty-hint {
+  margin: 0;
+  max-width: 190px;
+  font-size: 0.62rem;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+}
+.w-empty-cta {
+  margin-top: 5px;
+  padding: 5px 13px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full, 20px);
+  background: var(--surface-container-high);
   color: var(--text-primary);
-  line-height: 1.5;
-  min-height: 3em;
+  font: inherit;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: border-color var(--t-fast, 0.15s), background var(--t-fast, 0.15s);
+}
+.w-empty-cta:hover {
+  border-color: var(--accent);
+  background: var(--surface-container-highest);
+}
+.w-empty-cta:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ─── Water Widget ────────────────────────────────────── */
@@ -5875,8 +6176,21 @@ html.hub-edit .bento-bubble .w-st-add-inline { display: block; }
 }
 
 /* ─── Clock: Analog ─── */
+/* `.clock-face` declared `flex:1; min-height:0` but its parent was not a flex box,
+   so its height stayed auto — which made the face's `max-height:100%` resolve to
+   `none` and let a square face 75% wide overflow a 160px tile. Making the scroll
+   body a flex column gives the face a definite height, so the SVG can be capped. */
+.bento-scroll:has(> .clock-face) {
+  display: flex;
+  flex-direction: column;
+}
 .clock-analog { gap: 6px; }
-.clock-analog-svg { width: 75%; height: auto; max-height: calc(100% - 28px); }
+.clock-analog-svg {
+  width: auto;
+  height: 100%;
+  max-width: 75%;
+  max-height: 100%;
+}
 
 /* ─── Clock: Minimal ─── */
 .clock-minimal { gap: 6px; }
@@ -5886,7 +6200,9 @@ html.hub-edit .bento-bubble .w-st-add-inline { display: block; }
   gap: 2px;
 }
 .clock-minimal-h, .clock-minimal-m {
-  font-size: 4.2rem;
+  /* 4.2rem overflowed the clock's own 160px default tile by ~9px, clipping the
+     date line underneath it. 3.5rem clears it with room to spare. */
+  font-size: 3.5rem;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1;
@@ -5895,6 +6211,10 @@ html.hub-edit .bento-bubble .w-st-add-inline { display: block; }
 }
 .clock-minimal-col {
   font-size: 3rem;
+  /* Without this the colon's default line-height (~1.2 => 58px) plus its 6px
+     offset inflated the time row to 78px, so the row + date needed ~101px inside
+     an 86px face and the date was clipped by 9px. */
+  line-height: 1;
   font-weight: 300;
   color: var(--text-tertiary);
   margin: 0 4px;
@@ -6651,7 +6971,13 @@ input[type="color"].cpop-native-round::-moz-color-swatch { border:none; border-r
 .sleep-quality-star.filled { color: #f59e0b; opacity: 1; }
 .sleep-quality-star.half { opacity: 0.6; }
 
-/* ─── SLEEP LOG MODAL — GLASSMORPHISM ──────────────────── */
+/* ─── SLEEP LOG MODAL ──────────────────────────────────── */
+html.sl-open, html.sl-open body { overflow: hidden; }
+html.sl-open .hub-main { overflow: hidden; }
+.sl-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
 .sl-overlay {
   position: fixed; inset: 0; z-index: 99999;
   background: rgba(0, 0, 0, 0.6);
@@ -6665,19 +6991,27 @@ input[type="color"].cpop-native-round::-moz-color-swatch { border:none; border-r
 .sl-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
 .sl-modal {
   z-index: 100000;
+  --sl-fg: var(--text-primary);
+  --sl-muted: var(--text-secondary);
+  --sl-faint: var(--text-tertiary);
+  --sl-line: rgba(255, 255, 255, 0.08);
+  --sl-line-strong: rgba(255, 255, 255, 0.16);
+  --sl-field: rgba(255, 255, 255, 0.05);
+  --sl-field-hover: rgba(255, 255, 255, 0.1);
   background: rgba(20, 20, 20, 0.85);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset, 0 1px 0 rgba(255, 255, 255, 0.06) inset;
-  width: 420px; max-width: calc(100vw - 32px);
-  max-height: min(580px, calc(100vh - 40px));
+  width: 440px; max-width: calc(100vw - 32px);
+  max-height: min(820px, calc(100vh - 32px));
   transform: scale(0.94) translateY(16px);
   opacity: 0; visibility: hidden;
   transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease, visibility 300ms ease;
   display: flex; flex-direction: column;
   overflow: hidden;
+  outline: none;
 }
 .sl-overlay:not(.hidden) .sl-modal { transform: scale(1) translateY(0); opacity: 1; visibility: visible; }
 html.light .sl-overlay {
@@ -6686,6 +7020,10 @@ html.light .sl-overlay {
   -webkit-backdrop-filter: blur(4px);
 }
 html.light .sl-modal {
+  --sl-line: rgba(0, 0, 0, 0.08);
+  --sl-line-strong: rgba(0, 0, 0, 0.18);
+  --sl-field: rgba(0, 0, 0, 0.03);
+  --sl-field-hover: rgba(0, 0, 0, 0.07);
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -6694,11 +7032,13 @@ html.light .sl-modal {
 }
 .sl-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 22px 14px; flex-shrink: 0;
+  padding: 16px 22px 12px; flex-shrink: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 html.light .sl-header { border-bottom-color: rgba(0, 0, 0, 0.06); }
-.sl-header-left { display: flex; align-items: center; gap: 10px; }
+.sl-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sl-header-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sl-subtitle { margin: 0; font-size: 0.66rem; color: var(--sl-faint); }
 .sl-icon {
   width: 32px; height: 32px; border-radius: 10px;
   background: rgba(var(--accent-rgb, 99, 102, 241), 0.15);
@@ -6720,146 +7060,144 @@ html.light .sl-close:hover { background: rgba(0, 0, 0, 0.08); color: var(--text-
 .sl-body {
   overflow-y: auto; flex: 1;
   -webkit-overflow-scrolling: touch;
-  padding: 20px 22px;
+  padding: 16px 22px 18px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.08) transparent;
+  overscroll-behavior: contain;
 }
 .sl-body::-webkit-scrollbar { width: 4px; }
 .sl-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 html.light .sl-body::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); }
-.sl-field { margin-bottom: 16px; }
-.sl-field label {
-  display: block; font-size: 0.68rem; font-weight: 600;
-  color: var(--text-tertiary); margin-bottom: 7px;
-  text-transform: uppercase; letter-spacing: 0.06em;
+
+.sl-section { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--sl-line); }
+.sl-section:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: none; }
+.sl-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; margin-bottom: 9px; min-height: 18px;
 }
-.sl-label-hint { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.sl-section-title {
+  font-size: 0.63rem; font-weight: 700; color: var(--sl-faint);
+  text-transform: uppercase; letter-spacing: 0.09em;
+}
+.sl-section-note { font-size: 0.62rem; color: var(--sl-faint); font-weight: 500; }
+
+.sl-quickdates { display: flex; gap: 6px; }
+.sl-qd {
+  padding: 4px 11px; border-radius: 999px;
+  border: 1px solid var(--sl-line); background: transparent; color: var(--sl-faint);
+  font-family: var(--font-sans); font-size: 0.62rem; font-weight: 600;
+  cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.sl-qd:hover { color: var(--sl-muted); border-color: var(--sl-line-strong); }
+.sl-qd.active {
+  background: rgba(var(--accent-rgb, 99, 102, 241), 0.15);
+  border-color: var(--accent); color: var(--accent);
+}
+
+.sl-field { margin-bottom: 14px; }
+.sl-section .sl-field:last-child { margin-bottom: 0; }
+.sl-field label {
+  display: block; font-size: 0.72rem; font-weight: 600;
+  color: var(--sl-muted); margin-bottom: 6px;
+}
+.sl-label-hint { font-weight: 400; }
+.sl-hint { margin: 6px 0 0; font-size: 0.66rem; line-height: 1.4; color: var(--sl-faint); }
+.sl-hint:empty { display: none; }
+.sl-hint-warn { color: #f59e0b; }
+
 .sl-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .sl-input {
   width: 100%; padding: 10px 14px;
   font-size: 0.88rem; font-family: var(--font-sans);
-  background: rgba(255, 255, 255, 0.05); color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px;
-  outline: none; transition: border-color 0.2s, background 0.2s;
+  background: var(--sl-field); color: var(--sl-fg);
+  border: 1px solid var(--sl-line); border-radius: 10px;
+  outline: none; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
   box-sizing: border-box;
-}
-html.light .sl-input {
-  background: rgba(0, 0, 0, 0.03);
-  border-color: rgba(0, 0, 0, 0.1);
 }
 .sl-input:focus {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 99, 102, 241), 0.18);
 }
-html.light .sl-input:focus { background: rgba(0, 0, 0, 0.04); }
-.sl-input::placeholder { color: var(--text-tertiary); opacity: 0.6; }
-.sl-textarea { resize: vertical; min-height: 52px; line-height: 1.5; }
+.sl-input::placeholder { color: var(--sl-faint); opacity: 0.6; }
+.sl-textarea { resize: vertical; min-height: 46px; line-height: 1.45; }
+
 .sl-dur-preview {
   display: flex; align-items: center; gap: 8px;
-  padding: 10px 14px; margin-bottom: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.8rem; color: var(--text-secondary);
-}
-html.light .sl-dur-preview {
-  background: rgba(0, 0, 0, 0.025);
-  border-color: rgba(0, 0, 0, 0.06);
+  padding: 10px 14px; margin-top: 12px;
+  background: var(--sl-field);
+  border-radius: 10px; border: 1px solid var(--sl-line);
+  font-size: 0.8rem; color: var(--sl-muted);
 }
 .sl-dur-preview svg { opacity: 0.4; flex-shrink: 0; }
-.sl-dur-preview strong { color: var(--text-primary); font-weight: 600; }
-.sl-quality-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 4px 0 2px;
+.sl-dur-text { flex: 1; }
+.sl-dur-preview strong { color: var(--sl-fg); font-weight: 700; }
+.sl-dur-delta { font-size: 0.66rem; font-weight: 600; color: var(--sl-faint); white-space: nowrap; }
+.sl-dur-delta.sl-dur-ok { color: #10b981; }
+.sl-dur-delta.sl-dur-warn { color: #f59e0b; }
+
+.sl-quality-picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.sl-q-opt {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 4px 8px; border-radius: 12px;
+  border: 1px solid var(--sl-line); background: transparent; color: var(--sl-faint);
+  font-family: var(--font-sans); cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.12s;
 }
-.sl-q-label {
-  font-size: 0.62rem; font-weight: 600; color: var(--text-tertiary);
-  text-transform: uppercase; letter-spacing: 0.05em;
-  min-width: 32px;
+.sl-q-opt:hover { border-color: var(--sl-line-strong); background: var(--sl-field); color: var(--sl-muted); }
+.sl-q-opt:active { transform: scale(0.96); }
+.sl-q-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sl-q-opt.active {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb, 99, 102, 241), 0.15);
+  color: var(--accent);
 }
-.sl-q-label:last-child { text-align: right; }
-.sl-quality-slider {
-  flex: 1; -webkit-appearance: none; appearance: none;
-  height: 5px; border-radius: 3px;
-  background: rgba(255, 255, 255, 0.08);
-  outline: none;
-}
-html.light .sl-quality-slider { background: rgba(0, 0, 0, 0.08); }
-.sl-quality-slider::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer; border: 2px solid rgba(30, 30, 30, 0.8);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-html.light .sl-quality-slider::-webkit-slider-thumb {
-  border-color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-.sl-quality-slider::-moz-range-thumb {
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--accent);
-  cursor: pointer; border: 2px solid rgba(30, 30, 30, 0.8);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-html.light .sl-quality-slider::-moz-range-thumb {
-  border-color: rgba(255, 255, 255, 0.9);
-}
-.sl-quality-display {
-  display: flex; align-items: center; justify-content: center;
-  gap: 8px; padding: 10px; margin-top: 4px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.06);
-}
-html.light .sl-quality-display {
-  background: rgba(0, 0, 0, 0.025);
-  border-color: rgba(0, 0, 0, 0.06);
-}
-.sl-q-emoji { font-size: 1.2rem; }
-.sl-q-text { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+.sl-q-ico { font-size: 1.15rem; line-height: 1; filter: grayscale(0.5); transition: filter 0.15s; }
+.sl-q-opt:hover .sl-q-ico, .sl-q-opt.active .sl-q-ico { filter: none; }
+.sl-q-name { font-size: 0.57rem; font-weight: 600; letter-spacing: 0.01em; }
+
 .sl-mood-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .sl-mood-chip {
-  padding: 7px 14px; border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: transparent; color: var(--text-tertiary);
-  font-size: 0.72rem; font-weight: 500; font-family: var(--font-sans);
-  cursor: pointer; transition: all 0.15s;
+  padding: 6px 13px; border-radius: 20px;
+  border: 1px solid var(--sl-line);
+  background: transparent; color: var(--sl-faint);
+  font-size: 0.7rem; font-weight: 500; font-family: var(--font-sans);
+  cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-html.light .sl-mood-chip { border-color: rgba(0, 0, 0, 0.1); }
-.sl-mood-chip:hover { border-color: rgba(255, 255, 255, 0.15); color: var(--text-secondary); }
-html.light .sl-mood-chip:hover { border-color: rgba(0, 0, 0, 0.18); }
+.sl-mood-chip:hover { border-color: var(--sl-line-strong); color: var(--sl-muted); }
+.sl-mood-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sl-mood-chip.active {
   background: rgba(var(--accent-rgb, 99, 102, 241), 0.15);
   border-color: var(--accent); color: var(--accent);
 }
+
 .sl-footer {
-  display: flex; gap: 10px; padding: 14px 22px 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex; gap: 10px; padding: 12px 22px 16px;
+  border-top: 1px solid var(--sl-line);
   flex-shrink: 0;
 }
-html.light .sl-footer { border-top-color: rgba(0, 0, 0, 0.06); }
 .sl-btn {
   flex: 1; justify-content: center; padding: 10px 0;
   border-radius: 10px; font-weight: 600; font-size: 0.85rem;
   font-family: var(--font-sans); cursor: pointer;
-  border: none; transition: all 0.15s;
+  border: none; transition: background 0.15s, color 0.15s, filter 0.15s, opacity 0.15s;
 }
+.sl-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sl-btn-cancel {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-secondary);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--sl-field);
+  color: var(--sl-muted);
+  border: 1px solid var(--sl-line);
 }
-html.light .sl-btn-cancel {
-  background: rgba(0, 0, 0, 0.04);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-.sl-btn-cancel:hover { background: rgba(255, 255, 255, 0.1); color: var(--text-primary); }
-html.light .sl-btn-cancel:hover { background: rgba(0, 0, 0, 0.06); }
-.sl-btn-save {
-  background: var(--accent);
-  color: #fff;
-}
+.sl-btn-cancel:hover { background: var(--sl-field-hover); color: var(--sl-fg); }
+.sl-btn-save { background: var(--accent); color: var(--bg-primary); }
 .sl-btn-save:hover { filter: brightness(1.1); }
 .sl-btn-save:active { filter: brightness(0.95); }
+.sl-btn-save:disabled { opacity: 0.65; cursor: default; filter: none; }
+.sl-btn-delete {
+  flex: 0 0 auto; padding: 10px 16px;
+  background: rgba(239, 68, 68, 0.12); color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.28);
+}
+.sl-btn-delete:hover { background: rgba(239, 68, 68, 0.2); }
 
 @media (max-width: 767px) {
   .sl-modal {
@@ -6869,7 +7207,15 @@ html.light .sl-btn-cancel:hover { background: rgba(0, 0, 0, 0.06); }
     border-radius: 18px 18px 0 0 !important;
     align-self: flex-end !important;
   }
-  .sl-row-2 { grid-template-columns: 1fr; }
+  .sl-header { padding: 16px 18px 12px; }
+  .sl-body { padding: 16px 18px 18px; }
+  .sl-footer { padding: 12px 18px 16px; }
+  .sl-row-2 { grid-template-columns: 1fr; gap: 0; }
+  .sl-row-2 .sl-field { margin-bottom: 14px; }
+  .sl-quality-picker { gap: 4px; }
+  .sl-q-opt { padding: 9px 2px 7px; border-radius: 10px; }
+  .sl-q-name { font-size: 0.52rem; }
+  .sl-dur-delta { white-space: normal; text-align: right; }
 }
 
 .an-sleep-row {
@@ -9274,13 +9620,20 @@ html.light .hub-add-popup {
 
 /* ─── Bento Bubbles ──────────────────────────── */
 .bento-grid { position:relative; width:100%; display:block; }
-.bento-bubble { position:absolute; display:block; border-radius:var(--radius-lg); touch-action:none; transition:opacity 0.15s ease, box-shadow 0.15s ease, left 0.08s ease, top 0.08s ease; }
+.bento-bubble { position:absolute; display:block; border-radius:var(--radius-lg); touch-action:pan-x pan-y; transition:opacity 0.15s ease, box-shadow 0.15s ease, left 0.08s ease, top 0.08s ease; }
 /* Widget content scrolls vertically only when it overflows the bubble; edit toolbars/resize handles stay pinned as siblings. */
-.bento-scroll { height:100%; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; }
+.bento-scroll { height:100%; overflow-x:hidden; overflow-y:auto; overscroll-behavior:auto; touch-action:pan-x pan-y; }
 .bento-bubble.bento-noscroll > .bento-scroll { overflow:hidden !important; overscroll-behavior:auto; scrollbar-width:none; }
 .bento-bubble.bento-noscroll > .bento-scroll::-webkit-scrollbar { display:none; }
 .bento-bubble.bento-noscroll .cal-widget, .bento-bubble.bento-noscroll .clock-face { overflow:hidden !important; max-height:100%; }
 .bento-bubble.bento-noscroll .cal-list { overflow:hidden !important; max-height:none; }
+.spotify-widget, .strava-widget, .fr24-widget { position:relative; }
+.bento-iframe-veil { position:absolute; inset:0; z-index:450; display:flex; align-items:flex-end; justify-content:center; padding:8px; background:transparent; touch-action:pan-x pan-y; cursor:default; }
+.bento-iframe-veil.bento-veil-off { display:none; }
+.bento-veil-hint { pointer-events:none; font-size:0.6rem; font-weight:600; letter-spacing:0.04em; color:var(--text-tertiary); background:color-mix(in srgb, var(--surface-container-high) 82%, transparent); border:1px solid var(--border-color); border-radius:999px; padding:2px 10px; opacity:0; transition:opacity 0.15s ease; backdrop-filter:blur(8px); }
+.bento-iframe-veil:hover .bento-veil-hint { opacity:0.95; }
+.bento-veil-lock { position:absolute; right:6px; bottom:6px; z-index:460; display:none; font-size:0.6rem; font-weight:700; letter-spacing:0.04em; color:var(--text-secondary); background:var(--surface-container-high); border:1px solid var(--border-color); border-radius:999px; padding:3px 10px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.12); }
+.bento-veil-lock.bento-veil-lock-on { display:block; }
 .bento-bubble:not(.dragging):not(.drop-bounce):not(.drag-over):hover { box-shadow:0 8px 24px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1); }
 .bento-bubble.dragging { opacity:0.96; z-index:1000; transform:scale(1.02); box-shadow:0 24px 64px rgba(0,0,0,0.32), 0 10px 28px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.08); transition:opacity 0.1s ease, box-shadow 0.15s ease, transform 0.1s ease, left 0s, top 0s; cursor:grabbing; will-change:transform, left, top; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); border-color:var(--accent); border-radius:var(--radius-lg); pointer-events:none; user-select:none; }
 
@@ -9348,7 +9701,7 @@ html.light .hub-add-popup {
 .bento-tool-btn:active { transform:scale(0.96); }
 .bento-tool-btn.bento-tool-style { color:var(--text-secondary); }
 .bento-tool-btn.bento-tool-style:hover { background:color-mix(in srgb, var(--primary) 12%, transparent); color:var(--text-primary); }
-.bento-tool-move { cursor:grab; }
+.bento-tool-move { cursor:grab; touch-action:none; }
 .bento-tool-move:active { cursor:grabbing; }
 .bento-tool-delete:hover { background:var(--error-soft); color:var(--error); }
 .bento-tool-delete-right { position:absolute; top:6px; right:6px; display:none; width:28px; height:28px; border-radius:7px; border:none; background:var(--surface-container-high); color:var(--text-tertiary); align-items:center; justify-content:center; cursor:pointer; padding:0; z-index:600; border:1px solid var(--border-color); opacity:0.8; transition:all 0.15s; backdrop-filter:blur(8px); }
@@ -9662,6 +10015,21 @@ section.mono-hero #gsiContainer { position: relative; z-index: 3; }
 /* ─── Sleep Score Widget ─── */
 /* ─── Sleep Score Widget ─────────────────────────────── */
 .ss-widget { display:flex; flex-direction:column; gap:10px; flex:1; min-height:0; justify-content:center; padding:4px 0; }
+.ss-widget[data-ss-open] { cursor:pointer; outline:none; border-radius:12px; }
+.ss-widget[data-ss-open]:focus-visible { box-shadow:0 0 0 2px var(--accent); }
+
+.ss-empty { display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; padding:8px 4px; }
+.ss-empty-ico {
+  width:38px; height:38px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--surface-container-high); color:var(--text-tertiary);
+}
+.ss-empty-ico svg { width:20px; height:20px; }
+.ss-empty-title { margin:2px 0 0; font-size:0.76rem; font-weight:700; color:var(--text-primary); }
+.ss-empty-sub { margin:0; font-size:0.62rem; line-height:1.4; color:var(--text-tertiary); max-width:200px; }
+.ss-empty .ss-log-btn { margin:6px 0 0; }
+.ss-log-btn-primary { background:var(--accent); color:var(--bg-primary); border-color:transparent; }
+.ss-log-btn-primary:hover { background:var(--accent); color:var(--bg-primary); border-color:transparent; filter:brightness(1.08); }
 .ss-top { display:flex; align-items:center; gap:12px; }
 .ss-ring { position:relative; width:64px; height:64px; flex-shrink:0; }
 .ss-ring svg { width:100%; height:100%; }
@@ -9687,13 +10055,15 @@ section.mono-hero #gsiContainer { position: relative; z-index: 3; }
 .ss-minimal { display:flex; flex-direction:column; gap:8px; }
 .ss-min-row { display:flex; align-items:center; gap:10px; }
 .ss-min-row .ss-ring { width:52px; height:52px; }
-.ss-min-info { display:flex; flex-direction:column; gap:1px; }
-.ss-min-score { font-size:0.9rem; font-weight:700; color:var(--text-primary); }
-.ss-min-label { font-size:0.55rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.06em; }
+.ss-min-info { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.ss-min-label { font-size:0.6rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; }
+.ss-min-note { font-size:0.6rem; color:var(--text-tertiary); }
 .ss-consist-pill { display:inline-block; font-size:0.5rem; color:var(--primary); background:var(--accent-subtle); padding:1px 6px; border-radius:8px; margin-top:2px; width:fit-content; }
 .ss-min-bar { width:100%; height:4px; border-radius:2px; background:var(--border-subtle); overflow:hidden; }
 .ss-min-bar-fill { height:100%; border-radius:2px; transition:width 0.4s ease; }
-.ss-min-dur { font-size:0.6rem; color:var(--text-tertiary); }
+.ss-min-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.ss-min-target { font-size:0.58rem; color:var(--text-tertiary); }
+.ss-min-foot .ss-log-btn { margin-left:0; }
 
 /* Detailed style */
 .ss-detailed { display:flex; flex-direction:column; gap:10px; }
@@ -9715,9 +10085,8 @@ section.mono-hero #gsiContainer { position: relative; z-index: 3; }
 .ss-timeline { display:flex; flex-direction:column; gap:8px; }
 .ss-tl-header { display:flex; align-items:center; gap:10px; }
 .ss-tl-header .ss-ring { width:48px; height:48px; }
-.ss-tl-meta { display:flex; flex-direction:column; gap:1px; }
-.ss-tl-score { font-size:0.85rem; font-weight:700; color:var(--text-primary); }
-.ss-tl-label { font-size:0.5rem; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.06em; }
+.ss-tl-meta { display:flex; flex-direction:column; gap:2px; }
+.ss-tl-label { font-size:0.6rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.06em; }
 .ss-tl-list { display:flex; flex-direction:column; gap:3px; }
 .ss-tl-item { display:flex; align-items:center; gap:6px; padding:3px 0; }
 .ss-tl-day { font-size:0.55rem; font-weight:600; color:var(--text-tertiary); min-width:20px; text-transform:uppercase; }
@@ -9768,11 +10137,11 @@ section.mono-hero #gsiContainer { position: relative; z-index: 3; }
 .hub-sidebar-image-empty svg { display:block; }
 .hub-sidebar-image-empty span { opacity:0.5; }
 .hub-sidebar-image-empty:hover span { opacity:1; }
-.bento-resize-handle { position:absolute; bottom:0; right:0; width:22px; height:22px; cursor:nwse-resize; display:none; align-items:center; justify-content:center; font-size:0.7rem; color:var(--text-tertiary); z-index:600; user-select:none; }
+.bento-resize-handle { position:absolute; bottom:0; right:0; width:22px; height:22px; cursor:nwse-resize; display:none; align-items:center; justify-content:center; font-size:0.7rem; color:var(--text-tertiary); z-index:600; user-select:none; touch-action:none; }
 .hub-edit .bento-resize-handle { display:flex; }
 .bento-resize-handle::after { content:''; position:absolute; bottom:2px; right:2px; width:0; height:0; border-style:solid; border-width:0 0 14px 14px; border-color:transparent transparent var(--border-color) transparent; opacity:0.6; transition:all 0.15s; }
 .bento-resize-handle:hover::after { opacity:1; border-color:transparent transparent var(--primary) transparent; transform:scale(1.15); }
-.bento-resize-edge { position:absolute; z-index:600; display:none; user-select:none; }
+.bento-resize-edge { position:absolute; z-index:600; display:none; user-select:none; touch-action:none; }
 .hub-edit .bento-resize-edge { display:block; }
 .bento-resize-edge[data-resize-axis="e"] { top:0; right:0; width:8px; height:100%; cursor:ew-resize; }
 .bento-resize-edge[data-resize-axis="s"] { bottom:0; left:0; width:100%; height:8px; cursor:ns-resize; }
@@ -11867,11 +12236,9 @@ html.edit-mode .gal-canvas .gal-item:hover {
 .pomo-classic-bar { width:100%; height:6px; border-radius:3px; background:var(--border-subtle); overflow:hidden; }
 .pomo-classic-fill { height:100%; border-radius:3px; background:var(--primary); transition:width 0.3s; }
 
-/* ─── Notes: Lined Variant ────────────────────────────── */
-.w-notes-lined { border-bottom:1px solid var(--border-subtle); background-image:repeating-linear-gradient(transparent, transparent 23px, var(--border-subtle) 23px, var(--border-subtle) 24px); background-position:0 -1px; }
-.w-notes-lined div { min-height:48px; padding-top:1px; }
-.w-notes-minimal { border:none; }
-.w-notes-minimal div { min-height:48px; }
+/* ─── Notes: variants now live in the "WIDGET PACK 4 · NOTES" block at the
+   end of this file (the old lined/minimal rules targeted markup that no
+   longer exists). ──────────────────────────────────────────────────────── */
 
 /* ─── Text Widget ─────────────────────────────────── */
 .w-text-wrap { display:flex; flex-direction:column; justify-content:stretch; align-items:stretch; height:100%; width:100%; overflow:hidden; }
@@ -12607,8 +12974,62 @@ html.edit-mode .gal-canvas .gal-item:hover {
    styles outrank a class selector.
    ============================================================ */
 
-.skin-panel { width: 560px; max-width: 92vw; }
-.skin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+/* ── The style panel is DOCKED, not centred, and its backdrop is transparent.
+   The point of this panel is a live preview: you pick a style and watch the
+   real widgets change. The shared .hub-popup-overlay defeats that — it is
+   inset:0 with a 45% black wash *and* backdrop-filter:blur(4px), so the whole
+   canvas goes dim and blurry. Hence a separate transparent click-catcher
+   (.skin-catcher) and a right-docked panel that leaves the canvas in view.
+   This block sits after .canvas-guide-panel on purpose: both selectors are
+   single-class, so source order is what lets .skin-panel override the
+   position/top/left/transform it inherits from .canvas-guide-panel. */
+.skin-catcher {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: transparent;
+}
+
+.skin-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  bottom: 96px;   /* clears the collapsed access FAB (20px inset + ~56px button) */
+  left: auto;
+  transform: none;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  max-height: none;  /* overrides .canvas-guide-panel's 80vh — height comes from top+bottom */
+  animation: panelInRight 250ms cubic-bezier(0.16,1,0.3,1) both;
+}
+
+@keyframes panelInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Narrow screens cannot afford a side column, so it becomes a floating card
+   above the FAB. It deliberately does NOT reach the bottom edge: the gap below
+   keeps the FAB tappable (so Style still toggles) and leaves canvas visible. */
+@media (max-width: 768px) {
+  .skin-panel {
+    top: auto;
+    right: 12px;
+    left: 12px;
+    bottom: calc(env(safe-area-inset-bottom, 8px) + 122px);
+    width: auto;
+    max-width: none;
+    max-height: 50vh;
+    border-radius: var(--radius-lg);
+    animation: panelInUp 250ms cubic-bezier(0.16,1,0.3,1) both;
+  }
+  @keyframes panelInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: none; }
+  }
+}
+
+.skin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
 .skin-preview {
   display: flex; flex-direction: column; gap: 2px;
@@ -12818,12 +13239,14 @@ html.edit-mode .gal-canvas .gal-item:hover {
   --skin-shadow: 0 10px 26px -12px color-mix(in srgb, #7c6cf6 55%, transparent);
 }
 
-/* ---- Halo — accent glow bleeding in from one corner. Three stops, because
-   two of them washed out to nothing on a light canvas. ---- */
+/* ---- Halo — accent wash bleeding in from one corner. Three stops, and the
+   leading stop is deliberately restrained: --accent is near-white in dark but
+   near-black in light, so anything above ~25% stops reading as a corner glow
+   and starts reading as a dark smudge on a light canvas. ---- */
 [data-hub-skin="halo"] {
   --skin-bg: radial-gradient(135% 105% at 0% 0%,
-      color-mix(in srgb, var(--accent) 44%, var(--surface-container)) 0%,
-      color-mix(in srgb, var(--accent) 12%, var(--surface-container)) 46%,
+      color-mix(in srgb, var(--accent) 24%, var(--surface-container)) 0%,
+      color-mix(in srgb, var(--accent) 8%, var(--surface-container)) 46%,
       var(--surface-container) 80%);
   --skin-border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
   --skin-radius: var(--radius-xl);
@@ -12861,10 +13284,768 @@ html.edit-mode .gal-canvas .gal-item:hover {
   --skin-clip: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
 }
 
-/* ---- Pill — fully rounded corners ---- */
+/* ---- Pill — fully rounded. The extra horizontal padding is not decoration:
+   at a 36px radius the curved ends eat into the content box, so text sits
+   uncomfortably close to the curve without it. ---- */
 [data-hub-skin="pill"] {
   --skin-bg: var(--surface-container);
   --skin-border: 1px solid var(--border-color);
   --skin-radius: 36px;
   --skin-shadow: none;
+  --skin-pad: var(--gutter) calc(var(--gutter) + 8px);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   WIDGET PACK 4 · NOTES — 2026-10-08
+   The tile is the glanceable surface (list, previews, tickable checkboxes);
+   the editor modal is the writing surface. Six layouts that differ in
+   structure, not in shadow: default (separated cards), compact (dense
+   one-line rows), lined (a rule under every line), checklist (big tick
+   targets), sticky (flat tinted cards) and minimal (no chrome at all).
+   Every surface and text colour is a theme token. The only fixed hues are the
+   six user-chosen note tints — those encode data rather than surface, and are
+   mixed at a low percentage so they read on a light and a dark canvas alike.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── header extras ─────────────────────────────────────────────────────── */
+/* .w-head span sets flex:1 + 1.25rem uppercase, so these must override both
+   flex and typography explicitly or the pill stretches across the header. */
+.w-head .w-notes-count,
+.w-head .w-notes-todo {
+  flex: 0 0 auto;
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 3px 7px;
+  border-radius: var(--radius-full);
+  background: var(--surface-container-high);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+.w-head .w-notes-todo {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--text-primary);
+}
+.w-notes-new {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.w-notes-new svg { width: 12px; height: 12px; }
+.w-notes-new:hover {
+  background: var(--surface-container-high);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--text-tertiary) 45%, transparent);
+}
+
+/* ── wrapper, text size and font modifiers ─────────────────────────────── */
+.w-notes-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 0;
+  color: var(--text-primary);
+}
+.w-notes-sz-sm { font-size: 0.65rem; line-height: 1.35; }
+.w-notes-sz-md { font-size: 0.72rem; line-height: 1.45; }
+.w-notes-sz-lg { font-size: 0.84rem; line-height: 1.5; }
+.w-notes-ff-sans { font-family: var(--font-sans); }
+.w-notes-ff-serif { font-family: var(--font-serif); }
+.w-notes-ff-mono { font-family: var(--font-mono); }
+
+/* ── shared line primitives ────────────────────────────────────────────── */
+.w-note-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.w-note-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+.w-note-txt {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-note-line-head .w-note-txt { color: var(--text-primary); font-weight: 700; }
+.w-note-line-more .w-note-txt,
+.w-note-line-empty .w-note-txt { color: var(--text-tertiary); font-style: italic; }
+.w-note-bullet {
+  flex: 0 0 auto;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  margin-top: 0.5em;
+}
+.w-note-line-num .w-note-bullet { width: 6px; height: 1.5px; border-radius: 1px; }
+
+/* checkboxes — one markup drives the tile and the checklist layout */
+.w-note-check { align-items: flex-start; }
+.w-note-box {
+  position: relative;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  margin-top: 0.16em;
+  border: 1.4px solid color-mix(in srgb, var(--text-tertiary) 55%, transparent);
+  border-radius: 3.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+}
+/* a 12px box is a cruel tap target; this grows the hit area without touching layout */
+.w-note-box[data-notes-check] { cursor: pointer; }
+.w-note-box[data-notes-check]::before {
+  content: "";
+  position: absolute;
+  /* vertical reach stays inside the row's own line box, or the box would start
+     stealing clicks from the row above it */
+  inset: -4px -6px;
+}
+.w-note-box svg { width: 8px; height: 8px; pointer-events: none; }
+.w-note-check:hover .w-note-box { border-color: var(--text-secondary); }
+.w-note-box-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-primary);
+}
+.w-note-check-done .w-note-txt { text-decoration: line-through; color: var(--text-tertiary); }
+
+/* ── note tints (declared on the tinted element, so var() resolves there) ─ */
+.w-note-tint-blue { --note-hue: #3b82f6; }
+.w-note-tint-teal { --note-hue: #0d9488; }
+.w-note-tint-amber { --note-hue: #d97706; }
+.w-note-tint-rose { --note-hue: #e11d48; }
+.w-note-tint-violet { --note-hue: #7c3aed; }
+
+/* ── card layout — default / lined / sticky / minimal ──────────────────── */
+.w-note-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 6px 8px;
+  margin: 0 -8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.w-note-card:hover { background: var(--surface-container-high); }
+.w-note-card[class*="w-note-tint-"] {
+  background: color-mix(in srgb, var(--note-hue) 9%, transparent);
+  border-color: color-mix(in srgb, var(--note-hue) 24%, transparent);
+}
+.w-note-top {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+.w-note-pin { flex: 0 0 auto; display: inline-flex; color: var(--text-tertiary); align-self: center; }
+.w-note-pin svg { width: 10px; height: 10px; }
+.w-note-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-note-time {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: 0.58rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+.w-note-footnote {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding-top: 1px;
+}
+/* set by _notesFit, which hides the overflow at real layout time */
+.w-note-hidden { display: none !important; }
+.w-note-group {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: 2px 0 1px;
+}
+
+/* default — a hairline between notes, no card chrome */
+.w-notes-default .w-note-card { border-radius: 0; border-color: transparent; }
+.w-notes-default .w-note-card + .w-note-card { border-top: 1px solid var(--border-subtle); }
+.w-notes-default .w-note-card:hover {
+  background: var(--surface-container-high);
+  border-radius: var(--radius-md);
+}
+
+/* lined — a rule under every rendered line, so it always aligns to the text */
+.w-notes-lined .w-note-card {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  gap: 0;
+}
+.w-notes-lined .w-note-card:hover { background: transparent; }
+.w-notes-lined .w-note-card[class*="w-note-tint-"] { background: transparent; border: 0; }
+.w-notes-lined .w-note-top { padding: 2px 0; border-bottom: 1px solid var(--border-subtle); }
+.w-notes-lined .w-note-line { padding: 2px 0; border-bottom: 1px solid var(--border-subtle); }
+
+/* sticky — flat tinted cards, no separators, a soft lift */
+.w-notes-sticky .w-note-card {
+  margin: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 3px 12px 12px 12px;
+  background: var(--surface-container-highest);
+  box-shadow: var(--shadow-sm);
+}
+.w-notes-sticky .w-note-card[class*="w-note-tint-"] {
+  background: color-mix(in srgb, var(--note-hue) 11%, var(--surface-container-high));
+  border: 0;
+}
+.w-notes-sticky .w-note-card:hover { box-shadow: var(--shadow-md); }
+.w-notes-sticky .w-note-card + .w-note-card { margin-top: 2px; }
+
+/* minimal — no chrome, no separators, primary text */
+.w-notes-minimal .w-note-card {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  gap: 5px;
+}
+.w-notes-minimal .w-note-card:hover { background: transparent; }
+.w-notes-minimal .w-note-card[class*="w-note-tint-"] { background: transparent; border: 0; }
+.w-notes-minimal .w-note-txt { color: var(--text-primary); }
+
+/* ── compact layout — one dense row per note ───────────────────────────── */
+.w-note-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 4px 6px;
+  margin: 0 -6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.w-note-row:hover { background: var(--surface-container-high); }
+.w-note-swatch {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+}
+.w-note-rowlabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-note-row-pinned .w-note-rowlabel { font-weight: 700; }
+.w-note-badge {
+  flex: 0 0 auto;
+  font-size: 0.58rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── checklist layout — every task line, big and tappable ──────────────── */
+.w-notes-checklist .w-note-check { padding: 4px 0; gap: 8px; }
+.w-notes-checklist .w-note-box { width: 16px; height: 16px; border-radius: 5px; margin-top: 0; }
+.w-notes-checklist .w-note-box svg { width: 10px; height: 10px; }
+.w-notes-checklist .w-note-txt { white-space: normal; overflow: visible; text-overflow: clip; }
+
+/* ── roominess — a tall tile with little content ───────────────────────── */
+/* A bento tile is resizable, so it is routinely taller than its notes. Left as
+   dead space the six layouts all read alike, because there is nothing for them
+   to lay out — the tile just shows one line floating in a void. _notesRoominess()
+   flags the slack and the content grows into it. Only flex-grow is used, so it
+   can never overflow: it consumes free space, it does not create any.
+   The wrap has to own the leftover height before its cards can grow into it,
+   which is the same trick the shared empty state uses — and it is scoped to the
+   roomy case so the normal, content-sized path is untouched. */
+.bento-scroll:has(> .w-notes-wrap.w-notes-roomy) {
+  display: flex;
+  flex-direction: column;
+}
+.w-notes-wrap.w-notes-roomy { flex: 1 1 auto; }
+.w-notes-roomy .w-note-card,
+.w-notes-roomy .w-note-row,
+.w-notes-roomy .w-note-body { flex: 1 1 auto; }
+
+/* lined, default and minimal are chrome-less, so growing them is invisible — and
+   a left "notebook margin" rule cannot be drawn either, because the card carries
+   negative margins to bleed to the tile edge. They therefore converge on a
+   sparse tile. That is inherent, not a bug: with one short note there is nothing
+   for a chrome-less layout to lay out. They separate as soon as there is
+   content, which is when it matters. */
+
+/* checklist — every row gets taller, which is also a bigger tap target */
+.w-notes-roomy.w-notes-checklist .w-note-check { flex: 1 1 auto; }
+
+/* sticky grows via .w-note-card above, so the tint becomes a big sticky note. */
+
+/* ── editor modal ──────────────────────────────────────────────────────── */
+.notes-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(3px);
+  animation: fadeIn 140ms var(--curve) both;
+}
+.notes-modal {
+  position: fixed;
+  z-index: 201;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(560px, calc(100vw - 28px));
+  max-height: min(620px, calc(100vh - 72px));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  /* panelIn keeps translate(-50%,-50%) in both frames; popupIn would wipe it */
+  animation: panelIn 180ms var(--curve) both;
+}
+.notes-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 10px;
+}
+.notes-modal-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding: 2px 0;
+  outline: none;
+}
+.notes-modal-title::placeholder { color: var(--text-tertiary); font-weight: 600; }
+.notes-modal-x {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.notes-modal-x:hover { background: var(--surface-container-high); color: var(--text-primary); }
+.notes-modal-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0 14px 10px;
+}
+.notes-tool {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.64rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.notes-tool:hover {
+  background: var(--surface-container-high);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--text-tertiary) 45%, transparent);
+}
+.notes-modal-body {
+  flex: 1 1 auto;
+  min-height: 190px;
+  resize: none;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.65;
+  padding: 12px 14px;
+  outline: none;
+}
+.notes-modal-body::placeholder { color: var(--text-tertiary); }
+.notes-modal-foot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px 12px;
+}
+.notes-modal-colors { display: flex; align-items: center; gap: 6px; }
+.notes-swatch {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  background: var(--surface-container-highest);
+  cursor: pointer;
+  transition: transform var(--t-fast), border-color var(--t-fast);
+}
+.notes-swatch:hover { transform: scale(1.14); }
+.notes-swatch-none {
+  position: relative;
+  background: transparent;
+  border-color: color-mix(in srgb, var(--text-tertiary) 55%, transparent);
+}
+.notes-swatch-none::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: 50%;
+  border-top: 1.5px solid color-mix(in srgb, var(--text-tertiary) 70%, transparent);
+  transform: rotate(45deg);
+  transform-origin: center;
+}
+.notes-swatch-blue { background: #3b82f6; }
+.notes-swatch-teal { background: #0d9488; }
+.notes-swatch-amber { background: #d97706; }
+.notes-swatch-rose { background: #e11d48; }
+.notes-swatch-violet { background: #7c3aed; }
+.notes-swatch.on { border-color: var(--text-primary); }
+.notes-modal-stat {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.notes-modal-act {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.64rem;
+  font-weight: 600;
+  padding: 4px 11px;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.notes-modal-act:hover { background: var(--surface-container-high); color: var(--text-primary); }
+.notes-modal-act.on {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--text-primary);
+}
+.notes-modal-del {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+}
+.notes-modal-del:hover {
+  background: color-mix(in srgb, var(--error) 14%, transparent);
+  color: var(--error);
+}
+body.notes-modal-open { overflow: hidden; }
+
+/* ── display options — docked right, so the canvas stays judgeable ─────── */
+.notes-opts-catcher {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: transparent;
+}
+.notes-opts {
+  position: fixed;
+  z-index: 61;
+  top: 16px;
+  right: 16px;
+  /* hugs its content rather than stretching to the floor like .skin-panel —
+     five short rows do not need 600px of empty card */
+  bottom: auto;
+  max-height: calc(100vh - 140px);
+  width: 268px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: panelInRight 180ms var(--curve) both;
+}
+.notes-opts-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 12px 8px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+.notes-opts-close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.notes-opts-close:hover { background: var(--surface-container-high); color: var(--text-primary); }
+.notes-opts-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 0 12px 10px;
+}
+.notes-opts-row { padding: 8px 0; border-top: 1px solid var(--border-subtle); }
+.notes-opts-row:first-child { border-top: 0; }
+.notes-opts-label {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 7px;
+}
+.notes-opts-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.notes-chip {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.notes-chip:hover { background: var(--surface-container-high); color: var(--text-primary); }
+.notes-chip.on {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  border-color: color-mix(in srgb, var(--text-tertiary) 40%, transparent);
+  color: var(--text-primary);
+}
+.notes-opts-foot {
+  padding: 9px 12px 11px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  line-height: 1.45;
+}
+
+/* ── narrow screens ────────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .notes-modal {
+    width: calc(100vw - 20px);
+    max-height: calc(100vh - 40px);
+  }
+  .notes-modal-body { min-height: 150px; }
+  .notes-opts {
+    top: auto;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 122px);
+    max-height: 50vh;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   WEEK PLAN — 2026-10-08
+   One row per day (Mon–Sun). The chips are schedule subjects, read from the
+   same tag list the schedule page uses; a chip is ticked when it has been
+   studied. Everything is token-driven so all 14 hub skins apply unchanged.
+   Prefix wk- (wp- was already taken by the widget-pack-2 block).
+   ══════════════════════════════════════════════════════════════ */
+.wk-range {
+  font-style: normal;
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* --wk-c carries each subject's own hex, set inline on the chip. Declared here
+   so it always resolves (and so the var() audit finds a declaration): --accent
+   lives on :root, so resolving it at this level is safe. */
+.wk-body { display: flex; flex-direction: column; gap: 5px; --wk-c: var(--accent); }
+
+.wk-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+}
+.wk-row-today { background: var(--surface-container-high); border-color: var(--border-color); }
+
+.wk-day {
+  flex: 0 0 32px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.wk-row-today .wk-day { color: var(--text-primary); }
+
+.wk-chips { flex: 1 1 auto; display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+
+.wk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 3px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: var(--surface-container-high);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.58rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.wk-chip:hover { border-color: var(--wk-c, var(--accent)); }
+
+.wk-chip-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--wk-c, var(--accent));
+}
+.wk-chip-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.wk-chip-tick { display: inline-flex; flex: 0 0 auto; color: var(--text-secondary); }
+.wk-chip-tick svg { width: 11px; height: 11px; }
+
+.wk-chip-done { opacity: 0.6; }
+.wk-chip-done .wk-chip-lbl { text-decoration: line-through; }
+
+.wk-rest { font-size: 0.58rem; font-style: italic; color: var(--text-tertiary); }
+
+.wk-add {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-tertiary);
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.wk-add:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
+.wk-add.open { border-style: solid; background: var(--surface-container-highest); color: var(--text-primary); }
+
+.wk-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 6px 8px 46px;
+  border-bottom: 1px dashed var(--border-color);
+}
+.wk-pick-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.55rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wk-pick-chip:hover { color: var(--text-primary); }
+.wk-pick-chip.on { background: var(--surface-container-highest); border-color: var(--wk-c, var(--accent)); color: var(--text-primary); }
+.wk-pick-chip svg { width: 10px; height: 10px; }
+.wk-pick-plus { width: 10px; text-align: center; }
+.wk-pick-none { font-size: 0.58rem; color: var(--text-tertiary); }
+
+/* Phone. The "BENTO CANVAS MOBILE" block (max-width: 640px) turns every bubble
+   into a full-width card, so there is room for real touch targets. The desktop
+   sizes above are tuned for a 280px tile and land at a 20px "+" and 21px chips,
+   which is below the comfortable-tap range — the rest of the app uses 40-48px
+   for its controls. Only sizes change here; no colour or structure. */
+@media (max-width: 640px) {
+  .wk-row { padding: 8px 4px; gap: 6px; }
+  .wk-day { flex-basis: 34px; font-size: 0.66rem; }
+  .wk-chip { padding: 6px 11px; font-size: 0.66rem; }
+  .wk-chip-tick svg { width: 12px; height: 12px; }
+  .wk-add { width: 30px; height: 30px; font-size: 0.95rem; }
+  .wk-pick { padding: 2px 4px 10px 44px; }
+  .wk-pick-chip { padding: 6px 11px; font-size: 0.64rem; }
+  .wk-pick-chip svg { width: 12px; height: 12px; }
 }

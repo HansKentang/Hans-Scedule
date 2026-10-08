@@ -1,5 +1,5 @@
-/* Havën Schedule — Service Worker v2.1 */
-const CACHE = 'haven-schedule-v45';
+/* Havën Schedule — Service Worker v2.2 */
+const CACHE = 'haven-schedule-v46';
 const OFFLINE_FALLBACK = 'index.html';
 const URLS = [
   './',

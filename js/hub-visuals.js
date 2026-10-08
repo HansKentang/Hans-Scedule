@@ -99,11 +99,40 @@ function _getPomoStyle(uid) { return _pomoStyles[uid] || 'default'; }
 function _setPomoStyle(uid, style) { _pomoStyles[uid] = style; try { localStorage.setItem(POMO_STYLES_KEY, JSON.stringify(_pomoStyles)); } catch(e) {} }
 
 const NOTES_STYLES_KEY = 'haven-notes-styles';
-const NOTES_STYLE_LIST = ['default','lined','minimal'];
+/* Six styles that differ in structure, not just surface — 'default' and 'minimal'
+   used to differ only by a min-height, which made the style button look dead. */
+const NOTES_STYLE_LIST = ['default','compact','lined','checklist','sticky','minimal'];
 let _notesStyles = {};
 try { _notesStyles = JSON.parse(localStorage.getItem(NOTES_STYLES_KEY) || '{}'); } catch(e) {}
 function _getNotesStyle(uid) { return _notesStyles[uid] || 'default'; }
 function _setNotesStyle(uid, style) { _notesStyles[uid] = style; try { localStorage.setItem(NOTES_STYLES_KEY, JSON.stringify(_notesStyles)); } catch(e) {} }
+
+/* Notes display preferences — per widget, not per note, so one tile can be a
+   compact checklist and another a roomy reading pane. */
+const NOTES_PREFS_KEY = 'haven-notes-prefs';
+const NOTES_SIZE_LIST = ['sm','md','lg'];
+const NOTES_FONT_LIST = ['sans','serif','mono'];
+const NOTES_COLOR_LIST = ['','blue','teal','amber','rose','violet'];
+const NOTES_DEFAULT_PREFS = { size:'md', font:'sans', lines:2, time:true };
+let _notesPrefs = {};
+try { _notesPrefs = JSON.parse(localStorage.getItem(NOTES_PREFS_KEY) || '{}'); } catch(e) {}
+function _getNotesPrefs(uid) {
+  var p = (_notesPrefs && _notesPrefs[uid]) || {};
+  return {
+    size: NOTES_SIZE_LIST.indexOf(p.size) !== -1 ? p.size : NOTES_DEFAULT_PREFS.size,
+    font: NOTES_FONT_LIST.indexOf(p.font) !== -1 ? p.font : NOTES_DEFAULT_PREFS.font,
+    lines: (typeof p.lines === 'number' && p.lines >= 1 && p.lines <= 6) ? Math.round(p.lines) : NOTES_DEFAULT_PREFS.lines,
+    time: p.time === undefined ? NOTES_DEFAULT_PREFS.time : !!p.time
+  };
+}
+function _setNotesPrefs(uid, patch) {
+  if (!uid) return NOTES_DEFAULT_PREFS;
+  var cur = _getNotesPrefs(uid);
+  if (patch) for (var k in patch) { if (Object.prototype.hasOwnProperty.call(patch, k)) cur[k] = patch[k]; }
+  _notesPrefs[uid] = cur;
+  try { localStorage.setItem(NOTES_PREFS_KEY, JSON.stringify(_notesPrefs)); } catch(e) {}
+  return cur;
+}
 
 const LINKS_STYLES_KEY = 'haven-links-styles';
 const LINKS_STYLE_LIST = ['default','compact','grid'];
@@ -417,6 +446,7 @@ function _reloadAllWidgetStyles() {
   _timerStyles = _loadStyleMap(TIMER_STYLES_KEY);
   _pomoStyles = _loadStyleMap(POMO_STYLES_KEY);
   _notesStyles = _loadStyleMap(NOTES_STYLES_KEY);
+  _notesPrefs = _loadStyleMap(NOTES_PREFS_KEY);
   _linksStyles = _loadStyleMap(LINKS_STYLES_KEY);
   _quoteStyles = _loadStyleMap(QUOTE_STYLES_KEY);
   _cdStyles = _loadStyleMap(CD_STYLES_KEY);
@@ -454,7 +484,7 @@ function _copyWidgetStyle(srcUid, dstUid) {
     [_todosStyles, TODOS_STYLES_KEY], [_habitsStyles, HABITS_STYLES_KEY],
     [_moodStyles, MOOD_STYLES_KEY], [_waterStyles, WATER_STYLES_KEY],
     [_timerStyles, TIMER_STYLES_KEY], [_pomoStyles, POMO_STYLES_KEY],
-    [_notesStyles, NOTES_STYLES_KEY], [_linksStyles, LINKS_STYLES_KEY],
+    [_notesStyles, NOTES_STYLES_KEY], [_notesPrefs, NOTES_PREFS_KEY], [_linksStyles, LINKS_STYLES_KEY],
     [_quoteStyles, QUOTE_STYLES_KEY], [_cdStyles, CD_STYLES_KEY],
     [_priStyles, PRI_STYLES_KEY], [_progStyles, PROG_STYLES_KEY],
     [_goalsStyles, GOALS_STYLES_KEY], [_imgStyles, IMG_STYLES_KEY],
@@ -887,6 +917,8 @@ const HUB_DEFAULTS = {
   github: { username: '' },
 
   notes: '',
+  notesList: [],
+  notesMigrated: false,
   links: [],
   water: { goal: 8, logged: 0, date: new Date().toISOString().slice(0,10) },
   mood: { today: null, history: {} },
@@ -1260,6 +1292,512 @@ function _fitTextWidgets() {
     content.style.lineHeight = '1.1';
   });
 }
+/* ─── Shared widget empty state ────────────────────────────────────────────────
+   Before this, a widget with no data either rendered a completely blank card
+   (priorities, habits, links, reading) or invented its own one-off empty markup
+   (gh-empty, ytf-empty, w-wc-empty, … ~15 different spellings). This is the one
+   place that describes "nothing here yet", with a hint and an optional CTA that
+   reuses the existing [data-add] flow.
+
+   It is applied from the mount loop and only when the body renders NOTHING at all,
+   so a widget that already ships its own empty state or placeholder is untouched. */
+var _EMPTY_STATES = {
+  priorities: { t: 'No priorities yet', h: 'Add your top three to keep the day focused.', add: 'priorities', cta: 'Add priority' },
+  habits:     { t: 'No habits yet', h: 'Track one daily habit to start a streak.', add: 'habits', cta: 'Add habit' },
+  links:      { t: 'No links yet', h: 'Save the sites you open every day.', add: 'links', cta: 'Add link' },
+  todos:      { t: 'Nothing to do', h: 'Add a task and tick it off as you go.', add: 'todos', cta: 'Add task' },
+  goals:      { t: 'No goals yet', h: 'Write down what you are working towards.', add: 'goals', cta: 'Add goal' },
+  homework:   { t: 'No homework', h: 'Add assignments to keep track of due dates.', add: 'homework', cta: 'Add homework' },
+  countdown:  { t: 'No countdowns', h: 'Count down to an exam, trip or deadline.', add: 'countdown', cta: 'Add countdown' },
+  reading:    { t: 'No books yet', h: 'Add a book to track how far you have read.' },
+  notes:      { t: 'No notes yet', h: 'Capture a thought, a list or a checklist.', add: 'notes', cta: 'New note' }
+};
+
+function _applyEmptyState(bubble, type, uid) {
+  var spec = _EMPTY_STATES[type];
+  if (!spec) return;
+  /* off-document or hidden: geometry is meaningless, so we cannot tell blank from
+     not-yet-laid-out. Bail rather than risk stacking an empty state on real content. */
+  if (!bubble.getBoundingClientRect().width) return;
+  var scroll = bubble.querySelector('.bento-scroll');
+  if (!scroll) return;
+  var hasContent = false;
+  var nodes = scroll.querySelectorAll('*');
+  for (var i = 0; i < nodes.length && !hasContent; i++) {
+    var el = nodes[i];
+    if (el.closest('.w-head') || el.closest('.bento-toolbar') ||
+        el.closest('.bento-toolbar-remove') || el.closest('.bento-toolbar-style')) continue;
+    var s = getComputedStyle(el);
+    if (s.display === 'none' || s.visibility === 'hidden' || parseFloat(s.opacity) === 0) continue;
+    var r = el.getBoundingClientRect();
+    if (!r.width || !r.height) continue;
+    var tag = el.tagName.toUpperCase();
+    var media = ['IMG', 'CANVAS', 'VIDEO', 'SVG', 'INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].indexOf(tag) !== -1;
+    var txt = (el.textContent || '').trim().length > 0;
+    var bg = s.backgroundColor;
+    var bgOn = !!bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)';
+    if (media || txt || bgOn) hasContent = true;
+  }
+  if (hasContent) return;
+
+  var ico = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.6"/></svg>';
+  var html = '<div class="w-empty"><div class="w-empty-ico">' + ico + '</div>'
+    + '<p class="w-empty-title">' + escapeHtml(spec.t) + '</p>'
+    + '<p class="w-empty-hint">' + escapeHtml(spec.h) + '</p>';
+  if (spec.add) {
+    html += '<button class="w-empty-cta" type="button" data-empty-add="' + escapeHtml(spec.add) + '"'
+          + (uid ? ' data-empty-uid="' + escapeHtml(uid) + '"' : '') + '>'
+          + escapeHtml(spec.cta || 'Add') + '</button>';
+  }
+  html += '</div>';
+  scroll.insertAdjacentHTML('beforeend', html);
+}
+
+/* ─── Notes widget ──────────────────────────────────────────────────────────
+   The tile is a *glanceable* surface: it lists your notes, ticks their
+   checkboxes in place, and hands off to a full editor when you need to write.
+   hubContent.notesList is the source of truth. hubContent.notes — a single
+   string — was the original model; it is migrated into the list exactly once,
+   guarded by hubContent.notesMigrated, and then kept mirrored to the leading
+   note so older readers still see something sane. The guard matters: without
+   it, deleting every note would resurrect the old one on the next render. */
+
+var NOTES_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
+var NOTES_PIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 01-1.11 1.79l-1.78.9A2 2 0 005 15.24V16a1 1 0 001 1h12a1 1 0 001-1v-.76a2 2 0 00-1.11-1.79l-1.78-.9A2 2 0 0115 10.76V7a1 1 0 011-1 2 2 0 000-4H8a2 2 0 000 4 1 1 0 011 1z"/></svg>';
+var NOTES_PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+var NOTES_CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+var NOTES_GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 003.68 15a1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 003.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6 1.65 1.65 0 0010 3.09V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>';
+var NOTES_TINT_HEX = { blue:'#3b82f6', teal:'#0d9488', amber:'#d97706', rose:'#e11d48', violet:'#7c3aed' };
+/* how many units are emitted before the fitter takes over. The fitter
+   (_notesFit) hides the overflow at real layout time, so this is only a
+   bound on DOM size, not a display cap — a taller tile reveals more. */
+var NOTES_RENDER_CAP = 12;
+
+function _notesNewId() {
+  return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function _notesBlank() {
+  var t = Date.now();
+  return { id: _notesNewId(), title: '', body: '', color: '', pinned: false, created: t, updated: t };
+}
+
+/* Normalises hubContent.notesList in place and returns it. Safe to call on
+   every render — it never throws and never loses content. */
+function _notesData() {
+  if (!hubContent) return [];
+  var list = Array.isArray(hubContent.notesList) ? hubContent.notesList : [];
+  if (!hubContent.notesMigrated) {
+    hubContent.notesMigrated = true;
+    var legacy = typeof hubContent.notes === 'string' ? hubContent.notes.trim() : '';
+    if (!list.length && legacy) {
+      var seed = _notesBlank();
+      seed.body = legacy;
+      list = [seed];
+    }
+  }
+  var seen = {};
+  list = list.filter(function(n) {
+    return n && typeof n === 'object' && !Array.isArray(n);
+  }).map(function(n) {
+    var id = (typeof n.id === 'string' && n.id && !seen[n.id]) ? n.id : _notesNewId();
+    seen[id] = 1;
+    return {
+      id: id,
+      title: typeof n.title === 'string' ? n.title : '',
+      body: typeof n.body === 'string' ? n.body : '',
+      color: NOTES_COLOR_LIST.indexOf(n.color) !== -1 ? n.color : '',
+      pinned: !!n.pinned,
+      created: typeof n.created === 'number' ? n.created : Date.now(),
+      updated: typeof n.updated === 'number' ? n.updated : Date.now()
+    };
+  });
+  hubContent.notesList = list;
+  return list;
+}
+
+function _notesFind(id) {
+  var list = _notesData();
+  for (var i = 0; i < list.length; i++) { if (list[i].id === id) return list[i]; }
+  return null;
+}
+
+/* Pinned first, then most recently touched. */
+function _notesSorted() {
+  return _notesData().slice().sort(function(a, b) {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return (b.updated || 0) - (a.updated || 0);
+  });
+}
+
+/* Persist, and mirror the leading note into the legacy string key. */
+function _notesSave() {
+  if (!hubContent) return;
+  _notesSyncLegacy();
+  saveHubContent();
+}
+
+/* hubContent.notes (a single string) is the pre-2026-10-08 model. Keep it in
+   step with the leading note so a build that only knows the old shape still
+   finds the user's text. Runs on load too — otherwise the mirror stays empty
+   until the first edit, which is exactly when a fallback is least useful. */
+function _notesSyncLegacy() {
+  if (!hubContent) return;
+  var list = _notesData();
+  var lead = null;
+  for (var i = 0; i < list.length; i++) { if (list[i].pinned) { lead = list[i]; break; } }
+  if (!lead) lead = list[0];
+  var want = lead ? (lead.body || '') : '';
+  if (hubContent.notes !== want) {
+    hubContent.notes = want;
+    try { saveHubContent(); } catch (e) {}
+  }
+}
+
+function _notesAdd() {
+  var n = _notesBlank();
+  _notesData().unshift(n);
+  _notesSave();
+  return n;
+}
+
+function _notesRemove(id) {
+  var list = _notesData();
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].id === id) { list.splice(i, 1); _notesSave(); return true; }
+  }
+  return false;
+}
+
+function _notesDuplicate(id) {
+  var src = _notesFind(id);
+  if (!src) return null;
+  var t = Date.now();
+  var copy = {
+    id: _notesNewId(), title: src.title, body: src.body, color: src.color,
+    pinned: false, created: t, updated: t
+  };
+  _notesData().unshift(copy);
+  _notesSave();
+  return copy;
+}
+
+/* Short relative time — the tile has no room for "3 hours ago". */
+function _notesRelTime(ts) {
+  if (!ts) return '';
+  var d = Date.now() - ts;
+  if (d < 0) return '';
+  var m = Math.floor(d / 60000);
+  if (m < 1) return 'now';
+  if (m < 60) return m + 'm ago';
+  var h = Math.floor(m / 60);
+  if (h < 24) return h + 'h ago';
+  var days = Math.floor(h / 24);
+  if (days === 1) return 'yesterday';
+  if (days < 7) return days + 'd ago';
+  var dt = new Date(ts);
+  var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return mo[dt.getMonth()] + ' ' + dt.getDate();
+}
+
+/* Split a body into typed lines. `idx` is the real line index in the raw body,
+   which is what a checkbox toggle writes back to. */
+function _notesLines(body) {
+  var raw = String(body == null ? '' : body).replace(/\r\n?/g, '\n').split('\n');
+  var out = [];
+  for (var i = 0; i < raw.length; i++) {
+    var trimmed = raw[i].replace(/^\s+/, '').replace(/\s+$/, '');
+    if (!trimmed) { out.push({ kind:'gap', text:'', checked:false, idx:i }); continue; }
+    var chk = /^[-*]\s*\[( |x|X)\]\s*(.*)$/.exec(trimmed);
+    if (chk) { out.push({ kind:'check', text: chk[2], checked: chk[1].toLowerCase() === 'x', idx:i }); continue; }
+    var head = /^#{1,3}\s+(.*)$/.exec(trimmed);
+    if (head) { out.push({ kind:'head', text: head[1], checked:false, idx:i }); continue; }
+    var bul = /^[-*+]\s+(.*)$/.exec(trimmed);
+    if (bul) { out.push({ kind:'bullet', text: bul[1], checked:false, idx:i }); continue; }
+    var num = /^\d+[.)]\s+(.*)$/.exec(trimmed);
+    if (num) { out.push({ kind:'num', text: num[1], checked:false, idx:i }); continue; }
+    out.push({ kind:'text', text: trimmed, checked:false, idx:i });
+  }
+  return out;
+}
+
+/* Flip one checklist line in the raw body and return the new body. */
+function _notesToggleLine(body, idx) {
+  var raw = String(body == null ? '' : body).replace(/\r\n?/g, '\n').split('\n');
+  if (idx < 0 || idx >= raw.length) return body;
+  var m = /^(\s*[-*]\s*\[)( |x|X)(\][\s\S]*)$/.exec(raw[idx]);
+  if (!m) return body;
+  raw[idx] = m[1] + (m[2].toLowerCase() === 'x' ? ' ' : 'x') + m[3];
+  return raw.join('\n');
+}
+
+function _notesCounts(list) {
+  var open = 0, tasks = 0;
+  for (var i = 0; i < (list || []).length; i++) {
+    var ls = _notesLines(list[i].body);
+    for (var j = 0; j < ls.length; j++) {
+      if (ls[j].kind === 'check') { tasks++; if (!ls[j].checked) open++; }
+    }
+  }
+  return { open: open, tasks: tasks };
+}
+
+function _notesFirstLine(note) {
+  var ls = _notesLines(note && note.body);
+  for (var i = 0; i < ls.length; i++) { if (ls[i].kind !== 'gap') return ls[i].text; }
+  return '';
+}
+
+function _notesLabel(note) {
+  var t = String((note && note.title) || '').trim();
+  if (t) return t;
+  return _notesFirstLine(note) || 'Empty note';
+}
+
+function _notesWordCount(body) {
+  var s = String(body == null ? '' : body).trim();
+  return s ? s.split(/\s+/).length : 0;
+}
+
+/* One rendered line. `interactive` gates the checkbox hit area. */
+function _notesLineHtml(L, uid, noteId, interactive, compact) {
+  if (L.kind === 'check') {
+    /* Only the box carries the toggle. Putting it on the whole row meant that on
+       a checklist-heavy tile almost every click ticked something and the note
+       could barely be opened. The box grows a transparent hit area in CSS. */
+    var attrs = interactive
+      ? ' data-notes-check="' + escapeHtml(uid) + '" data-notes-id="' + escapeHtml(noteId) + '" data-notes-line="' + L.idx + '"'
+      : '';
+    return '<div class="w-note-line w-note-check' + (L.checked ? ' w-note-check-done' : '') + '">'
+      + '<span class="w-note-box' + (L.checked ? ' w-note-box-on' : '') + '"' + attrs + '>'
+      + NOTES_CHECK_SVG + '</span>'
+      + '<span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
+  }
+  if (L.kind === 'head') return '<div class="w-note-line w-note-line-head"><span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
+  if (L.kind === 'bullet') return '<div class="w-note-line w-note-line-bullet"><span class="w-note-bullet"></span><span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
+  if (L.kind === 'num') return '<div class="w-note-line w-note-line-num"><span class="w-note-bullet"></span><span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
+  return '<div class="w-note-line"><span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
+}
+
+/* Card layout — shared by default / lined / sticky / minimal, which the
+   stylesheet then differentiates. */
+function _notesCardsHtml(list, prefs, uid, interactive, modifier) {
+  var out = '';
+  for (var i = 0; i < list.length && i < NOTES_RENDER_CAP; i++) {
+    var n = list[i];
+    var lines = _notesLines(n.body);
+    var rows = '';
+    var used = 0;
+    var hidden = 0;
+    for (var j = 0; j < lines.length; j++) {
+      var L = lines[j];
+      if (L.kind === 'gap') continue;
+      if (used >= prefs.lines) { hidden++; continue; }
+      used++;
+      rows += _notesLineHtml(L, uid, n.id, interactive);
+    }
+    if (!rows) rows = '<div class="w-note-line w-note-line-empty"><span class="w-note-txt">Empty note</span></div>';
+    else if (hidden) rows += '<div class="w-note-line w-note-line-more"><span class="w-note-txt">+' + hidden + ' more</span></div>';
+    var title = String(n.title || '').trim();
+    /* Title and timestamp share one row: a separate meta line cost ~24px per
+       card, which is a whole extra note on a 240px tile. */
+    var when = (prefs.time && modifier !== 'minimal')
+      ? '<span class="w-note-time">' + escapeHtml(_notesRelTime(n.updated)) + '</span>'
+      : '';
+    var top = (title || n.pinned || when)
+      ? '<div class="w-note-top">'
+        + (n.pinned ? '<span class="w-note-pin" title="Pinned">' + NOTES_PIN_SVG + '</span>' : '')
+        + (title ? '<span class="w-note-title">' + escapeHtml(title) + '</span>' : '')
+        + when
+        + '</div>'
+      : '';
+    out += '<div class="w-note-card' + (n.color ? ' w-note-tint-' + n.color : '') + (n.pinned ? ' w-note-card-pinned' : '') + '"'
+      + ' data-notes-open="' + escapeHtml(uid) + '" data-notes-id="' + escapeHtml(n.id) + '"'
+      + ' title="' + escapeHtml(_notesLabel(n)) + '">'
+      + top
+      + '<div class="w-note-body">' + rows + '</div>'
+      + '</div>';
+  }
+  return out;
+}
+
+/* Compact layout — one dense row per note. */
+function _notesCompactHtml(list, prefs, uid, interactive) {
+  var out = '';
+  for (var i = 0; i < list.length && i < NOTES_RENDER_CAP; i++) {
+    var n = list[i];
+    var c = _notesCounts([n]);
+    out += '<div class="w-note-row' + (n.pinned ? ' w-note-row-pinned' : '') + '"'
+      + ' data-notes-open="' + escapeHtml(uid) + '" data-notes-id="' + escapeHtml(n.id) + '">'
+      + '<span class="w-note-swatch"' + (n.color ? ' style="background:' + (NOTES_TINT_HEX[n.color] || 'currentColor') + '"' : '') + '></span>'
+      + '<span class="w-note-rowlabel">' + escapeHtml(_notesLabel(n)) + '</span>'
+      + (c.tasks ? '<span class="w-note-badge">' + c.open + '/' + c.tasks + '</span>' : '')
+      + '</div>';
+  }
+  return out;
+}
+
+/* Checklist layout — every task line from every note, big and tappable. */
+function _notesChecklistHtml(list, prefs, uid, interactive) {
+  var out = '';
+  var count = 0;
+  var max = NOTES_RENDER_CAP;
+  for (var i = 0; i < list.length && count < max; i++) {
+    var n = list[i];
+    var lines = _notesLines(n.body);
+    var grouped = list.length > 1;
+    var head = grouped ? '<div class="w-note-group">' + escapeHtml(_notesLabel(n)) + '</div>' : '';
+    var rows = '';
+    for (var j = 0; j < lines.length && count < max; j++) {
+      if (lines[j].kind !== 'check') continue;
+      rows += _notesLineHtml(lines[j], uid, n.id, interactive);
+      count++;
+    }
+    if (rows) out += head + rows;
+  }
+  if (count) return out;
+  /* No task lines anywhere — show the plain text instead of a blank tile. */
+  var plain = 0;
+  for (var k = 0; k < list.length && plain < max; k++) {
+    var ls = _notesLines(list[k].body);
+    for (var m = 0; m < ls.length && plain < max; m++) {
+      if (ls[m].kind === 'gap') continue;
+      out += _notesLineHtml(ls[m], uid, list[k].id, false);
+      plain++;
+    }
+  }
+  return out;
+}
+
+function _notesBodyHtml(list, style, prefs, uid, isEdit) {
+  if (!list.length) return '';
+  var interactive = !isEdit;
+  if (style === 'checklist') return _notesChecklistHtml(list, prefs, uid, interactive);
+  if (style === 'compact') return _notesCompactHtml(list, prefs, uid, interactive);
+  return _notesCardsHtml(list, prefs, uid, interactive, style);
+}
+
+/* Post-render fitter. The tile is resizable, so how much fits cannot be decided
+   at render time — emit generously, then trim at real layout time and report
+   the rest in the footnote. Two things make it more than a naive clamp:
+   - the first unit that does not fit is *trimmed line by line* before it is
+     dropped, because hiding a whole 80px card to save 3px wastes most of a tile;
+   - it re-runs once with room reserved for the footnote, so a tile that fits
+     everything pays nothing for the footnote line.
+   Runs after the bubbles are in the document, like _applyEmptyState. */
+function _notesFit(grid) {
+  if (!grid) return;
+  Array.prototype.forEach.call(grid.querySelectorAll('.bento-bubble'), function(bub) {
+    var wrap = bub.querySelector('.w-notes-wrap');
+    if (!wrap) return;
+    var scroll = bub.querySelector('.bento-scroll');
+    if (!scroll || !scroll.clientHeight) return;
+
+    var mode = wrap.classList.contains('w-notes-compact') ? 'row'
+             : wrap.classList.contains('w-notes-checklist') ? 'line' : 'card';
+    var sel = mode === 'row' ? '.w-note-row' : mode === 'line' ? '.w-note-group, .w-note-line' : '.w-note-card';
+    var units = Array.prototype.slice.call(wrap.querySelectorAll(sel));
+    if (!units.length) return;
+
+    var foot = wrap.querySelector('.w-note-footnote');
+    _notesFitReset(wrap, foot);
+
+    var hidden = _notesFitPass(scroll, units, mode, 0);
+    if (hidden) {
+      _notesFitReset(wrap, foot);
+      hidden = _notesFitPass(scroll, units, mode, 16);
+    }
+    var extra = parseInt(wrap.dataset.notesExtra, 10) || 0;
+    if (foot && (hidden || extra)) {
+      foot.textContent = '+' + (hidden + extra) + ' more';
+      foot.classList.remove('hidden');
+    }
+    _notesRoominess(wrap, scroll, units);
+  });
+}
+
+/* The tile is resizable, so it is routinely much taller than its content. Left
+   alone that is a void — and worse, it makes the six styles look identical,
+   because there is nothing for them to lay out. Flag the slack instead and let
+   CSS grow the content into it. */
+function _notesRoominess(wrap, scroll, units) {
+  wrap.classList.remove('w-notes-roomy');
+  var visible = units.filter(function(u) { return !u.classList.contains('w-note-hidden'); });
+  if (!visible.length) return;
+  var foot = wrap.querySelector('.w-note-footnote');
+  var tail = (foot && !foot.classList.contains('hidden')) ? foot : visible[visible.length - 1];
+  var slack = scroll.getBoundingClientRect().bottom - tail.getBoundingClientRect().bottom;
+  if (slack > 28) wrap.classList.add('w-notes-roomy');
+}
+
+function _notesFitReset(wrap, foot) {
+  Array.prototype.forEach.call(wrap.querySelectorAll('.w-note-hidden'), function(el) { el.classList.remove('w-note-hidden'); });
+  Array.prototype.forEach.call(wrap.querySelectorAll('.w-note-fit-more'), function(el) { el.remove(); });
+  if (foot) { foot.classList.add('hidden'); foot.textContent = ''; }
+}
+
+/* Hides everything past the first unit that does not fit. Returns how many
+   units were dropped (a trimmed-but-kept card is not counted — its own
+   "+N more" line says the rest of it is out of view). */
+function _notesFitPass(scroll, units, mode, reserve) {
+  var limit = scroll.getBoundingClientRect().bottom - reserve;
+  var hidden = 0;
+  for (var i = 0; i < units.length; i++) {
+    if (units[i].getBoundingClientRect().bottom <= limit) continue;
+
+    if (mode === 'card') {
+      var body = units[i].querySelector('.w-note-body');
+      /* drop the render-time hint first, or the two counts stack up */
+      if (body) Array.prototype.forEach.call(body.querySelectorAll('.w-note-line-more'), function(el) { el.remove(); });
+      var lines = Array.prototype.slice.call(units[i].querySelectorAll('.w-note-line'))
+        .filter(function(el) { return !el.classList.contains('w-note-hidden'); });
+      var trimmed = 0;
+      for (var j = lines.length - 1; j >= 0; j--) {
+        if (units[i].getBoundingClientRect().bottom <= limit) break;
+        lines[j].classList.add('w-note-hidden');
+        trimmed++;
+      }
+      if (units[i].getBoundingClientRect().bottom > limit) {
+        /* bare, with every line hidden, it still does not fit — drop it whole */
+        units[i].classList.add('w-note-hidden');
+        hidden++;
+      } else if (trimmed && body) {
+        var more = document.createElement('div');
+        more.className = 'w-note-line w-note-line-more w-note-fit-more';
+        more.innerHTML = '<span class="w-note-txt">+' + trimmed + ' more</span>';
+        body.appendChild(more);
+        /* The hint is what tips it over. Rather than leave the card silently
+           short, drop the hint and let the tile footnote carry the signal —
+           a card that shows 2 of its 3 lines with no counter reads as complete. */
+        if (units[i].getBoundingClientRect().bottom > limit) {
+          more.remove();
+          hidden += trimmed;
+        }
+      }
+    } else {
+      units[i].classList.add('w-note-hidden');
+      hidden++;
+    }
+
+    for (var k = i + 1; k < units.length; k++) {
+      units[k].classList.add('w-note-hidden');
+      hidden++;
+    }
+    break;
+  }
+
+  /* A group header whose rows all got hidden reads as a bug, not a style. */
+  if (mode === 'line') {
+    for (var g = units.length - 1; g >= 0; g--) {
+      if (units[g].classList.contains('w-note-hidden')) continue;
+      if (!units[g].classList.contains('w-note-group')) break;
+      units[g].classList.add('w-note-hidden');
+      hidden++;
+    }
+  }
+  return hidden;
+}
+
 function renderHubBento() {
   try { if (typeof _reloadAllWidgetStyles === 'function') _reloadAllWidgetStyles(); } catch(e) {}
   if (typeof state !== 'undefined' && !state.images && typeof loadImages === 'function') loadImages();
@@ -1289,6 +1827,8 @@ function renderHubBento() {
   if (!hubContent.habits) hubContent.habits = [...defaults.habits];
   if (!hubContent.habitData) hubContent.habitData = {};
   if (hubContent.notes === undefined) hubContent.notes = '';
+  if (!Array.isArray(hubContent.notesList)) hubContent.notesList = [];
+  try { _notesSyncLegacy(); } catch(e) {}
   if (!hubContent.links) hubContent.links = defaults.links.map(l => ({...l}));
   if (!hubContent.water) hubContent.water = {...defaults.water};
   if (!hubContent.mood) hubContent.mood = { today:null, history:{} };
@@ -1296,6 +1836,8 @@ function renderHubBento() {
   if (!hubContent.homework) hubContent.homework = defaults.homework.map(h => ({...h}));
   if (!hubContent.study) hubContent.study = [];
   else hubContent.study = _normalizeStudy(hubContent.study);
+  if (!hubContent.weekplan || typeof hubContent.weekplan !== 'object') hubContent.weekplan = _weekplanBlank();
+  else if (_weekplanRollover()) { try { saveHubContent(); } catch (err) {} }
 
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   const isEdit = hubEditMode;
@@ -1351,6 +1893,7 @@ function renderHubBento() {
           + (type === 'alarm' ? _styleBtn('data-alarm-style-toggle="' + uid + '"', _getAlarmStyle(uid)) : '')
           + (type === 'pomodoro' ? _styleBtn('data-pomo-style-toggle="' + uid + '"', _getPomoStyle(uid)) : '')
           + (type === 'notes' ? _styleBtn('data-notes-style-toggle="' + uid + '"', _getNotesStyle(uid)) : '')
+          + (type === 'notes' ? '<button type="button" class="bento-tool-btn bento-tool-style" data-notes-opts="' + uid + '" title="Notes options — layout, text size, font, preview lines">' + NOTES_GEAR_SVG + '<span class="btool-label">Options</span></button>' : '')
           + (type === 'links' ? _styleBtn('data-links-style-toggle="' + uid + '"', _getLinksStyle(uid)) : '')
           + (type === 'quote' ? _styleBtn('data-quote-style-toggle="' + uid + '"', _getQuoteStyle(uid)) : '')
           + (type === 'countdown' ? _styleBtn('data-cd-style-toggle="' + uid + '"', _getCdStyle(uid)) : '')
@@ -1552,16 +2095,16 @@ function renderHubBento() {
         </div>`;
       }
       case 'notes': {
-        var _notesStyle = _getNotesStyle(uid);
-        var _notesClass = 'w-notes-wrap';
-        if (_notesStyle === 'lined') _notesClass = 'w-notes-wrap w-notes-lined';
-        if (_notesStyle === 'minimal') _notesClass = 'w-notes-wrap w-notes-minimal';
+        var _nStyle = _getNotesStyle(uid);
+        var _nPrefs = _getNotesPrefs(uid);
+        var _nList = _notesSorted();
+        var _nCounts = _notesCounts(_nList);
+        var _nExtra = _nStyle === 'checklist' ? 0 : Math.max(0, _nList.length - NOTES_RENDER_CAP);
+        var _nWrapCls = 'w-notes-wrap w-notes-' + _nStyle + ' w-notes-sz-' + _nPrefs.size + ' w-notes-ff-' + _nPrefs.font;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span>Notes</span></div>
-          <div class="${_notesClass}">
-            <div class="${isEdit ? 'hub-editable' : ''}" contenteditable="${isEdit}" data-save="notes">${e(hubContent.notes || '')}</div>
-          </div>
+          <div class="w-head">${NOTES_ICON}<span>Notes</span>${_nList.length > 1 ? '<span class="w-notes-count" title="' + _nList.length + ' notes">' + _nList.length + '</span>' : ''}${_nCounts.open ? '<span class="w-notes-todo" title="' + _nCounts.open + ' open task' + (_nCounts.open === 1 ? '' : 's') + '">' + _nCounts.open + '</span>' : ''}<button type="button" class="w-notes-new" data-notes-new="${uid}" title="New note" aria-label="New note">${NOTES_PLUS_SVG}</button></div>
+          <div class="${_nWrapCls}" data-notes-extra="${_nExtra}">${_notesBodyHtml(_nList, _nStyle, _nPrefs, uid, isEdit)}<div class="w-note-footnote hidden"></div></div>
         </div>`;
       }
       case 'links': {
@@ -1908,61 +2451,80 @@ function renderHubBento() {
           </div>`;
         }
       case 'sleep-score': {
-        var _sleepLogs = []; try { _sleepLogs = JSON.parse(localStorage.getItem('haven-schedule-sleep') || '[]'); } catch(e) {}
-        var _sleepTargets = {targetDuration:480}; try { _sleepTargets = JSON.parse(localStorage.getItem('haven-schedule-sleep-targets') || '{}'); } catch(e) {}
+        var _sleepLogs = (typeof loadSleepLogs === 'function') ? loadSleepLogs() : [];
+        var _sleepTargets = (typeof loadSleepTargets === 'function') ? loadSleepTargets() : { targetDuration: 480 };
+        var _fmtDur = function(m) {
+          if (!m || m < 0) return '\u2014';
+          if (typeof formatSleepMinutes === 'function') return formatSleepMinutes(m);
+          return m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm';
+        };
+        var _durOf = function(l) {
+          if (!l) return 0;
+          if (typeof l.duration === 'number' && l.duration > 0) return l.duration;
+          return (typeof calculateSleepDuration === 'function') ? calculateSleepDuration(l.bedtime, l.wakeTime) : 0;
+        };
         var _weekLogs = _sleepWeekLogs();
         var _loggedWeek = _weekLogs.filter(function(w) { return w.log; });
         var _lastEntry = _loggedWeek.length ? _loggedWeek[_loggedWeek.length - 1].log : (_sleepLogs.length ? _sleepLogs[_sleepLogs.length - 1] : null);
-        var _lastDur = _lastEntry ? (function(){ var b=_lastEntry.bedtime.split(':').map(Number), w=_lastEntry.wakeTime.split(':').map(Number); var bm=b[0]*60+b[1], wm=w[0]*60+w[1]; return wm <= bm ? wm+1440-bm : wm-bm; })() : 0;
+        var _lastDur = _durOf(_lastEntry);
         var _lastQual = _lastEntry ? _lastEntry.quality : 0;
-        var _durArr = _loggedWeek.map(function(w) { var l=w.log; var b=l.bedtime.split(':').map(Number), w2=l.wakeTime.split(':').map(Number); var bm=b[0]*60+b[1], wm=w2[0]*60+w2[1]; return wm <= bm ? wm+1440-bm : wm-bm; });
-        var _avgDur = _durArr.length ? Math.round(_durArr.reduce(function(s,d){ return s+d; },0) / _durArr.length) : 0;
-        var _avgQual = _loggedWeek.length ? (_loggedWeek.reduce(function(s,w){return s+(w.log.quality||0);},0) / _loggedWeek.length).toFixed(1) : '—';
-        var _target = _sleepTargets.targetDuration || 480;
+        var _durArr = _loggedWeek.map(function(w) { return _durOf(w.log); }).filter(function(d) { return d > 0; });
+        var _avgDur = _durArr.length ? Math.round(_durArr.reduce(function(s, d) { return s + d; }, 0) / _durArr.length) : 0;
+        var _avgQual = _loggedWeek.length ? (_loggedWeek.reduce(function(s, w) { return s + (w.log.quality || 0); }, 0) / _loggedWeek.length).toFixed(1) : '\u2014';
+        var _target = (_sleepTargets && _sleepTargets.targetDuration) || 480;
         var _score = _sleepScoreCalc(_sleepLogs, _weekLogs, _target);
         var _consist = (typeof getSleepConsistencyScore === 'function') ? getSleepConsistencyScore(_sleepLogs) : null;
         var _consistTxt = _consist ? (_consist.score >= 80 ? 'very consistent' : _consist.score >= 60 ? 'good rhythm' : _consist.score >= 40 ? 'some variation' : 'irregular') : '';
         var _circ = 2 * Math.PI * 15.5;
         var _pct = _score != null ? _score : 0;
         var _offset = _circ - (_pct / 100) * _circ;
-        var _durStr = _lastDur ? (_lastDur >= 60 ? Math.floor(_lastDur/60)+'h '+_lastDur%60+'m' : _lastDur+'m') : '—';
+        var _durStr = _lastDur ? _fmtDur(_lastDur) : '\u2014';
         var _scoreColor = _score == null ? 'var(--border-color)' : _score >= 80 ? '#10b981' : _score >= 60 ? '#3b82f6' : _score >= 40 ? '#f59e0b' : '#ef4444';
         var _scoreGlow = _score == null ? 'none' : _score >= 80 ? '0 0 12px #10b98166' : _score >= 60 ? '0 0 12px #3b82f666' : _score >= 40 ? '0 0 12px #f59e0b66' : '0 0 12px #ef444466';
+        var _todayStr = formatDate(new Date());
         var _bars = _weekLogs.map(function(w) {
-          var pct = w.log && w.log.duration ? Math.min(1, w.log.duration / (w.log.duration > 0 ? Math.max(_target, 1) : 480)) : 0;
+          var d = _durOf(w.log);
+          var pct = d ? Math.min(1, d / Math.max(_target, 1)) : 0;
           var fill = pct * 34;
-          var cls = 'ss-bar' + (w.log && w.log.duration >= _target ? ' ss-bar-hit' : '') + (w.ds === formatDate(new Date()) ? ' ss-bar-today' : '');
+          var cls = 'ss-bar' + (d >= _target ? ' ss-bar-hit' : '') + (w.ds === _todayStr ? ' ss-bar-today' : '');
           return '<div class="' + cls + '"><svg viewBox="0 0 6 36"><rect class="bg" x="0.5" y="1" width="5" height="34" rx="2.5"/><rect class="fill" x="0.5" y="' + (35 - fill) + '" width="5" height="' + fill + '" rx="2.5"/></svg><span>' + w.dow + '</span></div>';
         }).join('');
         var _ssStyle = _getSleepStyle(uid);
-        var _ssRingHtml = '<div class="ss-ring"><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-color)" stroke-width="2.5"></circle><circle class="fill" cx="18" cy="18" r="15.5" fill="none" stroke="' + _scoreColor + '" stroke-width="2.5" stroke-dasharray="' + _circ + '" stroke-dashoffset="' + _offset + '" stroke-linecap="round" transform="rotate(-90 18 18)" style="filter:drop-shadow(' + _scoreGlow + ')"></circle></svg><div class="ss-ring-val">' + (_score != null ? _score : '—') + '</div></div>';
+        var _ssRingHtml = '<div class="ss-ring"><svg viewBox="0 0 36 36"><circle class="bg" cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-color)" stroke-width="2.5"></circle><circle class="fill" cx="18" cy="18" r="15.5" fill="none" stroke="' + _scoreColor + '" stroke-width="2.5" stroke-dasharray="' + _circ + '" stroke-dashoffset="' + _offset + '" stroke-linecap="round" transform="rotate(-90 18 18)" style="filter:drop-shadow(' + _scoreGlow + ')"></circle></svg><div class="ss-ring-val">' + (_score != null ? _score : '\u2014') + '</div></div>';
         var _ssBody = '';
-        if (_ssStyle === 'minimal') {
+        var _ssLabel = 'Sleep' + (_score != null ? ', score ' + _score + ' out of 100' : '') + (_lastDur ? ', ' + _durStr + ' last night' : '') + '. Open the sleep log.';
+
+        if (!_sleepLogs.length) {
+          _ssBody = '<div class="ss-empty">'
+            + '<div class="ss-empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>'
+            + '<p class="ss-empty-title">No sleep logged yet</p>'
+            + '<p class="ss-empty-sub">Log a night to start your score, rhythm and 7-day chart.</p>'
+            + '<button class="ss-log-btn ss-log-btn-primary" data-ss-log type="button">Log a night</button>'
+            + '</div>';
+        } else if (_ssStyle === 'minimal') {
           var _minPct = _lastDur ? Math.min(100, Math.round((_lastDur / _target) * 100)) : 0;
-          _ssBody = '<div class="ss-minimal"><div class="ss-min-row">' + _ssRingHtml + '<div class="ss-min-info"><span class="ss-min-score">' + (_score != null ? _score : '—') + '</span><span class="ss-min-label">sleep score</span>' + (_consistTxt ? '<span class="ss-consist-pill">' + _consistTxt + '</span>' : '') + '</div></div><div class="ss-min-bar"><div class="ss-min-bar-fill" style="width:' + _minPct + '%;background:' + _scoreColor + '"></div></div><span class="ss-min-dur">' + _durStr + ' last night</span><button class="ss-log-btn" data-ss-log title="Log sleep">Log</button></div>';
+          _ssBody = '<div class="ss-minimal">'
+            + '<div class="ss-min-row">' + _ssRingHtml
+            + '<div class="ss-min-info"><span class="ss-min-label">Sleep score</span><span class="ss-min-note">' + _durStr + ' last night</span>'
+            + (_consistTxt ? '<span class="ss-consist-pill">' + _consistTxt + '</span>' : '') + '</div></div>'
+            + '<div class="ss-min-bar"><div class="ss-min-bar-fill" style="width:' + _minPct + '%;background:' + _scoreColor + '"></div></div>'
+            + '<div class="ss-min-foot"><span class="ss-min-target">' + _minPct + '% of ' + _fmtDur(_target) + ' target</span>'
+            + '<button class="ss-log-btn" data-ss-log type="button" title="Log sleep">Log</button></div>'
+            + '</div>';
         } else if (_ssStyle === 'detailed') {
-          var _qualityStars = '';
-          if (_lastQual) { for (var si = 0; si < 5; si++) _qualityStars += '<span class="ss-star' + (si < _lastQual ? ' ss-star-on' : '') + '">\u2605</span>'; }
           var _targetPct = _target > 0 ? Math.min(100, Math.round((_lastDur / _target) * 100)) : 0;
-          _ssBody = '<div class="ss-detailed"><div class="ss-det-header">' + _ssRingHtml + '<div class="ss-det-meta"><span class="ss-det-title">Sleep Score</span><span class="ss-det-sub">' + (_score == null ? 'Log 3+ nights this week' : _durStr + ' last night') + (_consistTxt ? ' \u00B7 ' + _consistTxt : '') + '</span></div></div><div class="ss-det-stats"><div class="ss-det-stat"><span class="ss-det-stat-val" style="color:' + _scoreColor + '">' + (_avgDur >= 60 ? Math.floor(_avgDur/60)+'h '+_avgDur%60+'m' : _avgDur+'m') + '</span><span class="ss-det-stat-lbl">avg sleep</span></div><div class="ss-det-stat"><span class="ss-det-stat-val">' + _avgQual + '<span class="ss-det-stat-unit">/5</span></span><span class="ss-det-stat-lbl">quality</span></div><div class="ss-det-stat"><span class="ss-det-stat-val">' + _targetPct + '<span class="ss-det-stat-unit">%</span></span><span class="ss-det-stat-lbl">of target</span></div><div class="ss-det-stat"><span class="ss-det-stat-val">' + _loggedWeek.length + '<span class="ss-det-stat-unit">/7</span></span><span class="ss-det-stat-lbl">nights</span></div></div><div class="ss-det-week">' + _bars + '</div><button class="ss-log-btn ss-log-btn-full" data-ss-log title="Log sleep">Log Sleep</button></div>';
+          _ssBody = '<div class="ss-detailed"><div class="ss-det-header">' + _ssRingHtml + '<div class="ss-det-meta"><span class="ss-det-title">Sleep Score</span><span class="ss-det-sub">' + (_score == null ? 'Log 3+ nights this week' : _durStr + ' last night') + (_consistTxt ? ' \u00B7 ' + _consistTxt : '') + '</span></div></div><div class="ss-det-stats"><div class="ss-det-stat"><span class="ss-det-stat-val" style="color:' + _scoreColor + '">' + _fmtDur(_avgDur) + '</span><span class="ss-det-stat-lbl">avg sleep</span></div><div class="ss-det-stat"><span class="ss-det-stat-val">' + _avgQual + '<span class="ss-det-stat-unit">/5</span></span><span class="ss-det-stat-lbl">quality</span></div><div class="ss-det-stat"><span class="ss-det-stat-val">' + _targetPct + '<span class="ss-det-stat-unit">%</span></span><span class="ss-det-stat-lbl">of target</span></div><div class="ss-det-stat"><span class="ss-det-stat-val">' + _loggedWeek.length + '<span class="ss-det-stat-unit">/7</span></span><span class="ss-det-stat-lbl">nights</span></div></div><div class="ss-det-week">' + _bars + '</div><button class="ss-log-btn ss-log-btn-full" data-ss-log type="button" title="Log sleep">Log Sleep</button></div>';
         } else if (_ssStyle === 'timeline') {
           var _timelineItems = _loggedWeek.slice(-7).map(function(w) {
-            var l = w.log;
-            var bParts = l.bedtime.split(':').map(Number);
-            var wParts = l.wakeTime.split(':').map(Number);
-            var bMin = bParts[0]*60+bParts[1];
-            var wMin = wParts[0]*60+wParts[1];
-            if (wMin <= bMin) wMin += 1440;
-            var dur = wMin - bMin;
-            var durStr = Math.floor(dur/60) + 'h' + (dur%60 > 0 ? ' ' + dur%60 + 'm' : '');
+            var dur = _durOf(w.log);
             var hitTarget = dur >= _target;
-            return '<div class="ss-tl-item' + (hitTarget ? ' ss-tl-hit' : '') + '"><span class="ss-tl-day">' + w.dow + '</span><div class="ss-tl-bar-wrap"><div class="ss-tl-bar" style="width:' + Math.min(100, Math.round((dur / Math.max(_target, 1)) * 100)) + '%"></div></div><span class="ss-tl-dur">' + durStr + '</span></div>';
+            return '<div class="ss-tl-item' + (hitTarget ? ' ss-tl-hit' : '') + '"><span class="ss-tl-day">' + w.dow + '</span><div class="ss-tl-bar-wrap"><div class="ss-tl-bar" style="width:' + Math.min(100, Math.round((dur / Math.max(_target, 1)) * 100)) + '%"></div></div><span class="ss-tl-dur">' + _fmtDur(dur) + '</span></div>';
           }).join('');
-          _ssBody = '<div class="ss-timeline"><div class="ss-tl-header">' + _ssRingHtml + '<div class="ss-tl-meta"><span class="ss-tl-score">' + (_score != null ? _score : '—') + '</span><span class="ss-tl-label">sleep score</span>' + (_consistTxt ? '<span class="ss-consist-pill">' + _consistTxt + '</span>' : '') + '</div></div><div class="ss-tl-list">' + (_timelineItems || '<span class="ss-tl-empty">No sleep logged yet</span>') + '</div><button class="ss-log-btn" data-ss-log title="Log sleep">Log</button></div>';
+          _ssBody = '<div class="ss-timeline"><div class="ss-tl-header">' + _ssRingHtml + '<div class="ss-tl-meta"><span class="ss-tl-label">Sleep score</span>' + (_consistTxt ? '<span class="ss-consist-pill">' + _consistTxt + '</span>' : '') + '</div></div><div class="ss-tl-list">' + (_timelineItems || '<span class="ss-tl-empty">No sleep logged yet</span>') + '</div><button class="ss-log-btn" data-ss-log type="button" title="Log sleep">Log</button></div>';
         } else {
-          _ssBody = '<div class="ss-top">' + _ssRingHtml + '<div class="ss-top-meta"><span class="ss-ring-label">sleep score</span><span class="ss-score-note">' + (_score == null ? 'log 3+ nights this week' : (_durStr + ' last night')) + (_consistTxt ? ' \u00B7 ' + _consistTxt : '') + '</span></div></div><div class="ss-bars">' + _bars + '</div><div class="ss-foot"><span class="ss-foot-item"><b>' + (_avgDur >= 60 ? Math.floor(_avgDur/60)+'h '+_avgDur%60+'m' : _avgDur+'m') + '</b> avg</span><span class="ss-foot-item"><b>' + _avgQual + '</b> /5 quality</span><button class="ss-log-btn" data-ss-log title="Log sleep">Log</button></div>';
+          _ssBody = '<div class="ss-top">' + _ssRingHtml + '<div class="ss-top-meta"><span class="ss-ring-label">sleep score</span><span class="ss-score-note">' + (_score == null ? 'log 3+ nights this week' : (_durStr + ' last night')) + (_consistTxt ? ' \u00B7 ' + _consistTxt : '') + '</span></div></div><div class="ss-bars">' + _bars + '</div><div class="ss-foot"><span class="ss-foot-item"><b>' + _fmtDur(_avgDur) + '</b> avg</span><span class="ss-foot-item"><b>' + _avgQual + '</b> /5 quality</span><button class="ss-log-btn" data-ss-log type="button" title="Log sleep">Log</button></div>';
         }
-        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span>Sleep</span></div><div class="ss-widget" data-ss-open="1" title="Log sleep">' + _ssBody + '</div></div>';
+        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><span>Sleep</span></div><div class="ss-widget" data-ss-open="1" role="button" tabindex="0" aria-label="' + escapeHtml(_ssLabel) + '" title="Open sleep log">' + _ssBody + '</div></div>';
       }
       case 'headlines': {
         const hlSource = _getHeadlineSource();
@@ -2541,6 +3103,57 @@ function renderHubBento() {
         }
         return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg><span>Study</span></div><div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _stCounts.pct + '%"></div></div><span class="w-hw-prog-text">' + _stCounts.done + '/' + _stCounts.total + ' done (' + _stCounts.pct + '%)</span></div><div class="w-list w-st-list">' + _stBody + '</div></div>';
       }
+      case 'weekplan': {
+        var _wk = _weekplanEnsure();
+        var _wkSubs = _weekplanSubjects();
+        var _wkToday = _weekplanTodayId();
+        var _wkStats = _weekplanStats(_wk.days);
+        var _wkTick = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        var _wkChipHtml = function(dayId, tag, done) {
+          var sub = null;
+          for (var si = 0; si < _wkSubs.length; si++) if (_wkSubs[si].id === tag) { sub = _wkSubs[si]; break; }
+          var lbl = sub ? sub.label : tag;
+          var col = sub ? sub.color : '#6366f1';
+          return '<button type="button" class="wk-chip' + (done ? ' wk-chip-done' : '') + '" data-wk-toggle="' + dayId + '|' + e(tag) + '" style="--wk-c:' + col + '" title="' + (done ? 'Done — click to undo' : 'Click once studied') + '">' +
+            '<span class="wk-chip-dot"></span><span class="wk-chip-lbl">' + e(lbl) + '</span>' +
+            (done ? '<span class="wk-chip-tick">' + _wkTick + '</span>' : '') + '</button>';
+        };
+        var _wkRows = '';
+        for (var _di = 0; _di < WEEKPLAN_DAYS.length; _di++) {
+          var _wkDay = WEEKPLAN_DAYS[_di];
+          var _wkItems = _wk.days[_wkDay.id] || [];
+          var _wkIsToday = _wkDay.id === _wkToday;
+          var _wkOpen = _weekplanPickerDay === _wkDay.id;
+          var _wkChips = '';
+          for (var _ii = 0; _ii < _wkItems.length; _ii++) _wkChips += _wkChipHtml(_wkDay.id, _wkItems[_ii].tag, _wkItems[_ii].done);
+          if (!_wkChips) _wkChips = '<span class="wk-rest">' + (_wkDay.id === 'sun' ? 'Rest day' : '—') + '</span>';
+          var _wkPicker = '';
+          if (_wkOpen) {
+            if (!_wkSubs.length) {
+              _wkPicker = '<div class="wk-pick"><span class="wk-pick-none">No subjects yet — add them on the Schedule page.</span></div>';
+            } else {
+              var _wkPk = '';
+              for (var _pi = 0; _pi < _wkSubs.length; _pi++) {
+                var _wkSub = _wkSubs[_pi];
+                var _wkHas = _weekplanHas(_wk.days, _wkDay.id, _wkSub.id);
+                _wkPk += '<button type="button" class="wk-pick-chip' + (_wkHas ? ' on' : '') + '" data-wk-add="' + _wkDay.id + '|' + e(_wkSub.id) + '" style="--wk-c:' + _wkSub.color + '">' +
+                  (_wkHas ? _wkTick : '<span class="wk-pick-plus">+</span>') + '<span>' + e(_wkSub.label) + '</span></button>';
+              }
+              _wkPicker = '<div class="wk-pick">' + _wkPk + '</div>';
+            }
+          }
+          _wkRows += '<div class="wk-row' + (_wkIsToday ? ' wk-row-today' : '') + '">' +
+            '<span class="wk-day">' + _wkDay.label + '</span>' +
+            '<div class="wk-chips">' + _wkChips + '</div>' +
+            '<button type="button" class="wk-add' + (_wkOpen ? ' open' : '') + '" data-wk-pick="' + _wkDay.id + '" title="' + (_wkOpen ? 'Close' : 'Add a subject') + '">' + (_wkOpen ? '\u00d7' : '+') + '</button>' +
+          '</div>' + _wkPicker;
+        }
+        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI +
+          '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h2M12 15h2"/></svg><span>Week Plan</span><em class="wk-range">' + _weekplanWeekLabel() + '</em></div>' +
+          '<div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _wkStats.pct + '%"></div></div><span class="w-hw-prog-text">' + _wkStats.done + '/' + _wkStats.total + ' done (' + _wkStats.pct + '%)</span></div>' +
+          '<div class="wk-body">' + _wkRows + '</div>' +
+        '</div>';
+      }
       case 'prayertime': {
         var _ptCached = _ptGetCache();
         var _ptBody = (_ptCached && _ptCached.timings)
@@ -2874,6 +3487,9 @@ function renderHubBento() {
         });
         _bub.appendChild(_scroll);
         grid.appendChild(_bub);
+        /* must run AFTER the bubble is in the document — it decides "is this body
+           actually blank?" from laid-out geometry, which is all zeroes off-document */
+        _applyEmptyState(_bub, item.t, item.uid);
       }
     } catch (e) {
       console.warn('Bento bubble render error:', item.t, e);
@@ -2907,7 +3523,7 @@ function renderHubBento() {
       var lon = parseFloat(el.dataset.fr24Lon) || -0.12;
       var frKey = '';
       try { frKey = localStorage.getItem('haven-fr24-key-' + el.id.replace('fr24-map-', '')) || ''; } catch(e) {}
-      var map = L.map(el, { zoomControl: false, attributionControl: false, maxZoom: 12, minZoom: 3 }).setView([lat, lon], 6);
+      var map = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, maxZoom: 12, minZoom: 3 }).setView([lat, lon], 6);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 12 }).addTo(map);
       el._leafletMap = map;
       el._flightMarkers = [];
@@ -3525,6 +4141,12 @@ function renderHubBento() {
   if (!grid._timerWired) {
     grid._timerWired = true;
     grid.addEventListener('keydown', function(e) {
+      var ssKey = (e.target && e.target.closest) ? e.target.closest('.ss-widget[data-ss-open]') : null;
+      if (ssKey && !hubEditMode && (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar')) {
+        e.preventDefault();
+        if (typeof openSleepLogModal === 'function') openSleepLogModal();
+        return;
+      }
       if (e.key !== 'Enter') return;
       var inp = (e.target && e.target.closest) ? e.target.closest('.weather-loc-input') : null;
       if (!inp) return;
@@ -3861,6 +4483,8 @@ function renderHubBento() {
 
   // ─── GitHub profile fetcher ─────────────────
   _fetchGithub(grid);
+  /* must run after the bubbles are laid out — it measures the scroll box */
+  try { _notesFit(grid); } catch(e) { console.warn('[notes] fit failed', e); }
 
   // ─── Widget pack fetchers ───────────────────
   _ptFetch(grid);
@@ -4259,6 +4883,366 @@ function showCanvasGuide() {
   document.getElementById('canvasGuideClose')?.addEventListener('click', function() { panel.remove(); overlay.remove(); });
 }
 
+/* ─── Notes: editor modal + options panel ─────────────────────────────────
+   The tile is for glancing; this is for writing. Both surfaces are built once
+   and reused, and both live on <body> so a hub re-render cannot tear them down
+   mid-edit. Autosave is debounced, and closing commits synchronously — the old
+   widget claimed "it saves as you type" while only saving on blur. */
+
+var _notesEdit = { uid:null, id:null, timer:null, dirty:false };
+
+function _notesTodayLabel() {
+  var d = new Date();
+  var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return mo[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+function _notesNewAndEdit(uid) {
+  var n = _notesAdd();
+  if (typeof renderHubBento === 'function') renderHubBento();
+  openNotesEditor(uid, n.id);
+  setTimeout(function() {
+    var t = document.getElementById('notesModalTitle');
+    if (t) { t.focus(); }
+  }, 60);
+}
+
+function _notesModalOpen() {
+  var m = document.getElementById('notesModal');
+  return !!(m && !m.classList.contains('hidden'));
+}
+
+/* Write the modal's fields back into the note. Returns true when something
+   actually changed, so callers can skip a needless repaint. */
+function _notesCommit() {
+  if (!_notesEdit.id) return false;
+  var n = _notesFind(_notesEdit.id);
+  if (!n) return false;
+  var tEl = document.getElementById('notesModalTitle');
+  var bEl = document.getElementById('notesModalBody');
+  var title = tEl ? tEl.value.replace(/^\s+/, '').replace(/\s+$/, '') : '';
+  var body = bEl ? bEl.value : '';
+  if (title === n.title && body === n.body) return false;
+  n.title = title;
+  n.body = body;
+  n.updated = Date.now();
+  _notesSave();
+  _notesEdit.dirty = true;
+  return true;
+}
+
+function _notesPaintStat(state) {
+  var el = document.getElementById('notesModalStat');
+  if (!el) return;
+  if (state === 'saving') { el.textContent = 'Saving…'; return; }
+  var bEl = document.getElementById('notesModalBody');
+  var body = bEl ? bEl.value : '';
+  var words = _notesWordCount(body);
+  var lines = body ? body.split('\n').length : 0;
+  el.textContent = words + ' word' + (words === 1 ? '' : 's')
+    + ' · ' + lines + ' line' + (lines === 1 ? '' : 's')
+    + ' · ' + (_notesEdit.dirty ? 'saved' : 'up to date');
+}
+
+function _notesQueueSave() {
+  _notesPaintStat('saving');
+  if (_notesEdit.timer) clearTimeout(_notesEdit.timer);
+  _notesEdit.timer = setTimeout(function() {
+    _notesEdit.timer = null;
+    _notesCommit();
+    _notesPaintStat();
+  }, 450);
+}
+
+function _notesPaintModal() {
+  var n = _notesFind(_notesEdit.id);
+  if (!n) return;
+  var pin = document.getElementById('notesModalPin');
+  if (pin) {
+    pin.classList.toggle('on', !!n.pinned);
+    pin.setAttribute('aria-pressed', n.pinned ? 'true' : 'false');
+    pin.textContent = n.pinned ? 'Pinned' : 'Pin';
+  }
+  var wrap = document.getElementById('notesModalColors');
+  if (wrap) {
+    Array.prototype.forEach.call(wrap.querySelectorAll('[data-notes-color]'), function(btn) {
+      var on = (btn.dataset.notesColor || '') === (n.color || '');
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  _notesPaintStat();
+}
+
+function _notesInsert(kind) {
+  var b = document.getElementById('notesModalBody');
+  if (!b) return;
+  var val = b.value;
+  var s = b.selectionStart, e2 = b.selectionEnd;
+  var lineStart = val.lastIndexOf('\n', s - 1) + 1;
+  var atLineStart = /^\s*$/.test(val.slice(lineStart, s));
+  var ins = '';
+  if (kind === 'check') ins = '- [ ] ';
+  else if (kind === 'bullet') ins = '- ';
+  else if (kind === 'num') ins = '1. ';
+  else if (kind === 'head') ins = '# ';
+  else if (kind === 'rule') ins = '---';
+  else if (kind === 'date') ins = _notesTodayLabel();
+  var pre = atLineStart ? '' : '\n';
+  b.value = val.slice(0, s) + pre + ins + val.slice(e2);
+  var caret = s + pre.length + ins.length;
+  try { b.setSelectionRange(caret, caret); } catch (err) {}
+  b.focus();
+  _notesQueueSave();
+}
+
+function _notesWireModal(m) {
+  var titleEl = m.querySelector('#notesModalTitle');
+  var bodyEl = m.querySelector('#notesModalBody');
+  if (titleEl) titleEl.addEventListener('input', _notesQueueSave);
+  if (bodyEl) bodyEl.addEventListener('input', _notesQueueSave);
+
+  var close = m.querySelector('#notesModalClose');
+  if (close) close.addEventListener('click', function() { closeNotesEditor(); });
+
+  Array.prototype.forEach.call(m.querySelectorAll('[data-notes-insert]'), function(btn) {
+    btn.addEventListener('click', function() { _notesInsert(this.dataset.notesInsert); });
+  });
+
+  var pin = m.querySelector('#notesModalPin');
+  if (pin) pin.addEventListener('click', function() {
+    var n = _notesFind(_notesEdit.id);
+    if (!n) return;
+    n.pinned = !n.pinned;
+    n.updated = Date.now();
+    _notesSave();
+    _notesEdit.dirty = true;
+    _notesPaintModal();
+  });
+
+  var dup = m.querySelector('#notesModalDup');
+  if (dup) dup.addEventListener('click', function() {
+    _notesCommit();
+    var srcId = _notesEdit.id;
+    var uid = _notesEdit.uid;
+    var copy = _notesDuplicate(srcId);
+    if (!copy) return;
+    _notesEdit.dirty = true;
+    if (typeof renderHubBento === 'function') renderHubBento();
+    openNotesEditor(uid, copy.id);
+    if (typeof showToast === 'function') showToast('Note duplicated', 'info', 1400);
+  });
+
+  var del = m.querySelector('#notesModalDel');
+  if (del) del.addEventListener('click', function() {
+    var n = _notesFind(_notesEdit.id);
+    if (!n) return;
+    if (typeof confirm === 'function' && !confirm('Delete this note?')) return;
+    _notesEdit.dirty = true;
+    _notesRemove(_notesEdit.id);
+    closeNotesEditor();
+    if (typeof showToast === 'function') showToast('Note deleted', 'info', 1400);
+  });
+
+  var colors = m.querySelector('#notesModalColors');
+  if (colors) colors.addEventListener('click', function(ev) {
+    var btn = ev.target.closest('[data-notes-color]');
+    if (!btn) return;
+    var n2 = _notesFind(_notesEdit.id);
+    if (!n2) return;
+    n2.color = btn.dataset.notesColor || '';
+    n2.updated = Date.now();
+    _notesSave();
+    _notesEdit.dirty = true;
+    _notesPaintModal();
+  });
+}
+
+function _notesBuildModal() {
+  var m = document.getElementById('notesModal');
+  if (m) return m;
+
+  var overlay = document.createElement('div');
+  overlay.id = 'notesOverlay';
+  overlay.className = 'notes-overlay hidden';
+  overlay.addEventListener('click', function() { closeNotesEditor(); });
+  document.body.appendChild(overlay);
+
+  var swatches = NOTES_COLOR_LIST.map(function(c) {
+    var label = c ? c.charAt(0).toUpperCase() + c.slice(1) : 'No colour';
+    return '<button type="button" class="notes-swatch' + (c ? ' notes-swatch-' + c : ' notes-swatch-none')
+      + '" data-notes-color="' + c + '" title="' + label + '" aria-label="' + label + '" aria-pressed="false"></button>';
+  }).join('');
+
+  m = document.createElement('div');
+  m.id = 'notesModal';
+  m.className = 'notes-modal hidden';
+  m.setAttribute('role', 'dialog');
+  m.setAttribute('aria-modal', 'true');
+  m.setAttribute('aria-label', 'Note editor');
+  m.innerHTML = ''
+    + '<div class="notes-modal-head">'
+    +   '<input id="notesModalTitle" class="notes-modal-title" type="text" placeholder="Title (optional)" maxlength="120" autocomplete="off">'
+    +   '<button type="button" class="notes-modal-x" id="notesModalClose" title="Close (Esc)" aria-label="Close">\u00D7</button>'
+    + '</div>'
+    + '<div class="notes-modal-tools">'
+    +   '<button type="button" class="notes-tool" data-notes-insert="check">Checklist</button>'
+    +   '<button type="button" class="notes-tool" data-notes-insert="bullet">Bullet</button>'
+    +   '<button type="button" class="notes-tool" data-notes-insert="num">Numbered</button>'
+    +   '<button type="button" class="notes-tool" data-notes-insert="head">Heading</button>'
+    +   '<button type="button" class="notes-tool" data-notes-insert="rule">Divider</button>'
+    +   '<button type="button" class="notes-tool" data-notes-insert="date">Date</button>'
+    + '</div>'
+    + '<textarea id="notesModalBody" class="notes-modal-body" spellcheck="true" placeholder="Write anything.&#10;&#10;- [ ] a checklist item&#10;- a bullet point&#10;# a heading"></textarea>'
+    + '<div class="notes-modal-foot">'
+    +   '<div class="notes-modal-colors" id="notesModalColors">' + swatches + '</div>'
+    +   '<span class="notes-modal-stat" id="notesModalStat"></span>'
+    +   '<button type="button" class="notes-modal-act" id="notesModalPin" aria-pressed="false">Pin</button>'
+    +   '<button type="button" class="notes-modal-act" id="notesModalDup">Duplicate</button>'
+    +   '<button type="button" class="notes-modal-act notes-modal-del" id="notesModalDel">Delete</button>'
+    + '</div>';
+  document.body.appendChild(m);
+  _notesWireModal(m);
+  return m;
+}
+
+function _notesOnNotesKeydown(e) {
+  if (!_notesModalOpen()) return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeNotesEditor(); return; }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); _notesCommit(); closeNotesEditor(); return; }
+  if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); e.stopPropagation(); _notesCommit(); _notesPaintStat(); }
+}
+
+function openNotesEditor(uid, noteId) {
+  var n = _notesFind(noteId);
+  if (!n) return;
+  _notesBuildModal();
+  if (_notesEdit.timer) { clearTimeout(_notesEdit.timer); _notesEdit.timer = null; }
+  _notesEdit.uid = uid || '';
+  _notesEdit.id = n.id;
+  _notesEdit.dirty = false;
+  var tEl = document.getElementById('notesModalTitle');
+  var bEl = document.getElementById('notesModalBody');
+  if (tEl) tEl.value = n.title || '';
+  if (bEl) bEl.value = n.body || '';
+  _notesPaintModal();
+  var m = document.getElementById('notesModal');
+  var o = document.getElementById('notesOverlay');
+  if (m) m.classList.remove('hidden');
+  if (o) o.classList.remove('hidden');
+  document.body.classList.add('notes-modal-open');
+  document.addEventListener('keydown', _notesOnNotesKeydown, true);
+  setTimeout(function() {
+    var b = document.getElementById('notesModalBody');
+    if (!b) return;
+    b.focus();
+    try { b.setSelectionRange(b.value.length, b.value.length); } catch (err) {}
+  }, 40);
+}
+
+function closeNotesEditor() {
+  if (_notesEdit.timer) { clearTimeout(_notesEdit.timer); _notesEdit.timer = null; }
+  _notesCommit();
+  var m = document.getElementById('notesModal');
+  var o = document.getElementById('notesOverlay');
+  if (m) m.classList.add('hidden');
+  if (o) o.classList.add('hidden');
+  document.body.classList.remove('notes-modal-open');
+  document.removeEventListener('keydown', _notesOnNotesKeydown, true);
+  var changed = _notesEdit.dirty;
+  _notesEdit.uid = null;
+  _notesEdit.id = null;
+  _notesEdit.dirty = false;
+  if (changed && typeof renderHubBento === 'function') renderHubBento();
+}
+
+/* ── display options ── */
+
+var _NOTES_OPT_GROUPS = [
+  { key:'style', label:'Layout',   vals: NOTES_STYLE_LIST, names: ['Cards','Compact','Lined','Checklist','Sticky','Minimal'] },
+  { key:'size',  label:'Text size', vals: NOTES_SIZE_LIST, names: ['S','M','L'] },
+  { key:'font',  label:'Font',      vals: NOTES_FONT_LIST, names: ['Sans','Serif','Mono'] },
+  { key:'lines', label:'Lines each',vals: [1,2,3,4,5,6], names: ['1','2','3','4','5','6'] },
+  { key:'time',  label:'Timestamps',vals: [1,0], names: ['On','Off'] }
+];
+
+function _notesPaintOptions(panel, uid) {
+  var style = _getNotesStyle(uid);
+  var prefs = _getNotesPrefs(uid);
+  var current = { style: style, size: prefs.size, font: prefs.font, lines: prefs.lines, time: prefs.time ? 1 : 0 };
+  Array.prototype.forEach.call(panel.querySelectorAll('[data-notes-opt]'), function(chip) {
+    var kind = chip.dataset.notesOpt;
+    var val = chip.dataset.notesVal;
+    var on = String(current[kind]) === String(val);
+    chip.classList.toggle('on', on);
+    chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+}
+
+function _notesWireOptions(panel, uid) {
+  var close = panel.querySelector('#notesOptsClose');
+  if (close) close.addEventListener('click', function() { closeNotesOptions(); });
+  panel.addEventListener('click', function(ev) {
+    var chip = ev.target.closest('[data-notes-opt]');
+    if (!chip) return;
+    ev.stopPropagation();
+    var kind = chip.dataset.notesOpt;
+    var val = chip.dataset.notesVal;
+    if (kind === 'style') _setNotesStyle(uid, val);
+    else if (kind === 'size') _setNotesPrefs(uid, { size: val });
+    else if (kind === 'font') _setNotesPrefs(uid, { font: val });
+    else if (kind === 'lines') _setNotesPrefs(uid, { lines: parseInt(val, 10) || 2 });
+    else if (kind === 'time') _setNotesPrefs(uid, { time: val === '1' });
+    _notesPaintOptions(panel, uid);
+    if (typeof renderHubBento === 'function') renderHubBento();
+  });
+}
+
+function closeNotesOptions() {
+  var p = document.getElementById('notesOptsPanel');
+  var c = document.getElementById('notesOptsCatcher');
+  if (p) p.remove();
+  if (c) c.remove();
+}
+
+function openNotesOptions(uid) {
+  if (!uid) return;
+  var existing = document.getElementById('notesOptsPanel');
+  if (existing) {
+    var same = existing.dataset.notesOptsUid === uid;
+    closeNotesOptions();
+    if (same) return;
+  }
+
+  var rows = _NOTES_OPT_GROUPS.map(function(g) {
+    var chips = g.vals.map(function(v, i) {
+      return '<button type="button" class="notes-chip" data-notes-opt="' + g.key + '" data-notes-val="' + v + '" aria-pressed="false">'
+        + escapeHtml(g.names[i] || String(v)) + '</button>';
+    }).join('');
+    return '<div class="notes-opts-row"><span class="notes-opts-label">' + escapeHtml(g.label) + '</span>'
+      + '<div class="notes-opts-chips">' + chips + '</div></div>';
+  }).join('');
+
+  /* transparent catcher — the canvas must stay visible and judgeable */
+  var catcher = document.createElement('div');
+  catcher.className = 'notes-opts-catcher';
+  catcher.id = 'notesOptsCatcher';
+  catcher.addEventListener('click', function() { closeNotesOptions(); });
+  document.body.appendChild(catcher);
+
+  var panel = document.createElement('div');
+  panel.className = 'notes-opts';
+  panel.id = 'notesOptsPanel';
+  panel.dataset.notesOptsUid = uid;
+  panel.innerHTML = '<div class="notes-opts-head"><span>Notes options</span>'
+    + '<button type="button" class="notes-opts-close" id="notesOptsClose" aria-label="Close">\u00D7</button></div>'
+    + '<div class="notes-opts-body">' + rows + '</div>'
+    + '<div class="notes-opts-foot">Tip: click a note in the tile to open the full editor.</div>';
+  document.body.appendChild(panel);
+  _notesWireOptions(panel, uid);
+  _notesPaintOptions(panel, uid);
+}
+
 /* ─── Hub skin (widget style) system ───────────────────────
    A skin is a set of CSS custom properties (--skin-*) defined on the
    [data-hub-skin="<id>"] root. style.css reads those tokens for both the live
@@ -4277,7 +5261,7 @@ var HUB_SKINS = [
   { id: 'hairline', name: 'Hairline', blurb: 'Ruled ledger, small caps' },
   { id: 'glass',    name: 'Frosted',  blurb: 'Translucent blur' },
   { id: 'paper',    name: 'Paper',    blurb: 'Warm cream, serif' },
-  { id: 'clay',     name: 'Clay',     blurb: 'Moulded pastel, lit rim' },
+  { id: 'clay',     name: 'Clay',     blurb: 'Moulded pastel, rimmed edge' },
   { id: 'outline',  name: 'Outline',  blurb: 'Dashed wireframe' },
   { id: 'framed',   name: 'Framed',   blurb: 'Plate inside a frame' },
   { id: 'aurora',   name: 'Aurora',   blurb: 'Soft gradient wash' },
@@ -4350,10 +5334,34 @@ function showStylePanel() {
     return;
   }
 
+  /* Transparent catcher, NOT .hub-popup-overlay: that class dims and blurs the
+     whole page, which hides the very widgets this panel exists to preview. */
   var overlay = document.createElement('div');
-  overlay.className = 'hub-popup-overlay';
+  overlay.className = 'skin-catcher';
   overlay.id = 'hubStyleOverlay';
   document.body.appendChild(overlay);
+
+  /* The catcher swallows clicks (so a stray click cannot trigger a widget
+     action) but must not swallow scrolling — otherwise you cannot scroll the
+     canvas to see widgets below the fold while the panel is open. */
+  overlay.addEventListener('wheel', function(ev) {
+    var sc = document.querySelector('.hub-main') || document.scrollingElement;
+    if (sc) sc.scrollTop += ev.deltaY;
+    ev.preventDefault();
+  }, { passive: false });
+
+  var _touchY = null;
+  overlay.addEventListener('touchstart', function(ev) {
+    _touchY = ev.touches.length ? ev.touches[0].clientY : null;
+  }, { passive: true });
+  overlay.addEventListener('touchmove', function(ev) {
+    if (_touchY === null || !ev.touches.length) return;
+    var y = ev.touches[0].clientY;
+    var sc = document.querySelector('.hub-main') || document.scrollingElement;
+    if (sc) sc.scrollTop += (_touchY - y);
+    _touchY = y;
+    ev.preventDefault();
+  }, { passive: false });
 
   var cards = '';
   for (var i = 0; i < HUB_SKINS.length; i++) cards += _skinPreviewHtml(HUB_SKINS[i].id);
@@ -5245,6 +6253,168 @@ function _wpTagList() {
   return out;
 }
 
+/* ─── Week plan helpers ────────────────────── */
+/* The Week Plan widget shows, for each day of the current week, which
+   schedule subjects the user means to study — and lets them tick each one
+   off. Subjects come from the same tag list the schedule page uses
+   (TAG_ORDER / TAG_LABELS, read through _wpTagList above), so adding a
+   subject in the pill manager makes it show up here with no extra wiring.
+   Nothing rolls over: an unticked day simply stays unticked. */
+
+var WEEKPLAN_DAYS = [
+  { id: 'mon', label: 'Mon' }, { id: 'tue', label: 'Tue' }, { id: 'wed', label: 'Wed' },
+  { id: 'thu', label: 'Thu' }, { id: 'fri', label: 'Fri' }, { id: 'sat', label: 'Sat' },
+  { id: 'sun', label: 'Sun' }
+];
+
+/* Which day row has its subject picker open. UI state only — never persisted,
+   so it resets on reload instead of leaking into the saved payload. */
+var _weekplanPickerDay = null;
+
+/* Monday of the week containing d, as a local YYYY-MM-DD key. Uses local
+   calendar parts (via _hubTodayKey), never toISOString, so a late-evening
+   clock in a +7 zone does not land on the previous day. */
+function _weekplanMonday(d) {
+  var t = d ? new Date(d.getTime()) : new Date();
+  t.setHours(0, 0, 0, 0);
+  t.setDate(t.getDate() - ((t.getDay() + 6) % 7));   /* Mon = 0 … Sun = 6 */
+  return _hubTodayKey(t);
+}
+
+function _weekplanTodayId(d) {
+  var t = d || new Date();
+  return WEEKPLAN_DAYS[(t.getDay() + 6) % 7].id;
+}
+
+function _weekplanBlank() {
+  var days = {};
+  for (var i = 0; i < WEEKPLAN_DAYS.length; i++) days[WEEKPLAN_DAYS[i].id] = [];
+  return { week: _weekplanMonday(), days: days };
+}
+
+/* Read + repair. Never throws on a half-written or hand-edited payload, and
+   drops anything that is not a {tag, done} pair. */
+function _weekplanEnsure() {
+  if (!hubContent || typeof hubContent !== 'object') return _weekplanBlank();
+  var wp = hubContent.weekplan;
+  if (!wp || typeof wp !== 'object' || Array.isArray(wp)) wp = hubContent.weekplan = _weekplanBlank();
+  if (typeof wp.week !== 'string') wp.week = _weekplanMonday();
+  if (!wp.days || typeof wp.days !== 'object' || Array.isArray(wp.days)) wp.days = {};
+  for (var i = 0; i < WEEKPLAN_DAYS.length; i++) {
+    var k = WEEKPLAN_DAYS[i].id;
+    var list = Array.isArray(wp.days[k]) ? wp.days[k] : [];
+    var clean = [];
+    for (var j = 0; j < list.length; j++) {
+      var it = list[j];
+      if (it && typeof it === 'object' && typeof it.tag === 'string' && it.tag) {
+        clean.push({ tag: it.tag, done: !!it.done });
+      }
+    }
+    wp.days[k] = clean;
+  }
+  return wp;
+}
+
+/* A new week starts → the board is cleared. Returns true when it cleared, so
+   the caller can persist; it is called from the render backfill, the same
+   place the Today widget resets itself. */
+function _weekplanRollover() {
+  var wp = _weekplanEnsure();
+  var mon = _weekplanMonday();
+  if (wp.week === mon) return false;
+  wp.week = mon;
+  for (var i = 0; i < WEEKPLAN_DAYS.length; i++) wp.days[WEEKPLAN_DAYS[i].id] = [];
+  return true;
+}
+
+function _weekplanStats(days) {
+  var total = 0, done = 0;
+  for (var i = 0; i < WEEKPLAN_DAYS.length; i++) {
+    var list = (days && days[WEEKPLAN_DAYS[i].id]) || [];
+    for (var j = 0; j < list.length; j++) { total++; if (list[j] && list[j].done) done++; }
+  }
+  return { done: done, total: total, pct: total ? Math.round((done / total) * 100) : 0 };
+}
+
+/* The subject list: the same ordered tags the schedule page's pill manager
+   shows, each with a real hex colour.
+
+   Deliberately NOT _wpTagList() (the homework widget's helper): that one always
+   merges TAG_LABELS keys on top of TAG_ORDER, which would resurrect starter
+   tags the user has hidden via applyCategoryPresetAtBoot() — it only prunes
+   TAG_ORDER. TAG_ORDER alone is the schedule page's real list; the TAG_LABELS
+   fallback is only for a brand-new profile, where initCustomCategories() has
+   nothing saved yet and TAG_ORDER is legitimately empty.
+
+   A hex (not var(--tag-x-text)) matters because those CSS vars only exist after
+   applyCardColors() has run — otherwise the chip dot would be transparent. */
+function _weekplanSubjects() {
+  var out = [], seen = {}, ids = [];
+  try {
+    if (typeof TAG_ORDER !== 'undefined' && TAG_ORDER && TAG_ORDER.length) {
+      for (var oi = 0; oi < TAG_ORDER.length; oi++) ids.push(TAG_ORDER[oi]);
+    }
+  } catch (err) {}
+  if (!ids.length) {
+    try {
+      if (typeof TAG_LABELS !== 'undefined' && TAG_LABELS) ids = Object.keys(TAG_LABELS);
+    } catch (err) {}
+  }
+  for (var i = 0; i < ids.length; i++) {
+    var id = ids[i];
+    if (!id || seen[id]) continue;
+    seen[id] = true;
+    var label = id;
+    try { if (typeof TAG_LABELS !== 'undefined' && TAG_LABELS && TAG_LABELS[id]) label = TAG_LABELS[id]; } catch (err) {}
+    var color = '#6366f1';
+    try { if (typeof getCategoryColor === 'function') color = getCategoryColor(id) || color; } catch (err) {}
+    out.push({ id: id, label: label, color: color });
+  }
+  return out;
+}
+
+function _weekplanHas(days, dayId, tag) {
+  var list = (days && days[dayId]) || [];
+  for (var i = 0; i < list.length; i++) if (list[i].tag === tag) return true;
+  return false;
+}
+
+function _weekplanToggle(dayId, tag) {
+  var wp = _weekplanEnsure();
+  var list = wp.days[dayId];
+  if (!list) return false;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].tag === tag) { list[i].done = !list[i].done; return true; }
+  }
+  return false;
+}
+
+/* Add the subject for that day — or remove it if it is already there, so the
+   same chip in the picker both adds and undoes. */
+function _weekplanAdd(dayId, tag) {
+  var wp = _weekplanEnsure();
+  var list = wp.days[dayId];
+  if (!list) return false;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].tag === tag) { list.splice(i, 1); return true; }
+  }
+  list.push({ tag: tag, done: false });
+  return true;
+}
+
+/* "5–11 Oct" style label for the header (or "28 Sep–4 Oct" across a month). */
+function _weekplanWeekLabel() {
+  var p = _weekplanMonday().split('-');
+  var start = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  var end = new Date(start.getTime());
+  end.setDate(end.getDate() + 6);
+  var M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (start.getMonth() === end.getMonth()) {
+    return start.getDate() + '–' + end.getDate() + ' ' + M[end.getMonth()];
+  }
+  return start.getDate() + ' ' + M[start.getMonth()] + '–' + end.getDate() + ' ' + M[end.getMonth()];
+}
+
 function _wpNum(v, fallback) {
   var n = parseFloat(v);
   return isFinite(n) ? n : (fallback || 0);
@@ -5824,6 +6994,7 @@ function bubbleTypeIcon(t) {
     text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
     homework: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
     study: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>',
+    weekplan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h2M12 15h2"/></svg>',
     prayertime: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/><path d="M18.5 17.5a5.5 5.5 0 01-6-6"/></svg>',
     bmkgquake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3l2.5-7 3 14 3-10 2.5 6 2-3H22"/></svg>',
     moneyflow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-8"/><polyline points="15 8 20 8 20 13"/></svg>',
@@ -5874,14 +7045,17 @@ function _wIconSmall(kind, isDay) {
   return '<svg ' + a + '><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>';
 }
 function _sleepWeekLogs() {
+  /* The last 7 NIGHTS ending today, oldest first — not the Mon-start calendar
+     week. A calendar week is empty every Monday morning, which is exactly when
+     you want to see the week you just had. */
   var logs = (typeof loadSleepLogs === 'function') ? loadSleepLogs() : [];
   var now = new Date();
-  var dow = (now.getDay() + 6) % 7;
+  var dows = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   var week = [];
-  for (var i = 0; i < 7; i++) {
-    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow + i);
+  for (var i = 6; i >= 0; i--) {
+    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
     var ds = formatDate(d);
-    week.push({ ds: ds, dow: ['S','M','T','W','T','F','S'][d.getDay()], log: logs.find(function(l) { return l.date === ds; }) || null });
+    week.push({ ds: ds, dow: dows[d.getDay()], log: logs.find(function(l) { return l.date === ds; }) || null });
   }
   return week;
 }
@@ -8987,11 +10161,11 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', today:'Today', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', alarm:'Alarm', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', crypto:'Crypto', homework:'Homework', study:'Study', upcoming:'Upcoming', streak:'Streak', budget:'Budget', airquality:'Air Quality', worldclock:'World Clock', savings:'Savings Goal', focuslog:'Focus Log', currency:'Currency', calculator:'Calculator', breathing:'Breathing', reading:'Reading', doodle:'Doodle', github:'GitHub', prayertime:'Prayer Times', bmkgquake:'Earthquake', moneyflow:'Money Flow', assistant:'Assistant', 'friends-live':'Friends', grades:'Grades', attendance:'Attendance', exams:'Exams', holidays:'Tanggal Merah', birthdays:'Birthdays', flashcards:'Flashcards', sleepdebt:'Sleep Debt', ytfeed:'Video Feed', watchlist:'Watchlist', musicviz:'Visualiser', pet:'Pet', garden:'Streak Garden', xp:'Level', badges:'Badges', money:'Money' };
-  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Alarms with sound + snooze', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', upcoming:'Next tasks on your schedule', streak:'Consecutive activity days', budget:'Monthly spend vs budget', airquality:'AQI, pollutants + UV', worldclock:'Times around the world', savings:'Progress toward a savings target', focuslog:'Track focused minutes per day', currency:'Live exchange rates', calculator:'Quick math with a keypad', breathing:'Guided breathing exercise', reading:'Books you are reading', doodle:'Quick sketch pad', github:'GitHub profile + repo stats', prayertime:'Subuh to Isya, next prayer countdown', bmkgquake:'Latest quake from BMKG live feed', moneyflow:'Auto-categorised spend, subscriptions + payday', assistant:'What to do next, from your own data', 'friends-live':'Who is online in your circle', grades:'Subject averages + what you need next', attendance:'Present, late, absent + absences left', exams:'Countdown + syllabus checklist', holidays:'Indonesian tanggal merah + cuti bersama', birthdays:'Upcoming birthdays you track', flashcards:'Spaced-repetition vocab cards', sleepdebt:'How much sleep you owe this week', ytfeed:'Saved YouTube and TikTok links', watchlist:'Films and series you are watching', musicviz:'Bars that react to sound', pet:'A creature that grows with your habits', garden:'A plant for every day you complete something', xp:'Your level and experience points', badges:'Achievements you have unlocked', money:'Piggy bank and wallet in one' };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', today:'Today', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', alarm:'Alarm', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', crypto:'Crypto', homework:'Homework', study:'Study', weekplan:'Week Plan', upcoming:'Upcoming', streak:'Streak', budget:'Budget', airquality:'Air Quality', worldclock:'World Clock', savings:'Savings Goal', focuslog:'Focus Log', currency:'Currency', calculator:'Calculator', breathing:'Breathing', reading:'Reading', doodle:'Doodle', github:'GitHub', prayertime:'Prayer Times', bmkgquake:'Earthquake', moneyflow:'Money Flow', assistant:'Assistant', 'friends-live':'Friends', grades:'Grades', attendance:'Attendance', exams:'Exams', holidays:'Tanggal Merah', birthdays:'Birthdays', flashcards:'Flashcards', sleepdebt:'Sleep Debt', ytfeed:'Video Feed', watchlist:'Watchlist', musicviz:'Visualiser', pet:'Pet', garden:'Streak Garden', xp:'Level', badges:'Badges', money:'Money' };
+  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', weekplan:'What to study each day this week', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Alarms with sound + snooze', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', upcoming:'Next tasks on your schedule', streak:'Consecutive activity days', budget:'Monthly spend vs budget', airquality:'AQI, pollutants + UV', worldclock:'Times around the world', savings:'Progress toward a savings target', focuslog:'Track focused minutes per day', currency:'Live exchange rates', calculator:'Quick math with a keypad', breathing:'Guided breathing exercise', reading:'Books you are reading', doodle:'Quick sketch pad', github:'GitHub profile + repo stats', prayertime:'Subuh to Isya, next prayer countdown', bmkgquake:'Latest quake from BMKG live feed', moneyflow:'Auto-categorised spend, subscriptions + payday', assistant:'What to do next, from your own data', 'friends-live':'Who is online in your circle', grades:'Subject averages + what you need next', attendance:'Present, late, absent + absences left', exams:'Countdown + syllabus checklist', holidays:'Indonesian tanggal merah + cuti bersama', birthdays:'Upcoming birthdays you track', flashcards:'Spaced-repetition vocab cards', sleepdebt:'How much sleep you owe this week', ytfeed:'Saved YouTube and TikTok links', watchlist:'Films and series you are watching', musicviz:'Bars that react to sound', pet:'A creature that grows with your habits', garden:'A plant for every day you complete something', xp:'Your level and experience points', badges:'Achievements you have unlocked', money:'Piggy bank and wallet in one' };
   var categories = [
     { name:'Productivity', short:'Productivity', types:['goals','priorities','todos','today','upcoming','habits','streak','focuslog','progress','assistant'] },
-    { name:'Study', short:'Study', types:['homework','study','grades','attendance','exams','flashcards'] },
+    { name:'Study', short:'Study', types:['homework','study','weekplan','grades','attendance','exams','flashcards'] },
     { name:'Wellness', short:'Wellness', types:['water','mood','sleep-score','sleepdebt','airquality','breathing','strava'] },
     { name:'Finance', short:'Finance', types:['crypto','budget','savings','currency','moneyflow','money'] },
     { name:'Utilities', short:'Utilities', types:['clock','worldclock','weather','calendar','timer','alarm','pomodoro','countdown','calculator'] },
@@ -9325,6 +10499,7 @@ function initBubbleDockDrag(dock) {
       links:{w:280,h:240},images:{w:280,h:210},'sleep-score':{w:280,h:280},headlines:{w:280,h:260},
       water:{w:280,h:180},mood:{w:280,h:200},countdown:{w:280,h:280},
       text:{w:280,h:160},crypto:{w:280,h:300},homework:{w:280,h:320},study:{w:280,h:420},
+      weekplan:{w:280,h:400},
       prayertime:{w:280,h:340},bmkgquake:{w:280,h:300},moneyflow:{w:280,h:420},assistant:{w:280,h:360},'friends-live':{w:280,h:320},
       grades:{w:280,h:340},attendance:{w:280,h:380},exams:{w:280,h:380},
       holidays:{w:280,h:300},birthdays:{w:280,h:300},flashcards:{w:280,h:300},
@@ -9841,6 +11016,53 @@ function setupHubEditEvents() {
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
     if (e.target.closest('.bento-bubble[data-suppress-click]')) return;
+    /* The shared empty state's CTA. The real add buttons only respond in edit mode
+       ([data-add] bails on !hubEditMode), so switch edit mode on first and then
+       click the real button — that keeps one implementation of "add an item". */
+    const emptyAdd = e.target.closest('[data-empty-add]');
+    if (emptyAdd) {
+      const field = emptyAdd.dataset.emptyAdd;
+      /* Notes is a content action, not a layout one — it does not need edit mode,
+         and there is no [data-add="notes"] button to forward to. */
+      if (field === 'notes') { _notesNewAndEdit(emptyAdd.dataset.emptyUid || ''); return; }
+      if (!hubEditMode) toggleHubEdit(true);
+      const realAdd = document.querySelector('[data-add="' + field + '"]');
+      if (realAdd) realAdd.click();
+      return;
+    }
+    /* Notes: tick a checklist line straight from the tile. Must run before the
+       row-open branch below, since the checkbox lives inside a note row. */
+    const notesCheck = e.target.closest('[data-notes-check]');
+    if (notesCheck) {
+      var _ncId = notesCheck.dataset.notesId;
+      var _ncLine = parseInt(notesCheck.dataset.notesLine, 10);
+      var _ncNote = _notesFind(_ncId);
+      if (_ncNote && !isNaN(_ncLine)) {
+        _ncNote.body = _notesToggleLine(_ncNote.body, _ncLine);
+        _ncNote.updated = Date.now();
+        _notesSave();
+        renderHubBento();
+      }
+      return;
+    }
+    /* Notes: open the editor for a note row / card. */
+    const notesOpen = e.target.closest('[data-notes-open]');
+    if (notesOpen) {
+      openNotesEditor(notesOpen.dataset.notesOpen, notesOpen.dataset.notesId);
+      return;
+    }
+    /* Notes: brand-new note. Works outside edit mode too. */
+    const notesNew = e.target.closest('[data-notes-new]');
+    if (notesNew) {
+      _notesNewAndEdit(notesNew.dataset.notesNew);
+      return;
+    }
+    /* Notes: display options (layout, size, font, preview lines). */
+    const notesOpts = e.target.closest('[data-notes-opts]');
+    if (notesOpts) {
+      openNotesOptions(notesOpts.dataset.notesOpts);
+      return;
+    }
     const addBtn = e.target.closest('[data-add]');
     if (!addBtn) return;
     if (!hubEditMode) return;
@@ -10283,6 +11505,34 @@ function setupHubEditEvents() {
         } else {
           hubContent.water.logged = idx + 1;
         }
+        saveHubContent();
+        renderHubBento();
+      }
+      return;
+    }
+    // Week plan: tick a subject off (or undo) for that day
+    var wkToggle = e.target.closest('[data-wk-toggle]');
+    if (wkToggle) {
+      var _wkT = String(wkToggle.dataset.wkToggle || '').split('|');
+      if (_wkT[0] && _wkT[1] && _weekplanToggle(_wkT[0], _wkT[1])) {
+        saveHubContent();
+        renderHubBento();
+      }
+      return;
+    }
+    // Week plan: open/close that day's subject picker
+    var wkPick = e.target.closest('[data-wk-pick]');
+    if (wkPick) {
+      var _wkP = wkPick.dataset.wkPick;
+      _weekplanPickerDay = (_weekplanPickerDay === _wkP) ? null : _wkP;
+      renderHubBento();
+      return;
+    }
+    // Week plan: add / remove a subject for that day
+    var wkAdd = e.target.closest('[data-wk-add]');
+    if (wkAdd) {
+      var _wkA = String(wkAdd.dataset.wkAdd || '').split('|');
+      if (_wkA[0] && _wkA[1] && _weekplanAdd(_wkA[0], _wkA[1])) {
         saveHubContent();
         renderHubBento();
       }
@@ -10865,6 +12115,7 @@ if (document.getElementById('hubAccessHub')) {
   }
   window.addEventListener('resize', positionHubFAB);
   window.addEventListener('resize', function() { if (typeof _fitTextWidgets === 'function') _fitTextWidgets(); });
+  window.addEventListener('resize', function() { if (typeof _notesFit === 'function') _notesFit(document.querySelector('.bento-grid')); });
 
   // Directly wire the FAB toggle + outside-close (skip if already wired by setupHubEditEvents)
   const _wireHubFab = () => {
