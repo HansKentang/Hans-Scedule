@@ -57,11 +57,35 @@ function _getCalStyle(uid) { return _calStyles[uid] || 'default'; }
 function _setCalStyle(uid, style) { _calStyles[uid] = style; try { localStorage.setItem(CAL_STYLES_KEY, JSON.stringify(_calStyles)); } catch(e) {} }
 
 const TODOS_STYLES_KEY = 'haven-todos-styles';
-const TODOS_STYLE_LIST = ['default','compact','progress'];
+const TODOS_STYLE_LIST = ['list','split','meter','timeline','chips','board'];
+/* The three ids that shipped before 2026-10-08. Map them, never drop them:
+   a saved {uid:'progress'} would otherwise fall through to the default and the
+   widget would silently change shape under the user. */
+const TODOS_LEGACY_STYLES = { 'default':'list', 'compact':'list', 'progress':'meter' };
 let _todosStyles = {};
 try { _todosStyles = JSON.parse(localStorage.getItem(TODOS_STYLES_KEY) || '{}'); } catch(e) {}
-function _getTodosStyle(uid) { return _todosStyles[uid] || 'default'; }
+function _getTodosStyle(uid) {
+  var v = _todosStyles[uid];
+  if (TODOS_LEGACY_STYLES[v]) return TODOS_LEGACY_STYLES[v];
+  return TODOS_STYLE_LIST.indexOf(v) !== -1 ? v : 'list';
+}
 function _setTodosStyle(uid, style) { _todosStyles[uid] = style; try { localStorage.setItem(TODOS_STYLES_KEY, JSON.stringify(_todosStyles)); } catch(e) {} }
+
+/* One task row, shared by all six to-do styles. The grid click handler finds a
+   task through `.w-item[data-idx] > .w-todo-box` (see the toggle branch at the
+   bottom of renderHubBento) — so every style must keep that exact pair, and
+   `extraCls` is the ONLY thing a style is allowed to vary. Do not inline a
+   per-style copy of this markup; that is how a style silently stops ticking. */
+var _TD_CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+var _TD_PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+function _tdTaskRow(t, i, isEdit, esc, extraCls) {
+  return '<div class="w-item ' + (extraCls || '') + (t.done ? ' w-item-done' : '') + '" data-idx="' + i + '">'
+    + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '')
+    + '<span class="w-todo-box' + (t.done ? ' w-todo-checked' : '') + '">' + (t.done ? _TD_CHECK_SVG : '') + '</span>'
+    + '<span class="w-item-text' + (t.done ? ' w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task\u2026" data-edit="todos" data-idx="' + i + '">' + esc(t.text) + '</span>'
+    + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">\u00D7</button>' : '')
+    + '</div>';
+}
 
 const HABITS_STYLES_KEY = 'haven-habits-styles';
 const HABITS_STYLE_LIST = ['default','list','minimal'];
@@ -303,6 +327,17 @@ try { _ghStyles = JSON.parse(localStorage.getItem(GH_STYLES_KEY) || '{}'); } cat
 function _getGhStyle(uid) { return _ghStyles[uid] || 'default'; }
 function _setGhStyle(uid, style) { _ghStyles[uid] = style; try { localStorage.setItem(GH_STYLES_KEY, JSON.stringify(_ghStyles)); } catch(e) {} }
 
+const WEEKPLAN_STYLES_KEY = 'haven-weekplan-styles';
+/* Four structures, not four spacings. 'default' vs 'minimal' differing by a
+   min-height is what made the notes style button look dead — each of these
+   answers a different question instead: whole week / whole matrix / today only
+   / only the days that actually have something. */
+const WEEKPLAN_STYLE_LIST = ['default','grid','today','list'];
+let _weekplanStyles = {};
+try { _weekplanStyles = JSON.parse(localStorage.getItem(WEEKPLAN_STYLES_KEY) || '{}'); } catch(e) {}
+function _getWeekplanStyle(uid) { return _weekplanStyles[uid] || 'default'; }
+function _setWeekplanStyle(uid, style) { _weekplanStyles[uid] = style; _weekplanPickerDay = null; _weekplanPickerCell = null; try { localStorage.setItem(WEEKPLAN_STYLES_KEY, JSON.stringify(_weekplanStyles)); } catch(e) {} }
+
 function _studyUid(p) { return (p || 'st') + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36); }
 function _normalizeStudy(list) {
   if (!Array.isArray(list)) return [];
@@ -477,6 +512,7 @@ function _reloadAllWidgetStyles() {
   _readStyles = _loadStyleMap(READ_STYLES_KEY);
   _doodleStyles = _loadStyleMap(DOODLE_STYLES_KEY);
   _ghStyles = _loadStyleMap(GH_STYLES_KEY);
+  _weekplanStyles = _loadStyleMap(WEEKPLAN_STYLES_KEY);
 }
 function _persistStyleMap(map, key) {
   try { localStorage.setItem(key, JSON.stringify(map)); } catch(e) {}
@@ -503,7 +539,8 @@ function _copyWidgetStyle(srcUid, dstUid) {
     [_currencyStyles, CURRENCY_STYLES_KEY], [_calcStyles, CALC_STYLES_KEY],
     [_breathStyles, BREATH_STYLES_KEY],
     [_readStyles, READ_STYLES_KEY], [_doodleStyles, DOODLE_STYLES_KEY],
-    [_ghStyles, GH_STYLES_KEY]
+    [_ghStyles, GH_STYLES_KEY],
+    [_weekplanStyles, WEEKPLAN_STYLES_KEY]
   ];
   for (var i = 0; i < pairs.length; i++) {
     var map = pairs[i][0];
@@ -513,6 +550,93 @@ function _copyWidgetStyle(srcUid, dstUid) {
       _persistStyleMap(map, key);
     }
   }
+}
+
+/* ─── Per-widget style picker ────────────────────────────────────────────
+   The Style button in a widget's edit toolbar used to cycle the list
+   (indexOf(cur) + 1 % length). Tolerable at 3 options, unusable at 6: five
+   clicks to reach the last one, and no way to see what the options even are
+   without stepping through them one at a time.
+
+   WIDGET_STYLES is the registry — a widget type only has to appear here for
+   the picker to work. Widgets not in the map keep their old cycle handler, so
+   this migrates one widget at a time instead of all 35 at once. */
+var WIDGET_STYLES = {
+  todos: { list: TODOS_STYLE_LIST, get: _getTodosStyle, set: _setTodosStyle }
+};
+
+/* Most ids are lowercase single words and title-case fine. Override only where
+   the raw id would read badly ("meter" -> "Meter" is fine; "board" -> "Board"). */
+var STYLE_LABELS = {
+  todos: { list: 'Checklist', split: 'Split', meter: 'Meter', timeline: 'Timeline', chips: 'Chips', board: 'Board' }
+};
+function _styleLabel(type, id) {
+  var m = STYLE_LABELS[type];
+  if (m && m[id]) return m[id];
+  var s = String(id);
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function closeStylePicker() {
+  var p = document.getElementById('hubStylePop');
+  if (p) p.remove();
+  document.removeEventListener('click', _stylePickerOutside, true);
+  document.removeEventListener('scroll', closeStylePicker, true);
+  window.removeEventListener('resize', closeStylePicker);
+}
+function _stylePickerOutside(ev) {
+  var pop = document.getElementById('hubStylePop');
+  if (!pop) { closeStylePicker(); return; }
+  if (pop.contains(ev.target)) return;
+  /* the Style button handles its own click (it toggles) — don't fight it */
+  if (ev.target.closest && ev.target.closest('.bento-tool-style')) return;
+  closeStylePicker();
+}
+
+function openStylePicker(uid, type, anchor) {
+  closeStylePicker();
+  var reg = WIDGET_STYLES[type];
+  if (!reg || !anchor) return;
+  var cur = reg.get(uid);
+  var pop = document.createElement('div');
+  pop.className = 'style-pop';
+  pop.id = 'hubStylePop';
+  pop.innerHTML = '<div class="style-pop-head">Widget style</div>' +
+    reg.list.map(function(id) {
+      var on = id === cur;
+      return '<button type="button" class="style-pop-item' + (on ? ' is-on' : '') + '" data-style-pick="' + id + '">' +
+        '<span class="style-pop-name">' + escapeHtml(_styleLabel(type, id)) + '</span>' +
+        (on ? '<span class="style-pop-tick">\u2713</span>' : '') +
+        '</button>';
+    }).join('');
+  document.body.appendChild(pop);
+
+  /* fixed + rect: the toolbar sits inside a scrollable, transformed canvas, so
+     offsetTop/offsetParent would be wrong */
+  var r = anchor.getBoundingClientRect();
+  var pw = pop.offsetWidth, ph = pop.offsetHeight;
+  var left = Math.min(Math.max(8, r.left), window.innerWidth - pw - 8);
+  var top = r.bottom + 6;
+  if (top + ph > window.innerHeight - 8) top = Math.max(8, r.top - ph - 6);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+
+  pop.addEventListener('click', function(ev) {
+    var b = ev.target.closest('[data-style-pick]');
+    if (!b) return;
+    ev.stopPropagation();
+    reg.set(uid, b.getAttribute('data-style-pick'));
+    closeStylePicker();
+    renderHubBento();
+  });
+
+  /* deferred: a listener registered during the opening click's own dispatch
+     can be invoked by that same click */
+  setTimeout(function() {
+    document.addEventListener('click', _stylePickerOutside, true);
+    document.addEventListener('scroll', closeStylePicker, true);
+    window.addEventListener('resize', closeStylePicker);
+  }, 0);
 }
 
 const HUB_VIS_KEY = 'haven-hub-visibility';
@@ -1951,13 +2075,13 @@ function renderHubBento() {
          </div>
          <div class="bento-toolbar-remove">
           <button class="bento-tool-btn bento-tool-delete bento-tool-icon-only" data-remove-bubble="${uid}" title="Remove this widget" aria-label="Remove this widget">${TRASH_SVG}</button></div>
-          ${ (type === 'clock' || type === 'weather' || type === 'sleep-score' || type === 'headlines' || type === 'calendar' || type === 'todos' || type === 'today' || type === 'habits' || type === 'mood' || type === 'water' || type === 'timer' || type === 'alarm' || type === 'pomodoro' || type === 'notes' || type === 'links' || type === 'quote' || type === 'countdown' || type === 'priorities' || type === 'progress' || type === 'goals' || type === 'images' || type === 'text' || type === 'homework' || type === 'upcoming' || type === 'streak' || type === 'budget' || type === 'airquality' || type === 'worldclock' || type === 'savings' || type === 'focuslog' || type === 'currency' || type === 'calculator' || type === 'breathing' || type === 'reading' || type === 'doodle' || type === 'github') ? `<div class="bento-toolbar-style">`
+          ${ (type === 'clock' || type === 'weather' || type === 'sleep-score' || type === 'headlines' || type === 'calendar' || type === 'todos' || type === 'today' || type === 'habits' || type === 'mood' || type === 'water' || type === 'timer' || type === 'alarm' || type === 'pomodoro' || type === 'notes' || type === 'links' || type === 'quote' || type === 'countdown' || type === 'priorities' || type === 'progress' || type === 'goals' || type === 'images' || type === 'text' || type === 'homework' || type === 'upcoming' || type === 'streak' || type === 'budget' || type === 'airquality' || type === 'worldclock' || type === 'savings' || type === 'focuslog' || type === 'currency' || type === 'calculator' || type === 'breathing' || type === 'reading' || type === 'doodle' || type === 'github' || type === 'weekplan') ? `<div class="bento-toolbar-style">`
           + (type === 'clock' ? _styleBtn('data-clock-style-toggle="' + uid + '"', _getClockStyle(uid)) : '')
           + (type === 'weather' ? _styleBtn('data-weather-style-toggle="' + uid + '"', _getWeatherStyle(uid)) : '')
           + (type === 'sleep-score' ? _styleBtn('data-sleep-style-toggle="' + uid + '"', _getSleepStyle(uid)) : '')
                     + (type === 'headlines' ? '<select class="bento-tool-btn bento-tool-style bento-headlines-select" data-headlines-source="' + uid + '" title="News source">' + Object.keys(_HL_SOURCES).map(function(sk) { return '<option value="' + sk + '"' + (sk === _getHeadlineSource() ? ' selected' : '') + '>' + _HL_SOURCES[sk].name + '</option>'; }).join('') + '</select>' : '')
           + (type === 'calendar' ? _styleBtn('data-cal-style-toggle="' + uid + '"', _getCalStyle(uid)) : '')
-          + (type === 'todos' ? _styleBtn('data-todos-style-toggle="' + uid + '"', _getTodosStyle(uid)) : '')
+          + (type === 'todos' ? _styleBtn('data-todos-style-toggle="' + uid + '"', _styleLabel('todos', _getTodosStyle(uid))) : '')
           + (type === 'today' ? _styleBtn('data-today-style-toggle="' + uid + '"', _getTodayStyle(uid)) : '')
           + (type === 'habits' ? _styleBtn('data-habits-style-toggle="' + uid + '"', _getHabitsStyle(uid)) : '')
           + (type === 'mood' ? _styleBtn('data-mood-style-toggle="' + uid + '"', _getMoodStyle(uid)) : '')
@@ -1989,6 +2113,7 @@ function renderHubBento() {
                     + (type === 'reading' ? _styleBtn('data-read-style-toggle="' + uid + '"', _getReadStyle(uid)) : '')
           + (type === 'doodle' ? _styleBtn('data-doodle-style-toggle="' + uid + '"', _getDoodleStyle(uid)) : '')
           + (type === 'github' ? _styleBtn('data-gh-style-toggle="' + uid + '"', _getGhStyle(uid)) : '')
+          + (type === 'weekplan' ? _styleBtn('data-weekplan-style-toggle="' + uid + '"', _getWeekplanStyle(uid)) : '')
           + `</div>` : ''}${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
@@ -2089,27 +2214,51 @@ function renderHubBento() {
       }
       case 'todos': {
         var _todosStyle = _getTodosStyle(uid);
-        var _todosDone = hubContent.todos.filter(function(t) { return t.done; }).length;
         var _todosTotal = hubContent.todos.length;
-        var _todosItems = '';
-        if (_todosStyle === 'progress') {
-          var _progPct = _todosTotal ? Math.round((_todosDone / _todosTotal) * 100) : 0;
-          _todosItems = '<div class="w-todos-progress"><div class="w-todos-prog-bar"><div class="w-todos-prog-fill" style="width:' + _progPct + '%"></div></div><span class="w-todos-prog-text">' + _todosDone + '/' + _todosTotal + ' done (' + _progPct + '%)</span></div>' + hubContent.todos.map(function(t, i) {
-            return '<div class="w-item' + (t.done ? ' w-item-done' : '') + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
-          }).join('');
-        } else if (_todosStyle === 'compact') {
-          _todosItems = hubContent.todos.map(function(t, i) {
-            return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box w-todo-box-sm ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
-          }).join('');
-        } else {
-          _todosItems = hubContent.todos.map(function(t, i) {
-            return '<div class="w-item" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '">' + (t.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todos" data-idx="' + i + '">×</button>' : '') + '</div>';
-          }).join('');
+        var _todosDone = hubContent.todos.filter(function(t) { return t.done; }).length;
+        var _todosPct = _todosTotal ? Math.round((_todosDone / _todosTotal) * 100) : 0;
+        var _tdRow = function(t, i, cls) { return _tdTaskRow(t, i, isEdit, e, cls); };
+        var _tdAdd = '<button class="w-add-btn" data-add="todos">' + _TD_PLUS_SVG + 'Add to-do</button>';
+        var _todosBody = '';
+
+        /* Empty: emit nothing but the shell so _applyEmptyState() supplies the CTA.
+           Any decorative chrome here (a 0/0 ring, an empty rail) would read as
+           content and suppress it. */
+        if (_todosTotal) {
+          if (_todosStyle === 'split') {
+            var _tdOpen = [], _tdDone = [];
+            hubContent.todos.forEach(function(t, i) { (t.done ? _tdDone : _tdOpen).push(_tdRow(t, i, '')); });
+            _todosBody = '<div class="w-td-split">'
+              + '<div class="w-td-col"><span class="w-td-colhead"><span>To do</span><i>' + _tdOpen.length + '</i></span><div class="w-td-collist">' + _tdOpen.join('') + '</div></div>'
+              + '<div class="w-td-col"><span class="w-td-colhead"><span>Done</span><i>' + _tdDone.length + '</i></span><div class="w-td-collist">' + _tdDone.join('') + '</div></div>'
+              + '</div>' + _tdAdd;
+          } else if (_todosStyle === 'meter') {
+            /* Only unfinished tasks are listed — so in edit mode show everything,
+               otherwise a done task cannot be edited or deleted at all. */
+            var _tdRingR = 26, _tdRingC = 2 * Math.PI * _tdRingR;
+            var _tdRest = hubContent.todos.map(function(t, i) { return (t.done && !isEdit) ? '' : _tdRow(t, i, 'w-td-restrow'); }).join('');
+            _todosBody = '<div class="w-td-meter">'
+              + '<div class="w-td-ring"><svg viewBox="0 0 64 64">'
+              + '<circle cx="32" cy="32" r="' + _tdRingR + '" fill="none" stroke="var(--border-subtle)" stroke-width="4"/>'
+              + '<circle cx="32" cy="32" r="' + _tdRingR + '" fill="none" stroke="var(--bubble-accent, var(--primary))" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + ((_todosPct / 100) * _tdRingC).toFixed(1) + ' ' + _tdRingC.toFixed(1) + '"/>'
+              + '</svg><div class="w-td-ringnum"><b>' + _todosDone + '/' + _todosTotal + '</b><i>done</i></div></div>'
+              + '<div class="w-td-rest"><span class="w-td-resthead">' + (_todosTotal - _todosDone) + ' left</span>'
+              + (_tdRest || '<span class="w-td-allclear">All done</span>')
+              + '</div></div>' + _tdAdd;
+          } else if (_todosStyle === 'timeline') {
+            _todosBody = '<div class="w-td-rail">' + hubContent.todos.map(function(t, i) { return _tdRow(t, i, 'w-td-node'); }).join('') + '</div>' + _tdAdd;
+          } else if (_todosStyle === 'chips') {
+            _todosBody = '<div class="w-td-chips">' + hubContent.todos.map(function(t, i) { return _tdRow(t, i, 'w-td-chip'); }).join('') + '</div>' + _tdAdd;
+          } else if (_todosStyle === 'board') {
+            _todosBody = '<div class="w-td-board">' + hubContent.todos.map(function(t, i) { return _tdRow(t, i, 'w-td-tile'); }).join('') + '</div>' + _tdAdd;
+          } else {
+            _todosBody = '<div class="w-list w-td-list">' + hubContent.todos.map(function(t, i) { return _tdRow(t, i, ''); }).join('') + _tdAdd + '</div>';
+          }
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>To Do's</span></div>
-          <div class="w-list">${_todosItems}<button class="w-add-btn" data-add="todos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to-do</button></div>
+          ${_todosBody}
         </div>`;
       }
       case 'today': {
@@ -3180,51 +3329,215 @@ function renderHubBento() {
         var _wk = _weekplanEnsure();
         var _wkSubs = _weekplanSubjects();
         var _wkToday = _weekplanTodayId();
+        var _wkTodayIdx = _weekplanDayIndex(_wkToday);
         var _wkStats = _weekplanStats(_wk.days);
+        var _wkStyle = _getWeekplanStyle(uid);
+        var _wkNums = _weekplanDayNums();
         var _wkTick = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        var _wkSub = function(tag) {
+          for (var si = 0; si < _wkSubs.length; si++) if (_wkSubs[si].id === tag) return _wkSubs[si];
+          return { id: tag, label: tag, color: '#6366f1' };
+        };
+        var _wkSlot = function(dayId, idx) {
+          return _weekplanSlot(_wk.days, dayId, idx);
+        };
         var _wkChipHtml = function(dayId, tag, done) {
-          var sub = null;
-          for (var si = 0; si < _wkSubs.length; si++) if (_wkSubs[si].id === tag) { sub = _wkSubs[si]; break; }
-          var lbl = sub ? sub.label : tag;
-          var col = sub ? sub.color : '#6366f1';
-          return '<button type="button" class="wk-chip' + (done ? ' wk-chip-done' : '') + '" data-wk-toggle="' + dayId + '|' + e(tag) + '" style="--wk-c:' + col + '" title="' + (done ? 'Done — click to undo' : 'Click once studied') + '">' +
-            '<span class="wk-chip-dot"></span><span class="wk-chip-lbl">' + e(lbl) + '</span>' +
+          var sub = _wkSub(tag);
+          return '<button type="button" class="wk-chip' + (done ? ' wk-chip-done' : '') + '" data-wk-toggle="' + dayId + '|' + e(tag) + '" style="--wk-c:' + sub.color + '" title="' + (done ? 'Done — click to undo' : 'Click once studied') + '">' +
+            '<span class="wk-chip-dot"></span><span class="wk-chip-lbl">' + e(sub.label) + '</span>' +
             (done ? '<span class="wk-chip-tick">' + _wkTick + '</span>' : '') + '</button>';
         };
-        var _wkRows = '';
-        for (var _di = 0; _di < WEEKPLAN_DAYS.length; _di++) {
-          var _wkDay = WEEKPLAN_DAYS[_di];
-          var _wkItems = _wk.days[_wkDay.id] || [];
-          var _wkIsToday = _wkDay.id === _wkToday;
-          var _wkOpen = _weekplanPickerDay === _wkDay.id;
-          var _wkChips = '';
-          for (var _ii = 0; _ii < _wkItems.length; _ii++) _wkChips += _wkChipHtml(_wkDay.id, _wkItems[_ii].tag, _wkItems[_ii].done);
-          if (!_wkChips) _wkChips = '<span class="wk-rest">' + (_wkDay.id === 'sun' ? 'Rest day' : '—') + '</span>';
-          var _wkPicker = '';
-          if (_wkOpen) {
-            if (!_wkSubs.length) {
-              _wkPicker = '<div class="wk-pick"><span class="wk-pick-none">No subjects yet — add them on the Schedule page.</span></div>';
-            } else {
-              var _wkPk = '';
-              for (var _pi = 0; _pi < _wkSubs.length; _pi++) {
-                var _wkSub = _wkSubs[_pi];
-                var _wkHas = _weekplanHas(_wk.days, _wkDay.id, _wkSub.id);
-                _wkPk += '<button type="button" class="wk-pick-chip' + (_wkHas ? ' on' : '') + '" data-wk-add="' + _wkDay.id + '|' + e(_wkSub.id) + '" style="--wk-c:' + _wkSub.color + '">' +
-                  (_wkHas ? _wkTick : '<span class="wk-pick-plus">+</span>') + '<span>' + e(_wkSub.label) + '</span></button>';
-              }
-              _wkPicker = '<div class="wk-pick">' + _wkPk + '</div>';
-            }
+        var _wkPickerHtml = function(dayId, extra) {
+          var cls = 'wk-pick' + (extra ? ' ' + extra : '');
+          if (!_wkSubs.length) return '<div class="' + cls + '"><span class="wk-pick-none">No subjects yet — add them on the Schedule page.</span></div>';
+          var pk = '';
+          for (var pi = 0; pi < _wkSubs.length; pi++) {
+            var ps = _wkSubs[pi];
+            var has = _weekplanHas(_wk.days, dayId, ps.id);
+            pk += '<button type="button" class="wk-pick-chip' + (has ? ' on' : '') + '" data-wk-add="' + dayId + '|' + e(ps.id) + '" style="--wk-c:' + ps.color + '">' +
+              (has ? _wkTick : '<span class="wk-pick-plus">+</span>') + '<span>' + e(ps.label) + '</span></button>';
           }
-          _wkRows += '<div class="wk-row' + (_wkIsToday ? ' wk-row-today' : '') + '">' +
-            '<span class="wk-day">' + _wkDay.label + '</span>' +
-            '<div class="wk-chips">' + _wkChips + '</div>' +
-            '<button type="button" class="wk-add' + (_wkOpen ? ' open' : '') + '" data-wk-pick="' + _wkDay.id + '" title="' + (_wkOpen ? 'Close' : 'Add a subject') + '">' + (_wkOpen ? '\u00d7' : '+') + '</button>' +
-          '</div>' + _wkPicker;
+          return '<div class="' + cls + '">' + pk + '</div>';
+        };
+        /* The picker for ONE box. It leads with the studied toggle, so a box that
+           is already planned can still be ticked off without leaving this style,
+           and its current subject's chip doubles as "empty this box" — the same
+           tap-again-to-undo the day picker uses. */
+        var _wkCellPickerHtml = function(dayId, idx) {
+          if (!dayId || !(idx >= 0)) return '';
+          var cur = _wkSlot(dayId, idx);
+          var dayLbl = dayId;
+          for (var di = 0; di < WEEKPLAN_DAYS.length; di++) if (WEEKPLAN_DAYS[di].id === dayId) dayLbl = WEEKPLAN_DAYS[di].label;
+          var head = '<div class="wk-pick-head">' + e(dayLbl) + ' · box ' + (idx + 1) + '</div>';
+          if (!_wkSubs.length) return '<div class="wk-pick wk-pick-wide"><div class="wk-pick-head">' + e(dayLbl) + ' · box ' + (idx + 1) + '</div><span class="wk-pick-none">No subjects yet — add them on the Schedule page.</span></div>';
+          var inner = '';
+          if (cur) {
+            var cs = _wkSub(cur.tag);
+            inner += '<button type="button" class="wk-pick-chip wk-pick-study' + (cur.done ? ' on' : '') + '" data-wk-toggle="' + dayId + '|' + e(cur.tag) + '" style="--wk-c:' + cs.color + '" title="' + (cur.done ? 'Studied — click to undo' : 'Mark ' + cs.label + ' as studied') + '">' +
+              (cur.done ? _wkTick : '<span class="wk-pick-plus">\u2713</span>') + '<span>' + (cur.done ? 'Studied' : 'Mark studied') + '</span></button>';
+          }
+          for (var pi = 0; pi < _wkSubs.length; pi++) {
+            var ps = _wkSubs[pi];
+            var isCur = !!(cur && cur.tag === ps.id);
+            inner += '<button type="button" class="wk-pick-chip' + (isCur ? ' on' : '') + '" data-wk-set="' + dayId + '|' + idx + '|' + e(ps.id) + '" style="--wk-c:' + ps.color + '" title="' + (isCur ? 'Empty this box' : 'Put ' + ps.label + ' in this box') + '">' +
+              (isCur ? _wkTick : '<span class="wk-pick-plus">+</span>') + '<span>' + e(ps.label) + '</span></button>';
+          }
+          return '<div class="wk-pick wk-pick-wide wk-pick-cell">' + head + inner + '</div>';
+        };
+        /* The two empty states. 'list' hides every empty day by design, so with
+           nothing planned it would otherwise render one line of text, 75% dead
+           space, and no way to plan anything at all — hence the CTA, which
+           hands the user to the style where every day has a +. */
+        var _wkEmptyHtml = function(kind) {
+          var ico = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h2M12 15h2"/></svg>';
+          if (kind === 'nosubs') {
+            return '<div class="w-empty"><div class="w-empty-ico">' + ico + '</div><p class="w-empty-title">No subjects yet</p><p class="w-empty-hint">Add your subjects on the Schedule page — this widget plans them across the week.</p></div>';
+          }
+          return '<div class="w-empty"><div class="w-empty-ico">' + ico + '</div><p class="w-empty-title">Nothing planned yet</p><p class="w-empty-hint">Give each day a subject. This style only lists the days that have something.</p><button type="button" class="w-empty-cta" data-wk-rows="1">Plan some days</button></div>';
+        };
+        var _wkEmpty = '';
+        var _wkBody = '';
+        if (_wkStyle === 'grid') {
+          if (!_wkSubs.length) {
+            _wkEmpty = _wkEmptyHtml('nosubs');
+          } else {
+            /* Rows are SLOTS, not subjects: box i of a day is days[day][i], so any
+               subject can go in any box. The row count follows the fullest day
+               plus one spare, which is what makes a fifth subject reachable
+               without a separate "add" row — every day always has a free box. */
+            var _wkSlots = 4;
+            for (var _wi = 0; _wi < WEEKPLAN_DAYS.length; _wi++) {
+              _wkSlots = Math.max(_wkSlots, _weekplanCount(_wk.days[WEEKPLAN_DAYS[_wi].id]) + 1);
+            }
+            var _wkGDays = '';
+            for (var _hi = 0; _hi < WEEKPLAN_DAYS.length; _hi++) {
+              _wkGDays += '<span class="wk-gday' + (WEEKPLAN_DAYS[_hi].id === _wkToday ? ' is-today' : '') + '">' + WEEKPLAN_DAYS[_hi].label.charAt(0) + '</span>';
+            }
+            var _wkGRows = '';
+            for (var _si = 0; _si < _wkSlots; _si++) {
+              var _wkCells = '';
+              for (var _ci = 0; _ci < WEEKPLAN_DAYS.length; _ci++) {
+                var _cd = WEEKPLAN_DAYS[_ci];
+                var _cit = _wkSlot(_cd.id, _si);
+                var _cSub = _cit ? _wkSub(_cit.tag) : null;
+                var _cDone = !!(_cit && _cit.done);
+                var _cOpen = _weekplanPickerCell === _cd.id + '|' + _si;
+                var _cPos = _cd.label + ' box ' + (_si + 1);
+                var _cTitle = _cit
+                  ? _cSub.label + ' · ' + _cPos + (_cDone ? ' — studied, click to change' : ' — click to change or tick off')
+                  : _cPos + ' — empty, click to choose a subject';
+                _wkCells += '<button type="button" class="wk-cell' + (_cit ? ' on' : '') + (_cDone ? ' done' : '') + (_cOpen ? ' open' : '') + (_cd.id === _wkToday ? ' is-today' : '') + '"' +
+                  ' data-wk-cell="' + _cd.id + '|' + _si + '"' +
+                  (_cit ? ' style="--wk-c:' + _cSub.color + '"' : '') +
+                  ' title="' + e(_cTitle) + '" aria-label="' + e(_cTitle) + '">' +
+                  (_cDone ? _wkTick : (_cit ? '<span class="wk-cell-lbl">' + e(_cSub.label.charAt(0).toUpperCase()) + '</span>' : '')) + '</button>';
+              }
+              _wkGRows += '<div class="wk-grow"><span class="wk-gslot">' + (_si + 1) + '</span><div class="wk-gcells">' + _wkCells + '</div></div>';
+            }
+            var _wkCellPick = '';
+            if (_weekplanPickerCell) {
+              var _cp = String(_weekplanPickerCell).split('|');
+              if (_cp.length === 2) _wkCellPick = _wkCellPickerHtml(_cp[0], parseInt(_cp[1], 10));
+            }
+            _wkBody = '<div class="wk-body wk-grid">' +
+              '<div class="wk-ghead"><span class="wk-gslot"></span><div class="wk-gcells">' + _wkGDays + '</div></div>' +
+              _wkGRows + _wkCellPick +
+              '</div>';
+          }
+        } else if (_wkStyle === 'today') {
+          var _wkTItems = _wk.days[_wkToday] || [];
+          var _wkTChips = '';
+          for (var _ti = 0; _ti < _wkTItems.length; _ti++) {
+            if (!_wkTItems[_ti] || !_wkTItems[_ti].tag) continue;   /* an empty slot is not a task */
+            var _ts = _wkSub(_wkTItems[_ti].tag);
+            var _tDone = !!_wkTItems[_ti].done;
+            _wkTChips += '<button type="button" class="wk-tchip' + (_tDone ? ' done' : '') + '" data-wk-toggle="' + _wkToday + '|' + e(_wkTItems[_ti].tag) + '" style="--wk-c:' + _ts.color + '" title="' + (_tDone ? 'Done — click to undo' : 'Click once studied') + '">' +
+              '<span class="wk-chip-dot"></span><span class="wk-tchip-lbl">' + e(_ts.label) + '</span>' +
+              (_tDone ? '<span class="wk-chip-tick">' + _wkTick + '</span>' : '') + '</button>';
+          }
+          if (!_wkTChips) _wkTChips = '<div class="wk-tempty">Nothing planned for today</div>';
+          var _wkRest = '';
+          for (var _ri = _wkTodayIdx + 1; _ri < WEEKPLAN_DAYS.length; _ri++) {
+            var _rd = WEEKPLAN_DAYS[_ri];
+            var _rn = _weekplanCount(_wk.days[_rd.id]);
+            if (!_rn) continue;
+            _wkRest += '<span class="wk-trest-day">' + _rd.label + ' <b>' + _rn + '</b></span>';
+          }
+          if (!_wkRest) _wkRest = '<span class="wk-trest-none">Nothing else this week</span>';
+          var _wkTOpen = _weekplanPickerDay === _wkToday;
+          _wkBody = '<div class="wk-body wk-today">' +
+            '<div class="wk-tday">' + _weekplanDayFull(_wkToday) + '<span class="wk-tdate">' + _wkNums[_wkToday] + '</span></div>' +
+            _wkTChips +
+            '<div class="wk-trest"><span class="wk-trest-lbl">Rest of week</span><span class="wk-trest-list">' + _wkRest + '</span></div>' +
+            '<button type="button" class="wk-tadd' + (_wkTOpen ? ' open' : '') + '" data-wk-pick="' + _wkToday + '">' + (_wkTOpen ? 'Close' : '+ Add to today') + '</button>' +
+            (_wkTOpen ? _wkPickerHtml(_wkToday, 'wk-pick-wide') : '') +
+            '</div>';
+        } else if (_wkStyle === 'list') {
+          var _wkGroups = '';
+          var _wkShown = 0;
+          for (var _li = 0; _li < WEEKPLAN_DAYS.length; _li++) {
+            var _ld = WEEKPLAN_DAYS[_li];
+            var _lItems = _wk.days[_ld.id] || [];
+            var _lCount = _weekplanCount(_lItems);
+            var _lIsToday = _ld.id === _wkToday;
+            var _lOpen = _weekplanPickerDay === _ld.id;
+            /* A day with nothing planned is skipped — that is the whole point of
+               this style — unless its picker is open, in which case it needs to
+               render so the × that closes it is reachable. Counted by filled
+               boxes, not list length: a cleared box leaves an empty slot behind. */
+            if (!_lCount && !_lOpen) continue;
+            if (_lCount) _wkShown++;
+            var _lLines = '';
+            for (var _mi = 0; _mi < _lItems.length; _mi++) {
+              if (!_lItems[_mi] || !_lItems[_mi].tag) continue;   /* an empty slot is not a task */
+              var _ms = _wkSub(_lItems[_mi].tag);
+              var _mDone = !!_lItems[_mi].done;
+              _lLines += '<button type="button" class="wk-litem' + (_mDone ? ' done' : '') + '" data-wk-toggle="' + _ld.id + '|' + e(_lItems[_mi].tag) + '" style="--wk-c:' + _ms.color + '" title="' + (_mDone ? 'Done — click to undo' : 'Click once studied') + '">' +
+                '<span class="wk-lbox">' + (_mDone ? _wkTick : '') + '</span><span class="wk-llbl">' + e(_ms.label) + '</span></button>';
+            }
+            _wkGroups += '<div class="wk-lgroup' + (_lIsToday ? ' is-today' : '') + (_li < _wkTodayIdx ? ' is-past' : '') + '">' +
+              '<div class="wk-lhead"><span class="wk-lday">' + _ld.label + ' <b>' + _wkNums[_ld.id] + '</b></span>' +
+              (_lIsToday ? '<span class="wk-ltag">today</span>' : '') +
+              '<button type="button" class="wk-add wk-add-sm' + (_lOpen ? ' open' : '') + '" data-wk-pick="' + _ld.id + '" title="' + (_lOpen ? 'Close' : 'Add a subject') + '">' + (_lOpen ? '\u00d7' : '+') + '</button></div>' +
+              _lLines + (_lOpen ? _wkPickerHtml(_ld.id) : '') + '</div>';
+          }
+          if (!_wkShown) _wkEmpty = _wkEmptyHtml('noplan');
+          else _wkBody = '<div class="wk-body wk-list">' + _wkGroups + '</div>';
+        } else {
+          var _wkRows = '';
+          for (var _di = 0; _di < WEEKPLAN_DAYS.length; _di++) {
+            var _wkDay = WEEKPLAN_DAYS[_di];
+            var _wkItems = _wk.days[_wkDay.id] || [];
+            var _wkIsToday = _wkDay.id === _wkToday;
+            var _wkOpen = _weekplanPickerDay === _wkDay.id;
+            var _wkChips = '';
+            for (var _ii = 0; _ii < _wkItems.length; _ii++) {
+              if (!_wkItems[_ii] || !_wkItems[_ii].tag) continue;   /* an empty slot is not a task */
+              _wkChips += _wkChipHtml(_wkDay.id, _wkItems[_ii].tag, _wkItems[_ii].done);
+            }
+            if (!_wkChips) _wkChips = '<span class="wk-rest">' + (_wkDay.id === 'sun' ? 'Rest day' : '—') + '</span>';
+            _wkRows += '<div class="wk-row' + (_wkIsToday ? ' wk-row-today' : '') + '">' +
+              '<span class="wk-day">' + _wkDay.label + '</span>' +
+              '<div class="wk-chips">' + _wkChips + '</div>' +
+              '<button type="button" class="wk-add' + (_wkOpen ? ' open' : '') + '" data-wk-pick="' + _wkDay.id + '" title="' + (_wkOpen ? 'Close' : 'Add a subject') + '">' + (_wkOpen ? '\u00d7' : '+') + '</button>' +
+            '</div>' + (_wkOpen ? _wkPickerHtml(_wkDay.id) : '');
+          }
+          _wkBody = '<div class="wk-body wk-rows">' + _wkRows + '</div>';
         }
+        /* Replaces the body wholesale, and deliberately sits outside .wk-body so
+           the shared .w-empty rule can match .bento-scroll > .w-empty and centre
+           it in the tile. */
+        if (_wkEmpty) _wkBody = _wkEmpty;
+        /* The two week-wide styles carry the progress bar; 'today' and 'list'
+           have their own summary line, and a bar above a single day reads as
+           the whole week's progress when it is not. An empty state gets none —
+           "0/0 done (0%)" above "Nothing planned yet" is noise. */
+        var _wkBar = (!_wkEmpty && (_wkStyle === 'grid' || _wkStyle === 'default'))
+          ? '<div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _wkStats.pct + '%"></div></div><span class="w-hw-prog-text">' + _wkStats.done + '/' + _wkStats.total + ' done (' + _wkStats.pct + '%)</span></div>'
+          : '';
         return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI +
-          '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h2M12 15h2"/></svg><span>Week Plan</span><em class="wk-range">' + _weekplanWeekLabel() + '</em></div>' +
-          '<div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _wkStats.pct + '%"></div></div><span class="w-hw-prog-text">' + _wkStats.done + '/' + _wkStats.total + ' done (' + _wkStats.pct + '%)</span></div>' +
-          '<div class="wk-body">' + _wkRows + '</div>' +
+          '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h2M12 15h2"/></svg><span>Study Plan</span><em class="wk-range">' + _weekplanWeekLabel() + '</em></div>' +
+          _wkBar + _wkBody +
         '</div>';
       }
       case 'prayertime': {
@@ -3808,16 +4121,12 @@ function renderHubBento() {
     });
   });
 
-  // Wire todos style toggle buttons
+  // To-do style button — opens the picker instead of cycling
   grid.querySelectorAll('[data-todos-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.todosStyleToggle;
-      var cur = _getTodosStyle(uid);
-      var idx = TODOS_STYLE_LIST.indexOf(cur);
-      var next = TODOS_STYLE_LIST[(idx + 1) % TODOS_STYLE_LIST.length];
-      _setTodosStyle(uid, next);
-      renderHubBento();
+      if (document.getElementById('hubStylePop')) { closeStylePicker(); return; }
+      openStylePicker(this.dataset.todosStyleToggle, 'todos', this);
     });
   });
 
@@ -4028,7 +4337,8 @@ function renderHubBento() {
    ['[data-breath-style-toggle]','breathStyleToggle',BREATH_STYLE_LIST,_getBreathStyle,_setBreathStyle],
    ['[data-read-style-toggle]','readStyleToggle',READ_STYLE_LIST,_getReadStyle,_setReadStyle],
    ['[data-doodle-style-toggle]','doodleStyleToggle',DOODLE_STYLE_LIST,_getDoodleStyle,_setDoodleStyle],
-   ['[data-gh-style-toggle]','ghStyleToggle',GH_STYLE_LIST,_getGhStyle,_setGhStyle]
+   ['[data-gh-style-toggle]','ghStyleToggle',GH_STYLE_LIST,_getGhStyle,_setGhStyle],
+   ['[data-weekplan-style-toggle]','weekplanStyleToggle',WEEKPLAN_STYLE_LIST,_getWeekplanStyle,_setWeekplanStyle]
   ].forEach(function(cfg) {
     grid.querySelectorAll(cfg[0]).forEach(function(btn) {
       btn.addEventListener('click', function(e) {
@@ -5155,23 +5465,26 @@ function _notesBuildModal() {
   m.setAttribute('aria-label', 'Note editor');
   m.innerHTML = ''
     + '<div class="notes-modal-head">'
-    +   '<input id="notesModalTitle" class="notes-modal-title" type="text" placeholder="Title (optional)" maxlength="120" autocomplete="off">'
+    +   '<input id="notesModalTitle" class="notes-modal-title" type="text" placeholder="Title" maxlength="120" autocomplete="off">'
     +   '<button type="button" class="notes-modal-x" id="notesModalClose" title="Close (Esc)" aria-label="Close">\u00D7</button>'
     + '</div>'
+    /* The insert row sits *below* the body on purpose. Above it, six boxed buttons
+       read as a word-processor ribbon — the note should be the first thing you
+       see, and the tools should be something you reach for. */
+    + '<textarea id="notesModalBody" class="notes-modal-body" spellcheck="true" placeholder="Write a note\u2026"></textarea>'
     + '<div class="notes-modal-tools">'
-    +   '<button type="button" class="notes-tool" data-notes-insert="check">Checklist</button>'
-    +   '<button type="button" class="notes-tool" data-notes-insert="bullet">Bullet</button>'
+    +   '<button type="button" class="notes-tool" data-notes-insert="check">Task</button>'
+    +   '<button type="button" class="notes-tool" data-notes-insert="bullet">List</button>'
     +   '<button type="button" class="notes-tool" data-notes-insert="num">Numbered</button>'
     +   '<button type="button" class="notes-tool" data-notes-insert="head">Heading</button>'
     +   '<button type="button" class="notes-tool" data-notes-insert="rule">Divider</button>'
     +   '<button type="button" class="notes-tool" data-notes-insert="date">Date</button>'
     + '</div>'
-    + '<textarea id="notesModalBody" class="notes-modal-body" spellcheck="true" placeholder="Write anything.&#10;&#10;- [ ] a checklist item&#10;- a bullet point&#10;# a heading"></textarea>'
     + '<div class="notes-modal-foot">'
     +   '<div class="notes-modal-colors" id="notesModalColors">' + swatches + '</div>'
     +   '<span class="notes-modal-stat" id="notesModalStat"></span>'
     +   '<button type="button" class="notes-modal-act" id="notesModalPin" aria-pressed="false">Pin</button>'
-    +   '<button type="button" class="notes-modal-act" id="notesModalDup">Duplicate</button>'
+    +   '<button type="button" class="notes-modal-act" id="notesModalDup">Copy</button>'
     +   '<button type="button" class="notes-modal-act notes-modal-del" id="notesModalDel">Delete</button>'
     + '</div>';
   document.body.appendChild(m);
@@ -6330,8 +6643,8 @@ function _wpTagList() {
   return out;
 }
 
-/* ─── Week plan helpers ────────────────────── */
-/* The Week Plan widget shows, for each day of the current week, which
+/* ─── Study Plan helpers ───────────────────── */
+/* The Study Plan widget shows, for each day of the current week, which
    schedule subjects the user means to study — and lets them tick each one
    off. Subjects come from the same tag list the schedule page uses
    (TAG_ORDER / TAG_LABELS, read through _wpTagList above), so adding a
@@ -6347,6 +6660,12 @@ var WEEKPLAN_DAYS = [
 /* Which day row has its subject picker open. UI state only — never persisted,
    so it resets on reload instead of leaking into the saved payload. */
 var _weekplanPickerDay = null;
+
+/* Which single box has its picker open, as "dayId|index" — the grid style only.
+   Separate from _weekplanPickerDay because a box is a POSITION, not a day: the
+   day picker appends to the end of the list, a box picker fills one exact slot.
+   The two are mutually exclusive; opening either clears the other. */
+var _weekplanPickerCell = null;
 
 /* Monday of the week containing d, as a local YYYY-MM-DD key. Uses local
    calendar parts (via _hubTodayKey), never toISOString, so a late-evening
@@ -6369,8 +6688,14 @@ function _weekplanBlank() {
   return { week: _weekplanMonday(), days: days };
 }
 
-/* Read + repair. Never throws on a half-written or hand-edited payload, and
-   drops anything that is not a {tag, done} pair. */
+/* Read + repair. Never throws on a half-written or hand-edited payload.
+
+   An empty slot is a real POSITION, not a corrupt entry: the grid shows box i of
+   a day as days[day][i], so dropping an empty slot would silently slide every box
+   after it one place to the left — clear Tuesday's slot 2 and Wednesday's slot 3
+   would quietly become slot 2. Junk therefore becomes a hole rather than being
+   filtered out; only TRAILING holes are trimmed, because they are invisible and
+   would otherwise inflate the grid's row count. */
 function _weekplanEnsure() {
   if (!hubContent || typeof hubContent !== 'object') return _weekplanBlank();
   var wp = hubContent.weekplan;
@@ -6383,10 +6708,11 @@ function _weekplanEnsure() {
     var clean = [];
     for (var j = 0; j < list.length; j++) {
       var it = list[j];
-      if (it && typeof it === 'object' && typeof it.tag === 'string' && it.tag) {
-        clean.push({ tag: it.tag, done: !!it.done });
-      }
+      clean.push((it && typeof it === 'object')
+        ? { tag: typeof it.tag === 'string' ? it.tag : '', done: !!it.done }
+        : { tag: '', done: false });
     }
+    while (clean.length && !clean[clean.length - 1].tag) clean.pop();
     wp.days[k] = clean;
   }
   return wp;
@@ -6404,11 +6730,31 @@ function _weekplanRollover() {
   return true;
 }
 
+/* How many slots a day actually uses — one past its last filled box. Empty
+   boxes inside that range are part of the layout; empties after it are not, so
+   the grid's row count follows the fullest day rather than whatever padding an
+   earlier edit happened to leave behind. */
+function _weekplanCount(list) {
+  if (!list || !list.length) return 0;
+  for (var i = list.length - 1; i >= 0; i--) if (list[i] && list[i].tag) return i + 1;
+  return 0;
+}
+
+/* The subject sitting in one exact box, or null when the box is empty. */
+function _weekplanSlot(days, dayId, idx) {
+  var list = (days && days[dayId]) || [];
+  var it = list[idx];
+  return (it && it.tag) ? it : null;
+}
+
 function _weekplanStats(days) {
   var total = 0, done = 0;
   for (var i = 0; i < WEEKPLAN_DAYS.length; i++) {
     var list = (days && days[WEEKPLAN_DAYS[i].id]) || [];
-    for (var j = 0; j < list.length; j++) { total++; if (list[j] && list[j].done) done++; }
+    for (var j = 0; j < list.length; j++) {
+      if (!list[j] || !list[j].tag) continue;   /* an empty slot is not a task */
+      total++; if (list[j].done) done++;
+    }
   }
   return { done: done, total: total, pct: total ? Math.round((done / total) * 100) : 0 };
 }
@@ -6452,7 +6798,7 @@ function _weekplanSubjects() {
 
 function _weekplanHas(days, dayId, tag) {
   var list = (days && days[dayId]) || [];
-  for (var i = 0; i < list.length; i++) if (list[i].tag === tag) return true;
+  for (var i = 0; i < list.length; i++) if (list[i] && list[i].tag === tag) return true;
   return false;
 }
 
@@ -6461,21 +6807,46 @@ function _weekplanToggle(dayId, tag) {
   var list = wp.days[dayId];
   if (!list) return false;
   for (var i = 0; i < list.length; i++) {
-    if (list[i].tag === tag) { list[i].done = !list[i].done; return true; }
+    if (list[i] && list[i].tag === tag) { list[i].done = !list[i].done; return true; }
   }
   return false;
 }
 
 /* Add the subject for that day — or remove it if it is already there, so the
-   same chip in the picker both adds and undoes. */
+   same chip in the picker both adds and undoes. A box emptied by a removal
+   stays empty (see _weekplanEnsure), and the next add reuses the first empty
+   slot rather than piling up at the end. */
 function _weekplanAdd(dayId, tag) {
   var wp = _weekplanEnsure();
   var list = wp.days[dayId];
-  if (!list) return false;
+  if (!list || !tag) return false;
   for (var i = 0; i < list.length; i++) {
-    if (list[i].tag === tag) { list.splice(i, 1); return true; }
+    if (list[i].tag === tag) { list[i] = { tag: '', done: false }; return true; }
+  }
+  for (var j = 0; j < list.length; j++) {
+    if (!list[j].tag) { list[j] = { tag: tag, done: false }; return true; }
   }
   list.push({ tag: tag, done: false });
+  return true;
+}
+
+/* Put `tag` in one exact box — the grid style's write path. Three cases:
+   - the box already holds that subject → clear the box (tap again to undo)
+   - the subject sits in another box of the same day → MOVE it here, leaving its
+     old box empty, rather than letting one subject appear twice in a day
+   - otherwise → fill the box, padding with empty slots if the day's list is
+     shorter than the box that was tapped */
+function _weekplanSet(dayId, idx, tag) {
+  var wp = _weekplanEnsure();
+  var list = wp.days[dayId];
+  if (!list || !tag || !(idx >= 0)) return false;
+  var cur = list[idx];
+  if (cur && cur.tag === tag) { list[idx] = { tag: '', done: false }; return true; }
+  for (var i = 0; i < list.length; i++) {
+    if (list[i] && list[i].tag === tag) list[i] = { tag: '', done: false };
+  }
+  while (list.length <= idx) list.push({ tag: '', done: false });
+  list[idx] = { tag: tag, done: false };
   return true;
 }
 
@@ -6490,6 +6861,29 @@ function _weekplanWeekLabel() {
     return start.getDate() + '–' + end.getDate() + ' ' + M[end.getMonth()];
   }
   return start.getDate() + ' ' + M[start.getMonth()] + '–' + end.getDate() + ' ' + M[end.getMonth()];
+}
+
+/* Day-of-month for each day of the current plan week, keyed by day id. Built by
+   stepping the Monday with setDate() rather than adding 86400000ms, so a DST
+   change inside the week cannot shift a date by one. */
+function _weekplanDayNums() {
+  var p = _weekplanMonday().split('-');
+  var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  var out = {};
+  for (var i = 0; i < WEEKPLAN_DAYS.length; i++) {
+    var t = new Date(d.getTime());
+    t.setDate(d.getDate() + i);
+    out[WEEKPLAN_DAYS[i].id] = t.getDate();
+  }
+  return out;
+}
+function _weekplanDayFull(dayId) {
+  var F = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
+  return F[dayId] || dayId;
+}
+function _weekplanDayIndex(dayId) {
+  for (var i = 0; i < WEEKPLAN_DAYS.length; i++) if (WEEKPLAN_DAYS[i].id === dayId) return i;
+  return 0;
 }
 
 function _wpNum(v, fallback) {
@@ -10279,8 +10673,8 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', today:'Today', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', alarm:'Alarm', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', crypto:'Crypto', homework:'Homework', study:'Study', weekplan:'Week Plan', upcoming:'Upcoming', streak:'Streak', budget:'Budget', airquality:'Air Quality', worldclock:'World Clock', savings:'Savings Goal', focuslog:'Focus Log', currency:'Currency', calculator:'Calculator', breathing:'Breathing', reading:'Reading', doodle:'Doodle', github:'GitHub', prayertime:'Prayer Times', bmkgquake:'Earthquake', moneyflow:'Money Flow', assistant:'Assistant', 'friends-live':'Friends', grades:'Grades', attendance:'Attendance', exams:'Exams', holidays:'Tanggal Merah', birthdays:'Birthdays', flashcards:'Flashcards', sleepdebt:'Sleep Debt', ytfeed:'Video Feed', watchlist:'Watchlist', musicviz:'Visualiser', pet:'Pet', garden:'Streak Garden', xp:'Level', badges:'Badges', money:'Money' };
-  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', weekplan:'What to study each day this week', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Alarms with sound + snooze', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', upcoming:'Next tasks on your schedule', streak:'Consecutive activity days', budget:'Monthly spend vs budget', airquality:'AQI, pollutants + UV', worldclock:'Times around the world', savings:'Progress toward a savings target', focuslog:'Track focused minutes per day', currency:'Live exchange rates', calculator:'Quick math with a keypad', breathing:'Guided breathing exercise', reading:'Books you are reading', doodle:'Quick sketch pad', github:'GitHub profile + repo stats', prayertime:'Subuh to Isya, next prayer countdown', bmkgquake:'Latest quake from BMKG live feed', moneyflow:'Auto-categorised spend, subscriptions + payday', assistant:'What to do next, from your own data', 'friends-live':'Who is online in your circle', grades:'Subject averages + what you need next', attendance:'Present, late, absent + absences left', exams:'Countdown + syllabus checklist', holidays:'Indonesian tanggal merah + cuti bersama', birthdays:'Upcoming birthdays you track', flashcards:'Spaced-repetition vocab cards', sleepdebt:'How much sleep you owe this week', ytfeed:'Saved YouTube and TikTok links', watchlist:'Films and series you are watching', musicviz:'Bars that react to sound', pet:'A creature that grows with your habits', garden:'A plant for every day you complete something', xp:'Your level and experience points', badges:'Achievements you have unlocked', money:'Piggy bank and wallet in one' };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', today:'Today', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', alarm:'Alarm', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', crypto:'Crypto', homework:'Homework', study:'Study', weekplan:'Study Plan', upcoming:'Upcoming', streak:'Streak', budget:'Budget', airquality:'Air Quality', worldclock:'World Clock', savings:'Savings Goal', focuslog:'Focus Log', currency:'Currency', calculator:'Calculator', breathing:'Breathing', reading:'Reading', doodle:'Doodle', github:'GitHub', prayertime:'Prayer Times', bmkgquake:'Earthquake', moneyflow:'Money Flow', assistant:'Assistant', 'friends-live':'Friends', grades:'Grades', attendance:'Attendance', exams:'Exams', holidays:'Tanggal Merah', birthdays:'Birthdays', flashcards:'Flashcards', sleepdebt:'Sleep Debt', ytfeed:'Video Feed', watchlist:'Watchlist', musicviz:'Visualiser', pet:'Pet', garden:'Streak Garden', xp:'Level', badges:'Badges', money:'Money' };
+  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', weekplan:'Which subject to study each day', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Alarms with sound + snooze', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', upcoming:'Next tasks on your schedule', streak:'Consecutive activity days', budget:'Monthly spend vs budget', airquality:'AQI, pollutants + UV', worldclock:'Times around the world', savings:'Progress toward a savings target', focuslog:'Track focused minutes per day', currency:'Live exchange rates', calculator:'Quick math with a keypad', breathing:'Guided breathing exercise', reading:'Books you are reading', doodle:'Quick sketch pad', github:'GitHub profile + repo stats', prayertime:'Subuh to Isya, next prayer countdown', bmkgquake:'Latest quake from BMKG live feed', moneyflow:'Auto-categorised spend, subscriptions + payday', assistant:'What to do next, from your own data', 'friends-live':'Who is online in your circle', grades:'Subject averages + what you need next', attendance:'Present, late, absent + absences left', exams:'Countdown + syllabus checklist', holidays:'Indonesian tanggal merah + cuti bersama', birthdays:'Upcoming birthdays you track', flashcards:'Spaced-repetition vocab cards', sleepdebt:'How much sleep you owe this week', ytfeed:'Saved YouTube and TikTok links', watchlist:'Films and series you are watching', musicviz:'Bars that react to sound', pet:'A creature that grows with your habits', garden:'A plant for every day you complete something', xp:'Your level and experience points', badges:'Achievements you have unlocked', money:'Piggy bank and wallet in one' };
   var categories = [
     { name:'Productivity', short:'Productivity', types:['goals','priorities','todos','today','upcoming','habits','streak','focuslog','progress','assistant'] },
     { name:'Study', short:'Study', types:['homework','study','weekplan','grades','attendance','exams','flashcards'] },
@@ -11628,7 +12022,7 @@ function setupHubEditEvents() {
       }
       return;
     }
-    // Week plan: tick a subject off (or undo) for that day
+    // Study plan: tick a subject off (or undo) for that day
     var wkToggle = e.target.closest('[data-wk-toggle]');
     if (wkToggle) {
       var _wkT = String(wkToggle.dataset.wkToggle || '').split('|');
@@ -11638,15 +12032,36 @@ function setupHubEditEvents() {
       }
       return;
     }
-    // Week plan: open/close that day's subject picker
+    // Study plan: open/close that day's subject picker
     var wkPick = e.target.closest('[data-wk-pick]');
     if (wkPick) {
       var _wkP = wkPick.dataset.wkPick;
       _weekplanPickerDay = (_weekplanPickerDay === _wkP) ? null : _wkP;
+      _weekplanPickerCell = null;   /* only one picker at a time */
       renderHubBento();
       return;
     }
-    // Week plan: add / remove a subject for that day
+    // Study plan: open/close the picker for one exact box (grid style)
+    var wkCell = e.target.closest('[data-wk-cell]');
+    if (wkCell) {
+      var _wkCellKey = String(wkCell.dataset.wkCell || '');
+      _weekplanPickerCell = (_weekplanPickerCell === _wkCellKey) ? null : _wkCellKey;
+      _weekplanPickerDay = null;
+      renderHubBento();
+      return;
+    }
+    // Study plan: put a subject in one exact box (or empty that box)
+    var wkSet = e.target.closest('[data-wk-set]');
+    if (wkSet) {
+      var _wkS = String(wkSet.dataset.wkSet || '').split('|');
+      var _wkSIdx = parseInt(_wkS[1], 10);
+      if (_wkS[0] && _wkS[2] && !isNaN(_wkSIdx) && _weekplanSet(_wkS[0], _wkSIdx, _wkS[2])) {
+        saveHubContent();
+        renderHubBento();   /* the box picker stays open, so it can be ticked straight away */
+      }
+      return;
+    }
+    // Study plan: add / remove a subject for that day
     var wkAdd = e.target.closest('[data-wk-add]');
     if (wkAdd) {
       var _wkA = String(wkAdd.dataset.wkAdd || '').split('|');
@@ -11654,6 +12069,14 @@ function setupHubEditEvents() {
         saveHubContent();
         renderHubBento();
       }
+      return;
+    }
+    // Study plan: from the agenda's empty state, hand over to the style that can plan
+    var wkRowsBtn = e.target.closest('[data-wk-rows]');
+    if (wkRowsBtn) {
+      var _wkBub = wkRowsBtn.closest('.bento-bubble');
+      if (_wkBub && _wkBub.dataset.bubble) _setWeekplanStyle(_wkBub.dataset.bubble, 'default');
+      renderHubBento();
       return;
     }
     // Mood picker

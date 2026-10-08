@@ -13643,12 +13643,12 @@ html.edit-mode .gal-canvas .gal-item:hover {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(560px, calc(100vw - 28px));
-  max-height: min(620px, calc(100vh - 72px));
+  width: min(520px, calc(100vw - 28px));
+  max-height: min(600px, calc(100vh - 72px));
   display: flex;
   flex-direction: column;
   background: var(--bg-elevated);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
   overflow: hidden;
@@ -13659,7 +13659,7 @@ html.edit-mode .gal-canvas .gal-item:hover {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 14px 10px;
+  padding: 16px 16px 4px;
 }
 .notes-modal-title {
   flex: 1 1 auto;
@@ -13668,13 +13668,15 @@ html.edit-mode .gal-canvas .gal-item:hover {
   background: transparent;
   color: var(--text-primary);
   font-family: var(--font-sans);
-  font-size: 1.02rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  padding: 2px 0;
+  /* 600, not 700 — the title is a heading, not a shout. It is also the largest
+     thing in the dialog on purpose: the note comes before the controls. */
+  font-size: 1.18rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  padding: 0;
   outline: none;
 }
-.notes-modal-title::placeholder { color: var(--text-tertiary); font-weight: 600; }
+.notes-modal-title::placeholder { color: var(--text-tertiary); font-weight: 400; }
 .notes-modal-x {
   flex: 0 0 auto;
   width: 28px;
@@ -13690,51 +13692,55 @@ html.edit-mode .gal-canvas .gal-item:hover {
   transition: background var(--t-fast), color var(--t-fast);
 }
 .notes-modal-x:hover { background: var(--surface-container-high); color: var(--text-primary); }
+.notes-modal-body {
+  flex: 1 1 auto;
+  min-height: 140px;
+  resize: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  /* Sans, not mono. A monospace body is the single biggest reason this read as
+     Notepad — it made the markup stop looking like the note and start looking
+     like code. */
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  line-height: 1.72;
+  padding: 4px 16px 10px;
+  outline: none;
+}
+.notes-modal-body::placeholder { color: var(--text-tertiary); }
+/* One hairline, above the tool row: it separates what you wrote from the things
+   you can do to it. Everything else is spacing. */
 .notes-modal-tools {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
-  padding: 0 14px 10px;
+  gap: 2px;
+  padding: 9px 12px 0;
+  border-top: 1px solid var(--border-subtle);
 }
 .notes-tool {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-full);
+  border: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   font-family: var(--font-sans);
-  font-size: 0.64rem;
-  font-weight: 600;
-  padding: 4px 10px;
+  font-size: 0.66rem;
+  font-weight: 500;
+  padding: 5px 8px;
+  min-height: 26px;
   cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast);
 }
 .notes-tool:hover {
   background: var(--surface-container-high);
   color: var(--text-primary);
-  border-color: color-mix(in srgb, var(--text-tertiary) 45%, transparent);
 }
-.notes-modal-body {
-  flex: 1 1 auto;
-  min-height: 190px;
-  resize: none;
-  border: 0;
-  border-top: 1px solid var(--border-subtle);
-  border-bottom: 1px solid var(--border-subtle);
-  background: transparent;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  line-height: 1.65;
-  padding: 12px 14px;
-  outline: none;
-}
-.notes-modal-body::placeholder { color: var(--text-tertiary); }
 .notes-modal-foot {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px 14px 12px;
+  gap: 6px;
+  padding: 3px 12px 12px;
 }
 .notes-modal-colors { display: flex; align-items: center; gap: 6px; }
 .notes-swatch {
@@ -13771,19 +13777,21 @@ html.edit-mode .gal-canvas .gal-item:hover {
 .notes-modal-stat {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
 }
 .notes-modal-act {
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-full);
+  border: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-secondary);
   font-family: var(--font-sans);
-  font-size: 0.64rem;
-  font-weight: 600;
-  padding: 4px 11px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 6px 9px;
+  /* 28px floor — these are the only controls in the footer on a phone */
+  min-height: 28px;
   cursor: pointer;
   transition: background var(--t-fast), color var(--t-fast);
 }
@@ -13792,12 +13800,12 @@ html.edit-mode .gal-canvas .gal-item:hover {
   background: color-mix(in srgb, var(--accent) 22%, transparent);
   color: var(--text-primary);
 }
-.notes-modal-del {
-  color: var(--error);
-  border-color: color-mix(in srgb, var(--error) 40%, transparent);
-}
+/* Softened, not full-strength red: Delete sits one slip away from Copy, and a
+   loud button next to a quiet one invites the wrong click. The undo toast is the
+   real safety net. */
+.notes-modal-del { color: color-mix(in srgb, var(--error) 80%, var(--text-secondary)); }
 .notes-modal-del:hover {
-  background: color-mix(in srgb, var(--error) 14%, transparent);
+  background: color-mix(in srgb, var(--error) 12%, transparent);
   color: var(--error);
 }
 body.notes-modal-open { overflow: hidden; }
@@ -13952,7 +13960,7 @@ body.notes-modal-open { overflow: hidden; }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   WEEK PLAN — 2026-10-08
+   STUDY PLAN — 2026-10-08
    One row per day (Mon–Sun). The chips are schedule subjects, read from the
    same tag list the schedule page uses; a chip is ticked when it has been
    studied. Everything is token-driven so all 14 hub skins apply unchanged.
@@ -14092,4 +14100,375 @@ body.notes-modal-open { overflow: hidden; }
   .wk-pick { padding: 2px 4px 10px 44px; }
   .wk-pick-chip { padding: 6px 11px; font-size: 0.64rem; }
   .wk-pick-chip svg { width: 12px; height: 12px; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STUDY PLAN — the four style layouts (2026-10-08)
+   .wk-rows is the original: one row per day. The other three are different
+   STRUCTURES, not different spacings — a subject x day matrix, a single-day
+   focus, and an agenda of only the days that have subjects. Three styles
+   differing by a min-height is what made the old notes button look dead.
+   ══════════════════════════════════════════════════════════════ */
+
+/* Grid and Today want the tile's full height, so the scroll container becomes a
+   column for them only — the same :has() technique .w-empty already uses. Without
+   it a four-subject matrix paints ~150px of a 400px tile and the rest reads as a
+   broken card rather than an empty one. */
+.bento-scroll:has(> .wk-grid),
+.bento-scroll:has(> .wk-today) { display: flex; flex-direction: column; }
+.bento-scroll:has(> .wk-grid) > .w-head,
+.bento-scroll:has(> .wk-grid) > .w-hw-progress,
+.bento-scroll:has(> .wk-today) > .w-head { flex: 0 0 auto; }
+
+/* ── grid: free slots down, Mon–Sun across ──
+   Rows are positions, not subjects: box i of a day is that day's i-th entry, so
+   any subject can go in any box. The row number is a small gutter figure — it
+   labels the box, not a subject, so it must not look like a name. */
+.wk-grid { flex: 1 1 auto; min-height: 0; gap: 5px; }
+.wk-ghead, .wk-grow { display: flex; align-items: center; gap: 6px; }
+/* Both stay in flow, so the day header and the slot rows read as one table. */
+.wk-ghead { flex: 0 0 auto; }
+/* Rows share the leftover height but stop at 40px — uncapped they stretch into
+   24x72 pills at four rows, which is not what a timetable looks like. */
+.wk-grow { flex: 1 1 0; min-height: 26px; max-height: 40px; }
+.wk-gslot {
+  flex: 0 0 16px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  font-size: 0.52rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  overflow: hidden;
+}
+.wk-ghead .wk-gslot { font-weight: 700; }
+.wk-gcells { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.wk-gday { font-size: 0.55rem; font-weight: 700; text-align: center; text-transform: uppercase; color: var(--text-tertiary); }
+.wk-gday.is-today { color: var(--text-primary); }
+
+/* One box per day per slot, tinted with the subject that sits in it. Three
+   states: empty (dashed outline, no tint) -> planned (solid + 16% tint +
+   initial) -> studied (32% tint + tick, the initial gives way to the tick).
+   The initial is what keeps two similar subject colours apart. */
+.wk-cell {
+  width: 100%;
+  height: 100%;
+  min-height: 22px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border-color);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--wk-c, var(--accent));
+  font: inherit;
+  cursor: pointer;
+}
+.wk-cell:hover { border-color: var(--wk-c, var(--accent)); }
+.wk-cell.on { border-style: solid; border-color: var(--wk-c, var(--accent)); background: color-mix(in srgb, var(--wk-c, var(--accent)) 16%, transparent); }
+.wk-cell.done { background: color-mix(in srgb, var(--wk-c, var(--accent)) 32%, transparent); }
+.wk-cell.is-today { border-width: 1.5px; }
+.wk-cell.open { box-shadow: 0 0 0 2px color-mix(in srgb, var(--wk-c, var(--accent)) 35%, transparent); }
+.wk-cell svg { width: 12px; height: 12px; }
+.wk-cell-lbl {
+  font-size: 0.56rem;
+  font-weight: 700;
+  line-height: 1;
+  opacity: 0.85;
+  overflow: hidden;
+}
+/* The shared picker, reused under a grid box or a single day instead of a row. */
+.wk-pick-wide { padding: 6px 0 0; border-bottom: none; }
+/* The box picker says which box it is editing, and its studied toggle leads. */
+.wk-pick-cell { flex-wrap: wrap; }
+.wk-pick-head {
+  flex: 0 0 100%;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.wk-pick-study { border-style: solid; border-color: var(--border-color); }
+.wk-pick-study.on { background: color-mix(in srgb, var(--wk-c, var(--accent)) 18%, transparent); }
+
+/* ── today: one day, big ── */
+.wk-today { flex: 1 1 auto; min-height: 0; gap: 6px; }
+.wk-tday {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text-primary);
+}
+.wk-tdate { font-size: 0.62rem; font-weight: 600; color: var(--text-tertiary); }
+.wk-tchip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--wk-c, var(--accent)) 10%, var(--surface-container-high));
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.wk-tchip:hover { border-color: var(--wk-c, var(--accent)); }
+.wk-tchip-lbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-tchip.done { opacity: 0.6; }
+.wk-tchip.done .wk-tchip-lbl { text-decoration: line-through; }
+.wk-tempty { font-size: 0.62rem; font-style: italic; color: var(--text-tertiary); padding: 4px 2px; }
+/* margin-top:auto pins the tail to the bottom and absorbs slack. Deliberately not
+   justify-content:center — that makes the top unreachable once content overflows
+   a scroll container. */
+.wk-trest {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+.wk-trest-lbl { font-size: 0.55rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); }
+.wk-trest-list { display: flex; flex-wrap: wrap; gap: 8px; font-size: 0.6rem; color: var(--text-secondary); }
+.wk-trest-day b { font-weight: 700; color: var(--text-primary); }
+.wk-trest-none { font-style: italic; color: var(--text-tertiary); }
+.wk-tadd {
+  padding: 7px 10px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.64rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.wk-tadd:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
+.wk-tadd.open { border-style: solid; background: var(--surface-container-highest); color: var(--text-primary); }
+
+/* ── list: an agenda of only the days that have subjects ── */
+.wk-list { gap: 7px; }
+.wk-lgroup { display: flex; flex-direction: column; gap: 3px; }
+.wk-lgroup.is-past { opacity: 0.55; }
+.wk-lhead { display: flex; align-items: center; gap: 6px; }
+.wk-lday { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); }
+.wk-lday b { font-weight: 700; color: var(--text-secondary); }
+.wk-lgroup.is-today .wk-lday, .wk-lgroup.is-today .wk-lday b { color: var(--text-primary); }
+.wk-ltag {
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--surface-container-highest);
+  color: var(--text-secondary);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.wk-lhead .wk-add { margin-left: auto; }
+.wk-add-sm { width: 18px; height: 18px; font-size: 0.72rem; }
+.wk-litem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.64rem;
+  text-align: left;
+  cursor: pointer;
+}
+.wk-litem:hover { background: var(--surface-container-high); }
+.wk-lbox {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--wk-c, var(--accent));
+}
+.wk-litem.done .wk-lbox { border-color: var(--wk-c, var(--accent)); background: color-mix(in srgb, var(--wk-c, var(--accent)) 18%, transparent); }
+.wk-lbox svg { width: 10px; height: 10px; }
+.wk-llbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wk-litem.done .wk-llbl { text-decoration: line-through; color: var(--text-tertiary); }
+
+/* Phone sizes for the three new layouts. Same rule as the row layout: only
+   sizes change, because a widget tuned for a 280px tile ships tap targets
+   well below the 40-48px the rest of the app uses. */
+@media (max-width: 640px) {
+  .wk-gslot { flex-basis: 18px; font-size: 0.62rem; }
+  .wk-grow { min-height: 34px; }
+  .wk-gcells { gap: 5px; }
+  .wk-cell { min-height: 32px; border-radius: 8px; }
+  .wk-cell svg { width: 15px; height: 15px; }
+  .wk-cell-lbl { font-size: 0.7rem; }
+  .wk-gday { font-size: 0.66rem; }
+  .wk-tchip { padding: 10px 12px; font-size: 0.72rem; }
+  .wk-tadd { padding: 10px 12px; font-size: 0.7rem; }
+  .wk-litem { padding: 8px 6px; font-size: 0.7rem; }
+  .wk-lbox { width: 18px; height: 18px; }
+  .wk-lbox svg { width: 12px; height: 12px; }
+  /* Must be restated here: the non-media .wk-add-sm rule sits later in the file
+     than the mobile .wk-add rule, and a media query adds no specificity. */
+  .wk-add-sm { width: 30px; height: 30px; font-size: 0.95rem; }
+}
+
+/* ============================================================
+   WIDGET PACK 5 · TO-DO STYLES — 2026-10-08
+   Six structurally distinct styles for the To Do's widget, replacing
+   default/compact/progress (which were one list at three densities).
+
+   HARD CONSTRAINT: the grid click handler resolves a task through
+   `.w-item[data-idx] > .w-todo-box` (the toggle branch near the bottom of
+   renderHubBento). Every style below changes only the SHAPE of .w-item —
+   never remove the box, never move data-idx off the .w-item, or the style
+   silently stops ticking. All six share one row builder (_tdTaskRow).
+
+   `.bento-scroll` is plain height:100%; overflow-y:auto, so a style that wants
+   to fill the tile needs the :has() rule below — flex:1 is a no-op without it.
+   ============================================================ */
+
+.bento-scroll:has(> .w-td-split),
+.bento-scroll:has(> .w-td-meter),
+.bento-scroll:has(> .w-td-chips),
+.bento-scroll:has(> .w-td-board) { display: flex; flex-direction: column; }
+
+/* ── 1 · LIST — checkbox rows. The anchor. ─────────────────── */
+.w-td-list { display: flex; flex-direction: column; gap: 1px; }
+.w-td-list > .w-item { display: flex; align-items: center; gap: 10px; padding: 5px 4px; }
+.w-td-list .w-todo-box { width: 17px; height: 17px; border-width: 1.5px; border-radius: 5px; }
+.w-td-list .w-todo-box svg { width: 10px; height: 10px; }
+.w-td-list .w-item-text { font-size: 0.75rem; }
+
+/* ── 2 · SPLIT — open left, done right. ───────────────────── */
+.w-td-split { display: grid; grid-template-columns: 1fr 1fr; flex: 1 1 auto; min-height: 0; }
+.w-td-col { display: flex; flex-direction: column; min-height: 0; padding: 0 11px; }
+.w-td-col:first-child { padding-left: 0; }
+.w-td-col:last-child { padding-right: 0; border-left: 1px solid var(--border-color); }
+.w-td-colhead { display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-tertiary); padding-bottom: 7px; margin-bottom: 7px;
+  border-bottom: 1px solid var(--border-subtle); }
+.w-td-colhead i { font-style: normal; }
+.w-td-collist { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; }
+.w-td-collist > .w-item { display: flex; align-items: flex-start; gap: 7px; padding: 0; }
+.w-td-collist > .w-item:hover { background: none; }
+.w-td-collist .w-todo-box { width: 12px; height: 12px; min-width: 12px; border-width: 1.5px;
+  border-radius: 4px; margin-top: 2px; }
+.w-td-collist .w-todo-box svg { width: 7px; height: 7px; }
+.w-td-collist .w-item-text { font-size: 0.66rem; line-height: 1.35; }
+.w-td-collist > .w-item.w-item-done { opacity: 0.62; }
+
+/* ── 3 · METER — the ring leads, only unfinished tasks listed. ─ */
+/* align-items:flex-start, NOT center: the container stretches to the tile, so
+   centring floats the ring in the middle of the card with a gap above it. */
+.w-td-meter { display: flex; align-items: flex-start; gap: 15px; flex: 1 1 auto; min-height: 0; }
+.w-td-ring { position: relative; width: 84px; height: 84px; flex: 0 0 auto; }
+.w-td-ring svg { display: block; width: 84px; height: 84px; transform: rotate(-90deg); }
+.w-td-ringnum { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; }
+.w-td-ringnum b { font-size: 1.2rem; font-weight: 600; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.w-td-ringnum i { font-style: normal; font-size: 0.5rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-tertiary); margin-top: 3px; }
+.w-td-rest { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;
+  overflow-y: auto; min-height: 0; }
+.w-td-resthead { font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-tertiary); }
+.w-td-restrow { display: flex; align-items: flex-start; gap: 8px; padding: 0; }
+.w-td-restrow:hover { background: none; }
+.w-td-restrow .w-todo-box { width: 13px; height: 13px; min-width: 13px; border-width: 1.5px;
+  border-radius: 4px; margin-top: 2px; }
+.w-td-restrow .w-todo-box svg { width: 7px; height: 7px; }
+.w-td-restrow .w-item-text { font-size: 0.68rem; line-height: 1.35; }
+.w-td-allclear { font-size: 0.68rem; color: var(--text-tertiary); }
+
+/* ── 4 · TIMELINE — a rail; the checkbox IS the node. ──────── */
+.w-td-rail { display: flex; flex-direction: column; margin-left: 6px;
+  padding-left: 18px; border-left: 1px solid var(--border-color); }
+.w-td-node { position: relative; display: flex; align-items: center; gap: 9px; padding: 6px 4px; }
+.w-td-node.w-item-done { opacity: 0.72; }
+.w-td-node > .w-todo-box { position: absolute; left: -24px; width: 11px; height: 11px;
+  min-width: 11px; border-width: 1.5px; border-radius: 50%; background: var(--surface-container); }
+.w-td-node > .w-todo-box svg { display: none; }
+.w-td-node > .w-todo-box.w-todo-checked {
+  background: var(--bubble-accent, var(--primary));
+  border-color: var(--bubble-accent, var(--primary)); }
+/* 11px is too small to hit on a phone — the pseudo-element is the real target */
+.w-td-node > .w-todo-box::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; }
+.w-td-node .w-item-text { font-size: 0.7rem; }
+
+/* ── 5 · CHIPS — wrapping pills, no rows. ──────────────────── */
+/* Deliberately top-aligned and tight. space-between was tried and reverted:
+   it filled the tile but spread three lines far apart, which reads as broken
+   rather than airy. Six pills cannot fill a 320px tile at a sane size, so this
+   style is honestly a LOW-DENSITY one — it earns its place in a small tile,
+   where the same six pills fill the card. */
+.w-td-chips { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start;
+  flex: 1 1 auto; min-height: 0; }
+.w-td-chip { display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 11px 5px 8px; border: 1px solid var(--border-color);
+  border-radius: var(--radius-full); max-width: 100%; }
+.w-td-chip .w-todo-box { width: 13px; height: 13px; min-width: 13px; border-width: 1.5px;
+  border-radius: 50%; }
+.w-td-chip .w-todo-box svg { width: 7px; height: 7px; }
+.w-td-chip .w-item-text { flex: 0 1 auto; font-size: 0.63rem; line-height: 1.3; }
+.w-td-chip.w-item-done { opacity: 1;
+  background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 10%, transparent);
+  border-color: transparent; }
+
+/* ── 6 · BOARD — a grid of tiles, each task its own card. ──── */
+.w-td-board { display: grid; grid-template-columns: 1fr 1fr; gap: 7px;
+  grid-auto-rows: 1fr; flex: 1 1 auto; min-height: 0; }
+.w-td-tile { display: flex; flex-direction: column; gap: 7px; padding: 8px;
+  border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+  min-height: 0; overflow: hidden; }
+.w-td-tile .w-todo-box { width: 14px; height: 14px; min-width: 14px; border-width: 1.5px;
+  border-radius: 4px; }
+.w-td-tile .w-todo-box svg { width: 8px; height: 8px; }
+.w-td-tile .w-item-text { flex: 0 1 auto; font-size: 0.6rem; line-height: 1.3; }
+.w-td-tile.w-item-done { opacity: 1;
+  background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 9%, transparent);
+  border-color: transparent; }
+
+/* ============================================================
+   PER-WIDGET STYLE PICKER — 2026-10-08
+   Generic: one popover serves every widget that registers in
+   WIDGET_STYLES. Replaces the old click-to-cycle button, which could not
+   show more than one option at a time. z-index sits above the canvas guide
+   (1002) and the style panel (1001) but below the toast (9999).
+   ============================================================ */
+.style-pop { position: fixed; z-index: 1005; min-width: 152px; padding: 5px;
+  background: var(--surface-container-high); border: 1px solid var(--border-color);
+  border-radius: var(--radius-md); box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+  animation: stylePopIn 140ms cubic-bezier(0.16,1,0.3,1) both; }
+@keyframes stylePopIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.style-pop-head { font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-tertiary); padding: 5px 8px 7px; }
+.style-pop-item { display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  width: 100%; padding: 8px 10px; border: 0; background: none;
+  border-radius: var(--radius-sm); font: inherit; font-size: 0.72rem;
+  color: var(--text-secondary); cursor: pointer; text-align: left; }
+.style-pop-item:hover { background: var(--accent-soft); color: var(--text-primary); }
+.style-pop-item.is-on { color: var(--text-primary); }
+.style-pop-name { flex: 1; min-width: 0; }
+.style-pop-tick { font-size: 0.7rem; color: var(--bubble-accent, var(--primary)); }
+@media (max-width: 640px) {
+  .style-pop-item { padding: 11px 12px; font-size: 0.78rem; }
 }
