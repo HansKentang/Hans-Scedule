@@ -9,7 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Havën">
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
-  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
   <title>Havën Schedule — Progress</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -727,7 +728,7 @@
   </script>
   <script src="js/shared.js"></script>
   <script src="js/settings.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/vendor/supabase-js.min.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/gsi.js"></script>
   <script src="js/supabase-sync.js"></script>
@@ -736,7 +737,6 @@
   <script src="js/premium.js"></script>
   <script>if (typeof havenBoot === 'function') havenBoot(spInit); else spInit();</script>
 
-  <script src="js/hub-visuals.js"></script>
   <script src="js/progress.js"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
 </body>

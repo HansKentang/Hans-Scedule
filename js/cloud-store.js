@@ -12,6 +12,7 @@ var CLOUD_DEFERRED = null;
 var CLOUD_PUSH_TIMER = null;
 var CLOUD_PUSHING = false;
 var CLOUD_BLOCKED_EL = null;
+var CLOUD_BLOCKED_PENDING = false;
 // The account CLOUD_MEM was hydrated for. Account switches flip
 // state.currentUserId while this page is still tearing down, so every write
 // that carries the blob (pagehide flush, image ops) must target the account
@@ -235,6 +236,18 @@ function cloudFlush() {
 
 function cloudBlocked(message) {
   if (CLOUD_HYDRATED || CLOUD_BLOCKED_EL) return;
+  /* Hydration can now start before the parser has reached <body>, so the
+     overlay has to wait for a body to exist before it can be attached. */
+  if (!document.body) {
+    if (!CLOUD_BLOCKED_PENDING) {
+      CLOUD_BLOCKED_PENDING = true;
+      document.addEventListener('DOMContentLoaded', function() {
+        CLOUD_BLOCKED_PENDING = false;
+        cloudBlocked(message);
+      });
+    }
+    return;
+  }
   var el = document.createElement('div');
   el.id = 'cloudBlockedOverlay';
   el.setAttribute('style', 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:var(--bg-primary,#141414);color:var(--text-primary,#eee);font-family:inherit;padding:24px;text-align:center');
@@ -584,6 +597,17 @@ localStorage.removeItem = function(key) {
 
 CLOUD_MODE = isCloudAccount();
 CLOUD_NEEDED = CLOUD_MODE;
+
+/* Kick the hydrate off as soon as this file executes instead of waiting for the
+   first havenBoot() at DOMContentLoaded. The Supabase round trip then overlaps
+   with the remaining script chain rather than being appended to the end of it,
+   which is what made the hub canvas appear seconds late for cloud accounts.
+   A synchronous throw must not strand the deferred promise, so CLOUD_STARTED is
+   cleared and the next cloudReady() call retries. */
+if (CLOUD_NEEDED) {
+  try { cloudReady(); }
+  catch (e) { CLOUD_STARTED = false; console.warn('[cloud] early hydrate failed:', e); }
+}
 
 (function() {
   function wire() {

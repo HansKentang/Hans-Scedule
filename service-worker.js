@@ -1,85 +1,30 @@
-/* Havën Schedule — Service Worker v2.2 */
-const CACHE = 'haven-schedule-v48';
+/* Havën Schedule — Service Worker v3.0
+   Strategy:
+     - HTML navigations : network-first (always fresh), cache fallback when offline
+     - Static assets    : stale-while-revalidate (instant repeat loads, refreshed in background)
+     - Supabase API     : never intercepted
+   Only a tiny shell is precached so install never competes with the first page load. */
+const CACHE = 'haven-schedule-v49';
 const OFFLINE_FALLBACK = 'index.html';
-const URLS = [
+
+const SHELL = [
   './',
-  'index.html',
-  'schedule.html',
-  'progress.html',
-  'finance.html',
-  'gallery.html',
-  'goals.html',
-  'friends.html',
-  'rhythm.html',
-  'login.html',
-  'landing.html',
-  'admin.html',
-  'privacy.html',
-  'terms.html',
-  'support.html',
-  'premium.html',
-  'css/style.css',
-  'css/legal.css',
-  'css/progress-desert.css',
-  'css/progress-editorial.css',
-  'css/progress-mono.css',
-  'js/shared.js',
-  'js/settings.js',
-  'js/schedule.js',
-  'js/progress.js',
-  'js/finance.js',
-  'js/hub-visuals.js',
-  'js/gallery.js',
-  'js/goals.js',
-  'js/friends.js',
-  'js/supabase.js',
-  'js/supabase-sync.js',
-  'js/cloud-store.js',
-  'js/gsi.js',
-  'js/chat.js',
-  'js/chat-badge.js',
-  'js/premium-config.js',
-  'js/premium.js',
-  'js/admin.js',
+  'manifest.json',
   'assets/icon.svg',
   'assets/icon-192.png',
-  'assets/icon-512.png',
-  'manifest.json'
+  'assets/icon-512.png'
 ];
+
+const STATIC_RE = /\.(?:js|css|mjs|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|json)$/i;
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE)
-      .then((cache) => cache.addAll(URLS))
+      .then((cache) => Promise.all(
+        SHELL.map((u) => cache.add(u).catch(() => {}))
+      ))
       .then(() => self.skipWaiting())
   );
-});
-
-self.addEventListener('fetch', (e) => {
-  var url = e.request.url;
-  if (url.indexOf('.supabase.co') !== -1 || url.indexOf('.supabase.in') !== -1) {
-    return;
-  }
-  if (e.request.method !== 'GET') return;
-  e.respondWith((async () => {
-    try {
-      const res = await fetch(e.request);
-      const isPartial = res.status === 206 || e.request.headers.has('range');
-      if (res && res.ok && !isPartial && new URL(e.request.url).origin === self.location.origin) {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-      }
-      return res;
-    } catch (err) {
-      const hit = await caches.match(e.request);
-      if (hit) return hit;
-      if (e.request.mode === 'navigate') {
-        const fallback = await caches.match(OFFLINE_FALLBACK);
-        if (fallback) return fallback;
-      }
-      throw err;
-    }
-  })());
 });
 
 self.addEventListener('activate', (e) => {
@@ -88,4 +33,79 @@ self.addEventListener('activate', (e) => {
     await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
+});
+
+function isSupabase(url) {
+  return url.indexOf('.supabase.co') !== -1 || url.indexOf('.supabase.in') !== -1;
+}
+
+async function cachePut(request, response) {
+  try {
+    const cache = await caches.open(CACHE);
+    await cache.put(request, response);
+  } catch (err) { /* quota or opaque response — ignore */ }
+}
+
+/* Serve from cache instantly, refresh from network in the background. */
+async function staleWhileRevalidate(event) {
+  const request = event.request;
+  const cache = await caches.open(CACHE);
+  const cached = await cache.match(request);
+
+  const network = fetch(request).then((res) => {
+    if (res && res.ok && res.status === 200) cachePut(request, res.clone());
+    return res;
+  }).catch(() => null);
+
+  if (cached) {
+    event.waitUntil(network);
+    return cached;
+  }
+
+  const fresh = await network;
+  if (fresh) return fresh;
+
+  return new Response('', { status: 504, statusText: 'Offline' });
+}
+
+/* Always try the network first so deploys show up immediately. */
+async function networkFirst(event) {
+  const request = event.request;
+  try {
+    const res = await fetch(request);
+    if (res && res.ok && res.status === 200) cachePut(request, res.clone());
+    return res;
+  } catch (err) {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    if (request.mode === 'navigate') {
+      const fallback = await caches.match(OFFLINE_FALLBACK);
+      if (fallback) return fallback;
+    }
+    throw err;
+  }
+}
+
+self.addEventListener('fetch', (e) => {
+  const request = e.request;
+  if (request.method !== 'GET') return;
+
+  const url = request.url;
+  if (!url.startsWith('http')) return;
+  if (isSupabase(url)) return;
+
+  const parsed = new URL(url);
+  if (parsed.origin !== self.location.origin) return;
+
+  if (request.mode === 'navigate' || request.destination === 'document') {
+    e.respondWith(networkFirst(e));
+    return;
+  }
+
+  if (STATIC_RE.test(parsed.pathname)) {
+    e.respondWith(staleWhileRevalidate(e));
+    return;
+  }
+
+  e.respondWith(networkFirst(e));
 });

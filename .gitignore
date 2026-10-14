@@ -6,3 +6,5 @@ notes/
 .tmp-*/
 __*.html
 .backup-*/
+__pycache__/
+*.pyc

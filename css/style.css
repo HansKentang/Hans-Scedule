@@ -6652,7 +6652,8 @@ input[type="color"].cpop-native-round::-moz-color-swatch { border:none; border-r
 
 /* Habits minimal variant */
 .w-habit-minimal { display:flex; flex-wrap:wrap; gap:4px; padding:4px 0; }
-.w-habit-min-item { width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:600; color:var(--text-secondary); cursor:pointer; transition:all 0.15s; user-select:none; }
+.w-habit-min-item { width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; font-size:0.6rem; font-weight:600; color:var(--text-secondary); cursor:pointer; transition:all 0.15s; user-select:none; position:relative; }
+.w-habit-min-item .hub-edit-item-btn.del { position:absolute; top:-7px; right:-7px; width:16px; height:16px; border-radius:50%; font-size:0.55rem; }
 .w-habit-min-item:hover { border-color:var(--text-tertiary); transform:scale(1.08); }
 .w-habit-min-item.w-habit-checked { background:color-mix(in srgb, var(--primary) 18%, transparent); border-color:var(--primary); color:var(--primary); }
 
@@ -12285,7 +12286,8 @@ html.edit-mode .gal-canvas .gal-item:hover {
 
 /* ─── Countdown: Cards Variant ────────────────────────── */
 .w-cd-cards { display:grid; grid-template-columns:1fr 1fr; gap:6px; overflow-y:auto; flex:1; min-height:0; }
-.w-cd-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:8px 4px; border-radius:8px; background:var(--surface-container-high); }
+.w-cd-card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:8px 4px; border-radius:8px; background:var(--surface-container-high); position:relative; }
+.w-cd-card .hub-edit-item-btn.del { position:absolute; top:4px; right:4px; }
 .w-cd-card-soon { background:color-mix(in srgb, #f59e0b 12%, var(--surface-container-high)); }
 .w-cd-card-passed { opacity:0.5; }
 .w-cd-card-num { font-size:1.4rem; font-weight:700; color:var(--primary); }
@@ -13302,10 +13304,11 @@ html.edit-mode .gal-canvas .gal-item:hover {
 /* ══════════════════════════════════════════════════════════════════════════
    WIDGET PACK 4 · NOTES — 2026-10-08
    The tile is the glanceable surface (list, previews, tickable checkboxes);
-   the editor modal is the writing surface. Six layouts that differ in
+   the editor modal is the writing surface. Five layouts that differ in
    structure, not in shadow: default (separated cards), compact (dense
-   one-line rows), lined (a rule under every line), checklist (big tick
-   targets), sticky (flat tinted cards) and minimal (no chrome at all).
+   one-line rows), lined (a rule under every line), sticky (flat tinted
+   cards) and minimal (no chrome at all). The sixth, a full-tile checklist,
+   was dropped on 2026-10-08 — this tile is for study notes, not tasks.
    Every surface and text colour is a theme token. The only fixed hues are the
    six user-chosen note tints — those encode data rather than surface, and are
    mixed at a low percentage so they read on a light and a dark canvas alike.
@@ -13354,6 +13357,26 @@ html.edit-mode .gal-canvas .gal-item:hover {
   color: var(--text-primary);
   border-color: color-mix(in srgb, var(--text-tertiary) 45%, transparent);
 }
+/* Browse-all is the quieter sibling of the +: the + is the action you reach for
+   every time, this is the one you need once the tile starts hiding notes. No
+   border, so it never competes with it. */
+.w-notes-browse {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.w-notes-browse svg { width: 13px; height: 13px; }
+.w-notes-browse:hover { background: var(--surface-container-high); color: var(--text-primary); }
 
 /* ── wrapper, text size and font modifiers ─────────────────────────────── */
 .w-notes-wrap {
@@ -13394,6 +13417,10 @@ html.edit-mode .gal-canvas .gal-item:hover {
 .w-note-line-head .w-note-txt { color: var(--text-primary); font-weight: 700; }
 .w-note-line-more .w-note-txt,
 .w-note-line-empty .w-note-txt { color: var(--text-tertiary); font-style: italic; }
+/* Inline emphasis from _notesInline(). Both are relative to the line's own
+   weight/colour, so **bold** inside a heading or a tinted card still reads. */
+.w-note-txt strong { font-weight: 600; color: var(--text-primary); }
+.w-note-txt em { font-style: italic; }
 .w-note-bullet {
   flex: 0 0 auto;
   width: 3px;
@@ -13404,7 +13431,7 @@ html.edit-mode .gal-canvas .gal-item:hover {
 }
 .w-note-line-num .w-note-bullet { width: 6px; height: 1.5px; border-radius: 1px; }
 
-/* checkboxes — one markup drives the tile and the checklist layout */
+/* checkboxes — the same markup ticks a line in any card layout */
 .w-note-check { align-items: flex-start; }
 .w-note-box {
   position: relative;
@@ -13494,16 +13521,22 @@ html.edit-mode .gal-canvas .gal-item:hover {
   text-align: center;
   padding-top: 1px;
 }
+/* _notesFit turns the footnote into the way in once notes are hidden, because a
+   hidden note has no node in the DOM and this line is the only thing that knows
+   it exists. It has to look pressable — a dead "+18 more" label was the bug. */
+.w-note-footnote.is-btn {
+  width: fit-content;
+  margin: 0 auto;
+  padding: 3px 7px 2px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.w-note-footnote.is-btn:hover { background: var(--surface-container-high); color: var(--text-primary); }
+.w-note-footnote.is-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 /* set by _notesFit, which hides the overflow at real layout time */
 .w-note-hidden { display: none !important; }
-.w-note-group {
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  padding: 2px 0 1px;
-}
 
 /* default — a hairline between notes, no card chrome */
 .w-notes-default .w-note-card { border-radius: 0; border-color: transparent; }
@@ -13590,15 +13623,9 @@ html.edit-mode .gal-canvas .gal-item:hover {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── checklist layout — every task line, big and tappable ──────────────── */
-.w-notes-checklist .w-note-check { padding: 4px 0; gap: 8px; }
-.w-notes-checklist .w-note-box { width: 16px; height: 16px; border-radius: 5px; margin-top: 0; }
-.w-notes-checklist .w-note-box svg { width: 10px; height: 10px; }
-.w-notes-checklist .w-note-txt { white-space: normal; overflow: visible; text-overflow: clip; }
-
 /* ── roominess — a tall tile with little content ───────────────────────── */
 /* A bento tile is resizable, so it is routinely taller than its notes. Left as
-   dead space the six layouts all read alike, because there is nothing for them
+   dead space the five layouts all read alike, because there is nothing for them
    to lay out — the tile just shows one line floating in a void. _notesRoominess()
    flags the slack and the content grows into it. Only flex-grow is used, so it
    can never overflow: it consumes free space, it does not create any.
@@ -13620,9 +13647,6 @@ html.edit-mode .gal-canvas .gal-item:hover {
    sparse tile. That is inherent, not a bug: with one short note there is nothing
    for a chrome-less layout to lay out. They separate as soon as there is
    content, which is when it matters. */
-
-/* checklist — every row gets taller, which is also a bigger tap target */
-.w-notes-roomy.w-notes-checklist .w-note-check { flex: 1 1 auto; }
 
 /* sticky grows via .w-note-card above, so the tint becomes a big sticky note. */
 
@@ -13712,26 +13736,49 @@ html.edit-mode .gal-canvas .gal-item:hover {
 .notes-modal-tools {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
-  padding: 9px 12px 0;
+  gap: 3px;
+  padding: 7px 10px 2px;
   border-top: 1px solid var(--border-subtle);
 }
+/* Square icon buttons. Each one draws the result it produces — a checkbox, a
+   bullet list, a rule — instead of naming itself, so the row reads as a set of
+   things you can do to the note rather than a line of small grey words. 30px
+   keeps it a comfortable target on a phone, and the whole row still fits on one
+   line at 320px wide. */
 .notes-tool {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
   font-family: var(--font-sans);
-  font-size: 0.66rem;
-  font-weight: 500;
-  padding: 5px 8px;
-  min-height: 26px;
   cursor: pointer;
-  transition: background var(--t-fast), color var(--t-fast);
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
 }
+.notes-tool svg { width: 15px; height: 15px; }
+.notes-tool-glyph { font-size: 0.82rem; line-height: 1; }
+.notes-tool-glyph.is-b { font-weight: 800; }
+.notes-tool-glyph.is-i { font-style: italic; font-size: 0.88rem; }
+.notes-tool-glyph.is-n { font-size: 0.7rem; font-weight: 600; letter-spacing: -0.02em; }
+.notes-tool-glyph.is-h { font-size: 0.82rem; font-weight: 700; }
 .notes-tool:hover {
   background: var(--surface-container-high);
   color: var(--text-primary);
+}
+.notes-tool:active { transform: scale(0.92); }
+/* Bold/Italic wrap the selection; the rest shape a line. The hairline says so
+   without a second row or a label. */
+.notes-tool-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 7px;
+  background: var(--border-subtle);
 }
 .notes-modal-foot {
   display: flex;
@@ -13934,6 +13981,112 @@ body.notes-modal-open { overflow: hidden; }
 }
 .notes-undo-btn:hover { background: color-mix(in srgb, var(--accent) 34%, transparent); }
 
+/* ── all-notes sheet ───────────────────────────────────────────────────── */
+/* The tile renders at most NOTES_RENDER_CAP cards, so this is the only route to
+   the rest. Reuses .notes-overlay / .notes-modal so it cannot drift from the
+   editor, and only the body scrolls. */
+.notes-all-title {
+  flex: 1 1 auto;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+.notes-all-count {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.notes-all-search {
+  padding: 0 14px 6px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.notes-all-search input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  padding: 6px 0;
+  outline: none;
+}
+.notes-all-search input::placeholder { color: var(--text-tertiary); }
+/* The global `input:focus-visible` ring (box-shadow: 0 0 0 2px var(--primary))
+   is a heavy box around a borderless field, and the sheet focuses this input on
+   open, so it would be on screen every single time. Move the cue to the rule
+   underneath instead — still an obvious focus indicator, just not loud. */
+.notes-all-search input:focus,
+.notes-all-search input:focus-visible { box-shadow: none; outline: none; }
+.notes-all-search:focus-within {
+  border-bottom-color: color-mix(in srgb, var(--accent) 55%, var(--border-subtle));
+}
+.notes-all-body {
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 6px;
+}
+.notes-all-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-sans);
+  padding: 7px 8px;
+  /* 34px, so a row is a comfortable target on a phone */
+  min-height: 34px;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.notes-all-row:hover { background: var(--surface-container-high); }
+.notes-all-swatch {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--border-color);
+}
+.notes-all-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.notes-all-top { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.notes-all-pin { flex: 0 0 auto; display: inline-flex; color: var(--text-tertiary); }
+.notes-all-pin svg { width: 9px; height: 9px; }
+.notes-all-label {
+  min-width: 0;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notes-all-snip {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notes-all-when {
+  flex: 0 0 auto;
+  font-size: 0.62rem;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.notes-all-none {
+  padding: 22px 10px;
+  text-align: center;
+  font-size: 0.74rem;
+  color: var(--text-tertiary);
+}
+
 /* ── narrow screens ────────────────────────────────────────────────────── */
 @media (max-width: 760px) {
   .notes-undo {
@@ -13947,6 +14100,12 @@ body.notes-modal-open { overflow: hidden; }
     max-height: calc(100vh - 40px);
   }
   .notes-modal-body { min-height: 150px; }
+  /* The two header icons are the controls you actually tap on a phone, and 22px
+     is under the ~28px comfortable target. */
+  .w-notes-new, .w-notes-browse { width: 28px; height: 28px; }
+  .w-notes-new svg { width: 13px; height: 13px; }
+  .w-notes-browse svg { width: 15px; height: 15px; }
+  .notes-all-row { min-height: 40px; }
   .notes-opts {
     top: auto;
     right: 12px;
@@ -14471,4 +14630,548 @@ body.notes-modal-open { overflow: hidden; }
 .style-pop-tick { font-size: 0.7rem; color: var(--bubble-accent, var(--primary)); }
 @media (max-width: 640px) {
   .style-pop-item { padding: 11px 12px; font-size: 0.78rem; }
+}
+
+/* ============================================================
+   WIDGET PACK 6 · LIST-FAMILY STYLES — 2026-10-08
+   Six structurally distinct structures shared by Goals, Priorities, Today and
+   Upcoming. All four are "a vertical list of one-line items", so the layouts
+   live here ONCE and each widget only supplies its own leading marker.
+
+   The rows come from _lxRow() / the containers from _lxWrap() in
+   hub-visuals.js. Every style keeps `.w-item[data-idx]` and
+   `.w-item-text[data-edit]`, which is what the grid's inline-edit and delete
+   handlers resolve against — reshape .w-item freely, but never remove data-idx
+   or data-edit, or the style silently stops being editable.
+
+   `.bento-scroll` is plain height:100%; overflow-y:auto, so a style that wants
+   to fill the tile needs the :has() rule — flex:1 is a no-op without it.
+   ============================================================ */
+
+.bento-scroll:has(> .w-lx-split),
+.bento-scroll:has(> .w-lx-meter),
+.bento-scroll:has(> .w-lx-chips),
+.bento-scroll:has(> .w-lx-board) { display: flex; flex-direction: column; }
+
+/* ── 1 · LIST — the plain vertical list. ───────────────────── */
+.w-lx-list { display: flex; flex-direction: column; gap: 1px; }
+.w-lx-list > .w-item { display: flex; align-items: center; gap: 10px; padding: 5px 4px; }
+.w-lx-list .w-item-text { font-size: 0.75rem; }
+.w-lx-list .w-pri-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+
+/* ── 2 · RANK — a big ghost numeral per row. ───────────────── */
+.w-lx-rank { display: flex; flex-direction: column; gap: 2px; }
+.w-lx-rankrow { display: flex; align-items: center; gap: 11px; padding: 6px 4px;
+  border-bottom: 1px solid var(--border-subtle); }
+.w-lx-rankrow:last-child { border-bottom: 0; }
+.w-lx-rankrow .w-item-text { font-size: 0.76rem; }
+.w-lx-bignum { font-size: 1.35rem; font-weight: 600; line-height: 1; flex: 0 0 auto;
+  min-width: 22px; font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--primary) 22%, transparent); }
+/* Priorities has no plain numeral to blow up — its marker is a coloured badge —
+   so the badge is scaled here instead. Without this, 'rank' and 'list' differ
+   only by a 20px circle vs a 6px dot, which does not read as a different design. */
+.w-lx-rankrow .w-pri-badge { width: 26px; height: 26px; font-size: 0.78rem; }
+
+/* ── 3 · SPLIT — two columns. ──────────────────────────────── */
+.w-lx-split { display: grid; grid-template-columns: 1fr 1fr; flex: 1 1 auto; min-height: 0; }
+.w-lx-col { display: flex; flex-direction: column; min-height: 0; padding: 0 11px; }
+.w-lx-col:first-child { padding-left: 0; }
+.w-lx-col:last-child { padding-right: 0; border-left: 1px solid var(--border-color); }
+.w-lx-colhead { display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-tertiary); padding-bottom: 7px; margin-bottom: 7px;
+  border-bottom: 1px solid var(--border-subtle); }
+.w-lx-colhead i { font-style: normal; }
+.w-lx-collist { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; min-height: 0; }
+.w-lx-collist > .w-item { display: flex; align-items: flex-start; gap: 7px; padding: 0; }
+.w-lx-collist > .w-item:hover { background: none; }
+.w-lx-collist .w-item-text { font-size: 0.66rem; line-height: 1.35; }
+.w-lx-collist .w-item-num { font-size: 0.58rem; min-width: 11px; color: var(--text-tertiary); }
+.w-lx-collist .w-pri-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; flex: 0 0 auto; }
+.w-lx-collist > .w-item.w-item-done { opacity: 0.62; }
+
+/* ── 4 · METER — a gauge leads, the items follow. ──────────── */
+/* align-items:flex-start, NOT center: the container stretches to the tile, so
+   centring floats the gauge in the middle of the card with a gap above it. */
+.w-lx-meter { display: flex; align-items: flex-start; gap: 15px; flex: 1 1 auto; min-height: 0; }
+.w-lx-gauge { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; }
+.w-lx-gaugenum { font-size: 1.7rem; font-weight: 600; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.w-lx-gauge > i { font-style: normal; font-size: 0.5rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-tertiary); margin-top: 2px; }
+.w-lx-ring { position: relative; width: 84px; height: 84px; }
+.w-lx-ring svg { display: block; width: 84px; height: 84px; transform: rotate(-90deg); }
+.w-lx-ringnum { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; }
+.w-lx-ringnum b { font-size: 1.2rem; font-weight: 600; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.w-lx-ringnum i { font-style: normal; font-size: 0.5rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-tertiary); margin-top: 3px; }
+.w-lx-rest { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;
+  overflow-y: auto; min-height: 0; }
+.w-lx-resthead { font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--text-tertiary); }
+.w-lx-restrow { display: flex; align-items: flex-start; gap: 8px; padding: 0; }
+.w-lx-restrow:hover { background: none; }
+.w-lx-restrow .w-item-text { font-size: 0.68rem; line-height: 1.35; }
+.w-lx-restrow .w-item-num { font-size: 0.58rem; min-width: 11px; color: var(--text-tertiary); }
+.w-lx-restrow .w-pri-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 4px; flex: 0 0 auto; }
+.w-lx-allclear { font-size: 0.68rem; color: var(--text-tertiary); }
+
+/* ── 5 · TIMELINE — a rail; the marker IS the node. ────────── */
+/* translateX(-50%) rather than a hand-tuned `left`: the marker differs per
+   widget (ordinal, dot, badge, checkbox), so one offset cannot centre them all. */
+.w-lx-rail { display: flex; flex-direction: column; margin-left: 6px;
+  padding-left: 18px; border-left: 1px solid var(--border-color); }
+.w-lx-node { position: relative; display: flex; align-items: center; gap: 9px; padding: 6px 4px; }
+/* ellipsis, not a raw clip: the rail is narrow and a long assignment title was
+   being cut mid-letter, which reads as a bug rather than as truncation */
+.w-lx-node .w-item-text { font-size: 0.7rem; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; }
+.w-lx-node > .w-item-num,
+.w-lx-node > .w-pri-dot,
+.w-lx-node > .w-pri-badge,
+.w-lx-node > .w-lx-dot,
+.w-lx-node > .w-todo-box { position: absolute; left: -18px; transform: translateX(-50%); }
+.w-lx-node > .w-pri-dot { width: 9px; height: 9px; border-radius: 50%; }
+.w-lx-node > .w-lx-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border-color); }
+.w-lx-node > .w-item-num { font-size: 0.55rem; width: auto; min-width: 0; text-align: center;
+  color: var(--text-tertiary); }
+.w-lx-node > .w-todo-box { width: 11px; height: 11px; min-width: 11px; border-width: 1.5px;
+  border-radius: 50%; background: var(--surface-container); }
+.w-lx-node > .w-todo-box svg { display: none; }
+.w-lx-node > .w-todo-box.w-todo-checked {
+  background: var(--bubble-accent, var(--primary));
+  border-color: var(--bubble-accent, var(--primary)); }
+/* 11px is too small to hit on a phone — the pseudo-element is the real target */
+.w-lx-node > .w-todo-box::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; }
+
+/* ── 6 · CHIPS — wrapping pills. Low density by nature. ────── */
+/* Top-aligned and tight on purpose: space-between was tried on the to-do chips
+   and reverted — it filled the tile but spread the rows apart until they read
+   as disconnected rather than airy. */
+.w-lx-chips { display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start;
+  flex: 1 1 auto; min-height: 0; }
+.w-lx-chip { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px 5px 8px;
+  border: 1px solid var(--border-color); border-radius: var(--radius-full); max-width: 100%; }
+.w-lx-chip .w-item-text { flex: 0 1 auto; font-size: 0.63rem; line-height: 1.3; }
+.w-lx-chip .w-item-num { font-size: 0.55rem; color: var(--text-tertiary); }
+.w-lx-chip .w-pri-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+.w-lx-chip .w-todo-box { width: 13px; height: 13px; min-width: 13px; border-width: 1.5px;
+  border-radius: 50%; }
+.w-lx-chip .w-todo-box svg { width: 7px; height: 7px; }
+.w-lx-chip.w-item-done { opacity: 1;
+  background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 10%, transparent);
+  border-color: transparent; }
+
+/* ── 7 · BOARD — a grid of tiles, each item its own card. ──── */
+.w-lx-board { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; grid-auto-rows: 1fr;
+  flex: 1 1 auto; min-height: 0; }
+.w-lx-tile { display: flex; flex-direction: column; gap: 6px; padding: 7px;
+  border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+  min-height: 0; overflow: hidden; }
+.w-lx-tile .w-item-text { flex: 0 1 auto; font-size: 0.6rem; line-height: 1.3; }
+.w-lx-tile .w-item-num { font-size: 0.55rem; color: var(--text-tertiary); }
+.w-lx-tile .w-pri-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+.w-lx-tile .w-todo-box { width: 14px; height: 14px; min-width: 14px; border-width: 1.5px;
+  border-radius: 4px; }
+.w-lx-tile .w-todo-box svg { width: 8px; height: 8px; }
+.w-lx-tile.w-item-done { opacity: 1;
+  background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 9%, transparent);
+  border-color: transparent; }
+
+/* ── 8 · AGENDA — grouped by day (Upcoming only). ──────────── */
+/* Tighter than it looks like it needs to be: in EDIT mode this widget grows a
+   horizon control (7d/14d/30d/90d) that costs ~27px, and the agenda is the
+   tallest structure, so it is the one that would overflow first. */
+.w-lx-agenda { display: flex; flex-direction: column; gap: 6px; }
+.w-lx-agenda .w-up-row { padding: 3px 4px; }
+/* the group head already names the day, so the per-row day tag is a repeat that
+   costs ~6px of height on every row — and the agenda is the tallest structure */
+.w-lx-agenda .w-up-daytag { display: none; }
+.w-up-daytag { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-tertiary); flex: 0 0 auto; }
+.w-up-row { display: flex; align-items: center; gap: 8px; padding: 4px 4px; }
+.w-up-row .w-up-title { flex: 1; min-width: 0; font-size: 0.72rem; }
+.w-lx-chip .w-up-daytag { font-size: 0.5rem; }
+.w-lx-chip .w-up-title { font-size: 0.63rem; }
+.w-lx-tile .w-up-daytag { font-size: 0.5rem; }
+.w-lx-tile .w-up-title { font-size: 0.64rem; }
+.w-lx-node .w-up-daytag { position: absolute; left: -18px; transform: translateX(-50%); }
+/* the to-do box is the rail node for Today; Upcoming has no box, so the rail
+   line needs its own node dot on rows that carry only a day tag */
+.w-lx-node .w-upcoming-dot { flex: 0 0 auto; }
+
+/* ── 9 · Homework rides the list family ─────────────────────
+   Its meta row (subject + priority + due chip) has to survive every structure.
+   The due chip is a real control — data-hw-due opens a date input — so it stays
+   visible everywhere, just smaller; only the subject badge is dropped in the
+   tight structures, where a coloured pill would break the shape. */
+.w-hw-meta { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.w-lx-rankrow .w-hw-meta { margin-left: auto; }
+/* Meter rows are the narrowest (the gauge takes ~100px of a 320px tile). Left
+   inline, the meta's intrinsic width beats the text's, so .w-item-text collapses
+   to a one-character column and the row grows to 235px. Wrapping the meta onto
+   its own line keeps the due-date control visible without that. */
+.w-lx-restrow.w-hw-item { flex-wrap: wrap; row-gap: 2px; }
+.w-lx-restrow .w-hw-meta { flex: 1 0 100%; order: 9; margin-left: 22px; }
+.w-lx-restrow .w-hw-meta .w-hw-subject { display: none; }
+.w-lx-collist .w-hw-meta, .w-lx-tile .w-hw-meta { flex-wrap: wrap; gap: 4px; }
+.w-lx-chip .w-hw-meta, .w-lx-node .w-hw-meta { gap: 4px; }
+.w-lx-chip .w-hw-meta .w-hw-subject,
+.w-lx-node .w-hw-meta .w-hw-subject { display: none; }
+.w-lx-chip .w-hw-meta .w-hw-due-chip,
+.w-lx-node .w-hw-meta .w-hw-due-chip,
+.w-lx-tile .w-hw-meta .w-hw-due-chip,
+.w-lx-collist .w-hw-meta .w-hw-due-chip { font-size: 0.5rem; padding: 1px 5px; }
+.w-lx-tile .w-hw-meta .w-hw-subject,
+.w-lx-collist .w-hw-meta .w-hw-subject { font-size: 0.5rem; }
+
+@media (max-width: 640px) {
+  .w-lx-list > .w-item, .w-up-row { padding: 7px 4px; }
+  .w-lx-chip { padding: 7px 12px 7px 9px; }
+  .w-lx-node > .w-todo-box::after { inset: -12px; }
+}
+
+/* ============================================================
+   WIDGET PACK 7 · METRIC FAMILY — 2026-10-10
+   Six structures shared by Streak, Focus Log and Progress — all three are "one
+   headline number plus a history of days". Built by _mxWrap() in hub-visuals.js,
+   so a layout fix here lands on all three at once.
+
+   Bar fills stay at or below ~25% accent mix, per the "minimal, not loud" rule;
+   the heat levels deliberately go higher because a heat grid is read as data,
+   not as chrome.
+   ============================================================ */
+
+.bento-scroll:has(> .mx-hero),
+.bento-scroll:has(> .mx-barswrap),
+.bento-scroll:has(> .mx-ringwrap) { display: flex; flex-direction: column; }
+
+.mx-big { font-size: 1.9rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.mx-lbl { font-style: normal; font-size: 0.52rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); margin-top: 3px; }
+.mx-sub { font-size: 0.6rem; color: var(--text-tertiary); margin-top: 3px; }
+.mx-foot { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px;
+  font-size: 0.6rem; color: var(--text-tertiary); flex: 0 0 auto; }
+
+/* ── hero — the number left, the week right ────────────────── */
+.mx-hero { display: flex; align-items: flex-start; gap: 14px; flex: 1 1 auto; min-height: 0; }
+.mx-heroleft { flex: 0 0 auto; display: flex; flex-direction: column; }
+.mx-herochart { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; }
+
+/* ── bars — the chart owns the tile ────────────────────────── */
+.mx-barswrap { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+
+.mx-days { display: flex; align-items: stretch; gap: 4px; flex: 1 1 auto; min-height: 0; width: 100%; }
+.mx-barcol { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mx-bartrack { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: flex-end;
+  background: color-mix(in srgb, var(--primary) 6%, transparent); border-radius: 3px; overflow: hidden; }
+.mx-bar { width: 100%; background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 22%, transparent); border-radius: 3px; }
+.mx-barlbl { font-size: 0.5rem; color: var(--text-tertiary); flex: 0 0 auto; }
+
+/* ── ring ──────────────────────────────────────────────────── */
+.mx-ringwrap { display: flex; align-items: flex-start; gap: 14px; flex: 1 1 auto; min-height: 0; }
+.mx-ring { position: relative; width: 84px; height: 84px; flex: 0 0 auto; }
+.mx-ring svg { display: block; width: 84px; height: 84px; transform: rotate(-90deg); }
+.mx-ringmeta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mx-ringlbl { font-size: 0.66rem; color: var(--text-secondary); }
+.mx-ringsub { font-size: 0.58rem; color: var(--text-tertiary); }
+
+/* ── heatmap ───────────────────────────────────────────────── */
+.mx-heattop { display: flex; flex-direction: column; margin-bottom: 8px; flex: 0 0 auto; }
+.mx-heatgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(7px, 1fr));
+  gap: 2px; align-content: flex-start; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.mx-cell { width: 100%; aspect-ratio: 1; border-radius: 2px;
+  background: color-mix(in srgb, var(--primary) 7%, transparent); }
+.mx-cell.lvl1 { background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 22%, transparent); }
+.mx-cell.lvl2 { background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 40%, transparent); }
+.mx-cell.lvl3 { background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 62%, transparent); }
+.mx-cell.lvl4 { background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 85%, transparent); }
+
+/* ── stats — labelled figures ──────────────────────────────── */
+.mx-stats { display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-height: 0; }
+.mx-statrow { display: flex; align-items: baseline; gap: 9px; padding: 6px 8px;
+  border-radius: var(--radius-sm); background: color-mix(in srgb, var(--primary) 5%, transparent); }
+.mx-statv { font-size: 1.1rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
+  color: var(--text-primary); min-width: 34px; }
+.mx-statl { font-size: 0.6rem; color: var(--text-tertiary); }
+
+/* ── compact — one line, number plus history strip ─────────── */
+.mx-compact { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-height: 0; }
+.mx-compact .mx-big { font-size: 1.4rem; }
+.mx-compact .mx-lbl { margin-top: 0; }
+.mx-strip { display: flex; gap: 2px; flex: 1 1 auto; min-width: 0; align-items: center; }
+.mx-strip .mx-cell { width: 100%; max-width: 12px; }
+
+@media (max-width: 640px) {
+  .mx-barcol { gap: 3px; }
+  .mx-hero, .mx-ringwrap { gap: 11px; }
+}
+
+/* ============================================================
+   WIDGET PACK 8 · EXAMS — 2026-10-14
+   The first widget whose style system was built from scratch instead of
+   converted. Six concepts chosen for what an exam list actually needs — a
+   countdown, a plain list, a revision rail, a syllabus checklist, a board of
+   tiles, one dense line each — rather than borrowed from a family vocabulary.
+
+   The renderer is _examsRender(d, style). Every style that shows syllabus
+   topics MUST keep the data-exam-topic / data-exam-idx pair on the chips; drop
+   it and topics silently stop being tickable.
+
+   No `.bento-scroll :has()` rule is needed here: the container is `.wp-widget`,
+   which is already `display:flex; flex-direction:column; height:100%`, so these
+   bodies can simply flex to fill it.
+   ============================================================ */
+
+/* ── 0 · the .wp-widget height bug (pre-existing, affects 6 widgets) ──
+   `.wp-widget` is `height:100%`, but it has a `.w-head` SIBLING inside
+   `.bento-scroll` — so 100% plus the head is always ~30px taller than the tile
+   and every one of these widgets scrolls by exactly the header's height. The
+   audit reads that as `clipped`. Affects exams, grades, attendance, holidays,
+   birthdays and flashcards. Same fix the codebase already uses elsewhere: make
+   the scroll container a flex column and let the widget take the remainder. */
+.bento-scroll:has(> .wp-widget) { display: flex; flex-direction: column; }
+.bento-scroll > .wp-widget { height: auto; flex: 1 1 auto; min-height: 0; }
+
+/* ── 1 · COUNTDOWN — the nearest exam owns the tile ────────── */
+.ex-hint { font-size: 0.62rem; color: var(--text-tertiary); }
+
+/* ── 2 · TIMELINE — a revision rail; the day count is the node ─ */
+.ex-rail { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; margin-left: 4px; padding-left: 16px; border-left: 1px solid var(--border-color); }
+.ex-node { position: relative; display: flex; align-items: center; gap: 9px; padding: 6px 2px; }
+.ex-node-day { position: absolute; left: -16px; transform: translateX(-50%);
+  font-size: 0.5rem; font-weight: 500; font-variant-numeric: tabular-nums;
+  background: var(--surface-container); padding: 0 1px; }
+.ex-node-body { display: flex; flex-direction: column; min-width: 0; }
+.ex-node-title { font-size: 0.72rem; color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-node-sub { font-size: 0.55rem; color: var(--text-tertiary); }
+
+/* ── 3 · SYLLABUS — topics first, grouped per exam ─────────── */
+.ex-syllabus { display: flex; flex-direction: column; gap: 10px; flex: 1 1 auto;
+  min-height: 0; overflow-y: auto; }
+.ex-syl-group { display: flex; flex-direction: column; gap: 5px; }
+.ex-syl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-tertiary); padding-bottom: 5px; border-bottom: 1px solid var(--border-subtle); }
+.ex-syl-head i { font-style: normal; }
+
+/* ── 4 · BOARD — a tile per exam, the count as the hero ────── */
+.ex-board { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; grid-auto-rows: 1fr;
+  flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.ex-tile { display: flex; flex-direction: column; gap: 3px; padding: 8px;
+  border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+  min-height: 0; overflow: hidden; }
+.ex-tile-days { font-size: 1.35rem; font-weight: 500; line-height: 1;
+  font-variant-numeric: tabular-nums; }
+.ex-tile-lbl { font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-tertiary); }
+.ex-tile-title { font-size: 0.6rem; color: var(--text-secondary); line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-tile .wp-bar { margin-top: auto; }
+
+/* ── 5 · COMPACT — one dense line per exam ─────────────────── */
+.ex-compact { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto;
+  min-height: 0; overflow-y: auto; }
+.ex-crow { display: flex; align-items: center; gap: 8px; padding: 4px 2px; }
+.ex-cdays { font-size: 0.58rem; font-variant-numeric: tabular-nums; min-width: 26px; }
+.ex-ctitle { flex: 1; min-width: 0; font-size: 0.7rem; color: var(--text-primary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-cpct { font-size: 0.55rem; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+
+/* ── 6 · LIST — the plain list, one syllabus bar per row ───── */
+.wp-widget > .wp-rows { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+
+@media (max-width: 640px) {
+  .ex-crow, .ex-node { padding: 7px 2px; }
+  .ex-tile { padding: 9px; }
+}
+
+/* ============================================================
+   WIDGET PACK 9 · HABITS — 2026-10-14
+   Six concepts chosen for a habit tracker specifically, not borrowed from the
+   list family: a tick list, a week grid, a heat grid, a completion ring, a tile
+   per habit, one dense line each.
+
+   HARD CONSTRAINT: the grid handler resolves a tick through
+   `[data-habit-toggle]`. Every style must emit exactly one per habit, and only
+   TODAY's cell carries it — past cells are history and are not editable.
+
+   The heat grid is 8 weeks (56 cells), not 12: habitData is pruned to the last
+   60 days, so a longer grid would be four columns of permanent blanks.
+   ============================================================ */
+
+.bento-scroll:has(> .hb-list),
+.bento-scroll:has(> .hb-week),
+.bento-scroll:has(> .hb-heat),
+.bento-scroll:has(> .hb-board),
+.bento-scroll:has(> .hb-ringwrap) { display: flex; flex-direction: column; }
+
+/* ── shared bits ───────────────────────────────────────────── */
+.hb-cell { display: block; width: 100%; aspect-ratio: 1; border-radius: 2px;
+  background: color-mix(in srgb, var(--primary) 7%, transparent); flex: 0 0 auto; }
+.hb-cell.is-on { background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 55%, transparent); }
+.hb-tick, .hb-dot, .hb-cdot { display: inline-flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--border-color); border-radius: 50%; flex: 0 0 auto;
+  color: transparent; cursor: pointer; }
+.hb-tick svg, .hb-dot svg, .hb-cdot svg { width: 9px; height: 9px; }
+.hb-tick.is-on, .hb-dot.is-on, .hb-cdot.is-on {
+  background: var(--bubble-accent, var(--primary));
+  border-color: var(--bubble-accent, var(--primary));
+  color: var(--on-primary); }
+/* a 15px circle is too small to hit on a phone */
+.hb-tick::after, .hb-dot::after, .hb-cdot::after { content: ''; position: absolute; inset: -8px; border-radius: 50%; }
+.hb-tick, .hb-dot, .hb-cdot { position: relative; }
+.hb-name, .hb-cname { flex: 1; min-width: 0; font-size: 0.72rem; color: var(--text-primary); }
+.hb-name[contenteditable="true"], .hb-cname[contenteditable="true"] { outline: none; }
+
+/* ── 1 · TODAY — the tick list ─────────────────────────────── */
+.hb-list { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.hb-row { display: flex; align-items: center; gap: 10px; padding: 6px 2px; }
+.hb-row .hb-tick { width: 17px; height: 17px; }
+.hb-row .hb-tick svg { width: 10px; height: 10px; }
+.hb-row.is-on .hb-name { color: var(--text-secondary); }
+
+/* ── 2 · WEEK — habits down, the last seven days across ────── */
+.hb-week { display: flex; flex-direction: column; gap: 3px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.hb-week-head, .hb-week-row { display: grid; grid-template-columns: 1fr repeat(7, 15px) 14px; gap: 4px; align-items: center; }
+.hb-week-head { padding-bottom: 4px; }
+.hb-dowlbl { font-size: 0.5rem; text-align: center; color: var(--text-tertiary); }
+.hb-dowlbl.is-today { color: var(--text-primary); font-weight: 500; }
+.hb-week-row { padding: 4px 0; }
+.hb-week-name { font-size: 0.68rem; color: var(--text-primary); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── 3 · HEAT GRID — habits down, 56 days across ───────────── */
+.hb-heat { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.hb-heat-row { display: flex; align-items: center; gap: 8px; }
+.hb-heat-name { font-size: 0.6rem; color: var(--text-secondary); width: 58px; flex: 0 0 auto;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb-heat-cells { display: grid; grid-template-columns: repeat(28, 1fr); gap: 2px; flex: 1 1 auto; min-width: 0; }
+
+/* ── 4 · RING — today's completion, then the names ─────────── */
+/* stretch, not flex-start: with flex-start the name list is content-height and
+   runs past the tile instead of scrolling inside it. The ring opts back out. */
+.hb-ringwrap { display: flex; align-items: stretch; gap: 14px; flex: 1 1 auto; min-height: 0; }
+.hb-ring { position: relative; width: 84px; height: 84px; flex: 0 0 auto; align-self: flex-start; }
+.hb-ring svg { display: block; width: 84px; height: 84px; transform: rotate(-90deg); }
+.hb-ringlist { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px;
+  overflow-y: auto; min-height: 0; }
+.hb-ringrow { display: flex; align-items: center; gap: 8px; }
+.hb-ringrow .hb-dot { width: 11px; height: 11px; }
+.hb-ringrow.is-on .hb-name { color: var(--text-secondary); }
+
+/* ── 5 · BOARD — a tile per habit with its week ────────────── */
+.hb-board { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; grid-auto-rows: 1fr;
+  flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.hb-tile { display: flex; flex-direction: column; gap: 6px; padding: 8px;
+  border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+  min-height: 0; overflow: hidden; }
+.hb-tile-name { font-size: 0.6rem; color: var(--text-primary); line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb-tile-cells { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: auto; }
+
+/* ── 6 · COMPACT — one dense line, plus a week strip ───────── */
+.hb-compact { display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.hb-crow { display: flex; align-items: center; gap: 8px; padding: 4px 2px; }
+.hb-crow .hb-cdot { width: 12px; height: 12px; }
+.hb-crow .hb-cdot svg { width: 7px; height: 7px; }
+.hb-cname { font-size: 0.68rem; }
+.hb-cstrip { display: grid; grid-template-columns: repeat(7, 8px); gap: 2px; flex: 0 0 auto; }
+.hb-cstrip .hb-cell { border-radius: 1px; }
+
+@media (max-width: 640px) {
+  .hb-row, .hb-crow { padding: 7px 2px; }
+  .hb-tick::after, .hb-dot::after, .hb-cdot::after { inset: -12px; }
+  .hb-week-head, .hb-week-row { grid-template-columns: 1fr repeat(7, 19px) 14px; gap: 5px; }
+}
+
+/* ============================================================
+   WIDGET PACK 10 · TIMER — 2026-10-14
+   Six concepts for a countdown: ring, digits, bar, dial, split, one line.
+
+   Fixes a pre-existing defect: `timer/default` overflowed its tile by 80px (the
+   worst in the app) because `.timer-widget` was never constrained to the tile.
+   The :has() rule below is the standard fix, and the sizes are chosen to fit a
+   280px tile rather than to look good at any size.
+
+   Interaction contract: `data-timer-action` (toggle / mode / reset) and
+   `data-timer-preset` must exist in every style, or that style stops working.
+   ============================================================ */
+
+.bento-scroll:has(> .timer-widget) { display: flex; flex-direction: column; }
+.bento-scroll > .timer-widget { flex: 1 1 auto; min-height: 0; }
+.tw-digits, .tw-bar, .tw-dial, .tw-split, .tw-minimal, .tw-ring {
+  display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+
+/* the controls are shared by every style; only their placement differs */
+.timer-widget .timer-controls { display: flex; gap: 6px; flex-wrap: wrap; }
+.timer-widget .timer-btn { padding: 2px 8px; font-size: 0.6rem; border-radius: var(--radius-sm); }
+.tw-ctl-inline { flex-direction: row; }
+.tw-ctl-stack { flex-direction: column; }
+.tw-ctl-stack .timer-btn { width: 100%; text-align: center; }
+.tw-ctl-min { flex-direction: row; margin-top: auto; }
+.tw-ctl-min .timer-btn { padding: 4px 9px; font-size: 0.6rem; }
+
+/* ── 1 · RING ──────────────────────────────────────────────── */
+.tw-ring { align-items: center; }
+.tw-ring .tw-ring { width: 54px; height: 54px; flex: 0 0 auto; }
+.tw-ring .timer-ring svg { width: 54px; height: 54px; }
+.tw-ring .timer-controls { margin-top: auto; }
+
+/* ── 2 · DIGITS — the numerals own the tile ────────────────── */
+.tw-digits-top { display: flex; flex-direction: column; gap: 2px; min-height: 0; }
+.tw-digits-time { font-size: 1.9rem; font-weight: 500; line-height: 1; letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.tw-digits-mode { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-tertiary); }
+.tw-digits .timer-controls { margin-top: auto; }
+
+/* ── 3 · BAR — a horizontal progress track ─────────────────── */
+.tw-bar { justify-content: center; gap: 8px; }
+.tw-bar .timer-bar-wrap { display: flex; flex-direction: column; gap: 7px; }
+.tw-bar .timer-bar-track { height: 8px; border-radius: 4px;
+  background: color-mix(in srgb, var(--primary) 8%, transparent); overflow: hidden; }
+.tw-bar .timer-bar-fill { height: 100%; border-radius: 4px;
+  background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 55%, transparent); }
+.tw-bar .timer-bar-time { font-size: 1.25rem; font-weight: 500; font-variant-numeric: tabular-nums;
+  color: var(--text-primary); text-align: center; }
+
+/* ── 4 · DIAL — an analog face with a sweeping hand ────────── */
+.tw-dial { align-items: center; }
+.tw-dial-face { position: relative; width: 62px; height: 62px; flex: 0 0 auto; }
+.tw-dial-face svg { display: block; width: 62px; height: 62px; }
+/* centred inside the face, not under it: the label below cost ~13px and the
+   tile is only 180px tall */
+.tw-dial-time { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.tw-dial .timer-controls { margin-top: auto; }
+
+/* ── 5 · SPLIT — time left, controls stacked right ─────────── */
+.tw-split { flex-direction: row; align-items: stretch; gap: 12px; }
+.tw-split-left { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+.tw-split-time { font-size: 1.6rem; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;
+  color: var(--text-primary); }
+.tw-split-mode { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-tertiary); margin-top: 3px; }
+.tw-split-right { flex: 0 0 auto; width: 84px; display: flex; flex-direction: column; }
+.tw-split .timer-presets { flex: 1 0 100%; }
+
+/* ── 6 · MINIMAL — one quiet line ──────────────────────────── */
+.tw-minimal { justify-content: center; gap: 8px; }
+.tw-min-time { font-size: 1.35rem; font-weight: 500; font-variant-numeric: tabular-nums;
+  color: var(--text-primary); }
+
+/* the preset chips only render while idle/ready, so they must never push the
+   body past the tile — they wrap and stay small */
+.timer-widget .timer-presets { display: flex; flex-wrap: wrap; gap: 5px; }
+.timer-widget .timer-preset { padding: 1px 7px; font-size: 0.55rem; border-radius: var(--radius-full); }
+
+@media (max-width: 640px) {
+  .timer-widget .timer-btn { padding: 8px 14px; font-size: 0.75rem; }
+  .timer-widget .timer-preset { padding: 7px 12px; font-size: 0.68rem; }
+  .tw-digits-time { font-size: 2.6rem; }
 }

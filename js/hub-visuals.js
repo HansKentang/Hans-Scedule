@@ -87,11 +87,178 @@ function _tdTaskRow(t, i, isEdit, esc, extraCls) {
     + '</div>';
 }
 
+/* ─── List-family styles: goals / priorities / today / upcoming ──────────
+   All four are the same shape — a vertical list of one-line items — so they
+   share ONE structural vocabulary and ONE row builder, and each id means the
+   same thing on every one of them:
+
+     list      plain rows           rank      big ghost numerals
+     split     two columns          meter     a gauge leads, items follow
+     timeline  vertical rail        chips     wrapping pills
+     board     tile grid            agenda    grouped by day (upcoming only)
+
+   The row builder is shared for the same reason the to-do one is: a style that
+   hand-rolls its row loses the data-edit / data-del contract and silently stops
+   being editable. `mk` (the leading marker) is the only per-style variation. */
+/* Ids that shipped before this rework. Map them, never drop them: a saved
+   {uid:'progress'} would otherwise fall through to the default and the widget
+   would silently change shape under the user. */
+const LX_LEGACY = {
+  goals:      { 'default':'list', 'compact':'list', 'numbered':'rank' },
+  priorities: { 'default':'list', 'compact':'list', 'numbered':'rank' },
+  today:      { 'default':'list', 'compact':'list', 'progress':'meter' },
+  upcoming:   { 'default':'list', 'compact':'list', 'agenda':'agenda' },
+  homework:   { 'default':'list', 'compact':'list', 'kanban':'split' }
+};
+function _lxResolve(type, list, uid, map) {
+  var v = map[uid];
+  var legacy = LX_LEGACY[type] && LX_LEGACY[type][v];
+  if (legacy) return legacy;
+  return list.indexOf(v) !== -1 ? v : 'list';
+}
+
+/* One row. `cfg` fixes the edit contract per widget — field name, drag
+   attribute, placeholder — and `mk` is the style's leading marker. */
+function _lxRow(cfg, text, i, isEdit, esc, cls, mk, done, extra) {
+  return '<div class="w-item ' + (cls || '') + (done ? ' w-item-done' : '') + (cfg.rowExtra || '') + '" data-idx="' + i + '">'
+    + (isEdit && cfg.drag ? '<span class="w-todo-drag-handle" draggable="true" data-' + cfg.drag + '-drag="' + i + '">\u283F</span>' : '')
+    + (mk || '')
+    + '<span class="w-item-text' + (done ? ' w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="' + cfg.ph + '" data-edit="' + cfg.field + '" data-idx="' + i + '">' + esc(text) + '</span>'
+    + (extra || '')
+    + (isEdit ? '<button class="hub-edit-item-btn del" data-del="' + cfg.field + '" data-idx="' + i + '">\u00D7</button>' : '')
+    + '</div>';
+}
+
+/* The completion ring the meter style uses — r=26 so it matches the to-do
+   meter exactly and the two widgets read as the same design. */
+function _lxRing(pct, label) {
+  var r = 26, c = 2 * Math.PI * r;
+  return '<svg viewBox="0 0 64 64">'
+    + '<circle cx="32" cy="32" r="' + r + '" fill="none" stroke="var(--border-subtle)" stroke-width="4"/>'
+    + '<circle cx="32" cy="32" r="' + r + '" fill="none" stroke="var(--bubble-accent, var(--primary))" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + ((pct / 100) * c).toFixed(1) + ' ' + c.toFixed(1) + '"/>'
+    + '</svg><div class="w-lx-ringnum"><b>' + label + '</b><i>done</i></div>';
+}
+
+/* The container for each structure. `rowAt(i, cls)` returns one row already
+   classed for the structure it lands in — the caller owns the marker, this owns
+   the layout, and between them the six styles cannot drift apart. */
+function _lxWrap(style, order, rowAt, add, opts) {
+  opts = opts || {};
+  if (style === 'split') {
+    /* A widget with a done-state passes its own two lists (open / done); one
+       without just gets the order halved. */
+    var a, b;
+    if (opts.splitAOrder || opts.splitBOrder) {
+      a = opts.splitAOrder || []; b = opts.splitBOrder || [];
+    } else {
+      var half = Math.ceil(order.length / 2);
+      a = order.slice(0, half); b = order.slice(half);
+    }
+    return '<div class="w-lx-split">'
+      + '<div class="w-lx-col"><span class="w-lx-colhead"><span>' + (opts.splitA || 'First') + '</span><i>' + a.length + '</i></span>'
+      + '<div class="w-lx-collist">' + a.map(function(i) { return rowAt(i, ''); }).join('') + '</div></div>'
+      + '<div class="w-lx-col"><span class="w-lx-colhead"><span>' + (opts.splitB || 'Rest') + '</span><i>' + b.length + '</i></span>'
+      + '<div class="w-lx-collist">' + b.map(function(i) { return rowAt(i, ''); }).join('') + '</div></div>'
+      + '</div>' + add;
+  }
+  if (style === 'meter') {
+    return '<div class="w-lx-meter"><div class="w-lx-gauge">' + (opts.gauge || '') + '</div>'
+      + '<div class="w-lx-rest">' + (opts.restHead || '') + order.map(function(i) { return rowAt(i, 'w-lx-restrow'); }).join('')
+      + (order.length ? '' : '<span class="w-lx-allclear">' + (opts.clearText || 'All done') + '</span>')
+      + '</div></div>' + add;
+  }
+  if (style === 'timeline') return '<div class="w-lx-rail">' + order.map(function(i) { return rowAt(i, 'w-lx-node'); }).join('') + '</div>' + add;
+  if (style === 'chips')    return '<div class="w-lx-chips">' + order.map(function(i) { return rowAt(i, 'w-lx-chip'); }).join('') + '</div>' + add;
+  if (style === 'board')    return '<div class="w-lx-board">' + order.map(function(i) { return rowAt(i, 'w-lx-tile'); }).join('') + '</div>' + add;
+  if (style === 'rank')     return '<div class="w-lx-rank">' + order.map(function(i) { return rowAt(i, 'w-lx-rankrow'); }).join('') + '</div>' + add;
+  if (style === 'agenda')   return '<div class="w-lx-agenda">' + (opts.groups || '') + '</div>' + add;
+  return '<div class="w-list w-lx-list">' + order.map(function(i) { return rowAt(i, ''); }).join('') + add + '</div>';
+}
+
+/* ─── Metric family: Streak / Focus Log / Progress ───────────────────────
+   All three are "one headline number plus a history of days", so they share six
+   structures and ONE builder — the three cannot drift apart, and a layout fix
+   lands on all of them at once. Each caller maps its own data into this shape:
+
+     m = { big, label, sub, pct, bars: [{lbl, pct}], cells: [{lvl, title}],
+           stats: [{v, l}], strip: [lvl, …], foot }
+
+   Any field may be omitted — a structure renders the parts it is given. */
+/* Ids that shipped before this rework. Map them, never drop them — a saved
+   {uid:'minimal'} would otherwise fall through to the default and the widget
+   would silently change shape under the user. */
+const MX_LEGACY = {
+  streak:   { 'default':'hero', 'compact':'compact', 'heatmap':'heatmap' },
+  focuslog: { 'default':'hero', 'compact':'compact', 'bars':'bars' },
+  progress: { 'default':'hero', 'stats':'stats', 'minimal':'compact' }
+};
+function _mxResolve(type, list, uid, map) {
+  var v = map[uid];
+  var legacy = MX_LEGACY[type] && MX_LEGACY[type][v];
+  if (legacy) return legacy;
+  return list.indexOf(v) !== -1 ? v : 'hero';
+}
+
+function _mxBars(bars) {
+  return '<div class="mx-days">' + (bars || []).map(function(b) {
+    return '<div class="mx-barcol"><div class="mx-bartrack"><div class="mx-bar" style="height:' + b.pct + '%"></div></div>'
+      + '<span class="mx-barlbl">' + b.lbl + '</span></div>';
+  }).join('') + '</div>';
+}
+function _mxCells(cells, cls) {
+  return (cells || []).map(function(c) {
+    return '<span class="mx-cell ' + (cls || '') + ' lvl' + c.lvl + '" title="' + c.title + '"></span>';
+  }).join('');
+}
+function _mxWrap(style, m) {
+  var big = '<span class="mx-big">' + m.big + '</span><i class="mx-lbl">' + m.label + '</i>';
+  var foot = m.foot ? '<div class="mx-foot">' + m.foot + '</div>' : '';
+
+  if (style === 'ring') {
+    return '<div class="mx-ringwrap"><div class="mx-ring">' + _lxRing(typeof m.pct === 'number' ? m.pct : 0, m.big) + '</div>'
+      + '<div class="mx-ringmeta"><span class="mx-ringlbl">' + m.label + '</span>'
+      + (m.sub ? '<span class="mx-ringsub">' + m.sub + '</span>' : '') + '</div></div>' + foot;
+  }
+  if (style === 'bars') {
+    /* the chart owns the tile — no headline number at all */
+    return '<div class="mx-barswrap">' + _mxBars(m.bars) + '</div>' + foot;
+  }
+  if (style === 'heatmap') {
+    return '<div class="mx-heattop">' + big + '</div><div class="mx-heatgrid">' + _mxCells(m.cells) + '</div>' + foot;
+  }
+  if (style === 'stats') {
+    return '<div class="mx-stats">' + (m.stats || []).map(function(s) {
+      return '<div class="mx-statrow"><span class="mx-statv">' + s.v + '</span><span class="mx-statl">' + s.l + '</span></div>';
+    }).join('') + '</div>' + foot;
+  }
+  if (style === 'compact') {
+    return '<div class="mx-compact"><div class="mx-heroleft">' + big + '</div>'
+      + '<span class="mx-strip">' + (m.strip || []).map(function(l) { return '<span class="mx-cell lvl' + l + '"></span>'; }).join('') + '</span>'
+      + '</div>' + foot;
+  }
+  /* hero — the number and the week side by side, rather than stacked like bars */
+  return '<div class="mx-hero"><div class="mx-heroleft">' + big
+    + (m.sub ? '<span class="mx-sub">' + m.sub + '</span>' : '') + '</div>'
+    + '<div class="mx-herochart">' + _mxBars(m.bars) + '</div></div>' + foot;
+}
+
 const HABITS_STYLES_KEY = 'haven-habits-styles';
-const HABITS_STYLE_LIST = ['default','list','minimal'];
+/* Six concepts chosen for a habit tracker specifically — a tick list, a week
+   grid, a heat grid, a completion ring, a tile per habit, one dense line each.
+   NOT the list family's vocabulary: "timeline" and "chips" mean nothing here.
+
+   The heat grid is EIGHT weeks, not twelve: the toggle handler prunes
+   habitData to the last 60 days, so anything older is always empty and a
+   12-week grid would render four columns of permanent blanks. */
+const HABITS_STYLE_LIST = ['today','week','heatmap','ring','board','compact'];
+const HABITS_LEGACY_STYLES = { 'default':'today', 'list':'today', 'minimal':'compact' };
 let _habitsStyles = {};
 try { _habitsStyles = JSON.parse(localStorage.getItem(HABITS_STYLES_KEY) || '{}'); } catch(e) {}
-function _getHabitsStyle(uid) { return _habitsStyles[uid] || 'default'; }
+function _getHabitsStyle(uid) {
+  var v = _habitsStyles[uid];
+  if (HABITS_LEGACY_STYLES[v]) return HABITS_LEGACY_STYLES[v];
+  return HABITS_STYLE_LIST.indexOf(v) !== -1 ? v : 'today';
+}
 function _setHabitsStyle(uid, style) { _habitsStyles[uid] = style; try { localStorage.setItem(HABITS_STYLES_KEY, JSON.stringify(_habitsStyles)); } catch(e) {} }
 
 const MOOD_STYLES_KEY = 'haven-mood-styles';
@@ -109,10 +276,18 @@ function _getWaterStyle(uid) { return _waterStyles[uid] || 'default'; }
 function _setWaterStyle(uid, style) { _waterStyles[uid] = style; try { localStorage.setItem(WATER_STYLES_KEY, JSON.stringify(_waterStyles)); } catch(e) {} }
 
 const TIMER_STYLES_KEY = 'haven-timer-styles';
-const TIMER_STYLE_LIST = ['default','digital','bar'];
+/* Six concepts chosen for a timer: a progress ring, big digits, a progress bar,
+   an analog dial, a split layout, and one quiet line. Not a list vocabulary —
+   "chips" and "board" mean nothing for a countdown. */
+const TIMER_STYLE_LIST = ['ring','digits','bar','dial','split','minimal'];
+const TIMER_LEGACY_STYLES = { 'default':'ring', 'digital':'digits', 'bar':'bar' };
 let _timerStyles = {};
 try { _timerStyles = JSON.parse(localStorage.getItem(TIMER_STYLES_KEY) || '{}'); } catch(e) {}
-function _getTimerStyle(uid) { return _timerStyles[uid] || 'default'; }
+function _getTimerStyle(uid) {
+  var v = _timerStyles[uid];
+  if (TIMER_LEGACY_STYLES[v]) return TIMER_LEGACY_STYLES[v];
+  return TIMER_STYLE_LIST.indexOf(v) !== -1 ? v : 'ring';
+}
 function _setTimerStyle(uid, style) { _timerStyles[uid] = style; try { localStorage.setItem(TIMER_STYLES_KEY, JSON.stringify(_timerStyles)); } catch(e) {} }
 
 const POMO_STYLES_KEY = 'haven-pomo-styles';
@@ -123,16 +298,30 @@ function _getPomoStyle(uid) { return _pomoStyles[uid] || 'default'; }
 function _setPomoStyle(uid, style) { _pomoStyles[uid] = style; try { localStorage.setItem(POMO_STYLES_KEY, JSON.stringify(_pomoStyles)); } catch(e) {} }
 
 const NOTES_STYLES_KEY = 'haven-notes-styles';
-/* Six styles that differ in structure, not just surface — 'default' and 'minimal'
-   used to differ only by a min-height, which made the style button look dead. */
-const NOTES_STYLE_LIST = ['default','compact','lined','checklist','sticky','minimal'];
+/* Five styles that differ in structure, not just surface — 'default' and 'minimal'
+   used to differ only by a min-height, which made the style button look dead.
+   The 'checklist' layout was dropped on 2026-10-08: Hans uses this tile for study
+   notes, not tasks, so a layout whose whole job was to flatten every note into one
+   tick list was the wrong shape. Ticking still works on any note whose body has
+   '- [ ]' lines, so nothing was lost except a sixth button to cycle past. */
+const NOTES_STYLE_LIST = ['default','compact','lined','sticky','minimal'];
+/* A saved map in the wild can still hold 'checklist' (or the pre-rework
+   'default'/'lined'/'minimal' trio, which all meant the same thing). Map the
+   removed id onto the nearest surviving design instead of letting it fall
+   through — a fall-through renders the card body under a `w-notes-checklist`
+   wrapper whose CSS no longer exists, which looks like a broken tile. */
+const NOTES_LEGACY_STYLES = { checklist: 'default' };
 let _notesStyles = {};
 try { _notesStyles = JSON.parse(localStorage.getItem(NOTES_STYLES_KEY) || '{}'); } catch(e) {}
-function _getNotesStyle(uid) { return _notesStyles[uid] || 'default'; }
+function _getNotesStyle(uid) {
+  var s = _notesStyles[uid] || 'default';
+  if (NOTES_LEGACY_STYLES[s]) s = NOTES_LEGACY_STYLES[s];
+  return NOTES_STYLE_LIST.indexOf(s) !== -1 ? s : 'default';
+}
 function _setNotesStyle(uid, style) { _notesStyles[uid] = style; try { localStorage.setItem(NOTES_STYLES_KEY, JSON.stringify(_notesStyles)); } catch(e) {} }
 
 /* Notes display preferences — per widget, not per note, so one tile can be a
-   compact checklist and another a roomy reading pane. */
+   compact list and another a roomy reading pane. */
 const NOTES_PREFS_KEY = 'haven-notes-prefs';
 const NOTES_SIZE_LIST = ['sm','md','lg'];
 const NOTES_FONT_LIST = ['sans','serif','mono'];
@@ -186,24 +375,24 @@ function _getCdStyle(uid) { return _cdStyles[uid] || 'default'; }
 function _setCdStyle(uid, style) { _cdStyles[uid] = style; try { localStorage.setItem(CD_STYLES_KEY, JSON.stringify(_cdStyles)); } catch(e) {} }
 
 const PRI_STYLES_KEY = 'haven-pri-styles';
-const PRI_STYLE_LIST = ['default','compact','numbered'];
+const PRI_STYLE_LIST = ['list','rank','split','timeline','chips','board'];
 let _priStyles = {};
 try { _priStyles = JSON.parse(localStorage.getItem(PRI_STYLES_KEY) || '{}'); } catch(e) {}
-function _getPriStyle(uid) { return _priStyles[uid] || 'default'; }
+function _getPriStyle(uid) { return _lxResolve('priorities', PRI_STYLE_LIST, uid, _priStyles); }
 function _setPriStyle(uid, style) { _priStyles[uid] = style; try { localStorage.setItem(PRI_STYLES_KEY, JSON.stringify(_priStyles)); } catch(e) {} }
 
 const PROG_STYLES_KEY = 'haven-prog-styles';
-const PROG_STYLE_LIST = ['default','stats','minimal'];
+const PROG_STYLE_LIST = ['hero','ring','bars','stats','heatmap','compact'];
 let _progStyles = {};
 try { _progStyles = JSON.parse(localStorage.getItem(PROG_STYLES_KEY) || '{}'); } catch(e) {}
-function _getProgStyle(uid) { return _progStyles[uid] || 'default'; }
+function _getProgStyle(uid) { return _mxResolve('progress', PROG_STYLE_LIST, uid, _progStyles); }
 function _setProgStyle(uid, style) { _progStyles[uid] = style; try { localStorage.setItem(PROG_STYLES_KEY, JSON.stringify(_progStyles)); } catch(e) {} }
 
 const GOALS_STYLES_KEY = 'haven-goals-styles';
-const GOALS_STYLE_LIST = ['default','compact','numbered'];
+const GOALS_STYLE_LIST = ['list','rank','split','timeline','chips','board'];
 let _goalsStyles = {};
 try { _goalsStyles = JSON.parse(localStorage.getItem(GOALS_STYLES_KEY) || '{}'); } catch(e) {}
-function _getGoalsStyle(uid) { return _goalsStyles[uid] || 'default'; }
+function _getGoalsStyle(uid) { return _lxResolve('goals', GOALS_STYLE_LIST, uid, _goalsStyles); }
 function _setGoalsStyle(uid, style) { _goalsStyles[uid] = style; try { localStorage.setItem(GOALS_STYLES_KEY, JSON.stringify(_goalsStyles)); } catch(e) {} }
 
 const IMG_STYLES_KEY = 'haven-img-styles';
@@ -214,10 +403,10 @@ function _getImgStyle(uid) { return _imgStyles[uid] || 'default'; }
 function _setImgStyle(uid, style) { _imgStyles[uid] = style; try { localStorage.setItem(IMG_STYLES_KEY, JSON.stringify(_imgStyles)); } catch(e) {} }
 
 const HW_STYLES_KEY = 'haven-hw-styles';
-const HW_STYLE_LIST = ['default','compact','kanban'];
+const HW_STYLE_LIST = ['list','split','meter','timeline','chips','board'];
 let _hwStyles = {};
 try { _hwStyles = JSON.parse(localStorage.getItem(HW_STYLES_KEY) || '{}'); } catch(e) {}
-function _getHwStyle(uid) { return _hwStyles[uid] || 'default'; }
+function _getHwStyle(uid) { return _lxResolve('homework', HW_STYLE_LIST, uid, _hwStyles); }
 function _setHwStyle(uid, style) { _hwStyles[uid] = style; try { localStorage.setItem(HW_STYLES_KEY, JSON.stringify(_hwStyles)); } catch(e) {} }
 
 const ALARM_STYLES_KEY = 'haven-alarm-styles';
@@ -228,24 +417,24 @@ function _getAlarmStyle(uid) { return _alarmStyles[uid] || 'digital'; }
 function _setAlarmStyle(uid, style) { _alarmStyles[uid] = style; try { localStorage.setItem(ALARM_STYLES_KEY, JSON.stringify(_alarmStyles)); } catch(e) {} }
 
 const TODAY_STYLES_KEY = 'haven-today-styles';
-const TODAY_STYLE_LIST = ['default','compact','progress'];
+const TODAY_STYLE_LIST = ['list','split','meter','timeline','chips','board'];
 let _todayStyles = {};
 try { _todayStyles = JSON.parse(localStorage.getItem(TODAY_STYLES_KEY) || '{}'); } catch(e) {}
-function _getTodayStyle(uid) { return _todayStyles[uid] || 'default'; }
+function _getTodayStyle(uid) { return _lxResolve('today', TODAY_STYLE_LIST, uid, _todayStyles); }
 function _setTodayStyle(uid, style) { _todayStyles[uid] = style; try { localStorage.setItem(TODAY_STYLES_KEY, JSON.stringify(_todayStyles)); } catch(e) {} }
 
 const UPCOMING_STYLES_KEY = 'haven-upcoming-styles';
-const UPCOMING_STYLE_LIST = ['default','compact','agenda'];
+const UPCOMING_STYLE_LIST = ['list','agenda','split','timeline','chips','board'];
 let _upcomingStyles = {};
 try { _upcomingStyles = JSON.parse(localStorage.getItem(UPCOMING_STYLES_KEY) || '{}'); } catch(e) {}
-function _getUpcomingStyle(uid) { return _upcomingStyles[uid] || 'default'; }
+function _getUpcomingStyle(uid) { return _lxResolve('upcoming', UPCOMING_STYLE_LIST, uid, _upcomingStyles); }
 function _setUpcomingStyle(uid, style) { _upcomingStyles[uid] = style; try { localStorage.setItem(UPCOMING_STYLES_KEY, JSON.stringify(_upcomingStyles)); } catch(e) {} }
 
 const STREAK_STYLES_KEY = 'haven-streak-styles';
-const STREAK_STYLE_LIST = ['default','compact','heatmap'];
+const STREAK_STYLE_LIST = ['hero','ring','heatmap','bars','stats','compact'];
 let _streakStyles = {};
 try { _streakStyles = JSON.parse(localStorage.getItem(STREAK_STYLES_KEY) || '{}'); } catch(e) {}
-function _getStreakStyle(uid) { return _streakStyles[uid] || 'default'; }
+function _getStreakStyle(uid) { return _mxResolve('streak', STREAK_STYLE_LIST, uid, _streakStyles); }
 function _setStreakStyle(uid, style) { _streakStyles[uid] = style; try { localStorage.setItem(STREAK_STYLES_KEY, JSON.stringify(_streakStyles)); } catch(e) {} }
 
 const BUDGET_STYLES_KEY = 'haven-budget-styles';
@@ -277,10 +466,10 @@ function _getSavingsStyle(uid) { return _savingsStyles[uid] || 'default'; }
 function _setSavingsStyle(uid, style) { _savingsStyles[uid] = style; try { localStorage.setItem(SAVINGS_STYLES_KEY, JSON.stringify(_savingsStyles)); } catch(e) {} }
 
 const FOCUS_STYLES_KEY = 'haven-focus-styles';
-const FOCUS_STYLE_LIST = ['default','compact','bars'];
+const FOCUS_STYLE_LIST = ['hero','ring','bars','heatmap','stats','compact'];
 let _focusStyles = {};
 try { _focusStyles = JSON.parse(localStorage.getItem(FOCUS_STYLES_KEY) || '{}'); } catch(e) {}
-function _getFocusStyle(uid) { return _focusStyles[uid] || 'default'; }
+function _getFocusStyle(uid) { return _mxResolve('focuslog', FOCUS_STYLE_LIST, uid, _focusStyles); }
 function _setFocusStyle(uid, style) { _focusStyles[uid] = style; try { localStorage.setItem(FOCUS_STYLES_KEY, JSON.stringify(_focusStyles)); } catch(e) {} }
 
 
@@ -337,6 +526,19 @@ let _weekplanStyles = {};
 try { _weekplanStyles = JSON.parse(localStorage.getItem(WEEKPLAN_STYLES_KEY) || '{}'); } catch(e) {}
 function _getWeekplanStyle(uid) { return _weekplanStyles[uid] || 'default'; }
 function _setWeekplanStyle(uid, style) { _weekplanStyles[uid] = style; _weekplanPickerDay = null; _weekplanPickerCell = null; try { localStorage.setItem(WEEKPLAN_STYLES_KEY, JSON.stringify(_weekplanStyles)); } catch(e) {} }
+
+/* Exams — the first widget to get a style system built from scratch rather than
+   converted (it shipped with none). No LEGACY map is needed: there was never a
+   saved map to break, so the only fallback is the default. */
+const EXAMS_STYLES_KEY = 'haven-exams-styles';
+const EXAMS_STYLE_LIST = ['countdown','list','timeline','syllabus','board','compact'];
+let _examsStyles = {};
+try { _examsStyles = JSON.parse(localStorage.getItem(EXAMS_STYLES_KEY) || '{}'); } catch(e) {}
+function _getExamsStyle(uid) {
+  var v = _examsStyles[uid];
+  return EXAMS_STYLE_LIST.indexOf(v) !== -1 ? v : 'countdown';
+}
+function _setExamsStyle(uid, style) { _examsStyles[uid] = style; try { localStorage.setItem(EXAMS_STYLES_KEY, JSON.stringify(_examsStyles)); } catch(e) {} }
 
 function _studyUid(p) { return (p || 'st') + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36); }
 function _normalizeStudy(list) {
@@ -408,6 +610,24 @@ function _studySubjectItems(sj) {
   var out = [];
   (sj.chapters || []).forEach(function(c) { (c.items || []).forEach(function(it) { out.push(it); }); });
   return out;
+}
+
+/* The Study widget's subject palette. Module scope, NOT local to the `study`
+   render case, because the Study Plan widget paints its boxes with the same
+   colours — the two widgets have to agree on what colour "Math" is, and a
+   case-local helper cannot be reached from another function at all. */
+var STUDY_SUBJECT_PALETTE = ['#4a90d9','#27ae60','#8e44ad','#f39c12','#e74c8b','#16a085','#e67e22','#2980b9','#c0392b','#1abc9c'];
+/* A subject with no colour of its own gets a stable one hashed from its name, so
+   the same subject is the same colour on every render and in both widgets. */
+function _studyColor(name) {
+  if (!name) return STUDY_SUBJECT_PALETTE[0];
+  var hash = 0;
+  for (var ci = 0; ci < name.length; ci++) hash = name.charCodeAt(ci) + ((hash << 5) - hash);
+  return STUDY_SUBJECT_PALETTE[Math.abs(hash) % STUDY_SUBJECT_PALETTE.length];
+}
+function _studySubjectColor(sj) {
+  if (!sj) return STUDY_SUBJECT_PALETTE[0];
+  return sj.color || _studyColor(sj.name);
 }
 function _moveStudyItem(dragId, leafId, zoneId, before) {
   _ensureStudy();
@@ -513,6 +733,7 @@ function _reloadAllWidgetStyles() {
   _doodleStyles = _loadStyleMap(DOODLE_STYLES_KEY);
   _ghStyles = _loadStyleMap(GH_STYLES_KEY);
   _weekplanStyles = _loadStyleMap(WEEKPLAN_STYLES_KEY);
+  _examsStyles = _loadStyleMap(EXAMS_STYLES_KEY);
 }
 function _persistStyleMap(map, key) {
   try { localStorage.setItem(key, JSON.stringify(map)); } catch(e) {}
@@ -540,7 +761,8 @@ function _copyWidgetStyle(srcUid, dstUid) {
     [_breathStyles, BREATH_STYLES_KEY],
     [_readStyles, READ_STYLES_KEY], [_doodleStyles, DOODLE_STYLES_KEY],
     [_ghStyles, GH_STYLES_KEY],
-    [_weekplanStyles, WEEKPLAN_STYLES_KEY]
+    [_weekplanStyles, WEEKPLAN_STYLES_KEY],
+    [_examsStyles, EXAMS_STYLES_KEY]
   ];
   for (var i = 0; i < pairs.length; i++) {
     var map = pairs[i][0];
@@ -562,13 +784,33 @@ function _copyWidgetStyle(srcUid, dstUid) {
    the picker to work. Widgets not in the map keep their old cycle handler, so
    this migrates one widget at a time instead of all 35 at once. */
 var WIDGET_STYLES = {
-  todos: { list: TODOS_STYLE_LIST, get: _getTodosStyle, set: _setTodosStyle }
+  todos:      { list: TODOS_STYLE_LIST,    get: _getTodosStyle,    set: _setTodosStyle },
+  goals:      { list: GOALS_STYLE_LIST,    get: _getGoalsStyle,    set: _setGoalsStyle },
+  priorities: { list: PRI_STYLE_LIST,      get: _getPriStyle,      set: _setPriStyle },
+  today:      { list: TODAY_STYLE_LIST,    get: _getTodayStyle,    set: _setTodayStyle },
+  upcoming:   { list: UPCOMING_STYLE_LIST, get: _getUpcomingStyle, set: _setUpcomingStyle },
+  homework:   { list: HW_STYLE_LIST,       get: _getHwStyle,       set: _setHwStyle },
+  habits:     { list: HABITS_STYLE_LIST,   get: _getHabitsStyle,   set: _setHabitsStyle },
+  streak:     { list: STREAK_STYLE_LIST,   get: _getStreakStyle,   set: _setStreakStyle },
+  focuslog:   { list: FOCUS_STYLE_LIST,    get: _getFocusStyle,    set: _setFocusStyle },
+  progress:   { list: PROG_STYLE_LIST,     get: _getProgStyle,     set: _setProgStyle },
+  exams:      { list: EXAMS_STYLE_LIST,    get: _getExamsStyle,    set: _setExamsStyle }
 };
 
 /* Most ids are lowercase single words and title-case fine. Override only where
-   the raw id would read badly ("meter" -> "Meter" is fine; "board" -> "Board"). */
+   the raw id would read badly, or where two widgets mean different things by the
+   same id ("list" is a plain checklist on today, a numbered list on goals). */
 var STYLE_LABELS = {
-  todos: { list: 'Checklist', split: 'Split', meter: 'Meter', timeline: 'Timeline', chips: 'Chips', board: 'Board' }
+  todos:      { list: 'Checklist', split: 'Split', meter: 'Meter', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
+  goals:      { list: 'Numbered', rank: 'Big numbers', split: 'Split', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
+  priorities: { list: 'Dots', rank: 'Ranked', split: 'Split', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
+  today:      { list: 'Checklist', split: 'Open / done', meter: 'Progress ring', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
+  upcoming:   { list: 'List', agenda: 'Agenda', split: 'Split', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
+  homework:   { list: 'List', split: 'Pending / done', meter: 'Progress ring', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
+  habits:     { today: 'Today', week: 'This week', heatmap: 'Heat grid', ring: 'Progress ring', board: 'Tiles', compact: 'One line' },
+  streak:     { hero: 'Big number', ring: 'Ring', heatmap: 'Heatmap', bars: 'Bar chart', stats: 'Stats', compact: 'One line' },
+  focuslog:   { hero: 'Big number', ring: 'Ring', bars: 'Bar chart', heatmap: 'Heat grid', stats: 'Stats', compact: 'One line' },
+  progress:   { hero: 'Big number', ring: 'Ring', bars: 'Bar chart', stats: 'Stats', heatmap: 'Heat grid', compact: 'One line' }
 };
 function _styleLabel(type, id) {
   var m = STYLE_LABELS[type];
@@ -637,6 +879,22 @@ function openStylePicker(uid, type, anchor) {
     document.addEventListener('scroll', closeStylePicker, true);
     window.addEventListener('resize', closeStylePicker);
   }, 0);
+}
+
+/* One click handler for every Style button. A widget listed in WIDGET_STYLES
+   opens the picker; one that is not converted yet keeps the old cycle
+   behaviour — which is what lets the widgets migrate a few at a time instead of
+   all 30 in one go. */
+function _styleBtnClick(btn, uid, type, list, get, set) {
+  if (WIDGET_STYLES[type]) {
+    if (document.getElementById('hubStylePop')) { closeStylePicker(); return; }
+    openStylePicker(uid, type, btn);
+    return;
+  }
+  var cur = get(uid);
+  var idx = list.indexOf(cur);
+  set(uid, list[(idx + 1) % list.length]);
+  renderHubBento();
 }
 
 const HUB_VIS_KEY = 'haven-hub-visibility';
@@ -1440,7 +1698,7 @@ var _EMPTY_STATES = {
   homework:   { t: 'No homework', h: 'Add assignments to keep track of due dates.', add: 'homework', cta: 'Add homework' },
   countdown:  { t: 'No countdowns', h: 'Count down to an exam, trip or deadline.', add: 'countdown', cta: 'Add countdown' },
   reading:    { t: 'No books yet', h: 'Add a book to track how far you have read.' },
-  notes:      { t: 'No notes yet', h: 'Capture a thought, a list or a checklist.', add: 'notes', cta: 'New note' }
+  notes:      { t: 'No notes yet', h: 'Write down what you are studying, or a thought to keep.', add: 'notes', cta: 'New note' }
 };
 
 function _applyEmptyState(bubble, type, uid) {
@@ -1497,11 +1755,52 @@ var NOTES_PIN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 var NOTES_PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
 var NOTES_CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 var NOTES_GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 003.68 15a1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 003.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6 1.65 1.65 0 0010 3.09V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>';
+/* Browse-all icon — three stacked lines, the conventional "list" glyph. */
+var NOTES_LIST_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
+
+/* Formatting tools. Each button draws the RESULT it produces instead of naming
+   itself: "Task" told you nothing about what you would get, whereas a checkbox
+   glyph *is* the thing you are asking for. Bold and Italic stay as a bold B and
+   an italic I because that pair is the one convention every editor shares, so it
+   needs no label at all. `label` still carries the plain name for the tooltip
+   and for screen readers — the icons are for the eye, not the only signal. */
+var NOTES_TOOL_BTNS = [
+  { k:'bold', label:'Bold', title:'Bold',
+    icon:'<span class="notes-tool-glyph is-b">B</span>' },
+  { k:'italic', label:'Italic', title:'Italic',
+    icon:'<span class="notes-tool-glyph is-i">I</span>' },
+  { k:'check', label:'Task', title:'Task \u2014 a tickable checkbox', sep:true,
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4.5"/><polyline points="7.5 12.4 10.6 15.5 16.5 8.8"/></svg>' },
+  { k:'bullet', label:'List', title:'Bulleted list',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4.6" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4.6" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4.6" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>' },
+  { k:'num', label:'Numbered list', title:'Numbered list',
+    icon:'<span class="notes-tool-glyph is-n">1.</span>' },
+  { k:'head', label:'Heading', title:'Heading',
+    icon:'<span class="notes-tool-glyph is-h">H</span>' },
+  { k:'rule', label:'Divider', title:'Divider',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/></svg>' },
+  { k:'date', label:'Date', title:'Today\u2019s date',
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3.5"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg>' }
+];
+
+function _notesToolsHtml() {
+  return NOTES_TOOL_BTNS.map(function(b) {
+    return (b.sep ? '<span class="notes-tool-sep" aria-hidden="true"></span>' : '')
+      + '<button type="button" class="notes-tool" data-notes-insert="' + b.k + '"'
+      + ' title="' + b.title + '" aria-label="' + b.label + '">' + b.icon + '</button>';
+  }).join('');
+}
 var NOTES_TINT_HEX = { blue:'#3b82f6', teal:'#0d9488', amber:'#d97706', rose:'#e11d48', violet:'#7c3aed' };
 /* how many units are emitted before the fitter takes over. The fitter
    (_notesFit) hides the overflow at real layout time, so this is only a
    bound on DOM size, not a display cap — a taller tile reveals more. */
 var NOTES_RENDER_CAP = 12;
+/* Room the fitter leaves for the footnote on its second pass. This has to cover
+   the footnote's real height, which lives in CSS — when the footnote became a
+   button (`.w-note-footnote.is-btn`, for tap target) it grew past the old 16 and
+   the tile started overflowing by 4px. If you change that padding, re-run
+   `audit-widget-styles.js` with `HAVEN_ONLY=notes` and check the `over` column. */
+var NOTES_FOOT_RESERVE = 24;
 
 function _notesNewId() {
   return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -1741,14 +2040,38 @@ function _notesFirstLine(note) {
 }
 
 function _notesLabel(note) {
-  var t = String((note && note.title) || '').trim();
+  var t = _notesPlain(String((note && note.title) || '').trim());
   if (t) return t;
-  return _notesFirstLine(note) || 'Empty note';
+  return _notesPlain(_notesFirstLine(note)) || 'Empty note';
 }
 
 function _notesWordCount(body) {
   var s = String(body == null ? '' : body).trim();
   return s ? s.split(/\s+/).length : 0;
+}
+
+/* Inline emphasis, because these are study notes: **bold** and *italic* are how
+   a revision note marks the term that matters. The input arrives already escaped,
+   so the only metacharacters left are the markers themselves and the tags below
+   are ours — never user text.
+
+   Deliberately no `_underscore_` emphasis: study notes are full of chapter_4 /
+   h2_o style tokens, and silently italicising those is a worse bug than not
+   having a third way to write emphasis. */
+function _notesInline(txt) {
+  var s = String(txt == null ? '' : txt);
+  /* Bold first. Reversed, the italic pass eats one asterisk of each bold pair
+     and leaves stray stars sitting next to the words. */
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  return s;
+}
+
+/* The same text with its markers stripped, for the places a note is shown as a
+   one-line label (tile title, row label, tooltip). There, literal asterisks read
+   as a typo rather than as emphasis. */
+function _notesPlain(txt) {
+  return String(txt == null ? '' : txt).replace(/\*\*/g, '').replace(/\*/g, '');
 }
 
 /* One rendered line. `interactive` gates the checkbox hit area. */
@@ -1763,12 +2086,12 @@ function _notesLineHtml(L, uid, noteId, interactive, compact) {
     return '<div class="w-note-line w-note-check' + (L.checked ? ' w-note-check-done' : '') + '">'
       + '<span class="w-note-box' + (L.checked ? ' w-note-box-on' : '') + '"' + attrs + '>'
       + NOTES_CHECK_SVG + '</span>'
-      + '<span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
+      + '<span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
   }
-  if (L.kind === 'head') return '<div class="w-note-line w-note-line-head"><span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
-  if (L.kind === 'bullet') return '<div class="w-note-line w-note-line-bullet"><span class="w-note-bullet"></span><span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
-  if (L.kind === 'num') return '<div class="w-note-line w-note-line-num"><span class="w-note-bullet"></span><span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
-  return '<div class="w-note-line"><span class="w-note-txt">' + escapeHtml(L.text) + '</span></div>';
+  if (L.kind === 'head') return '<div class="w-note-line w-note-line-head"><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
+  if (L.kind === 'bullet') return '<div class="w-note-line w-note-line-bullet"><span class="w-note-bullet"></span><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
+  if (L.kind === 'num') return '<div class="w-note-line w-note-line-num"><span class="w-note-bullet"></span><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
+  return '<div class="w-note-line"><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
 }
 
 /* Card layout — shared by default / lined / sticky / minimal, which the
@@ -1794,7 +2117,10 @@ function _notesCardsHtml(list, prefs, uid, interactive, modifier) {
     }
     if (!rows) rows = '<div class="w-note-line w-note-line-empty"><span class="w-note-txt">Empty note</span></div>';
     else if (hidden) rows += '<div class="w-note-line w-note-line-more"><span class="w-note-txt">+' + hidden + ' more</span></div>';
-    var title = String(n.title || '').trim();
+    /* _notesPlain, not the raw title: a title is a one-line label, so a bolded
+       one must read "Physics", never "**Physics**". Only body lines render
+       emphasis. */
+    var title = _notesPlain(String(n.title || '').trim());
     /* Title and timestamp share one row: a separate meta line cost ~24px per
        card, which is a whole extra note on a 240px tile. */
     var when = (prefs.time && modifier !== 'minimal')
@@ -1833,43 +2159,9 @@ function _notesCompactHtml(list, prefs, uid, interactive) {
   return out;
 }
 
-/* Checklist layout — every task line from every note, big and tappable. */
-function _notesChecklistHtml(list, prefs, uid, interactive) {
-  var out = '';
-  var count = 0;
-  var max = NOTES_RENDER_CAP;
-  for (var i = 0; i < list.length && count < max; i++) {
-    var n = list[i];
-    var lines = _notesLines(n.body);
-    var grouped = list.length > 1;
-    var head = grouped ? '<div class="w-note-group">' + escapeHtml(_notesLabel(n)) + '</div>' : '';
-    var rows = '';
-    for (var j = 0; j < lines.length && count < max; j++) {
-      if (lines[j].kind !== 'check') continue;
-      if (!prefs.done && lines[j].checked) continue;
-      rows += _notesLineHtml(lines[j], uid, n.id, interactive);
-      count++;
-    }
-    if (rows) out += head + rows;
-  }
-  if (count) return out;
-  /* No task lines anywhere — show the plain text instead of a blank tile. */
-  var plain = 0;
-  for (var k = 0; k < list.length && plain < max; k++) {
-    var ls = _notesLines(list[k].body);
-    for (var m = 0; m < ls.length && plain < max; m++) {
-      if (ls[m].kind === 'gap') continue;
-      out += _notesLineHtml(ls[m], uid, list[k].id, false);
-      plain++;
-    }
-  }
-  return out;
-}
-
 function _notesBodyHtml(list, style, prefs, uid, isEdit) {
   if (!list.length) return '';
   var interactive = !isEdit;
-  if (style === 'checklist') return _notesChecklistHtml(list, prefs, uid, interactive);
   if (style === 'compact') return _notesCompactHtml(list, prefs, uid, interactive);
   return _notesCardsHtml(list, prefs, uid, interactive, style);
 }
@@ -1890,9 +2182,11 @@ function _notesFit(grid) {
     var scroll = bub.querySelector('.bento-scroll');
     if (!scroll || !scroll.clientHeight) return;
 
-    var mode = wrap.classList.contains('w-notes-compact') ? 'row'
-             : wrap.classList.contains('w-notes-checklist') ? 'line' : 'card';
-    var sel = mode === 'row' ? '.w-note-row' : mode === 'line' ? '.w-note-group, .w-note-line' : '.w-note-card';
+    /* Two fit modes: 'row' trims whole rows (compact), 'card' trims lines off a
+       card before dropping it (everything else). The old 'line' mode existed
+       only for the checklist layout, which was removed on 2026-10-08. */
+    var mode = wrap.classList.contains('w-notes-compact') ? 'row' : 'card';
+    var sel = mode === 'row' ? '.w-note-row' : '.w-note-card';
     var units = Array.prototype.slice.call(wrap.querySelectorAll(sel));
     if (!units.length) return;
 
@@ -1902,12 +2196,21 @@ function _notesFit(grid) {
     var hidden = _notesFitPass(scroll, units, mode, 0);
     if (hidden) {
       _notesFitReset(wrap, foot);
-      hidden = _notesFitPass(scroll, units, mode, 16);
+      hidden = _notesFitPass(scroll, units, mode, NOTES_FOOT_RESERVE);
     }
     var extra = parseInt(wrap.dataset.notesExtra, 10) || 0;
     if (foot && (hidden || extra)) {
       foot.textContent = '+' + (hidden + extra) + ' more';
       foot.classList.remove('hidden');
+      /* Those notes have no card in the DOM, so this line is the only thing that
+         knows they exist — which makes it the only way in. Turn it into a button
+         rather than a dead label. */
+      if (bub.dataset.bubble) {
+        foot.setAttribute('data-notes-all', bub.dataset.bubble);
+        foot.setAttribute('role', 'button');
+        foot.setAttribute('tabindex', '0');
+        foot.classList.add('is-btn');
+      }
     }
     _notesRoominess(wrap, scroll, units);
   });
@@ -1930,7 +2233,14 @@ function _notesRoominess(wrap, scroll, units) {
 function _notesFitReset(wrap, foot) {
   Array.prototype.forEach.call(wrap.querySelectorAll('.w-note-hidden'), function(el) { el.classList.remove('w-note-hidden'); });
   Array.prototype.forEach.call(wrap.querySelectorAll('.w-note-fit-more'), function(el) { el.remove(); });
-  if (foot) { foot.classList.add('hidden'); foot.textContent = ''; }
+  if (foot) {
+    foot.classList.add('hidden');
+    foot.classList.remove('is-btn');
+    foot.textContent = '';
+    foot.removeAttribute('data-notes-all');
+    foot.removeAttribute('role');
+    foot.removeAttribute('tabindex');
+  }
 }
 
 /* Hides everything past the first unit that does not fit. Returns how many
@@ -1983,15 +2293,6 @@ function _notesFitPass(scroll, units, mode, reserve) {
     break;
   }
 
-  /* A group header whose rows all got hidden reads as a bug, not a style. */
-  if (mode === 'line') {
-    for (var g = units.length - 1; g >= 0; g--) {
-      if (units[g].classList.contains('w-note-hidden')) continue;
-      if (!units[g].classList.contains('w-note-group')) break;
-      units[g].classList.add('w-note-hidden');
-      hidden++;
-    }
-  }
   return hidden;
 }
 
@@ -2075,7 +2376,7 @@ function renderHubBento() {
          </div>
          <div class="bento-toolbar-remove">
           <button class="bento-tool-btn bento-tool-delete bento-tool-icon-only" data-remove-bubble="${uid}" title="Remove this widget" aria-label="Remove this widget">${TRASH_SVG}</button></div>
-          ${ (type === 'clock' || type === 'weather' || type === 'sleep-score' || type === 'headlines' || type === 'calendar' || type === 'todos' || type === 'today' || type === 'habits' || type === 'mood' || type === 'water' || type === 'timer' || type === 'alarm' || type === 'pomodoro' || type === 'notes' || type === 'links' || type === 'quote' || type === 'countdown' || type === 'priorities' || type === 'progress' || type === 'goals' || type === 'images' || type === 'text' || type === 'homework' || type === 'upcoming' || type === 'streak' || type === 'budget' || type === 'airquality' || type === 'worldclock' || type === 'savings' || type === 'focuslog' || type === 'currency' || type === 'calculator' || type === 'breathing' || type === 'reading' || type === 'doodle' || type === 'github' || type === 'weekplan') ? `<div class="bento-toolbar-style">`
+          ${ (type === 'clock' || type === 'weather' || type === 'sleep-score' || type === 'headlines' || type === 'calendar' || type === 'todos' || type === 'today' || type === 'habits' || type === 'mood' || type === 'water' || type === 'timer' || type === 'alarm' || type === 'pomodoro' || type === 'notes' || type === 'links' || type === 'quote' || type === 'countdown' || type === 'priorities' || type === 'progress' || type === 'goals' || type === 'images' || type === 'text' || type === 'homework' || type === 'upcoming' || type === 'streak' || type === 'budget' || type === 'airquality' || type === 'worldclock' || type === 'savings' || type === 'focuslog' || type === 'currency' || type === 'calculator' || type === 'breathing' || type === 'reading' || type === 'doodle' || type === 'github' || type === 'weekplan' || type === 'exams') ? `<div class="bento-toolbar-style">`
           + (type === 'clock' ? _styleBtn('data-clock-style-toggle="' + uid + '"', _getClockStyle(uid)) : '')
           + (type === 'weather' ? _styleBtn('data-weather-style-toggle="' + uid + '"', _getWeatherStyle(uid)) : '')
           + (type === 'sleep-score' ? _styleBtn('data-sleep-style-toggle="' + uid + '"', _getSleepStyle(uid)) : '')
@@ -2114,6 +2415,7 @@ function renderHubBento() {
           + (type === 'doodle' ? _styleBtn('data-doodle-style-toggle="' + uid + '"', _getDoodleStyle(uid)) : '')
           + (type === 'github' ? _styleBtn('data-gh-style-toggle="' + uid + '"', _getGhStyle(uid)) : '')
           + (type === 'weekplan' ? _styleBtn('data-weekplan-style-toggle="' + uid + '"', _getWeekplanStyle(uid)) : '')
+          + (type === 'exams' ? _styleBtn('data-exams-style-toggle="' + uid + '"', _getExamsStyle(uid)) : '')
           + `</div>` : ''}${resizeHandle}`
       : '';
     const clampY = Math.max(0, Math.min(y, MAX_CANVAS_HEIGHT - h));
@@ -2123,21 +2425,25 @@ function renderHubBento() {
     switch (type) {
       case 'goals': {
         var _goalsStyle = _getGoalsStyle(uid);
-        var _goalsList = '';
-        if (_goalsStyle === 'compact') {
-          _goalsList = '<div class="w-list w-list-compact">' + hubContent.goals.map(function(g, i) {
-            return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-todo-drag="' + i + '">\u283F</span>' : '') + '<span class="w-item-num w-item-num-sm">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a goal…" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
-          }).join('') + '<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button></div>';
-        } else if (_goalsStyle === 'numbered') {
-          _goalsList = '<div class="w-list w-list-numbered">' + hubContent.goals.map(function(g, i) {
-            var pct = Math.min(100, Math.round(((i + 1) / hubContent.goals.length) * 100));
-            return '<div class="w-item w-item-numbered" data-idx="' + i + '"><span class="w-goal-num-bg">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a goal…" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
-          }).join('') + '<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button></div>';
-        } else {
-          _goalsList = '<div class="w-list">' + hubContent.goals.map(function(g, i) {
-            return '<div class="w-item" data-idx="' + i + '"><span class="w-item-num">' + (i+1) + '</span><span class="w-item-text' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a goal…" data-edit="goals" data-idx="' + i + '">' + e(g) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="goals" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
-          }).join('') + '<button class="w-add-btn" data-add="goals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add goal</button></div>';
-        }
+        var _glCfg = { field: 'goals', drag: 'todo', ph: 'Type a goal\u2026' };
+        var _glAdd = '<button class="w-add-btn" data-add="goals">' + _TD_PLUS_SVG + 'Add goal</button>';
+        var _glOrder = hubContent.goals.map(function(_, i) { return i; });
+        /* The leading marker is the only thing that varies per structure: a small
+           ordinal in list/rail, a ghost numeral in rank, a dot in chips/board. */
+        var _glRow = function(i, cls) {
+          var mk;
+          if (_goalsStyle === 'rank') mk = '<span class="w-lx-bignum">' + (i + 1) + '</span>';
+          else if (_goalsStyle === 'chips' || _goalsStyle === 'board') mk = '<span class="w-lx-dot"></span>';
+          else mk = '<span class="w-item-num">' + (i + 1) + '</span>';
+          return _lxRow(_glCfg, hubContent.goals[i] || '', i, isEdit, e, cls, mk, false);
+        };
+        /* Empty -> emit nothing but the shell; _applyEmptyState() then supplies the
+           shared CTA. Any chrome here would read as content and suppress it. */
+        var _goalsList = hubContent.goals.length ? _lxWrap(_goalsStyle, _glOrder, _glRow, _glAdd, {
+          splitA: 'First', splitB: 'Next',
+          gauge: '<span class="w-lx-gaugenum">' + hubContent.goals.length + '</span><i>goals</i>',
+          restHead: '<span class="w-lx-resthead">All goals</span>'
+        }) : '';
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><span>Goals</span></div>
@@ -2173,20 +2479,23 @@ function renderHubBento() {
       case 'priorities': {
         const priColors = ['#ef4444','#f59e0b','#10b981','#3b82f6','#8b5cf6'];
         var _priStyle = _getPriStyle(uid);
-        var _priList = '';
-        if (_priStyle === 'compact') {
-          _priList = '<div class="w-list w-list-compact">' + hubContent.priorities.map(function(p, i) {
-            return '<div class="w-item w-item-compact" data-idx="' + i + '"><span class="w-pri-dot" style="background:' + priColors[i % priColors.length] + '"></span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a priority…" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
-          }).join('') + '<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button></div>';
-        } else if (_priStyle === 'numbered') {
-          _priList = '<div class="w-list">' + hubContent.priorities.map(function(p, i) {
-            return '<div class="w-item w-item-card" data-idx="' + i + '"><span class="w-pri-badge" style="background:' + priColors[i % priColors.length] + '">' + (i+1) + '</span><span class="w-item-text ' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a priority…" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
-          }).join('') + '<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button></div>';
-        } else {
-          _priList = '<div class="w-list">' + hubContent.priorities.map(function(p, i) {
-            return '<div class="w-item w-item-card" data-idx="' + i + '"><span class="w-pri-dot" style="background:' + priColors[i % priColors.length] + '"></span><span class="w-item-text' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a priority…" data-edit="priorities" data-idx="' + i + '">' + e(p) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="priorities" data-idx="' + i + '">\u00D7</button>' : '') + '</div>';
-          }).join('') + '<button class="w-add-btn" data-add="priorities"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add priority</button></div>';
-        }
+        var _priCfg = { field: 'priorities', drag: '', ph: 'Type a priority\u2026' };
+        var _priAdd = '<button class="w-add-btn" data-add="priorities">' + _TD_PLUS_SVG + 'Add priority</button>';
+        var _priOrder = hubContent.priorities.map(function(_, i) { return i; });
+        /* rank swaps the coloured dot for a big numbered badge — the one marker
+           that is structurally different rather than just repositioned. */
+        var _priRow = function(i, cls) {
+          var col = priColors[i % priColors.length];
+          var mk = (_priStyle === 'rank')
+            ? '<span class="w-pri-badge" style="background:' + col + '">' + (i + 1) + '</span>'
+            : '<span class="w-pri-dot" style="background:' + col + '"></span>';
+          return _lxRow(_priCfg, hubContent.priorities[i] || '', i, isEdit, e, cls, mk, false);
+        };
+        var _priList = hubContent.priorities.length ? _lxWrap(_priStyle, _priOrder, _priRow, _priAdd, {
+          splitA: 'Top', splitB: 'Then',
+          gauge: '<span class="w-lx-gaugenum">' + hubContent.priorities.length + '</span><i>focus</i>',
+          restHead: '<span class="w-lx-resthead">In order</span>'
+        }) : '';
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Priorities</span></div>
@@ -2269,55 +2578,144 @@ function renderHubBento() {
         var _tdTotal = _ttList.length;
         var _tdStyle = _getTodayStyle(uid);
         var _tdReset = (typeof _todayResetText === 'function') ? _todayResetText() : '';
-        var _tdCheck = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-        var _tdItems = '';
+        var _tdPct = _tdTotal ? Math.round((_tdDone / _tdTotal) * 100) : 0;
+        var _ttCfg = { field: 'todayTodos', drag: 'tt', ph: 'Type a task\u2026' };
+        var _ttAdd = '<button class="w-add-btn" data-add="todayTodos">' + _TD_PLUS_SVG + 'Add to-do</button>';
         var _ttOrder = _ttList.map(function(_, i) { return i; });
         if (!isEdit) _ttOrder.sort(function(a, b) { return ((_ttList[a] && _ttList[a].done) ? 1 : 0) - ((_ttList[b] && _ttList[b].done) ? 1 : 0); });
-        if (_tdStyle === 'progress') {
-          var _tdPct = _tdTotal ? Math.round((_tdDone / _tdTotal) * 100) : 0;
-          _tdItems = '<div class="w-todos-progress"><div class="w-todos-prog-bar"><div class="w-todos-prog-fill" style="width:' + _tdPct + '%"></div></div><span class="w-todos-prog-text">' + _tdDone + '/' + _tdTotal + ' done (' + _tdPct + '%)</span></div>' + _ttOrder.map(function(i) { var t = _ttList[i];
-            return '<div class="w-item' + (t.done ? ' w-item-done' : '') + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-tt-drag="' + i + '">⠿</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '" data-tt-toggle="' + i + '">' + (t.done ? _tdCheck : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todayTodos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todayTodos" data-idx="' + i + '">×</button>' : '') + '</div>';
-          }).join('');
-        } else if (_tdStyle === 'compact') {
-          _tdItems = _ttOrder.map(function(i) { var t = _ttList[i];
-            return '<div class="w-item w-item-compact" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-tt-drag="' + i + '">⠿</span>' : '') + '<span class="w-todo-box w-todo-box-sm ' + (t.done ? 'w-todo-checked' : '') + '" data-tt-toggle="' + i + '">' + (t.done ? _tdCheck : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todayTodos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todayTodos" data-idx="' + i + '">×</button>' : '') + '</div>';
-          }).join('');
+        var _ttOpen = _ttOrder.filter(function(k) { return !(_ttList[k] && _ttList[k].done); });
+        var _ttDoneIdx = _ttOrder.filter(function(k) { return !!(_ttList[k] && _ttList[k].done); });
+        var _ttRow = function(k, cls) {
+          var t = _ttList[k] || { text: '', done: false };
+          var mk = '<span class="w-todo-box' + (t.done ? ' w-todo-checked' : '') + '" data-tt-toggle="' + k + '">' + (t.done ? _TD_CHECK_SVG : '') + '</span>';
+          return _lxRow(_ttCfg, t.text, k, isEdit, e, cls, mk, t.done);
+        };
+        /* meter lists only what is left — except in edit mode, where hiding a
+           finished task would make it impossible to edit or delete. */
+        var _ttBody = '';
+        if (_tdTotal) {
+          _ttBody = _lxWrap(_tdStyle, _tdStyle === 'meter' ? (isEdit ? _ttOrder : _ttOpen) : _ttOrder, _ttRow, _ttAdd, {
+            splitA: 'To do', splitB: 'Done',
+            splitAOrder: _ttOpen, splitBOrder: _ttDoneIdx,
+            gauge: '<div class="w-lx-ring">' + _lxRing(_tdPct, _tdDone + '/' + _tdTotal) + '</div>',
+            restHead: '<span class="w-lx-resthead">' + (_tdTotal - _tdDone) + ' left</span>',
+            clearText: 'All done'
+          });
         } else {
-          _tdItems = _ttOrder.map(function(i) { var t = _ttList[i];
-            return '<div class="w-item" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-tt-drag="' + i + '">⠿</span>' : '') + '<span class="w-todo-box ' + (t.done ? 'w-todo-checked' : '') + '" data-tt-toggle="' + i + '">' + (t.done ? _tdCheck : '') + '</span><span class="w-item-text ' + (t.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a task…" data-edit="todayTodos" data-idx="' + i + '">' + e(t.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="todayTodos" data-idx="' + i + '">×</button>' : '') + '</div>';
-          }).join('');
+          /* 'today' has no _EMPTY_STATES spec, so the add button must stay or an
+             empty tile would have no way to add anything at all. */
+          _ttBody = '<div class="w-list">' + _ttAdd + '</div>';
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><span>Today</span><span class="w-today-count">${_tdDone}/${_tdTotal}</span><span class="w-today-reset" data-today-reset title="Resets at midnight">${_tdReset}</span></div>
-          <div class="w-list">${_tdItems}<button class="w-add-btn" data-add="todayTodos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add to-do</button></div>
+          ${_ttBody}
         </div>`;
       }
       case 'habits': {
         const todayKey = _hubTodayKey();
         const habitDone = hubContent.habitData?.[todayKey] || {};
         var _habitsStyle = _getHabitsStyle(uid);
-        var _habitsBody = '';
-        if (_habitsStyle === 'list') {
-          _habitsBody = '<div class="w-habit-list">' + hubContent.habits.map(function(h, i) {
-            var checked = habitDone[i] ? ' w-habit-checked' : '';
-            return '<div class="w-habit-row" data-idx="' + i + '"><span class="w-habit-check' + checked + '" data-habit-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="w-habit-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a habit…" data-edit="habits" data-idx="' + i + '">' + e(h) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="habits" data-idx="' + i + '">×</button>' : '') + '</div>';
-          }).join('') + '</div>';
-        } else if (_habitsStyle === 'minimal') {
-          _habitsBody = '<div class="w-habit-minimal">' + hubContent.habits.map(function(h, i) {
-            var checked = habitDone[i] ? ' w-habit-checked' : '';
-            return '<div class="w-habit-min-item' + checked + '" data-habit-toggle="' + i + '" title="' + e(h) + '">' + e(h.slice(0, 3)) + '</div>';
-          }).join('') + '</div>';
-        } else {
-          _habitsBody = '<div class="w-habit-grid">' + hubContent.habits.map(function(h, i) {
-            var checked = habitDone[i] ? ' w-habit-checked' : '';
-            return '<div class="w-habit-chip" data-idx="' + i + '"><span class="w-habit-check' + checked + '" data-habit-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><span class="' + (isEdit ? 'hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a habit…" data-edit="habits" data-idx="' + i + '">' + e(h) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="habits" data-idx="' + i + '">×</button>' : '') + '</div>';
-          }).join('') + '<button class="w-add-btn" data-add="habits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add habit</button></div>';
+        /* Habit history, oldest to today. 56 days keeps us inside the 60-day
+           window the toggle handler retains. */
+        var _hbDays = [];
+        for (var _hbI = 55; _hbI >= 0; _hbI--) {
+          var _hbD = new Date(); _hbD.setDate(_hbD.getDate() - _hbI);
+          _hbDays.push({ key: _hubTodayKey(_hbD), dow: _hbD.getDay(), today: _hbI === 0 });
         }
+        var _hbHist = hubContent.habitData || {};
+        var _hbOn = function(i, key) { return !!((_hbHist[key] || {})[i]); };
+        var _hbTotal = hubContent.habits.length;
+        var _hbDoneToday = hubContent.habits.filter(function(_, i) { return _hbOn(i, todayKey); }).length;
+        var _hbPct = _hbTotal ? Math.round((_hbDoneToday / _hbTotal) * 100) : 0;
+
+        /* The tick element is the ONLY thing that toggles a habit: the grid handler
+           resolves a click through [data-habit-toggle]. Every style must emit one
+           per habit, and today's cell is the only cell that gets it — past days
+           are history and cannot be edited. */
+        var _hbTick = function(i, cls) {
+          return '<span class="' + (cls || 'hb-tick') + (_hbOn(i, todayKey) ? ' is-on' : '') + '" data-habit-toggle="' + i + '">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
+        };
+        var _hbName = function(i, cls) {
+          return '<span class="' + (cls || 'hb-name') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type a habit\u2026" data-edit="habits" data-idx="' + i + '">' + e(hubContent.habits[i]) + '</span>';
+        };
+        var _hbDel = function(i) {
+          return isEdit ? '<button class="hub-edit-item-btn del" data-del="habits" data-idx="' + i + '">\u00D7</button>' : '';
+        };
+        var _hbCell = function(i, d) {
+          var on = _hbOn(i, d.key) ? ' is-on' : '';
+          return d.today
+            ? '<span class="hb-cell' + on + '" data-habit-toggle="' + i + '"></span>'
+            : '<span class="hb-cell' + on + '"></span>';
+        };
+        /* Display-only cell. `compact` already has a tick dot as its control, so
+           giving the strip's today-cell a toggle too would put TWO click targets
+           on one habit — and the probe asserts exactly one per habit. */
+        var _hbCellRO = function(i, d) {
+          return '<span class="hb-cell' + (_hbOn(i, d.key) ? ' is-on' : '') + '"></span>';
+        };
+        var _hbAdd = '<button class="w-add-btn" data-add="habits">' + _TD_PLUS_SVG + 'Add habit</button>';
+        var _hbBody = '';
+
+        if (_hbTotal) {
+          if (_habitsStyle === 'week') {
+            var _hbW = _hbDays.slice(-7);
+            _hbBody = '<div class="hb-week">'
+              + '<div class="hb-week-head"><span></span>' + _hbW.map(function(d) {
+                  return '<span class="hb-dowlbl' + (d.today ? ' is-today' : '') + '">' + 'SMTWTFS'.charAt(d.dow) + '</span>';
+                }).join('') + '<span></span></div>'
+              + hubContent.habits.map(function(h, i) {
+                  return '<div class="hb-week-row">' + _hbName(i, 'hb-week-name')
+                    + _hbW.map(function(d) { return _hbCell(i, d); }).join('')
+                    + _hbDel(i) + '</div>';
+                }).join('') + '</div>' + _hbAdd;
+
+          } else if (_habitsStyle === 'heatmap') {
+            _hbBody = '<div class="hb-heat">' + hubContent.habits.map(function(h, i) {
+              return '<div class="hb-heat-row">' + _hbName(i, 'hb-heat-name')
+                + '<span class="hb-heat-cells">' + _hbDays.map(function(d) { return _hbCell(i, d); }).join('') + '</span>'
+                + _hbDel(i) + '</div>';
+            }).join('') + '</div>' + _hbAdd;
+
+          } else if (_habitsStyle === 'ring') {
+            _hbBody = '<div class="hb-ringwrap"><div class="hb-ring">' + _lxRing(_hbPct, _hbDoneToday + '/' + _hbTotal) + '</div>'
+              + '<div class="hb-ringlist">' + hubContent.habits.map(function(h, i) {
+                  return '<div class="hb-ringrow' + (_hbOn(i, todayKey) ? ' is-on' : '') + '" data-idx="' + i + '">'
+                    + _hbTick(i, 'hb-dot') + _hbName(i) + _hbDel(i) + '</div>';
+                }).join('') + '</div></div>' + _hbAdd;
+
+          } else if (_habitsStyle === 'board') {
+            var _hbW2 = _hbDays.slice(-7);
+            _hbBody = '<div class="hb-board">' + hubContent.habits.map(function(h, i) {
+              return '<div class="hb-tile" data-idx="' + i + '">' + _hbName(i, 'hb-tile-name')
+                + '<span class="hb-tile-cells">' + _hbW2.map(function(d) { return _hbCell(i, d); }).join('') + '</span>'
+                + _hbDel(i) + '</div>';
+            }).join('') + '</div>' + _hbAdd;
+
+          } else if (_habitsStyle === 'compact') {
+            var _hbW3 = _hbDays.slice(-7);
+            _hbBody = '<div class="hb-compact">' + hubContent.habits.map(function(h, i) {
+              return '<div class="hb-crow' + (_hbOn(i, todayKey) ? ' is-on' : '') + '" data-idx="' + i + '">'
+                + _hbTick(i, 'hb-cdot') + _hbName(i, 'hb-cname')
+                + '<span class="hb-cstrip">' + _hbW3.map(function(d) { return _hbCellRO(i, d); }).join('') + '</span>'
+                + _hbDel(i) + '</div>';
+            }).join('') + '</div>' + _hbAdd;
+
+          } else {
+            _hbBody = '<div class="hb-list">' + hubContent.habits.map(function(h, i) {
+              return '<div class="hb-row' + (_hbOn(i, todayKey) ? ' is-on' : '') + '" data-idx="' + i + '">'
+                + _hbTick(i) + _hbName(i) + _hbDel(i) + '</div>';
+            }).join('') + '</div>' + _hbAdd;
+          }
+        }
+        /* Empty -> emit nothing; _applyEmptyState() supplies the shared CTA, which
+           now works because the empty-state handler synthesises a [data-add] target. */
+
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Habits</span></div>
-          ${_habitsBody}
+          ${_hbBody}
         </div>`;
       }
       case 'notes': {
@@ -2325,11 +2723,11 @@ function renderHubBento() {
         var _nPrefs = _getNotesPrefs(uid);
         var _nList = _notesSorted(uid);
         var _nCounts = _notesCounts(_nList);
-        var _nExtra = _nStyle === 'checklist' ? 0 : Math.max(0, _nList.length - NOTES_RENDER_CAP);
+        var _nExtra = Math.max(0, _nList.length - NOTES_RENDER_CAP);
         var _nWrapCls = 'w-notes-wrap w-notes-' + _nStyle + ' w-notes-sz-' + _nPrefs.size + ' w-notes-ff-' + _nPrefs.font;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head">${NOTES_ICON}<span>Notes</span>${_nList.length > 1 ? '<span class="w-notes-count" title="' + _nList.length + ' notes">' + _nList.length + '</span>' : ''}${_nCounts.open ? '<span class="w-notes-todo" title="' + _nCounts.open + ' open task' + (_nCounts.open === 1 ? '' : 's') + '">' + _nCounts.open + '</span>' : ''}<button type="button" class="w-notes-new" data-notes-new="${uid}" title="New note" aria-label="New note">${NOTES_PLUS_SVG}</button></div>
+          <div class="w-head">${NOTES_ICON}<span>Notes</span>${_nList.length > 1 ? '<span class="w-notes-count" title="' + _nList.length + ' notes">' + _nList.length + '</span>' : ''}${_nCounts.open ? '<span class="w-notes-todo" title="' + _nCounts.open + ' open task' + (_nCounts.open === 1 ? '' : 's') + '">' + _nCounts.open + '</span>' : ''}${_nList.length > 1 ? '<button type="button" class="w-notes-browse" data-notes-all="' + uid + '" title="All notes" aria-label="All notes">' + NOTES_LIST_SVG + '</button>' : ''}<button type="button" class="w-notes-new" data-notes-new="${uid}" title="New note" aria-label="New note">${NOTES_PLUS_SVG}</button></div>
           <div class="${_nWrapCls}" data-notes-extra="${_nExtra}">${_notesBodyHtml(_nList, _nStyle, _nPrefs, uid, isEdit)}<div class="w-note-footnote hidden"></div></div>
         </div>`;
       }
@@ -2362,20 +2760,32 @@ function renderHubBento() {
         const todayCol = _now_.getDay() === 0 ? 6 : _now_.getDay() - 1;
         const dayLabels = ['M','T','W','T','F','S','S'];
         var _progStyle = _getProgStyle(uid);
-        var _progBody = '';
-        if (_progStyle === 'stats') {
-          _progBody = '<div class="prog-stats-only"><div class="prog-stat-row"><span class="prog-stat-val">' + progData.total + '</span><span class="prog-stat-lbl">completed this week</span></div><div class="prog-stat-row"><span class="prog-stat-val">' + progData.streak + '</span><span class="prog-stat-lbl">day streak</span></div><div class="prog-stat-row"><span class="prog-stat-val">' + progData.todayRemaining + '</span><span class="prog-stat-lbl">remaining today</span></div></div>';
-        } else if (_progStyle === 'minimal') {
-          var _todayPct = progData.todayTotal > 0 ? Math.round((progData.todayDone / progData.todayTotal) * 100) : 0;
-          _progBody = '<div class="prog-minimal"><div class="prog-mini-bar"><div class="prog-mini-fill" style="width:' + _todayPct + '%"></div></div><span class="prog-mini-text">' + progData.todayDone + ' / ' + progData.todayTotal + ' today (' + _todayPct + '%)</span></div>';
-        } else {
-          var chartBars = progData.daily.map(function(d, i) {
-            var pct = Math.max(4, (d.done / maxVal) * 100);
-            var todayClass = i === todayCol ? ' today' : '';
-            return '<div class="prog-bar-col' + todayClass + '"><span class="prog-bar-count">' + d.done + '<span style="opacity:0.4">/' + d.total + '</span></span><div class="prog-bar" style="height:' + pct + '%"></div><span class="prog-bar-label">' + dayLabels[i] + '</span></div>';
-          }).join('');
-          _progBody = '<div class="prog-stats-row"><div class="prog-stat"><span class="prog-stat-val">' + progData.total + '</span><span class="prog-stat-lbl">completed</span></div><div class="prog-stat"><span class="prog-stat-val">' + progData.streak + '</span><span class="prog-stat-lbl">day streak</span></div><div class="prog-stat"><span class="prog-stat-val">' + progData.todayRemaining + '</span><span class="prog-stat-lbl">remaining today</span></div></div><div class="prog-chart">' + chartBars + '</div>';
-        }
+        var _progPct = progData.todayTotal > 0 ? Math.round((progData.todayDone / progData.todayTotal) * 100) : 0;
+        var _progBody = _mxWrap(_progStyle, {
+          big: progData.total, label: 'completed this week',
+          sub: progData.todayRemaining + ' left today',
+          pct: _progPct,
+          bars: progData.daily.map(function(d, i) {
+            return { lbl: dayLabels[i], pct: Math.max(4, (d.done / maxVal) * 100) };
+          }),
+          cells: progData.daily.map(function(d, i) {
+            var p = d.total ? d.done / d.total : 0;
+            return {
+              lvl: p === 0 ? 0 : p < 0.34 ? 1 : p < 0.67 ? 2 : 3,
+              title: e(dayLabels[i] + ' \u00b7 ' + d.done + '/' + d.total)
+            };
+          }),
+          strip: progData.daily.map(function(d) {
+            var p = d.total ? d.done / d.total : 0;
+            return p === 0 ? 0 : p < 0.34 ? 1 : p < 0.67 ? 2 : 3;
+          }),
+          stats: [
+            { v: progData.total, l: 'completed this week' },
+            { v: progData.streak, l: 'day streak' },
+            { v: progData.todayRemaining, l: 'remaining today' }
+          ],
+          foot: '<span>' + progData.todayDone + '/' + progData.todayTotal + ' today</span><span>' + _progPct + '%</span>'
+        });
         return `<div class="bento-bubble prog-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head" style="color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Progress</span></div>
@@ -2518,15 +2928,74 @@ function renderHubBento() {
         var tFrac = (ts.mode === 'countdown' && ts.target > 0) ? Math.max(0, Math.min(1, ts.elapsed / ts.target)) : 0;
         var tOffset = 326.73 - 326.73 * tFrac;
         var _timerStyle = _getTimerStyle(uid);
+        /* Every style must keep the three controls wired to data-timer-action and
+           the presets on data-timer-preset — that is the whole interaction. Only
+           their shape and position change. */
+        var _tModeLbl = ts.mode === 'countdown' ? (ts.target > 0 ? 'countdown' : 'set a preset') : 'stopwatch';
+        var _tCtl = function(cls) {
+          return '<div class="timer-controls' + (cls ? ' ' + cls : '') + '">'
+            + '<button class="timer-btn' + (ts.running ? ' timer-btn-active' : '') + '" data-timer-action="toggle" data-timer-uid="' + uid + '">' + (ts.running ? 'Pause' : 'Start') + '</button>'
+            + '<button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="' + uid + '">' + modeLabel + '</button>'
+            + '<button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="' + uid + '">Reset</button>'
+            + '</div>';
+        };
+        var _tWrap = function(cls, inner) {
+          return '<div class="timer-widget tw-' + cls + '" data-timer-uid="' + uid + '">' + inner + '</div>';
+        };
         var _timerBody = '';
-        if (_timerStyle === 'digital') {
-          _timerBody = '<div class="timer-widget timer-widget-digital" data-timer-uid="' + uid + '">' + presetsHtml + '<div class="timer-digital-display"><span class="timer-digital-time">' + tDisplay + '</span><span class="timer-digital-label">' + (ts.mode === 'countdown' ? (ts.target > 0 ? 'countdown' : 'set a preset') : 'stopwatch') + '</span></div><div class="timer-controls"><button class="timer-btn ' + (ts.running ? 'timer-btn-active' : '') + '" data-timer-action="toggle" data-timer-uid="' + uid + '">' + (ts.running ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="' + uid + '">' + modeLabel + '</button><button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="' + uid + '">Reset</button></div></div>';
+
+        if (_timerStyle === 'digits') {
+          _timerBody = _tWrap('digits',
+            '<div class="tw-digits-top"><span class="tw-digits-time timer-display">' + tDisplay + '</span>'
+            + '<span class="tw-digits-mode">' + _tModeLbl + '</span></div>'
+            + _tCtl('tw-ctl-inline') + presetsHtml);
+
         } else if (_timerStyle === 'bar') {
-          var _barPct = Math.round(tFrac * 100);
-          _timerBody = '<div class="timer-widget timer-widget-bar" data-timer-uid="' + uid + '">' + presetsHtml + '<div class="timer-bar-wrap"><div class="timer-bar-track"><div class="timer-bar-fill" style="width:' + _barPct + '%"></div></div><span class="timer-bar-time">' + tDisplay + '</span></div><div class="timer-controls"><button class="timer-btn ' + (ts.running ? 'timer-btn-active' : '') + '" data-timer-action="toggle" data-timer-uid="' + uid + '">' + (ts.running ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="' + uid + '">' + modeLabel + '</button><button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="' + uid + '">Reset</button></div></div>';
+          _timerBody = _tWrap('bar',
+            '<div class="timer-bar-wrap"><div class="timer-bar-track"><div class="timer-bar-fill" style="width:' + Math.round(tFrac * 100) + '%"></div></div>'
+            + '<span class="timer-bar-time timer-display">' + tDisplay + '</span></div>'
+            + _tCtl() + presetsHtml);
+
+        } else if (_timerStyle === 'dial') {
+          /* an analog face: 12 ticks, a sweeping hand, the digital time under it */
+          var _dialTicks = '';
+          for (var _dt = 0; _dt < 12; _dt++) {
+            var _da = (_dt * 30 - 90) * Math.PI / 180;
+            _dialTicks += '<line x1="' + (60 + Math.cos(_da) * 45).toFixed(1) + '" y1="' + (60 + Math.sin(_da) * 45).toFixed(1)
+              + '" x2="' + (60 + Math.cos(_da) * 51).toFixed(1) + '" y2="' + (60 + Math.sin(_da) * 51).toFixed(1)
+              + '" stroke="var(--border-color)" stroke-width="1.5" stroke-linecap="round"/>';
+          }
+          _timerBody = _tWrap('dial',
+            '<div class="tw-dial-face"><svg viewBox="0 0 120 120">'
+            + '<circle cx="60" cy="60" r="54" fill="none" stroke="var(--border-color)" stroke-width="1"/>'
+            + _dialTicks
+            + '<line x1="60" y1="60" x2="60" y2="20" stroke="var(--bubble-accent, var(--primary))" stroke-width="2.5" stroke-linecap="round" transform="rotate(' + (tFrac * 360).toFixed(1) + ' 60 60)"/>'
+            + '<circle cx="60" cy="60" r="4" fill="var(--bubble-accent, var(--primary))"/>'
+            + '</svg><span class="tw-dial-time timer-display">' + tDisplay + '</span></div>'
+            + _tCtl() + presetsHtml);
+
+        } else if (_timerStyle === 'split') {
+          _timerBody = _tWrap('split',
+            '<div class="tw-split-left"><span class="tw-split-time timer-display">' + tDisplay + '</span>'
+            + '<span class="tw-split-mode">' + _tModeLbl + '</span></div>'
+            + '<div class="tw-split-right">' + _tCtl('tw-ctl-stack') + '</div>'
+            + presetsHtml);
+
+        } else if (_timerStyle === 'minimal') {
+          /* Quiet, but not crippled: presets stay, or a countdown could not be
+             given a duration at all in this style. */
+          _timerBody = _tWrap('minimal',
+            '<span class="tw-min-time timer-display">' + tDisplay + '</span>'
+            + _tCtl('tw-ctl-min') + presetsHtml);
+
         } else {
-          _timerBody = '<div class="timer-widget" data-timer-uid="' + uid + '">' + presetsHtml + '<div class="timer-ring"><svg viewBox="0 0 120 120"><circle class="timer-ring-bg" cx="60" cy="60" r="52"/><circle class="timer-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="' + tOffset + '"/></svg><div class="timer-ring-text"><span class="timer-display">' + tDisplay + '</span><span class="timer-mode-label">' + (ts.mode === 'countdown' ? (ts.target > 0 ? 'countdown' : 'set a preset') : 'stopwatch') + '</span></div></div><div class="timer-controls"><button class="timer-btn ' + (ts.running ? 'timer-btn-active' : '') + '" data-timer-action="toggle" data-timer-uid="' + uid + '">' + (ts.running ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="' + uid + '">' + modeLabel + '</button><button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="' + uid + '">Reset</button></div></div>';
+          /* ring — the default */
+          _timerBody = _tWrap('ring',
+            '<div class="timer-ring tw-ring"><svg viewBox="0 0 120 120"><circle class="timer-ring-bg" cx="60" cy="60" r="52"/><circle class="timer-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="' + tOffset + '"/></svg>'
+            + '<div class="timer-ring-text"><span class="timer-display">' + tDisplay + '</span><span class="timer-mode-label">' + _tModeLbl + '</span></div></div>'
+            + _tCtl() + presetsHtml);
         }
+
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Timer</span></div>
@@ -2862,14 +3331,14 @@ function renderHubBento() {
             var _target = new Date(c.date + 'T00:00:00');
             var _diff = Math.ceil((_target - new Date()) / (1000*60*60*24));
             var _cls = _diff <= 0 ? ' w-cd-card-passed' : _diff <= 7 ? ' w-cd-card-soon' : '';
-            return '<div class="w-cd-card' + _cls + '"><span class="w-cd-card-num">' + (_diff <= 0 ? '0' : _diff) + '</span><span class="w-cd-card-label">' + e(c.label) + '</span></div>';
+            return '<div class="w-cd-card' + _cls + '"><span class="w-cd-card-num">' + (_diff <= 0 ? '0' : _diff) + '</span><span class="w-cd-card-label">' + e(c.label) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="countdown" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('') + '</div>';
         } else if (_cdStyle === 'minimal') {
           _cdBody = '<div class="w-list w-list-compact">' + _cds.map(function(c, i) {
             var _target = new Date(c.date + 'T00:00:00');
             var _diff = Math.ceil((_target - new Date()) / (1000*60*60*24));
             var _cls = _diff <= 0 ? ' w-item-done' : '';
-            return '<div class="w-item w-item-compact' + _cls + '"><span class="w-cd-mini-label">' + e(c.label) + '</span><span class="w-cd-mini-days">' + (_diff <= 0 ? 'Today' : _diff + 'd') + '</span></div>';
+            return '<div class="w-item w-item-compact' + _cls + '"><span class="w-cd-mini-label">' + e(c.label) + '</span><span class="w-cd-mini-days">' + (_diff <= 0 ? 'Today' : _diff + 'd') + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="countdown" data-idx="' + i + '">×</button>' : '') + '</div>';
           }).join('') + '</div>';
         } else {
           _cdBody = '<div class="w-list">' + (_cdItems || '<div style="color:var(--text-tertiary);font-size:0.65rem;text-align:center;padding:8px 0">No events yet</div>') + '</div>';
@@ -2887,33 +3356,44 @@ function renderHubBento() {
         var _upAll = _upcomingData(_upDays);
         var _upShown = _upAll.slice(0, 8);
         var _upStyle = _getUpcomingStyle(uid);
-        var _upRowHtml = function(t, compact) {
+        /* Upcoming rows are READ-ONLY — the items come from the schedule, so
+           there is no data-edit / data-del contract here and _lxRow (which
+           always emits one) would be wrong. The day tag is the only marker. */
+        var _upOrder = _upShown.map(function(_, i) { return i; });
+        var _upRowAt = function(k, cls) {
+          var t = _upShown[k] || {};
           var _tc = (typeof TAG_COLORS !== 'undefined' && TAG_COLORS[t.tag]) ? TAG_COLORS[t.tag].text : 'var(--text-tertiary)';
           var _tt = t.startTime || '';
-          return '<div class="w-upcoming-row' + (compact ? ' w-upcoming-compact' : '') + '">' +
-            '<span class="w-upcoming-day">' + e(_upcomingDayLabel(t.date)) + '</span>' +
-            '<div class="w-upcoming-main"><span class="w-upcoming-dot" style="background:' + e(_tc) + '"></span>' +
-              '<span class="w-upcoming-title">' + e(t.title || 'Untitled') + '</span>' +
-              (_tt ? '<span class="w-upcoming-time">' + e(_tt) + '</span>' : '') +
-            '</div></div>';
+          return '<div class="w-item ' + (cls || '') + ' w-up-row" data-idx="' + k + '">'
+            + '<span class="w-up-daytag">' + e(_upcomingDayLabel(t.date)) + '</span>'
+            + '<span class="w-upcoming-dot" style="background:' + e(_tc) + '"></span>'
+            + '<span class="w-item-text w-up-title">' + e(t.title || 'Untitled') + '</span>'
+            + (_tt ? '<span class="w-upcoming-time">' + e(_tt) + '</span>' : '')
+            + '</div>';
         };
         var _upBody = '';
         if (!_upShown.length) {
           _upBody = '<div class="w-upcoming-empty">Nothing upcoming' + (isEdit ? '' : ' in the next ' + _upDays + ' days') + '</div>';
-        } else if (_upStyle === 'compact') {
-          _upBody = '<div class="w-upcoming-list w-upcoming-list-compact">' + _upShown.map(function(t) { return _upRowHtml(t, true); }).join('') + '</div>';
         } else if (_upStyle === 'agenda') {
+          /* agenda is the one structure that needs its own grouping, so it
+             builds the groups and hands them to the shared container. */
           var _upGroups = [];
           _upShown.forEach(function(t) {
             var g = _upGroups[_upGroups.length - 1];
             if (!g || g.date !== t.date) { g = { date: t.date, items: [] }; _upGroups.push(g); }
             g.items.push(t);
           });
-          _upBody = '<div class="w-upcoming-agenda">' + _upGroups.map(function(g) {
-            return '<div class="w-upcoming-group"><span class="w-upcoming-group-head">' + e(_upcomingDayLabel(g.date)) + '</span><div class="w-upcoming-group-items">' + g.items.map(function(t) { return _upRowHtml(t, true); }).join('') + '</div></div>';
-          }).join('') + '</div>';
+          var _upGroupsHtml = _upGroups.map(function(g) {
+            return '<div class="w-upcoming-group"><span class="w-upcoming-group-head">' + e(_upcomingDayLabel(g.date)) + '</span>'
+              + '<div class="w-upcoming-group-items">' + g.items.map(function(t) { return _upRowAt(_upShown.indexOf(t), ''); }).join('') + '</div></div>';
+          }).join('');
+          _upBody = _lxWrap('agenda', _upOrder, _upRowAt, '', { groups: _upGroupsHtml });
         } else {
-          _upBody = '<div class="w-upcoming-list">' + _upShown.map(function(t) { return _upRowHtml(t, false); }).join('') + '</div>';
+          _upBody = _lxWrap(_upStyle, _upOrder, _upRowAt, '', {
+            splitA: 'Soonest', splitB: 'Later',
+            gauge: '<span class="w-lx-gaugenum">' + _upAll.length + '</span><i>upcoming</i>',
+            restHead: '<span class="w-lx-resthead">Next up</span>'
+          });
         }
         var _upHorizonCtl = isEdit ? '<div class="w-upcoming-horizon"><span class="w-upcoming-horizon-label">Show</span>' + [7,14,30,90].map(function(d) {
           return '<button class="w-upcoming-hz-btn' + (d === _upDays ? ' active' : '') + '" data-upcoming-days="' + d + '">' + d + 'd</button>';
@@ -2928,7 +3408,8 @@ function renderHubBento() {
         var _stk = _streakData();
         var _stkStyle = _getStreakStyle(uid);
         var _stkFlame = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>';
-        var _stkStrip = [];
+        /* Raw history, handed straight to the shared metric builder. */
+        var _stkCells = [], _stkStripLvls = [], _stkLast14 = [];
         var _stkWeeks = 12;
         var _stkPadStart = new Date();
         _stkPadStart.setDate(_stkPadStart.getDate() - (_stkWeeks * 7 - 1));
@@ -2936,24 +3417,33 @@ function renderHubBento() {
           var _stkD = new Date(_stkPadStart); _stkD.setDate(_stkPadStart.getDate() + _stkSi);
           var _stkK = formatDate(_stkD);
           var _stkC = _stk.days[_stkK] || 0;
-          var _stkLvl = _stkC === 0 ? 0 : _stkC <= 1 ? 1 : _stkC <= 3 ? 2 : _stkC <= 5 ? 3 : 4;
-          _stkStrip.push('<span class="w-stk-cell lvl' + _stkLvl + '" title="' + e(_stkK + ' · ' + _stkC + ' completed') + '"></span>');
+          _stkCells.push({
+            lvl: _stkC === 0 ? 0 : _stkC <= 1 ? 1 : _stkC <= 3 ? 2 : _stkC <= 5 ? 3 : 4,
+            title: e(_stkK + ' \u00b7 ' + _stkC + ' completed')
+          });
         }
-        var _stkLast14 = [];
         for (var _stkS2 = 13; _stkS2 >= 0; _stkS2--) {
           var _stkD2 = new Date(); _stkD2.setDate(_stkD2.getDate() - _stkS2);
           var _stkK2 = formatDate(_stkD2);
           var _stkHas = (_stk.days[_stkK2] || 0) > 0;
-          _stkLast14.push('<span class="w-stk-day' + (_stkHas ? ' done' : '') + (_stkS2 === 0 ? ' today' : '') + '" title="' + e(_stkK2) + '"></span>');
+          _stkLast14.push({ lbl: _stkS2 === 0 ? 'T' : String(_stkD2.getDate()), pct: _stkHas ? 100 : 6 });
+          _stkStripLvls.push(_stkHas ? 3 : 0);
         }
-        var _stkBody = '';
-        if (_stkStyle === 'compact') {
-          _stkBody = '<div class="w-stk-compact">' + _stkFlame + '<span class="w-stk-compact-num">' + _stk.current + '</span><span class="w-stk-compact-lbl">day streak</span><span class="w-stk-compact-sep"></span><span class="w-stk-compact-best">best ' + _stk.best + '</span></div>';
-        } else if (_stkStyle === 'heatmap') {
-          _stkBody = '<div class="w-stk-heat-top"><span class="w-stk-heat-num">' + _stk.current + '</span><span class="w-stk-heat-lbl">day streak</span></div><div class="w-stk-heat">' + _stkStrip.join('') + '</div><div class="w-stk-heat-foot"><span>' + _stk.total + ' total</span><span>best ' + _stk.best + '</span></div>';
-        } else {
-          _stkBody = '<div class="w-stk-hero"><div class="w-stk-hero-num">' + _stk.current + '</div><div class="w-stk-hero-meta"><span class="w-stk-hero-lbl">day streak</span><span class="w-stk-hero-sub">' + (_stk.current > 0 ? 'Keep it going' : 'Complete a task to start') + '</span></div></div><div class="w-stk-days">' + _stkLast14.join('') + '</div><div class="w-stk-stats"><div class="w-stk-stat"><span class="w-stk-stat-val">' + _stk.best + '</span><span class="w-stk-stat-lbl">best</span></div><div class="w-stk-stat"><span class="w-stk-stat-val">' + _stk.total + '</span><span class="w-stk-stat-lbl">completed</span></div></div>';
-        }
+        var _stkBody = _mxWrap(_stkStyle, {
+          big: _stk.current, label: 'day streak',
+          sub: _stk.current > 0 ? 'Keep it going' : 'Complete a task to start',
+          pct: Math.min(100, Math.round((_stk.current / 7) * 100)),
+          bars: _stkLast14,
+          cells: _stkCells,
+          strip: _stkStripLvls,
+          stats: [
+            { v: _stk.current, l: 'current streak' },
+            { v: _stk.best, l: 'best streak' },
+            { v: _stk.total, l: 'completed' }
+          ],
+          foot: '<span>' + _stk.total + ' total</span><span>best ' + _stk.best + '</span>'
+        });
+
         return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' +
           editUI +
           '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg><span>Streak</span></div>' +
@@ -3074,14 +3564,30 @@ function renderHubBento() {
           return '<div class="w-fo-bar-col' + (today ? ' today' : '') + '" title="' + d.minutes + ' min"><div class="w-fo-bar-track"><div class="w-fo-bar" style="height:' + h + '%"></div></div><span class="w-fo-bar-lbl">' + d.dow + '</span></div>';
         }).join('');
         var _foSess = _fo.today.sessions || 0;
-        var _foBody = '';
-        if (_foStyle === 'compact') {
-          _foBody = '<div class="w-fo-compact"><span class="w-fo-compact-time">' + _foFmt(_fo.today.minutes) + '</span><span class="w-fo-compact-lbl">focused today</span><span class="w-fo-compact-sessions">' + _foSess + ' session' + (_foSess === 1 ? '' : 's') + '</span></div>';
-        } else if (_foStyle === 'bars') {
-          _foBody = '<div class="w-fo-days">' + _foBars + '</div><div class="w-fo-foot"><span>' + _foFmt(_fo.weekMinutes) + ' this week</span><span>' + _foSess + ' today</span></div>';
-        } else {
-          _foBody = '<div class="w-fo-hero"><span class="w-fo-hero-time">' + _foFmt(_fo.today.minutes) + '</span><span class="w-fo-hero-lbl">focused today</span></div><div class="w-fo-days">' + _foBars + '</div><div class="w-fo-foot"><span>' + _foSess + ' session' + (_foSess === 1 ? '' : 's') + '</span><span>' + _foFmt(_fo.weekMinutes) + ' this week</span></div>';
-        }
+        var _foBody = _mxWrap(_foStyle, {
+          big: _foFmt(_fo.today.minutes), label: 'focused today',
+          sub: _foSess + ' session' + (_foSess === 1 ? '' : 's'),
+          /* the ring reads today against a 2-hour focus day */
+          pct: Math.min(100, Math.round((_fo.today.minutes / 120) * 100)),
+          bars: _fo.days.map(function(d) {
+            return { lbl: d.dow, pct: d.minutes > 0 ? Math.max(6, Math.round((d.minutes / _foMax) * 100)) : 2 };
+          }),
+          cells: _fo.days.map(function(d) {
+            return {
+              lvl: d.minutes === 0 ? 0 : d.minutes < _foMax * 0.34 ? 1 : d.minutes < _foMax * 0.67 ? 2 : 3,
+              title: e(d.dow + ' \u00b7 ' + d.minutes + ' min')
+            };
+          }),
+          strip: _fo.days.map(function(d) {
+            return d.minutes === 0 ? 0 : d.minutes < _foMax * 0.5 ? 1 : 3;
+          }),
+          stats: [
+            { v: _foFmt(_fo.today.minutes), l: 'focused today' },
+            { v: _foFmt(_fo.weekMinutes), l: 'this week' },
+            { v: _foSess, l: 'sessions today' }
+          ],
+          foot: '<span>' + _foFmt(_fo.weekMinutes) + ' this week</span><span>' + _foSess + ' today</span>'
+        });
         var _foCtl = '<div class="w-fo-ctl">' +
           (isEdit ? '<input type="number" min="1" max="240" class="w-fo-min" data-focus-minutes value="' + _foMin + '"><span class="w-fo-min-lbl">min</span>' : '') +
           '<button class="w-add-btn" data-focus-add="' + uid + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Log session</button>' +
@@ -3182,7 +3688,12 @@ function renderHubBento() {
         } else if (_rdStyle === 'progress') {
           var _rdPending = [];
           _rdItems.forEach(function(b, i) { if (!b.done && _rdPending.length < 4) _rdPending.push({ b: b, i: i }); });
-          _rdBody = '<div class="w-rd-prog"><div class="w-rd-prog-head"><span>' + _rdDone + ' / ' + _rdTotal + ' read</span><span>' + _rdPct + '%</span></div><div class="w-bg-track"><div class="w-bg-fill" style="width:' + _rdPct + '%"></div></div></div><div class="w-rd-list">' + (_rdPending.length ? _rdPending.map(function(x) { return _rdRow(x.b, x.i, true); }).join('') : '<span class="w-rd-empty">All caught up</span>') + '</div>';
+          /* In edit mode a finished book would otherwise be impossible to edit or
+             delete, so list everything like the to-do meter does. */
+          var _rdProgRows = isEdit
+            ? _rdItems.map(function(b, i) { return _rdRow(b, i, true); }).join('')
+            : _rdPending.map(function(x) { return _rdRow(x.b, x.i, true); }).join('');
+          _rdBody = '<div class="w-rd-prog"><div class="w-rd-prog-head"><span>' + _rdDone + ' / ' + _rdTotal + ' read</span><span>' + _rdPct + '%</span></div><div class="w-bg-track"><div class="w-bg-fill" style="width:' + _rdPct + '%"></div></div></div><div class="w-rd-list">' + (_rdProgRows || '<span class="w-rd-empty">All caught up</span>') + '</div>';
         } else {
           _rdBody = '<div class="w-rd-list">' + _rdItems.map(function(b, i) { return _rdRow(b, i, false); }).join('') + '</div>';
         }
@@ -3267,23 +3778,38 @@ function renderHubBento() {
           if (!subj) return '';
           return '<span class="w-hw-subject" style="background:' + _hwSubColor(subj) + '20;color:' + _hwSubColor(subj) + '">' + e(subj) + '</span>';
         }
+        /* Homework joins the list family. Its rows must keep BOTH the family's
+           data-edit/data-idx contract AND its own .w-hw-item wrapper — the grid
+           handler resolves the tick through '.w-hw-item .w-todo-box', and the
+           generic to-do branch deliberately skips anything inside .w-hw-item. */
+        var _hwCfg = { field: 'homework', drag: 'hw', ph: 'Type assignment\u2026', rowExtra: ' w-hw-item' };
+        var _hwAdd = '<button class="w-add-btn" data-add="homework">' + _TD_PLUS_SVG + 'Add homework</button>';
+        var _hwOrder = _hwItems.map(function(_, i) { return i; });
+        var _hwOpen = _hwOrder.filter(function(k) { return !(_hwItems[k] && _hwItems[k].done); });
+        var _hwDoneIdx = _hwOrder.filter(function(k) { return !!(_hwItems[k] && _hwItems[k].done); });
+        var _hwRowAt = function(k, cls) {
+          var h = _hwItems[k] || {};
+          var mk = '<span class="w-todo-box' + (h.done ? ' w-todo-checked' : '') + '">' + (h.done ? _TD_CHECK_SVG : '') + '</span>';
+          var extra = '<span class="w-hw-meta">' + _hwSubjectBadge(h.subject) + _hwPriorityDot(h.priority)
+            + '<span class="w-hw-due-chip' + _hwDueClass(h.due) + '" data-hw-due="' + k + '">'
+            + (h.due ? h.due.split('-').slice(1).join('/') : 'No due date') + '</span></span>';
+          return _lxRow(_hwCfg, h.text, k, isEdit, e, cls, mk, !!h.done, extra);
+        };
         var _hwBody = '';
-        if (_hwStyle === 'kanban') {
-          var _pending = _hwItems.map(function(h,i){return Object.assign({},h,{_idx:i});}).filter(function(h){return !h.done;});
-          var _done = _hwItems.map(function(h,i){return Object.assign({},h,{_idx:i});}).filter(function(h){return h.done;});
-          function _kanbanCard(h) {
-            return '<div class="w-hw-kcard' + _hwDueClass(h.due) + '" data-idx="' + h._idx + '">' + _hwPriorityDot(h.priority) + '<span class="w-hw-ktext' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type assignment…" data-edit="homework" data-idx="' + h._idx + '">' + e(h.text) + '</span>' + _hwSubjectBadge(h.subject) + _hwDueChip(h.due) + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + h._idx + '">\u00d7</button>' : '') + '</div>';
-          }
-          _hwBody = '<div class="w-hw-kanban"><div class="w-hw-kcol"><div class="w-hw-kcol-head">Pending</div><div class="w-hw-kcol-body">' + _pending.map(_kanbanCard).join('') + '</div></div><div class="w-hw-kcol"><div class="w-hw-kcol-head">Done</div><div class="w-hw-kcol-body">' + _done.map(_kanbanCard).join('') + '</div></div></div>';
-        } else if (_hwStyle === 'compact') {
-          _hwBody = '<div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _hwPct + '%"></div></div><span class="w-hw-prog-text">' + _hwDone + '/' + _hwTotal + ' done (' + _hwPct + '%)</span></div><div class="w-list w-hw-list">' + _hwItems.map(function(h, i) {
-            return '<div class="w-item w-item-compact w-hw-item' + (h.done ? ' w-item-done' : '') + _hwDueClass(h.due) + '" data-idx="' + i + '">' + _hwPriorityDot(h.priority) + '<span class="w-todo-box w-todo-box-sm ' + (h.done ? 'w-todo-checked' : '') + '">' + (h.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><span class="w-item-text ' + (h.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type assignment…" data-edit="homework" data-idx="' + i + '">' + e(h.text) + '</span>' + _hwDueChip(h.due) + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + i + '">\u00d7</button>' : '') + '</div>';
-          }).join('') + '<button class="w-add-btn" data-add="homework"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add homework</button></div>';
+        if (_hwTotal) {
+          _hwBody = _lxWrap(_hwStyle, _hwStyle === 'meter' ? (isEdit ? _hwOrder : _hwOpen) : _hwOrder, _hwRowAt, _hwAdd, {
+            splitA: 'Pending', splitB: 'Done',
+            splitAOrder: _hwOpen, splitBOrder: _hwDoneIdx,
+            gauge: '<div class="w-lx-ring">' + _lxRing(_hwPct, _hwDone + '/' + _hwTotal) + '</div>',
+            restHead: '<span class="w-lx-resthead">' + (_hwTotal - _hwDone) + ' left</span>',
+            clearText: 'All done'
+          });
         } else {
-          _hwBody = '<div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _hwPct + '%"></div></div><span class="w-hw-prog-text">' + _hwDone + '/' + _hwTotal + ' done (' + _hwPct + '%)</span></div><div class="w-list w-hw-list">' + _hwItems.map(function(h, i) {
-            return '<div class="w-item w-hw-item' + (h.done ? ' w-item-done' : '') + _hwDueClass(h.due) + '" data-idx="' + i + '">' + (isEdit ? '<span class="w-todo-drag-handle" draggable="true" data-hw-drag="' + i + '">\u283F</span>' : '') + '<span class="w-todo-box ' + (h.done ? 'w-todo-checked' : '') + '">' + (h.done ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '') + '</span><div class="w-hw-details"><span class="w-item-text ' + (h.done ? 'w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type assignment…" data-edit="homework" data-idx="' + i + '">' + e(h.text) + '</span><div class="w-hw-meta">' + _hwSubjectBadge(h.subject) + _hwPriorityDot(h.priority) + '<span class="w-hw-due-chip' + _hwDueClass(h.due) + '" data-hw-due="' + i + '">' + (h.due ? h.due.split('-').slice(1).join('/') : 'No due date') + '</span></div></div>' + (isEdit ? '<button class="hub-edit-item-btn del" data-del="homework" data-idx="' + i + '">\u00d7</button>' : '') + '</div>';
-          }).join('') + '<button class="w-add-btn" data-add="homework"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add homework</button></div>';
+          /* homework has no _EMPTY_STATES spec, so keep the add button or an
+             empty tile would have no way to add anything */
+          _hwBody = '<div class="w-list">' + _hwAdd + '</div>';
         }
+
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
           <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Homework</span></div>
@@ -3292,13 +3818,6 @@ function renderHubBento() {
       }
       case 'study': {
         var _stSubs = _ensureStudy();
-        var _stPalette = ['#4a90d9','#27ae60','#8e44ad','#f39c12','#e74c8b','#16a085','#e67e22','#2980b9','#c0392b','#1abc9c'];
-        function _stColor(name) {
-          if (!name) return _stPalette[0];
-          var hash = 0;
-          for (var ci = 0; ci < name.length; ci++) hash = name.charCodeAt(ci) + ((hash << 5) - hash);
-          return _stPalette[Math.abs(hash) % _stPalette.length];
-        }
         var _stAll = [];
         _stSubs.forEach(function(sj) { _studySubjectItems(sj).forEach(function(it) { _stAll.push(it); }); });
         var _stCounts = _studyCounts(_stAll);
@@ -3312,7 +3831,7 @@ function renderHubBento() {
           _stBody = _stSubs.map(function(sj) {
             var _sjItems = _studySubjectItems(sj);
             var _sjC = _studyCounts(_sjItems);
-            var _sjColor = sj.color || _stColor(sj.name);
+            var _sjColor = _studySubjectColor(sj);
             var _sjChN = (sj.chapters || []).length;
             var _sjStats = _sjChN + ' chapter' + (_sjChN === 1 ? '' : 's') + ' · ' + _sjC.total + ' subchapter' + (_sjC.total === 1 ? '' : 's');
             var _chaps = (sj.chapters || []).map(function(ch) {
@@ -3340,7 +3859,9 @@ function renderHubBento() {
         var _wkTick = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
         var _wkSub = function(tag) {
           for (var si = 0; si < _wkSubs.length; si++) if (_wkSubs[si].id === tag) return _wkSubs[si];
-          return { id: tag, label: tag, color: '#6366f1' };
+          /* Not a current Study subject: a plan saved against the old schedule-tag
+             source, or a subject that was deleted. Keep the entry, readable. */
+          return { id: tag, label: _weekplanTagLabel(tag), color: '#6366f1' };
         };
         var _wkSlot = function(dayId, idx) {
           return _weekplanSlot(_wk.days, dayId, idx);
@@ -3353,7 +3874,7 @@ function renderHubBento() {
         };
         var _wkPickerHtml = function(dayId, extra) {
           var cls = 'wk-pick' + (extra ? ' ' + extra : '');
-          if (!_wkSubs.length) return '<div class="' + cls + '"><span class="wk-pick-none">No subjects yet — add them on the Schedule page.</span></div>';
+          if (!_wkSubs.length) return '<div class="' + cls + '"><span class="wk-pick-none">No subjects yet — add them in the Study widget.</span></div>';
           var pk = '';
           for (var pi = 0; pi < _wkSubs.length; pi++) {
             var ps = _wkSubs[pi];
@@ -3373,7 +3894,7 @@ function renderHubBento() {
           var dayLbl = dayId;
           for (var di = 0; di < WEEKPLAN_DAYS.length; di++) if (WEEKPLAN_DAYS[di].id === dayId) dayLbl = WEEKPLAN_DAYS[di].label;
           var head = '<div class="wk-pick-head">' + e(dayLbl) + ' · box ' + (idx + 1) + '</div>';
-          if (!_wkSubs.length) return '<div class="wk-pick wk-pick-wide"><div class="wk-pick-head">' + e(dayLbl) + ' · box ' + (idx + 1) + '</div><span class="wk-pick-none">No subjects yet — add them on the Schedule page.</span></div>';
+          if (!_wkSubs.length) return '<div class="wk-pick wk-pick-wide"><div class="wk-pick-head">' + e(dayLbl) + ' · box ' + (idx + 1) + '</div><span class="wk-pick-none">No subjects yet — add them in the Study widget.</span></div>';
           var inner = '';
           if (cur) {
             var cs = _wkSub(cur.tag);
@@ -3395,59 +3916,62 @@ function renderHubBento() {
         var _wkEmptyHtml = function(kind) {
           var ico = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h2M12 15h2"/></svg>';
           if (kind === 'nosubs') {
-            return '<div class="w-empty"><div class="w-empty-ico">' + ico + '</div><p class="w-empty-title">No subjects yet</p><p class="w-empty-hint">Add your subjects on the Schedule page — this widget plans them across the week.</p></div>';
+            return '<div class="w-empty"><div class="w-empty-ico">' + ico + '</div><p class="w-empty-title">No subjects yet</p><p class="w-empty-hint">Add your subjects in the Study widget — this one plans them across the week.</p></div>';
           }
           return '<div class="w-empty"><div class="w-empty-ico">' + ico + '</div><p class="w-empty-title">Nothing planned yet</p><p class="w-empty-hint">Give each day a subject. This style only lists the days that have something.</p><button type="button" class="w-empty-cta" data-wk-rows="1">Plan some days</button></div>';
         };
         var _wkEmpty = '';
         var _wkBody = '';
-        if (_wkStyle === 'grid') {
-          if (!_wkSubs.length) {
-            _wkEmpty = _wkEmptyHtml('nosubs');
-          } else {
-            /* Rows are SLOTS, not subjects: box i of a day is days[day][i], so any
-               subject can go in any box. The row count follows the fullest day
-               plus one spare, which is what makes a fifth subject reachable
-               without a separate "add" row — every day always has a free box. */
-            var _wkSlots = 4;
-            for (var _wi = 0; _wi < WEEKPLAN_DAYS.length; _wi++) {
-              _wkSlots = Math.max(_wkSlots, _weekplanCount(_wk.days[WEEKPLAN_DAYS[_wi].id]) + 1);
-            }
-            var _wkGDays = '';
-            for (var _hi = 0; _hi < WEEKPLAN_DAYS.length; _hi++) {
-              _wkGDays += '<span class="wk-gday' + (WEEKPLAN_DAYS[_hi].id === _wkToday ? ' is-today' : '') + '">' + WEEKPLAN_DAYS[_hi].label.charAt(0) + '</span>';
-            }
-            var _wkGRows = '';
-            for (var _si = 0; _si < _wkSlots; _si++) {
-              var _wkCells = '';
-              for (var _ci = 0; _ci < WEEKPLAN_DAYS.length; _ci++) {
-                var _cd = WEEKPLAN_DAYS[_ci];
-                var _cit = _wkSlot(_cd.id, _si);
-                var _cSub = _cit ? _wkSub(_cit.tag) : null;
-                var _cDone = !!(_cit && _cit.done);
-                var _cOpen = _weekplanPickerCell === _cd.id + '|' + _si;
-                var _cPos = _cd.label + ' box ' + (_si + 1);
-                var _cTitle = _cit
-                  ? _cSub.label + ' · ' + _cPos + (_cDone ? ' — studied, click to change' : ' — click to change or tick off')
-                  : _cPos + ' — empty, click to choose a subject';
-                _wkCells += '<button type="button" class="wk-cell' + (_cit ? ' on' : '') + (_cDone ? ' done' : '') + (_cOpen ? ' open' : '') + (_cd.id === _wkToday ? ' is-today' : '') + '"' +
-                  ' data-wk-cell="' + _cd.id + '|' + _si + '"' +
-                  (_cit ? ' style="--wk-c:' + _cSub.color + '"' : '') +
-                  ' title="' + e(_cTitle) + '" aria-label="' + e(_cTitle) + '">' +
-                  (_cDone ? _wkTick : (_cit ? '<span class="wk-cell-lbl">' + e(_cSub.label.charAt(0).toUpperCase()) + '</span>' : '')) + '</button>';
-              }
-              _wkGRows += '<div class="wk-grow"><span class="wk-gslot">' + (_si + 1) + '</span><div class="wk-gcells">' + _wkCells + '</div></div>';
-            }
-            var _wkCellPick = '';
-            if (_weekplanPickerCell) {
-              var _cp = String(_weekplanPickerCell).split('|');
-              if (_cp.length === 2) _wkCellPick = _wkCellPickerHtml(_cp[0], parseInt(_cp[1], 10));
-            }
-            _wkBody = '<div class="wk-body wk-grid">' +
-              '<div class="wk-ghead"><span class="wk-gslot"></span><div class="wk-gcells">' + _wkGDays + '</div></div>' +
-              _wkGRows + _wkCellPick +
-              '</div>';
+        /* With no subjects in the Study widget there is nothing ANY style can
+           plan, so they all fall through to the same state rather than four
+           different flavours of empty. This branch is reachable now that the
+           subject source is the Study widget — it used to be dead code, because
+           the old TAG_ORDER/TAG_LABELS fallback always produced a list. */
+        if (!_wkSubs.length) {
+          _wkEmpty = _wkEmptyHtml('nosubs');
+        } else if (_wkStyle === 'grid') {
+          /* Rows are SLOTS, not subjects: box i of a day is days[day][i], so any
+             subject can go in any box. The row count follows the fullest day
+             plus one spare, which is what makes a fifth subject reachable
+             without a separate "add" row — every day always has a free box. */
+          var _wkSlots = 4;
+          for (var _wi = 0; _wi < WEEKPLAN_DAYS.length; _wi++) {
+            _wkSlots = Math.max(_wkSlots, _weekplanCount(_wk.days[WEEKPLAN_DAYS[_wi].id]) + 1);
           }
+          var _wkGDays = '';
+          for (var _hi = 0; _hi < WEEKPLAN_DAYS.length; _hi++) {
+            _wkGDays += '<span class="wk-gday' + (WEEKPLAN_DAYS[_hi].id === _wkToday ? ' is-today' : '') + '">' + WEEKPLAN_DAYS[_hi].label.charAt(0) + '</span>';
+          }
+          var _wkGRows = '';
+          for (var _si = 0; _si < _wkSlots; _si++) {
+            var _wkCells = '';
+            for (var _ci = 0; _ci < WEEKPLAN_DAYS.length; _ci++) {
+              var _cd = WEEKPLAN_DAYS[_ci];
+              var _cit = _wkSlot(_cd.id, _si);
+              var _cSub = _cit ? _wkSub(_cit.tag) : null;
+              var _cDone = !!(_cit && _cit.done);
+              var _cOpen = _weekplanPickerCell === _cd.id + '|' + _si;
+              var _cPos = _cd.label + ' box ' + (_si + 1);
+              var _cTitle = _cit
+                ? _cSub.label + ' · ' + _cPos + (_cDone ? ' — studied, click to change' : ' — click to change or tick off')
+                : _cPos + ' — empty, click to choose a subject';
+              _wkCells += '<button type="button" class="wk-cell' + (_cit ? ' on' : '') + (_cDone ? ' done' : '') + (_cOpen ? ' open' : '') + (_cd.id === _wkToday ? ' is-today' : '') + '"' +
+                ' data-wk-cell="' + _cd.id + '|' + _si + '"' +
+                (_cit ? ' style="--wk-c:' + _cSub.color + '"' : '') +
+                ' title="' + e(_cTitle) + '" aria-label="' + e(_cTitle) + '">' +
+                (_cDone ? _wkTick : (_cit ? '<span class="wk-cell-lbl">' + e(_cSub.label.charAt(0).toUpperCase()) + '</span>' : '')) + '</button>';
+            }
+            _wkGRows += '<div class="wk-grow"><span class="wk-gslot">' + (_si + 1) + '</span><div class="wk-gcells">' + _wkCells + '</div></div>';
+          }
+          var _wkCellPick = '';
+          if (_weekplanPickerCell) {
+            var _cp = String(_weekplanPickerCell).split('|');
+            if (_cp.length === 2) _wkCellPick = _wkCellPickerHtml(_cp[0], parseInt(_cp[1], 10));
+          }
+          _wkBody = '<div class="wk-body wk-grid">' +
+            '<div class="wk-ghead"><span class="wk-gslot"></span><div class="wk-gcells">' + _wkGDays + '</div></div>' +
+            _wkGRows + _wkCellPick +
+            '</div>';
         } else if (_wkStyle === 'today') {
           var _wkTItems = _wk.days[_wkToday] || [];
           var _wkTChips = '';
@@ -3615,7 +4139,7 @@ function renderHubBento() {
         var _ex = _examsData();
         return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI +
           '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><span>Exams</span></div>' +
-          '<div class="wp-widget">' + _examsRender(_ex) + '</div>' +
+          '<div class="wp-widget">' + _examsRender(_ex, _getExamsStyle(uid)) + '</div>' +
           (isEdit ? _examsEditor() : '') +
         '</div>';
       }
@@ -4129,20 +4653,14 @@ function renderHubBento() {
   grid.querySelectorAll('[data-todos-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      if (document.getElementById('hubStylePop')) { closeStylePicker(); return; }
-      openStylePicker(this.dataset.todosStyleToggle, 'todos', this);
+      _styleBtnClick(this, this.dataset.todosStyleToggle, 'todos', TODOS_STYLE_LIST, _getTodosStyle, _setTodosStyle);
     });
   });
 
   grid.querySelectorAll('[data-today-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.todayStyleToggle;
-      var cur = _getTodayStyle(uid);
-      var idx = TODAY_STYLE_LIST.indexOf(cur);
-      var next = TODAY_STYLE_LIST[(idx + 1) % TODAY_STYLE_LIST.length];
-      _setTodayStyle(uid, next);
-      renderHubBento();
+      _styleBtnClick(this, this.dataset.todayStyleToggle, 'today', TODAY_STYLE_LIST, _getTodayStyle, _setTodayStyle);
     });
   });
 
@@ -4162,12 +4680,7 @@ function renderHubBento() {
   grid.querySelectorAll('[data-habits-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.habitsStyleToggle;
-      var cur = _getHabitsStyle(uid);
-      var idx = HABITS_STYLE_LIST.indexOf(cur);
-      var next = HABITS_STYLE_LIST[(idx + 1) % HABITS_STYLE_LIST.length];
-      _setHabitsStyle(uid, next);
-      renderHubBento();
+      _styleBtnClick(this, this.dataset.habitsStyleToggle, 'habits', HABITS_STYLE_LIST, _getHabitsStyle, _setHabitsStyle);
     });
   });
 
@@ -4272,36 +4785,21 @@ function renderHubBento() {
   grid.querySelectorAll('[data-pri-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.priStyleToggle;
-      var cur = _getPriStyle(uid);
-      var idx = PRI_STYLE_LIST.indexOf(cur);
-      var next = PRI_STYLE_LIST[(idx + 1) % PRI_STYLE_LIST.length];
-      _setPriStyle(uid, next);
-      renderHubBento();
+      _styleBtnClick(this, this.dataset.priStyleToggle, 'priorities', PRI_STYLE_LIST, _getPriStyle, _setPriStyle);
     });
   });
 
   grid.querySelectorAll('[data-prog-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.progStyleToggle;
-      var cur = _getProgStyle(uid);
-      var idx = PROG_STYLE_LIST.indexOf(cur);
-      var next = PROG_STYLE_LIST[(idx + 1) % PROG_STYLE_LIST.length];
-      _setProgStyle(uid, next);
-      renderHubBento();
+      _styleBtnClick(this, this.dataset.progStyleToggle, 'progress', PROG_STYLE_LIST, _getProgStyle, _setProgStyle);
     });
   });
 
   grid.querySelectorAll('[data-goals-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.goalsStyleToggle;
-      var cur = _getGoalsStyle(uid);
-      var idx = GOALS_STYLE_LIST.indexOf(cur);
-      var next = GOALS_STYLE_LIST[(idx + 1) % GOALS_STYLE_LIST.length];
-      _setGoalsStyle(uid, next);
-      renderHubBento();
+      _styleBtnClick(this, this.dataset.goalsStyleToggle, 'goals', GOALS_STYLE_LIST, _getGoalsStyle, _setGoalsStyle);
     });
   });
 
@@ -4320,38 +4818,30 @@ function renderHubBento() {
   grid.querySelectorAll('[data-hw-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.hwStyleToggle;
-      var cur = _getHwStyle(uid);
-      var idx = HW_STYLE_LIST.indexOf(cur);
-      var next = HW_STYLE_LIST[(idx + 1) % HW_STYLE_LIST.length];
-      _setHwStyle(uid, next);
-      renderHubBento();
+      _styleBtnClick(this, this.dataset.hwStyleToggle, 'homework', HW_STYLE_LIST, _getHwStyle, _setHwStyle);
     });
   });
 
-  [['[data-upcoming-style-toggle]','upcomingStyleToggle',UPCOMING_STYLE_LIST,_getUpcomingStyle,_setUpcomingStyle],
-   ['[data-streak-style-toggle]','streakStyleToggle',STREAK_STYLE_LIST,_getStreakStyle,_setStreakStyle],
-   ['[data-budget-style-toggle]','budgetStyleToggle',BUDGET_STYLE_LIST,_getBudgetStyle,_setBudgetStyle],
-   ['[data-aq-style-toggle]','aqStyleToggle',AQ_STYLE_LIST,_getAqStyle,_setAqStyle],
-   ['[data-wc-style-toggle]','wcStyleToggle',WC_STYLE_LIST,_getWcStyle,_setWcStyle],
-   ['[data-savings-style-toggle]','savingsStyleToggle',SAVINGS_STYLE_LIST,_getSavingsStyle,_setSavingsStyle],
-   ['[data-focus-style-toggle]','focusStyleToggle',FOCUS_STYLE_LIST,_getFocusStyle,_setFocusStyle],
-   ['[data-currency-style-toggle]','currencyStyleToggle',CURRENCY_STYLE_LIST,_getCurrencyStyle,_setCurrencyStyle],
-   ['[data-calc-style-toggle]','calcStyleToggle',CALC_STYLE_LIST,_getCalcStyle,_setCalcStyle],
-   ['[data-breath-style-toggle]','breathStyleToggle',BREATH_STYLE_LIST,_getBreathStyle,_setBreathStyle],
-   ['[data-read-style-toggle]','readStyleToggle',READ_STYLE_LIST,_getReadStyle,_setReadStyle],
-   ['[data-doodle-style-toggle]','doodleStyleToggle',DOODLE_STYLE_LIST,_getDoodleStyle,_setDoodleStyle],
-   ['[data-gh-style-toggle]','ghStyleToggle',GH_STYLE_LIST,_getGhStyle,_setGhStyle],
-   ['[data-weekplan-style-toggle]','weekplanStyleToggle',WEEKPLAN_STYLE_LIST,_getWeekplanStyle,_setWeekplanStyle]
+  [['[data-upcoming-style-toggle]','upcomingStyleToggle',UPCOMING_STYLE_LIST,_getUpcomingStyle,_setUpcomingStyle,'upcoming'],
+   ['[data-streak-style-toggle]','streakStyleToggle',STREAK_STYLE_LIST,_getStreakStyle,_setStreakStyle,'streak'],
+   ['[data-budget-style-toggle]','budgetStyleToggle',BUDGET_STYLE_LIST,_getBudgetStyle,_setBudgetStyle,'budget'],
+   ['[data-aq-style-toggle]','aqStyleToggle',AQ_STYLE_LIST,_getAqStyle,_setAqStyle,'airquality'],
+   ['[data-wc-style-toggle]','wcStyleToggle',WC_STYLE_LIST,_getWcStyle,_setWcStyle,'worldclock'],
+   ['[data-savings-style-toggle]','savingsStyleToggle',SAVINGS_STYLE_LIST,_getSavingsStyle,_setSavingsStyle,'savings'],
+   ['[data-focus-style-toggle]','focusStyleToggle',FOCUS_STYLE_LIST,_getFocusStyle,_setFocusStyle,'focuslog'],
+   ['[data-currency-style-toggle]','currencyStyleToggle',CURRENCY_STYLE_LIST,_getCurrencyStyle,_setCurrencyStyle,'currency'],
+   ['[data-calc-style-toggle]','calcStyleToggle',CALC_STYLE_LIST,_getCalcStyle,_setCalcStyle,'calculator'],
+   ['[data-breath-style-toggle]','breathStyleToggle',BREATH_STYLE_LIST,_getBreathStyle,_setBreathStyle,'breathing'],
+   ['[data-read-style-toggle]','readStyleToggle',READ_STYLE_LIST,_getReadStyle,_setReadStyle,'reading'],
+   ['[data-doodle-style-toggle]','doodleStyleToggle',DOODLE_STYLE_LIST,_getDoodleStyle,_setDoodleStyle,'doodle'],
+   ['[data-gh-style-toggle]','ghStyleToggle',GH_STYLE_LIST,_getGhStyle,_setGhStyle,'github'],
+   ['[data-weekplan-style-toggle]','weekplanStyleToggle',WEEKPLAN_STYLE_LIST,_getWeekplanStyle,_setWeekplanStyle,'weekplan'],
+   ['[data-exams-style-toggle]','examsStyleToggle',EXAMS_STYLE_LIST,_getExamsStyle,_setExamsStyle,'exams']
   ].forEach(function(cfg) {
     grid.querySelectorAll(cfg[0]).forEach(function(btn) {
       btn.addEventListener('click', function(e) {
         e.stopPropagation();
-        var uid = this.dataset[cfg[1]];
-        var cur = cfg[3](uid);
-        var idx = cfg[2].indexOf(cur);
-        cfg[4](uid, cfg[2][(idx + 1) % cfg[2].length]);
-        renderHubBento();
+        _styleBtnClick(this, this.dataset[cfg[1]], cfg[5], cfg[2], cfg[3], cfg[4]);
       });
     });
   });
@@ -5366,6 +5856,21 @@ function _notesInsert(kind) {
   if (!b) return;
   var val = b.value;
   var s = b.selectionStart, e2 = b.selectionEnd;
+
+  /* Emphasis wraps whatever is selected instead of prefixing a line — it is an
+     inline mark, and typing the markers by hand is the thing the button exists
+     to save. With nothing selected the markers land around the caret, so the
+     next thing typed is emphasised. */
+  if (kind === 'bold' || kind === 'italic') {
+    var mark = kind === 'bold' ? '**' : '*';
+    var sel = val.slice(s, e2);
+    b.value = val.slice(0, s) + mark + sel + mark + val.slice(e2);
+    try { b.setSelectionRange(s + mark.length, s + mark.length + sel.length); } catch (err) {}
+    b.focus();
+    _notesQueueSave();
+    return;
+  }
+
   var lineStart = val.lastIndexOf('\n', s - 1) + 1;
   var atLineStart = /^\s*$/.test(val.slice(lineStart, s));
   var ins = '';
@@ -5472,18 +5977,13 @@ function _notesBuildModal() {
     +   '<input id="notesModalTitle" class="notes-modal-title" type="text" placeholder="Title" maxlength="120" autocomplete="off">'
     +   '<button type="button" class="notes-modal-x" id="notesModalClose" title="Close (Esc)" aria-label="Close">\u00D7</button>'
     + '</div>'
-    /* The insert row sits *below* the body on purpose. Above it, six boxed buttons
-       read as a word-processor ribbon — the note should be the first thing you
-       see, and the tools should be something you reach for. */
+    /* The insert row sits *below* the body on purpose. Above it, the boxed
+       buttons read as a word-processor ribbon — the note should be the first
+       thing you see, and the tools should be something you reach for.
+       Bold/Italic lead, separated from the line-shape tools: they wrap the
+       selection, the rest insert at the start of a line. */
     + '<textarea id="notesModalBody" class="notes-modal-body" spellcheck="true" placeholder="Write a note\u2026"></textarea>'
-    + '<div class="notes-modal-tools">'
-    +   '<button type="button" class="notes-tool" data-notes-insert="check">Task</button>'
-    +   '<button type="button" class="notes-tool" data-notes-insert="bullet">List</button>'
-    +   '<button type="button" class="notes-tool" data-notes-insert="num">Numbered</button>'
-    +   '<button type="button" class="notes-tool" data-notes-insert="head">Heading</button>'
-    +   '<button type="button" class="notes-tool" data-notes-insert="rule">Divider</button>'
-    +   '<button type="button" class="notes-tool" data-notes-insert="date">Date</button>'
-    + '</div>'
+    + '<div class="notes-modal-tools">' + _notesToolsHtml() + '</div>'
     + '<div class="notes-modal-foot">'
     +   '<div class="notes-modal-colors" id="notesModalColors">' + swatches + '</div>'
     +   '<span class="notes-modal-stat" id="notesModalStat"></span>'
@@ -5546,10 +6046,162 @@ function closeNotesEditor() {
   if (changed && typeof renderHubBento === 'function') renderHubBento();
 }
 
+/* ── all notes ──────────────────────────────────────────────────────────────
+   The tile renders at most NOTES_RENDER_CAP cards. With more notes than that
+   the rest have no node in the DOM at all — they cannot be opened, edited or
+   even seen, so "how many notes can I have" was really "twelve". This sheet is
+   the way in: every note in one scrollable list with a search box, because past
+   a dozen notes finding the one you want is the actual problem.
+   It reuses the editor's overlay + modal shell so the two cannot drift apart. */
+
+var _notesAllUid = null;
+
+/* Rows for the sheet. Returns counts as well as markup, so the caller can say
+   "3 of 20" while searching without walking the list twice. */
+function _notesAllRowsHtml(uid, q) {
+  var list = _notesSorted(uid);
+  var needle = String(q == null ? '' : q).toLowerCase().replace(/^\s+/, '').replace(/\s+$/, '');
+  var out = '';
+  var shown = 0;
+  for (var i = 0; i < list.length; i++) {
+    var n = list[i];
+    if (needle) {
+      var hay = (_notesLabel(n) + ' ' + String(n.body || '')).toLowerCase();
+      if (hay.indexOf(needle) === -1) continue;
+    }
+    shown++;
+    /* Markers stripped and newlines collapsed, so a multi-line note previews as
+       one clean line instead of a ragged block that breaks the row rhythm. */
+    var flat = _notesPlain(String(n.body || '')).replace(/\s+/g, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
+    out += '<button type="button" class="notes-all-row' + (n.pinned ? ' is-pinned' : '') + '"'
+      + ' data-notes-all-id="' + escapeHtml(n.id) + '">'
+      + '<span class="notes-all-swatch"' + (n.color ? ' style="background:' + (NOTES_TINT_HEX[n.color] || 'currentColor') + '"' : '') + '></span>'
+      + '<span class="notes-all-text">'
+      + '<span class="notes-all-top">'
+      + (n.pinned ? '<span class="notes-all-pin">' + NOTES_PIN_SVG + '</span>' : '')
+      + '<span class="notes-all-label">' + escapeHtml(_notesLabel(n)) + '</span>'
+      + '</span>'
+      + '<span class="notes-all-snip">' + (flat ? escapeHtml(flat) : 'Empty note') + '</span>'
+      + '</span>'
+      + '<span class="notes-all-when">' + escapeHtml(_notesRelTime(n.updated)) + '</span>'
+      + '</button>';
+  }
+  return { html: out, shown: shown, total: list.length };
+}
+
+function _notesPaintAll() {
+  var body = document.getElementById('notesAllBody');
+  if (!body) return;
+  var qEl = document.getElementById('notesAllQuery');
+  var res = _notesAllRowsHtml(_notesAllUid, qEl ? qEl.value : '');
+  body.innerHTML = res.html || '<div class="notes-all-none">No notes match that.</div>';
+  var count = document.getElementById('notesAllCount');
+  if (count) {
+    count.textContent = (res.shown === res.total)
+      ? res.total + (res.total === 1 ? ' note' : ' notes')
+      : res.shown + ' of ' + res.total;
+  }
+  /* A search field is noise on three notes and essential past a dozen, so it
+     only appears once the list is long enough to be hard to scan. */
+  var search = document.getElementById('notesAllSearch');
+  if (search) search.classList.toggle('hidden', res.total <= 6);
+}
+
+function _notesBuildAll() {
+  var old = document.getElementById('notesAll');
+  if (old) old.remove();
+  var oldOv = document.getElementById('notesAllOverlay');
+  if (oldOv) oldOv.remove();
+  var ov = document.createElement('div');
+  ov.className = 'notes-overlay';
+  ov.id = 'notesAllOverlay';
+  document.body.appendChild(ov);
+  var m = document.createElement('div');
+  m.className = 'notes-modal notes-all';
+  m.id = 'notesAll';
+  m.setAttribute('role', 'dialog');
+  m.setAttribute('aria-modal', 'true');
+  m.setAttribute('aria-label', 'All notes');
+  m.innerHTML = ''
+    + '<div class="notes-modal-head">'
+    + '<span class="notes-all-title">All notes</span>'
+    + '<span class="notes-all-count" id="notesAllCount"></span>'
+    + '<button type="button" class="notes-modal-x" id="notesAllClose" title="Close (Esc)" aria-label="Close">\u00D7</button>'
+    + '</div>'
+    + '<div class="notes-all-search hidden" id="notesAllSearch">'
+    + '<input id="notesAllQuery" type="search" placeholder="Search notes\u2026" autocomplete="off">'
+    + '</div>'
+    + '<div class="notes-all-body" id="notesAllBody"></div>'
+    + '<div class="notes-modal-foot">'
+    + '<button type="button" class="notes-modal-act" id="notesAllNew">New note</button>'
+    + '</div>';
+  document.body.appendChild(m);
+  return m;
+}
+
+function _notesWireAll(m) {
+  var close = m.querySelector('#notesAllClose');
+  if (close) close.addEventListener('click', function() { closeNotesAll(); });
+  var ov = document.getElementById('notesAllOverlay');
+  if (ov) ov.addEventListener('click', function() { closeNotesAll(); });
+  var q = m.querySelector('#notesAllQuery');
+  if (q) q.addEventListener('input', function() { _notesPaintAll(); });
+  var body = m.querySelector('#notesAllBody');
+  if (body) body.addEventListener('click', function(ev) {
+    var row = ev.target.closest('[data-notes-all-id]');
+    if (!row) return;
+    var uid = _notesAllUid;
+    var id = row.dataset.notesAllId;
+    /* Close first. The editor is built from the same overlay + modal shell, so
+       leaving this mounted would stack two dialogs and two Esc handlers. */
+    closeNotesAll();
+    openNotesEditor(uid, id);
+  });
+  var nw = m.querySelector('#notesAllNew');
+  if (nw) nw.addEventListener('click', function() {
+    var uid = _notesAllUid;
+    closeNotesAll();
+    _notesNewAndEdit(uid);
+  });
+}
+
+function _notesOnAllKeydown(e) {
+  if (!document.getElementById('notesAll')) return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeNotesAll(); }
+}
+
+function openNotesAll(uid) {
+  if (!uid) return;
+  _notesAllUid = uid;
+  var m = _notesBuildAll();
+  _notesWireAll(m);
+  _notesPaintAll();
+  document.body.classList.add('notes-modal-open');
+  document.addEventListener('keydown', _notesOnAllKeydown, true);
+  var search = document.getElementById('notesAllSearch');
+  var q = document.getElementById('notesAllQuery');
+  /* Only focus the field when it is actually shown — otherwise the caret sits in
+     a hidden input and typing appears to do nothing. */
+  if (q && search && !search.classList.contains('hidden')) {
+    setTimeout(function() { try { q.focus(); } catch (err) {} }, 40);
+  }
+}
+
+function closeNotesAll() {
+  var m = document.getElementById('notesAll');
+  var ov = document.getElementById('notesAllOverlay');
+  if (m) m.remove();
+  if (ov) ov.remove();
+  document.removeEventListener('keydown', _notesOnAllKeydown, true);
+  _notesAllUid = null;
+  /* The editor shares the same body class, so only drop it when it is closed too. */
+  if (!_notesModalOpen()) document.body.classList.remove('notes-modal-open');
+}
+
 /* ── display options ── */
 
 var _NOTES_OPT_GROUPS = [
-  { key:'style', label:'Layout',   vals: NOTES_STYLE_LIST, names: ['Cards','Compact','Lined','Checklist','Sticky','Minimal'] },
+  { key:'style', label:'Layout',   vals: NOTES_STYLE_LIST, names: ['Cards','Compact','Lined','Sticky','Minimal'] },
   { key:'size',  label:'Text size', vals: NOTES_SIZE_LIST, names: ['S','M','L'] },
   { key:'font',  label:'Font',      vals: NOTES_FONT_LIST, names: ['Sans','Serif','Mono'] },
   { key:'lines', label:'Lines each',vals: [1,2,3,4,5,6], names: ['1','2','3','4','5','6'] },
@@ -6648,11 +7300,12 @@ function _wpTagList() {
 }
 
 /* ─── Study Plan helpers ───────────────────── */
-/* The Study Plan widget shows, for each day of the current week, which
-   schedule subjects the user means to study — and lets them tick each one
-   off. Subjects come from the same tag list the schedule page uses
-   (TAG_ORDER / TAG_LABELS, read through _wpTagList above), so adding a
-   subject in the pill manager makes it show up here with no extra wiring.
+/* The Study Plan widget shows, for each day of the current week, which of the
+   user's STUDY SUBJECTS they mean to study — and lets them tick each one off.
+   Subjects come from the Study widget on the same canvas (`hubContent.study`,
+   read through _weekplanSubjects below), so adding a subject in the Study widget
+   makes it show up here with no extra wiring, and the Schedule page's tags are
+   deliberately NOT involved.
    Nothing rolls over: an unticked day simply stays unticked. */
 
 var WEEKPLAN_DAYS = [
@@ -6763,39 +7416,32 @@ function _weekplanStats(days) {
   return { done: done, total: total, pct: total ? Math.round((done / total) * 100) : 0 };
 }
 
-/* The subject list: the same ordered tags the schedule page's pill manager
-   shows, each with a real hex colour.
+/* The subject list: the subjects defined in the **Study widget** (`hubContent.study`),
+   each painted in the same colour that widget uses for it.
 
-   Deliberately NOT _wpTagList() (the homework widget's helper): that one always
-   merges TAG_LABELS keys on top of TAG_ORDER, which would resurrect starter
-   tags the user has hidden via applyCategoryPresetAtBoot() — it only prunes
-   TAG_ORDER. TAG_ORDER alone is the schedule page's real list; the TAG_LABELS
-   fallback is only for a brand-new profile, where initCustomCategories() has
-   nothing saved yet and TAG_ORDER is legitimately empty.
+   Deliberately NOT the Schedule page's tag list. Hans, after the first cut wired
+   this to `TAG_ORDER`: "dont connected to schedule just connected to the study
+   widget in the canvas". The two lists are maintained in different places by
+   different controls, so a tag added on the Schedule page must NOT show up here —
+   that is the whole point of the change, and it means there is no fallback to
+   `TAG_ORDER`/`TAG_LABELS` any more. No subjects in the Study widget ⇒ no
+   subjects here, and every style shows the shared "No subjects yet" state.
 
-   A hex (not var(--tag-x-text)) matters because those CSS vars only exist after
-   applyCardColors() has run — otherwise the chip dot would be transparent. */
+   Guarded with `typeof` because the helper tests extract this block into a bare
+   sandbox with no Study widget behind it. */
 function _weekplanSubjects() {
-  var out = [], seen = {}, ids = [];
-  try {
-    if (typeof TAG_ORDER !== 'undefined' && TAG_ORDER && TAG_ORDER.length) {
-      for (var oi = 0; oi < TAG_ORDER.length; oi++) ids.push(TAG_ORDER[oi]);
-    }
-  } catch (err) {}
-  if (!ids.length) {
-    try {
-      if (typeof TAG_LABELS !== 'undefined' && TAG_LABELS) ids = Object.keys(TAG_LABELS);
-    } catch (err) {}
-  }
-  for (var i = 0; i < ids.length; i++) {
-    var id = ids[i];
-    if (!id || seen[id]) continue;
-    seen[id] = true;
-    var label = id;
-    try { if (typeof TAG_LABELS !== 'undefined' && TAG_LABELS && TAG_LABELS[id]) label = TAG_LABELS[id]; } catch (err) {}
+  var out = [], seen = {};
+  var subs = [];
+  try { if (typeof _ensureStudy === 'function') subs = _ensureStudy() || []; } catch (err) { subs = []; }
+  for (var i = 0; i < subs.length; i++) {
+    var sj = subs[i];
+    if (!sj || !sj.id || seen[sj.id]) continue;
+    seen[sj.id] = true;
     var color = '#6366f1';
-    try { if (typeof getCategoryColor === 'function') color = getCategoryColor(id) || color; } catch (err) {}
-    out.push({ id: id, label: label, color: color });
+    try {
+      color = (typeof _studySubjectColor === 'function') ? _studySubjectColor(sj) : (sj.color || color);
+    } catch (err) {}
+    out.push({ id: sj.id, label: sj.name || 'Subject', color: color });
   }
   return out;
 }
@@ -6806,6 +7452,17 @@ function _weekplanSubjects() {
 function _weekplanTrim(list) {
   while (list.length && !(list[list.length - 1] && list[list.length - 1].tag)) list.pop();
   return list;
+}
+
+/* A stored tag that is no longer one of the Study widget's subjects — because the
+   plan was saved before the widget was wired to the Study subjects, or because
+   the subject has since been deleted or renamed. Render it readably
+   ("deep-work" -> "Deep Work") in a neutral grey rather than dropping it: a
+   deleted subject must not silently erase a day the user had already planned. */
+function _weekplanTagLabel(tag) {
+  var words = String(tag || '').split(/[-_\s]+/).filter(Boolean);
+  if (!words.length) return 'Subject';
+  return words.map(function(w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
 }
 
 function _weekplanHas(days, dayId, tag) {
@@ -7137,39 +7794,85 @@ function _examsData() {
   return { items: items, count: list.length };
 }
 
-function _examsRender(d) {
+function _examsRender(d, style) {
   if (!d.items.length) return _wpEmpty('No upcoming exams. Add one in edit mode.');
+  style = style || 'countdown';
+
+  /* Six concepts invented for THIS widget rather than borrowed from a family —
+     a countdown, a syllabus and a revision board are exam ideas, not list ideas.
+     The topic chips keep their data-exam-topic / data-exam-idx pair in every
+     style that shows them: that is the only way a topic gets ticked. */
+  var _exTone = function(days) { return days <= 3 ? 'bad' : (days <= 7 ? 'warn' : 'ok'); };
+  var _exReady = function(x) { return x.total > 0 ? x.doneN + '/' + x.total + ' topics ready' : 'no syllabus yet'; };
+  var _exBar = function(x) {
+    if (x.total <= 0) return '';
+    return '<span class="wp-bar"><span class="wp-bar-fill wp-tone-' + _exTone(x.days) + '" style="width:' + _wpPct(x.doneN, x.total).toFixed(1) + '%"></span></span>';
+  };
+  var _exTopics = function(x) {
+    if (!x.topics.length) return '';
+    return '<div class="wp-topics">' + x.topics.map(function(t, ti) {
+      return '<button class="wp-topic' + (t.done ? ' done' : '') + '" data-exam-topic="' + _wpEscape(x.id) + '" data-exam-idx="' + ti + '">' + _wpEscape(t.t) + '</button>';
+    }).join('') + '</div>';
+  };
 
   var next = d.items[0];
-  var head = '<div class="wp-hero">' +
-    '<span class="wp-hero-val">' + next.days + '</span>' +
-    '<span class="wp-hero-lbl">day' + (next.days === 1 ? '' : 's') + ' until ' + _wpEscape(next.title) + '</span>' +
-    '</div>';
 
-  var rows = d.items.slice(0, 6).map(function(x) {
-    var pct = x.total > 0 ? _wpPct(x.doneN, x.total) : 0;
-    var tone = x.days <= 3 ? 'bad' : (x.days <= 7 ? 'warn' : 'ok');
-    var syllabus = x.total > 0
-      ? '<span class="wp-bar"><span class="wp-bar-fill wp-tone-' + tone + '" style="width:' + pct.toFixed(1) + '%"></span></span>'
-      : '';
-    var meta = x.total > 0
-      ? x.doneN + '/' + x.total + ' topics ready'
-      : 'no syllabus yet';
-    return '<div class="wp-exam">' +
-        '<div class="wp-row">' +
-          '<span class="wp-row-name">' + _wpEscape(x.title) + '</span>' +
-          syllabus +
-          '<span class="wp-row-val wp-tone-' + tone + '">' + x.days + 'd</span>' +
-        '</div>' +
-        '<div class="wp-sub"><span class="wp-muted">' + _wpEscape(x.date) + ' · ' + _wpEscape(meta) + '</span></div>' +
-        (x.topics.length ? '<div class="wp-topics">' + x.topics.map(function(t, ti) {
-          return '<button class="wp-topic' + (t.done ? ' done' : '') + '" data-exam-topic="' + _wpEscape(x.id) + '" data-exam-idx="' + ti + '">' +
-            _wpEscape(t.t) + '</button>';
-        }).join('') + '</div>' : '') +
-      '</div>';
-  }).join('');
+  if (style === 'list') {
+    return '<div class="wp-rows">' + d.items.slice(0, 6).map(function(x) {
+      return '<div class="wp-exam"><div class="wp-row">'
+        + '<span class="wp-row-name">' + _wpEscape(x.title) + '</span>'
+        + _exBar(x)
+        + '<span class="wp-row-val wp-tone-' + _exTone(x.days) + '">' + x.days + 'd</span>'
+        + '</div><div class="wp-sub"><span class="wp-muted">' + _wpEscape(x.date) + ' · ' + _wpEscape(_exReady(x)) + '</span></div></div>';
+    }).join('') + '</div>';
+  }
 
-  return head + '<div class="wp-rows">' + rows + '</div>';
+  if (style === 'timeline') {
+    return '<div class="ex-rail">' + d.items.slice(0, 8).map(function(x) {
+      return '<div class="ex-node">'
+        + '<span class="ex-node-day wp-tone-' + _exTone(x.days) + '">' + x.days + 'd</span>'
+        + '<div class="ex-node-body"><span class="ex-node-title">' + _wpEscape(x.title) + '</span>'
+        + '<span class="ex-node-sub">' + _wpEscape(x.date) + ' · ' + _wpEscape(_exReady(x)) + '</span></div>'
+        + '</div>';
+    }).join('') + '</div>';
+  }
+
+  if (style === 'syllabus') {
+    var _withTopics = d.items.filter(function(x) { return x.topics.length; });
+    if (!_withTopics.length) return _wpEmpty('No syllabus topics yet. Add them in edit mode.');
+    return '<div class="ex-syllabus">' + _withTopics.slice(0, 4).map(function(x) {
+      return '<div class="ex-syl-group">'
+        + '<span class="ex-syl-head"><span>' + _wpEscape(x.title) + '</span><i>' + x.doneN + '/' + x.total + '</i></span>'
+        + _exTopics(x) + '</div>';
+    }).join('') + '</div>';
+  }
+
+  if (style === 'board') {
+    return '<div class="ex-board">' + d.items.slice(0, 6).map(function(x) {
+      return '<div class="ex-tile">'
+        + '<span class="ex-tile-days wp-tone-' + _exTone(x.days) + '">' + x.days + '</span>'
+        + '<span class="ex-tile-lbl">day' + (x.days === 1 ? '' : 's') + '</span>'
+        + '<span class="ex-tile-title">' + _wpEscape(x.title) + '</span>'
+        + _exBar(x) + '</div>';
+    }).join('') + '</div>';
+  }
+
+  if (style === 'compact') {
+    return '<div class="ex-compact">' + d.items.slice(0, 8).map(function(x) {
+      return '<div class="ex-crow">'
+        + '<span class="ex-cdays wp-tone-' + _exTone(x.days) + '">' + x.days + 'd</span>'
+        + '<span class="ex-ctitle">' + _wpEscape(x.title) + '</span>'
+        + (x.total ? '<span class="ex-cpct">' + x.doneN + '/' + x.total + '</span>' : '')
+        + '</div>';
+    }).join('') + '</div>';
+  }
+
+  /* countdown — the default: the nearest exam owns the tile, its syllabus below */
+  return '<div class="wp-hero">'
+    + '<span class="wp-hero-val">' + next.days + '</span>'
+    + '<span class="wp-hero-lbl">day' + (next.days === 1 ? '' : 's') + ' until ' + _wpEscape(next.title) + '</span>'
+    + '</div>'
+    + (_exTopics(next) || '<div class="ex-hint">' + _wpEscape(_exReady(next)) + '</div>');
 }
 
 function _examsEditor() {
@@ -10027,7 +10730,10 @@ function _renderTimer(uid) {
   var s = _timerIntervals[uid];
   if (!s) return;
   var displaySecs = s.mode === 'countdown' ? Math.max(0, s.target - s.elapsed) : s.elapsed;
-  el.querySelector('.timer-display').textContent = _fmtTime(displaySecs);
+  /* every style carries .timer-display on its time element so this one tick can
+     update all six; guard anyway, or a future style throws once per second */
+  var _tEl = el.querySelector('.timer-display');
+  if (_tEl) _tEl.textContent = _fmtTime(displaySecs);
   var ring = el.querySelector('.timer-ring');
   if (ring) ring.classList.toggle('timer-done', s.mode === 'countdown' && s.target > 0 && s.elapsed >= s.target && !s.running);
   var modeLabel = el.querySelector('.timer-mode-label');
@@ -10686,7 +11392,7 @@ function renderBubbleDock(grid) {
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
   var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', today:'Today', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', alarm:'Alarm', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', crypto:'Crypto', homework:'Homework', study:'Study', weekplan:'Study Plan', upcoming:'Upcoming', streak:'Streak', budget:'Budget', airquality:'Air Quality', worldclock:'World Clock', savings:'Savings Goal', focuslog:'Focus Log', currency:'Currency', calculator:'Calculator', breathing:'Breathing', reading:'Reading', doodle:'Doodle', github:'GitHub', prayertime:'Prayer Times', bmkgquake:'Earthquake', moneyflow:'Money Flow', assistant:'Assistant', 'friends-live':'Friends', grades:'Grades', attendance:'Attendance', exams:'Exams', holidays:'Tanggal Merah', birthdays:'Birthdays', flashcards:'Flashcards', sleepdebt:'Sleep Debt', ytfeed:'Video Feed', watchlist:'Watchlist', musicviz:'Visualiser', pet:'Pet', garden:'Streak Garden', xp:'Level', badges:'Badges', money:'Money' };
-  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', weekplan:'Which subject to study each day', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Alarms with sound + snooze', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', upcoming:'Next tasks on your schedule', streak:'Consecutive activity days', budget:'Monthly spend vs budget', airquality:'AQI, pollutants + UV', worldclock:'Times around the world', savings:'Progress toward a savings target', focuslog:'Track focused minutes per day', currency:'Live exchange rates', calculator:'Quick math with a keypad', breathing:'Guided breathing exercise', reading:'Books you are reading', doodle:'Quick sketch pad', github:'GitHub profile + repo stats', prayertime:'Subuh to Isya, next prayer countdown', bmkgquake:'Latest quake from BMKG live feed', moneyflow:'Auto-categorised spend, subscriptions + payday', assistant:'What to do next, from your own data', 'friends-live':'Who is online in your circle', grades:'Subject averages + what you need next', attendance:'Present, late, absent + absences left', exams:'Countdown + syllabus checklist', holidays:'Indonesian tanggal merah + cuti bersama', birthdays:'Upcoming birthdays you track', flashcards:'Spaced-repetition vocab cards', sleepdebt:'How much sleep you owe this week', ytfeed:'Saved YouTube and TikTok links', watchlist:'Films and series you are watching', musicviz:'Bars that react to sound', pet:'A creature that grows with your habits', garden:'A plant for every day you complete something', xp:'Your level and experience points', badges:'Achievements you have unlocked', money:'Piggy bank and wallet in one' };
+  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', weekplan:'Your Study subjects, planned across the week', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Alarms with sound + snooze', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', upcoming:'Next tasks on your schedule', streak:'Consecutive activity days', budget:'Monthly spend vs budget', airquality:'AQI, pollutants + UV', worldclock:'Times around the world', savings:'Progress toward a savings target', focuslog:'Track focused minutes per day', currency:'Live exchange rates', calculator:'Quick math with a keypad', breathing:'Guided breathing exercise', reading:'Books you are reading', doodle:'Quick sketch pad', github:'GitHub profile + repo stats', prayertime:'Subuh to Isya, next prayer countdown', bmkgquake:'Latest quake from BMKG live feed', moneyflow:'Auto-categorised spend, subscriptions + payday', assistant:'What to do next, from your own data', 'friends-live':'Who is online in your circle', grades:'Subject averages + what you need next', attendance:'Present, late, absent + absences left', exams:'Countdown + syllabus checklist', holidays:'Indonesian tanggal merah + cuti bersama', birthdays:'Upcoming birthdays you track', flashcards:'Spaced-repetition vocab cards', sleepdebt:'How much sleep you owe this week', ytfeed:'Saved YouTube and TikTok links', watchlist:'Films and series you are watching', musicviz:'Bars that react to sound', pet:'A creature that grows with your habits', garden:'A plant for every day you complete something', xp:'Your level and experience points', badges:'Achievements you have unlocked', money:'Piggy bank and wallet in one' };
   var categories = [
     { name:'Productivity', short:'Productivity', types:['goals','priorities','todos','today','upcoming','habits','streak','focuslog','progress','assistant'] },
     { name:'Study', short:'Study', types:['homework','study','weekplan','grades','attendance','exams','flashcards'] },
@@ -11550,8 +12256,25 @@ function setupHubEditEvents() {
          and there is no [data-add="notes"] button to forward to. */
       if (field === 'notes') { _notesNewAndEdit(emptyAdd.dataset.emptyUid || ''); return; }
       if (!hubEditMode) toggleHubEdit(true);
-      const realAdd = document.querySelector('[data-add="' + field + '"]');
+      /* An empty tile deliberately emits NO add button: a <button> counts as
+         content to the blank-detection walk, so keeping one would suppress this
+         empty state entirely. That leaves the forward-click with nothing to land
+         on, so synthesize a target inside the grid — the [data-add] listener is
+         on .bento-grid, so the event has to bubble from in there. */
+      let realAdd = document.querySelector('[data-add="' + field + '"]');
+      let synthAdd = null;
+      if (!realAdd) {
+        const gridEl = document.querySelector('.bento-grid');
+        if (gridEl) {
+          synthAdd = document.createElement('button');
+          synthAdd.setAttribute('data-add', field);
+          synthAdd.style.display = 'none';
+          gridEl.appendChild(synthAdd);
+          realAdd = synthAdd;
+        }
+      }
       if (realAdd) realAdd.click();
+      if (synthAdd && synthAdd.parentNode) synthAdd.parentNode.removeChild(synthAdd);
       return;
     }
     /* Notes: tick a checklist line straight from the tile. Must run before the
@@ -11579,6 +12302,13 @@ function setupHubEditEvents() {
     const notesNew = e.target.closest('[data-notes-new]');
     if (notesNew) {
       _notesNewAndEdit(notesNew.dataset.notesNew);
+      return;
+    }
+    /* Notes: browse every note. The tile only renders the first N, so without
+       this the overflow is unreachable. */
+    const notesAll = e.target.closest('[data-notes-all]');
+    if (notesAll) {
+      openNotesAll(notesAll.dataset.notesAll);
       return;
     }
     /* Notes: display options (layout, size, font, preview lines). */
@@ -11894,6 +12624,7 @@ function setupHubEditEvents() {
     }
     const habitToggle = e.target.closest('[data-habit-toggle]');
     if (habitToggle) {
+      if (e.target.closest('[data-del]')) return;
       const idx = parseInt(habitToggle.dataset.habitToggle);
       if (!isNaN(idx)) {
         const todayKey = _hubTodayKey();
