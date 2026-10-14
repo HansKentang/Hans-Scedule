@@ -330,7 +330,7 @@ const NOTES_COLOR_LIST = ['','blue','teal','amber','rose','violet'];
    but useless when you are hunting for one specific note — hence the other
    three, which sort the whole list and ignore the pin. */
 const NOTES_SORT_LIST = ['recent','oldest','alpha','created'];
-const NOTES_DEFAULT_PREFS = { size:'md', font:'sans', lines:2, time:true, sort:'recent', done:true };
+const NOTES_DEFAULT_PREFS = { size:'md', font:'sans', lines:2, time:true, sort:'recent', done:true, preview:true };
 let _notesPrefs = {};
 try { _notesPrefs = JSON.parse(localStorage.getItem(NOTES_PREFS_KEY) || '{}'); } catch(e) {}
 function _getNotesPrefs(uid) {
@@ -341,7 +341,12 @@ function _getNotesPrefs(uid) {
     lines: (typeof p.lines === 'number' && p.lines >= 1 && p.lines <= 6) ? Math.round(p.lines) : NOTES_DEFAULT_PREFS.lines,
     time: p.time === undefined ? NOTES_DEFAULT_PREFS.time : !!p.time,
     sort: NOTES_SORT_LIST.indexOf(p.sort) !== -1 ? p.sort : NOTES_DEFAULT_PREFS.sort,
-    done: p.done === undefined ? NOTES_DEFAULT_PREFS.done : !!p.done
+    done: p.done === undefined ? NOTES_DEFAULT_PREFS.done : !!p.done,
+    /* The editor's split view. It lives in the prefs map because it is
+       per-widget state with the same lifetime — but it is *not* a tile setting,
+       and the options panel enumerates its rows by hand, so it never leaks into
+       that list. */
+    preview: p.preview === undefined ? NOTES_DEFAULT_PREFS.preview : !!p.preview
   };
 }
 function _setNotesPrefs(uid, patch) {
@@ -1996,17 +2001,26 @@ function _notesRelTime(ts) {
 function _notesLines(body) {
   var raw = String(body == null ? '' : body).replace(/\r\n?/g, '\n').split('\n');
   var out = [];
+  /* Numbered lines carry their own ordinal so the tile can draw "2." instead of
+     a dash. The run restarts at any line that is not numbered — which is what
+     makes a second list in the same note start at 1 again. */
+  var numRun = 0;
   for (var i = 0; i < raw.length; i++) {
     var trimmed = raw[i].replace(/^\s+/, '').replace(/\s+$/, '');
+    var num = trimmed ? /^\d+[.)]\s+(.*)$/.exec(trimmed) : null;
+    if (!num) numRun = 0;
     if (!trimmed) { out.push({ kind:'gap', text:'', checked:false, idx:i }); continue; }
     var chk = /^[-*]\s*\[( |x|X)\]\s*(.*)$/.exec(trimmed);
     if (chk) { out.push({ kind:'check', text: chk[2], checked: chk[1].toLowerCase() === 'x', idx:i }); continue; }
+    /* Must come before the bullet test: '---' has no space after the dash, so it
+       never matched a bullet, and it used to fall through to a plain text line —
+       the Divider button inserted three dashes and the tile showed three dashes. */
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(trimmed)) { out.push({ kind:'rule', text:'', checked:false, idx:i }); continue; }
     var head = /^#{1,3}\s+(.*)$/.exec(trimmed);
     if (head) { out.push({ kind:'head', text: head[1], checked:false, idx:i }); continue; }
     var bul = /^[-*+]\s+(.*)$/.exec(trimmed);
     if (bul) { out.push({ kind:'bullet', text: bul[1], checked:false, idx:i }); continue; }
-    var num = /^\d+[.)]\s+(.*)$/.exec(trimmed);
-    if (num) { out.push({ kind:'num', text: num[1], checked:false, idx:i }); continue; }
+    if (num) { numRun++; out.push({ kind:'num', text: num[1], ord: numRun, checked:false, idx:i }); continue; }
     out.push({ kind:'text', text: trimmed, checked:false, idx:i });
   }
   return out;
@@ -2035,7 +2049,11 @@ function _notesCounts(list) {
 
 function _notesFirstLine(note) {
   var ls = _notesLines(note && note.body);
-  for (var i = 0; i < ls.length; i++) { if (ls[i].kind !== 'gap') return ls[i].text; }
+  /* A rule carries no text, so it must not win the "first line" race and hand
+     _notesLabel an empty string for a note that has words in it. */
+  for (var i = 0; i < ls.length; i++) {
+    if (ls[i].kind !== 'gap' && ls[i].kind !== 'rule') return ls[i].text;
+  }
   return '';
 }
 
@@ -2089,8 +2107,9 @@ function _notesLineHtml(L, uid, noteId, interactive, compact) {
       + '<span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
   }
   if (L.kind === 'head') return '<div class="w-note-line w-note-line-head"><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
+  if (L.kind === 'rule') return '<div class="w-note-line w-note-line-rule"><span class="w-note-rule"></span></div>';
   if (L.kind === 'bullet') return '<div class="w-note-line w-note-line-bullet"><span class="w-note-bullet"></span><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
-  if (L.kind === 'num') return '<div class="w-note-line w-note-line-num"><span class="w-note-bullet"></span><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
+  if (L.kind === 'num') return '<div class="w-note-line w-note-line-num"><span class="w-note-num">' + (L.ord || 1) + '.</span><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
   return '<div class="w-note-line"><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
 }
 
@@ -2164,6 +2183,79 @@ function _notesBodyHtml(list, style, prefs, uid, isEdit) {
   var interactive = !isEdit;
   if (style === 'compact') return _notesCompactHtml(list, prefs, uid, interactive);
   return _notesCardsHtml(list, prefs, uid, interactive, style);
+}
+
+/* ── the editor's live preview ────────────────────────────────────────────
+   Hans, 2026-10-14: the thing that made notes feel unclear was "the symbols
+   while writing" — the editor showed '- [ ]' and '**' and the tile showed a
+   checkbox and bold text, so the two never looked like the same note.
+
+   The fix is not to hide the symbols (a contenteditable that renders as you
+   type is the fragile answer on Android keyboards, and it can silently rewrite
+   a note). The fix is to show both at once. The preview below is not a picture
+   of the note: it calls _notesLineHtml and the same w-notes-* wrapper classes
+   the tile calls, on the same body text, so the two panes cannot drift apart —
+   if the preview shows a checkbox, the tile will show a checkbox.
+
+   One consequence worth knowing: because it renders the *whole* body and lets
+   the pane scroll, it is not subject to NOTES_RENDER_CAP or to the tile's
+   `lines` preference. The preview is the note; the tile is an excerpt of it. */
+const NOTES_PREVIEW_MAX = 80;
+/* Rendered only while the note is empty, so the first thing you ever see in the
+   editor is what each symbol makes instead of the symbol itself. */
+const NOTES_PREVIEW_DEMO = '- [ ] a task\n- a bullet\n1. a numbered line\n'
+  + '**bold** and *italic*\n# A heading\n---';
+
+function _notesPreviewHtml(uid, title, body) {
+  var prefs = _getNotesPrefs(uid);
+  var style = _getNotesStyle(uid);
+  var lines = _notesLines(body);
+  var rows = '';
+  var shown = 0;
+  for (var i = 0; i < lines.length && shown < NOTES_PREVIEW_MAX; i++) {
+    if (lines[i].kind === 'gap') continue;
+    shown++;
+    /* interactive=false: the preview is for looking at, and a live checkbox in
+       it would tick the note you are in the middle of writing. */
+    rows += _notesLineHtml(lines[i], '', '', false);
+  }
+  if (!rows) rows = '<div class="w-note-line w-note-line-empty"><span class="w-note-txt">Empty note</span></div>';
+  var t = _notesPlain(String(title || '').trim());
+  var top = t ? '<div class="w-note-top"><span class="w-note-title">' + escapeHtml(t) + '</span></div>' : '';
+  return '<div class="w-notes-wrap w-notes-' + style + ' w-notes-sz-' + prefs.size + ' w-notes-ff-' + prefs.font + '">'
+    + '<div class="w-note-card">' + top + '<div class="w-note-body">' + rows + '</div></div>'
+    + '</div>';
+}
+
+function _notesPaintPreview() {
+  var host = document.getElementById('notesModalPrevBody');
+  if (!host) return;
+  var uid = _notesEdit.uid || '';
+  var tEl = document.getElementById('notesModalTitle');
+  var bEl = document.getElementById('notesModalBody');
+  var title = tEl ? tEl.value : '';
+  var body = bEl ? bEl.value : '';
+  if (!String(title).replace(/\s+/g, '') && !String(body).replace(/\s+/g, '')) {
+    host.innerHTML = '<p class="notes-prev-cap">Nothing yet \u2014 the buttons above write these:</p>'
+      + _notesPreviewHtml(uid, '', NOTES_PREVIEW_DEMO);
+    return;
+  }
+  host.innerHTML = _notesPreviewHtml(uid, title, body);
+}
+
+function _notesApplyPreviewPref() {
+  var pane = document.getElementById('notesModalPrev');
+  var btn = document.getElementById('notesModalPrevToggle');
+  var modal = document.getElementById('notesModal');
+  var on = _getNotesPrefs(_notesEdit.uid || '').preview;
+  if (pane) pane.classList.toggle('is-off', !on);
+  /* Only the side-by-side layout needs the extra width; on a phone the two
+     panes stack and the dialog stays as narrow as it was. */
+  if (modal) modal.classList.toggle('has-prev', on);
+  if (btn) {
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
 }
 
 /* Post-render fitter. The tile is resizable, so how much fits cannot be decided
@@ -5823,6 +5915,9 @@ function _notesPaintStat(state) {
 
 function _notesQueueSave() {
   _notesPaintStat('saving');
+  /* Repaint the preview on the keystroke, not after the debounce — a preview
+     that lags half a second behind the caret is worse than none. */
+  _notesPaintPreview();
   if (_notesEdit.timer) clearTimeout(_notesEdit.timer);
   _notesEdit.timer = setTimeout(function() {
     _notesEdit.timer = null;
@@ -5896,6 +5991,13 @@ function _notesWireModal(m) {
 
   var close = m.querySelector('#notesModalClose');
   if (close) close.addEventListener('click', function() { closeNotesEditor(); });
+
+  var prevBtn = m.querySelector('#notesModalPrevToggle');
+  if (prevBtn) prevBtn.addEventListener('click', function() {
+    var on = _getNotesPrefs(_notesEdit.uid || '').preview;
+    _setNotesPrefs(_notesEdit.uid, { preview: !on });
+    _notesApplyPreviewPref();
+  });
 
   Array.prototype.forEach.call(m.querySelectorAll('[data-notes-insert]'), function(btn) {
     btn.addEventListener('click', function() { _notesInsert(this.dataset.notesInsert); });
@@ -5975,14 +6077,24 @@ function _notesBuildModal() {
   m.innerHTML = ''
     + '<div class="notes-modal-head">'
     +   '<input id="notesModalTitle" class="notes-modal-title" type="text" placeholder="Title" maxlength="120" autocomplete="off">'
+    +   '<button type="button" class="notes-modal-prev-toggle on" id="notesModalPrevToggle" aria-pressed="true" title="Show the note as the tile will render it">Preview</button>'
     +   '<button type="button" class="notes-modal-x" id="notesModalClose" title="Close (Esc)" aria-label="Close">\u00D7</button>'
     + '</div>'
     /* The insert row sits *below* the body on purpose. Above it, the boxed
        buttons read as a word-processor ribbon — the note should be the first
        thing you see, and the tools should be something you reach for.
        Bold/Italic lead, separated from the line-shape tools: they wrap the
-       selection, the rest insert at the start of a line. */
-    + '<textarea id="notesModalBody" class="notes-modal-body" spellcheck="true" placeholder="Write a note\u2026"></textarea>'
+       selection, the rest insert at the start of a line.
+
+       Write above, preview below (side by side from 720px, where two readable
+       columns actually fit). This is what answers "the symbols while writing":
+       you never have to guess what '- [ ]' turns into. */
+    + '<div class="notes-modal-panes">'
+    +   '<textarea id="notesModalBody" class="notes-modal-body" spellcheck="true" placeholder="Write a note\u2026"></textarea>'
+    +   '<div class="notes-modal-prev" id="notesModalPrev">'
+    +     '<div class="notes-prev-body" id="notesModalPrevBody"></div>'
+    +   '</div>'
+    + '</div>'
     + '<div class="notes-modal-tools">' + _notesToolsHtml() + '</div>'
     + '<div class="notes-modal-foot">'
     +   '<div class="notes-modal-colors" id="notesModalColors">' + swatches + '</div>'
@@ -6016,6 +6128,8 @@ function openNotesEditor(uid, noteId) {
   if (tEl) tEl.value = n.title || '';
   if (bEl) bEl.value = n.body || '';
   _notesPaintModal();
+  _notesApplyPreviewPref();
+  _notesPaintPreview();
   var m = document.getElementById('notesModal');
   var o = document.getElementById('notesOverlay');
   if (m) m.classList.remove('hidden');
