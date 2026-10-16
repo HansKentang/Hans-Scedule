@@ -291,10 +291,22 @@ function _getTimerStyle(uid) {
 function _setTimerStyle(uid, style) { _timerStyles[uid] = style; try { localStorage.setItem(TIMER_STYLES_KEY, JSON.stringify(_timerStyles)); } catch(e) {} }
 
 const POMO_STYLES_KEY = 'haven-pomo-styles';
-const POMO_STYLE_LIST = ['default','minimal','classic'];
+/* Six designs, each answering a different question about a focus session:
+   how far through am I (ring), which session of the set (cycle), how much
+   time is left (digits, split), how much of the phase has burned (bar), or
+   nothing but the number (calm). The old trio was 'default'/'minimal'/
+   'classic', which differed only by the presence of a ring or a bar — the
+   style button looked half-dead. Their ids are mapped, not dropped, because
+   a saved map in the wild still holds them. */
+const POMO_STYLE_LIST = ['ring','cycle','digits','split','bar','calm'];
+const POMO_LEGACY_STYLES = { default: 'ring', minimal: 'digits', classic: 'bar' };
 let _pomoStyles = {};
 try { _pomoStyles = JSON.parse(localStorage.getItem(POMO_STYLES_KEY) || '{}'); } catch(e) {}
-function _getPomoStyle(uid) { return _pomoStyles[uid] || 'default'; }
+function _getPomoStyle(uid) {
+  var v = _pomoStyles[uid];
+  if (POMO_LEGACY_STYLES[v]) return POMO_LEGACY_STYLES[v];
+  return POMO_STYLE_LIST.indexOf(v) !== -1 ? v : 'ring';
+}
 function _setPomoStyle(uid, style) { _pomoStyles[uid] = style; try { localStorage.setItem(POMO_STYLES_KEY, JSON.stringify(_pomoStyles)); } catch(e) {} }
 
 const NOTES_STYLES_KEY = 'haven-notes-styles';
@@ -799,7 +811,9 @@ var WIDGET_STYLES = {
   streak:     { list: STREAK_STYLE_LIST,   get: _getStreakStyle,   set: _setStreakStyle },
   focuslog:   { list: FOCUS_STYLE_LIST,    get: _getFocusStyle,    set: _setFocusStyle },
   progress:   { list: PROG_STYLE_LIST,     get: _getProgStyle,     set: _setProgStyle },
-  exams:      { list: EXAMS_STYLE_LIST,    get: _getExamsStyle,    set: _setExamsStyle }
+  exams:      { list: EXAMS_STYLE_LIST,    get: _getExamsStyle,    set: _setExamsStyle },
+  timer:      { list: TIMER_STYLE_LIST,    get: _getTimerStyle,    set: _setTimerStyle },
+  pomodoro:   { list: POMO_STYLE_LIST,     get: _getPomoStyle,     set: _setPomoStyle }
 };
 
 /* Most ids are lowercase single words and title-case fine. Override only where
@@ -3107,14 +3121,61 @@ function renderHubBento() {
         for (var pdi = 0; pdi < 4; pdi++) pDots += '<span class="pomo-dot' + (pdi < pDone ? ' pomo-dot-on' : '') + '"></span>';
         var pOffset = 326.73 - (326.73 * pct / 100);
         var _pomoStyle = _getPomoStyle(uid);
+        var _puid = uid;
+        /* every style shares one control block: the interaction contract is
+           data-pomo-action (toggle|reset|skip). Built once so no style can
+           accidentally ship without a working Start button. */
+        var _pomoCtl = function(cls) {
+          return '<div class="pomo-controls ' + (cls || '') + '">'
+            + '<button class="timer-btn' + (pRunning ? ' timer-btn-active' : '') + '" data-pomo-action="toggle" data-pomo-uid="' + _puid + '">' + (pRunning ? 'Pause' : 'Start') + '</button>'
+            + '<button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="' + _puid + '">Reset</button>'
+            + '<button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="' + _puid + '">Skip</button>'
+            + '</div>';
+        };
+        var _pomoHead = '<div class="pomo-header"><span class="pomo-phase">' + pPhase + '</span><span class="pomo-dots">' + pDots + '</span></div>';
+        var _pomoWrap = function(cls, inner) {
+          return '<div class="pomo-widget ' + cls + '" data-pomo-uid="' + _puid + '">' + inner + '</div>';
+        };
         var _pomoBody = '';
-        if (_pomoStyle === 'minimal') {
-          _pomoBody = '<div class="pomo-widget pomo-widget-minimal" data-pomo-uid="' + uid + '"><div class="pomo-header"><span class="pomo-phase">' + pPhase + '</span><span class="pomo-dots">' + pDots + '</span></div><span class="pomo-time pomo-time-large">' + pDisplay + '</span><div class="pomo-controls"><button class="timer-btn ' + (pRunning ? 'timer-btn-active' : '') + '" data-pomo-action="toggle" data-pomo-uid="' + uid + '">' + (pRunning ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="' + uid + '">Reset</button><button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="' + uid + '">Skip</button></div></div>';
-        } else if (_pomoStyle === 'classic') {
-          var _pBar = '<div class="pomo-classic-bar"><div class="pomo-classic-fill" style="width:' + pct + '%"></div></div>';
-          _pomoBody = '<div class="pomo-widget pomo-widget-classic" data-pomo-uid="' + uid + '"><div class="pomo-header"><span class="pomo-phase">' + pPhase + '</span><span class="pomo-dots">' + pDots + '</span></div>' + _pBar + '<span class="pomo-time">' + pDisplay + '</span><div class="pomo-controls"><button class="timer-btn ' + (pRunning ? 'timer-btn-active' : '') + '" data-pomo-action="toggle" data-pomo-uid="' + uid + '">' + (pRunning ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="' + uid + '">Reset</button><button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="' + uid + '">Skip</button></div></div>';
+        if (_pomoStyle === 'cycle') {
+          /* the four-session rhythm is the hero; the clock is secondary.
+             Every time element carries `pomo-time` — the 1s tick writes to
+             `.pomo-time`, so a style that names it only `pw-cycle-time` throws
+             once a second while still looking correct in a screenshot. */
+          _pomoBody = _pomoWrap('pw-cycle',
+            '<div class="pw-cycle-pips">' + pDots + '</div>'
+            + '<div class="pw-cycle-phase pomo-phase">' + pPhase + '</div>'
+            + '<div class="pw-cycle-time pomo-time">' + pDisplay + '</div>'
+            + _pomoCtl('pomo-ctl-inline'));
+        } else if (_pomoStyle === 'digits') {
+          _pomoBody = _pomoWrap('pw-digits',
+            '<div class="pw-digits-top"><span class="pw-digits-time pomo-time">' + pDisplay + '</span>'
+            + '<span class="pw-digits-phase">' + pPhase + ' \u00b7 session ' + pCycles + '</span></div>'
+            + '<div class="pw-progress"><div class="pw-progress-fill" style="width:' + pct + '%"></div></div>'
+            + _pomoCtl('pomo-ctl-inline'));
+        } else if (_pomoStyle === 'split') {
+          _pomoBody = _pomoWrap('pw-split',
+            '<div class="pw-split-left"><span class="pw-split-time pomo-time">' + pDisplay + '</span>'
+            + '<span class="pw-split-phase">' + pPhase + '</span>'
+            + '<span class="pw-split-dots">' + pDots + '</span></div>'
+            + '<div class="pw-split-right">' + _pomoCtl('pomo-ctl-stack') + '</div>');
+        } else if (_pomoStyle === 'bar') {
+          var _pBar = '<div class="pw-bar-track"><div class="pw-bar-fill" style="width:' + pct + '%"></div></div>';
+          _pomoBody = _pomoWrap('pw-bar',
+            _pomoHead + _pBar
+            + '<span class="pomo-time pw-bar-time">' + pDisplay + '</span>'
+            + _pomoCtl('pomo-ctl-inline'));
+        } else if (_pomoStyle === 'calm') {
+          /* nothing but the number and a hairline — for deep work */
+          _pomoBody = _pomoWrap('pw-calm',
+            '<span class="pomo-time pw-calm-time">' + pDisplay + '</span>'
+            + '<span class="pw-calm-phase">' + pPhase + '</span>'
+            + _pomoCtl('pomo-ctl-min'));
         } else {
-          _pomoBody = '<div class="pomo-widget" data-pomo-uid="' + uid + '"><div class="pomo-header"><span class="pomo-phase">' + pPhase + '</span><span class="pomo-dots">' + pDots + '</span></div><div class="pomo-ring pomo-ring-' + ps.phase + '"><svg viewBox="0 0 120 120"><circle class="pomo-ring-bg" cx="60" cy="60" r="52"/><circle class="pomo-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="' + pOffset + '"/></svg><span class="pomo-time">' + pDisplay + '</span></div><div class="pomo-controls"><button class="timer-btn ' + (pRunning ? 'timer-btn-active' : '') + '" data-pomo-action="toggle" data-pomo-uid="' + uid + '">' + (pRunning ? 'Pause' : 'Start') + '</button><button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="' + uid + '">Reset</button><button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="' + uid + '">Skip</button></div></div>';
+          _pomoBody = _pomoWrap('pw-ring',
+            _pomoHead
+            + '<div class="pomo-ring pomo-ring-' + ps.phase + '"><svg viewBox="0 0 120 120"><circle class="pomo-ring-bg" cx="60" cy="60" r="52"/><circle class="pomo-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="' + pOffset + '"/></svg><span class="pomo-time">' + pDisplay + '</span></div>'
+            + _pomoCtl('pomo-ctl-inline'));
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
@@ -4805,24 +4866,14 @@ function renderHubBento() {
   grid.querySelectorAll('[data-timer-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.timerStyleToggle;
-      var cur = _getTimerStyle(uid);
-      var idx = TIMER_STYLE_LIST.indexOf(cur);
-      var next = TIMER_STYLE_LIST[(idx + 1) % TIMER_STYLE_LIST.length];
-      _setTimerStyle(uid, next);
-      renderHubBento();
+      _styleBtnClick(this, this.dataset.timerStyleToggle, 'timer', TIMER_STYLE_LIST, _getTimerStyle, _setTimerStyle);
     });
   });
 
   grid.querySelectorAll('[data-pomo-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.pomoStyleToggle;
-      var cur = _getPomoStyle(uid);
-      var idx = POMO_STYLE_LIST.indexOf(cur);
-      var next = POMO_STYLE_LIST[(idx + 1) % POMO_STYLE_LIST.length];
-      _setPomoStyle(uid, next);
-      renderHubBento();
+      _styleBtnClick(this, this.dataset.pomoStyleToggle, 'pomodoro', POMO_STYLE_LIST, _getPomoStyle, _setPomoStyle);
     });
   });
 
@@ -10821,8 +10872,17 @@ function _renderPomo(uid) {
   var phaseLabels = { focus:'Focus', short:'Short Break', long:'Long Break' };
   var pct = s.total > 0 ? ((s.total - s.remaining) / s.total) * 100 : 0;
   var pRunning = s.running;
-  el.querySelector('.pomo-time').textContent = _fmtTime(s.remaining);
-  el.querySelector('.pomo-phase').textContent = phaseLabels[s.phase] || 'Focus';
+  var _ptEl = el.querySelector('.pomo-time');
+  if (_ptEl) _ptEl.textContent = _fmtTime(s.remaining);
+  /* the phase text lives in a different element per style; a plain
+     `querySelector('.pomo-phase')` would throw once a second on the four
+     styles that name it something else */
+  var _phEl = el.querySelector('.pomo-phase, .pw-digits-phase, .pw-split-phase, .pw-calm-phase');
+  if (_phEl) {
+    var _phTxt = phaseLabels[s.phase] || 'Focus';
+    if (_phEl.classList.contains('pw-digits-phase')) _phTxt += ' \u00b7 session ' + (s.cycle + 1);
+    _phEl.textContent = _phTxt;
+  }
   var ring = el.querySelector('.pomo-ring');
   if (ring) {
     ring.classList.remove('pomo-ring-focus', 'pomo-ring-short', 'pomo-ring-long');

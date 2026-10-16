@@ -1929,7 +1929,7 @@ html.dark .hour-slot .half-hour-line { border-bottom-color: color-mix(in srgb, v
 .hour-slot:hover .slot-add { opacity: 0.9; transform: scale(1); }
 .hour-slot .slot-add:hover { opacity: 1; transform: scale(1.15); box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent); }
 .create-drag-preview { position: absolute; left: 5px; width: calc(100% - 10px); z-index: 25; pointer-events: none; border-radius: 10px; background: color-mix(in srgb, var(--accent) 18%, transparent); border: 1.5px dashed var(--accent); display: flex; align-items: flex-start; }
-.create-drag-preview span { font-size: 0.62rem; font-weight: 700; font-family: var(--font-mono); color: var(--accent); background: color-mix(in srgb, var(--bg-primary) 75%, transparent); padding: 1px 7px; margin: 3px 0 0 6px; border-radius: 20px; white-space: nowrap; }
+.create-drag-preview span { font-size: 0.62rem; font-weight: 700; font-family: var(--font-mono); color: var(--accent); background: color-mix(in srgb, var(--bg-primary) 75%, transparent); padding: 1px 7px; margin: 3px 0 0 6px; border-radius: 20px; white-space: nowrap; max-width: calc(100% - 12px); overflow: hidden; text-overflow: ellipsis; }
 #unschedTray { display: none; align-items: center; gap: 8px; padding: 6px var(--space-5); background: color-mix(in srgb, var(--accent) 6%, var(--bg-primary)); border-bottom: 1px solid var(--border-color); font-size: 0.7rem; overflow-x: auto; flex-shrink: 0; }
 #unschedTray.has-items { display: flex; }
 #unschedTray .unsched-label { font-weight: 700; color: var(--text-secondary); white-space: nowrap; }
@@ -3170,7 +3170,7 @@ html.dark .hub-hero-decor {
 .sleep-chart-wrap canvas {
   display: block;
   width: 100%;
-  height: 180px;
+  height: 254px;   /* H in renderSleepChart = top+caption+hours+gap+quality+labels+bottom */
 }
 
 /* ─── History List ────────────────────────────────────── */
@@ -12232,14 +12232,11 @@ html.edit-mode .gal-canvas .gal-item:hover {
 .timer-bar-fill { height:100%; border-radius:4px; background:var(--primary); transition:width 0.3s; }
 .timer-bar-time { font-size:1.2rem; font-weight:600; font-variant-numeric:tabular-nums; color:var(--text-primary); }
 
-/* ─── Pomodoro: Minimal Variant ───────────────────────── */
-.pomo-widget-minimal { display:flex; flex-direction:column; align-items:center; gap:6px; padding:6px 0; }
-.pomo-time-large { font-size:2rem; font-weight:700; font-variant-numeric:tabular-nums; color:var(--text-primary); }
-
-/* ─── Pomodoro: Classic Variant ───────────────────────── */
-.pomo-widget-classic { display:flex; flex-direction:column; align-items:center; gap:8px; padding:8px 0; }
-.pomo-classic-bar { width:100%; height:6px; border-radius:3px; background:var(--border-subtle); overflow:hidden; }
-.pomo-classic-fill { height:100%; border-radius:3px; background:var(--primary); transition:width 0.3s; }
+/* ─── Pomodoro: the six styles live in "WIDGET PACK 11 · POMODORO" at the
+   end of this file. The old minimal/classic rules targeted markup that no
+   longer exists (and the ids were remapped, not dropped) — a borderless body
+   with no ring is now `pw-calm`, not `.pomo-widget-minimal`.
+   ──────────────────────────────────────────────────────────────────────── */
 
 /* ─── Notes: variants now live in the "WIDGET PACK 4 · NOTES" block at the
    end of this file (the old lined/minimal rules targeted markup that no
@@ -15259,4 +15256,101 @@ body.notes-modal-open { overflow: hidden; }
   .timer-widget .timer-btn { padding: 8px 14px; font-size: 0.75rem; }
   .timer-widget .timer-preset { padding: 7px 12px; font-size: 0.68rem; }
   .tw-digits-time { font-size: 2.6rem; }
+}
+
+/* ============================================================
+   WIDGET PACK 11 · POMODORO — 2026-10-14
+   Six designs, each answering a different question about a focus session.
+
+   Fixes a pre-existing defect: all three old styles overflowed the 280x180
+   default tile (default +69px, classic +17px, minimal +3px, all clipped)
+   because `.pomo-widget` was never constrained to the tile — the same bug
+   the Timer had. The :has() rule is the standard fix; the sizes below are
+   chosen to fit 280x180, not to look good at any size.
+
+   Interaction contract, identical in all six: data-pomo-action
+   (toggle / reset / skip) on a button, and a `.pomo-time` element that the
+   one-second tick can write to. A style missing either stops working.
+   ============================================================ */
+
+.bento-scroll:has(> .pomo-widget) { display: flex; flex-direction: column; }
+.bento-scroll > .pomo-widget { flex: 1 1 auto; min-height: 0; }
+
+/* the phase label sits low-key in every style — only its placement differs */
+.pomo-widget .pomo-phase {
+  font-size: 0.58rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-tertiary);
+}
+.pomo-widget .pomo-time { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.pomo-widget .pomo-controls { display: flex; gap: 5px; }
+.pomo-widget .timer-btn { padding: 2px 8px; font-size: 0.6rem; border-radius: var(--radius-sm); }
+.pomo-ctl-inline { flex-direction: row; }
+.pomo-ctl-stack { flex-direction: column; }
+.pomo-ctl-stack .timer-btn { width: 100%; text-align: center; }
+.pomo-ctl-min { flex-direction: row; margin-top: auto; }
+
+/* ── 1 · RING — the progress ring; the default ─────────────── */
+/* `.pomo-widget` already carries gap:14px/padding:8px from the base rule at
+   the top of the file; this style tightens both, or header + 74px ring +
+   controls come to 187px in a 180px tile. */
+.pw-ring { align-items: center; justify-content: center; gap: 4px; padding: 0; }
+.pw-ring .pomo-header { flex: 0 0 auto; }
+.pw-ring .pomo-ring { width: 68px; height: 68px; flex: 0 0 auto; }
+.pw-ring .pomo-ring .pomo-time { font-size: 0.95rem; }
+.pw-ring .pomo-controls { margin-top: auto; flex: 0 0 auto; }
+
+/* ── 2 · CYCLE — the four-session rhythm is the hero ───────── */
+.pw-cycle { align-items: center; justify-content: center; gap: 6px; }
+.pw-cycle-pips { display: flex; gap: 8px; align-items: center; }
+.pw-cycle-pips .pomo-dot { width: 11px; height: 11px; border-width: 2px; }
+.pw-cycle-phase { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-tertiary); }
+.pw-cycle-time { font-size: 1.6rem; font-weight: 500; line-height: 1; }
+.pw-cycle .pomo-controls { margin-top: auto; }
+
+/* ── 3 · DIGITS — the numerals own the tile ────────────────── */
+.pw-digits { justify-content: center; gap: 8px; }
+.pw-digits-time { font-size: 2.1rem; font-weight: 500; line-height: 1; letter-spacing: -0.02em; }
+.pw-digits-phase { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-tertiary); }
+.pw-progress { height: 4px; border-radius: 2px; width: 100%;
+  background: color-mix(in srgb, var(--primary) 8%, transparent); overflow: hidden; }
+.pw-progress-fill { height: 100%; border-radius: 2px;
+  background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 55%, transparent); }
+.pw-digits .pomo-controls { margin-top: auto; }
+
+/* ── 4 · SPLIT — time left, controls stacked right ─────────── */
+.pw-split { flex-direction: row; align-items: stretch; gap: 12px; }
+.pw-split-left { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.pw-split-time { font-size: 1.7rem; font-weight: 500; line-height: 1; }
+.pw-split-phase { font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-tertiary); }
+.pw-split-dots { display: flex; gap: 5px; margin-top: 2px; }
+.pw-split-right { flex: 0 0 auto; width: 96px; display: flex; flex-direction: column; justify-content: center; }
+.pw-split-right .timer-btn { padding: 4px 8px; font-size: 0.62rem; }
+
+/* ── 5 · BAR — how much of the phase has burned ────────────── */
+.pw-bar { align-items: center; justify-content: center; gap: 8px; }
+.pw-bar-track { width: 100%; height: 7px; border-radius: 4px;
+  background: color-mix(in srgb, var(--primary) 8%, transparent); overflow: hidden; }
+.pw-bar-fill { height: 100%; border-radius: 4px;
+  background: color-mix(in srgb, var(--bubble-accent, var(--primary)) 55%, transparent);
+  transition: width 0.3s; }
+.pw-bar-time { font-size: 1.3rem; font-weight: 500; }
+.pw-bar .pomo-controls { margin-top: auto; }
+
+/* ── 6 · CALM — nothing but the number and a hairline ──────── */
+/* the controls fade until the tile is hovered, so at rest the tile is just
+   the number; they are still focusable, so keyboard users are not locked out */
+.pw-calm { align-items: center; justify-content: center; gap: 3px; }
+.pw-calm-time { font-size: 1.9rem; font-weight: 400; line-height: 1; letter-spacing: -0.02em; }
+.pw-calm-phase { font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-tertiary); opacity: 0.7; }
+.pw-calm .pomo-controls { margin-top: auto; opacity: 0.35; transition: opacity 0.2s; }
+.pw-calm:hover .pomo-controls, .pw-calm .pomo-controls:focus-within { opacity: 1; }
+
+@media (max-width: 640px) {
+  .pomo-widget .timer-btn { padding: 8px 14px; font-size: 0.75rem; }
+  .pw-digits-time { font-size: 2.8rem; }
+  .pw-cycle-pips .pomo-dot { width: 14px; height: 14px; }
 }
