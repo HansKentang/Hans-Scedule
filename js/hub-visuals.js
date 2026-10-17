@@ -954,13 +954,16 @@ function undoCanvas() {
   hubContent.bentoLayout = normalizeBentoLayout(JSON.parse(_undoStack.pop()), hubContent);
   saveHubContent();
   renderHubBento();
+  updateUndoButtons();
 }
 function redoCanvas() {
   if (!_redoStack.length) return;
   _undoStack.push(JSON.stringify(hubContent.bentoLayout));
+  if (_undoStack.length > BENTO_UNDO_MAX) _undoStack.shift();
   hubContent.bentoLayout = normalizeBentoLayout(JSON.parse(_redoStack.pop()), hubContent);
   saveHubContent();
   renderHubBento();
+  updateUndoButtons();
 }
 function updateUndoButtons() {
   var ub = document.getElementById('bentoEditUndo');
@@ -2965,7 +2968,6 @@ function renderHubBento() {
             _ring(34, _mPct, 3, 'var(--text-secondary)') +
             _ring(24, _sPct, 3, 'var(--bubble-accent, var(--primary))') +
             '</svg>' +
-            '<span class="clock-orbit-time">' + hh + ':' + mm + '</span>' +
             '<span class="clock-date">' + dateStr + '</span>' +
             '</div>';
         } else {
@@ -4968,6 +4970,7 @@ function renderHubBento() {
             var rmBtn = grid.querySelector('[data-remove-bubble="' + uid + '"]');
             if (rmBtn) rmBtn.click();
           } else if (action === 'reset-size') {
+            pushUndoState();
             var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
             var item = layout.find(function(i) { return i.uid === uid; });
             if (item) {
@@ -5680,6 +5683,7 @@ function renderHubBento() {
       var sel = grid.querySelector('.bento-bubble.selected');
       if (!sel) return;
       e.preventDefault();
+      pushUndoState();
       var step = e.shiftKey ? 1 : 20;
       var dx = dir[0] * step;
       var dy = dir[1] * step;

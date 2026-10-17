@@ -6242,16 +6242,9 @@ html.hub-edit .bento-bubble .w-st-add-inline { display: block; }
   gap: 6px;
 }
 .clock-orbit-svg {
-  width: 92px;
-  height: 92px;
+  width: 58px;
+  height: 58px;
   flex: 0 0 auto;
-}
-.clock-orbit-time {
-  font-size: var(--w-hero);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-  line-height: 1;
 }
 
 /* ─── Weather Widget ──────────────────────────────────── */
