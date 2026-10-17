@@ -15200,15 +15200,15 @@ body.notes-modal-open { overflow: hidden; }
 /* ── 1 · RING ──────────────────────────────────────────────── */
 /* Side by side, for the same reason as Pomodoro's: the body is ~106px tall
    and 246px wide, so an 84px circle fits beside a column but not on top of
-   the controls. */
-.tw-ring { flex-direction: row; align-items: center; gap: 14px; }
+   the controls. Centred as a group, so the circle is not pinned hard left. */
+.tw-ring { flex-direction: row; align-items: center; justify-content: center; gap: 14px; }
 .tw-ring .tw-ring { width: 84px; height: 84px; flex: 0 0 auto; }
 .tw-ring .timer-ring svg { width: 84px; height: 84px; }
 .tw-ring .timer-ring-text { position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 2px; }
 .tw-ring .timer-display { font-size: var(--w-lead); font-weight: 500; line-height: 1;
   font-variant-numeric: tabular-nums; color: var(--text-primary); }
-.tw-ring-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;
+.tw-ring-body { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column;
   align-items: flex-start; gap: 7px; }
 .tw-ring-body .w-act { align-self: flex-start; }
 
@@ -15235,7 +15235,7 @@ body.notes-modal-open { overflow: hidden; }
 /* Side by side like the ring, and the presets live INSIDE the body column:
    as a wrapping sibling they fell to a second line and pushed the widget
    14px past the tile. */
-.tw-dial { flex-direction: row; align-items: center; gap: 14px; }
+.tw-dial { flex-direction: row; align-items: center; justify-content: center; gap: 14px; }
 /* 84px, same budget as the ring: at 98 the dial overflowed by 20px. */
 .tw-dial-face { position: relative; width: 84px; height: 84px; flex: 0 0 auto; }
 .tw-dial-face svg { display: block; width: 84px; height: 84px; }
@@ -15243,7 +15243,7 @@ body.notes-modal-open { overflow: hidden; }
    body is only ~106px tall */
 .tw-dial-time { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   font-size: var(--w-lead); font-weight: 500; font-variant-numeric: tabular-nums; color: var(--text-primary); }
-.tw-dial-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;
+.tw-dial-body { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column;
   align-items: flex-start; gap: 7px; }
 .tw-dial-body .w-act { align-self: flex-start; }
 .tw-dial-body .timer-presets { align-self: stretch; }
@@ -15300,7 +15300,7 @@ body.notes-modal-open { overflow: hidden; }
    bar/dial/split/minimal, not "list/chips/board". What is now shared is
    the eye: one type scale, one control treatment, one hierarchy rule.
 
-   ── The five rules ──────────────────────────────────────────
+   ── The six rules ───────────────────────────────────────────
    R1  ONE NUMBER, ONE SIZE. A widget's headline figure does not resize
        between that widget's styles. Only the layout changes. --w-hero
        unless the numerals have the whole tile width, then --w-hero-xl.
@@ -15312,6 +15312,12 @@ body.notes-modal-open { overflow: hidden; }
        is about (phase / progress), not a glow on a circle.
    R5  QUIET META, LOUD HERO. One thing shouts. Everything else is 0.68rem
        uppercase and muted.
+   R6  NOTHING TOUCHES THE SIDE. The body carries its own gutter
+       (--w-pad-x) INSIDE the bubble's padding, so no figure or label ever
+       sits flush against the tile edge. Measured on 2026-10-16: the bubble's
+       own --gutter (16px + 1px border) leaves text at 17px, which reads as
+       pinned to the edge. R6 takes it to ~29px, and it is a horizontal-only
+       pad so the ~106px body height budget is not spent on it.
    ============================================================ */
 
 .bento-bubble {
@@ -15323,6 +15329,7 @@ body.notes-modal-open { overflow: hidden; }
   --w-ctl: 0.68rem;       /* control text */
   --w-gap: 8px;           /* the vertical rhythm inside a widget */
   --w-track: 6px;         /* progress-track height */
+  --w-pad-x: 12px;        /* R6: the body's own horizontal gutter */
 }
 
 /* the figure. Tabular numerals so a ticking clock does not jitter. */
@@ -15353,6 +15360,24 @@ body.notes-modal-open { overflow: hidden; }
   color: var(--text-tertiary);
   opacity: 0.75;
 }
+
+/* ── R6: nothing touches the side ────────────────────────────
+   The body's own gutter, inside the bubble's --gutter. Hans, 2026-10-16:
+   "pls always make the layout have abit of spacing , dont make any text
+   touch the sides". Horizontal only, so it does not spend the ~106px body
+   height budget — a vertical pad here would push the hero out of the tile.
+
+   These selectors are the two widgets currently on the language. The other
+   11 get the same two lines when they are converted. */
+.bento-scroll > .pomo-widget,
+.bento-scroll > .timer-widget {
+  padding-left: var(--w-pad-x);
+  padding-right: var(--w-pad-x);
+}
+
+/* the base `.pomo-widget` rule earlier in this file sets padding:8px 0 and
+   `.pw-ring` sets padding:0; both are lower specificity than the rule above,
+   so their horizontal value loses and only their vertical value survives. */
 
 /* ── R2: the controls ───────────────────────────────────────
    One primary action as a pill. Everything else is an icon. A widget
@@ -15447,10 +15472,14 @@ body.notes-modal-open { overflow: hidden; }
    width. A circle grows in both axes, so a tall one cannot fit — but a wide
    row can hold an 84px ring beside a column. This is the composition the old
    vertical ring could never have. */
-.pw-ring { flex-direction: row; align-items: center; gap: 14px; }
+.pw-ring { flex-direction: row; align-items: center; justify-content: center; gap: 14px; }
 .pw-ring .pomo-ring { width: 84px; height: 84px; flex: 0 0 auto; }
 .pw-ring .pomo-ring .pomo-time { font-size: var(--w-lead); }
-.pw-ring-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column;
+/* 0 1 auto, not 1 1 auto: with grow:1 the column fills the whole row and the
+   circle is pinned hard left, leaving ~167px of dead space on the right. With
+   grow:0 the group is only as wide as its content and `justify-content:center`
+   on .pw-ring can balance it. */
+.pw-ring-body { flex: 0 1 auto; min-width: 0; display: flex; flex-direction: column;
   align-items: flex-start; gap: 7px; }
 .pw-ring-body .w-act { align-self: flex-start; }
 
