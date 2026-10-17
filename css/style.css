@@ -6235,6 +6235,25 @@ html.hub-edit .bento-bubble .w-st-add-inline { display: block; }
   padding-bottom: 10px;
 }
 
+/* ─── Clock: Orbit ────────────────────────────────────── */
+.clock-orbit {
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.clock-orbit-svg {
+  width: 92px;
+  height: 92px;
+  flex: 0 0 auto;
+}
+.clock-orbit-time {
+  font-size: var(--w-hero);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
 /* ─── Weather Widget ──────────────────────────────────── */
 .weather-widget {
   display: flex;
@@ -12554,7 +12573,7 @@ html.edit-mode .gal-canvas .gal-item:hover {
 }
 /* ══════════════════════════════════════════════════════════════════
    WIDGET PACK 2 — grades · attendance · weakspot · exams ·
-   holidays · hijri · rain · birthdays · flashcards
+   birthdays · flashcards
    Theme tokens only; fixed hues reserved for data values.
    ══════════════════════════════════════════════════════════════════ */
 
@@ -12685,7 +12704,7 @@ html.edit-mode .gal-canvas .gal-item:hover {
 
 /* ═══════════════════════════════════════════════════════════
    WIDGET PACK 3
-   sleepdebt · ytfeed · watchlist · musicviz
+   sleepdebt · watchlist · musicviz
    pet · garden · xp · badges · money
    Theme-token only. Fixed hues are used for data, never surfaces.
    ═══════════════════════════════════════════════════════════ */
@@ -14878,7 +14897,7 @@ body.notes-modal-open { overflow: hidden; }
    `.wp-widget` is `height:100%`, but it has a `.w-head` SIBLING inside
    `.bento-scroll` — so 100% plus the head is always ~30px taller than the tile
    and every one of these widgets scrolls by exactly the header's height. The
-   audit reads that as `clipped`. Affects exams, grades, attendance, holidays,
+   audit reads that as `clipped`. Affects exams, grades, attendance,
    birthdays and flashcards. Same fix the codebase already uses elsewhere: make
    the scroll container a flex column and let the widget take the remainder. */
 .bento-scroll:has(> .wp-widget) { display: flex; flex-direction: column; }

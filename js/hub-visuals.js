@@ -21,7 +21,7 @@ const HUB_LAYOUT_KEY = 'haven-schedule-hub-layout';
 const HUB_BENTO_KEY = 'haven-hub-bento';
 const HUB_EDIT_KEY = 'haven-hub-edit';
 const CLOCK_STYLES_KEY = 'haven-clock-styles';
-const CLOCK_STYLE_LIST = ['digital','analog','minimal','flip','split'];
+const CLOCK_STYLE_LIST = ['digital','analog','minimal','flip','split','orbit'];
 let _clockStyles = {};
 try { _clockStyles = JSON.parse(localStorage.getItem(CLOCK_STYLES_KEY) || '{}'); } catch(e) {}
 function _getClockStyle(uid) { return _clockStyles[uid] || 'digital'; }
@@ -795,6 +795,7 @@ function _copyWidgetStyle(srcUid, dstUid) {
    this migrates one widget at a time instead of all 35 at once. */
 var WIDGET_STYLES = {
   todos:      { list: TODOS_STYLE_LIST,    get: _getTodosStyle,    set: _setTodosStyle },
+  clock:      { list: CLOCK_STYLE_LIST,    get: _getClockStyle,    set: _setClockStyle },
   goals:      { list: GOALS_STYLE_LIST,    get: _getGoalsStyle,    set: _setGoalsStyle },
   priorities: { list: PRI_STYLE_LIST,      get: _getPriStyle,      set: _setPriStyle },
   today:      { list: TODAY_STYLE_LIST,    get: _getTodayStyle,    set: _setTodayStyle },
@@ -813,6 +814,7 @@ var WIDGET_STYLES = {
    the raw id would read badly, or where two widgets mean different things by the
    same id ("list" is a plain checklist on today, a numbered list on goals). */
 var STYLE_LABELS = {
+  clock:      { digital: 'Digital', analog: 'Analog', minimal: 'Minimal', flip: 'Flip', split: 'Split', orbit: 'Orbit' },
   todos:      { list: 'Checklist', split: 'Split', meter: 'Meter', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
   goals:      { list: 'Numbered', rank: 'Big numbers', split: 'Split', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
   priorities: { list: 'Dots', rank: 'Ranked', split: 'Split', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
@@ -1139,7 +1141,7 @@ function onDrop(e) {
 
 /* ─── Bento layout normalization ───────────── */
 function normalizeBentoLayout(layout, parent) {
-  var REMOVED_WIDGET_TYPES = ['gratitude','hijri','sunrise','rain','weakspot','expense','holidays','ytfeed','crypto','moneyflow','water','mood'];
+  var REMOVED_WIDGET_TYPES = ['gratitude','hijri','sunrise','rain','weakspot','expense'];
   if (Array.isArray(layout)) layout = layout.filter(function(it) { return it && REMOVED_WIDGET_TYPES.indexOf(it.t) === -1; });
 
   const result = [];
@@ -1693,7 +1695,7 @@ function _fitTextWidgets() {
 /* ─── Shared widget empty state ────────────────────────────────────────────────
    Before this, a widget with no data either rendered a completely blank card
    (priorities, habits, links, reading) or invented its own one-off empty markup
-   (gh-empty, ytf-empty, w-wc-empty, … ~15 different spellings). This is the one
+   (gh-empty, w-wc-empty, … ~15 different spellings). This is the one
    place that describes "nothing here yet", with a hint and an optional CTA that
    reuses the existing [data-add] flow.
 
@@ -2942,6 +2944,30 @@ function renderHubBento() {
             </div>
             <span class="clock-date">${dateStr}</span>
           </div>`;
+        } else if (clockStyle === 'orbit') {
+          /* three concentric rings: outer = hour progress, middle = minute,
+             inner = second. Each ring is an SVG arc that fills as the unit
+             progresses through its cycle. */
+          var _hPct = (hourNum % 12) / 12;
+          var _mPct = minNum / 60;
+          var _sPct = secNum / 60;
+          var _ring = function(r, pct, sw, color) {
+            var c = 2 * Math.PI * r;
+            var off = c - (c * pct);
+            return '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + color + '" stroke-width="' + sw + '" stroke-dasharray="' + c + '" stroke-dashoffset="' + off + '" stroke-linecap="round" transform="rotate(-90 50 50)"/>';
+          };
+          clockFaceHTML = '<div class="clock-face clock-orbit" data-clock-uid="' + uid + '" data-clock-style="orbit">' +
+            '<svg class="clock-orbit-svg" viewBox="0 0 100 100">' +
+            '<circle cx="50" cy="50" r="44" fill="none" stroke="var(--border-color)" stroke-width="1.5" opacity="0.3"/>' +
+            '<circle cx="50" cy="50" r="34" fill="none" stroke="var(--border-color)" stroke-width="1.5" opacity="0.3"/>' +
+            '<circle cx="50" cy="50" r="24" fill="none" stroke="var(--border-color)" stroke-width="1.5" opacity="0.3"/>' +
+            _ring(44, _hPct, 3, 'var(--text-primary)') +
+            _ring(34, _mPct, 3, 'var(--text-secondary)') +
+            _ring(24, _sPct, 3, 'var(--bubble-accent, var(--primary))') +
+            '</svg>' +
+            '<span class="clock-orbit-time">' + hh + ':' + mm + '</span>' +
+            '<span class="clock-date">' + dateStr + '</span>' +
+            '</div>';
         } else {
           clockFaceHTML = `<div class="clock-face clock-digital" data-clock-uid="${uid}" data-clock-style="digital">
             <div class="clock-row"><span class="clock-time">${hh}:${mm}</span><span class="clock-seconds">${ss}</span></div>
@@ -3831,7 +3857,7 @@ function renderHubBento() {
         var _hwDone = _hwItems.filter(function(h) { return h.done; }).length;
         var _hwTotal = _hwItems.length;
         var _hwPct = _hwTotal ? Math.round((_hwDone / _hwTotal) * 100) : 0;
-        var _today = new Date().toISOString().slice(0, 10);
+        var _today = _hubTodayKey();
         var _subjectColors = { Math:'#4a90d9', Science:'#27ae60', English:'#8e44ad', History:'#f39c12', Art:'#e74c8b', Music:'#16a085', PE:'#e67e22', Programming:'#2980b9' };
         var _colorIdx = 0;
         var _colorPalette = ['#4a90d9','#27ae60','#8e44ad','#f39c12','#e74c8b','#16a085','#e67e22','#2980b9','#c0392b','#1abc9c'];
@@ -4614,6 +4640,9 @@ function renderHubBento() {
       var layout2 = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
       var src = layout2.find(function(it) { return it.uid === uid; });
       if (!src) return;
+      /* Duplicating adds a widget, so it must respect the same free-plan cap
+         as the Add button. */
+      if (!_hubCanAddWidget(1)) return;
       pushUndoState();
       var copy = JSON.parse(JSON.stringify(src));
       copy.uid = 'bubble-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
@@ -4642,12 +4671,7 @@ function renderHubBento() {
   grid.querySelectorAll('[data-clock-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
-      var uid = this.dataset.clockStyleToggle;
-      var cur = _getClockStyle(uid);
-      var idx = CLOCK_STYLE_LIST.indexOf(cur);
-      var next = CLOCK_STYLE_LIST[(idx + 1) % CLOCK_STYLE_LIST.length];
-      _setClockStyle(uid, next);
-      renderHubBento();
+      _styleBtnClick(this, this.dataset.clockStyleToggle, 'clock', CLOCK_STYLE_LIST, _getClockStyle, _setClockStyle);
     });
   });
 
@@ -4993,12 +5017,17 @@ function renderHubBento() {
     grid.insertAdjacentHTML('beforeend', '<div class="bento-empty-state"><div class="bento-empty-icon"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="32" height="32" rx="4"/><line x1="24" y1="18" x2="24" y2="30"/><line x1="18" y1="24" x2="30" y2="24"/></svg></div><div class="bento-empty-title">Canvas is empty</div><div class="bento-empty-desc">Toggle edit mode and click <strong>Add Bubble</strong> to populate your canvas</div></div>');
   }
 
-  // SAFETY: Ensure grid has content; if somehow empty, force default render
+  // SAFETY: if the layout says there should be widgets but nothing rendered,
+  // that is a rendering bug. This branch used to "recover" by assigning
+  // defaults.bentoLayout — which is [] — over the user's non-empty layout,
+  // silently destroying every widget on the canvas with no undo pushed.
+  // Never overwrite the layout here: report it and leave the data alone.
   if (!grid.children.length && hubContent.bentoLayout && hubContent.bentoLayout.length) {
-    console.warn('[hub] renderHubBento produced empty grid, forcing default layout');
-    hubContent.bentoLayout = defaults.bentoLayout.map(i => ({...i}));
-    // Re-render once with defaults
-    setTimeout(() => { if (typeof renderHubBento === 'function') renderHubBento(); }, 0);
+    console.error('[hub] renderHubBento produced no DOM for ' + hubContent.bentoLayout.length +
+                  ' layout entries. The layout was left untouched; this is a render defect, not a data problem.');
+    if (typeof showToast === 'function') {
+      showToast('Some widgets could not be drawn. Your layout was not changed.', 'error', 4500);
+    }
     return;
   }
 
@@ -6483,6 +6512,12 @@ function _removeBubbleByUid(uid) {
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var found = layout.some(function(i) { return i.uid === uid; });
   if (!found) return false;
+  /* Release the widget's timer state before the DOM goes away. Without this,
+     a deleted running Timer/Pomodoro kept running: true, so the global 200 ms
+     tick never stopped and _saveTimerStates()/ _savePomoStates() kept writing
+     localStorage five times a second for the rest of the session. */
+  if (_timerIntervals[uid]) { delete _timerIntervals[uid]; if (typeof _timerClearTickIfIdle === 'function') _timerClearTickIfIdle(); }
+  if (_pomodoroState[uid]) { delete _pomodoroState[uid]; if (typeof _pomoClearTickIfIdle === 'function') _pomoClearTickIfIdle(); }
   pushUndoState();
   hubContent.bentoLayout = layout.filter(function(i) { return i.uid !== uid; });
   saveHubContent();
@@ -7269,8 +7304,8 @@ function setupBubbleResize() {
 
 /* ─── Bubble type icons ────────────────────── */
 /* ══════════════════════════════════════════════════════════════════
-   WIDGET PACK 2 — grades, attendance, exams, holidays, birthdays,
-   flashcards. Local-data only.
+   WIDGET PACK 2 — grades, attendance, exams, birthdays, flashcards.
+   Local-data only.
    ══════════════════════════════════════════════════════════════════ */
 
 var WP_WINDOW_DAYS = 28;
@@ -7883,44 +7918,6 @@ function _examsEditor() {
     '</div>';
 }
 
-/* ═══════════════════════ INDONESIAN HOLIDAYS ═══════════════════════ */
-/* Source: SKB 3 Menteri (No. 1497/2025, No. 2/2025, No. 5/2025) for 2026.
-   National holidays only carry legal weight; cuti bersama is set annually.
-   This list must be refreshed when the next SKB is published. */
-
-var WP_HOLIDAYS = [
-  ['2026-01-01', 'Tahun Baru Masehi 2026', 'national'],
-  ['2026-01-16', 'Isra Mikraj Nabi Muhammad SAW', 'national'],
-  ['2026-02-16', 'Cuti Tahun Baru Imlek 2577', 'cuti'],
-  ['2026-02-17', 'Tahun Baru Imlek 2577', 'national'],
-  ['2026-03-18', 'Cuti Hari Suci Nyepi', 'cuti'],
-  ['2026-03-19', 'Hari Suci Nyepi 1948', 'national'],
-  ['2026-03-20', 'Cuti Idulfitri 1447 H', 'cuti'],
-  ['2026-03-21', 'Hari Raya Idulfitri 1447 H', 'national'],
-  ['2026-03-22', 'Hari Raya Idulfitri 1447 H', 'national'],
-  ['2026-03-23', 'Cuti Idulfitri 1447 H', 'cuti'],
-  ['2026-03-24', 'Cuti Idulfitri 1447 H', 'cuti'],
-  ['2026-04-03', 'Wafat Yesus Kristus', 'national'],
-  ['2026-04-05', 'Hari Paskah', 'national'],
-  ['2026-05-01', 'Hari Buruh Internasional', 'national'],
-  ['2026-05-14', 'Kenaikan Yesus Kristus', 'national'],
-  ['2026-05-15', 'Cuti Kenaikan Yesus Kristus', 'cuti'],
-  ['2026-05-27', 'Hari Raya Iduladha 1447 H', 'national'],
-  ['2026-05-28', 'Cuti Hari Raya Iduladha', 'cuti'],
-  ['2026-05-31', 'Hari Raya Waisak 2570', 'national'],
-  ['2026-06-01', 'Hari Lahir Pancasila', 'national'],
-  ['2026-06-16', 'Tahun Baru Islam 1448 H', 'national'],
-  ['2026-08-17', 'Hari Kemerdekaan RI', 'national'],
-  ['2026-08-25', 'Maulid Nabi Muhammad SAW', 'national'],
-  ['2026-12-24', 'Cuti Hari Raya Natal', 'cuti'],
-  ['2026-12-25', 'Hari Raya Natal', 'national']
-];
-
-
-
-
-
-
 /* ════════════════════════ BIRTHDAYS ════════════════════════ */
 
 function _birthdaysData() {
@@ -8474,7 +8471,7 @@ function _fetchWeather(grid) {
     _geoDone = true;
     _fetchWeatherByIP(weatherWidgets);
   }
-  if (typeof navigator !== 'undefined' && navigator.geolocation && navigator.geolocation.getCurrentPosition) {
+  if (typeof navigator !== 'undefined' && navigator.geolocation && navigator.geolocation.getCurrentPosition && location.protocol === 'https:') {
     try {
       var _geoTimer = setTimeout(_geoFallback, 9000);
       navigator.geolocation.getCurrentPosition(function(pos) {
@@ -9185,7 +9182,7 @@ function _fetchAirQuality(grid) {
   _aqFetched = true;
   var saved = _getSavedWeatherLoc();
   if (saved) { _loadAqForCoords(saved.lat, saved.lon, saved.name, widgets); return; }
-  if (typeof navigator !== 'undefined' && navigator.geolocation && navigator.geolocation.getCurrentPosition) {
+  if (typeof navigator !== 'undefined' && navigator.geolocation && navigator.geolocation.getCurrentPosition && location.protocol === 'https:') {
     try {
       navigator.geolocation.getCurrentPosition(function(pos) {
         _loadAqForCoords(pos.coords.latitude, pos.coords.longitude, 'Current location', widgets);
@@ -9323,7 +9320,7 @@ function _geoByIP(cb) {
 function _resolveGeo(cb) {
   var saved = _getSavedWeatherLoc();
   if (saved) { cb(saved.lat, saved.lon, saved.name); return; }
-  if (typeof navigator !== 'undefined' && navigator.geolocation && navigator.geolocation.getCurrentPosition) {
+  if (typeof navigator !== 'undefined' && navigator.geolocation && navigator.geolocation.getCurrentPosition && location.protocol === 'https:') {
     try {
       navigator.geolocation.getCurrentPosition(function(pos) { cb(pos.coords.latitude, pos.coords.longitude, 'Current location'); },
         function() { _geoByIP(cb); }, { timeout: 8000, enableHighAccuracy: false });
@@ -9867,7 +9864,7 @@ function generateProgressData() {
   for (let i = 0; i < 7; i++) {
     const d = new Date(ws);
     d.setDate(d.getDate() + i);
-    const dateStr = d.toISOString().slice(0,10);
+    const dateStr = _hubTodayKey(d);
     const dayTasks = allT.filter(t => t.date === dateStr);
     const done = dayTasks.filter(t => t.completed).length;
     daily.push({ done, total: dayTasks.length });
@@ -9885,10 +9882,10 @@ function generateProgressData() {
   for (let i = 0; i < 7; i++) {
     const d = new Date(lws);
     d.setDate(d.getDate() + i);
-    const dateStr = d.toISOString().slice(0,10);
+    const dateStr = _hubTodayKey(d);
     lastWeekDone += allT.filter(t => t.date === dateStr).filter(t => t.completed).length;
   }
-  const todayStr = now.toISOString().slice(0,10);
+  const todayStr = _hubTodayKey(now);
   const todayTasks = allT.filter(t => t.date === todayStr);
   const todayDone = todayTasks.filter(t => t.completed).length;
   const rate = totalAll > 0 ? Math.round((totalDone / totalAll) * 100) : 0;
@@ -9928,16 +9925,25 @@ function refreshProgressWidget() {
 }
 let _progressRefreshInterval = null;
 
-/* ─── Add bubble types ─────────────────────── */
-function addBubbleTypes(types, dropPos) {
+/* ─── Free-plan widget cap ─────────────────── */
+/* The cap used to live inline in addBubbleTypes only, so the duplicate path
+   could push a widget straight past it and a free account got an unlimited
+   canvas. Every path that increases the widget count goes through here. */
+function _hubCanAddWidget(count) {
   if (typeof hasAccess === 'function' && !hasAccess('unlimited_tags')) {
     const widgetLimit = typeof premiumLimit === 'function' ? premiumLimit('widgetsPerCanvas') : 8;
     const currentLayout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
-    if (currentLayout.length >= widgetLimit) {
+    if (currentLayout.length + (count || 1) > widgetLimit) {
       requirePremium('unlimited_tags', { reason: 'The Free plan fits ' + widgetLimit + ' widgets on one canvas' });
-      return;
+      return false;
     }
   }
+  return true;
+}
+
+/* ─── Add bubble types ─────────────────────── */
+function addBubbleTypes(types, dropPos) {
+  if (!_hubCanAddWidget(types.length)) return;
   // Start from fresh normalized layout
   const layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   // Get grid width for gap-finding
@@ -10678,6 +10684,13 @@ function _loadPomoStates() {
             }
             _renderPomo(k);
           });
+          /* When the last phase completes nothing is running any more, but
+             this interval kept firing (and _savePomoStates kept writing) for
+             the rest of the session. Release it as soon as nothing needs it. */
+          var anyPomoRunning = Object.keys(_pomodoroState).some(function(k) {
+            return k !== '_tick' && _pomodoroState[k] && _pomodoroState[k].running;
+          });
+          if (!anyPomoRunning && typeof _pomoClearTickIfIdle === 'function') _pomoClearTickIfIdle();
           _savePomoStates();
         }, 200);
 }
@@ -10692,7 +10705,7 @@ function _loadPomoStates() {
 
 /* ══════════════════════════════════════════════════════════════
    WIDGET PACK — added 2026-10-03
-   prayertime · bmkgquake · moneyflow · assistant · friends-live
+   prayertime · bmkgquake · assistant · friends-live
    ══════════════════════════════════════════════════════════════ */
 
 /* ─── Shared helpers for the widget pack ────── */
@@ -11452,8 +11465,8 @@ function initBubbleDockDrag(dock) {
       weekplan:{w:280,h:400},
       prayertime:{w:280,h:340},bmkgquake:{w:280,h:300},assistant:{w:280,h:360},'friends-live':{w:280,h:320},
       grades:{w:280,h:340},attendance:{w:280,h:380},exams:{w:280,h:380},
-      holidays:{w:280,h:300},birthdays:{w:280,h:300},flashcards:{w:280,h:300},
-      sleepdebt:{w:280,h:280},ytfeed:{w:280,h:320},watchlist:{w:280,h:320},musicviz:{w:280,h:200},
+      birthdays:{w:280,h:300},flashcards:{w:280,h:300},
+      sleepdebt:{w:280,h:280},watchlist:{w:280,h:320},musicviz:{w:280,h:200},
       pet:{w:280,h:340},garden:{w:280,h:300},xp:{w:280,h:220},badges:{w:280,h:300},money:{w:280,h:240}
     };
     return defSizes[type] || {w:280,h:280};
@@ -12047,7 +12060,7 @@ function setupHubEditEvents() {
     else if (field === 'todayTodos') { _todayTodosItems().push({ text: '', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="todayTodos"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'habits') { hubContent.habits.push(''); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="habits"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'links') { hubContent.links.push({ label: '', url: '' }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.hub-editable[data-edit="links-label"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
-    else if (field === 'countdown') { hubContent.countdown.push({ label: '', date: new Date().toISOString().slice(0,10) }); saveHubContent(); renderHubBento(); }
+    else if (field === 'countdown') { hubContent.countdown.push({ label: '', date: _hubTodayKey() }); saveHubContent(); renderHubBento(); }
     else if (field === 'homework') { hubContent.homework.push({ text: '', subject: '', due: '', priority: 'medium', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-item-text[data-edit="homework"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
     else if (field === 'reading') { hubContent.reading.push({ title: '', author: '', done: false }); saveHubContent(); renderHubBento(); setTimeout(() => { const els = document.querySelectorAll('.w-rd-title[data-edit="reading-title"]'); const last = els[els.length - 1]; if (last) { last.focus(); } }, 50); }
   });
@@ -13176,7 +13189,7 @@ var _snapshotColors = {
   goals:'#bdbdbd', priorities:'#b0b0b0', todos:'#a3a3a3', habits:'#979797',
   progress:'#8a8a8a', clock:'#bdbdbd', weather:'#b0b0b0', calendar:'#a3a3a3',timer:'#979797', pomodoro:'#8a8a8a', spotify:'#c7c7c7', strava:'#9a9a9a',
       flightradar:'#8d8d8d', 'sleep-score':'#b5b5b5', quote:'#a8a8a8', notes:'#9c9c9c', headlines:'#ababab',
-       links:'#909090', images:'#c2c2c2', crypto:'#f7931a', homework:'#9a9a9a', study:'#8e44ad'
+       links:'#909090', images:'#c2c2c2', homework:'#9a9a9a', study:'#8e44ad'
 };
 
 window.captureHubSnapshot = function() {
