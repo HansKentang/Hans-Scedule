@@ -291,6 +291,16 @@ function _getTimerStyle(uid) {
 function _setTimerStyle(uid, style) { _timerStyles[uid] = style; try { localStorage.setItem(TIMER_STYLES_KEY, JSON.stringify(_timerStyles)); } catch(e) {} }
 
 const POMO_STYLES_KEY = 'haven-pomo-styles';
+/* ── R2 control glyphs (the WIDGET DESIGN LANGUAGE block in style.css) ─────
+   Secondary actions are icons, not word-buttons. A row of "Start Reset Skip"
+   at the bottom of six different layouts is what made them all read as one
+   design: that row is where the eye lands, and it was identical every time.
+   Inline SVG rather than a font or sprite, so the app keeps its no-build-step
+   shape; the language CSS sizes them. */
+const PLAY_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.53.85l12-7.5a1 1 0 0 0 0-1.7l-12-7.5A1 1 0 0 0 7 4.5z"/></svg>';
+const PAUSE_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+const RESET_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/></svg>';
+const SKIP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5v15a1 1 0 0 0 1.53.85l10-7.5a1 1 0 0 0 0-1.7l-10-7.5A1 1 0 0 0 5 4.5z"/><line x1="19" y1="4" x2="19" y2="20"/></svg>';
 /* Six designs, each answering a different question about a focus session:
    how far through am I (ring), which session of the set (cycle), how much
    time is left (digits, split), how much of the phase has burned (bar), or
@@ -3030,7 +3040,6 @@ function renderHubBento() {
         var tDisplay = ts.mode === 'countdown' ? _fmtTime(Math.max(0, ts.target - ts.elapsed)) : _fmtTime(ts.elapsed);
         var tStatus = ts.running ? 'running' : (ts.target > 0 && ts.elapsed > 0 ? 'paused' : (ts.target > 0 ? 'ready' : 'idle'));
         var presetsHtml = (tStatus === 'idle' || tStatus === 'ready') ? '<div class="timer-presets"><button class="timer-preset" data-timer-preset="60" data-timer-uid="' + uid + '">1m</button><button class="timer-preset" data-timer-preset="300" data-timer-uid="' + uid + '">5m</button><button class="timer-preset" data-timer-preset="900" data-timer-uid="' + uid + '">15m</button><button class="timer-preset" data-timer-preset="1800" data-timer-uid="' + uid + '">30m</button><button class="timer-preset" data-timer-preset="3600" data-timer-uid="' + uid + '">1h</button></div>' : '';
-        var modeLabel = ts.mode === 'countdown' ? 'SW' : 'TD';
         var tFrac = (ts.mode === 'countdown' && ts.target > 0) ? Math.max(0, Math.min(1, ts.elapsed / ts.target)) : 0;
         var tOffset = 326.73 - 326.73 * tFrac;
         var _timerStyle = _getTimerStyle(uid);
@@ -3038,11 +3047,16 @@ function renderHubBento() {
            the presets on data-timer-preset — that is the whole interaction. Only
            their shape and position change. */
         var _tModeLbl = ts.mode === 'countdown' ? (ts.target > 0 ? 'countdown' : 'set a preset') : 'stopwatch';
+        /* R2, the same treatment Pomodoro got: one primary action as a pill, the
+           mode switch and reset as icons. The old three-word row (Start / SW /
+           Reset) was identical at the bottom of every style, which is what made
+           six layouts read as one. */
+        var _tModeSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 6h18"/><path d="M7 22l-4-4 4-4"/><path d="M21 18H3"/></svg>';
         var _tCtl = function(cls) {
-          return '<div class="timer-controls' + (cls ? ' ' + cls : '') + '">'
-            + '<button class="timer-btn' + (ts.running ? ' timer-btn-active' : '') + '" data-timer-action="toggle" data-timer-uid="' + uid + '">' + (ts.running ? 'Pause' : 'Start') + '</button>'
-            + '<button class="timer-btn timer-btn-mode" data-timer-action="mode" data-timer-uid="' + uid + '">' + modeLabel + '</button>'
-            + '<button class="timer-btn timer-btn-reset" data-timer-action="reset" data-timer-uid="' + uid + '">Reset</button>'
+          return '<div class="w-act' + (cls ? ' ' + cls : '') + '">'
+            + '<button class="w-play' + (ts.running ? ' is-running' : '') + '" data-timer-action="toggle" data-timer-uid="' + uid + '" aria-label="' + (ts.running ? 'Pause' : 'Start') + '">' + (ts.running ? PAUSE_SVG : PLAY_SVG) + '<span>' + (ts.running ? 'Pause' : 'Start') + '</span></button>'
+            + '<button class="w-ico" data-timer-action="mode" data-timer-uid="' + uid + '" title="' + (ts.mode === 'countdown' ? 'Switch to stopwatch' : 'Switch to countdown') + '" aria-label="' + (ts.mode === 'countdown' ? 'Switch to stopwatch' : 'Switch to countdown') + '">' + _tModeSvg + '</button>'
+            + '<button class="w-ico" data-timer-action="reset" data-timer-uid="' + uid + '" title="Reset" aria-label="Reset">' + RESET_SVG + '</button>'
             + '</div>';
         };
         var _tWrap = function(cls, inner) {
@@ -3054,7 +3068,8 @@ function renderHubBento() {
           _timerBody = _tWrap('digits',
             '<div class="tw-digits-top"><span class="tw-digits-time timer-display">' + tDisplay + '</span>'
             + '<span class="tw-digits-mode">' + _tModeLbl + '</span></div>'
-            + _tCtl('tw-ctl-inline') + presetsHtml);
+            + '<div class="w-track"><div class="w-track-fill" style="width:' + Math.round(tFrac * 100) + '%"></div></div>'
+            + _tCtl() + presetsHtml);
 
         } else if (_timerStyle === 'bar') {
           _timerBody = _tWrap('bar',
@@ -3078,13 +3093,13 @@ function renderHubBento() {
             + '<line x1="60" y1="60" x2="60" y2="20" stroke="var(--bubble-accent, var(--primary))" stroke-width="2.5" stroke-linecap="round" transform="rotate(' + (tFrac * 360).toFixed(1) + ' 60 60)"/>'
             + '<circle cx="60" cy="60" r="4" fill="var(--bubble-accent, var(--primary))"/>'
             + '</svg><span class="tw-dial-time timer-display">' + tDisplay + '</span></div>'
-            + _tCtl() + presetsHtml);
+            + '<div class="tw-dial-body"><span class="tw-digits-mode">' + _tModeLbl + '</span>' + _tCtl() + presetsHtml + '</div>');
 
         } else if (_timerStyle === 'split') {
           _timerBody = _tWrap('split',
             '<div class="tw-split-left"><span class="tw-split-time timer-display">' + tDisplay + '</span>'
             + '<span class="tw-split-mode">' + _tModeLbl + '</span></div>'
-            + '<div class="tw-split-right">' + _tCtl('tw-ctl-stack') + '</div>'
+            + '<div class="tw-split-right">' + _tCtl('w-act--stack') + '</div>'
             + presetsHtml);
 
         } else if (_timerStyle === 'minimal') {
@@ -3092,14 +3107,18 @@ function renderHubBento() {
              given a duration at all in this style. */
           _timerBody = _tWrap('minimal',
             '<span class="tw-min-time timer-display">' + tDisplay + '</span>'
-            + _tCtl('tw-ctl-min') + presetsHtml);
+            + _tCtl() + presetsHtml);
 
         } else {
-          /* ring — the default */
+          /* ring: the circle left, with the mode label, controls and presets in
+             a column beside it. The body is ~106px tall and 246px wide, so a
+             circle stacked on top of its controls cannot be big. The presets
+             MUST stay in this style, or a countdown can never be given a
+             duration here. */
           _timerBody = _tWrap('ring',
             '<div class="timer-ring tw-ring"><svg viewBox="0 0 120 120"><circle class="timer-ring-bg" cx="60" cy="60" r="52"/><circle class="timer-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="' + tOffset + '"/></svg>'
-            + '<div class="timer-ring-text"><span class="timer-display">' + tDisplay + '</span><span class="timer-mode-label">' + _tModeLbl + '</span></div></div>'
-            + _tCtl() + presetsHtml);
+            + '<div class="timer-ring-text"><span class="timer-display">' + tDisplay + '</span></div></div>'
+            + '<div class="tw-ring-body"><span class="tw-digits-mode">' + _tModeLbl + '</span>' + _tCtl() + presetsHtml + '</div>');
         }
 
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
@@ -3126,13 +3145,12 @@ function renderHubBento() {
            data-pomo-action (toggle|reset|skip). Built once so no style can
            accidentally ship without a working Start button. */
         var _pomoCtl = function(cls) {
-          return '<div class="pomo-controls ' + (cls || '') + '">'
-            + '<button class="timer-btn' + (pRunning ? ' timer-btn-active' : '') + '" data-pomo-action="toggle" data-pomo-uid="' + _puid + '">' + (pRunning ? 'Pause' : 'Start') + '</button>'
-            + '<button class="timer-btn timer-btn-reset" data-pomo-action="reset" data-pomo-uid="' + _puid + '">Reset</button>'
-            + '<button class="timer-btn timer-btn-reset" data-pomo-action="skip" data-pomo-uid="' + _puid + '">Skip</button>'
+          return '<div class="w-act' + (cls ? ' ' + cls : '') + '">'
+            + '<button class="w-play' + (pRunning ? ' is-running' : '') + '" data-pomo-action="toggle" data-pomo-uid="' + _puid + '" aria-label="' + (pRunning ? 'Pause' : 'Start') + '">' + (pRunning ? PAUSE_SVG : PLAY_SVG) + '<span>' + (pRunning ? 'Pause' : 'Start') + '</span></button>'
+            + '<button class="w-ico" data-pomo-action="reset" data-pomo-uid="' + _puid + '" title="Reset this session" aria-label="Reset this session">' + RESET_SVG + '</button>'
+            + '<button class="w-ico" data-pomo-action="skip" data-pomo-uid="' + _puid + '" title="Skip to the next phase" aria-label="Skip to the next phase">' + SKIP_SVG + '</button>'
             + '</div>';
         };
-        var _pomoHead = '<div class="pomo-header"><span class="pomo-phase">' + pPhase + '</span><span class="pomo-dots">' + pDots + '</span></div>';
         var _pomoWrap = function(cls, inner) {
           return '<div class="pomo-widget ' + cls + '" data-pomo-uid="' + _puid + '">' + inner + '</div>';
         };
@@ -3144,38 +3162,42 @@ function renderHubBento() {
              once a second while still looking correct in a screenshot. */
           _pomoBody = _pomoWrap('pw-cycle',
             '<div class="pw-cycle-pips">' + pDots + '</div>'
-            + '<div class="pw-cycle-phase pomo-phase">' + pPhase + '</div>'
             + '<div class="pw-cycle-time pomo-time">' + pDisplay + '</div>'
-            + _pomoCtl('pomo-ctl-inline'));
+            + '<div class="pw-cycle-phase pomo-phase">' + pPhase + '</div>'
+            + _pomoCtl());
         } else if (_pomoStyle === 'digits') {
           _pomoBody = _pomoWrap('pw-digits',
-            '<div class="pw-digits-top"><span class="pw-digits-time pomo-time">' + pDisplay + '</span>'
-            + '<span class="pw-digits-phase">' + pPhase + ' \u00b7 session ' + pCycles + '</span></div>'
-            + '<div class="pw-progress"><div class="pw-progress-fill" style="width:' + pct + '%"></div></div>'
-            + _pomoCtl('pomo-ctl-inline'));
+            '<div class="pw-digits-top"><span class="pw-digits-phase">' + pPhase + ' \u00b7 session ' + pCycles + '</span>'
+            + '<span class="pw-digits-time pomo-time">' + pDisplay + '</span></div>'
+            + '<div class="w-track"><div class="w-track-fill" style="width:' + pct + '%"></div></div>'
+            + _pomoCtl());
         } else if (_pomoStyle === 'split') {
           _pomoBody = _pomoWrap('pw-split',
             '<div class="pw-split-left"><span class="pw-split-time pomo-time">' + pDisplay + '</span>'
-            + '<span class="pw-split-phase">' + pPhase + '</span>'
+            + '<span class="pw-split-phase pomo-phase">' + pPhase + '</span>'
             + '<span class="pw-split-dots">' + pDots + '</span></div>'
-            + '<div class="pw-split-right">' + _pomoCtl('pomo-ctl-stack') + '</div>');
+            + '<div class="pw-split-right">' + _pomoCtl('w-act--stack') + '</div>');
         } else if (_pomoStyle === 'bar') {
-          var _pBar = '<div class="pw-bar-track"><div class="pw-bar-fill" style="width:' + pct + '%"></div></div>';
           _pomoBody = _pomoWrap('pw-bar',
-            _pomoHead + _pBar
-            + '<span class="pomo-time pw-bar-time">' + pDisplay + '</span>'
-            + _pomoCtl('pomo-ctl-inline'));
+            '<div class="pw-bar-top"><span class="pw-bar-time pomo-time">' + pDisplay + '</span>'
+            + '<span class="pomo-phase">' + pPhase + '</span></div>'
+            + '<div class="pw-bar-track"><div class="pw-bar-fill" style="width:' + pct + '%"></div></div>'
+            + _pomoCtl());
         } else if (_pomoStyle === 'calm') {
-          /* nothing but the number and a hairline — for deep work */
           _pomoBody = _pomoWrap('pw-calm',
-            '<span class="pomo-time pw-calm-time">' + pDisplay + '</span>'
-            + '<span class="pw-calm-phase">' + pPhase + '</span>'
-            + _pomoCtl('pomo-ctl-min'));
+            '<span class="pw-calm-time pomo-time">' + pDisplay + '</span>'
+            + '<span class="pw-calm-phase pomo-phase">' + pPhase + '</span>'
+            + _pomoCtl());
         } else {
+          /* ring: the ring sits LEFT, with the phase, pips and controls in a
+             column beside it. A 280x180 bubble spends ~34px on its header and
+             ~20px on padding, leaving ~106px of body height but 246px of width,
+             so a circle has to be short. Beside the content it fits at 84px;
+             stacked above it, it overflowed the tile by 17px. */
           _pomoBody = _pomoWrap('pw-ring',
-            _pomoHead
-            + '<div class="pomo-ring pomo-ring-' + ps.phase + '"><svg viewBox="0 0 120 120"><circle class="pomo-ring-bg" cx="60" cy="60" r="52"/><circle class="pomo-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="' + pOffset + '"/></svg><span class="pomo-time">' + pDisplay + '</span></div>'
-            + _pomoCtl('pomo-ctl-inline'));
+            '<div class="pomo-ring pomo-ring-' + ps.phase + '"><svg viewBox="0 0 120 120"><circle class="pomo-ring-bg" cx="60" cy="60" r="52"/><circle class="pomo-ring-fg" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="' + pOffset + '"/></svg><span class="pomo-time">' + pDisplay + '</span></div>'
+            + '<div class="pw-ring-body"><span class="pomo-phase">' + pPhase + '</span>'
+            + '<span class="pomo-dots">' + pDots + '</span>' + _pomoCtl() + '</div>');
         }
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
@@ -10894,8 +10916,11 @@ function _renderPomo(uid) {
   if (fg) fg.style.strokeDashoffset = 326.73 - (326.73 * pct / 100);
   var btn = el.querySelector('[data-pomo-action="toggle"]');
   if (btn) {
-    btn.textContent = pRunning ? 'Pause' : 'Start';
-    btn.classList.toggle('timer-btn-active', pRunning);
+    /* the primary button now holds an icon AND a word, so textContent would
+       wipe the glyph. Rebuild both parts. */
+    btn.innerHTML = (pRunning ? PAUSE_SVG : PLAY_SVG) + '<span>' + (pRunning ? 'Pause' : 'Start') + '</span>';
+    btn.classList.toggle('is-running', !!pRunning);
+    btn.setAttribute('aria-label', pRunning ? 'Pause' : 'Start');
   }
 }
 function _renderTimer(uid) {
@@ -10917,13 +10942,19 @@ function _renderTimer(uid) {
     var frac = (s.mode === 'countdown' && s.target > 0) ? Math.max(0, Math.min(1, s.elapsed / s.target)) : 0;
     fg.style.strokeDashoffset = 326.73 - 326.73 * frac;
   }
+  /* the primary button now holds an icon AND a word, so textContent would
+     wipe the glyph. Rebuild both parts. */
   var btn = el.querySelector('[data-timer-action="toggle"]');
   if (btn) {
-    btn.textContent = s.running ? 'Pause' : 'Start';
-    btn.classList.toggle('timer-btn-active', s.running);
+    btn.innerHTML = (s.running ? PAUSE_SVG : PLAY_SVG) + '<span>' + (s.running ? 'Pause' : 'Start') + '</span>';
+    btn.classList.toggle('is-running', !!s.running);
+    btn.setAttribute('aria-label', s.running ? 'Pause' : 'Start');
   }
   var modeBtn = el.querySelector('[data-timer-action="mode"]');
-  if (modeBtn) modeBtn.textContent = s.mode === 'countdown' ? 'SW' : 'TD';
+  if (modeBtn) {
+    modeBtn.title = s.mode === 'countdown' ? 'Switch to stopwatch' : 'Switch to countdown';
+    modeBtn.setAttribute('aria-label', s.mode === 'countdown' ? 'Switch to stopwatch' : 'Switch to countdown');
+  }
   var presetsEl = el.querySelector('.timer-presets');
   if (presetsEl) presetsEl.style.display = (!s.running && s.elapsed === 0) ? 'flex' : 'none';
 }
