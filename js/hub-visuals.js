@@ -261,20 +261,6 @@ function _getHabitsStyle(uid) {
 }
 function _setHabitsStyle(uid, style) { _habitsStyles[uid] = style; try { localStorage.setItem(HABITS_STYLES_KEY, JSON.stringify(_habitsStyles)); } catch(e) {} }
 
-const MOOD_STYLES_KEY = 'haven-mood-styles';
-const MOOD_STYLE_LIST = ['default','minimal','chart'];
-let _moodStyles = {};
-try { _moodStyles = JSON.parse(localStorage.getItem(MOOD_STYLES_KEY) || '{}'); } catch(e) {}
-function _getMoodStyle(uid) { return _moodStyles[uid] || 'default'; }
-function _setMoodStyle(uid, style) { _moodStyles[uid] = style; try { localStorage.setItem(MOOD_STYLES_KEY, JSON.stringify(_moodStyles)); } catch(e) {} }
-
-const WATER_STYLES_KEY = 'haven-water-styles';
-const WATER_STYLE_LIST = ['default','minimal','detailed'];
-let _waterStyles = {};
-try { _waterStyles = JSON.parse(localStorage.getItem(WATER_STYLES_KEY) || '{}'); } catch(e) {}
-function _getWaterStyle(uid) { return _waterStyles[uid] || 'default'; }
-function _setWaterStyle(uid, style) { _waterStyles[uid] = style; try { localStorage.setItem(WATER_STYLES_KEY, JSON.stringify(_waterStyles)); } catch(e) {} }
-
 const TIMER_STYLES_KEY = 'haven-timer-styles';
 /* Six concepts chosen for a timer: a progress ring, big digits, a progress bar,
    an analog dial, a split layout, and one quiet line. Not a list vocabulary —
@@ -729,8 +715,6 @@ function _reloadAllWidgetStyles() {
   _calStyles = _loadStyleMap(CAL_STYLES_KEY);
   _todosStyles = _loadStyleMap(TODOS_STYLES_KEY);
   _habitsStyles = _loadStyleMap(HABITS_STYLES_KEY);
-  _moodStyles = _loadStyleMap(MOOD_STYLES_KEY);
-  _waterStyles = _loadStyleMap(WATER_STYLES_KEY);
   _timerStyles = _loadStyleMap(TIMER_STYLES_KEY);
   _pomoStyles = _loadStyleMap(POMO_STYLES_KEY);
   _notesStyles = _loadStyleMap(NOTES_STYLES_KEY);
@@ -772,7 +756,6 @@ function _copyWidgetStyle(srcUid, dstUid) {
     [_sleepStyles, SLEEP_STYLES_KEY],
     [_headlinesStyles, HEADLINES_STYLES_KEY], [_calStyles, CAL_STYLES_KEY],
     [_todosStyles, TODOS_STYLES_KEY], [_habitsStyles, HABITS_STYLES_KEY],
-    [_moodStyles, MOOD_STYLES_KEY], [_waterStyles, WATER_STYLES_KEY],
     [_timerStyles, TIMER_STYLES_KEY], [_pomoStyles, POMO_STYLES_KEY],
     [_notesStyles, NOTES_STYLES_KEY], [_notesPrefs, NOTES_PREFS_KEY], [_linksStyles, LINKS_STYLES_KEY],
     [_quoteStyles, QUOTE_STYLES_KEY], [_cdStyles, CD_STYLES_KEY],
@@ -1156,7 +1139,7 @@ function onDrop(e) {
 
 /* ─── Bento layout normalization ───────────── */
 function normalizeBentoLayout(layout, parent) {
-  var REMOVED_WIDGET_TYPES = ['gratitude','hijri','sunrise','rain','weakspot','expense'];
+  var REMOVED_WIDGET_TYPES = ['gratitude','hijri','sunrise','rain','weakspot','expense','holidays','ytfeed','crypto','moneyflow','water','mood'];
   if (Array.isArray(layout)) layout = layout.filter(function(it) { return it && REMOVED_WIDGET_TYPES.indexOf(it.t) === -1; });
 
   const result = [];
@@ -1337,8 +1320,6 @@ const HUB_DEFAULTS = {
   notesList: [],
   notesMigrated: false,
   links: [],
-  water: { goal: 8, logged: 0, date: new Date().toISOString().slice(0,10) },
-  mood: { today: null, history: {} },
   countdown: [],
   homework: [],
   study: [],
@@ -2444,8 +2425,6 @@ function renderHubBento() {
   if (!Array.isArray(hubContent.notesList)) hubContent.notesList = [];
   try { _notesSyncLegacy(); } catch(e) {}
   if (!hubContent.links) hubContent.links = defaults.links.map(l => ({...l}));
-  if (!hubContent.water) hubContent.water = {...defaults.water};
-  if (!hubContent.mood) hubContent.mood = { today:null, history:{} };
   if (!hubContent.countdown) hubContent.countdown = defaults.countdown.map(c => ({...c}));
   if (!hubContent.homework) hubContent.homework = defaults.homework.map(h => ({...h}));
   if (!hubContent.study) hubContent.study = [];
@@ -2501,8 +2480,6 @@ function renderHubBento() {
           + (type === 'todos' ? _styleBtn('data-todos-style-toggle="' + uid + '"', _styleLabel('todos', _getTodosStyle(uid))) : '')
           + (type === 'today' ? _styleBtn('data-today-style-toggle="' + uid + '"', _getTodayStyle(uid)) : '')
           + (type === 'habits' ? _styleBtn('data-habits-style-toggle="' + uid + '"', _getHabitsStyle(uid)) : '')
-          + (type === 'mood' ? _styleBtn('data-mood-style-toggle="' + uid + '"', _getMoodStyle(uid)) : '')
-          + (type === 'water' ? _styleBtn('data-water-style-toggle="' + uid + '"', _getWaterStyle(uid)) : '')
           + (type === 'timer' ? _styleBtn('data-timer-style-toggle="' + uid + '"', _getTimerStyle(uid)) : '')
           + (type === 'alarm' ? _styleBtn('data-alarm-style-toggle="' + uid + '"', _getAlarmStyle(uid)) : '')
           + (type === 'pomodoro' ? _styleBtn('data-pomo-style-toggle="' + uid + '"', _getPomoStyle(uid)) : '')
@@ -3419,71 +3396,6 @@ function renderHubBento() {
           <div class="headlines-widget" data-headlines-uid="${uid}">${_hlBody}</div>
         </div>`;
       }
-      case 'water': {
-        var _wd = hubContent.water || { goal:8, logged:0, date:'' };
-        var _today = new Date().toISOString().slice(0,10);
-        if (_wd.date !== _today) { _wd.logged = 0; _wd.date = _today; hubContent.water = _wd; }
-        var _pct = Math.min(100, Math.round((_wd.logged / _wd.goal) * 100));
-        var _waterStyle = _getWaterStyle(uid);
-        var _wGlasses = '';
-        var _wBody = '';
-        if (_waterStyle === 'minimal') {
-          _wBody = '<div class="w-water-minimal"><div class="w-water-minimal-row"><span class="w-water-count-big">' + _wd.logged + '</span><span class="w-water-count-of">/ ' + _wd.goal + '</span></div><div class="w-water-bar"><div class="w-water-fill" style="width:' + _pct + '%"></div></div>' + (_pct >= 100 ? '<span class="w-water-goal-hit">Goal reached!</span>' : '') + '</div>';
-        } else {
-          var _glasses = [];
-          for (var i = 0; i < _wd.goal; i++) {
-            var _filled = i < _wd.logged;
-            _glasses.push('<div class="w-water-glass' + (_filled ? ' filled' : '') + '" data-water-toggle="' + i + '"><svg viewBox="0 0 24 24" fill="' + (_filled ? 'currentColor' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>');
-          }
-          if (_waterStyle === 'detailed') {
-            _wBody = '<div class="w-water-grid">' + _glasses.join('') + '</div><div class="w-water-bar"><div class="w-water-fill" style="width:' + _pct + '%"></div></div><div class="w-water-detail"><span>' + _wd.logged + ' / ' + _wd.goal + ' glasses</span><span>' + _pct + '%</span></div>' + (_pct >= 100 ? '<span class="w-water-goal-hit">Goal reached!</span>' : '');
-          } else {
-            _wBody = '<div class="w-water-grid">' + _glasses.join('') + '</div><div class="w-water-bar"><div class="w-water-fill" style="width:' + _pct + '%"></div></div><div class="w-water-count">' + _wd.logged + ' / ' + _wd.goal + ' glasses' + (_pct >= 100 ? ' — Goal reached!' : '') + '</div>';
-          }
-        }
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
-          ${editUI}
-          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><span>Water</span></div>
-          ${_wBody}
-        </div>`;
-      }
-      case 'mood': {
-        var _moods = ['&#x1F621;','&#x1F61E;','&#x1F610;','&#x1F60A;','&#x1F60D;'];
-        var _moodLabels = ['Angry','Sad','Meh','Good','Great'];
-        var _md = hubContent.mood || { today:null, history:{} };
-        var _mToday = new Date().toISOString().slice(0,10);
-        var _selected = _md.history?.[_mToday]?.mood ?? null;
-        var _note = _md.history?.[_mToday]?.note || '';
-        var _mBtns = _moods.map(function(em, idx) {
-          return '<div class="w-mood-btn' + (_selected === idx ? ' selected' : '') + '" data-mood-pick="' + idx + '" title="' + _moodLabels[idx] + '">' + em + '</div>';
-        }).join('');
-        var _recent = Object.keys(_md.history || {}).slice(-5).reverse().map(function(dk) {
-          var v = _md.history[dk];
-          var mood = v?.mood ?? v;
-          var note = v?.note || '';
-          return '<div class="w-mood-day"><span class="w-mood-day-label">' + dk.slice(5) + '</span><span>' + (mood != null ? _moods[mood] : '—') + '</span>' + (note ? '<span class="w-mood-note-preview" title="' + e(note) + '">' + e(note.slice(0,12)) + '</span>' : '') + '</div>';
-        }).join('');
-        var _moodStyle = _getMoodStyle(uid);
-        var _moodBody = '';
-        if (_moodStyle === 'minimal') {
-          _moodBody = '<div class="w-mood-row">' + _mBtns + '</div>';
-        } else if (_moodStyle === 'chart') {
-          var _chartBars = Object.keys(_md.history || {}).slice(-7).map(function(dk) {
-            var v = _md.history[dk];
-            var mood = v?.mood ?? v;
-            var h = mood != null ? ((mood + 1) / 5) * 100 : 0;
-            return '<div class="w-mood-chart-bar" style="height:' + Math.max(4, h) + '%"><span class="w-mood-chart-label">' + dk.slice(5, 7) + '/' + dk.slice(8, 10) + '</span></div>';
-          }).join('');
-          _moodBody = '<div class="w-mood-row">' + _mBtns + '</div><div class="w-mood-chart">' + _chartBars + '</div>';
-        } else {
-          _moodBody = '<div class="w-mood-row">' + _mBtns + '</div><input class="w-mood-note" data-mood-note placeholder="How are you feeling?" value="' + e(_note) + '"><div class="w-mood-history">' + (_recent || '<span style="color:var(--text-tertiary);font-size:0.65rem">No entries yet</span>') + '</div>';
-        }
-        return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
-          ${editUI}
-          <div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span>Mood</span></div>
-          ${_moodBody}
-        </div>`;
-      }
       case 'countdown': {
         var _cds = hubContent.countdown || [];
         var _cdStyle = _getCdStyle(uid);
@@ -3913,9 +3825,6 @@ function renderHubBento() {
         var _fontClass = 'w-text-font-' + _textStyle.replace(/\s+/g, '-');
         return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-text-wrap"><div class="w-text-content ' + _fontClass + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-save="text" data-text-uid="' + uid + '">' + e(_text) + '</div></div></div>';
       }
-      case 'crypto': {
-        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/><line x1="10" y1="6" x2="10" y2="8"/><line x1="14" y1="6" x2="14" y2="8"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg><span>Crypto</span></div><div class="crypto-widget" data-crypto-uid="' + uid + '"><div class="crypto-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/></svg><span>Loading prices...</span></div></div></div>';
-      }
       case 'homework': {
         var _hwStyle = _getHwStyle(uid);
         var _hwItems = hubContent.homework || [];
@@ -4263,14 +4172,6 @@ function renderHubBento() {
           '<div class="qk-widget" data-qk-uid="' + uid + '">' + _qkBody + '</div>' +
         '</div>';
       }
-      case 'moneyflow': {
-        var _mf = _moneyFlowData();
-        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI +
-          '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-8"/><polyline points="15 8 20 8 20 13"/></svg><span>Money Flow</span></div>' +
-          '<div class="mf-widget">' + _moneyFlowRender(_mf) + '</div>' +
-          (isEdit ? '<div class="mf-ctl"><span class="mf-ctl-lbl">Payday</span><input type="number" min="1" max="28" class="mf-ctl-input" data-mf-payday value="' + _mf.payday + '"></div>' : '') +
-        '</div>';
-      }
       case 'assistant': {
         var _as = _assistantPlan();
         var _asRows = _as.items.map(function(it, i) {
@@ -4318,13 +4219,6 @@ function renderHubBento() {
           (isEdit ? _examsEditor() : '') +
         '</div>';
       }
-      case 'holidays': {
-        var _hd = _holidaysData();
-        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI +
-          '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg><span>Tanggal Merah</span></div>' +
-          '<div class="wp-widget">' + _holidaysRender(_hd) + '</div>' +
-        '</div>';
-      }
       case 'birthdays': {
         var _bd = _birthdaysData();
         return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI +
@@ -4365,33 +4259,6 @@ function renderHubBento() {
             '<div class="sd-bars">' + _sdBars + '</div>' +
             '<div class="sd-foot">' + _sdFoot + '</div>' +
           '</div>' +
-        '</div>';
-      }
-      case 'ytfeed': {
-        var _yf = _ytFeedData();
-        var _yfItems = _yf.items || [];
-        var _yfGrid = _yfItems.length
-          ? _yfItems.map(function(it, i) {
-              var meta = _videoMeta(it.url) || { kind:'link', url:it.url, thumb:'' };
-              var thumb = meta.thumb
-                ? '<img class="ytf-thumb" src="' + e(meta.thumb) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">'
-                : '<span class="ytf-thumb ytf-thumb-none">' + (meta.kind === 'tt' ? 'TikTok' : 'Link') + '</span>';
-              var badge = meta.kind === 'yt' ? 'YT' : meta.kind === 'tt' ? 'TT' : '\u00B7';
-              return '<div class="ytf-card">'
-                + '<a class="ytf-link" href="' + e(meta.url) + '" target="_blank" rel="noopener noreferrer" title="' + e(it.title || meta.url) + '">'
-                + thumb
-                + '<span class="ytf-badge' + (meta.kind === 'link' ? '' : ' ytf-badge-' + meta.kind) + '">' + badge + '</span>'
-                + '<span class="ytf-title">' + e(it.title || 'Untitled') + '</span></a>'
-                + (isEdit ? '<button class="ytf-del" data-ytf-del="' + i + '" title="Remove" aria-label="Remove">\u00D7</button>' : '')
-                + '</div>';
-            }).join('')
-          : '<div class="ytf-empty">No videos saved yet</div>';
-        var _yfAdd = isEdit
-          ? '<div class="ytf-add"><input class="ytf-input" data-ytf-input placeholder="Paste a YouTube or TikTok link" maxlength="300"><button class="wf-btn" data-ytf-add>Add</button></div>'
-          : '';
-        return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI +
-          '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9"/></svg><span>Video Feed</span></div>' +
-          '<div class="ytf-wrap"><div class="ytf-grid">' + _yfGrid + '</div>' + _yfAdd + '</div>' +
         '</div>';
       }
       case 'watchlist': {
@@ -4859,32 +4726,6 @@ function renderHubBento() {
     });
   });
 
-  // Wire mood style toggle buttons
-  grid.querySelectorAll('[data-mood-style-toggle]').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      var uid = this.dataset.moodStyleToggle;
-      var cur = _getMoodStyle(uid);
-      var idx = MOOD_STYLE_LIST.indexOf(cur);
-      var next = MOOD_STYLE_LIST[(idx + 1) % MOOD_STYLE_LIST.length];
-      _setMoodStyle(uid, next);
-      renderHubBento();
-    });
-  });
-
-  // Wire water style toggle buttons
-  grid.querySelectorAll('[data-water-style-toggle]').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      var uid = this.dataset.waterStyleToggle;
-      var cur = _getWaterStyle(uid);
-      var idx = WATER_STYLE_LIST.indexOf(cur);
-      var next = WATER_STYLE_LIST[(idx + 1) % WATER_STYLE_LIST.length];
-      _setWaterStyle(uid, next);
-      renderHubBento();
-    });
-  });
-
   grid.querySelectorAll('[data-timer-style-toggle]').forEach(function(btn) {
     btn.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -5048,7 +4889,7 @@ function renderHubBento() {
         var bubble = e.target.closest('.bento-bubble');
         if (!bubble) { grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); }); return; }
         // Don't select when clicking interactive elements inside the bubble
-        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-mood-style-toggle], [data-water-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-hw-style-toggle], [data-alarm-style-toggle], [data-today-style-toggle], [data-upcoming-style-toggle], [data-streak-style-toggle], [data-budget-style-toggle], [data-aq-style-toggle], [data-wc-style-toggle], [data-upcoming-days], [data-budget-input], [data-aq-refresh], [data-wc-del], [data-wc-add-select], [data-wc-add-btn], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-water-toggle], [data-mood-pick], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-crypto-refresh], [data-crypto-edit], [data-hw-due], [data-accent-popup], [data-st-toggle-subj], [data-st-toggle-chap], [data-st-toggle-item], [data-st-add-subject], [data-st-add-chapter], [data-st-add-item], [data-st-del-subject], [data-st-del-chapter], [data-st-del-item], [data-st-color], [data-breath-style-toggle], [data-grat-style-toggle], [data-read-style-toggle], [data-doodle-style-toggle], [data-gh-style-toggle], [data-breath-toggle], [data-breath-reset], [data-breath-pattern], [data-doodle-color], [data-doodle-clear], [data-read-toggle], [data-gratitude], [data-gh-refresh], [data-gh-user], .w-doodle-canvas, .mv-canvas, .cpop, .bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .w-st-add-inline')) return;
+        if (e.target.closest('button, a, input, select, textarea, iframe, [contenteditable], [data-remove-bubble], [data-duplicate-bubble], [data-clock-style-toggle], [data-weather-style-toggle], [data-sleep-style-toggle], [data-expense-style-toggle], [data-cal-style-toggle], [data-todos-style-toggle], [data-habits-style-toggle], [data-timer-style-toggle], [data-pomo-style-toggle], [data-notes-style-toggle], [data-links-style-toggle], [data-quote-style-toggle], [data-cd-style-toggle], [data-pri-style-toggle], [data-prog-style-toggle], [data-goals-style-toggle], [data-img-style-toggle], [data-hw-style-toggle], [data-alarm-style-toggle], [data-today-style-toggle], [data-upcoming-style-toggle], [data-streak-style-toggle], [data-budget-style-toggle], [data-aq-style-toggle], [data-wc-style-toggle], [data-upcoming-days], [data-budget-input], [data-aq-refresh], [data-wc-del], [data-wc-add-select], [data-wc-add-btn], [data-text-font-select], [data-headlines-source], [data-habit-toggle], [data-timer-action], [data-timer-preset], [data-pomo-action], [data-ss-log], [data-cal-nav], [data-quote-shuffle], [data-expense-amt], [data-expense-cat], [data-expense-type], [data-expense-add], [data-cd-date], [data-cd-label], [data-hw-due], [data-accent-popup], [data-st-toggle-subj], [data-st-toggle-chap], [data-st-toggle-item], [data-st-add-subject], [data-st-add-chapter], [data-st-add-item], [data-st-del-subject], [data-st-del-chapter], [data-st-del-item], [data-st-color], [data-breath-style-toggle], [data-grat-style-toggle], [data-read-style-toggle], [data-doodle-style-toggle], [data-gh-style-toggle], [data-breath-toggle], [data-breath-reset], [data-breath-pattern], [data-doodle-color], [data-doodle-clear], [data-read-toggle], [data-gratitude], [data-gh-refresh], [data-gh-user], .w-doodle-canvas, .mv-canvas, .cpop, .bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .w-st-add-inline')) return;
         var wasSelected = bubble.classList.contains('selected');
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
         if (!wasSelected) bubble.classList.add('selected');
@@ -5261,25 +5102,6 @@ function renderHubBento() {
       var headlinesRefreshBtn = e.target.closest('[data-headlines-refresh]');
       if (headlinesRefreshBtn) {
         refreshHeadlines();
-        return;
-      }
-      var cryptoRefreshBtn = e.target.closest('[data-crypto-refresh]');
-      if (cryptoRefreshBtn) {
-        _cryptoLastData = null;
-        try { localStorage.removeItem(_cryptoCacheKey); } catch(e) {}
-        _cryptoFetched = false;
-        var cg = document.querySelector('.bento-grid');
-        if (cg) {
-          cg.querySelectorAll('.crypto-widget').forEach(function(w) {
-            w.innerHTML = '<div class="crypto-loading"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Loading prices...</span></div>';
-          });
-          _fetchCrypto(cg);
-        }
-        return;
-      }
-      var cryptoEditBtn = e.target.closest('[data-crypto-edit]');
-      if (cryptoEditBtn) {
-        _openCryptoEditor(cryptoEditBtn.dataset.cryptoEdit);
         return;
       }
       var embedSetup = e.target.closest('[data-embed-setup]');
@@ -5510,9 +5332,6 @@ function renderHubBento() {
   // ─── Headlines fetcher ────────────────────────
   _fetchHeadlines(grid);
 
-  // ─── Crypto fetcher ────────────────────────
-  _fetchCrypto(grid);
-
   // ─── Air quality fetcher ────────────────────
   _fetchAirQuality(grid);
 
@@ -5577,19 +5396,6 @@ function renderHubBento() {
   // World clock add-select (edit mode)
   grid.querySelectorAll('[data-wc-add-select]').forEach(function(sel) {
     sel.addEventListener('click', function(e) { e.stopPropagation(); });
-  });
-
-  // Money flow payday input (edit mode, re-created each render)
-  grid.querySelectorAll('[data-mf-payday]').forEach(function(inp) {
-    inp.addEventListener('click', function(e) { e.stopPropagation(); });
-    inp.addEventListener('change', function() {
-      var v = parseInt(inp.value, 10);
-      if (!(v >= 1 && v <= 28)) v = 25;
-      if (!hubContent.moneyflow) hubContent.moneyflow = {};
-      hubContent.moneyflow.payday = v;
-      saveHubContent();
-      renderHubBento();
-    });
   });
 
   // ─── Widget pack 2: grades target (edit mode) ───
@@ -8110,50 +7916,6 @@ var WP_HOLIDAYS = [
   ['2026-12-25', 'Hari Raya Natal', 'national']
 ];
 
-function _holidaysData() {
-  var today = _hubTodayKey();
-  var all = WP_HOLIDAYS.map(function(h) {
-    return { date: h[0], name: h[1], kind: h[2], days: _wpDaysBetween(today, h[0]) };
-  });
-  var upcoming = all.filter(function(h) { return isFinite(h.days) && h.days >= 0; })
-    .sort(function(a, b) { return a.days - b.days; });
-  var yr = String(today).slice(0, 4);
-  var inYear = all.filter(function(h) { return h.date.slice(0, 4) === yr; });
-  return {
-    next: upcoming.slice(0, 4),
-    year: yr,
-    yearTotal: inYear.length,
-    yearNational: inYear.filter(function(h) { return h.kind === 'national'; }).length,
-    listed: all.length
-  };
-}
-
-function _holidaysRender(d) {
-  if (!d.next.length) {
-    return _wpEmpty('No holidays left on record for ' + d.year + '. The list needs updating.');
-  }
-  var n = d.next[0];
-  var head = '<div class="wp-hero">' +
-    '<span class="wp-hero-val">' + (n.days === 0 ? 'Today' : n.days) + '</span>' +
-    '<span class="wp-hero-lbl">' + (n.days === 0 ? _wpEscape(n.name) : 'day' + (n.days === 1 ? '' : 's') + ' until ' + _wpEscape(n.name)) + '</span>' +
-    '</div>';
-
-  var rows = d.next.map(function(h, i) {
-    var tone = i === 0 ? 'bad' : 'ok';
-    return '<div class="wp-row">' +
-        '<span class="wp-row-name">' + _wpEscape(h.name) + '</span>' +
-        '<span class="wp-chip-mini wp-' + (h.kind === 'national' ? 'kind-national' : 'kind-cuti') + '">' +
-          (h.kind === 'national' ? 'libur' : 'cuti') + '</span>' +
-        '<span class="wp-row-val wp-tone-' + tone + '">' + (h.days === 0 ? '—' : h.days + 'd') + '</span>' +
-      '</div>' +
-      '<div class="wp-sub"><span class="wp-muted">' + _wpEscape(h.date) + '</span></div>';
-  }).join('');
-
-  return head + '<div class="wp-rows">' + rows + '</div>' +
-    '<div class="wp-foot">' + d.yearTotal + ' tanggal merah in ' + d.year +
-    ' · ' + d.yearNational + ' libur nasional</div>';
-}
-
 
 
 
@@ -8359,28 +8121,22 @@ function bubbleTypeIcon(t) {
     flightradar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 1 0 20 14.5 14.5 0 0 1 0-20z"/><circle cx="12" cy="12" r="3"/><path d="M2 12h20"/></svg>',
     'sleep-score': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a9 9 0 1 0-9-9 9 9 0 0 0 9 9z"/><path d="M4 12a8 8 0 0 1 8-8"/><path d="M17 14.5a6.5 6.5 0 0 1-6-6.5"/></svg>',
     headlines: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>',
-    water: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
-    mood: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
     countdown: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 8 10"/></svg>',
 
-    crypto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 8h4.5a2 2 0 0 1 0 4H9V8z"/><path d="M9 12h5a2 2 0 0 1 0 4H9v-4z"/><line x1="10" y1="6" x2="10" y2="8"/><line x1="14" y1="6" x2="14" y2="8"/><line x1="10" y1="16" x2="10" y2="18"/><line x1="14" y1="16" x2="14" y2="18"/></svg>',
     text: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
     homework: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
     study: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg>',
     weekplan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 15h2M12 15h2"/></svg>',
     prayertime: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/><path d="M18.5 17.5a5.5 5.5 0 01-6-6"/></svg>',
     bmkgquake: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3l2.5-7 3 14 3-10 2.5 6 2-3H22"/></svg>',
-    moneyflow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-8"/><polyline points="15 8 20 8 20 13"/></svg>',
     assistant: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></svg>',
     'friends-live': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>',
     grades: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.2 13.6L7 22l5-3 5 3-1.2-8.4"/></svg>',
     attendance: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v3H9z"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><polyline points="9 14 11 16 15 11"/></svg>',
     exams: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>',
-    holidays: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
     birthdays: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>',
     flashcards: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
     sleepdebt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>',
-    ytfeed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polygon points="10 9 15 12 10 15 10 9"/></svg>',
     watchlist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M7 3v18M17 3v18M2 8h5M2 16h5M17 8h5M17 16h5"/></svg>',
     musicviz: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="14" x2="4" y2="20"/><line x1="9" y1="8" x2="9" y2="20"/><line x1="14" y1="4" x2="14" y2="20"/><line x1="19" y1="11" x2="19" y2="20"/></svg>',
     pet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="15" r="6"/><circle cx="5" cy="9" r="2.2"/><circle cx="19" cy="9" r="2.2"/><circle cx="9" cy="5" r="2.2"/><circle cx="15" cy="5" r="2.2"/></svg>',
@@ -9143,21 +8899,6 @@ function _moneyData() {
 }
 
 /* ─── Video feed helpers ────────────────────── */
-function _videoMeta(url) {
-  var u = String(url || '').trim();
-  if (!u) return null;
-  var yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-  if (yt) return { kind:'yt', id:yt[1], url:u, thumb:'https://img.youtube.com/vi/' + yt[1] + '/mqdefault.jpg' };
-  if (/tiktok\.com/.test(u)) {
-    var tk = u.match(/\/video\/(\d+)/);
-    return { kind:'tt', id: tk ? tk[1] : u, url:u, thumb:'' };
-  }
-  return { kind:'link', id:u, url:u, thumb:'' };
-}
-function _ytFeedData() {
-  if (!hubContent.ytFeed || !Array.isArray(hubContent.ytFeed.items)) hubContent.ytFeed = { items: [] };
-  return hubContent.ytFeed;
-}
 
 /* ─── Watchlist helpers ─────────────────────── */
 function _watchlistData() {
@@ -10018,155 +9759,9 @@ function _fetchGithub(grid) {
   });
 }
 
-/* ─── Crypto widget ─────────────────────────── */
-var _cryptoLastData = null;
-var _cryptoFetched = false;
-var _cryptoCacheKey = 'hub-crypto-prices';
 
-var _CRYPTO_COINS = [
-  { id:'bitcoin', symbol:'BTC', name:'Bitcoin' },
-  { id:'ethereum', symbol:'ETH', name:'Ethereum' },
-  { id:'solana', symbol:'SOL', name:'Solana' },
-  { id:'dogecoin', symbol:'DOGE', name:'Dogecoin' },
-  { id:'cardano', symbol:'ADA', name:'Cardano' },
-  { id:'ripple', symbol:'XRP', name:'XRP' },
-  { id:'polkadot', symbol:'DOT', name:'Polkadot' },
-  { id:'avalanche-2', symbol:'AVAX', name:'Avalanche' }
-];
 
-function _getCryptoCoins() {
-  try { return JSON.parse(localStorage.getItem('haven-crypto-coins')) || ['bitcoin','ethereum','solana']; }
-  catch(e) { return ['bitcoin','ethereum','solana']; }
-}
-function _setCryptoCoins(ids) {
-  try { localStorage.setItem('haven-crypto-coins', JSON.stringify(ids)); } catch(e) {}
-}
 
-function _makeSparkline(prices, isUp) {
-  if (!prices || prices.length < 2) return '';
-  var min = Math.min.apply(null, prices);
-  var max = Math.max.apply(null, prices);
-  var range = max - min || 1;
-  var w = 80, h = 24;
-  var pts = prices.map(function(p, i) {
-    var x = (i / (prices.length - 1)) * w;
-    var y = h - ((p - min) / range) * h;
-    return x.toFixed(1) + ',' + y.toFixed(1);
-  }).join(' ');
-  var color = isUp ? '#22c55e' : '#ef4444';
-  return '<svg viewBox="0 0 ' + w + ' ' + h + '" class="crypto-sparkline" preserveAspectRatio="none"><polyline points="' + pts + '" fill="none" stroke="' + color + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-}
-
-function updateCryptoWidget(widget, data) {
-  if (!widget || !data) return;
-  var coins = _getCryptoCoins();
-  var rows = coins.map(function(id) {
-    var coin = _CRYPTO_COINS.find(function(c) { return c.id === id; });
-    var d = data[id];
-    if (!coin || !d) return '';
-    var price = d.usd;
-    var change = d.usd_24h_change;
-    var isUp = change >= 0;
-    var changeClass = isUp ? 'crypto-up' : 'crypto-down';
-    var changeStr = (isUp ? '+' : '') + change.toFixed(1) + '%';
-    var sparkline = d.sparkline ? _makeSparkline(d.sparkline, isUp) : '';
-    var priceStr = price >= 1000 ? '$' + price.toLocaleString('en-US', {maximumFractionDigits:0}) : price >= 1 ? '$' + price.toFixed(2) : '$' + price.toFixed(4);
-    return '<div class="crypto-row" data-crypto-id="' + id + '"><div class="crypto-info"><span class="crypto-symbol">' + coin.symbol + '</span><span class="crypto-name">' + coin.name + '</span></div><div class="crypto-right"><span class="crypto-price">' + priceStr + '</span>' + sparkline + '<span class="crypto-change ' + changeClass + '">' + changeStr + '</span></div></div>';
-  }).join('');
-  var refreshBtn = '<button class="crypto-refresh" data-crypto-refresh title="Refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>';
-  var editBtn = '<button class="crypto-edit" data-crypto-edit="' + widget.dataset.cryptoUid + '" title="Select coins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>';
-  widget.innerHTML = '<div class="crypto-header">' + refreshBtn + editBtn + '</div>' + rows;
-}
-
-function _fetchCrypto(grid) {
-  var widgets = grid.querySelectorAll('.crypto-widget[data-crypto-uid]');
-  if (widgets.length === 0) return;
-  if (_cryptoLastData) {
-    widgets.forEach(function(w) { updateCryptoWidget(w, _cryptoLastData); });
-    return;
-  }
-  var cached = null;
-  try { cached = JSON.parse(localStorage.getItem(_cryptoCacheKey)); } catch(e) {}
-  if (cached && Date.now() - cached.ts < 120000) {
-    _cryptoLastData = cached.data;
-    widgets.forEach(function(w) { updateCryptoWidget(w, cached.data); });
-    return;
-  }
-  if (_cryptoFetched) return;
-  _cryptoFetched = true;
-  var coins = _getCryptoCoins();
-  var ids = coins.join(',');
-  var url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd&include_24hr_change=true&include_last_updated_at=true';
-  var sparkUrl = 'https://api.coingecko.com/api/v3/coins/' + coins[0] + '/market_chart?vs_currency=usd&days=1&interval=daily';
-  fetch(url, { signal: AbortSignal.timeout(10000) })
-    .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(function(data) {
-      if (!data || typeof data !== 'object') throw new Error('empty');
-      var result = {};
-      coins.forEach(function(id) {
-        if (data[id]) {
-          result[id] = { usd: data[id].usd || 0, usd_24h_change: data[id].usd_24h_change || 0 };
-        }
-      });
-      // Fetch sparkline for each coin sequentially to avoid rate limits
-      var coinQueue = coins.slice();
-      function fetchNextSparkline() {
-        if (coinQueue.length === 0) {
-          _cryptoLastData = result;
-          try { localStorage.setItem(_cryptoCacheKey, JSON.stringify({ ts: Date.now(), data: result })); } catch(e) {}
-          _cryptoFetched = false;
-          var g = document.querySelector('.bento-grid');
-          if (g) g.querySelectorAll('.crypto-widget[data-crypto-uid]').forEach(function(w) { updateCryptoWidget(w, result); });
-          return;
-        }
-        var coinId = coinQueue.shift();
-        fetch('https://api.coingecko.com/api/v3/coins/' + coinId + '/market_chart?vs_currency=usd&days=1&interval=daily', { signal: AbortSignal.timeout(8000) })
-          .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-          .then(function(cd) {
-            if (cd && cd.prices && cd.prices.length && result[coinId]) {
-              result[coinId].sparkline = cd.prices.map(function(p) { return p[1]; });
-            }
-          })
-          .catch(function() {})
-          .then(function() { setTimeout(fetchNextSparkline, 300); });
-      }
-      fetchNextSparkline();
-    })
-    .catch(function() {
-      _cryptoFetched = false;
-      var g2 = document.querySelector('.bento-grid');
-      if (g2) g2.querySelectorAll('.crypto-widget[data-crypto-uid]').forEach(function(w) {
-        w.innerHTML = '<div class="crypto-error"><span>Could not load prices</span></div>';
-      });
-    });
-}
-
-function _openCryptoEditor(uid) {
-  var existing = document.querySelector('.crypto-editor-overlay');
-  if (existing) existing.remove();
-  var coins = _getCryptoCoins();
-  var overlay = document.createElement('div');
-  overlay.className = 'crypto-editor-overlay';
-  var options = _CRYPTO_COINS.map(function(c) {
-    var checked = coins.indexOf(c.id) !== -1 ? 'checked' : '';
-    return '<label class="crypto-option"><input type="checkbox" value="' + c.id + '" ' + checked + '><span class="crypto-opt-symbol">' + c.symbol + '</span><span class="crypto-opt-name">' + c.name + '</span></label>';
-  }).join('');
-  overlay.innerHTML = '<div class="crypto-editor-modal"><div class="crypto-editor-header"><span>Select Coins</span><button class="crypto-editor-close" data-crypto-editor-close>&times;</button></div><div class="crypto-editor-body">' + options + '</div><div class="crypto-editor-footer"><button class="crypto-editor-save" data-crypto-editor-save="' + uid + '">Save</button></div></div>';
-  document.body.appendChild(overlay);
-  overlay.addEventListener('click', function(ev) {
-    if (ev.target === overlay || ev.target.closest('[data-crypto-editor-close]')) overlay.remove();
-    if (ev.target.closest('[data-crypto-editor-save]')) {
-      var selected = [];
-      overlay.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb) { selected.push(cb.value); });
-      if (selected.length === 0) selected = ['bitcoin'];
-      _setCryptoCoins(selected);
-      _cryptoLastData = null;
-      try { localStorage.removeItem(_cryptoCacheKey); } catch(e) {}
-      overlay.remove();
-      renderHubBento();
-    }
-  });
-}
 
 function openEmbedSetup(type, uid) {
   var existing = document.querySelector('.embed-settings-overlay');
@@ -10371,7 +9966,7 @@ function addBubbleTypes(types, dropPos) {
     }
     item.w = snap(280);
     item.h = (function() {
-      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,alarm:220,pomodoro:180,weather:260,headlines:260,'sleep-score':280,water:180,mood:200,countdown:280,notes:240,links:240,quote:220,priorities:320,todos:320,today:320,habits:240,progress:240,goals:420,text:160,crypto:300,homework:320,study:420,upcoming:320,streak:260,budget:300,airquality:300,worldclock:280,savings:300,focuslog:300,currency:320,calculator:440,breathing:280,reading:320,doodle:320,github:300};
+      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,alarm:220,pomodoro:180,weather:260,headlines:260,'sleep-score':280,countdown:280,notes:240,links:240,quote:220,priorities:320,todos:320,today:320,habits:240,progress:240,goals:420,text:160,homework:320,study:420,upcoming:320,streak:260,budget:300,airquality:300,worldclock:280,savings:300,focuslog:300,currency:320,calculator:440,breathing:280,reading:320,doodle:320,github:300};
       return snap(sizes[item.t] || 280);
     })();
     // If a drop position is provided, use it; otherwise find a gap
@@ -11336,70 +10931,6 @@ function _mfSubs() {
   });
   return subs.sort(function(a, b) { return b.amount - a.amount; }).slice(0, 4);
 }
-function _moneyFlowData() {
-  var b = _budgetData();
-  var exp = hubContent.expense || { entries: [], balance: 0 };
-  var now = new Date();
-  var cats = Object.keys(b.cats).map(function(k) { return { name: k, val: b.cats[k] }; })
-    .sort(function(a, c) { return c.val - a.val; });
-  var dayOfMonth = now.getDate();
-  var pace = dayOfMonth > 0 ? b.spend / dayOfMonth : 0;
-  var projected = pace * b.daysInMonth;
-  var subs = _mfSubs();
-  var payday = parseInt((hubContent.moneyflow || {}).payday, 10);
-  if (!(payday >= 1 && payday <= 28)) payday = 25;
-  var daysToPayday = payday >= dayOfMonth ? payday - dayOfMonth : (b.daysInMonth - dayOfMonth) + payday;
-  return {
-    spend: b.spend, monthly: b.monthly, remaining: b.remaining, pct: b.pct,
-    cats: cats.slice(0, 4), catCount: cats.length, topCat: cats[0] || null,
-    pace: pace, projected: projected, overPace: b.monthly > 0 && projected > b.monthly,
-    daysLeft: b.daysLeft, dayOfMonth: dayOfMonth, daysInMonth: b.daysInMonth,
-    subs: subs, subsTotal: subs.reduce(function(s, x) { return s + x.amount; }, 0),
-    payday: payday, daysToPayday: daysToPayday,
-    balance: parseFloat(exp.balance) || 0, entryCount: (exp.entries || []).length
-  };
-}
-function _moneyFlowRender(d) {
-  if (!d.entryCount) {
-    return '<div class="mf-empty"><span class="mf-empty-t">No transactions yet</span>' +
-      '<span class="mf-empty-s">Log spending in the Budget widget and this fills itself in automatically.</span></div>';
-  }
-  var pctCls = d.pct >= 100 ? 'mf-bad' : d.pct >= 80 ? 'mf-warn' : 'mf-good';
-  var maxCat = d.cats[0] ? d.cats[0].val : 1;
-  var bars = d.cats.map(function(c) {
-    var share = d.spend > 0 ? Math.round((c.val / d.spend) * 100) : 0;
-    var w = Math.max(6, Math.round((c.val / maxCat) * 100));
-    return '<div class="mf-cat">' +
-      '<span class="mf-cat-name">' + escapeHtml(c.name) + '</span>' +
-      '<div class="mf-cat-track"><div class="mf-cat-fill" style="width:' + w + '%"></div></div>' +
-      '<span class="mf-cat-pct">' + share + '%</span>' +
-      '<span class="mf-cat-amt">' + _wfNum(c.val) + '</span>' +
-    '</div>';
-  }).join('');
-  var subs = d.subs.length
-    ? d.subs.map(function(s) {
-        return '<div class="mf-sub">' +
-          '<span class="mf-sub-name">' + escapeHtml(s.category) + '</span>' +
-          '<span class="mf-sub-meta">' + s.months + ' months</span>' +
-          '<span class="mf-sub-amt">' + _wfNum(s.amount) + '</span>' +
-        '</div>';
-      }).join('')
-    : '<div class="mf-sub-empty">No recurring charges detected yet</div>';
-  return '<div class="mf-hero">' +
-      '<div class="mf-hero-main"><span class="mf-hero-val">' + _wfNum(d.spend) + '</span>' +
-        '<span class="mf-hero-lbl">spent · day ' + d.dayOfMonth + ' of ' + d.daysInMonth + '</span></div>' +
-      '<div class="mf-hero-side"><span class="mf-hero-side-val ' + pctCls + '">' + (d.monthly > 0 ? d.pct + '%' : '—') + '</span>' +
-        '<span class="mf-hero-side-lbl">of budget</span></div>' +
-    '</div>' +
-    (d.monthly > 0 ? '<div class="mf-track"><div class="mf-fill ' + pctCls + '" style="width:' + Math.min(100, d.pct) + '%"></div></div>' : '') +
-    '<div class="mf-tiles">' +
-      '<div class="mf-tile"><span class="mf-tile-val">' + _wfNum(Math.round(d.pace)) + '</span><span class="mf-tile-lbl">per day</span></div>' +
-      '<div class="mf-tile"><span class="mf-tile-val' + (d.overPace ? ' mf-bad' : '') + '">' + _wfNum(Math.round(d.projected)) + '</span><span class="mf-tile-lbl">projected</span></div>' +
-      '<div class="mf-tile"><span class="mf-tile-val">' + d.daysToPayday + '</span><span class="mf-tile-lbl">to payday</span></div>' +
-    '</div>' +
-    '<div class="mf-sec"><span class="mf-sec-lbl">Where it went</span>' + bars + '</div>' +
-    '<div class="mf-sec"><span class="mf-sec-lbl">Recurring<span class="mf-sec-note">' + _wfNum(Math.round(d.subsTotal)) + '/mo</span></span>' + subs + '</div>';
-}
 
 /* ─── Assistant · local rule-based next-action planner ────── */
 function _assistantPlan() {
@@ -11410,9 +10941,6 @@ function _assistantPlan() {
   var habits = hubContent.habits || [];
   var habitToday = (hubContent.habitData || {})[_hubTodayKey()] || {};
   var habitsLeft = habits.filter(function(h, i) { return !habitToday[i]; }).length;
-  var water = hubContent.water || { goal: 8, logged: 0 };
-  var waterLeft = Math.max(0, (water.goal || 8) - (water.logged || 0));
-  var moodToday = (((hubContent.mood || {}).history) || {})[_hubTodayKey()];
   var b = _budgetData();
   var focus = _focusData();
 
@@ -11429,14 +10957,6 @@ function _assistantPlan() {
       tone: 'next',
       title: todos.length + ' task' + (todos.length === 1 ? '' : 's') + ' still open',
       why: 'First one: ' + String((todos[0] && todos[0].text) || 'untitled'),
-      href: 'index.html'
-    });
-  }
-  if (waterLeft > 0 && hour >= 14) {
-    items.push({
-      tone: waterLeft > 4 ? 'warn' : 'next',
-      title: 'Drink ' + waterLeft + ' more glass' + (waterLeft === 1 ? '' : 'es') + ' of water',
-      why: (water.logged || 0) + ' of ' + (water.goal || 8) + ' logged and it is already ' + hour + ':00',
       href: 'index.html'
     });
   }
@@ -11468,14 +10988,11 @@ function _assistantPlan() {
   if (readingNow.length && hour >= 19) {
     items.push({ tone: 'soft', title: 'Read ' + readingNow[0].title, why: 'Still in progress', href: 'index.html' });
   }
-  if (hour >= 20 && !moodToday) {
-    items.push({ tone: 'soft', title: 'Log how today felt', why: 'No mood entry for today yet', href: 'index.html' });
-  }
   if (!items.length) {
     items.push({
       tone: 'good',
       title: 'Nothing urgent right now',
-      why: 'Priorities, tasks, habits and water are all clear',
+      why: 'Priorities, tasks and habits are all clear',
       href: 'goals.html'
     });
   }
@@ -11596,17 +11113,16 @@ function renderBubbleDock(grid) {
   dock.setAttribute('data-bubble-dock', '');
   var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
   var has = function(t) { return layout.some(function(i) { return i.t === t; }); };
-  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', today:'Today', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', alarm:'Alarm', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', water:'Water', mood:'Mood', countdown:'Countdown', crypto:'Crypto', homework:'Homework', study:'Study', weekplan:'Study Plan', upcoming:'Upcoming', streak:'Streak', budget:'Budget', airquality:'Air Quality', worldclock:'World Clock', savings:'Savings Goal', focuslog:'Focus Log', currency:'Currency', calculator:'Calculator', breathing:'Breathing', reading:'Reading', doodle:'Doodle', github:'GitHub', prayertime:'Prayer Times', bmkgquake:'Earthquake', moneyflow:'Money Flow', assistant:'Assistant', 'friends-live':'Friends', grades:'Grades', attendance:'Attendance', exams:'Exams', holidays:'Tanggal Merah', birthdays:'Birthdays', flashcards:'Flashcards', sleepdebt:'Sleep Debt', ytfeed:'Video Feed', watchlist:'Watchlist', musicviz:'Visualiser', pet:'Pet', garden:'Streak Garden', xp:'Level', badges:'Badges', money:'Money' };
-  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', weekplan:'Your Study subjects, planned across the week', water:'Daily water intake', mood:'How you feel today', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', crypto:'Coin prices', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Alarms with sound + snooze', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', upcoming:'Next tasks on your schedule', streak:'Consecutive activity days', budget:'Monthly spend vs budget', airquality:'AQI, pollutants + UV', worldclock:'Times around the world', savings:'Progress toward a savings target', focuslog:'Track focused minutes per day', currency:'Live exchange rates', calculator:'Quick math with a keypad', breathing:'Guided breathing exercise', reading:'Books you are reading', doodle:'Quick sketch pad', github:'GitHub profile + repo stats', prayertime:'Subuh to Isya, next prayer countdown', bmkgquake:'Latest quake from BMKG live feed', moneyflow:'Auto-categorised spend, subscriptions + payday', assistant:'What to do next, from your own data', 'friends-live':'Who is online in your circle', grades:'Subject averages + what you need next', attendance:'Present, late, absent + absences left', exams:'Countdown + syllabus checklist', holidays:'Indonesian tanggal merah + cuti bersama', birthdays:'Upcoming birthdays you track', flashcards:'Spaced-repetition vocab cards', sleepdebt:'How much sleep you owe this week', ytfeed:'Saved YouTube and TikTok links', watchlist:'Films and series you are watching', musicviz:'Bars that react to sound', pet:'A creature that grows with your habits', garden:'A plant for every day you complete something', xp:'Your level and experience points', badges:'Achievements you have unlocked', money:'Piggy bank and wallet in one' };
+  var labels = { goals:'Goals', images:'Images', priorities:'Priorities', quote:'Quote', todos:'To-Dos', today:'Today', habits:'Habits', notes:'Notes', links:'Links', progress:'Progress', clock:'Clock', weather:'Weather', calendar:'Calendar', timer:'Timer', alarm:'Alarm', pomodoro:'Pomodoro', spotify:'Spotify', strava:'Strava', flightradar:'FlightRadar24', 'sleep-score':'Sleep Score', headlines:'Headlines', countdown:'Countdown', homework:'Homework', study:'Study', weekplan:'Study Plan', upcoming:'Upcoming', streak:'Streak', budget:'Budget', airquality:'Air Quality', worldclock:'World Clock', savings:'Savings Goal', focuslog:'Focus Log', currency:'Currency', calculator:'Calculator', breathing:'Breathing', reading:'Reading', doodle:'Doodle', github:'GitHub', prayertime:'Prayer Times', bmkgquake:'Earthquake', assistant:'Assistant', 'friends-live':'Friends', grades:'Grades', attendance:'Attendance', exams:'Exams', birthdays:'Birthdays', flashcards:'Flashcards', sleepdebt:'Sleep Debt', watchlist:'Watchlist', musicviz:'Visualiser', pet:'Pet', garden:'Streak Garden', xp:'Level', badges:'Badges', money:'Money' };
+  var blurbs = { goals:'Track goals with progress', priorities:'Top focus for today', todos:'Checklist for tasks', today:'Tasks due today', habits:'Daily streaks', progress:'Week completion chart', homework:'Assignments + due dates', study:'Subjects + chapters', weekplan:'Your Study subjects, planned across the week', spotify:'Music playlist', strava:'Activity embed', flightradar:'Live flights map', images:'Photo widget', clock:'Time + date', weather:'Temp + forecast', calendar:'Month mini calendar', timer:'Countdown / stopwatch', alarm:'Alarms with sound + snooze', pomodoro:'Focus sessions', 'sleep-score':'Last night score', headlines:'Top world news', countdown:'Days to event', quote:'Weekly inspiration', notes:'Quick notes', links:'Favorite links', upcoming:'Next tasks on your schedule', streak:'Consecutive activity days', budget:'Monthly spend vs budget', airquality:'AQI, pollutants + UV', worldclock:'Times around the world', savings:'Progress toward a savings target', focuslog:'Track focused minutes per day', currency:'Live exchange rates', calculator:'Quick math with a keypad', breathing:'Guided breathing exercise', reading:'Books you are reading', doodle:'Quick sketch pad', github:'GitHub profile + repo stats', prayertime:'Subuh to Isya, next prayer countdown', bmkgquake:'Latest quake from BMKG live feed', assistant:'What to do next, from your own data', 'friends-live':'Who is online in your circle', grades:'Subject averages + what you need next', attendance:'Present, late, absent + absences left', exams:'Countdown + syllabus checklist', birthdays:'Upcoming birthdays you track', flashcards:'Spaced-repetition vocab cards', sleepdebt:'How much sleep you owe this week', watchlist:'Films and series you are watching', musicviz:'Bars that react to sound', pet:'A creature that grows with your habits', garden:'A plant for every day you complete something', xp:'Your level and experience points', badges:'Achievements you have unlocked', money:'Piggy bank and wallet in one' };
   var categories = [
     { name:'Productivity', short:'Productivity', types:['goals','priorities','todos','today','upcoming','habits','streak','focuslog','progress','assistant'] },
     { name:'Study', short:'Study', types:['homework','study','weekplan','grades','attendance','exams','flashcards'] },
-    { name:'Wellness', short:'Wellness', types:['water','mood','sleep-score','sleepdebt','airquality','breathing','strava'] },
-    { name:'Finance', short:'Finance', types:['crypto','budget','savings','currency','moneyflow','money'] },
-    { name:'Utilities', short:'Utilities', types:['clock','worldclock','weather','calendar','timer','alarm','pomodoro','countdown','calculator'] },
-    { name:'Media', short:'Media', types:['spotify','flightradar','images','headlines','ytfeed','watchlist','musicviz'] },
+    { name:'Wellness', short:'Wellness', types:['sleep-score','sleepdebt','airquality','breathing','strava'] },
+    { name:'Finance', short:'Finance', types:['budget','savings','currency','money'] },
+    { name:'Utilities', short:'Utilities', types:['clock','worldclock','weather','calendar','prayertime','bmkgquake','timer','alarm','pomodoro','countdown','calculator'] },
+    { name:'Media', short:'Media', types:['spotify','flightradar','images','headlines','watchlist','musicviz'] },
     { name:'Content', short:'Content', types:['quote','notes','links','reading'] },
-    { name:'Local', short:'Local', types:['prayertime','bmkgquake','holidays'] },
     { name:'Social', short:'Social', types:['friends-live','birthdays','github'] },
     { name:'Fun', short:'Fun', types:['pet','garden','xp','badges','doodle'] }
   ];
@@ -11619,7 +11135,6 @@ function renderBubbleDock(grid) {
     Finance: _ciHead + '<circle cx="12" cy="12" r="9"/><path d="M12 6.5v11M14.8 9.2c-.6-.9-1.6-1.4-2.8-1.4-1.6 0-2.8.9-2.8 2.3 0 3.2 5.6 1.6 5.6 4.9 0 1.4-1.2 2.3-2.8 2.3-1.2 0-2.2-.5-2.8-1.4"/></svg>',
     Utilities: _ciHead + '<line x1="4" y1="7" x2="20" y2="7"/><circle cx="15" cy="7" r="2"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="17" r="2"/></svg>',
     Content: _ciHead + '<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>',
-    Local: _ciHead + '<path d="M12 21s-7-5.5-7-11a7 7 0 1 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
     Social: _ciHead + '<path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
     Study: _ciHead + '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12.5V17c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/></svg>',
     Fun: _ciHead + '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 17l.7 1.8L21.5 19.5l-1.8.7L19 22l-.7-1.8L16.5 19.5l1.8-.7z"/></svg>'
@@ -11932,10 +11447,10 @@ function initBubbleDockDrag(dock) {
       pomodoro:{w:280,h:180},spotify:{w:280,h:420},strava:{w:280,h:420},
       flightradar:{w:280,h:420},quote:{w:280,h:220},notes:{w:280,h:240},
       links:{w:280,h:240},images:{w:280,h:210},'sleep-score':{w:280,h:280},headlines:{w:280,h:260},
-      water:{w:280,h:180},mood:{w:280,h:200},countdown:{w:280,h:280},
-      text:{w:280,h:160},crypto:{w:280,h:300},homework:{w:280,h:320},study:{w:280,h:420},
+      countdown:{w:280,h:280},
+      text:{w:280,h:160},homework:{w:280,h:320},study:{w:280,h:420},
       weekplan:{w:280,h:400},
-      prayertime:{w:280,h:340},bmkgquake:{w:280,h:300},moneyflow:{w:280,h:420},assistant:{w:280,h:360},'friends-live':{w:280,h:320},
+      prayertime:{w:280,h:340},bmkgquake:{w:280,h:300},assistant:{w:280,h:360},'friends-live':{w:280,h:320},
       grades:{w:280,h:340},attendance:{w:280,h:380},exams:{w:280,h:380},
       holidays:{w:280,h:300},birthdays:{w:280,h:300},flashcards:{w:280,h:300},
       sleepdebt:{w:280,h:280},ytfeed:{w:280,h:320},watchlist:{w:280,h:320},musicviz:{w:280,h:200},
@@ -12845,35 +12360,6 @@ function setupHubEditEvents() {
       }
       return;
     }
-    // Video feed: add
-    var _ytfAddBtn = e.target.closest('[data-ytf-add]');
-    if (_ytfAddBtn) {
-      var _ytfWrap = _ytfAddBtn.closest('.ytf-wrap');
-      var _ytfInp = _ytfWrap ? _ytfWrap.querySelector('[data-ytf-input]') : null;
-      var _ytfVal = _ytfInp ? String(_ytfInp.value || '').trim() : '';
-      var _ytfMeta = _ytfVal ? _videoMeta(_ytfVal) : null;
-      if (_ytfMeta) {
-        var _ytfStore = _ytFeedData();
-        var _ytfTitle = _ytfMeta.kind === 'yt' ? 'YouTube video' : (_ytfMeta.kind === 'tt' ? 'TikTok video' : _ytfVal);
-        _ytfStore.items.unshift({ url: _ytfMeta.url, title: _ytfTitle, kind: _ytfMeta.kind, added: Date.now() });
-        if (_ytfStore.items.length > 24) _ytfStore.items = _ytfStore.items.slice(0, 24);
-        saveHubContent();
-        renderHubBento();
-      }
-      return;
-    }
-    // Video feed: remove
-    var _ytfDel = e.target.closest('[data-ytf-del]');
-    if (_ytfDel) {
-      var _ytfIdx = parseInt(_ytfDel.dataset.ytfDel, 10);
-      var _ytfS2 = _ytFeedData();
-      if (!isNaN(_ytfIdx) && _ytfIdx >= 0 && _ytfIdx < _ytfS2.items.length) {
-        _ytfS2.items.splice(_ytfIdx, 1);
-        saveHubContent();
-        renderHubBento();
-      }
-      return;
-    }
     // Watchlist: cycle status
     var _wlCycle = e.target.closest('[data-wl-cycle]');
     if (_wlCycle) {
@@ -12952,24 +12438,6 @@ function setupHubEditEvents() {
       _mvToggle(_mvBtn);
       return;
     }
-    // Water toggle
-    const waterToggle = e.target.closest('[data-water-toggle]');
-    if (waterToggle) {
-      const idx = parseInt(waterToggle.dataset.waterToggle);
-      if (!isNaN(idx)) {
-        if (!hubContent.water) hubContent.water = { goal:8, logged:0, date:'' };
-        var _today = new Date().toISOString().slice(0,10);
-        if (hubContent.water.date !== _today) { hubContent.water.logged = 0; hubContent.water.date = _today; }
-        if (idx < hubContent.water.logged) {
-          hubContent.water.logged = idx;
-        } else {
-          hubContent.water.logged = idx + 1;
-        }
-        saveHubContent();
-        renderHubBento();
-      }
-      return;
-    }
     // Study plan: tick a subject off (or undo) for that day
     var wkToggle = e.target.closest('[data-wk-toggle]');
     if (wkToggle) {
@@ -13025,20 +12493,6 @@ function setupHubEditEvents() {
       var _wkBub = wkRowsBtn.closest('.bento-bubble');
       if (_wkBub && _wkBub.dataset.bubble) _setWeekplanStyle(_wkBub.dataset.bubble, 'default');
       renderHubBento();
-      return;
-    }
-    // Mood picker
-    const moodPick = e.target.closest('[data-mood-pick]');
-    if (moodPick) {
-      const idx = parseInt(moodPick.dataset.moodPick);
-      if (!isNaN(idx)) {
-        if (!hubContent.mood) hubContent.mood = { today:null, history:{} };
-        var _today = new Date().toISOString().slice(0,10);
-        if (!hubContent.mood.history[_today]) hubContent.mood.history[_today] = {};
-        hubContent.mood.history[_today].mood = idx;
-        saveHubContent();
-        renderHubBento();
-      }
       return;
     }
     // Upcoming horizon
