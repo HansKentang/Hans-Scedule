@@ -6378,9 +6378,7 @@ var HUB_SKINS = [
   { id: 'clay',     name: 'Clay',     blurb: 'Moulded pastel, rimmed edge' },
   { id: 'outline',  name: 'Outline',  blurb: 'Dashed wireframe' },
   { id: 'framed',   name: 'Framed',   blurb: 'Plate inside a frame' },
-  { id: 'aurora',   name: 'Aurora',   blurb: 'Soft gradient wash' },
   { id: 'halo',     name: 'Halo',     blurb: 'Glow from one corner' },
-  { id: 'spine',    name: 'Spine',    blurb: 'Accent bar on the edge' },
   { id: 'inset',    name: 'Inset',    blurb: 'Pressed into the page' },
   { id: 'notch',    name: 'Notch',    blurb: 'Cut top corner' },
   { id: 'pill',     name: 'Pill',     blurb: 'Fully rounded' }

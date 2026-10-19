@@ -13142,17 +13142,6 @@ html.edit-mode .gal-canvas .gal-item:hover {
    stay quiet but don't read as "another flat card".
    ============================================================ */
 
-/* ---- Aurora — soft multi-hue gradient wash ---- */
-[data-hub-skin="aurora"] {
-  --skin-bg: linear-gradient(145deg,
-      color-mix(in srgb, var(--accent) 20%, var(--surface-container)) 0%,
-      color-mix(in srgb, #7c6cf6 15%, var(--surface-container)) 52%,
-      color-mix(in srgb, #e879a8 13%, var(--surface-container)) 100%);
-  --skin-border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
-  --skin-radius: var(--radius-xl);
-  --skin-shadow: 0 10px 26px -12px color-mix(in srgb, #7c6cf6 55%, transparent);
-}
-
 /* ---- Halo — accent wash bleeding in from one corner. Three stops, and the
    leading stop is deliberately restrained: --accent is near-white in dark but
    near-black in light, so anything above ~25% stops reading as a corner glow
@@ -13165,15 +13154,6 @@ html.edit-mode .gal-canvas .gal-item:hover {
   --skin-border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
   --skin-radius: var(--radius-xl);
   --skin-shadow: 0 8px 22px -16px color-mix(in srgb, var(--accent) 70%, transparent);
-}
-
-/* ---- Spine — accent bar down the leading edge ---- */
-[data-hub-skin="spine"] {
-  --skin-bg: var(--surface-container);
-  --skin-border: 1px solid transparent;
-  --skin-radius: var(--radius-md);
-  --skin-shadow: inset 3px 0 0 0 var(--accent);
-  --skin-accent: var(--accent);
 }
 
 /* ---- Inset — debossed, pressed into the page. The inner rim is what makes
