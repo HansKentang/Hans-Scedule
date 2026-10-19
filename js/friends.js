@@ -725,10 +725,12 @@ function loadFeed() {
   var friendIds = accepted.map(function(f) { return f.otherUserId; }).filter(Boolean);
   friendIds.push(activeId);
 
-  sb.from('activity').select('*').order('created_at', { ascending: false }).limit(30).then(function(res) {
+  /* Filter by the friend ids in the query, not after it. Taking the newest 30
+     rows globally and then discarding non-friends meant a busy instance could
+     fill the page with strangers and show an empty feed. */
+  sb.from('activity').select('*').in('user_id', friendIds).order('created_at', { ascending: false }).limit(30).then(function(res) {
     if (res.error) return;
     var items = (res.data || [])
-      .filter(function(r) { return friendIds.indexOf(r.user_id) !== -1; })
       .map(function(r) {
         return { id: r.id, userId: r.user_id, userName: r.user_name, avatarColor: r.avatar_color, text: r.text, createdAt: r.created_at };
       });
