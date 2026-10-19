@@ -674,6 +674,48 @@ function _moveStudyItem(dragId, leafId, zoneId, before) {
   src.ch.items.push(moving);
   return true;
 }
+function _moveStudyChapter(dragId, chapId, subjId, before) {
+  _ensureStudy();
+  var sp = String(dragId || '').split('|');
+  var src = _findStudy(sp[0], sp[1]);
+  if (!src.ch || !src.sj) return false;
+  if (chapId && chapId === dragId) return false;
+  var from = src.sj.chapters;
+  var at = from.indexOf(src.ch);
+  if (at === -1) return false;
+  var moving = src.ch;
+  from.splice(at, 1);
+  var dstSj = null;
+  if (chapId) {
+    var tp = String(chapId).split('|');
+    var tgt = _findStudy(tp[0], tp[1]);
+    if (tgt.ch && tgt.sj) {
+      dstSj = tgt.sj;
+      var ti = dstSj.chapters.indexOf(tgt.ch);
+      if (ti === -1) dstSj.chapters.push(moving);
+      else dstSj.chapters.splice(before ? ti : ti + 1, 0, moving);
+    }
+  } else if (subjId) {
+    var d = _findStudy(subjId);
+    if (d.sj) { dstSj = d.sj; d.sj.chapters.push(moving); }
+  }
+  if (!dstSj) { from.splice(at, 0, moving); return false; }
+  dstSj.collapsed = false;
+  return true;
+}
+function _moveStudySubject(dragId, subjId, before) {
+  var subs = _ensureStudy();
+  if (!dragId || !subjId || dragId === subjId) return false;
+  var at = -1;
+  for (var i = 0; i < subs.length; i++) if (subs[i].id === dragId) { at = i; break; }
+  if (at === -1) return false;
+  var moving = subs.splice(at, 1)[0];
+  var to = -1;
+  for (var j = 0; j < subs.length; j++) if (subs[j].id === subjId) { to = j; break; }
+  if (to === -1) { subs.splice(at, 0, moving); return false; }
+  subs.splice(before ? to : to + 1, 0, moving);
+  return true;
+}
 function _closeStudyColorPopup() {
   if (typeof closeColorPopup === 'function') closeColorPopup();
   var p = document.querySelector('.w-st-color-pop');
@@ -3952,10 +3994,10 @@ function renderHubBento() {
                 return '<div class="w-st-leaf' + (it.done ? ' w-st-done' : '') + '" data-st-leaf="' + sj.id + '|' + ch.id + '|' + it.id + '">' + (isEdit ? '<span class="w-st-drag" draggable="true" data-st-drag="' + sj.id + '|' + ch.id + '|' + it.id + '" title="Drag to reorder">⠿</span>' : '') + '<span class="w-todo-box w-todo-box-sm' + (it.done ? ' w-todo-checked' : '') + '" data-st-toggle-item="' + sj.id + '|' + ch.id + '|' + it.id + '">' + (it.done ? _stCheckSvg() : '') + '</span><span class="w-item-text' + (it.done ? ' w-todo-done' : '') + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Type subchapter…" data-edit="study-item" data-sid="' + sj.id + '" data-cid="' + ch.id + '" data-iid="' + it.id + '">' + e(it.text) + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-item="' + sj.id + '|' + ch.id + '|' + it.id + '">×</button>' : '') + '</div>';
               }).join('');
               var _chapOpen = !ch.collapsed;
-              return '<div class="w-st-chap"><div class="w-st-chap-head" data-st-toggle-chap="' + sj.id + '|' + ch.id + '"><span class="w-st-caret' + (_chapOpen ? ' open' : '') + '">▸</span><span class="w-st-chap-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Chapter name…" data-edit="study-chapter" data-sid="' + sj.id + '" data-cid="' + ch.id + '">' + e(ch.name) + '</span><span class="w-st-count">' + _chC.done + '/' + _chC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-chapter="' + sj.id + '|' + ch.id + '">×</button>' : '') + '</div>' + (_chapOpen ? '<div class="w-st-leaves" data-st-drop-chap="' + sj.id + '|' + ch.id + '">' + _items + '<button class="w-st-add-inline" data-st-add-item="' + sj.id + '|' + ch.id + '">+ Subchapter</button></div>' : '') + '</div>';
+              return '<div class="w-st-chap" data-st-chap="' + sj.id + '|' + ch.id + '"><div class="w-st-chap-head" data-st-toggle-chap="' + sj.id + '|' + ch.id + '" data-st-chap-drop="' + sj.id + '|' + ch.id + '">' + (isEdit ? '<span class="w-st-drag" draggable="true" data-st-drag-chap="' + sj.id + '|' + ch.id + '" title="Drag chapter - drop on another subject to move it">⠿</span>' : '') + '<span class="w-st-caret' + (_chapOpen ? ' open' : '') + '">▸</span><span class="w-st-chap-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Chapter name…" data-edit="study-chapter" data-sid="' + sj.id + '" data-cid="' + ch.id + '">' + e(ch.name) + '</span><span class="w-st-count">' + _chC.done + '/' + _chC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-chapter="' + sj.id + '|' + ch.id + '">×</button>' : '') + '</div>' + (_chapOpen ? '<div class="w-st-leaves" data-st-drop-chap="' + sj.id + '|' + ch.id + '">' + _items + '<button class="w-st-add-inline" data-st-add-item="' + sj.id + '|' + ch.id + '">+ Subchapter</button></div>' : '') + '</div>';
             }).join('');
             var _subjOpen = !sj.collapsed;
-            return '<div class="w-st-subj"><div class="w-st-subj-head" data-st-toggle-subj="' + sj.id + '"><span class="w-st-caret' + (_subjOpen ? ' open' : '') + '">▸</span><span class="w-st-dot" style="background:' + _sjColor + '" data-st-color="' + sj.id + '" title="Change color"></span><span class="w-st-subj-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Subject name…" data-edit="study-subject" data-sid="' + sj.id + '">' + e(sj.name) + '</span><span class="w-st-subj-stats">' + _sjStats + '</span><span class="w-st-count">' + _sjC.done + '/' + _sjC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-subject="' + sj.id + '">×</button>' : '') + '</div>' + (_subjOpen ? '<div class="w-st-subj-bar"><div class="w-st-subj-fill" style="width:' + _sjC.pct + '%;background:' + _sjColor + '"></div></div><div class="w-st-chaps">' + _chaps + '<button class="w-st-add-inline" data-st-add-chapter="' + sj.id + '">+ Chapter</button></div>' : '') + '</div>';
+            return '<div class="w-st-subj" data-st-subj="' + sj.id + '"><div class="w-st-subj-head" data-st-toggle-subj="' + sj.id + '" data-st-subj-drop="' + sj.id + '">' + (isEdit ? '<span class="w-st-drag" draggable="true" data-st-drag-subj="' + sj.id + '" title="Drag subject to reorder">⠿</span>' : '') + '<span class="w-st-caret' + (_subjOpen ? ' open' : '') + '">▸</span><span class="w-st-dot" style="background:' + _sjColor + '" data-st-color="' + sj.id + '" title="Change color"></span><span class="w-st-subj-name' + (isEdit ? ' hub-editable' : '') + '" contenteditable="' + isEdit + '" data-ph="Subject name…" data-edit="study-subject" data-sid="' + sj.id + '">' + e(sj.name) + '</span><span class="w-st-subj-stats">' + _sjStats + '</span><span class="w-st-count">' + _sjC.done + '/' + _sjC.total + '</span>' + (isEdit ? '<button class="hub-edit-item-btn del" data-st-del-subject="' + sj.id + '">×</button>' : '') + '</div>' + (_subjOpen ? '<div class="w-st-subj-bar"><div class="w-st-subj-fill" style="width:' + _sjC.pct + '%;background:' + _sjColor + '"></div></div><div class="w-st-chaps">' + _chaps + '<button class="w-st-add-inline" data-st-add-chapter="' + sj.id + '">+ Chapter</button></div>' : '') + '</div>';
           }).join('') + '<button class="w-add-btn" data-st-add-subject><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add subject</button>';
         }
         return '<div class="bento-bubble" data-bubble="' + uid + '" style="' + dimStyle + ';background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">' + editUI + '<div class="w-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/></svg><span>Study</span></div><div class="w-hw-progress"><div class="w-hw-prog-bar"><div class="w-hw-prog-fill" style="width:' + _stCounts.pct + '%"></div></div><span class="w-hw-prog-text">' + _stCounts.done + '/' + _stCounts.total + ' done (' + _stCounts.pct + '%)</span></div><div class="w-list w-st-list">' + _stBody + '</div></div>';
@@ -11789,20 +11831,54 @@ function setupHubEditEvents() {
   });
 
   var _stDragId = null;
+  var _stDragKind = null;
   function _stClearDropMarks() {
     document.querySelectorAll('.w-st-drop-before,.w-st-drop-after,.w-st-dragging').forEach(function(el) { el.classList.remove('w-st-drop-before'); el.classList.remove('w-st-drop-after'); el.classList.remove('w-st-dragging'); });
   }
+  function _stEndDrag() { _stDragId = null; _stDragKind = null; _stClearDropMarks(); }
   document.querySelector('.bento-grid')?.addEventListener('dragstart', function(e) {
-    var handle = e.target.closest('[data-st-drag]');
-    if (!handle) return;
-    _stDragId = handle.dataset.stDrag;
+    var subjHandle = e.target.closest('[data-st-drag-subj]');
+    var chapHandle = e.target.closest('[data-st-drag-chap]');
+    var itemHandle = e.target.closest('[data-st-drag]');
+    if (!subjHandle && !chapHandle && !itemHandle) return;
+    _stDragKind = subjHandle ? 'subject' : (chapHandle ? 'chapter' : 'item');
+    _stDragId = subjHandle ? subjHandle.dataset.stDragSubj : (chapHandle ? chapHandle.dataset.stDragChap : itemHandle.dataset.stDrag);
     e.dataTransfer.effectAllowed = 'move';
     try { e.dataTransfer.setData('text/plain', _stDragId); } catch (err) {}
-    var leaf = handle.closest('.w-st-leaf');
-    if (leaf) leaf.classList.add('w-st-dragging');
+    var row = e.target.closest('.w-st-leaf, .w-st-chap, .w-st-subj');
+    if (row) row.classList.add('w-st-dragging');
   });
   document.querySelector('.bento-grid')?.addEventListener('dragover', function(e) {
     if (!_stDragId) return;
+    if (_stDragKind === 'subject') {
+      var sjH = e.target.closest('[data-st-subj-drop]');
+      if (!sjH || sjH.dataset.stSubjDrop === _stDragId) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      _stClearDropMarks();
+      var sr = sjH.getBoundingClientRect();
+      var sRow = sjH.closest('.w-st-subj');
+      if (sRow) sRow.classList.add(e.clientY < sr.top + sr.height / 2 ? 'w-st-drop-before' : 'w-st-drop-after');
+      return;
+    }
+    if (_stDragKind === 'chapter') {
+      var chH = e.target.closest('[data-st-chap-drop]');
+      var sjD = e.target.closest('[data-st-subj-drop]');
+      if (!chH && !sjD) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      _stClearDropMarks();
+      if (chH) {
+        if (chH.dataset.stChapDrop === _stDragId) return;
+        var cr = chH.getBoundingClientRect();
+        var cRow = chH.closest('.w-st-chap');
+        if (cRow) cRow.classList.add(e.clientY < cr.top + cr.height / 2 ? 'w-st-drop-before' : 'w-st-drop-after');
+      } else {
+        var sRowC = sjD.closest('.w-st-subj');
+        if (sRowC) sRowC.classList.add('w-st-drop-after');
+      }
+      return;
+    }
     var leaf = e.target.closest('.w-st-leaf[data-st-leaf]');
     var zone = e.target.closest('[data-st-drop-chap]');
     if (!leaf && !zone) return;
@@ -11817,30 +11893,47 @@ function setupHubEditEvents() {
   });
   document.querySelector('.bento-grid')?.addEventListener('drop', function(e) {
     if (!_stDragId) return;
-    var leaf = e.target.closest('.w-st-leaf[data-st-leaf]');
-    var zone = e.target.closest('[data-st-drop-chap]');
-    if (!leaf && !zone) { _stDragId = null; _stClearDropMarks(); return; }
-    var leafId = leaf ? leaf.dataset.stLeaf : null;
-    var zoneId = zone ? zone.dataset.stDropChap : null;
-    if (leafId && leafId === _stDragId) { _stDragId = null; _stClearDropMarks(); return; }
-    e.preventDefault();
-    var before = false;
-    if (leaf && leafId) {
-      var r = leaf.getBoundingClientRect();
-      before = e.clientY < r.top + r.height / 2;
+    var moved = false;
+    if (_stDragKind === 'subject') {
+      var sjH = e.target.closest('[data-st-subj-drop]');
+      if (!sjH) { _stEndDrag(); return; }
+      e.preventDefault();
+      var sr = sjH.getBoundingClientRect();
+      moved = _moveStudySubject(_stDragId, sjH.dataset.stSubjDrop, e.clientY < sr.top + sr.height / 2);
+    } else if (_stDragKind === 'chapter') {
+      var chH = e.target.closest('[data-st-chap-drop]');
+      var sjD = e.target.closest('[data-st-subj-drop]');
+      if (!chH && !sjD) { _stEndDrag(); return; }
+      e.preventDefault();
+      if (chH) {
+        var cr = chH.getBoundingClientRect();
+        moved = _moveStudyChapter(_stDragId, chH.dataset.stChapDrop, null, e.clientY < cr.top + cr.height / 2);
+      } else {
+        moved = _moveStudyChapter(_stDragId, null, sjD.dataset.stSubjDrop, false);
+      }
+    } else {
+      var leaf = e.target.closest('.w-st-leaf[data-st-leaf]');
+      var zone = e.target.closest('[data-st-drop-chap]');
+      if (!leaf && !zone) { _stEndDrag(); return; }
+      var leafId = leaf ? leaf.dataset.stLeaf : null;
+      var zoneId = zone ? zone.dataset.stDropChap : null;
+      if (leafId && leafId === _stDragId) { _stEndDrag(); return; }
+      e.preventDefault();
+      var before = false;
+      if (leaf && leafId) {
+        var r = leaf.getBoundingClientRect();
+        before = e.clientY < r.top + r.height / 2;
+      }
+      moved = _moveStudyItem(_stDragId, leafId, zoneId, before);
     }
-    if (_moveStudyItem(_stDragId, leafId, zoneId, before)) {
+    if (moved) {
       saveHubContent();
       renderHubBento();
     }
-    _stDragId = null;
-    _stClearDropMarks();
+    _stEndDrag();
   });
   document.querySelector('.bento-grid')?.addEventListener('dragend', function(e) {
-    if (_stDragId !== null) {
-      _stDragId = null;
-      _stClearDropMarks();
-    }
+    if (_stDragId !== null || _stDragKind !== null) _stEndDrag();
   });
 
   document.querySelector('.bento-grid')?.addEventListener('click', function(e) {
@@ -12328,7 +12421,7 @@ function setupHubEditEvents() {
     }
     const stTogChap = e.target.closest('[data-st-toggle-chap]');
     if (stTogChap) {
-      if (e.target.closest('[contenteditable],button,.w-todo-box,[data-st-toggle-item],[data-st-add-item]')) return;
+      if (e.target.closest('[contenteditable],button,.w-todo-box,[data-st-toggle-item],[data-st-add-item],[data-st-drag-chap]')) return;
       var _tcp = (stTogChap.dataset.stToggleChap || '').split('|');
       var _tct = _findStudy(_tcp[0], _tcp[1]);
       if (_tct.ch) { _tct.ch.collapsed = !_tct.ch.collapsed; saveHubContent(); renderHubBento(); }
@@ -12336,7 +12429,7 @@ function setupHubEditEvents() {
     }
     const stTogSubj = e.target.closest('[data-st-toggle-subj]');
     if (stTogSubj) {
-      if (e.target.closest('[contenteditable],button,.w-todo-box,[data-st-toggle-item],[data-st-add-item],[data-st-add-chapter],[data-st-color]')) return;
+      if (e.target.closest('[contenteditable],button,.w-todo-box,[data-st-toggle-item],[data-st-add-item],[data-st-add-chapter],[data-st-color],[data-st-drag-subj]')) return;
       var _tst = _findStudy(stTogSubj.dataset.stToggleSubj);
       if (_tst.sj) { _tst.sj.collapsed = !_tst.sj.collapsed; saveHubContent(); renderHubBento(); }
       return;

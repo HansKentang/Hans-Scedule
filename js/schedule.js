@@ -263,6 +263,10 @@ function initScheduleOptions() {
     weekPrefs.density = b.dataset.density;
     saveWeekPrefs();
     applyScheduleDensity(weekPrefs.density);
+    // The grid rows resize themselves from --hour-height, but every card's top
+    // and min-height are inline pixels measured at render time — without this
+    // the cards keep the old density's geometry and drift off the hour lines.
+    renderCalendar();
   });
 
   document.getElementById('schOptWeekends')?.addEventListener('click', function () {
@@ -1585,7 +1589,7 @@ function renderTasks() {
       const colW = `(100% - 10px) / ${maxCol}`;
       const cardLeft = `calc(5px + ${columns[i]} * ${colW})`;
       const cardWidth = `calc(${colW})`;
-      el.style.cssText = `top:${top}px;min-height:${height}px;left:${cardLeft};width:${cardWidth}${zIdx}`;
+      el.style.cssText = `top:${top}px;height:${height}px;min-height:${height}px;left:${cardLeft};width:${cardWidth}${zIdx}`;
       el.dataset.restoreZ = restoreZ;
       const checked = task.completed ? ' checked' : '';
       const pCls = task.priority === 1 ? ' priority-1' : '';

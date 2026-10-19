@@ -1969,6 +1969,20 @@ html.dark .hour-slot .half-hour-line { border-bottom-color: color-mix(in srgb, v
   html.sch-density-compact { --hour-height: 44px; }
   html.sch-density-normal { --hour-height: 60px; }
   html.sch-density-roomy { --hour-height: 80px; }
+  /* Density has to reach the CARD, not only the row. At 44px/hour a 30-minute
+     slot is 22px while the normal card needs 33px, so it spilled over the next
+     hour line. Compact drops the meta row and notes and pins the title to one
+     line; Roomy spends the extra height on padding and a longer notes clamp. */
+  html.sch-density-compact .calendar-task { padding: 3px 8px; overflow: hidden; }
+  html.sch-density-compact .calendar-task .task-meta,
+  html.sch-density-compact .calendar-task .task-notes { display: none; }
+  html.sch-density-compact .calendar-task .task-title { white-space: nowrap; font-size: 0.68rem; line-height: 1.2; }
+  html.sch-density-compact .calendar-task .task-time { font-size: 0.5rem; max-width: 42%; }
+  html.sch-density-compact .calendar-task .task-check { width: 11px; height: 11px; }
+  html.sch-density-roomy .calendar-task:not(.task-xs) { padding: 9px 12px; }
+  html.sch-density-roomy .calendar-task:not(.task-xs):not(.task-sm) .task-title { font-size: 1rem; line-height: 1.35; }
+  html.sch-density-roomy .calendar-task:not(.task-xs):not(.task-sm) .task-meta { margin-top: 5px; padding-top: 6px; }
+  html.sch-density-roomy .calendar-task .task-notes { -webkit-line-clamp: 4; }
 }
 #bulkBar { display: none; align-items: center; gap: 8px; padding: 6px var(--space-5); background: var(--accent); color: var(--text-inverse); font-size: 0.72rem; font-weight: 600; flex-shrink: 0; }
 #bulkBar.show { display: flex; }
@@ -2179,6 +2193,12 @@ html.dark .current-time-line { opacity: 0.5; }
 .calendar-task.task-sm .task-notes {
   display: none;
 }
+/* A 30-minute card is only 22px tall in Compact, and the tag row wants 17px of
+   its own. That pushed the card past its slot — it grew to 49px and stopped
+   responding to the row height at all. Half-hour cards keep title + time. */
+.calendar-task.task-xs .task-meta {
+  display: none;
+}
 .calendar-task:not(.task-xs):not(.task-sm) .task-meta {
   border-top: 1px solid color-mix(in srgb, var(--task-accent) 22%, transparent);
   padding-top: 5px;
@@ -2186,6 +2206,12 @@ html.dark .current-time-line { opacity: 0.5; }
 }
 .calendar-task.task-xs { padding: 2px 8px; min-height: 22px; }
 .calendar-task.task-xs .task-title { font-size: 0.68rem; line-height: 1.2; }
+/* Half-hour cards are 22-40px tall. A wrapped title is exactly what used to push
+   them past their slot, so they get one line and an ellipsis. */
+.calendar-task.task-xs .task-title {
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .calendar-task.task-xs .task-time { font-size: 0.5rem; opacity: 0.6; }
 .calendar-task.task-xs .task-meta { gap: 3px; }
 .calendar-task.task-xs .task-tag-chip { font-size: 0.5rem; padding: 0 4px; }
@@ -6548,6 +6574,12 @@ div.bento-bubble select.bento-headlines-select:hover { opacity:1; background:var
 .w-st-leaf.w-st-dragging { opacity:0.4; }
 .w-st-leaf.w-st-drop-before { box-shadow:0 -2px 0 var(--primary); border-radius:6px; }
 .w-st-leaf.w-st-drop-after { box-shadow:0 2px 0 var(--primary); border-radius:6px; }
+.w-st-chap.w-st-dragging, .w-st-subj.w-st-dragging { opacity:0.4; }
+.w-st-chap.w-st-drop-before, .w-st-subj.w-st-drop-before { box-shadow:0 -2px 0 var(--primary); }
+.w-st-chap.w-st-drop-after, .w-st-subj.w-st-drop-after { box-shadow:0 2px 0 var(--primary); }
+.w-st-subj-head > .w-st-drag, .w-st-chap-head > .w-st-drag { margin-right:-2px; }
+html.hub-edit .w-st-subj-stats { display:none; }
+html.hub-edit .w-st-subj-name { flex:1 1 auto; }
 .w-st-done .w-item-text { text-decoration:line-through; opacity:0.6; }
 .w-st-add-inline { background:transparent; border:1px dashed var(--border-color); border-radius:6px; color:var(--text-tertiary); font-size:0.64rem; padding:3px 8px; cursor:pointer; text-align:left; transition:all 0.12s; }
 .w-st-add-inline:hover { border-color:var(--primary); color:var(--primary); background:var(--accent-soft); }
