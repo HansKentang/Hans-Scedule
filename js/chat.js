@@ -76,7 +76,7 @@ function getOrCreateConversation(friendId) {
 }
 
 // ─── SUBSCRIBE TO CONVERSATIONS (real-time list) ────────
-function subscribeToConversations() {
+function chatSubscribeToConversations() {
   var activeId = getActiveUserId();
   if (!activeId) return;
 
@@ -88,11 +88,11 @@ function subscribeToConversations() {
   var sb = getSupabaseDb();
   if (!sb) return;
 
-  loadConversations();
-  chatState.convUnsubscribe = sbWatch('conversations', function() { loadConversations(); });
+  chatLoadConversations();
+  chatState.convUnsubscribe = sbWatch('conversations', function() { chatLoadConversations(); });
 }
 
-function loadConversations() {
+function chatLoadConversations() {
   var sb = getSupabaseDb();
   var activeId = getActiveUserId();
   if (!sb || !activeId) return;
@@ -150,13 +150,17 @@ function loadMessages(conversationId) {
   var sb = getSupabaseDb();
   if (!sb || !conversationId) return;
 
+  /* Newest 200, then reversed for display. Ordering ascending and taking the
+     first 200 returns the OLDEST page, so past 200 messages a newly sent
+     message vanished on the next realtime reload — the thread stayed frozen
+     at its first 200 lines. */
   sb.from('messages').select('*').eq('conversation_id', conversationId)
-    .order('created_at', { ascending: true }).then(function(res) {
+    .order('created_at', { ascending: false }).limit(200).then(function(res) {
       if (res.error) {
         console.warn('[chat] messages load error:', res.error);
         return;
       }
-      chatState.messages = (res.data || []).map(function(r) {
+      chatState.messages = (res.data || []).slice().reverse().map(function(r) {
         return {
           id: r.id,
           data: {
@@ -174,6 +178,11 @@ function loadMessages(conversationId) {
 }
 
 // ─── SEND MESSAGE ─────────────────────────────────────────
+/* The input is cleared only on success. The previous version cleared it
+   synchronously, before the insert resolved, and the failure path only
+   console.warn'd — so a send that failed (offline, expired token, RLS) made the
+   message disappear with no error and no retry, and the user believed it was
+   sent. */
 function sendMessage(text) {
   var activeId = getActiveUserId();
   var convId = getConversationId();
@@ -190,6 +199,10 @@ function sendMessage(text) {
   var unread = Object.assign({}, (conv && conv.data.unreadCount) || {});
   unread[otherUserId] = (unread[otherUserId] || 0) + 1;
 
+  var input = document.getElementById('chatMsgInput');
+  var sending = document.getElementById('chatSendBtn');
+  if (sending) sending.disabled = true;
+
   sb.from('messages').insert({
     conversation_id: convId,
     sender_id: activeId,
@@ -197,24 +210,25 @@ function sendMessage(text) {
     read_by: [activeId],
     created_at: now
   }).then(function(res) {
-    if (res.error) {
-      console.warn('[chat] send message error:', res.error);
-      return;
-    }
+    if (res.error) throw res.error;
     return sb.from('conversations').update({
       last_message: { text: trimmed, from: activeId, timestamp: now },
       updated_at: now,
       unread_count: unread
     }).eq('id', convId);
+  }).then(function(res) {
+    if (res && res.error) throw res.error;
+    if (input) { input.value = ''; input.style.height = 'auto'; }
   }).catch(function(err) {
     console.warn('[chat] send message error:', err);
+    if (typeof showToast === 'function') {
+      showToast('Message not sent — check your connection, then press send again', 'error', 3500);
+    }
+    /* Keep the text in the box so the user can retry without retyping. */
+    if (input) input.focus();
+  }).then(function() {
+    if (sending) sending.disabled = false;
   });
-
-  var input = document.getElementById('chatMsgInput');
-  if (input) {
-    input.value = '';
-    input.style.height = 'auto';
-  }
 }
 
 // ─── MARK CONVERSATION AS READ ────────────────────────────
@@ -258,21 +272,13 @@ function getTotalUnreadCount() {
 }
 
 // ─── UPDATE UNREAD BADGE ──────────────────────────────────
+/* The badge and the tab title are owned by ChatBadge (js/chat-badge.js),
+   which computes the total itself and is the only thing that owns the base
+   title. This wrapper exists so previous call sites keep working; it used to
+   duplicate the same logic here — minus the branch that restores the base
+   title at zero, which is why a read thread left a stale "(3)" on the tab. */
 function updateUnreadBadge() {
-  var total = getTotalUnreadCount();
-  var badge = document.getElementById('chatUnreadBadge');
-  if (!badge) return;
-  if (total > 0) {
-    badge.textContent = total > 99 ? '99+' : total;
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
-  }
-
-  var baseTitle = document.title.replace(/^\(\d+\)\s*/, '');
-  if (total > 0) {
-    document.title = '(' + total + ') ' + baseTitle;
-  }
+  if (window.chatBadgeRefresh) window.chatBadgeRefresh();
 }
 
 // ─── OPEN CHAT PANEL ──────────────────────────────────────
@@ -637,24 +643,26 @@ function checkNewUnreadMessages(convs, activeId) {
     if (currentUnread > prevUnread) {
       var lastMsg = conv.data.lastMessage;
       if (lastMsg && lastMsg.from !== activeId) {
-        fetchUserName(lastMsg.from, function(senderName) {
-          var body = lastMsg.text || 'New message';
-          var truncatedBody = body.length > 100 ? body.slice(0, 97) + '...' : body;
-          _sendNotification(
-            senderName,
-            truncatedBody,
-            {
-              tag: 'chat-' + conv.id,
-              onClick: function() {
-                window.focus();
-                var otherId = conv.data.participants.find(function(p) { return p !== activeId; });
-                if (otherId && typeof openChatPanel === 'function') {
-                  openChatPanel(otherId, senderName);
+        (function(convId, participants, lastMsgFrom, lastMsgText) {
+          fetchUserName(lastMsgFrom, function(senderName) {
+            var body = lastMsgText || 'New message';
+            var truncatedBody = body.length > 100 ? body.slice(0, 97) + '...' : body;
+            _sendNotification(
+              senderName,
+              truncatedBody,
+              {
+                tag: 'chat-' + convId,
+                onClick: function() {
+                  window.focus();
+                  var otherId = participants.find(function(p) { return p !== activeId; });
+                  if (otherId && typeof openChatPanel === 'function') {
+                    openChatPanel(otherId, senderName);
+                  }
                 }
               }
-            }
-          );
-        });
+            );
+          });
+        })(conv.id, conv.data.participants, lastMsg.from, lastMsg.text);
       }
     }
 
@@ -667,7 +675,7 @@ function initChat() {
   var activeId = getActiveUserId();
   if (!activeId) return;
 
-  subscribeToConversations();
+  chatSubscribeToConversations();
   setupChatPanel();
 
   if (typeof requestNotifPermission === 'function') {
