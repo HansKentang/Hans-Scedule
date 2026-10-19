@@ -292,26 +292,50 @@ function premiumCheckout(planId) {
     return Promise.resolve(null);
   }
 
-  if (PREMIUM_CONFIG.provider === 'mock') return premiumMockCheckout(plan);
-
   _premiumBusy = true;
   premiumSetButtonState(true, 'Opening checkout...');
 
-  return fetch(premiumBillingUrl('/checkout'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      user_id: premiumUserId(),
-      plan: plan.id,
-      interval: plan.interval,
-      provider: PREMIUM_CONFIG.provider,
-      price_id: (plan.priceId && plan.priceId[PREMIUM_CONFIG.provider]) || '',
-      return_url: location.origin + '/' + PREMIUM_CONFIG.returnUrl
-    })
-  }).then(function(r) { return r.json(); }).then(function(data) {
+  /* The Edge Function derives the user from the bearer token and rejects a
+     body-only user id with 401. The old client-side mock insert is gone too:
+     the go-live lock-down drops the mock write policies, so it could only ever
+     fail. Every provider — mock included — now goes through the function. */
+  if (typeof sbAuthHeaders !== 'function') {
     _premiumBusy = false;
     premiumSetButtonState(false);
-    if (data && data.url) { location.href = data.url; return data; }
+    showToast('Billing is unavailable right now', 'error');
+    return Promise.resolve(null);
+  }
+
+  return sbAuthHeaders().then(function(headers) {
+    if (!headers) {
+      _premiumBusy = false;
+      premiumSetButtonState(false);
+      showToast('Sign in again to upgrade', 'error');
+      return null;
+    }
+    return fetch(premiumBillingUrl('/checkout'), {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        plan: plan.id,
+        interval: plan.interval,
+        provider: PREMIUM_CONFIG.provider,
+        price_id: (plan.priceId && plan.priceId[PREMIUM_CONFIG.provider]) || '',
+        return_url: location.origin + '/' + PREMIUM_CONFIG.returnUrl
+      })
+    });
+  }).then(function(r) {
+    return r ? r.json() : null;
+  }).then(function(data) {
+    _premiumBusy = false;
+    premiumSetButtonState(false);
+    if (data && data.url) {
+      /* The mock adapter has no external page; it returns the app's own
+         return URL. Reloading there re-runs premiumRefresh() and picks up the
+         grant the function wrote when ALLOW_MOCK_GRANTS is on. */
+      location.href = data.url;
+      return data;
+    }
     showToast((data && data.error) || 'Could not start checkout', 'error');
     return null;
   }).catch(function() {
@@ -322,110 +346,64 @@ function premiumCheckout(planId) {
   });
 }
 
-/* Mock adapter — completes the purchase in the browser so the whole flow can be
-   tested before a Paddle/Dodo account exists. Writes a real subscriptions row,
-   so the entitlement behaves exactly like a live one. */
-function premiumMockCheckout(plan) {
-  var sb = typeof getSupabaseDb === 'function' ? getSupabaseDb() : null;
-  if (!sb) { showToast('Database not configured', 'error'); return Promise.resolve(null); }
-
-  var uid = premiumUserId();
-  var now = new Date();
-  var end = new Date(now.getTime());
-  if (plan.interval === 'year') end.setFullYear(end.getFullYear() + 1);
-  else end.setMonth(end.getMonth() + 1);
-
-  var regionPrice = plan.prices[premiumRegion()] || plan.prices.DEFAULT;
-
-  _premiumBusy = true;
-  premiumSetButtonState(true, 'Processing (test mode)...');
-
-  var subRow = {
-    user_id: uid,
-    provider: 'mock',
-    plan: plan.id,
-    interval: plan.interval,
-    status: 'active',
-    price_id: 'mock_' + plan.id,
-    currency: regionPrice.currency,
-    amount_cents: regionPrice.amount,
-    provider_subscription_id: 'mock_sub_' + uid + '_' + Date.now(),
-    current_period_start: now.toISOString(),
-    current_period_end: end.toISOString()
-  };
-  var ordRow = {
-    user_id: uid,
-    provider: 'mock',
-    plan: plan.id,
-    status: 'paid',
-    currency: regionPrice.currency,
-    amount_cents: regionPrice.amount,
-    provider_order_id: 'mock_order_' + uid + '_' + Date.now()
-  };
-  try {
-    var au = null;
-    if (typeof cloudActiveUser === 'function') au = cloudActiveUser();
-    else if (typeof localUsers !== 'undefined') {
-      for (var i = 0; i < localUsers.length; i++) {
-        if (localUsers[i] && localUsers[i].id === uid && localUsers[i].authUid) { au = localUsers[i]; break; }
-      }
-    }
-    if (au && au.authUid) { subRow.auth_uid = au.authUid; ordRow.auth_uid = au.authUid; }
-  } catch (e) {}
-  return sb.from('subscriptions').insert(subRow).then(function(res) {
-    _premiumBusy = false;
-    premiumSetButtonState(false);
-    if (res.error) { showToast('Test checkout failed: ' + res.error.message, 'error'); return null; }
-    return sb.from('orders').insert(ordRow).then(function() {
-      return premiumRefresh().then(function() {
-        premiumSheetSetView('success', {
-          mode: 'activated',
-          planLabel: plan.label + ' plan',
-          price: premiumPriceLabel(plan.id, premiumRegion()) + ' per ' + (plan.interval === 'year' ? 'year' : 'month'),
-          until: premiumUntilLabel()
-        });
-        showToast('Test mode: ' + plan.label + ' plan activated — no charge was made', 'success', 3200);
-        return getPremium();
-      });
-    });
-  }).catch(function(e) {
-    _premiumBusy = false;
-    premiumSetButtonState(false);
-    showToast('Test checkout failed', 'error');
-    return null;
-  });
-}
+/* The client-side mock adapter has been removed. It inserted a `subscriptions`
+   row straight from the browser, which meant anyone who could edit their own
+   JS could grant themselves Premium — and after the go-live lock-down drops
+   the mock write policies, it could not work anyway. The billing Edge
+   Function's mock adapter is the only grant path now; it is opt-in via
+   ALLOW_MOCK_GRANTS and can only ever write for the authenticated caller. */
 
 function premiumPortal() {
   if (!isPremium()) { openPremiumSheet(); return Promise.resolve(null); }
   if (PREMIUM_CONFIG.provider === 'mock') {
-    showToast('Test mode: no billing portal. Use Manage plan to cancel.', 'info', 3000);
+    showToast('Test mode: no billing portal. Use Cancel plan to stop it.', 'info', 3000);
     return Promise.resolve(null);
   }
-  return fetch(premiumBillingUrl('/portal'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: premiumUserId(), return_url: location.origin + '/' + PREMIUM_CONFIG.returnUrl })
-  }).then(function(r) { return r.json(); }).then(function(data) {
+  if (typeof sbAuthHeaders !== 'function') {
+    showToast('Billing is unavailable right now', 'error');
+    return Promise.resolve(null);
+  }
+  return sbAuthHeaders().then(function(headers) {
+    if (!headers) { showToast('Sign in again to manage billing', 'error'); return null; }
+    return fetch(premiumBillingUrl('/portal'), {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ return_url: location.origin + '/' + PREMIUM_CONFIG.returnUrl })
+    });
+  }).then(function(r) {
+    return r ? r.json() : null;
+  }).then(function(data) {
     if (data && data.url) { location.href = data.url; return data; }
     showToast((data && data.error) || 'Could not open billing portal', 'error');
     return null;
   }).catch(function() { showToast('Could not reach billing', 'error'); return null; });
 }
 
-function premiumCancel(planId) {
-  var sb = typeof getSupabaseDb === 'function' ? getSupabaseDb() : null;
-  var uid = premiumUserId();
-  if (!sb || !uid) return Promise.resolve(null);
-  return sb.from('subscriptions')
-    .update({ status: 'canceled', cancel_at_period_end: true, canceled_at: new Date().toISOString() })
-    .eq('user_id', uid)
-    .eq('status', 'active')
-    .then(function(res) {
-      if (res.error) { showToast('Could not cancel: ' + res.error.message, 'error'); return null; }
-      showToast('Premium canceled — active until the end of the period', 'info', 3500);
-      return premiumRefresh();
+function premiumCancel() {
+  if (!premiumUserId()) return Promise.resolve(null);
+  /* Cancelling is a server-side write now: the lock-down drops the client
+     UPDATE policy on `subscriptions`, so the old .update() could only fail. */
+  if (typeof sbAuthHeaders !== 'function') {
+    showToast('Billing is unavailable right now', 'error');
+    return Promise.resolve(null);
+  }
+  return sbAuthHeaders().then(function(headers) {
+    if (!headers) { showToast('Sign in again to cancel', 'error'); return null; }
+    return fetch(premiumBillingUrl('/cancel'), {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({})
     });
+  }).then(function(r) {
+    return r ? r.json() : null;
+  }).then(function(data) {
+    if (data && data.error) { showToast('Could not cancel: ' + data.error, 'error'); return null; }
+    showToast('Premium canceled — active until the end of the period', 'info', 3500);
+    return premiumRefresh();
+  }).catch(function() {
+    showToast('Could not reach billing', 'error');
+    return null;
+  });
 }
 
 /* ─── Formatting helpers ─────────────────────────────────── */
@@ -922,18 +900,11 @@ function renderPremiumPage() {
 window.__premium = {
   refresh: premiumRefresh,
   status: getPremium,
-  activate: function(planId) { return premiumMockCheckout(premiumPlan(planId || 'yearly')); },
+  activate: function(planId) { return premiumCheckout(planId || 'yearly'); },
   cancel: premiumCancel,
   reset: function() {
-    var sb = typeof getSupabaseDb === 'function' ? getSupabaseDb() : null;
-    var uid = premiumUserId();
-    if (!sb || !uid) return Promise.resolve();
-    return sb.from('subscriptions').delete().eq('user_id', uid).then(function() {
-      _premium = { premium: false, plan: null, interval: null, status: null, provider: null, until: null, cancel_at_period_end: false, checkedAt: Date.now() };
-      premiumSaveCache();
-      renderPremiumState();
-      showToast('Premium reset to free', 'info');
-    });
+    showToast('Delete the subscriptions row in the Supabase dashboard to reset', 'info', 4000);
+    return Promise.resolve();
   },
   open: function() { openPremiumSheet(); }
 };

@@ -4,13 +4,20 @@
    that holds provider secrets, so the browser never sees them.
 
    Routes:
-     GET  /health    → which provider is configured
-     POST /checkout  → { user_id, plan, interval, price_id, return_url } → { url }
-     POST /portal    → { user_id, return_url } → { url }
+     GET  /health                            → { provider }  (unauthenticated)
+     POST /checkout  → { plan, interval, price_id, return_url } → { url }
+     POST /portal    → { return_url } → { url }
+     POST /cancel    → marks the caller's active subscription canceled
      POST /webhook?provider=paddle|dodo → verifies signature, grants/updates premium
 
-   Deploy (webhooks need JWT verification off, because providers cannot send a
-   Supabase JWT):
+   Authentication: /checkout and /portal require the caller's own Supabase
+   access token as `Authorization: Bearer <token>`. The user's id is taken
+   from that verified token and is never read from the request body. The
+   /webhook route is the exception — providers cannot send a Supabase JWT, so
+   the function is deployed `--no-verify-jwt` and webhooks are authenticated
+   by HMAC signature instead.
+
+   Deploy (JWT verification stays off so the webhook route works):
 
      supabase functions deploy billing --no-verify-jwt
 
@@ -19,10 +26,14 @@
      supabase secrets set \
        PAYMENT_PROVIDER=paddle \
        APP_URL=https://your-app-url \
+       SUPABASE_ANON_KEY=eyJ... \
        PADDLE_ENVIRONMENT=sandbox \
        PADDLE_API_KEY=... PADDLE_WEBHOOK_SECRET=... \
        PADDLE_PRICE_MONTHLY=pri_... PADDLE_PRICE_YEARLY=pri_... \
        SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...
+
+   Local testing with the mock adapter additionally requires
+   ALLOW_MOCK_GRANTS=true, and can only ever grant to the caller's own id.
 */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -48,30 +59,77 @@ function adminClient() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
+/* ─── Caller authentication ────────────────────────────────
+   The webhook route is called by payment providers, which cannot send a
+   Supabase JWT, so the function is deployed with `--no-verify-jwt` and the
+   gateway does no auth work for us. Every user-facing route must therefore
+   verify the bearer token itself, and must derive the user's identity from
+   that verified token and never from the request body — otherwise anyone
+   could act on any other account. */
+
+function bearerToken(req: Request): string | null {
+  const h = req.headers.get('authorization') ?? '';
+  const m = /^Bearer\s+(.+)$/i.exec(h.trim());
+  return m && m[1] ? m[1].trim() : null;
+}
+
+async function requireUser(req: Request): Promise<string> {
+  const token = bearerToken(req);
+  if (!token) throw new Unauthorized('Missing bearer token');
+
+  const url = Deno.env.get('SUPABASE_URL') ?? '';
+  const key = Deno.env.get('SUPABASE_ANON_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  if (!url || !key) throw new Error('SUPABASE_URL / SUPABASE_ANON_KEY not set');
+
+  const anon = createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false }
+  });
+  const { data, error } = await anon.auth.getUser(token);
+  if (error || !data?.user?.id) throw new Unauthorized('Invalid or expired token');
+  return data.user.id;
+}
+
+class Unauthorized extends Error {}
+
 /* ─── Checkout ───────────────────────────────────────────── */
 
 async function handleCheckout(req: Request): Promise<Response> {
+  let userId: string;
+  try {
+    userId = await requireUser(req);
+  } catch (e) {
+    if (e instanceof Unauthorized) return json({ error: e.message }, 401);
+    return json({ error: e instanceof Error ? e.message : 'Auth unavailable' }, 500);
+  }
+
   const body = await req.json().catch(() => ({}));
-  const { user_id, plan, interval, price_id, return_url } = body ?? {};
-  if (!user_id || !plan) return json({ error: 'user_id and plan are required' }, 400);
+  const { plan, interval, price_id, return_url } = body ?? {};
+  if (!plan) return json({ error: 'plan is required' }, 400);
 
   const appUrl = (Deno.env.get('APP_URL') ?? '').replace(/\/+$/, '');
   const returnUrl = return_url || `${appUrl}/premium.html`;
 
   try {
     const adapter = getAdapter();
-    const result = await adapter.createCheckout({ userId: user_id, plan, interval: interval || 'year', priceId: price_id, returnUrl: returnUrl });
+    /* Keep the adapter's URL. Paddle and Dodo return their hosted checkout
+       page here; returning `returnUrl` instead would bounce the user straight
+       back to premium.html without ever reaching a payment form. The mock
+       adapter returns the app's own URL, so this works for all three. */
+    const result = await adapter.createCheckout({ userId, plan, interval: interval || 'year', priceId: price_id, returnUrl: returnUrl });
 
-    /* Mock has no external page — grant immediately so the deployed function is
-       testable end to end. Remove this branch when going live. */
-    if (adapter.name === 'mock') {
+    /* The mock adapter has no external checkout page. It used to grant an
+       active subscription immediately so the deployed function could be
+       tested end to end — with an unverified request body that was an open
+       entitlement bypass. Grants are now opt-in per environment, and can
+       only ever be written for the authenticated caller's own account. */
+    if (adapter.name === 'mock' && Deno.env.get('ALLOW_MOCK_GRANTS') === 'true') {
       const db = adminClient();
       const end = new Date();
       if (interval === 'month') end.setMonth(end.getMonth() + 1);
       else end.setFullYear(end.getFullYear() + 1);
 
-      await db.from('subscriptions').insert({
-        user_id,
+      const { error: insertErr } = await db.from('subscriptions').insert({
+        user_id: userId,
         provider: 'mock',
         plan,
         interval: interval || 'year',
@@ -79,10 +137,11 @@ async function handleCheckout(req: Request): Promise<Response> {
         price_id: 'mock_' + plan,
         currency: 'USD',
         amount_cents: 0,
-        provider_subscription_id: `mock_sub_${user_id}_${Date.now()}`,
+        provider_subscription_id: `mock_sub_${userId}_${Date.now()}`,
         current_period_start: new Date().toISOString(),
         current_period_end: end.toISOString()
       });
+      if (insertErr) return json({ error: insertErr.message }, 500);
     }
 
     return json({ url: result.url, id: result.id ?? null });
@@ -94,15 +153,22 @@ async function handleCheckout(req: Request): Promise<Response> {
 /* ─── Customer portal ────────────────────────────────────── */
 
 async function handlePortal(req: Request): Promise<Response> {
+  let userId: string;
+  try {
+    userId = await requireUser(req);
+  } catch (e) {
+    if (e instanceof Unauthorized) return json({ error: e.message }, 401);
+    return json({ error: e instanceof Error ? e.message : 'Auth unavailable' }, 500);
+  }
+
   const body = await req.json().catch(() => ({}));
-  const { user_id, return_url } = body ?? {};
-  if (!user_id) return json({ error: 'user_id is required' }, 400);
+  const { return_url } = body ?? {};
 
   const db = adminClient();
   const { data: sub } = await db
     .from('subscriptions')
     .select('provider_customer_id')
-    .eq('user_id', user_id)
+    .eq('user_id', userId)
     .not('provider_customer_id', 'is', null)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -111,7 +177,7 @@ async function handlePortal(req: Request): Promise<Response> {
   try {
     const adapter = getAdapter();
     const result = await adapter.createPortal({
-      userId: user_id,
+      userId,
       customerId: sub?.provider_customer_id ?? null,
       returnUrl: return_url || `${(Deno.env.get('APP_URL') ?? '').replace(/\/+$/, '')}/premium.html`
     });
@@ -119,6 +185,37 @@ async function handlePortal(req: Request): Promise<Response> {
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : 'Portal failed' }, 502);
   }
+}
+
+/* ─── Cancel ─────────────────────────────────────────────── */
+
+/* Cancelling used to be a client-side UPDATE on `subscriptions`. The go-live
+   lock-down drops the mock update policy, so that write is now rejected for
+   every account. Move it here, where the service role can apply it to the
+   authenticated caller's own row only. */
+async function handleCancel(req: Request): Promise<Response> {
+  let userId: string;
+  try {
+    userId = await requireUser(req);
+  } catch (e) {
+    if (e instanceof Unauthorized) return json({ error: e.message }, 401);
+    return json({ error: e instanceof Error ? e.message : 'Auth unavailable' }, 500);
+  }
+
+  const db = adminClient();
+  const { error } = await db
+    .from('subscriptions')
+    .update({
+      status: 'canceled',
+      cancel_at_period_end: true,
+      canceled_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    })
+    .eq('user_id', userId)
+    .eq('status', 'active');
+
+  if (error) return json({ error: error.message }, 500);
+  return json({ ok: true });
 }
 
 /* ─── Webhook ────────────────────────────────────────────── */
@@ -242,6 +339,7 @@ Deno.serve(async (req: Request) => {
     }
     if (route === 'checkout' && req.method === 'POST') return await handleCheckout(req);
     if (route === 'portal' && req.method === 'POST') return await handlePortal(req);
+    if (route === 'cancel' && req.method === 'POST') return await handleCancel(req);
     if (route === 'webhook' && req.method === 'POST') return await handleWebhook(req);
     return json({ error: 'Not found', route }, 404);
   } catch (e) {
