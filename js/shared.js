@@ -2120,7 +2120,8 @@ var HAVEN_STATE_LOADED = false;
 function havenFlushAccountData() {
   try { if (HAVEN_STATE_LOADED && typeof saveState === 'function') saveState(); } catch (e) { /* ignore */ }
   try { if (typeof saveHubContent === 'function') saveHubContent(); } catch (e) { /* ignore */ }
-  try { if (typeof cloudFlush === 'function') cloudFlush(); } catch (e) { /* ignore */ }
+  try { if (typeof cloudFlush === 'function') return cloudFlush(); } catch (e) { /* ignore */ }
+  return null;
 }
 
 function havenBlockUnloadSaves() {
@@ -2128,8 +2129,9 @@ function havenBlockUnloadSaves() {
 }
 
 function havenBeginAccountSwitch() {
-  havenFlushAccountData();
+  var flushed = havenFlushAccountData();
   HAVEN_UNLOAD_BLOCKED = true;
+  return flushed;
 }
 
 // Safe localStorage write with auto-cleanup on quota exceeded.

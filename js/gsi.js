@@ -1050,12 +1050,21 @@ function switchAccount(id) {
     showToast('Could not switch to ' + user.name + ' — browser storage is full.', 'error', 4000);
     return;
   }
-  havenBeginAccountSwitch();
+  var flushed = havenBeginAccountSwitch();
   if (typeof state !== 'undefined') state.currentUserId = id;
   _leaveGuestSession(user);
   renderAuthUI();
   showToast('Switched to ' + user.name, 'info', 1500);
-  location.reload();
+  /* Wait for the final cloud push. location.reload() aborts in-flight
+     requests, so navigating immediately could drop the last few seconds of
+     edits. Cap the wait so an offline device still switches. */
+  var go = function() { location.reload(); };
+  if (flushed && typeof flushed.then === 'function') {
+    flushed.then(go, go);
+    setTimeout(go, 3000);
+  } else {
+    go();
+  }
 }
 
 // Ends the session only. The profile and every key under its prefix stay on the
@@ -1066,18 +1075,28 @@ function signOutKeepProfile() {
   if (!id) { location.href = 'login.html'; return; }
   try { sessionStorage.removeItem('haven-guest'); } catch (e) {}
   try { sessionStorage.removeItem(OAUTH_INTENT_KEY); } catch (e) {}
-  havenBeginAccountSwitch();
+  var flushed = havenBeginAccountSwitch();
   setActiveUserId(null);
   if (typeof state !== 'undefined') state.currentUserId = null;
   renderAuthUI();
   var once = false;
   var go = function() { if (once) return; once = true; location.href = 'login.html'; };
-  try {
-    var p = supabaseSignOut();
-    if (p && typeof p.then === 'function') p.then(go, go);
-    else go();
-  } catch (e) { go(); }
-  setTimeout(go, 1500);
+  var signOut = function() {
+    try {
+      var p = supabaseSignOut();
+      if (p && typeof p.then === 'function') p.then(go, go);
+      else go();
+    } catch (e) { go(); }
+    setTimeout(go, 1500);
+  };
+  /* Push before signing out: the upsert needs the session token that
+     supabaseSignOut() is about to revoke. */
+  if (flushed && typeof flushed.then === 'function') {
+    flushed.then(signOut, signOut);
+    setTimeout(signOut, 3000);
+  } else {
+    signOut();
+  }
 }
 
 function removeProfile(id) {
@@ -1272,7 +1291,7 @@ function initGSI() {
   }
 
   if (!activeId && !isGuestMode()) {
-    location.href = 'login.html';
+    location.href = location.pathname.indexOf('index.html') !== -1 ? 'landing.html' : 'login.html';
     return;
   }
 
@@ -1682,7 +1701,9 @@ function renderAccountSettings(el) {
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'haven-data-' + new Date().toISOString().slice(0, 10) + '.json';
+    var _expD = new Date();
+    var _expKey = _expD.getFullYear() + '-' + String(_expD.getMonth() + 1).padStart(2, '0') + '-' + String(_expD.getDate()).padStart(2, '0');
+    a.download = 'haven-data-' + _expKey + '.json';
     a.click();
     URL.revokeObjectURL(a.href);
     if (typeof showToast === 'function') showToast('Data exported');
