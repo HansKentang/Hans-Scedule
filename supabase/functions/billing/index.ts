@@ -59,6 +59,25 @@ function adminClient() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
+/* subscriptions.user_id / orders.user_id hold the app's profile id (a random
+   string), while the JWT identifies the Supabase auth uid (a uuid). The
+   entitlement check (premium_status) reads by profile id, so every billing
+   write has to translate. Accept either value so webhooks created before this
+   translation existed still resolve. */
+async function resolveProfileId(db: ReturnType<typeof adminClient>, idOrAuthUid: string): Promise<string> {
+  const { data: byId } = await db.from('profiles').select('id').eq('id', idOrAuthUid).maybeSingle();
+  if (byId?.id) return byId.id;
+  const { data: byAuth } = await db.from('profiles').select('id').eq('auth_uid', idOrAuthUid).maybeSingle();
+  return byAuth?.id || idOrAuthUid;
+}
+
+/* The RLS read policy is `auth_uid = auth.uid()`, so rows written with the
+   service role must carry the auth uid explicitly — auth.uid() is null there. */
+async function authUidForProfile(db: ReturnType<typeof adminClient>, profileId: string): Promise<string | null> {
+  const { data } = await db.from('profiles').select('auth_uid').eq('id', profileId).maybeSingle();
+  return data?.auth_uid ?? null;
+}
+
 /* ─── Caller authentication ────────────────────────────────
    The webhook route is called by payment providers, which cannot send a
    Supabase JWT, so the function is deployed with `--no-verify-jwt` and the
@@ -110,12 +129,15 @@ async function handleCheckout(req: Request): Promise<Response> {
   const returnUrl = return_url || `${appUrl}/premium.html`;
 
   try {
+    const db = adminClient();
+    const profileId = await resolveProfileId(db, userId);
+    const authUid = await authUidForProfile(db, profileId);
     const adapter = getAdapter();
     /* Keep the adapter's URL. Paddle and Dodo return their hosted checkout
        page here; returning `returnUrl` instead would bounce the user straight
        back to premium.html without ever reaching a payment form. The mock
        adapter returns the app's own URL, so this works for all three. */
-    const result = await adapter.createCheckout({ userId, plan, interval: interval || 'year', priceId: price_id, returnUrl: returnUrl });
+    const result = await adapter.createCheckout({ userId: profileId, plan, interval: interval || 'year', priceId: price_id, returnUrl: returnUrl });
 
     /* The mock adapter has no external checkout page. It used to grant an
        active subscription immediately so the deployed function could be
@@ -123,13 +145,13 @@ async function handleCheckout(req: Request): Promise<Response> {
        entitlement bypass. Grants are now opt-in per environment, and can
        only ever be written for the authenticated caller's own account. */
     if (adapter.name === 'mock' && Deno.env.get('ALLOW_MOCK_GRANTS') === 'true') {
-      const db = adminClient();
       const end = new Date();
       if (interval === 'month') end.setMonth(end.getMonth() + 1);
       else end.setFullYear(end.getFullYear() + 1);
 
       const { error: insertErr } = await db.from('subscriptions').insert({
-        user_id: userId,
+        user_id: profileId,
+        auth_uid: authUid,
         provider: 'mock',
         plan,
         interval: interval || 'year',
@@ -137,7 +159,7 @@ async function handleCheckout(req: Request): Promise<Response> {
         price_id: 'mock_' + plan,
         currency: 'USD',
         amount_cents: 0,
-        provider_subscription_id: `mock_sub_${userId}_${Date.now()}`,
+        provider_subscription_id: `mock_sub_${profileId}_${Date.now()}`,
         current_period_start: new Date().toISOString(),
         current_period_end: end.toISOString()
       });
@@ -165,10 +187,11 @@ async function handlePortal(req: Request): Promise<Response> {
   const { return_url } = body ?? {};
 
   const db = adminClient();
+  const profileId = await resolveProfileId(db, userId);
   const { data: sub } = await db
     .from('subscriptions')
     .select('provider_customer_id')
-    .eq('user_id', userId)
+    .eq('user_id', profileId)
     .not('provider_customer_id', 'is', null)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -177,7 +200,7 @@ async function handlePortal(req: Request): Promise<Response> {
   try {
     const adapter = getAdapter();
     const result = await adapter.createPortal({
-      userId,
+      userId: profileId,
       customerId: sub?.provider_customer_id ?? null,
       returnUrl: return_url || `${(Deno.env.get('APP_URL') ?? '').replace(/\/+$/, '')}/premium.html`
     });
@@ -203,6 +226,7 @@ async function handleCancel(req: Request): Promise<Response> {
   }
 
   const db = adminClient();
+  const profileId = await resolveProfileId(db, userId);
   const { error } = await db
     .from('subscriptions')
     .update({
@@ -211,7 +235,7 @@ async function handleCancel(req: Request): Promise<Response> {
       canceled_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
-    .eq('user_id', userId)
+    .eq('user_id', profileId)
     .eq('status', 'active');
 
   if (error) return json({ error: error.message }, 500);
@@ -259,11 +283,17 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
   if (!userId) return json({ ok: true, skipped: 'unknown user' });
 
+  /* Normalise to the profile id the entitlement check reads, and carry the
+     auth uid so the owner-read RLS policy can see the row. */
+  userId = await resolveProfileId(db, userId);
+  const authUid = await authUidForProfile(db, userId);
+
   const isPayment = /payment|transaction/.test(event.type) && /active|completed|paid|succeeded|billed/.test((event.status || '').toLowerCase());
   const status = normalizeStatus(event.status, event.type);
 
   const payload = {
     user_id: userId,
+    auth_uid: authUid,
     provider: adapter.name,
     plan: event.plan ?? 'yearly',
     interval: event.interval ?? 'year',
