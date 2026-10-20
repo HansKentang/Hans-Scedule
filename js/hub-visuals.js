@@ -992,17 +992,23 @@ function pushUndoState() {
 }
 function undoCanvas() {
   if (!_undoStack.length) return;
+  var raw;
+  /* A corrupt entry used to throw here and take the whole canvas down with it.
+     Drop the bad snapshot and let the next undo try again. */
+  try { raw = JSON.parse(_undoStack.pop()); } catch (e) { return; }
   _redoStack.push(JSON.stringify(hubContent.bentoLayout));
-  hubContent.bentoLayout = normalizeBentoLayout(JSON.parse(_undoStack.pop()), hubContent);
+  hubContent.bentoLayout = normalizeBentoLayout(raw, hubContent);
   saveHubContent();
   renderHubBento();
   updateUndoButtons();
 }
 function redoCanvas() {
   if (!_redoStack.length) return;
+  var raw;
+  try { raw = JSON.parse(_redoStack.pop()); } catch (e) { return; }
   _undoStack.push(JSON.stringify(hubContent.bentoLayout));
   if (_undoStack.length > BENTO_UNDO_MAX) _undoStack.shift();
-  hubContent.bentoLayout = normalizeBentoLayout(JSON.parse(_redoStack.pop()), hubContent);
+  hubContent.bentoLayout = normalizeBentoLayout(raw, hubContent);
   saveHubContent();
   renderHubBento();
   updateUndoButtons();
