@@ -269,9 +269,10 @@ function premiumStart() {
   premiumLoadCache();
   renderPremiumState();
   premiumInjectNav();
-  premiumRefresh();
   premiumWatch();
   if (document.getElementById('premiumPageRoot')) renderPremiumPage();
+  /* One refresh, not two: the old code fired one here and returned a second
+     identical premium_status RPC on every page load. */
   return premiumRefresh();
 }
 
