@@ -32,7 +32,9 @@ var CLOUD_DEVICE_KEYS = [
   'haven-schedule-apikey',
   'haven-schedule-chat',
   'haven-guest-default-template',
-  'haven-gsi-migrated'
+  'haven-gsi-migrated',
+  /* Pasted third-party API keys: device-only, like the AI key above. */
+  'haven-freesound-token'
 ];
 
 function cloudActiveUser() {

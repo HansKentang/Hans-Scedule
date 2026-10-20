@@ -21,7 +21,9 @@ var CLOUD_EXCLUDED_KEYS = [
   'haven-schedule-chat',
   'haven-admin-password',
   'haven-admin-presets',
-  'haven-guest-default-template'
+  'haven-guest-default-template',
+  /* Pasted third-party API key: device-only, like the AI key above. */
+  'haven-freesound-token'
 ];
 
 function initSync() {
