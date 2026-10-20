@@ -187,9 +187,9 @@ function cloudSchedulePush(delay) {
 
 function cloudPushNow() {
   var uid = cloudUid();
-  if (!CLOUD_MODE || !CLOUD_HYDRATED || !uid) return false;
+  if (!CLOUD_MODE || !CLOUD_HYDRATED || !uid) return Promise.resolve(false);
   var sb = getSupabaseDb();
-  if (!sb) return false;
+  if (!sb) return Promise.resolve(false);
 
   var data = { _syncedAt: Date.now(), _version: 1 };
   for (var k in CLOUD_MEM) {
@@ -213,25 +213,44 @@ function cloudPushNow() {
 
   CLOUD_PUSHING = true;
   cloudSetSyncStatus('syncing');
-  sb.from(CLOUD_TABLE).upsert(row, { onConflict: 'user_id' }).then(function(res) {
+  var attempt = (typeof CLOUD_PUSH_ATTEMPT === 'number') ? CLOUD_PUSH_ATTEMPT : 0;
+  CLOUD_PUSH_ATTEMPT = attempt + 1;
+  /* Return the promise: account switch and sign-out must be able to wait for
+     this write before they navigate away, otherwise the reload aborts the
+     in-flight upsert and the last few seconds of edits are lost. */
+  return sb.from(CLOUD_TABLE).upsert(row, { onConflict: 'user_id' }).then(function(res) {
     CLOUD_PUSHING = false;
     if (res && res.error) {
-      console.warn('[cloud] push failed:', res.error);
+      console.warn('[cloud] push failed (attempt ' + attempt + '):', res.error);
       cloudSetSyncStatus('error');
-      return;
+      cloudPushRetry();
+      return false;
     }
+    CLOUD_PUSH_ATTEMPT = 0;
     cloudSetSyncStatus('synced');
+    return true;
   }).catch(function(err) {
     CLOUD_PUSHING = false;
-    console.warn('[cloud] push failed:', err);
+    console.warn('[cloud] push failed (attempt ' + attempt + '):', err);
     cloudSetSyncStatus('error');
+    cloudPushRetry();
+    return false;
   });
-  return true;
+}
+
+function cloudPushRetry() {
+  var attempt = (typeof CLOUD_PUSH_ATTEMPT === 'number') ? CLOUD_PUSH_ATTEMPT : 1;
+  if (attempt >= 5) {
+    if (typeof showToast === 'function') showToast('Sync failed — some changes may not be saved. Check your connection.', 'error', 4000);
+    return;
+  }
+  var delay = Math.min(30000, Math.pow(2, attempt) * 1000);
+  setTimeout(function() { cloudPushNow(); }, delay);
 }
 
 function cloudFlush() {
   if (CLOUD_PUSH_TIMER) { clearTimeout(CLOUD_PUSH_TIMER); CLOUD_PUSH_TIMER = null; }
-  cloudPushNow();
+  return cloudPushNow();
 }
 
 function cloudBlocked(message) {
