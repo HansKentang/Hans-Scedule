@@ -51,7 +51,9 @@ function renderTreemap(body, items) {
   });
   const data = Object.entries(totals).sort((a, b) => b[1] - a[1]);
   const total = data.reduce((s, [,v]) => s + v, 0);
-  if (!data.length) {
+  /* A zero-amount expense still creates a category, but a zero total makes
+     squarify divide by zero and produce NaN coordinates. Treat it as empty. */
+  if (!data.length || total <= 0) {
     body.innerHTML = '<div class="fin-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="15"/><rect x="3" y="14" width="7" height="4"/></svg><p>No expenses to visualize.</p></div>';
     return;
   }
@@ -370,7 +372,9 @@ function renderTopMerchants(body, items) {
     return;
   }
 
-  const maxTotal = sorted[0].total;
+  /* A merchant can exist with a zero total (zero-amount expense); dividing by
+     it would put NaN in the bar width. */
+  const maxTotal = sorted[0].total || 1;
   const topN = sorted.slice(0, 20);
   const icons = ['shopping','food','fuel','store','pharmacy','film','delivery','electronics','home','clothing','books','coffee','car','travel','gaming','computer','fitness','music','nature','package'].map(function(n) {
     return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/></svg>';
