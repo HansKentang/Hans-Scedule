@@ -8,6 +8,7 @@
      POST /checkout  → { plan, interval, price_id, return_url } → { url }
      POST /portal    → { return_url } → { url }
      POST /cancel    → marks the caller's active subscription canceled
+     POST /reset     → deletes the caller's own provider='mock' row (test only)
      POST /webhook?provider=paddle|dodo → verifies signature, grants/updates premium
 
    Authentication: /checkout and /portal require the caller's own Supabase
@@ -242,6 +243,31 @@ async function handleCancel(req: Request): Promise<Response> {
   return json({ ok: true });
 }
 
+/* ─── Reset (test only) ──────────────────────────────────── */
+
+/* Removes the caller's own mock subscription so the purchase flow can be
+   replayed. Scoped to provider='mock' so it can never cancel a real one. */
+async function handleReset(req: Request): Promise<Response> {
+  let userId: string;
+  try {
+    userId = await requireUser(req);
+  } catch (e) {
+    if (e instanceof Unauthorized) return json({ error: e.message }, 401);
+    return json({ error: e instanceof Error ? e.message : 'Auth unavailable' }, 500);
+  }
+
+  const db = adminClient();
+  const profileId = await resolveProfileId(db, userId);
+  const { error } = await db
+    .from('subscriptions')
+    .delete()
+    .eq('user_id', profileId)
+    .eq('provider', 'mock');
+
+  if (error) return json({ error: error.message }, 500);
+  return json({ ok: true });
+}
+
 /* ─── Webhook ────────────────────────────────────────────── */
 
 async function handleWebhook(req: Request): Promise<Response> {
@@ -370,6 +396,7 @@ Deno.serve(async (req: Request) => {
     if (route === 'checkout' && req.method === 'POST') return await handleCheckout(req);
     if (route === 'portal' && req.method === 'POST') return await handlePortal(req);
     if (route === 'cancel' && req.method === 'POST') return await handleCancel(req);
+    if (route === 'reset' && req.method === 'POST') return await handleReset(req);
     if (route === 'webhook' && req.method === 'POST') return await handleWebhook(req);
     return json({ error: 'Not found', route }, 404);
   } catch (e) {

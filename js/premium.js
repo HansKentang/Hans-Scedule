@@ -431,20 +431,32 @@ function premiumRefreshStatus() {
 }
 
 /* Removes the test subscription so the whole purchase flow can be replayed.
-   RLS only allows this for the owner's own 'mock' rows. */
+   Server-side now: the lock-down drops the client DELETE policy, so the old
+   .delete() could only fail. The route is scoped to provider='mock'. */
 function premiumResetSubscription() {
-  var sb = typeof getSupabaseDb === 'function' ? getSupabaseDb() : null;
-  var uid = premiumUserId();
-  if (!sb || !uid) return Promise.resolve(null);
-  return sb.from('subscriptions').delete().eq('user_id', uid).then(function(res) {
-    if (res.error) {
-      showToast('Could not reset: ' + res.error.message, 'error');
+  if (!premiumUserId()) return Promise.resolve(null);
+  if (typeof sbAuthHeaders !== 'function') return Promise.resolve(null);
+  return sbAuthHeaders().then(function(headers) {
+    if (!headers) return null;
+    return fetch(premiumBillingUrl('/reset'), {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({})
+    });
+  }).then(function(r) {
+    return r ? r.json() : null;
+  }).then(function(data) {
+    if (data && data.error) {
+      showToast('Could not reset: ' + data.error, 'error');
       return null;
     }
     _premium = { premium: false, plan: null, interval: null, status: null, provider: null, until: null, cancel_at_period_end: false, checkedAt: Date.now() };
     premiumSaveCache();
     renderPremiumState();
     showToast('Test subscription removed — you are back on Free', 'info', 3000);
+    return null;
+  }).catch(function() {
+    showToast('Could not reach billing', 'error');
     return null;
   });
 }
