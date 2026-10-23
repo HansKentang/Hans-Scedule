@@ -6908,6 +6908,11 @@ input[type="color"].cpop-native-round::-moz-color-swatch { border:none; border-r
   transition: background var(--t-fast);
 }
 .spotify-empty .sp-add-btn:hover { background: var(--surface-container-high); }
+/* A 115px tile leaves only ~81px of body. Icon + title + hint + button do
+   not fit there, so drop the decoration and keep the CTA reachable. */
+.spotify-empty-sm { gap: 6px; }
+.spotify-empty-sm > svg,
+.spotify-empty-sm .spotify-hint { display: none; }
 /* ─── SLEEP TRACKING ────────────────────────────────────────── */
 .sleep-section {
   margin-bottom: var(--section-gap);
