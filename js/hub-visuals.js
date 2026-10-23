@@ -3321,7 +3321,7 @@ function renderHubBento() {
         if (_spActivePlaylist) {
           var spotUrl = (typeof spEmbedUrl === 'function') ? spEmbedUrl(_spActivePlaylist) : ('https://open.spotify.com/embed/playlist/' + _spActivePlaylist.id);
           var _iframeSrc = e(spotUrl);
-          return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
+          return `<div class="bento-bubble spotify-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container-low);padding:0;border:1px solid var(--border-color);overflow:hidden">
             ${editUI}
             <div class="spotify-widget">
               <div class="spotify-header">

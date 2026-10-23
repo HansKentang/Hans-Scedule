@@ -6853,10 +6853,12 @@ input[type="color"].cpop-native-round::-moz-color-swatch { border:none; border-r
   background: #121212;
   flex: 1;
   min-height: 0;
-  /* The bubble already clips at its own 12px radius. A 16px radius here cut
-     inside that, leaving a sliver of the header colour in the bottom corners. */
   border-radius: 0;
 }
+/* Keep the top corners rounded like every other tile, but square off the
+   bottom. The player is a dark rectangle, and a rounded bottom left the page's
+   light background showing as a white quarter-circle in light mode. */
+.bento-bubble.spotify-bubble { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
 .spotify-header {
   display: flex;
   align-items: center;
