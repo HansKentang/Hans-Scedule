@@ -7,10 +7,17 @@
 /* ─── Snap helper (20px grid) ─────────────── */
 function snap(v) { return Math.round(v / 20) * 20; }
 
-/* ─── Spotify height snap (115, 190, 400, then free) ─── */
+/* ─── Spotify height snap ──────────────────────────────────
+   Three real Spotify embed heights, plus free 20px steps above them:
+     115   = 80px compact bar  + 33px header + 2px border
+     187.5 = 152px full track + 33px header + 2px border
+     400   = 352px full playlist + 33px header + 2px border
+   Below 352px the playlist embed falls back to its compact card and leaves
+   a white strip inside the iframe, so 400 is the shortest height that still
+   shows the full playlist. */
 function snapSpotifyHeight(v) {
-  v = Math.max(108.5, v);
-  if (v < 147) return 108.5;
+  v = Math.max(115, v);
+  if (v < 147) return 115;
   if (v < 295) return 187.5;
   if (v < 400) return 400;
   return snap(v);
@@ -3325,7 +3332,8 @@ function renderHubBento() {
             <div class="spotify-widget spotify-empty">
               <svg viewBox="0 0 24 24" fill="currentColor" style="width:24px;height:24px;opacity:0.25"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.5 17.3c-.24.36-.66.48-1.02.24-2.82-1.74-6.36-2.1-10.56-1.14-.42.12-.78-.18-.9-.54-.12-.42.18-.78.54-.9 4.56-1.02 8.52-.6 11.64 1.32.42.18.48.66.3 1.02zm1.44-3.3c-.3.42-.84.6-1.26.3-3.24-1.98-8.16-2.58-11.94-1.38-.48.12-1.02-.12-1.14-.6-.12-.48.12-1.02.6-1.14 4.2-1.26 9.6-.6 13.32 1.68.36.18.54.78.24 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.3c-.6.18-1.2-.18-1.38-.72-.18-.6.18-1.2.72-1.38 4.26-1.26 11.28-1.02 15.72 1.62.54.3.72 1.02.42 1.56-.3.42-1.02.6-1.56.3z"/></svg>
               <span style="font-size:0.75rem">No playlist linked</span>
-              <span class="spotify-hint">Add playlists via sidebar</span>
+              <span class="spotify-hint">Link a playlist to play it here</span>
+              <button class="sp-add-btn" type="button" onclick="spOpenSettings()">Add a playlist</button>
             </div>
           </div>`;
         }
@@ -5022,8 +5030,8 @@ function renderHubBento() {
             var layout = normalizeBentoLayout(hubContent.bentoLayout, hubContent);
             var item = layout.find(function(i) { return i.uid === uid; });
             if (item) {
-              item.w = snap(280);
-    item.h = item.t === 'spotify' ? snap(420) : item.t === 'strava' || item.t === 'flightradar' ? snap(420) : item.t === 'images' ? snap(280 / 1.333) : snap(280);
+              item.w = snap(item.t === 'spotify' ? 300 : 280);
+    item.h = item.t === 'spotify' ? snap(400) : item.t === 'strava' || item.t === 'flightradar' ? snap(420) : item.t === 'images' ? snap(280 / 1.333) : snap(280);
               item.x = snap(24);
               item.y = snap(24);
               resolveBubbleCollisions(layout);
@@ -7236,7 +7244,7 @@ function setupBubbleResize() {
     const item = layout.find(i => i.uid === uid);
     if (item) {
       if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
-      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? Math.max(108.5, snapSpotifyHeight(h)) : Math.max(80, snap(h));
+      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? snapSpotifyHeight(h) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       pushUndoState();
       hubContent.bentoLayout = layout;
@@ -7321,7 +7329,7 @@ function setupBubbleResize() {
     const item = layout.find(i => i.uid === uid);
     if (item) {
       if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
-      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? Math.max(108.5, snapSpotifyHeight(h)) : Math.max(80, snap(h));
+      if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? snapSpotifyHeight(h) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       pushUndoState();
       hubContent.bentoLayout = layout;
@@ -10020,9 +10028,9 @@ function addBubbleTypes(types, dropPos) {
     } else {
       if (layout.find(i => i.t === t)) return;
     }
-    item.w = snap(280);
+    item.w = snap(item.t === 'spotify' ? 300 : 280);
     item.h = (function() {
-      var sizes = {spotify:420,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,alarm:220,pomodoro:180,weather:260,headlines:260,'sleep-score':280,countdown:280,notes:240,links:240,quote:220,priorities:320,todos:320,today:320,habits:240,progress:240,goals:420,text:160,homework:320,study:420,upcoming:320,streak:260,budget:300,airquality:300,worldclock:280,savings:300,focuslog:300,currency:320,calculator:440,breathing:280,reading:320,doodle:320,github:300};
+      var sizes = {spotify:400,strava:420,flightradar:420,images:210,clock:160,calendar:300,timer:180,alarm:220,pomodoro:180,weather:260,headlines:260,'sleep-score':280,countdown:280,notes:240,links:240,quote:220,priorities:320,todos:320,today:320,habits:240,progress:240,goals:420,text:160,homework:320,study:420,upcoming:320,streak:260,budget:300,airquality:300,worldclock:280,savings:300,focuslog:300,currency:320,calculator:440,breathing:280,reading:320,doodle:320,github:300};
       return snap(sizes[item.t] || 280);
     })();
     // If a drop position is provided, use it; otherwise find a gap
@@ -11507,7 +11515,7 @@ function initBubbleDockDrag(dock) {
       goals:{w:280,h:420},priorities:{w:280,h:320},todos:{w:280,h:320},today:{w:280,h:320},
       habits:{w:280,h:240},progress:{w:280,h:240},clock:{w:280,h:160},
       weather:{w:280,h:260},calendar:{w:280,h:300},timer:{w:280,h:180},
-      pomodoro:{w:280,h:180},spotify:{w:280,h:420},strava:{w:280,h:420},
+      pomodoro:{w:280,h:180},spotify:{w:300,h:400},strava:{w:280,h:420},
       flightradar:{w:280,h:420},quote:{w:280,h:220},notes:{w:280,h:240},
       links:{w:280,h:240},images:{w:280,h:210},'sleep-score':{w:280,h:280},headlines:{w:280,h:260},
       countdown:{w:280,h:280},

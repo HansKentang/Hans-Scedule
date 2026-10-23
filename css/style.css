@@ -6853,7 +6853,9 @@ input[type="color"].cpop-native-round::-moz-color-swatch { border:none; border-r
   background: #121212;
   flex: 1;
   min-height: 0;
-  border-radius: 16px;
+  /* The bubble already clips at its own 12px radius. A 16px radius here cut
+     inside that, leaving a sliver of the header colour in the bottom corners. */
+  border-radius: 0;
 }
 .spotify-header {
   display: flex;
@@ -6869,6 +6871,11 @@ input[type="color"].cpop-native-round::-moz-color-swatch { border:none; border-r
 }
 .spotify-header svg { color: #1DB954; }
 .spotify-header span {
+  /* flex:1 + min-width:0 is what actually lets a flex child shrink below its
+     content width; without it a long playlist name is hard-clipped by the
+     parent's overflow:hidden and the ellipsis never appears. */
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -6886,6 +6893,21 @@ input[type="color"].cpop-native-round::-moz-color-swatch { border:none; border-r
   opacity: 0.6;
   display: block;
 }
+/* The empty widget used to say "add playlists via sidebar" with no control.
+   On mobile the sidebar is hidden, so the only way in is this button. */
+.spotify-empty .sp-add-btn {
+  margin-top: 2px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--surface-container);
+  color: var(--text-primary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.spotify-empty .sp-add-btn:hover { background: var(--surface-container-high); }
 /* ─── SLEEP TRACKING ────────────────────────────────────────── */
 .sleep-section {
   margin-bottom: var(--section-gap);
