@@ -1211,6 +1211,11 @@ function normalizeBentoLayout(layout, parent) {
       norm.w = snap(defaultSize);
       norm.h = snap(defaultSize);
     }
+    /* Spotify's embed clips its controls below 300px (its own recommended
+       minimum), and around 200px it renders blank. Heal a layout that was
+       saved narrower than that instead of leaving a tile the user cannot fix
+       by dragging. */
+    if (norm.t === 'spotify' && norm.w < 300) norm.w = snap(300);
     if (norm.hidden === undefined) norm.hidden = false;
     result.push(norm);
   });
@@ -1603,7 +1608,7 @@ function toggleHubEdit(on) {
       if (!w || !h) return;
       var item = hubContent.bentoLayout.find(function(i) { return i.uid === uid; });
       if (item) {
-        item.w = Math.max(100, snap(w));
+        item.w = Math.max(item.t === 'spotify' ? 300 : 100, snap(w));
         item.h = Math.max(80, snap(h));
       }
     });
@@ -7189,7 +7194,7 @@ function setupBubbleResize() {
     var curW = _bubbleResizeData.bubble.offsetWidth || parseInt(bubble.style.width) || 320;
     var curH = _bubbleResizeData.bubble.offsetHeight || parseInt(bubble.style.height) || 240;
     if (axis === 'e' || axis === 'se') {
-      let newW = snap(Math.max(100, _bubbleResizeData.startW + dx));
+      let newW = snap(Math.max(_bubbleResizeData.isSpotify ? 300 : 100, _bubbleResizeData.startW + dx));
       newW = Math.min(newW, gridRect.width - left);
       _bubbleResizeData.bubble.style.width = newW + 'px';
     }
@@ -7243,7 +7248,7 @@ function setupBubbleResize() {
     const layout = JSON.parse(JSON.stringify(hubContent.bentoLayout));
     const item = layout.find(i => i.uid === uid);
     if (item) {
-      if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
+      if (axis === 'e' || axis === 'se') item.w = Math.max(item.t === 'spotify' ? 300 : 100, snap(w));
       if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? snapSpotifyHeight(h) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       pushUndoState();
@@ -7282,7 +7287,7 @@ function setupBubbleResize() {
     var curW = _bubbleResizeData.bubble.offsetWidth || parseInt(bubble.style.width) || 320;
     var curH = _bubbleResizeData.bubble.offsetHeight || parseInt(bubble.style.height) || 240;
     if (axis === 'e' || axis === 'se') {
-      let newW = snap(Math.max(100, _bubbleResizeData.startW + dx));
+      let newW = snap(Math.max(_bubbleResizeData.isSpotify ? 300 : 100, _bubbleResizeData.startW + dx));
       newW = Math.min(newW, gridRect.width - left);
       _bubbleResizeData.bubble.style.width = newW + 'px';
     }
@@ -7328,7 +7333,7 @@ function setupBubbleResize() {
     const layout = JSON.parse(JSON.stringify(hubContent.bentoLayout));
     const item = layout.find(i => i.uid === uid);
     if (item) {
-      if (axis === 'e' || axis === 'se') item.w = Math.max(100, snap(w));
+      if (axis === 'e' || axis === 'se') item.w = Math.max(item.t === 'spotify' ? 300 : 100, snap(w));
       if (axis === 's' || axis === 'se') item.h = item.t === 'spotify' ? snapSpotifyHeight(h) : Math.max(80, snap(h));
       resolveBubbleCollisions(layout);
       pushUndoState();
