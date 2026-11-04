@@ -6599,7 +6599,7 @@ const HOLD_MOVE_PX = 9;
 
 function _holdExcluded(target) {
   if (!target || !target.closest) return true;
-  return !!target.closest('button, a, input, select, textarea, iframe, [contenteditable], .bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .cpop, .bento-context-menu, .snap-preset-menu, .w-doodle-canvas');
+  return !!target.closest('button, a, input, select, textarea, iframe, [contenteditable], .bento-toolbar, .bento-toolbar-remove, .bento-toolbar-style, .bento-tool-btn, .bento-resize-handle, .bento-resize-edge, .w-add-btn, .hub-edit-item-btn, .cpop, .bento-context-menu, .snap-preset-menu, .w-doodle-canvas, [data-st-drag], [data-st-drag-subj], [data-st-drag-chap], [data-todo-drag], [data-tt-drag], .w-st-drag-handle, .w-todo-drag-handle');
 }
 
 function _clearHoldPending() {
