@@ -11695,6 +11695,7 @@ function setupHubEditEvents() {
     document.getElementById('hubFabSnapshot')?.addEventListener('click', function() { toggleHubAccess(); setTimeout(captureHubSnapshot, 200); });
     document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
     document.getElementById('hubFabStyle')?.addEventListener('click', function() { toggleHubAccess(); showStylePanel(); });
+    document.getElementById('hubFabAI')?.addEventListener('click', function() { toggleHubAccess(); if (typeof showAIChat === 'function') showAIChat(); });
   }
   document.addEventListener('click', function(e) {
     const hub = document.getElementById('hubAccessHub');
@@ -13223,6 +13224,7 @@ if (document.getElementById('hubAccessHub')) {
       document.getElementById('hubFabSnapshot')?.addEventListener('click', function() { toggleHubAccess(); setTimeout(captureHubSnapshot, 200); });
       document.getElementById('hubFabGuide')?.addEventListener('click', function() { toggleHubAccess(); showCanvasGuide(); });
       document.getElementById('hubFabStyle')?.addEventListener('click', function() { toggleHubAccess(); showStylePanel(); });
+      document.getElementById('hubFabAI')?.addEventListener('click', function() { try { toggleHubAccess(); if (typeof showAIChat === 'function') showAIChat(); } catch(e) { console.error('AI chat error:', e); } });
     }
   };
   if (document.readyState === 'loading') {

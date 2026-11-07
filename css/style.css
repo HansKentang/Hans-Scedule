@@ -2622,6 +2622,13 @@ html.light .tag-item:hover { background: var(--accent-soft); }
 }
 .ai-input:focus { border-color: var(--border-focus); box-shadow: 0 0 0 2px rgba(180, 204, 188, 0.15); }
 .ai-input::placeholder { color: var(--text-tertiary); }
+textarea.ai-input {
+  display: block; resize: none; overflow-y: auto;
+  min-height: 35px; max-height: 190px; line-height: 1.45;
+  white-space: pre-wrap; word-break: break-word;
+}
+.ai-input-wrapper:has(textarea.ai-input) { align-items: flex-end; }
+textarea.ai-input ~ .ai-send-btn { align-self: flex-end; margin-bottom: 4px; }
 .ai-send-btn {
   width: 28px; height: 28px; border-radius: 50%;
   border: none; background: var(--accent); color: var(--text-inverse);
@@ -4838,6 +4845,17 @@ html.light .hub-bottom-nav {
 @keyframes accessPulse {
   0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
   50% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+}
+
+/* ChickBot — make the AI action read as "the bot" (solid, like the main + button) */
+#hubFabAI .access-item-icon {
+  background: var(--accent);
+  color: var(--bg-primary);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+#hubFabAI:hover .access-item-icon {
+  background: var(--accent);
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 
 /* ─── AI CHAT PANEL ─────────────────────────────────────── */

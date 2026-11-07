@@ -41,9 +41,10 @@ const API_PROVIDER_STORAGE = 'haven-schedule-provider';
 
 const PROVIDER_MODELS = {
   groq: [
-    { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (recommended)' },
-    { value: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B (vision, images)' },
-    { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (fast)' },
+    { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B — works on the free plan' },
+    { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — paid plan only' },
+    { value: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B (vision) — paid plan only' },
+    { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (fast) — paid plan only' },
   ],
   gemini: [
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (balanced)' },
@@ -374,28 +375,6 @@ function calculateStdDev(values) {
 }
 
 // ─── SLEEP DEBT ───────────────────────────────────────────────
-function getSleepDebt(logs, targets) {
-  const targetDur = targets ? targets.targetDuration : 480;
-  const now = new Date();
-  let totalDebt = 0;
-  let daysWithData = 0;
-  // Look at last 14 days
-  for (let i = 13; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const ds = formatDate(d);
-    const log = logs.find(l => l.date === ds);
-    if (log) {
-      totalDebt += log.duration - targetDur;
-      daysWithData++;
-    }
-  }
-  return {
-    totalDebt: totalDebt,
-    avgSurplus: daysWithData > 0 ? Math.round(totalDebt / daysWithData) : 0,
-    daysWithData: daysWithData
-  };
-}
 
 // ─── SLEEP INSIGHTS ───────────────────────────────────────────
 function generateSleepInsights(logs) {
@@ -772,29 +751,6 @@ function addCustomCategory(label, color, options) {
   return id;
 }
 
-function duplicateCustomCategory(sourceId, label) {
-  const custom = loadCustomCategories().find(cat => cat.id === sourceId);
-  const sourceTag = custom
-    || loadCustomTags().find(cat => cat.id === sourceId)
-    || (TAG_ORDER.includes(sourceId) ? {
-      id: sourceId,
-      label: TAG_LABELS[sourceId] || sourceId,
-      color: getCategoryColor(sourceId),
-      ...getCategoryDefaults(sourceId),
-    } : null);
-  if (!sourceTag) return null;
-  const sourceLabel = sourceTag.label || sourceTag.name || 'Category';
-  const sourceColor = custom?.color || getCategoryColor(sourceId);
-  const sourceSubs = loadSubcategories()[sourceId] || [];
-  const requestedLabel = (label || '').trim();
-  const cats = loadCustomCategories();
-  const cleanLabel = makeUniqueCategoryLabel(requestedLabel || `${sourceLabel} copy`, cats);
-  return addCustomCategory(cleanLabel, sourceColor, {
-    defaultStart: sourceTag.defaultStart,
-    duration: sourceTag.duration,
-    subcategories: sourceSubs,
-  });
-}
 
 function removeCustomCategory(id) {
   let cats = loadCustomCategories();
@@ -812,7 +768,11 @@ function removeCustomCategory(id) {
   const subs = loadSubcategories();
   delete subs[id];
   saveSubcategories(subs);
-  state.tasks = state.tasks.filter(t => t.tag !== id);
+  // Reassign tasks to a fallback tag rather than deleting them
+  const fallbackTag = TAG_ORDER.find(t => t !== id) || 'daily';
+  for (const task of state.tasks) {
+    if (task.tag === id) task.tag = fallbackTag;
+  }
   saveState();
   saveCardColors(cardColors);
   // Clean up activity completions referencing the deleted tag
@@ -899,111 +859,6 @@ function updateCustomCategory(id, name, color) {
 }
 
 // ─── CATEGORY EDIT POPUP ────────────────────────────────
-function openCategoryEditPopup(anchorEl, tagId) {
-  const existing = document.getElementById('catEditPopup');
-  if (existing) existing.remove();
-
-  const curCat = loadCustomCategories().find(c => c.id === tagId) || loadCustomTags().find(t => t.id === tagId);
-  if (!curCat) return;
-
-  const accent = curCat.color || '#6366f1';
-
-  const popup = document.createElement('div');
-  popup.id = 'catEditPopup';
-  popup.className = 'cat-edit-popup';
-  popup.style.setProperty('--edit-accent', accent);
-  popup.innerHTML = `
-    <div class="cat-edit-popup-header">
-      <span class="cat-edit-dot" style="background:${accent}"></span>
-      <span>Edit Category</span>
-    </div>
-    <div class="cat-edit-popup-body">
-      <div class="cat-edit-field">
-        <input type="text" id="catEditName" value="${escapeHtml(curCat.label || curCat.name)}" autocomplete="off" maxlength="30" spellcheck="false">
-      </div>
-      <div class="cat-edit-field">
-        <button class="cpop-trigger" id="catEditColorBtn"><span class="cpop-trigger-dot" style="background:${accent}"></span><span class="cpop-trigger-hex">${accent}</span></button>
-        <input type="hidden" id="catEditColor" value="${accent}">
-      </div>
-      <div class="cat-edit-actions">
-        <button id="catEditCancel">Cancel</button>
-        <button id="catEditSave">Save</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(popup);
-
-  requestAnimationFrame(() => {
-    const rect = anchorEl.getBoundingClientRect();
-    const pw = 220, ph = popup.offsetHeight || 260;
-    let left = rect.right - pw + 16;
-    let top = rect.top - 10;
-    if (left + pw > window.innerWidth - 12) left = window.innerWidth - pw - 12;
-    if (left < 12) left = 12;
-    if (top + ph > window.innerHeight - 12) top = window.innerHeight - ph - 12;
-    if (top < 12) top = 12;
-    popup.style.left = left + 'px';
-    popup.style.top = top + 'px';
-    popup.classList.add('cat-edit-visible');
-    document.getElementById('catEditName')?.focus();
-    document.getElementById('catEditName')?.select();
-  });
-
-  document.getElementById('catEditColorBtn')?.addEventListener('click', (ev) => {
-    ev.stopPropagation();
-    const btn = document.getElementById('catEditColorBtn');
-    const hidden = document.getElementById('catEditColor');
-    openColorPopup(btn, { title: 'Category color', value: hidden ? hidden.value : accent, onPick: function(hex) {
-      if (hidden) hidden.value = hex;
-      const dot = btn ? btn.querySelector('.cpop-trigger-dot') : null;
-      const label = btn ? btn.querySelector('.cpop-trigger-hex') : null;
-      if (dot) dot.style.background = hex;
-      if (label) label.textContent = hex;
-      popup.style.setProperty('--edit-accent', hex);
-      const headDot = popup.querySelector('.cat-edit-dot');
-      if (headDot) headDot.style.background = hex;
-    } });
-  });
-
-  function saveEdit() {
-    const nameEl = document.getElementById('catEditName');
-    const colorEl = document.getElementById('catEditColor');
-    if (!nameEl || !colorEl) return;
-    const newName = nameEl.value.trim();
-    if (!newName) {
-      nameEl.focus();
-      nameEl.style.borderColor = '#e04040';
-      setTimeout(() => nameEl.style.borderColor = '', 1500);
-      return;
-    }
-    updateCustomCategory(tagId, newName, colorEl.value);
-    popup.remove();
-    if (typeof renderSchTemplates === 'function') renderSchTemplates();
-    if (typeof renderActivities === 'function') renderActivities();
-    else if (typeof renderTags === 'function') renderTags();
-    if (typeof renderCalendar === 'function') renderCalendar();
-    showToast(`Category updated to "<strong>${escapeHtml(newName)}</strong>"`, 'success', 2000);
-  }
-
-  document.getElementById('catEditCancel')?.addEventListener('click', () => popup.remove());
-  document.getElementById('catEditSave')?.addEventListener('click', saveEdit);
-  popup.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { popup.remove(); }
-    if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
-  });
-
-  setTimeout(() => {
-    function closeOnOutside(e) {
-      if (e.target.closest && e.target.closest('.cpop')) return;
-      if (!popup.contains(e.target) && !anchorEl.contains(e.target)) {
-        popup.remove();
-        document.removeEventListener('click', closeOnOutside);
-      }
-    }
-    document.addEventListener('click', closeOnOutside);
-  }, 0);
-}
 
 // ─── PRIORITY ────────────────────────────────────────────────
 const PRIORITY_LEVELS = [1, 2, 3, 4];
@@ -1069,18 +924,6 @@ function toggleFocusMode() {
   if (typeof renderWeekView === 'function') renderWeekView();
 }
 
-function loadFocusMode() {
-  try {
-    const data = localStorage.getItem(FOCUS_MODE_KEY);
-    focusModeActive = data ? JSON.parse(data) : false;
-    if (focusModeActive) {
-      document.documentElement.classList.add('focus-mode');
-    }
-    updateFocusModeBubble();
-  } catch (e) {
-    focusModeActive = false;
-  }
-}
 const TAG_LABELS = {
   'daily': 'Daily',
   'math': 'Math',
@@ -1161,44 +1004,6 @@ function initCustomTags() {
   injectCustomTagStyles();
 }
 
-function addCustomTag(name, hexColor) {
-  if (typeof hasAccess === 'function' && !hasAccess('unlimited_tags')) {
-    const tagLimit = typeof premiumLimit === 'function' ? premiumLimit('customTags') : 0;
-    if (loadCustomTags().length >= tagLimit) {
-      requirePremium('unlimited_tags', { reason: tagLimit > 0 ? 'The Free plan includes ' + tagLimit + ' custom tags' : 'Custom tags are a Premium feature' });
-      return;
-    }
-  }
-  const customTags = loadCustomTags();
-  const id = 'c' + Date.now().toString(36);
-  customTags.push({ id, name, color: hexColor });
-  saveCustomTags(customTags);
-  TAG_ORDER.push(id);
-  TAG_LABELS[id] = name;
-  TAG_COLORS[id] = { bg: `var(--tag-${id}-bg)`, text: `var(--tag-${id}-text)` };
-  cardColors[id] = { light: hexColor, dark: lightenColor(hexColor, 0.45) };
-  saveCardColors(cardColors);
-  injectCustomTagStyles();
-  return id;
-}
-
-function removeCustomTag(id) {
-  let customTags = loadCustomTags();
-  customTags = customTags.filter(ct => ct.id !== id);
-  saveCustomTags(customTags);
-  const idx = TAG_ORDER.indexOf(id);
-  if (idx > -1) TAG_ORDER.splice(idx, 1);
-  delete TAG_LABELS[id];
-  delete TAG_COLORS[id];
-  delete cardColors[id];
-  saveCardColors(cardColors);
-  const fallbackTag = TAG_ORDER.find(t => t !== id) || '';
-  for (const task of state.tasks) {
-    if (task.tag === id) task.tag = fallbackTag;
-  }
-  saveState();
-  injectCustomTagStyles();
-}
 
 function injectCustomTagStyles() {
   const existing = document.getElementById('custom-tag-styles');
@@ -1252,14 +1057,6 @@ function saveCardColors(colors) {
   applyCardColors();
 }
 
-function resetCardColors() {
-  const colors = JSON.parse(JSON.stringify(DEFAULT_TAG_COLORS));
-  const customTags = loadCustomTags();
-  for (const ct of customTags) {
-    colors[ct.id] = { light: ct.color, dark: lightenColor(ct.color, 0.45) };
-  }
-  saveCardColors(colors);
-}
 
 function applyCardColors() {
   const root = document.documentElement;
@@ -1283,39 +1080,6 @@ function lightenColor(hex, amount) {
   return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
 }
 
-function hexToHsv(hex) {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0, v = max;
-  const d = max - min;
-  s = max === 0 ? 0 : d / max;
-  if (max !== min) {
-    switch (max) {
-      case r: h = ((g - b) / d + (g < b ? 6 : 0)) * 60; break;
-      case g: h = ((b - r) / d + 2) * 60; break;
-      case b: h = ((r - g) / d + 4) * 60; break;
-    }
-  }
-  return { h, s, v };
-}
-
-function hsvToHex(h, s, v) {
-  h = ((h % 360) + 360) % 360;
-  const c = v * s;
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-  const m = v - c;
-  let r, g, b;
-  if (h < 60) { r = c; g = x; b = 0; }
-  else if (h < 120) { r = x; g = c; b = 0; }
-  else if (h < 180) { r = 0; g = c; b = x; }
-  else if (h < 240) { r = 0; g = x; b = c; }
-  else if (h < 300) { r = x; g = 0; b = c; }
-  else { r = c; g = 0; b = x; }
-  const toHex = (n) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
 
 // ─── UNDO STACK ────────────────────────────────────────────
 const MAX_UNDO = 30;
@@ -1502,7 +1266,14 @@ function expandRecurringTasks(dateStart, dateEnd) {
       if (r.type === 'daily') current.setDate(current.getDate() + (r.interval || 1));
       else if (r.type === 'weekdays') current.setDate(current.getDate() + 1);
       else if (r.type === 'weekly') current.setDate(current.getDate() + 7 * (r.interval || 1));
-      else if (r.type === 'monthly') current.setMonth(current.getMonth() + (r.interval || 1));
+      else if (r.type === 'monthly') {
+        const originalDay = current.getDate();
+        current.setMonth(current.getMonth() + (r.interval || 1));
+        // If the month rolled over (e.g. Jan 31 -> Mar 3), clamp to the last day of the target month
+        if (current.getDate() !== originalDay) {
+          current.setDate(0);
+        }
+      }
       else break;
 
       if (r.endAfter && count >= r.endAfter) break;
@@ -1943,6 +1714,7 @@ let state = {
   vibrate: true,
   toastDuration: 4000,
   compactMode: false,
+  textSize: 'medium',
   animations: true,
   confirmBeforeDelete: true,
   aiEnabled: true,
@@ -2760,40 +2532,6 @@ function getPreferredDuration(tag) {
   return t && t.durations.length > 0 ? getModeValue(t.durations) : null;
 }
 
-function getPreferredTag() {
-  const tags = state.userProfile?.tags;
-  if (!tags) return null;
-  let bestTag = null, bestCount = 0;
-  for (const [tag, data] of Object.entries(tags)) {
-    if (data.count > bestCount) { bestCount = data.count; bestTag = tag; }
-  }
-  return bestTag;
-}
-
-function getPreferredTitle(tag) {
-  const t = state.userProfile?.tags?.[tag];
-  return t && t.titles.length > 0 ? getModeValue(t.titles) : null;
-}
-
-function predictTagFromTitle(title) {
-  if (!title || !state.userProfile?.titleKeywords) return null;
-  const words = title.toLowerCase().split(/[\s,]+/);
-  const scores = {};
-  for (const tag of TAG_ORDER) scores[tag] = 0;
-  for (const word of words) {
-    const kw = state.userProfile.titleKeywords[word];
-    if (kw) {
-      for (const [tag, count] of Object.entries(kw)) {
-        if (scores[tag] !== undefined) scores[tag] += count;
-      }
-    }
-  }
-  let best = null, bestS = 0;
-  for (const [tag, score] of Object.entries(scores)) {
-    if (score > bestS) { bestS = score; best = tag; }
-  }
-  return bestS > 0 ? best : null;
-}
 
 function getLearningContext() {
   if (!state.userProfile) loadUserProfile();
@@ -2967,46 +2705,6 @@ function getScheduleInsights() {
   return '\n' + lines.join('\n');
 }
 
-function getDailyBriefing() {
-  const today = formatDate(new Date());
-  const now = new Date();
-  const currentMins = now.getHours() * 60 + now.getMinutes();
-  const todayTasks = state.tasks.filter(t => t.date === today && !t.completed && !isWhiteboardTask(t));
-  if (todayTasks.length === 0) return null;
-
-  const occupied = todayTasks
-    .filter(t => t.startTime && t.endTime)
-    .map(t => ({ start: parseTime(t.startTime), end: parseTime(t.endTime) }))
-    .sort((a, b) => a.start - b.start);
-
-  if (occupied.length === 0) return null;
-
-  const endOfDay = START_HOUR + VISIBLE_HOURS;
-  const gaps = [];
-  let cursor = currentMins;
-
-  for (const block of occupied) {
-    if (block.start > cursor + 30) {
-      gaps.push({ start: cursor, end: block.start });
-    }
-    cursor = Math.max(cursor, block.end);
-  }
-  if (cursor < endOfDay * 60) {
-    gaps.push({ start: cursor, end: endOfDay * 60 });
-  }
-
-  const relevantGaps = gaps.filter(g => (g.end - g.start) >= 30);
-  if (relevantGaps.length === 0) return null;
-
-  const biggest = relevantGaps.reduce((a, b) => (a.end - a.start > b.end - b.start ? a : b));
-  const dur = Math.round((biggest.end - biggest.start) / 30) * 30;
-  return {
-    gapStart: toTimeStr(biggest.start),
-    gapEnd: toTimeStr(biggest.start + dur),
-    duration: dur,
-    taskCount: todayTasks.length,
-  };
-}
 
 // ─── DOM REFS (populated by each page) ──────────────────────
 const dom = {};
@@ -3022,7 +2720,9 @@ function uid() {
 function getMonday(d) {
   const date = new Date(d);
   const day = date.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
+  var weekStart = 'monday';
+  try { weekStart = localStorage.getItem('haven-week-start') || 'monday'; } catch(e) {}
+  const diff = weekStart === 'sunday' ? -day : (day === 0 ? -6 : 1 - day);
   date.setDate(date.getDate() + diff);
   date.setHours(0, 0, 0, 0);
   return date;
@@ -3123,15 +2823,6 @@ function safeColor(val, fallback) {
   return fallback || '#b4ccbc';
 }
 
-function popupAnimateOut(el, cb) {
-  if (!el || el._animatingOut) return;
-  el._animatingOut = true;
-  el.style.animation = 'popupOut 200ms ease forwards';
-  el.addEventListener('animationend', function handler() {
-    el.removeEventListener('animationend', handler);
-    if (cb) cb();
-  });
-}
 
 function formatTimeRange(start, end) {
   const fmt = (t) => {
@@ -3202,6 +2893,7 @@ function saveState() {
       vibrate: state.vibrate,
       toastDuration: state.toastDuration,
       compactMode: state.compactMode,
+      textSize: state.textSize,
       animations: state.animations,
       confirmBeforeDelete: state.confirmBeforeDelete,
       aiEnabled: state.aiEnabled
@@ -3212,10 +2904,16 @@ function saveState() {
 function loadState() {
   // Auto-apply active preset for new users before loading state
   try { applyActivePresetIfNewUser(); } catch(e) { /* silent */ }
+
+  // Tasks — isolated so a corrupt tasks array doesn't block everything else
   try {
     const tasks = localStorage.getItem(STORAGE_KEY);
     if (tasks) state.tasks = JSON.parse(tasks);
     HAVEN_STATE_LOADED = true;
+  } catch (e) { console.warn('[state] tasks load failed:', e); HAVEN_STATE_LOADED = true; }
+
+  // Settings
+  try {
     const settings = localStorage.getItem(SETTINGS_KEY);
     if (settings) {
       const s = JSON.parse(settings);
@@ -3246,29 +2944,40 @@ function loadState() {
       state.vibrate = s.vibrate !== false;
       state.toastDuration = ([2000, 4000, 6000].indexOf(s.toastDuration) !== -1) ? s.toastDuration : 4000;
       state.compactMode = s.compactMode === true;
+      state.textSize = (['small', 'medium', 'large', 'xlarge'].indexOf(s.textSize) !== -1) ? s.textSize : 'medium';
       state.animations = s.animations !== false;
       state.confirmBeforeDelete = s.confirmBeforeDelete !== false;
       state.aiEnabled = s.aiEnabled !== false;
       START_HOUR = state.gridStartHour;
       VISIBLE_HOURS = state.gridVisibleHours;
       SNAP_MINUTES = state.snapMinutes;
-      // Images are restored via haven-image-* keys directly
     }
+  } catch (e) { console.warn('[state] settings load failed:', e); }
+
+  // Simple keys — each independent
+  try {
     const key = localStorage.getItem(API_KEY_STORAGE);
     if (key) state.apiKey = key;
+  } catch (e) { /* ignore */ }
+  try {
     const model = localStorage.getItem(API_MODEL_STORAGE);
     if (model) state.apiModel = model;
+  } catch (e) { /* ignore */ }
+  try {
     const provider = localStorage.getItem(API_PROVIDER_STORAGE);
     if (provider) state.apiProvider = provider;
-    initCustomTags();
-    initCustomCategories();
-    applyRenamedLabels();
-    loadCardColors();
-    loadUserProfile();
-    loadImages();
-    // Clean up deprecated ai mode storage
-    try { localStorage.removeItem('haven-schedule-ai-mode'); } catch (e) { /* ignore */ }
-  } catch (e) { console.warn('[img] loadState failed:', e); /* fresh start */ }
+  } catch (e) { /* ignore */ }
+
+  // Dependent inits — each wrapped so one failure doesn't cascade
+  try { initCustomTags(); } catch (e) { console.warn('[state] tags init failed:', e); }
+  try { initCustomCategories(); } catch (e) { console.warn('[state] categories init failed:', e); }
+  try { applyRenamedLabels(); } catch (e) { console.warn('[state] labels init failed:', e); }
+  try { loadCardColors(); } catch (e) { console.warn('[state] card colours init failed:', e); }
+  try { loadUserProfile(); } catch (e) { console.warn('[state] profile init failed:', e); }
+  try { loadImages(); } catch (e) { console.warn('[state] images init failed:', e); }
+
+  // Clean up deprecated ai mode storage
+  try { localStorage.removeItem('haven-schedule-ai-mode'); } catch (e) { /* ignore */ }
 }
 
 // ─── CUSTOM IMAGES ─────────────────────────────────────────
@@ -3352,16 +3061,6 @@ function _imgDBPut(id, url) {
       tx.objectStore('images').put(url, id);
       tx.oncomplete = function() { resolve(); };
       tx.onerror = function(e) { reject(e.target.error); };
-    });
-  });
-}
-function _imgDBGet(id) {
-  return _imgDB().then(function(db) {
-    return new Promise(function(resolve, reject) {
-      var tx = db.transaction('images', 'readonly');
-      var req = tx.objectStore('images').get(id);
-      req.onsuccess = function() { resolve(req.result); };
-      req.onerror = function(e) { reject(e.target.error); };
     });
   });
 }
@@ -3500,7 +3199,6 @@ function restoreDirectImageKeys() {
 }
 
 
-
 // ─── TOUCH UTILITY ─────────────────────────────────────────
 function getEventPos(e) {
   if (e.changedTouches && e.changedTouches.length > 0) {
@@ -3521,14 +3219,6 @@ function isCustomImage(key, url) {
   return url && url !== DEFAULT_IMAGES[key];
 }
 
-function saveImages() {
-  if (typeof CLOUD_MODE !== 'undefined' && CLOUD_MODE) return;
-  for (const key of Object.keys(state.images || {})) {
-    const val = state.images[key];
-    if (!val) continue;
-    try { localStorage.setItem('haven-image-' + key, val); } catch(e) { /* skip */ }
-  }
-}
 
 function getImage(id) {
   if (!state.images) loadImages();
@@ -4467,9 +4157,16 @@ function applyTheme() {
   applyAmbientEffects();
 }
 
+var TEXT_SIZE_PX = { small: 14, medium: 16, large: 18, xlarge: 20 };
+function applyTextSize() {
+  var key = (typeof state !== 'undefined' && TEXT_SIZE_PX[state.textSize]) ? state.textSize : 'medium';
+  try { document.documentElement.style.fontSize = TEXT_SIZE_PX[key] + 'px'; } catch (e) {}
+}
+
 function applyBehaviorClasses() {
   document.documentElement.classList.toggle('compact', !!state.compactMode);
   document.documentElement.classList.toggle('no-anim', state.animations === false);
+  applyTextSize();
 }
 
 function applyAmbientEffects() {
@@ -4542,117 +4239,9 @@ function toggleComplete(id) {
   }
 }
 
-function callGeminiAPI(text) {
-  const today = new Date();
-  const todayStr = formatDate(today);
-  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const taskSummary = buildTaskSummary();
-  const learningContext = getLearningContext();
-  const now = new Date();
-  const nowStr = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const systemPrompt = `You are a smart calendar scheduling assistant. Today is ${todayStr} (${dayNames[now.getDay()]}). Current time: ${nowStr}.${learningContext}
-
-CALENDAR GRID: The visible hours are ${toTimeStr(START_HOUR * 60)} – ${toTimeStr((START_HOUR + VISIBLE_HOURS) * 60)}. All times must snap to :00 or :30.
-
-EXISTING TASKS (next 2 weeks):
-${taskSummary || 'None'}
-
-SMART SCHEDULING RULES — follow these strictly:
-1. Choose a START TIME and END TIME that does NOT conflict with any existing task
-2. Consider the time of day — different task types fit different times:
-   - Deep work → best in morning (9-12), needs 2hr uninterrupted blocks
-   - Exercise → morning (6-8) or late afternoon/evening (17-19)
-   - Meetings → late morning or afternoon (10-11, 14-16), keep 30min default
-   - Study → afternoon or evening, consistent schedule
-   - Hobby → evening, weekends
-3. Leave 15min buffer between consecutive tasks (don't back-to-back)
-4. Don't schedule anything before 6am or after 11pm unless the user specifies
-5. Prefer the user's established routine times from their typical schedule above
-6. "Morning" = 6-12, "afternoon" = 12-17, "evening" = 17-21
-
-TITLE QUALITY — make the task title specific and descriptive, not generic:
-- Deep work: "Deep work: [concrete goal]" (e.g. "Deep work: Design system architecture")
-- Exercise: "[specific activity]" (e.g. "Morning run 5k", "Gym: upper body", "Yoga flow")
-- Meetings: "[purpose]" (e.g. "Team standup", "1:1 with Manager", "Sprint planning")
-- Study: "Study [subject] — [topic]" (e.g. "Study Mandarin — lesson 12")
-- Hobby: "[specific activity]" (e.g. "Read 'Atomic Habits'", "Practice guitar scales")
-- NEVER use just the tag name as the title
-
-Parse the user's request into a JSON object with these exact fields:
-- title: string (event name)
-- date: string (YYYY-MM-DD)
-- startTime: string (HH:MM 24h)
-- endTime: string (HH:MM 24h)
-- tag: string (${TAG_ORDER.map(t => `"${t}"`).join(' | ')})
-- subcategory: string (optional, use a known subcategory name if the user mentions one)
-
-Tag labels: ${TAG_ORDER.map(t => `"${t}" = "${TAG_LABELS[t]}"`).join(', ')}
-${(() => {
-  const subcatMap = loadSubcategories();
-  const parts = [];
-  for (const t of TAG_ORDER) {
-    const subs = subcatMap[t] || [];
-    if (subs.length > 0) parts.push(`"${t}" subcategories: ${subs.map(s => `"${s}"`).join(', ')}`);
-  }
-  return parts.length > 0 ? 'Known subcategories:\n' + parts.join('\n') : '';
-})()}
-Tag rules: "daily"/"chores"/"errands"/"routine"/"meals"/"exercise"/"shopping"/"cleaning"/"cooking" = daily. "math"/"algebra"/"calculus"/"geometry" = math. "physics"/"mechanics"/"thermo" = physics. "bio"/"biology"/"ecology" = bio. "chem"/"chemistry"/"organic" = chem. "english"/"essay"/"writing"/"reading" = eng. "mandarin"/"chinese"/"中文" = mandarin. Default tag = "daily".
-Default duration: 1 hour. Default time: 9 AM. "tomorrow" = next day. Day names = next occurrence. "morning" ≈ 9am, "afternoon" ≈ 2pm, "evening" ≈ 7pm.
-
-IMPORTANT: Choose a time slot that does NOT conflict with existing tasks shown above. If the user's requested time is taken, shift to the nearest free slot.
-
-USER'S EXTRA INSTRUCTIONS:
-${(() => { try { return localStorage.getItem('haven-ai-extra-instructions') || ''; } catch (e) { return ''; } })()}
-
-Return ONLY valid JSON. No markdown, no code fences, no extra text.`;
-  return fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${state.apiModel}:generateContent?key=${state.apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: 'user', parts: [{ text: 'User request: ' + text }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 500 }
-    })
-  }).then(async res => {
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`API error: ${res.status}${body ? ' — ' + body.slice(0, 200) : ''}`);
-    }
-    return res.json();
-  }).then(data => {
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!raw) throw new Error('Empty response');
-    let p;
-    try { p = JSON.parse(raw); } catch (e) {
-      const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (fenced) try { p = JSON.parse(fenced[1]); } catch (e2) {}
-      if (!p) {
-        const m = raw.match(/\{[\s\S]*\}/);
-        if (m) p = JSON.parse(m[0]);
-        else throw new Error('Invalid JSON response');
-      }
-    }
-    if (!p.title || !p.date || !p.startTime || !p.endTime) throw new Error('Incomplete data');
-    if (isNaN(new Date(p.date + 'T' + p.startTime).getTime())) throw new Error('Invalid date');
-    return { title: p.title, date: p.date, startTime: p.startTime, endTime: p.endTime, tag: p.tag || 'daily', subcategory: p.subcategory || '' };
-  });
-}
 
 // ─── API KEY MANAGEMENT ─────────────────────────────────────
-function saveApiKey(key) {
-  state.apiKey = key;
-  try { localStorage.setItem(API_KEY_STORAGE, key); } catch (e) { /* ignore */ }
-}
 
-function saveApiModel(model) {
-  state.apiModel = model;
-  try { localStorage.setItem(API_MODEL_STORAGE, model); } catch (e) { /* ignore */ }
-}
-
-function clearApiKey() {
-  state.apiKey = '';
-  try { localStorage.removeItem(API_KEY_STORAGE); } catch (e) { /* ignore */ }
-}
 
 function saveRoutine(text) {
   try { localStorage.setItem(ROUTINE_STORAGE, text); } catch (e) { /* ignore */ }
@@ -4661,7 +4250,6 @@ function saveRoutine(text) {
 function loadRoutine() {
   try { return localStorage.getItem(ROUTINE_STORAGE) || ''; } catch (e) { return ''; }
 }
-
 
 
 function saveApiProvider(provider) {
@@ -4696,6 +4284,15 @@ function createDefaultAIUsage() {
 
 function saveAIUsage() {
   try {
+    // Prune dailyUsage to the last 90 days so the object never grows without bound
+    if (aiUsage && aiUsage.dailyUsage) {
+      const days = Object.keys(aiUsage.dailyUsage).sort();
+      if (days.length > 90) {
+        for (let i = 0; i < days.length - 90; i++) {
+          delete aiUsage.dailyUsage[days[i]];
+        }
+      }
+    }
     localStorage.setItem(AI_USAGE_KEY, JSON.stringify(aiUsage));
   } catch (e) { /* ignore */ }
 }
@@ -4764,36 +4361,75 @@ function renderAIUsage() {
 
 
 // ─── DATA EXPORT/IMPORT ────────────────────────────────────
+/* Every key the app writes that belongs in a backup. This is the single
+   source of truth; the previous version hand-listed 10 of them, so a "backup"
+   silently dropped the whole hub canvas, tags, categories, settings, profile,
+   chat history and every image — a partial backup is worse than none, because
+   it looks like it worked. Mirrors the key list in js/admin.js. */
+var HAVEN_BACKUP_KEYS = [
+  'haven-schedule-tasks', 'haven-schedule-categories', 'haven-schedule-settings',
+  'haven-custom-tags', 'haven-subcategories', 'haven-card-colors',
+  'haven-renamed-labels', 'haven-schedule-focus', 'haven-schedule-pomodoro',
+  'haven-language', 'haven-week-start', 'haven-time-format',
+  'haven-schedule-provider', 'haven-schedule-model', 'haven-schedule-apikey',
+  'haven-ai-extra-instructions', 'haven-schedule-profile', 'haven-chickbot-profile',
+  'haven-schedule-ai-usage', 'haven-schedule-chat',
+  'haven-activities-completions',
+  'haven-schedule-sleep', 'haven-schedule-sleep-targets', 'haven-schedule-sleep-routine',
+  'haven-schedule-sleep-recovery',
+  'haven-schedule-finance', 'haven-piggybank', 'haven-wallet',
+  'haven-schedule-goals',
+  'haven-hub-content', 'haven-hub-visibility', 'haven-schedule-hub-layout', 'haven-hub-layout',
+  'haven-gallery-layout', 'haven-spotify-playlists', 'haven-spotify-active',
+  'haven-routine'
+];
+
 function exportData() {
   if (typeof requirePremium === 'function' && !requirePremium('export', { reason: 'Exporting your data is a Premium feature' })) return;
-  const sleepLogs = loadSleepLogs();
-  let sleepTargets = null;
-  let sleepRoutine = null;
-  try { sleepTargets = loadSleepTargets(); } catch (e) {}
-  try {
-    const rawRoutine = localStorage.getItem(SLEEP_ROUTINE_KEY);
-    if (rawRoutine) sleepRoutine = JSON.parse(rawRoutine);
-  } catch (e) {}
   const readJSON = (key) => {
     try {
       const raw = localStorage.getItem(key);
-      return raw === null ? null : JSON.parse(raw);
-    } catch (e) { return null; }
+      return raw === null ? undefined : JSON.parse(raw);
+    } catch (e) { return undefined; }
   };
-  const data = JSON.stringify({
-    tasks: state.tasks,
-    sleepLogs: sleepLogs,
-    sleepTargets: sleepTargets,
-    sleepRoutine: sleepRoutine,
+  const keys = {};
+  HAVEN_BACKUP_KEYS.forEach(k => { const v = readJSON(k); if (v !== undefined) keys[k] = v; });
+
+  /* Images are base64 data URLs, so only include them when they actually fit.
+     Storage is IndexedDB-primary for cloud accounts, so a localStorage-only
+     pass is best effort — the key list above is the part that must be complete. */
+  try {
+    const imgs = {};
+    const pre = getStoragePrefix ? getStoragePrefix() : '';
+    for (let i = __origLS.length - 1; i >= 0; i--) {
+      const k = __origLS.key(i);
+      if (!k) continue;
+      const short = pre && k.indexOf(pre) === 0 ? k.slice(pre.length) : (pre ? null : k);
+      if (!short) continue;
+      if (short.indexOf('haven-image-') !== 0 || short.indexOf('haven-image-gallery-') !== -1) continue;
+      const v = __origLS.getItem(k);
+      if (v) imgs[short] = v;
+    }
+    if (Object.keys(imgs).length) keys.images = imgs;
+  } catch (e) {}
+
+  /* Legacy named fields kept so backups made by an older build still import. */
+  const data = {
+    version: 3,
+    exportedAt: new Date().toISOString(),
+    keys: keys,
+    tasks: keys['haven-schedule-tasks'] || [],
+    sleepLogs: readJSON('haven-schedule-sleep') || [],
+    sleepTargets: readJSON('haven-schedule-sleep-targets'),
+    sleepRoutine: readJSON('haven-schedule-sleep-routine'),
     goals: readJSON('haven-schedule-goals'),
     finance: readJSON('haven-schedule-finance'),
     piggybank: readJSON('haven-piggybank'),
     wallet: readJSON('haven-wallet'),
     activityCompletions: readJSON('haven-activities-completions'),
-    galleryLayout: readJSON('haven-gallery-layout'),
-    version: 2
-  }, null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
+    galleryLayout: readJSON('haven-gallery-layout')
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -4816,35 +4452,34 @@ function importData(e) {
         return;
       }
       state.tasks = data.tasks;
-      if (data.sleepLogs && Array.isArray(data.sleepLogs)) {
-        const clean = [];
-        const seen = {};
-        for (const raw of data.sleepLogs) {
-          const log = sanitizeSleepLog(raw);
-          if (!log || seen[log.date]) continue;
-          seen[log.date] = true;
-          clean.push(log);
-        }
-        saveSleepLogs(clean);
+      /* A v3 backup carries every key under `keys`. Restore them all so a
+         restore is a real restore rather than a husk. Only keys present in the
+         file are written, so an older backup can never wipe newer data. */
+      if (data.keys && typeof data.keys === 'object') {
+        Object.keys(data.keys).forEach(key => {
+          if (key === 'images') return;
+          const value = data.keys[key];
+          if (value === undefined || value === null) return;
+          try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+        });
+      } else {
+        /* v2 and older backups only carried these named fields. */
+        const restoreKey = (value, key) => {
+          if (value === undefined || value === null) return;
+          try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+        };
+        restoreKey(data.goals, 'haven-schedule-goals');
+        restoreKey(data.finance, 'haven-schedule-finance');
+        restoreKey(data.piggybank, 'haven-piggybank');
+        restoreKey(data.wallet, 'haven-wallet');
+        restoreKey(data.activityCompletions, 'haven-activities-completions');
+        restoreKey(data.galleryLayout, 'haven-gallery-layout');
       }
-      if (data.sleepTargets && typeof data.sleepTargets === 'object') {
-        saveSleepTargets(data.sleepTargets);
+      if (data.keys && data.keys.images && typeof data.keys.images === 'object') {
+        Object.keys(data.keys.images).forEach(k => {
+          try { localStorage.setItem(k, data.keys.images[k]); } catch (e) {}
+        });
       }
-      if (data.sleepRoutine && typeof data.sleepRoutine === 'object') {
-        try { localStorage.setItem(SLEEP_ROUTINE_KEY, JSON.stringify(data.sleepRoutine)); } catch (e) {}
-      }
-      // Restore the remaining data sections. Only keys actually present in the
-      // file are written, so an older backup can never wipe newer data.
-      const restoreKey = (value, key) => {
-        if (value === undefined || value === null) return;
-        try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
-      };
-      restoreKey(data.goals, 'haven-schedule-goals');
-      restoreKey(data.finance, 'haven-schedule-finance');
-      restoreKey(data.piggybank, 'haven-piggybank');
-      restoreKey(data.wallet, 'haven-wallet');
-      restoreKey(data.activityCompletions, 'haven-activities-completions');
-      restoreKey(data.galleryLayout, 'haven-gallery-layout');
       saveState();
       dom.importFileInput.value = '';
       if (typeof pageAfterImport === 'function') pageAfterImport();
@@ -4888,7 +4523,8 @@ function exportHubSettings() {
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = 'haven-hub-settings-' + new Date().toISOString().slice(0,10) + '.json';
+  var d = new Date();
+  a.download = 'haven-hub-settings-' + d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + '.json';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -5137,6 +4773,15 @@ function renderDisplaySettingsInSettings() {
   var motionOn = state.animations === false;
   var ambientOn = state.ambientEffects !== false;
   var html = '<div class="set-group display-settings-group">' +
+    '<div class="set-row set-row-stack">' +
+      '<div class="set-row-left"><div class="set-row-label">Text size</div><div class="set-row-desc">Small, medium, large or super large</div></div>' +
+      '<div class="set-seg" id="setDrawerTextSizeSeg" role="group" aria-label="Text size">' +
+        '<button data-text-size="small" title="Small" aria-label="Small">S</button>' +
+        '<button data-text-size="medium" title="Medium" aria-label="Medium">M</button>' +
+        '<button data-text-size="large" title="Large" aria-label="Large">L</button>' +
+        '<button data-text-size="xlarge" title="Super large" aria-label="Super large">XL</button>' +
+      '</div>' +
+    '</div>' +
     '<div class="set-row">' +
       '<div class="set-row-left"><div class="set-row-label">Compact mode</div><div class="set-row-desc">Tighter spacing throughout the app</div></div>' +
       '<button class="set-toggle' + (compactOn ? ' on' : '') + '" id="setDrawerCompactToggle"></button>' +
@@ -5152,6 +4797,17 @@ function renderDisplaySettingsInSettings() {
   '</div>';
   container.insertAdjacentHTML('beforeend', html);
 
+  var _dtsCur = (['small', 'large', 'xlarge'].indexOf(state.textSize) !== -1) ? state.textSize : 'medium';
+  document.querySelectorAll('#setDrawerTextSizeSeg button').forEach(function(b) {
+    b.classList.toggle('on', b.getAttribute('data-text-size') === _dtsCur);
+    b.addEventListener('click', function() {
+      state.textSize = this.getAttribute('data-text-size');
+      var sel = this.getAttribute('data-text-size');
+      document.querySelectorAll('#setDrawerTextSizeSeg button').forEach(function(x) { x.classList.toggle('on', x.getAttribute('data-text-size') === sel); });
+      applyTextSize();
+      saveState();
+    });
+  });
   document.getElementById('setDrawerCompactToggle').addEventListener('click', function() {
     state.compactMode = !state.compactMode;
     this.classList.toggle('on', state.compactMode);
@@ -5287,49 +4943,6 @@ function injectHubExportUI() {
   section.appendChild(card);
 }
 
-function openSettingsDrawer() {
-  dom.settingsApiKey = document.getElementById('drawerApiKey');
-  // Reset to first section
-  var firstNav = document.querySelector('.settings-nav-item');
-  if (firstNav) switchSettingsSection(firstNav.dataset.section);
-  dom.settingsProvider = document.getElementById('drawerProvider');
-  dom.settingsModel = document.getElementById('drawerModel');
-  dom.settingsKeyStatus = document.getElementById('drawerKeyStatus');
-  dom.settingsKeyStatusText = document.getElementById('drawerKeyStatusText');
-  dom.settingsClearBtn = document.getElementById('drawerClearBtn');
-  dom.settingsAIUsage = document.getElementById('drawerAIUsage');
-  const drawer = document.getElementById('settingsDrawer');
-  const overlay = document.getElementById('settingsDrawerOverlay');
-  if (!drawer || !overlay) return;
-  if (dom.settingsApiKey) dom.settingsApiKey.value = state.apiKey || '';
-  if (dom.settingsProvider) dom.settingsProvider.value = state.apiProvider || 'groq';
-  try { updateModelOptions(); } catch (e) {}
-  try { updateSettingsKeyStatus(); } catch (e) {}
-  try { loadAIUsage(); } catch (e) {}
-  try { renderAIUsage(); } catch (e) {}
-  try { renderDisplaySettingsInSettings(); } catch (e) {}
-  try { renderCardColorsInSettings(); } catch (e) {}
-  try { renderBubbleConfigInSettings(); } catch (e) {}
-  try { injectHubExportUI(); } catch (e) {}
-  try {
-    var imgSec = document.getElementById('settingsImageManager');
-    if (imgSec && !imgSec.querySelector('.acc-picker-body, .cc-swatch-grid, .settings-card, button, input, select')) imgSec.style.display = 'none';
-  } catch (e) {}
-  overlay.classList.remove('hidden');
-  drawer.classList.remove('hidden');
-  requestAnimationFrame(() => {
-    overlay.classList.add('active');
-    drawer.classList.add('open');
-  });
-  state.settingsDrawerOpen = true;
-  // Close on Escape (remove old listener first to prevent duplicates)
-  if (drawer._escListener) document.removeEventListener('keydown', drawer._escListener);
-  function _onSettingsKeydown(e) {
-    if (e.key === 'Escape') closeSettingsDrawer();
-  }
-  document.addEventListener('keydown', _onSettingsKeydown);
-  drawer._escListener = _onSettingsKeydown;
-}
 
 function closeSettingsDrawer() {
   const drawer = document.getElementById('settingsDrawer');
@@ -5954,62 +5567,6 @@ function renderSidebarImageEditControls() {
   });
 }
 
-function showSidebarImagePastePopup() {
-  const existing = document.querySelector('.sidebar-paste-popup');
-  if (existing) { existing.remove(); return; }
-  const popup = document.createElement('div');
-  popup.className = 'sidebar-paste-popup';
-  popup.innerHTML = '<div style="font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-tertiary);margin-bottom:6px">Paste Image</div>' +
-    '<input type="text" id="sidebarPasteInput" placeholder="Paste URL or Ctrl+V" autofocus>' +
-    '<select id="sidebarPastePage" style="width:100%;margin-top:4px;padding:3px 4px;font-size:0.7rem;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-color);border-radius:4px">' +
-    '<option value="">All pages</option>' +
-    '<option value="index">Hub</option>' +
-    '<option value="schedule">Schedule</option>' +
-    '<option value="activities">Activities</option>' +
-    '<option value="analytics">Analytics</option>' +
-    '<option value="goals">Goals</option>' +
-    '<option value="finance">Finance</option>' +
-    '<option value="tags">Tags</option>' +
-    '</select>' +
-    '<div class="sidebar-paste-hint" style="font-size:0.6rem;color:var(--text-tertiary);margin-top:4px">Paste a URL or use Ctrl+V to paste from clipboard</div>' +
-    '<div class="hub-edit-popup-actions" style="margin-top:6px">' +
-    '<button class="cancel" id="sidebarPasteCancel">Cancel</button>' +
-    '<button class="primary" id="sidebarPasteSave">Add</button></div>';
-  var addBtn = document.querySelector('.hub-sidebar-image-add');
-  if (addBtn) addBtn.parentNode.insertBefore(popup, addBtn.nextSibling);
-  else document.querySelector('.hub-sidebar-images').appendChild(popup);
-  var input = document.getElementById('sidebarPasteInput');
-  if (input) { input.focus(); }
-  document.getElementById('sidebarPasteSave').addEventListener('click', function() {
-    var val = document.getElementById('sidebarPasteInput')?.value?.trim();
-    if (val) addSidebarImage('_custom_' + Date.now(), val);
-    popup.remove();
-  });
-  document.getElementById('sidebarPasteCancel').addEventListener('click', function() { popup.remove(); });
-  // Paste from clipboard — capture paste event
-  if (input) {
-    input.addEventListener('paste', function(e) {
-      var gifUrl = extractPastedGifUrl(e.clipboardData);
-      if (gifUrl) {
-        e.preventDefault();
-        input.value = gifUrl;
-        return;
-      }
-      var items = e.clipboardData.items;
-      for (var i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-          var blob = items[i].getAsFile();
-          var reader = new FileReader();
-          reader.onload = function(ev) {
-            input.value = ev.target.result;
-          };
-          reader.readAsDataURL(blob);
-          break;
-        }
-      }
-    });
-  }
-}
 
 function addSidebarImage(id, url) {
   if (url) {
@@ -6046,29 +5603,6 @@ function removeSidebarImage(id) {
   renderSidebarImages();
 }
 
-function openImageLightbox(url, label) {
-  var existing = document.querySelector('.sidebar-lightbox');
-  if (existing) existing.remove();
-  var overlay = document.createElement('div');
-  overlay.className = 'sidebar-lightbox';
-  overlay.innerHTML = '<div class="sidebar-lightbox-backdrop"></div>' +
-    '<div class="sidebar-lightbox-content">' +
-    '<button class="sidebar-lightbox-close">' + '\u00D7' + '</button>' +
-    (isVideoUrl(url)
-      ? '<video src="' + url + '" alt="' + (label || '') + '" controls autoplay muted loop playsinline preload="auto"></video>'
-      : '<img src="' + url + '" alt="' + (label || '') + '">') +
-    '</div>';
-  document.body.appendChild(overlay);
-  requestAnimationFrame(function() { overlay.classList.add('active'); });
-  overlay.querySelector('.sidebar-lightbox-backdrop').addEventListener('click', function() {
-    overlay.classList.remove('active');
-    setTimeout(function() { overlay.remove(); }, 200);
-  });
-  overlay.querySelector('.sidebar-lightbox-close').addEventListener('click', function() {
-    overlay.classList.remove('active');
-    setTimeout(function() { overlay.remove(); }, 200);
-  });
-}
 
 // ─── RESIZE HANDLE DRAG ───────────────────────
 var _sidebarResizeData = null;
@@ -6185,49 +5719,6 @@ function toggleSidebarImageHidden(id) {
   renderSidebarImages();
 }
 
-function showAddLinkPopup() {
-  const existing = document.querySelector('.snav-add-popup');
-  if (existing) { existing.remove(); return; }
-
-  const popup = document.createElement('div');
-  popup.className = 'hub-edit-popup snav-add-popup';
-  popup.innerHTML = `
-    <div style="font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);margin-bottom:10px">Add Shortcut</div>
-    <input type="text" id="snavLinkLabel" placeholder="Label (e.g. Journal)" autofocus>
-    <input type="text" id="snavLinkUrl" placeholder="URL or path (e.g. journal.html)">
-    <div class="hub-edit-popup-actions">
-      <button class="cancel" id="snavLinkCancel">Cancel</button>
-      <button class="primary" id="snavLinkSave">Add</button>
-    </div>
-  `;
-  document.body.appendChild(popup);
-
-  const addBtn = document.querySelector('.snav-add-link-btn');
-  if (addBtn) {
-    const rect = addBtn.getBoundingClientRect();
-    popup.style.top = Math.min(rect.bottom + 4, window.innerHeight - 160) + 'px';
-    popup.style.left = Math.max(8, Math.min(rect.left + rect.width / 2 - 120, window.innerWidth - 248)) + 'px';
-  }
-
-  document.getElementById('snavLinkCancel').addEventListener('click', () => popup.remove());
-  document.getElementById('snavLinkSave').addEventListener('click', function() {
-    const label = document.getElementById('snavLinkLabel').value.trim();
-    const url = document.getElementById('snavLinkUrl').value.trim();
-    if (!label || !url) { showToast('Enter both a label and URL', 'warning'); return; }
-    const config = loadSidebarConfig();
-    if (!config.customLinks) config.customLinks = [];
-    config.customLinks.push({ label, url });
-    saveSidebarConfig(config);
-    popup.remove();
-    applySidebarConfig();
-    if (sidebarEditMode) renderSidebarEditControls();
-    showToast(`Added ${escapeHtml(label)}`, 'success');
-  });
-
-  function onKey(e) { if (e.key === 'Escape') popup.remove(); }
-  document.addEventListener('keydown', onKey);
-  popup._onKey = onKey;
-}
 
 // Delegated click: handle hide buttons in sidebar edit mode
 document.addEventListener('click', function(e) {
@@ -6260,7 +5751,6 @@ function updateSectionHandles() {
     h.classList.toggle('hub-section-drag-handle-visible', isEdit);
   });
 }
-
 
 
 // ─── Hamburger Side Panel ─────────────────────────────
@@ -6424,6 +5914,26 @@ function initTaskDropdowns() {
   });
 }
 
+const LAST_DURATION_KEY = 'haven-last-duration';
+const DEFAULT_TASK_DURATION = 60;
+
+// Clicking an empty slot used to always open a 1-hour task. Remember the length
+// the user last saved so a 2-hour block stays 2 hours next time. A dragged range
+// still wins, because openNewTaskModal's opts.end takes precedence over this.
+function lastTaskDuration() {
+  try {
+    const v = parseInt(localStorage.getItem(LAST_DURATION_KEY), 10);
+    if (v >= SNAP_MINUTES && v <= 24 * 60) return v;
+  } catch (e) {}
+  return DEFAULT_TASK_DURATION;
+}
+
+function rememberTaskDuration(mins) {
+  const m = Math.round(Number(mins) || 0);
+  if (!(m >= SNAP_MINUTES && m <= 24 * 60)) return;
+  try { localStorage.setItem(LAST_DURATION_KEY, String(m)); } catch (e) {}
+}
+
 function openNewTaskModal(date, startMins, opts) {
   if (!dom.taskForm) return;
   state.editingTask = null;
@@ -6435,8 +5945,8 @@ function openNewTaskModal(date, startMins, opts) {
   dom.taskTitle.value = (opts && opts.title) || '';
   dom.taskTitle.dispatchEvent(new Event('input'));
   dom.taskDate.value = date || formatDate(new Date());
-  dom.taskStart.value = (opts && opts.start) || toTimeStr(sr);
-  dom.taskEnd.value = (opts && opts.end) || toTimeStr(sr + 60);
+  dom.taskStart.value = (opts && opts.start) || toClockStr(sr);
+  dom.taskEnd.value = (opts && opts.end) || toClockStr(sr + lastTaskDuration());
   dom.taskNotes.value = '';
   if (dom.taskRepeat) dom.taskRepeat.value = 'none';
   if (dom.taskReminder) dom.taskReminder.value = '0';
@@ -6569,6 +6079,7 @@ function handleTaskFormSubmit(e) {
   if (data.startTime && data.endTime && parseTime(data.startTime) >= parseTime(data.endTime)) {
     showToast('End time must be after start time', 'error', 2500); return;
   }
+  rememberTaskDuration(parseTime(data.endTime) - parseTime(data.startTime));
   if (state.editingTask) updateTask(state.editingTask, data);
   else { pushUndo(); createTask(data); }
   hideTaskModal();
@@ -6615,15 +6126,15 @@ function findFreeSlot(dateStr, durationMinutes) {
     const now = new Date(); const currentMins = now.getHours() * 60 + now.getMinutes();
     const isToday = dateStr === formatDate(new Date());
     const startSlot = isToday ? roundToNearest(Math.max(currentMins + buffer, startBoundary), SNAP_MINUTES) : startBoundary;
-    if (startSlot + durationMinutes <= endBoundary) return { startTime: toTimeStr(startSlot), endTime: toTimeStr(startSlot + durationMinutes) };
+    if (startSlot + durationMinutes <= endBoundary) return { startTime: toClockStr(startSlot), endTime: toClockStr(startSlot + durationMinutes) };
     return null;
   }
   for (const interval of busy) {
-    if (cursor + durationMinutes <= interval.start - buffer) return { startTime: toTimeStr(cursor), endTime: toTimeStr(cursor + durationMinutes) };
+    if (cursor + durationMinutes <= interval.start - buffer) return { startTime: toClockStr(cursor), endTime: toClockStr(cursor + durationMinutes) };
     cursor = Math.max(cursor, interval.end + buffer);
   }
-  if (cursor + durationMinutes <= endBoundary) return { startTime: toTimeStr(cursor), endTime: toTimeStr(cursor + durationMinutes) };
-  return null;
+  if (cursor + durationMinutes <= endBoundary) return { startTime: toClockStr(cursor), endTime: toClockStr(cursor + durationMinutes) };
+    return null;
 }
 
 function findConflict(dateStr, startM, endM, excludeId) {
@@ -6662,6 +6173,10 @@ function toggleAISendBtn() {
   if (btn && input) {
     btn.classList.toggle('show', input.value.trim().length > 0);
   }
+  if (input && input.tagName === 'TEXTAREA') {
+    input.style.height = 'auto';
+    input.style.height = Math.min(190, Math.max(35, input.scrollHeight)) + 'px';
+  }
 }
 
 function resetAIChat() {
@@ -6674,7 +6189,8 @@ function resetAIChat() {
 }
 
 function showAIChat() {
-  if (typeof requirePremium === 'function' && !requirePremium('ai')) return;
+  const premiumGateActive = !(typeof premiumSuspended === 'function' && premiumSuspended());
+  if (premiumGateActive && typeof requirePremium === 'function' && !requirePremium('ai')) return;
   if (!dom.aiChatPanel) return;
   const provider = state.apiProvider || 'groq';
   const pLabel = PROVIDER_LABELS[provider] || 'Groq';
@@ -6688,13 +6204,13 @@ function showAIChat() {
         </svg>
       </div>
       <h3>Welcome to ChickBot</h3>
-      <p>Your smart schedule buddy. Get started by adding your API key in Settings.</p>
+      <p>Paste a study syllabus below to file it into a subject — no key needed.</p>
       <button class="btn btn-primary" id="aiSetupBtn">Open Settings</button>
-      <p class="ai-welcome-hint">Need a key? Get a free one at <a href="${pLink.url}" target="_blank" class="form-link">${pLink.text}</a>. Without it, basic parsing still works in the AI chat (${shortcutDisplay('K')}).</p>
+      <p class="ai-welcome-hint">For full chat, add a free API key from <a href="${pLink.url}" target="_blank" class="form-link">${pLink.text}</a> in Settings.</p>
     </div>`;
-    dom.aiChatInputWrapper.classList.add('disabled');
-    dom.aiChatInput.disabled = true;
-    dom.aiChatInput.placeholder = 'Configure an API key in Settings to chat...';
+    dom.aiChatInputWrapper.classList.remove('disabled');
+    dom.aiChatInput.disabled = false;
+    dom.aiChatInput.placeholder = 'Paste a study syllabus here...';
     document.getElementById('aiSetupBtn')?.addEventListener('click', () => { window.open(`${pLink.url}`, '_blank'); });
   } else {
     attachedFile = null;
@@ -6774,6 +6290,20 @@ function showAIChat() {
       _resetBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
       _resetBtn.addEventListener('click', resetAIChat);
       _actions.insertBefore(_resetBtn, _actions.querySelector('#aiChatClose'));
+    }
+  }
+
+  if (!document.getElementById('aiPermBtn')) {
+    var _permActions = dom.aiChatPanel.querySelector('.ai-panel-header-actions');
+    if (_permActions) {
+      var _permBtn = document.createElement('button');
+      _permBtn.id = 'aiPermBtn';
+      _permBtn.className = 'ai-panel-icon-btn';
+      _permBtn.title = 'What ChickBot is allowed to do';
+      _permBtn.setAttribute('aria-label', 'AI permissions');
+      _permBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>';
+      _permBtn.addEventListener('click', showAIPermissions);
+      _permActions.insertBefore(_permBtn, _permActions.querySelector('#aiChatClose'));
     }
   }
 
@@ -6927,13 +6457,245 @@ function flashTaskOnGrid(taskId) {
   }, 1500);
 }
 
+/* ─── AI permission + safety gate ───────────────────────────────────────
+   Enforcement lives here, not in the prompt. A model can hallucinate an
+   action, but guardAIAction() decides what is ever allowed to execute. */
+var AI_PERMS_KEY = 'haven-ai-permissions';
+var AI_PERMS_DEFAULT = { arrange:true, content:true, schedule:true, bulkDelete:false };
+var AI_TASKS_BACKUP_KEY = 'haven-ai-tasks-backup';
+
+function getAIPermissions() {
+  try {
+    var raw = localStorage.getItem(AI_PERMS_KEY);
+    var saved = raw ? JSON.parse(raw) : {};
+    var out = {};
+    Object.keys(AI_PERMS_DEFAULT).forEach(function (k) {
+      out[k] = (saved && typeof saved[k] === 'boolean') ? saved[k] : AI_PERMS_DEFAULT[k];
+    });
+    return out;
+  } catch (e) { return Object.assign({}, AI_PERMS_DEFAULT); }
+}
+function setAIPermission(key, value) {
+  if (!Object.prototype.hasOwnProperty.call(AI_PERMS_DEFAULT, key)) return getAIPermissions();
+  var p = getAIPermissions();
+  p[key] = !!value;
+  try { localStorage.setItem(AI_PERMS_KEY, JSON.stringify(p)); } catch (e) {}
+  return p;
+}
+
+var AI_ACTION_META = {
+  createTask:        { risk:'safe',     group:'schedule' },
+  batchCreate:       { risk:'safe',     group:'schedule' },
+  updateTask:        { risk:'safe',     group:'schedule' },
+  moveTask:          { risk:'safe',     group:'schedule' },
+  rememberFact:      { risk:'safe',     group:'schedule' },
+  deleteTask:        { risk:'moderate', group:'schedule' },
+  clearAllTasks:     { risk:'high',     group:'schedule' },
+  clearDate:         { risk:'high',     group:'schedule' },
+  clearCompletedTasks:{ risk:'high',    group:'schedule' },
+  deleteTasksByTag:  { risk:'high',     group:'schedule' },
+  deleteTasksByQuery:{ risk:'high',     group:'schedule' },
+  addWidget:         { risk:'safe',     group:'arrange' },
+  moveWidget:        { risk:'safe',     group:'arrange' },
+  resizeWidget:      { risk:'safe',     group:'arrange' },
+  removeWidget:      { risk:'moderate', group:'arrange' },
+  changeWidgetStyle: { risk:'safe',     group:'arrange' },
+  setHubSkin:        { risk:'safe',     group:'arrange' },
+  clearCanvas:       { risk:'high',     group:'arrange' },
+  addWidgetItem:     { risk:'safe',     group:'content' },
+  updateWidgetItem:  { risk:'safe',     group:'content' },
+  completeWidgetItem:{ risk:'safe',     group:'content' },
+  setWidgetSetting:  { risk:'safe',     group:'content' },
+  removeWidgetItem:  { risk:'moderate', group:'content' },
+  clearWidgetContent:{ risk:'high',     group:'content' },
+  addStudySyllabus:  { risk:'safe',     group:'content' }
+};
+
+function aiActionIsHub(type) {
+  var m = AI_ACTION_META[type];
+  return !!(m && (m.group === 'arrange' || m.group === 'content'));
+}
+
+function guardAIAction(action, perms) {
+  if (!action || typeof action !== 'object' || typeof action.type !== 'string')
+    return { allowed:false, reason:'An unrecognised action was ignored.' };
+  var meta = AI_ACTION_META[action.type];
+  if (!meta)
+    return { allowed:false, reason:'"' + String(action.type).slice(0, 40) + '" is not a supported action — blocked.' };
+  if (meta.risk === 'high' && !perms.bulkDelete)
+    return { allowed:false, reason:'"' + action.type + '" is a bulk deletion. Turn on "Allow deleting my data" in AI permissions to enable it.' };
+  if (!perms[meta.group])
+    return { allowed:false, reason:'"' + action.type + '" is blocked because the "' + meta.group + '" permission is off.' };
+  if (aiActionIsHub(action.type) && !(window.HubAI && window.HubAI.available()))
+    return { allowed:false, reason:'Widget changes only work on the Hub page — open the Hub chat (the + button) to use them.' };
+  if (action.type === 'addStudySyllabus') {
+    var sd = action.data || {};
+    if (!Array.isArray(sd.chapters) || !sd.chapters.length)
+      return { allowed:false, reason:'The syllabus had no chapters to add.' };
+    var rs = window.HubAI.resolveSubject ? window.HubAI.resolveSubject(sd.subject) : { name:'', reason:'Subject list unavailable.' };
+    if (!rs.name) return { allowed:false, reason:rs.reason + ' Name the subject so I can file it correctly.' };
+    sd.subject = rs.name;
+  }
+  return { allowed:true, risk:meta.risk, group:meta.group };
+}
+
+function aiBackupState() {
+  var did = false;
+  try { localStorage.setItem(AI_TASKS_BACKUP_KEY, JSON.stringify(state.tasks || [])); did = true; } catch (e) {}
+  if (window.HubAI && window.HubAI.available()) {
+    try { if (window.HubAI.backup()) did = true; } catch (e) {}
+  }
+  return did;
+}
+
+function hasAIBackup() {
+  try { if (localStorage.getItem(AI_TASKS_BACKUP_KEY)) return true; } catch (e) {}
+  return !!(window.HubAI && window.HubAI.hasBackup && window.HubAI.hasBackup());
+}
+
+function undoAIChanges() {
+  var restored = [];
+  try {
+    var raw = localStorage.getItem(AI_TASKS_BACKUP_KEY);
+    if (raw) {
+      state.tasks = JSON.parse(raw);
+      saveState();
+      if (typeof pageAfterTaskSave === 'function') pageAfterTaskSave();
+      localStorage.removeItem(AI_TASKS_BACKUP_KEY);
+      restored.push('schedule');
+    }
+  } catch (e) {}
+  if (window.HubAI && window.HubAI.hasBackup && window.HubAI.hasBackup()) {
+    var r = window.HubAI.restore();
+    if (r.ok) restored.push('hub');
+  }
+  return restored;
+}
+
+function aiRiskBadge(type) {
+  var m = AI_ACTION_META[type];
+  if (!m) return '';
+  if (m.risk === 'high') return '<span style="color:#e26565;font-weight:700">DELETES DATA</span> ';
+  if (m.risk === 'moderate') return '<span style="color:#dca85a;font-weight:700">REMOVES</span> ';
+  return '';
+}
+
+function describeAIAction(a) {
+  var d = a.data || {};
+  var e = function (v) { return escapeHtml(String(v == null ? '' : v).slice(0, 90)); };
+  switch (a.type) {
+    case 'createTask': return 'Add task <strong>' + e(d.title) + '</strong> on ' + e(d.date) + ' ' + e(d.startTime) + '–' + e(d.endTime);
+    case 'batchCreate': return 'Create ' + (Array.isArray(d.tasks) ? d.tasks.length : 0) + ' tasks (weekly plan)';
+    case 'updateTask': return 'Update task ' + e(d.id);
+    case 'moveTask': return 'Move task to ' + e(d.startTime) + (d.date ? ' on ' + e(d.date) : '');
+    case 'deleteTask': return 'Delete task ' + e(d.id);
+    case 'clearAllTasks': return 'Clear the entire schedule';
+    case 'clearDate': return 'Clear all tasks on ' + e(d.date);
+    case 'clearCompletedTasks': return 'Remove all completed tasks';
+    case 'deleteTasksByTag': return 'Delete all ' + e(d.tag) + ' tasks';
+    case 'deleteTasksByQuery': return 'Delete tasks matching "' + e(d.query) + '"';
+    case 'rememberFact': return 'Remember ' + e(d.key) + ': ' + e(d.fact);
+    case 'addWidget': return 'Add a <strong>' + e(d.type) + '</strong> widget';
+    case 'removeWidget': return 'Remove the <strong>' + e(d.type || d.widget) + '</strong> tile (its data is kept)';
+    case 'moveWidget': return 'Move <strong>' + e(d.type || d.widget) + '</strong> to ' + e(d.x) + ',' + e(d.y);
+    case 'resizeWidget': return 'Resize <strong>' + e(d.type || d.widget) + '</strong> to ' + e(d.w) + 'x' + e(d.h);
+    case 'changeWidgetStyle': return 'Change <strong>' + e(d.type || d.widget) + '</strong> design to "' + e(d.style) + '"';
+    case 'setHubSkin': return 'Change canvas style to "' + e(d.skin || d.id) + '"';
+    case 'addWidgetItem': return 'Add "' + e(d.text || d.title || d.label || d.name) + '" to <strong>' + e(d.widget || d.type) + '</strong>';
+    case 'updateWidgetItem': return 'Edit "' + e(d.match || d.text) + '" in <strong>' + e(d.widget || d.type) + '</strong>';
+    case 'completeWidgetItem': return 'Tick off "' + e(d.match || d.text) + '" in <strong>' + e(d.widget || d.type) + '</strong>';
+    case 'removeWidgetItem': return 'Remove "' + e(d.match || d.text) + '" from <strong>' + e(d.widget || d.type) + '</strong>';
+    case 'setWidgetSetting': return 'Set ' + e(d.widget || d.type) + '.' + e(d.field) + ' to ' + e(d.value);
+    case 'clearWidgetContent': return 'Clear all items in <strong>' + e(d.widget || d.type) + '</strong>';
+    case 'clearCanvas': return 'Remove every widget tile from the canvas (data is kept)';
+    case 'addStudySyllabus': {
+      var sc = Array.isArray(d.chapters) ? d.chapters : [];
+      var sn = sc.reduce(function (n, c) { return n + (c && Array.isArray(c.items) ? c.items.length : 0); }, 0);
+      return 'Add <strong>' + sc.length + ' chapter' + (sc.length === 1 ? '' : 's') + ' / ' + sn + ' subtopic' + (sn === 1 ? '' : 's') +
+        '</strong> to subject <strong>' + e(d.subject) + '</strong> (existing chapters are skipped)';
+    }
+    default: return e(a.type);
+  }
+}
+
+function wireAIMessageButtons(msgEl) {
+  if (!msgEl) return;
+  var undoBtn = msgEl.querySelector('.ai-undo-btn');
+  if (undoBtn) undoBtn.addEventListener('click', function () {
+    var restored = undoAIChanges();
+    var bubble = msgEl.querySelector('.ai-bubble');
+    if (restored.length) {
+      undoBtn.disabled = true;
+      undoBtn.textContent = 'Undone';
+      if (bubble) bubble.insertAdjacentHTML('beforeend', '<br><em style="color:var(--text-tertiary)">Changes undone (' + escapeHtml(restored.join(' + ')) + ').</em>');
+      if (typeof showToast === 'function') showToast('AI changes undone', 'success', 2500);
+    } else if (bubble) {
+      bubble.insertAdjacentHTML('beforeend', '<br><em style="color:var(--text-tertiary)">No backup left to restore.</em>');
+    }
+  });
+}
+
+function showAIPermissions() {
+  var existing = document.getElementById('aiPermPanel');
+  if (existing) { existing.remove(); return; }
+  if (!dom.aiChatPanel) return;
+  var perms = getAIPermissions();
+  var rows = [
+    { key:'arrange', label:'Arrange widgets', desc:'Add, move, resize or remove tiles; change widget designs and the canvas theme.' },
+    { key:'content', label:'Edit widget content', desc:'Add items, tick them off, and change simple settings inside widgets.' },
+    { key:'schedule', label:'Manage my schedule', desc:'Create, move and update tasks on the calendar.' },
+    { key:'bulkDelete', label:'Allow deleting my data', desc:'Clear lists, empty the canvas, bulk-delete tasks. OFF by default. Even when on, deletions show a warning and can be undone.', danger:true }
+  ];
+  var panel = document.createElement('div');
+  panel.id = 'aiPermPanel';
+  panel.setAttribute('style', 'margin:10px 12px;padding:12px;border:1px solid var(--border-color);border-radius:12px;background:var(--bg-secondary);font-size:0.76rem;line-height:1.45;');
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="font-size:0.84rem">What ChickBot is allowed to do</strong><button id="aiPermClose" class="ai-panel-icon-btn" style="width:22px;height:22px;font-size:1rem;line-height:1">×</button></div>';
+  rows.forEach(function (r) {
+    html += '<label style="display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--border-subtle);cursor:pointer">' +
+      '<input type="checkbox" data-ai-perm="' + r.key + '" ' + (perms[r.key] ? 'checked' : '') + ' style="margin-top:2px;accent-color:var(--accent);flex:0 0 auto">' +
+      '<span><strong style="color:' + (r.danger && perms[r.key] ? '#e26565' : 'var(--text-primary)') + '">' + r.label + '</strong>' +
+      '<br><span style="color:var(--text-tertiary)">' + r.desc + '</span></span></label>';
+  });
+  html += '<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="aiPermRestore" class="btn btn-outline" style="font-size:0.72rem;padding:4px 10px">Restore last AI backup</button><span style="color:var(--text-tertiary)">Reverts all AI changes at once.</span></div>';
+  panel.innerHTML = html;
+  var body = dom.aiChatPanel.querySelector('.ai-panel-body');
+  if (body) dom.aiChatPanel.insertBefore(panel, body);
+  else dom.aiChatPanel.appendChild(panel);
+  document.getElementById('aiPermClose')?.addEventListener('click', function () { panel.remove(); });
+  panel.querySelectorAll('[data-ai-perm]').forEach(function (box) {
+    box.addEventListener('change', function () {
+      setAIPermission(box.dataset.aiPerm, box.checked);
+      if (typeof showToast === 'function') showToast(box.checked ? 'Permission enabled' : 'Permission disabled', 'info', 1600);
+    });
+  });
+  document.getElementById('aiPermRestore')?.addEventListener('click', function () {
+    var restored = undoAIChanges();
+    if (typeof showToast === 'function') showToast(restored.length ? 'Restored: ' + restored.join(' + ') : 'No AI backup to restore', restored.length ? 'success' : 'info', 2500);
+  });
+}
+
 function executeActions(actions, responseText) {
+  const perms = getAIPermissions();
+  const safeActions = [];
+  const blockedReasons = [];
+  (Array.isArray(actions) ? actions : []).forEach(function (a) {
+    var g = guardAIAction(a, perms);
+    if (g.allowed) safeActions.push(a);
+    else blockedReasons.push(g.reason);
+  });
+  const didBackup = safeActions.length > 0 ? aiBackupState() : false;
   let responseHtml = responseText;
   const actionSummary = [];
   let actionsModified = false;
   const createdTaskIds = [];
 
-  for (const action of actions) {
+  for (const action of safeActions) {
+    if (aiActionIsHub(action.type)) {
+      const hubResult = window.HubAI.apply(action);
+      actionSummary.push((hubResult.ok ? '● ' : '✕ ') + escapeHtml(hubResult.message));
+      if (hubResult.ok) actionsModified = true;
+      continue;
+    }
     if (action.type === 'createTask') {
       trackAIUsage('task');
       const data = action.data;
@@ -7046,6 +6808,17 @@ function executeActions(actions, responseText) {
     responseHtml += '\n\n' + actionSummary.join('<br>');
   }
 
+  if (blockedReasons.length > 0) {
+    responseHtml += '\n\n<div style="margin-top:10px;padding:9px 11px;border:1px solid rgba(226,101,101,0.4);border-radius:9px;background:rgba(226,101,101,0.08);font-size:0.76rem;line-height:1.5">' +
+      '<strong style="color:#e26565">Blocked for safety</strong><br>' +
+      blockedReasons.map(function (r) { return '· ' + escapeHtml(r); }).join('<br>') +
+      '</div>';
+  }
+
+  if (didBackup || hasAIBackup()) {
+    responseHtml += '\n\n<div style="margin-top:10px"><button class="btn btn-outline ai-undo-btn" style="font-size:0.72rem;padding:4px 11px">Undo these AI changes</button></div>';
+  }
+
   if (typeof pageAfterTaskSave === 'function') pageAfterTaskSave();
 
   const taskCount = createdTaskIds.length;
@@ -7053,7 +6826,7 @@ function executeActions(actions, responseText) {
     showToast(`✓ Added <strong>${taskCount}</strong> task${taskCount > 1 ? 's' : ''} to the calendar`, 'success', 3000);
     setTimeout(() => { flashTaskOnGrid(createdTaskIds[0]); }, 400);
   } else if (actionsModified) {
-    showToast('✓ Schedule updated', 'success', 2000);
+    showToast('✓ Changes applied', 'success', 2000);
   }
 
   return responseHtml;
@@ -7064,9 +6837,10 @@ function sendAIMessage() {
     if (typeof showToast === 'function') showToast('AI assistant is disabled in Settings');
     return;
   }
-  if (!dom.aiChatInput || !dom.aiChatInput.value.trim() || !state.apiKey) return;
+  if (!dom.aiChatInput || !dom.aiChatInput.value.trim()) return;
   const text = dom.aiChatInput.value.trim();
   dom.aiChatInput.value = '';
+  if (dom.aiChatInput.tagName === 'TEXTAREA') dom.aiChatInput.style.height = '35px';
   toggleAISendBtn();
 
   appendAIMessage('user', text);
@@ -7089,9 +6863,13 @@ function sendAIMessage() {
     aiChatHistory.push({ role: 'user', text });
     saveChatHistory();
     if (localResult.confirmAction) {
+      const localPlanLine = localResult.syllabusData
+        ? '<div class="ai-plan-items">· ' + describeAIAction({ type:'addStudySyllabus', data:localResult.syllabusData }) + '</div>'
+        : '';
       const planHtml = `${localResult.text}
         <div class="ai-plan-bar">
           <div class="ai-plan-summary"><strong>Confirm action</strong></div>
+          ${localPlanLine}
           <div class="ai-plan-actions">
             <button class="btn btn-primary ai-plan-confirm" style="font-size:0.74rem;padding:3px 12px">Confirm</button>
             <button class="btn btn-outline ai-plan-cancel" style="font-size:0.74rem;padding:3px 12px">Cancel</button>
@@ -7107,10 +6885,14 @@ function sendAIMessage() {
           actions = [{ type: 'clearAllTasks', data: {} }];
         } else if (localResult.confirmAction === 'updateTask' && localResult.moveData) {
           actions = [{ type: 'updateTask', data: localResult.moveData }];
+        } else if (localResult.confirmAction === 'addStudySyllabus' && localResult.syllabusData) {
+          actions = [{ type: 'addStudySyllabus', data: localResult.syllabusData }];
         }
         if (actions) {
+          if (localResult.syllabusData) localResult.text += '\n\n' + describeAIAction(actions[0]);
           const resultHtml = executeActions(actions, localResult.text);
           msgEl.querySelector('.ai-bubble').innerHTML = resultHtml;
+          wireAIMessageButtons(msgEl);
         }
       });
       msgEl.querySelector('.ai-plan-cancel')?.addEventListener('click', () => {
@@ -7125,6 +6907,11 @@ function sendAIMessage() {
     return;
   }
 
+  if (!state.apiKey) {
+    typingEl.remove();
+    appendAIMessage('assistant', 'I can file a pasted study syllabus without a key — just paste the chapters and say which subject (e.g. "for bio"). For anything else, add a free API key in Settings first.');
+    return;
+  }
   trackAIUsage('chat');
   trackAIUsage('api');
   aiChatHistory.push({ role: 'user', text });
@@ -7132,33 +6919,43 @@ function sendAIMessage() {
   callAIAgent(text).then(response => {
     typingEl.remove();
 
-    const hasActions = response.actions && response.actions.length > 0;
+    const allActions = Array.isArray(response.actions) ? response.actions : [];
+    const perms = getAIPermissions();
+    const allowed = [];
+    const blocked = [];
+    allActions.forEach(function (a) {
+      var g = guardAIAction(a, perms);
+      if (g.allowed) allowed.push(a); else blocked.push(g.reason);
+    });
 
-    if (hasActions) {
-      // Plan mode: show plan and wait for confirmation
-      const planLines = response.actions.map(a => {
-        if (a.type === 'createTask') {
-          const meta = getTagMeta(a.data.tag || 'daily');
-          return `<span style="color:${meta.text}">●</span> <strong>${escapeHtml(a.data.title)}</strong> — ${a.data.date} ${a.data.startTime}–${a.data.endTime} <em style="color:var(--text-tertiary)">(${a.data.tag})</em>`;
-        }
-        if (a.type === 'clearAllTasks') return `⊘ Clear entire schedule`;
-        if (a.type === 'clearDate') return `⊘ Clear tasks on ${a.data.date}`;
-        if (a.type === 'clearCompletedTasks') return `⊘ Remove all completed tasks`;
-        if (a.type === 'deleteTasksByTag') return `⊘ Delete all ${a.data.tag} tasks`;
-        if (a.type === 'deleteTasksByQuery') return `⊘ Delete tasks matching "${escapeHtml(a.data.query)}"`;
-        if (a.type === 'updateTask') return `✎ Update task ${a.data.id}`;
-        if (a.type === 'deleteTask') return `✕ Delete task ${a.data.id}`;
-        if (a.type === 'moveTask') return `→ Move task to ${a.data.startTime || ''}${a.data.date ? ' on ' + a.data.date : ''}`;
-        if (a.type === 'batchCreate') return `● Create ${a.data.tasks.length} task${a.data.tasks.length > 1 ? 's' : ''} (weekly plan)`;
-        return `» ${a.type}`;
+    if (allActions.length > 0) {
+      const needsWarning = allowed.some(function (a) {
+        var m = AI_ACTION_META[a.type];
+        return m && (m.risk === 'moderate' || m.risk === 'high');
+      });
+      const planLines = allowed.map(function (a) {
+        return '· ' + aiRiskBadge(a.type) + describeAIAction(a);
       }).join('<br>');
+      const blockedHtml = blocked.length
+        ? '<div style="margin-top:8px;padding:7px 9px;border:1px solid rgba(226,101,101,0.4);border-radius:8px;background:rgba(226,101,101,0.08);font-size:0.73rem;line-height:1.5">' +
+          '<strong style="color:#e26565">Blocked for safety</strong><br>' +
+          blocked.map(function (r) { return '· ' + escapeHtml(r); }).join('<br>') + '</div>'
+        : '';
+      const warningHtml = needsWarning
+        ? '<label style="display:flex;gap:7px;align-items:flex-start;margin-top:9px;padding:8px 9px;border:1px solid rgba(226,101,101,0.45);border-radius:8px;background:rgba(226,101,101,0.08);font-size:0.74rem;line-height:1.45;cursor:pointer">' +
+          '<input type="checkbox" class="ai-plan-ack" style="margin-top:2px;accent-color:var(--accent);flex:0 0 auto">' +
+          '<span>This plan removes or deletes something of mine. I understand, and I know I can undo it.</span></label>'
+        : '';
+      const confirmDisabled = needsWarning ? ' disabled style="font-size:0.74rem;padding:3px 12px;opacity:0.45;cursor:not-allowed"' : ' style="font-size:0.74rem;padding:3px 12px"';
 
       const planHtml = `${response.text}
         <div class="ai-plan-bar">
-          <div class="ai-plan-summary"><strong>Plan (${response.actions.length} action${response.actions.length > 1 ? 's' : ''})</strong></div>
-          <div class="ai-plan-items">${planLines}</div>
+          <div class="ai-plan-summary"><strong>Plan (${allowed.length} action${allowed.length !== 1 ? 's' : ''})</strong></div>
+          <div class="ai-plan-items">${planLines || '<em style="color:var(--text-tertiary)">Nothing to apply</em>'}</div>
+          ${blockedHtml}
+          ${warningHtml}
           <div class="ai-plan-actions">
-            <button class="btn btn-primary ai-plan-confirm" style="font-size:0.74rem;padding:3px 12px">Confirm</button>
+            <button class="btn btn-primary ai-plan-confirm"${confirmDisabled}>Confirm</button>
             <button class="btn btn-outline ai-plan-cancel" style="font-size:0.74rem;padding:3px 12px">Cancel</button>
           </div>
         </div>`;
@@ -7167,11 +6964,19 @@ function sendAIMessage() {
       aiChatHistory.push({ role: 'assistant', text: response.text });
       saveChatHistory();
 
-      // Wire up confirm/cancel buttons
       const msgEl = dom.aiChatMessages.lastElementChild;
-      msgEl.querySelector('.ai-plan-confirm')?.addEventListener('click', () => {
-        const resultHtml = executeActions(response.actions, response.text);
+      const ack = msgEl.querySelector('.ai-plan-ack');
+      const confirmBtn = msgEl.querySelector('.ai-plan-confirm');
+      if (ack && confirmBtn) ack.addEventListener('change', function () {
+        confirmBtn.disabled = !ack.checked;
+        confirmBtn.style.opacity = ack.checked ? '1' : '0.45';
+        confirmBtn.style.cursor = ack.checked ? 'pointer' : 'not-allowed';
+      });
+      confirmBtn?.addEventListener('click', () => {
+        if (confirmBtn.disabled) return;
+        const resultHtml = executeActions(allowed, response.text);
         msgEl.querySelector('.ai-bubble').innerHTML = resultHtml;
+        wireAIMessageButtons(msgEl);
         trackPlanResult(true);
         showToast('✓ Plan executed', 'success', 2000);
       });
@@ -7261,7 +7066,11 @@ function appendAIMessage(role, html) {
     div.className = 'ai-message ai-message-system';
     div.innerHTML = `<div class="ai-bubble">${html}</div>`;
   }
+  var _welcome = dom.aiChatMessages.querySelector('.ai-welcome');
+  if (_welcome) _welcome.remove();
   dom.aiChatMessages.appendChild(div);
+  var _scroll = dom.aiChatMessages.closest('.ai-panel-body') || dom.aiChatMessages.parentElement;
+  if (_scroll) _scroll.scrollTop = _scroll.scrollHeight;
   dom.aiChatMessages.scrollTop = dom.aiChatMessages.scrollHeight;
 }
 
@@ -7369,7 +7178,63 @@ function processOnboardingStep(userText, typingEl) {
 }
 
 // ─── LOCAL COMMAND PARSER (skip API for common queries) ──
+function parseStudySyllabus(text) {
+  let hint = '';
+  let body = text;
+  // (a) explicit "do this / add this / this for <subject>" — subject may be multi-word
+  const strictRe = /(?:please\s+)?(?:do\s+this|add\s+(?:it|this|them)|put\s+(?:it|this|them)|this)\s+for\s+(?:my\s+)?([^\n.;,]+?)\s*(?:pls|please)?\.?\s*$/gim;
+  let m;
+  while ((m = strictRe.exec(text)) !== null) hint = m[1].trim();
+  if (hint) {
+    body = text.replace(strictRe, '');
+  } else {
+    // (b) a line that is only "for <subject>"
+    const lineRe = /(?:^|\n)\s*for\s+(?:my\s+)?([^\n.;,]+?)\s*(?:pls|please)?\.?\s*$/i;
+    const lm = body.match(lineRe);
+    if (lm) {
+      hint = lm[1].trim();
+      body = body.replace(lineRe, '');
+    } else {
+      // (c) trailing " for <subject>" at the very end, only if it resolves to a real subject
+      const endRe = /\s+for\s+(?:my\s+)?([^\n.;,]+?)\s*(?:pls|please)?\.?\s*$/i;
+      const em = body.match(endRe);
+      if (em) {
+        const cand = em[1].trim();
+        const rv = (window.HubAI && window.HubAI.resolveSubject) ? window.HubAI.resolveSubject(cand) : { name: '' };
+        if (rv && rv.name) { hint = cand; body = body.replace(endRe, ''); }
+      }
+    }
+  }
+  body = body.replace(/[,;]\s*$/gm, '');
+  const lines = body.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) return null;
+  const chapterRe = /^Chapter\s+\d+\s*[\u2013\u2014-]\s*.+$/i;
+  const itemRe = /^\d+\.\d+\s+.+$/;
+  const chapters = [];
+  let cur = null, itemHits = 0;
+  lines.forEach(function (line) {
+    if (chapterRe.test(line)) { cur = { name: line, items: [] }; chapters.push(cur); return; }
+    if (itemRe.test(line) && cur) { cur.items.push(line); itemHits++; }
+  });
+  if (!chapters.length || !itemHits) return null;
+  const names = (window.HubAI && window.HubAI.subjectNames) ? window.HubAI.subjectNames() : [];
+  const resolved = (window.HubAI && window.HubAI.resolveSubject) ? window.HubAI.resolveSubject(hint) : { name:'', reason:'Study subjects are unavailable.' };
+  if (!resolved.name) {
+    return { text: 'Which subject should I file these ' + chapters.length + ' chapter' + (chapters.length === 1 ? '' : 's') + ' / ' + itemHits + ' subtopic' + (itemHits === 1 ? '' : 's') + ' into?' +
+      (names.length ? '\n\nYour subjects: **' + names.join('**, **') + '**.' : '') +
+      '\n\n' + (resolved.reason || 'Name one and paste the syllabus again.') };
+  }
+  const n = chapters.reduce((a, c) => a + c.items.length, 0);
+  return {
+    text: 'I found **' + chapters.length + ' chapters / ' + n + ' subtopics** for **' + resolved.name + '**. Nothing is written until you confirm.',
+    confirmAction: 'addStudySyllabus',
+    syllabusData: { subject: resolved.name, chapters: chapters }
+  };
+}
+
 function localCommandParser(text) {
+  const syl = parseStudySyllabus(text);
+  if (syl) return syl;
   const t = text.trim().toLowerCase();
   const today = formatDate(new Date());
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -7479,12 +7344,6 @@ function localCommandParser(text) {
   return null;
 }
 
-function detectQueryScope(t) {
-  if (/today|tonight|this\s+morning|this\s+afternoon/i.test(t)) return 'today';
-  if (/tomorrow/i.test(t)) return 'tomorrow';
-  if (/this\s+week|next\s+week|week/i.test(t)) return 'week';
-  return 'all';
-}
 
 function callAIAgent(userText) {
   const today = formatDate(new Date());
@@ -7577,6 +7436,29 @@ ${TAG_ORDER.map(t => `- ${TAG_LABELS[t]}: ${tagSummary[t].count} tasks, ${format
 
   const profileSection = buildChickBotProfileSection();
 
+  const aiPerms = getAIPermissions();
+  const hubReady = !!(window.HubAI && window.HubAI.available());
+  const hubSection = hubReady ? `
+HUB CANVAS (you are on the Hub page — you CAN change widgets here):
+${window.HubAI.context()}
+
+WIDGET CATALOG (the only valid "type" values for addWidget):
+${window.HubAI.catalogString()}
+
+WIDGET DESIGNS (only these types have changeable designs):
+${['todos','clock','goals','priorities','today','upcoming','homework','habits','streak','focuslog','progress','exams','timer','pomodoro'].map(function (t) { var o = window.HubAI.styleOptions(t); return o.length ? t + ': ' + o.join(', ') : ''; }).filter(Boolean).join('\n')}
+CANVAS STYLES (setHubSkin): ${window.HubAI.skinOptions().join(', ')}
+
+CONTENT-EDITABLE WIDGETS and the fields each accepts:
+- todos / today: {text}. goals / priorities / habits: {text}. notes: {title,body}. links: {label,url} (real http or https URL). reading: {title,author}. homework: {text,subject,due,priority}. countdown: {label,date} (YYYY-MM-DD). study: {name}.
+- Item edits need {widget, match} where "match" is the exact visible text of ONE existing item. Never guess, abbreviate, or use a wildcard.
+- setWidgetSetting allowed pairs: budget.monthly, savings.name, savings.target, savings.saved, currency.from, currency.to, currency.amount, github.username, pomodoro.sessionMinutes, upcoming.days.
+
+PERMISSIONS RIGHT NOW: arrange=${aiPerms.arrange}, content=${aiPerms.content}, schedule=${aiPerms.schedule}, allowBulkDelete=${aiPerms.bulkDelete}.
+` : `
+HUB CANVAS: not available on this page. If asked to change widgets, reply: "Open the Hub page and tap the AI button inside the + menu, then I can do that."
+`;
+
   const systemPrompt = `You are ChickBot, Havën Schedule's smart assistant. ${getHolidayMode() ? 'HOLIDAY mode — lighter workloads, flexible timing.' : 'SCHOOL mode — prioritize study/deep work on weekdays.'} ${learningContext}${profileSection}
 
 TODAY: ${today} | TIME: ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} | TZ: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
@@ -7584,7 +7466,7 @@ GRID: ${toTimeStr(START_HOUR * 60)}–${toTimeStr((START_HOUR + VISIBLE_HOURS) *
 
 SCHEDULE CONTEXT:
 ${context}
-
+${hubSection}
 CONVERSATION:
 ${recentHistory || '(start fresh)'}
 
@@ -7604,9 +7486,33 @@ Default: 60min, 09:00. Tomorrow=next day. Day names=next occurrence.
 RESPOND with ONLY valid JSON (no markdown fences, no extra text):
 {"text":"response","actions":[{"type":"ACTION","data":{...}}]}
 
-ACTIONS: createTask{title,date,startTime,endTime,tag,subcategory?} | updateTask{id,changes:{title?,date?,startTime?,endTime?,tag?,completed?}} | deleteTask{id} | clearAllTasks{} | clearDate{date} | clearCompletedTasks{} | deleteTasksByTag{tag} | deleteTasksByQuery{query} | rememberFact{key,fact} | moveTask{id,startTime,endTime} | batchCreate{tasks:[{title,date,startTime,endTime,tag,subcategory?}]}
+SCHEDULE ACTIONS: createTask{title,date,startTime,endTime,tag,subcategory?} | updateTask{id,changes:{title?,date?,startTime?,endTime?,tag?,completed?}} | deleteTask{id} | clearAllTasks{} | clearDate{date} | clearCompletedTasks{} | deleteTasksByTag{tag} | deleteTasksByQuery{query} | rememberFact{key,fact} | moveTask{id,startTime,endTime} | batchCreate{tasks:[{title,date,startTime,endTime,tag,subcategory?}]}
 
-EXAMPLES: "Clear schedule"→clearAllTasks. "Delete math tasks"→deleteTasksByTag:{tag:"math"}. "Move X to 2pm"→moveTask. "Schedule week"→batchCreate 5-7 days.
+WIDGET ACTIONS (only work on the Hub page):
+- addWidget{type,x?,y?} | removeWidget{type} | moveWidget{type,x,y} | resizeWidget{type,w,h}
+- changeWidgetStyle{type,style} | setHubSkin{skin}
+- addWidgetItem{widget,text|title|label|name,...} | updateWidgetItem{widget,match,text?} | completeWidgetItem{widget,match,done?} | removeWidgetItem{widget,match} | setWidgetSetting{widget,field,value}
+- clearWidgetContent{widget} | clearCanvas{}  [BULK — only when the user explicitly asks to delete everything]
+- addStudySyllabus{subject,chapters:[{name,items:[...]}]} — ONE action files a whole pasted syllabus into an EXISTING Study subject. "name" is the chapter line verbatim, "items" are its numbered subtopics verbatim. Never split a syllabus into many addWidgetItem actions.
+
+STUDY SYLLABUS RULES:
+- "subject" MUST be the exact name of an existing subject from STUDY SUBJECTS in the CANVAS context. If the user says "for bio"/"for chemistry" and that clearly matches ONE subject, use that exact name.
+- If the user does NOT name a subject, or the name is ambiguous, do NOT emit any action. Reply with a short question listing the subject names and actions:[].
+- Copy chapter names and numbered subtopics EXACTLY as pasted. Do not renumber, reword, summarise, or drop any.
+- This is additive: it never deletes or replaces existing chapters.
+
+SAFETY RULES (hard rules; the app enforces them again, so breaking them just wastes the turn):
+1. NEVER delete or clear anything unless the user explicitly names exactly what to remove. "Tidy up", "clean my hub", "fix things", "reset", "start fresh", "make it nicer" are NOT permission to delete.
+2. Prefer ADDITIVE actions. To change a list, add or edit ONE item with addWidgetItem / updateWidgetItem. Never replace a whole list.
+3. Removing a widget TILE keeps all its data — always say so. Never remove a widget the CANVAS context says holds saved data unless the user names that exact widget.
+4. Widgets listed under "WIDGETS HOLDING YOUR DATA" contain the user's real work. Never emit clearWidgetContent for them on a vague request.
+5. If it is unclear WHICH item or widget the user means, ask a short question and return actions:[]. Do not guess — a wrong match is blocked anyway.
+6. If allowBulkDelete=false, do NOT emit clearAllTasks, clearDate, clearCompletedTasks, deleteTasksByTag, deleteTasksByQuery, clearWidgetContent, or clearCanvas. Explain that the permission is off instead.
+7. Only use widget types from WIDGET CATALOG, designs from WIDGET DESIGNS, and fields from CONTENT-EDITABLE WIDGETS. If arrange/content permission is false, explain instead of emitting those actions.
+8. Never invent an action type. Unsupported or malformed actions are silently blocked.
+9. You may answer questions about the canvas (what is on it, what a widget holds, suggestions) with actions:[] — this is often the best answer.
+
+EXAMPLES: "Clear schedule" -> clearAllTasks (only if allowBulkDelete). "Add a pomodoro timer" -> addWidget{type:"pomodoro"}. "Add buy milk to my todos" -> addWidgetItem{widget:"todos",text:"buy milk"}. "Tick off buy milk" -> completeWidgetItem{widget:"todos",match:"buy milk"}. "Make my clock analog" -> changeWidgetStyle{type:"clock",style:"analog"}. "Move clock to top left" -> moveWidget{type:"clock",x:24,y:24}. "What widgets do I have?" -> answer from CANVAS context, actions:[]. "Chapter 1 – Cells\n1.1 Cell structure\n... for bio" -> addStudySyllabus{subject:"<exact subject name from STUDY SUBJECTS>",chapters:[{name:"Chapter 1 – Cells",items:["1.1 Cell structure"]}]}.
 
 ${(() => { try { const extra = localStorage.getItem('haven-ai-extra-instructions') || ''; return extra ? `EXTRA:\n${extra}\n` : ''; } catch (e) { return ''; } })()}
 IMPORTANT: Only valid JSON.`;

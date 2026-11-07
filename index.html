@@ -1,5 +1,5 @@
 ﻿ <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="pg-loading">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,7 +31,7 @@
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" media="print" onload="this.media='all'">
-  <link rel="stylesheet" href="css/style.css?v=59">
+  <link rel="stylesheet" href="css/style.css?v=61">
   <style>
     /* All page CSS consolidated in style.css */
   </style>
@@ -243,11 +243,11 @@
               </span>
               <span class="access-item-label">Layout</span>
             </button>
-            <button class="access-item" id="hubFabSnapshot" title="Share snapshot of your hub">
+            <button class="access-item" id="hubFabAI" title="ChickBot">
               <span class="access-item-icon" style="background:color-mix(in srgb, var(--text-primary) 12%, transparent);color:var(--text-primary)">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg>
               </span>
-              <span class="access-item-label">Snapshot</span>
+              <span class="access-item-label">ChickBot</span>
             </button>
             <button class="access-item" id="hubFabGuide" title="How to use the canvas">
               <span class="access-item-icon" style="background:color-mix(in srgb, var(--text-primary) 12%, transparent);color:var(--text-primary)">
@@ -309,13 +309,16 @@
 
                 <!-- Top row: Score + Last Night quick card -->
                 <div class="sleep-overview-top">
-                  <div class="sleep-score-ring" id="sleepScoreRing">
-                    <svg viewBox="0 0 36 36">
-                      <circle class="bg" cx="18" cy="18" r="15.5"></circle>
-                      <circle class="fill" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" id="sleepScoreCircle"></circle>
-                    </svg>
-                    <div class="sleep-score-value" id="sleepScoreValue">—</div>
-                    <div class="sleep-score-label" data-i18n="sleep.score">Score</div>
+                  <div class="s-score-col">
+                    <div class="sleep-score-ring" id="sleepScoreRing">
+                      <svg viewBox="0 0 36 36">
+                        <circle class="bg" cx="18" cy="18" r="15.5"></circle>
+                        <circle class="fill" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" id="sleepScoreCircle"></circle>
+                      </svg>
+                      <div class="sleep-score-value" id="sleepScoreValue">—</div>
+                      <div class="sleep-score-label" data-i18n="sleep.score">Score</div>
+                    </div>
+                    <div class="s-score-delta" id="sleepScoreDelta" hidden></div>
                   </div>
                   <div class="s-last-card" id="sLastCard">
                     <div class="s-last-main">
@@ -347,7 +350,15 @@
                 </div>
 
                 <!-- Weekly sleep chart (canvas) -->
-                <div class="s-schedule-label">Last 7 Nights</div>
+                <div class="s-week-nav">
+                  <button class="s-week-arrow" id="sleepWeekPrev" type="button" aria-label="Previous week" title="Previous week">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <div class="s-schedule-label" id="sleepWeekLabel">Mon &ndash; Sun</div>
+                  <button class="s-week-arrow" id="sleepWeekNext" type="button" aria-label="Next week" title="Next week">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </div>
                 <div class="sleep-chart-wrap">
                   <canvas id="sleepChart"></canvas>
                 </div>
@@ -480,7 +491,7 @@
     </div>
     <div class="ai-panel-footer">
       <div class="ai-input-wrapper" id="aiChatInputWrapper">
-        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your schedule..." autocomplete="off">
+        <textarea id="aiChatInput" class="ai-input" rows="1" placeholder="Ask about your schedule..." autocomplete="off"></textarea>
         <button id="aiChatSend" class="ai-send-btn show" aria-label="Send">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
@@ -501,7 +512,8 @@
     }
   </script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="js/shared.js"></script>
+  <script src="js/page-loader.js"></script>
+  <script src="js/shared.js?v=61"></script>
   <script src="js/settings.js"></script>
   <script src="js/vendor/supabase-js.min.js"></script>
   <script src="js/supabase.js"></script>
@@ -511,7 +523,8 @@
   <script src="js/premium-config.js"></script>
   <script src="js/premium.js"></script>
 
-  <script src="js/hub-visuals.js?v=59"></script>
+  <script src="js/hub-visuals.js?v=61"></script>
+  <script src="js/hub-ai.js?v=61"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
   <script>
     // ════════════════════════════════════════════════════════════
@@ -804,41 +817,138 @@ function init() {
     }
 
     // ── Score ──
-    function computeSleepScore(logs, targets) {
-      if (logs.length < 3) return null;
-      var now = new Date();
-      var weekLogs = getWeekLogs(now);
-      if (weekLogs.length === 0) return null;
-      var durScore = 0, targetDur = targets ? targets.targetDuration : 480;
+    // One Mon-Sun week of sleep, anchored to `base` plus `weekOffset` whole weeks.
+    function sleepWeekLogs(base, weekOffset) {
+      var monday = addDays(base, -(((base.getDay() + 6) % 7)) + (weekOffset || 0) * 7);
+      var out = [];
+      for (var i = 0; i < 7; i++) {
+        var log = getSleepLog(formatDate(addDays(monday, i)));
+        if (log) out.push(log);
+      }
+      return out;
+    }
+
+    function sleepWeekConsistency(weekLogs) {
+      if (weekLogs.length < 3) return null;
+      var bedMins = [], wakeMins = [], durs = [];
+      for (var i = 0; i < weekLogs.length; i++) {
+        var l = weekLogs[i];
+        var b = l.bedtime.split(':').map(Number);
+        var bT = b[0] * 60 + b[1];
+        if (bT < 720) bT += 1440; // past-midnight bedtime
+        bedMins.push(bT);
+        var w = l.wakeTime.split(':').map(Number);
+        wakeMins.push(w[0] * 60 + w[1]);
+        durs.push(l.duration);
+      }
+      var bedScore = Math.max(0, 100 - calculateStdDev(bedMins) * 2.5);
+      var wakeScore = Math.max(0, 100 - calculateStdDev(wakeMins) * 2.5);
+      var durScore = Math.max(0, 100 - calculateStdDev(durs));
+      return Math.round((bedScore + wakeScore + durScore) / 3);
+    }
+
+    /* Score for a single Mon-Sun week. A partial week is rescaled against only the
+       components that had data, so one good night isn't capped at 70/100. */
+    function computeSleepScore(weekLogs, targets) {
+      if (!weekLogs || weekLogs.length === 0) return null;
+      var targetDur = targets ? targets.targetDuration : 480;
+      var raw = 0, avail = 0;
+
       var durData = weekLogs.filter(function(l) { return l.duration; });
       if (durData.length > 0) {
         var avgDur = durData.reduce(function(s, l) { return s + l.duration; }, 0) / durData.length;
-        durScore = Math.max(0, 40 - Math.abs(avgDur - targetDur) * 0.15);
+        raw += Math.max(0, 40 - Math.abs(avgDur - targetDur) * 0.15);
+        avail += 40;
       }
-      var qualityScore = 0;
       var qData = weekLogs.filter(function(l) { return l.quality; });
       if (qData.length > 0) {
-        qualityScore = (qData.reduce(function(s, l) { return s + l.quality; }, 0) / qData.length / 5) * 30;
+        raw += (qData.reduce(function(s, l) { return s + l.quality; }, 0) / qData.length / 5) * 30;
+        avail += 30;
       }
-      var consistencyScore = 0;
-      var consistency = getSleepConsistencyScore(logs);
-      if (consistency) consistencyScore = (consistency.score / 100) * 30;
-      return Math.round(durScore + qualityScore + consistencyScore);
+      var consistency = sleepWeekConsistency(weekLogs);
+      if (consistency !== null) {
+        raw += (consistency / 100) * 30;
+        avail += 30;
+      }
+      if (avail === 0) return null;
+      return {
+        score: Math.round((raw / avail) * 100),
+        nights: weekLogs.length,
+        partial: weekLogs.length < 3
+      };
+    }
+
+    // Score colour band: poor -> fair -> good -> excellent, split at 25/50/75.
+    function sleepScoreColor(score) {
+      if (score >= 75) return '#10b981';
+      if (score >= 50) return '#eab308';
+      if (score >= 25) return '#f97316';
+      return '#ef4444';
     }
 
     function renderSleepScore(logs, targets) {
-      var score = computeSleepScore(logs, targets);
+      var now = new Date();
+      var cur = computeSleepScore(sleepWeekLogs(now, 0), targets);
+      var prev = computeSleepScore(sleepWeekLogs(now, -1), targets);
+
       var scoreEl = document.getElementById('sleepScoreValue');
       var circleEl = document.getElementById('sleepScoreCircle');
       if (!scoreEl || !circleEl) return;
-      if (score === null) { scoreEl.textContent = '\u2014'; return; }
-      scoreEl.textContent = score;
+
+      if (!cur) {
+        scoreEl.textContent = '\u2014';
+        circleEl.style.strokeDashoffset = '';
+        circleEl.style.stroke = '';
+        renderSleepDelta(null, prev);
+        return;
+      }
+      scoreEl.textContent = cur.score;
       var circumference = 97.4;
-      var offset = circumference - (score / 100) * circumference;
-      requestAnimationFrame(function() {
+      var offset = circumference - (cur.score / 100) * circumference;
+      requestAnimationFrame(function () {
         circleEl.style.strokeDashoffset = offset;
-        circleEl.style.stroke = score >= 70 ? '#10b981' : score >= 40 ? '#f59e0b' : '#ef4444';
+        circleEl.style.stroke = sleepScoreColor(cur.score);
       });
+      renderSleepDelta(cur, prev);
+    }
+
+    // This week vs last week, with a nudge either way.
+    function renderSleepDelta(cur, prev) {
+      var el = document.getElementById('sleepScoreDelta');
+      if (!el) return;
+      var tag = (cur && cur.partial)
+        ? ' <span class="s-delta-partial">partial \u00B7 ' + cur.nights + (cur.nights === 1 ? ' night' : ' nights') + '</span>'
+        : '';
+
+      if (!cur && !prev) {
+        el.innerHTML = '<span class="s-delta-none">log a night to start</span>';
+        el.hidden = false;
+        return;
+      }
+      if (!cur) {
+        el.innerHTML = '<span class="s-delta-prev">last week ' + prev.score + '</span>' + (tag ? ' \u00B7' + tag : '');
+        el.hidden = false;
+        return;
+      }
+      if (!prev) {
+        el.innerHTML = '<span class="s-delta-none">first week</span>' + (tag ? ' \u00B7' + tag : '');
+        el.hidden = false;
+        return;
+      }
+
+      var delta = cur.score - prev.score;
+      var msg;
+      if (delta > 0) {
+        msg = cur.score >= 70 ? 'up ' + delta + ' \u2014 nice' : 'up ' + delta + ', keep going';
+      } else if (delta < 0) {
+        msg = Math.abs(delta) + ' behind \u2014 you\u2019ve got this';
+      } else {
+        msg = 'level with last week';
+      }
+      var cls = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+      el.innerHTML = '<span class="s-delta-prev">last week ' + prev.score + '</span>'
+        + '<span class="s-delta-badge ' + cls + '">' + msg + '</span>' + tag;
+      el.hidden = false;
     }
 
     // ── Consistency (compact) ──
@@ -860,13 +970,69 @@ function init() {
     // ── Weekly sleep chart (canvas: duration bars + quality line) ──
     var sleepChartTooltipEl = null;
 
+    // Canvas falls back to sans-serif if the webfont hasn't loaded yet, and never
+    // repaints on its own — so redraw once Bebas Neue is actually available.
+    var sleepChartFontReady = false;
+
+    // Which Mon-Sun week the chart shows: 0 = this week, -1 = last week. Never the future.
+    var sleepWeekOffset = 0;
+
+    function sleepWeekShift(delta) {
+      var next = sleepWeekOffset + delta;
+      if (next > 0) return;
+      sleepWeekOffset = next;
+      renderSleepChart(loadSleepLogs());
+    }
+
+    function sleepWeekSyncNav() {
+      var nextBtn = document.getElementById('sleepWeekNext');
+      if (!nextBtn) return;
+      var atCurrentWeek = sleepWeekOffset >= 0;
+      nextBtn.disabled = atCurrentWeek;
+      nextBtn.setAttribute('aria-disabled', atCurrentWeek ? 'true' : 'false');
+    }
+
+    (function wireSleepWeekNav() {
+      var prevBtn = document.getElementById('sleepWeekPrev');
+      var nextBtn = document.getElementById('sleepWeekNext');
+      if (prevBtn) prevBtn.addEventListener('click', function () { sleepWeekShift(-1); });
+      if (nextBtn) nextBtn.addEventListener('click', function () { sleepWeekShift(1); });
+    })();
+
+    // Canvas colours are baked in at draw time, so redraw when the theme flips —
+    // otherwise the bar weight and label colour stay wrong until the next render.
+    (function watchSleepTheme() {
+      var wasLight = document.documentElement.classList.contains('light');
+      new MutationObserver(function () {
+        var isLightNow = document.documentElement.classList.contains('light');
+        if (isLightNow === wasLight) return;
+        wasLight = isLightNow;
+        if (document.getElementById('sleepChart')) renderSleepChart(loadSleepLogs());
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    })();
+
     function renderSleepChart(logs) {
       var canvas = document.getElementById('sleepChart');
       if (!canvas) return;
       var container = canvas.parentElement;
+      if (!sleepChartFontReady && document.fonts && document.fonts.load) {
+        sleepChartFontReady = true;
+        document.fonts.load('16px "Bebas Neue"').then(function () {
+          renderSleepChart(loadSleepLogs());
+        }).catch(function () {});
+      }
       var now = new Date();
-      var ws = addDays(now, -6); // last 7 nights ending today, not the Mon-start calendar week
+      // Fixed Monday-Sunday week: column 0 is always Monday, column 6 always Sunday.
+      // sleepWeekOffset shifts the window: 0 = this week, -1 = last week, -2 = the week before.
+      var ws = addDays(now, -(((now.getDay() + 6) % 7)) + sleepWeekOffset * 7);
       var todayStr = formatDate(now);
+      var wkEnd = addDays(ws, 6);
+      var wkLabelEl = document.getElementById('sleepWeekLabel');
+      if (wkLabelEl) {
+        var MN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        wkLabelEl.textContent = 'Mon ' + ws.getDate() + ' ' + MN[ws.getMonth()] + ' \u2013 Sun ' + wkEnd.getDate() + ' ' + MN[wkEnd.getMonth()];
+      }
+      sleepWeekSyncNav();
       var dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
       var targets = loadSleepTargets();
 
@@ -893,7 +1059,12 @@ function init() {
       var rect = container.getBoundingClientRect();
       var W = rect.width;
       if (W < 50) return; // not laid out yet (hidden tab / section) — re-rendered on tab show + resize
-      var H = 180;
+      // Weekday labels scale with the column, capped so seven never overlap, and are
+      // squashed vertically so they sit as a flat strip rather than tall caps.
+      var labelSize = Math.max(16, Math.min(85, ((W - 80) / 7) * 0.60));
+      var labelSquash = 0.80;
+      var labelPad = Math.max(0, (labelSize * labelSquash) - 16) * 0.85;
+      var H = 180 + labelPad;
       var dpr = window.devicePixelRatio || 1;
       canvas.width = W * dpr;
       canvas.height = H * dpr;
@@ -912,8 +1083,15 @@ function init() {
       var accent = cs.getPropertyValue('--accent').trim() || '#6366f1';
       var surfaceHigh = cs.getPropertyValue('--surface-container-high').trim() || '#262626';
       var bgPrimary = cs.getPropertyValue('--bg-primary').trim() || '#1c1c1c';
+      // Neutral bars need far more weight on a light card than on a dark one.
+      var isLightTheme = document.documentElement.classList.contains('light');
+      var barAlpha = isLightTheme ? 0.38 : 0.16;
+      // Halo behind the duration labels, so a quality dot can never swallow the text.
+      var cardEl = canvas.closest('.sleep-card') || canvas.parentElement;
+      var cardBg = cardEl ? getComputedStyle(cardEl).backgroundColor : '';
+      if (!cardBg || cardBg === 'transparent' || cardBg === 'rgba(0, 0, 0, 0)') cardBg = bgPrimary;
 
-      var PAD = { top: 16, bottom: 28, left: 36, right: 36 };
+      var PAD = { top: 16, bottom: 28 + labelPad, left: 44, right: 36 };
       var chartW = W - PAD.left - PAD.right;
       var chartH = H - PAD.top - PAD.bottom;
       var maxDur = 720;
@@ -921,13 +1099,25 @@ function init() {
       var barGap = 6;
       var barW = (chartW / 7) - barGap;
 
-      // ── empty state ──
+      // ── empty state ── keep the fixed Mon-Sun columns visible
       if (!hasAny) {
         ctx.fillStyle = textTertiary;
         ctx.font = '13px system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('No sleep data this week', W / 2, H / 2);
+        ctx.fillText('No sleep data this week', W / 2, H / 2 - 10);
+        ctx.textBaseline = 'top';
+        for (var ei = 0; ei < entries.length; ei++) {
+          var ex = PAD.left + ei * (chartW / 7) + barGap / 2;
+          ctx.fillStyle = entries[ei].isToday ? accent : textTertiary;
+          ctx.save();
+          ctx.translate(ex + barW / 2, PAD.top + chartH + 5);
+          ctx.scale(1, labelSquash);
+          ctx.font = labelSize + 'px "Bebas Neue", system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(entries[ei].label, 0, 0);
+          ctx.restore();
+        }
         return;
       }
 
@@ -935,16 +1125,16 @@ function init() {
       ctx.clearRect(0, 0, W, H);
 
       // ── Y axis ──
-      ctx.fillStyle = textTertiary;
-      ctx.font = '10px system-ui, sans-serif';
+      ctx.fillStyle = textSecondary;
+      ctx.font = '14px system-ui, sans-serif';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       var ySteps = [0, 2, 4, 6, 8, 10, 12];
       for (var si = 0; si < ySteps.length; si++) {
         var yVal = ySteps[si];
         var yPx = PAD.top + chartH - (yVal / 12) * chartH;
-        ctx.fillStyle = textTertiary;
-        ctx.fillText(yVal + 'h', PAD.left - 6, yPx);
+        ctx.fillStyle = textSecondary;
+        ctx.fillText(yVal + 'h', PAD.left - 8, yPx);
         ctx.strokeStyle = borderSubtle;
         ctx.lineWidth = 0.5;
         ctx.beginPath();
@@ -988,20 +1178,18 @@ function init() {
       ctx.fillStyle = accent;
       ctx.font = '9px system-ui, sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('Target ' + formatSleepMinutes(targetDur), W - PAD.right - 70, targetY - 5);
+      ctx.fillText('Target ' + formatSleepMinutes(targetDur), PAD.left + 6, targetY + 10);
 
       // ── bars ──
-      var qualityColors = {1:'#ef4444',2:'#f59e0b',3:'#6366f1',4:'#10b981',5:'#059669'};
-      var qFillColors = {1:'rgba(239,68,68,0.85)',2:'rgba(245,158,11,0.85)',3:'rgba(99,102,241,0.85)',4:'rgba(16,185,129,0.85)',5:'rgba(5,150,105,0.85)'};
+      var qualityColors = {1:'#ef4444',2:'#f97316',3:'#eab308',4:'#10b981',5:'#10b981'};
       var barData = [];
+      var durLabels = [];
 
       for (var bi = 0; bi < entries.length; bi++) {
         var e = entries[bi];
         var x = PAD.left + bi * (chartW / 7) + barGap / 2;
         var barH = e.hasData ? (e.duration / maxDur) * chartH : 0;
         var y = e.hasData ? PAD.top + chartH - barH : 0;
-        var color = e.hasData ? (qFillColors[e.quality] || 'rgba(99,102,241,0.85)') : 'transparent';
-        var barColor = e.hasData ? (qualityColors[e.quality] || '#6366f1') : 'transparent';
 
         // Rounded rect bar
         if (e.hasData) {
@@ -1017,42 +1205,29 @@ function init() {
           ctx.lineTo(x, y + r);
           ctx.quadraticCurveTo(x, y, x + r, y);
           ctx.closePath();
-          ctx.fillStyle = color;
+          // Neutral fill — the bar carries duration only; quality lives on the dots.
+          ctx.globalAlpha = barAlpha;
+          ctx.fillStyle = accent;
           ctx.fill();
+          ctx.globalAlpha = 1;
 
-          // Glow
-          ctx.shadowColor = barColor;
-          ctx.shadowBlur = 8;
-          ctx.fillStyle = color;
-          ctx.fill();
-          ctx.shadowBlur = 0;
+          // Duration label — collected and drawn after the dots so it can sit on top
+          durLabels.push({ x: x + barW / 2, y: y - 2, txt: formatSleepMinutes(e.duration) });
 
-          // Duration label above bar
-          ctx.fillStyle = textPrimary;
-          ctx.font = 'bold 10px system-ui, sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          ctx.fillText(formatSleepMinutes(e.duration), x + barW / 2, y - 2);
-
-          // Today highlight
-          if (e.isToday) {
-            ctx.strokeStyle = accent;
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(x + barW / 2, PAD.top + chartH + 4);
-            ctx.lineTo(x + barW / 2, PAD.top + chartH + 10);
-            ctx.stroke();
-          }
         }
 
         barData.push({ x: x, w: barW, y: y, h: barH, entry: e });
 
-        // X-axis label
+        // X-axis label — Bebas Neue, squashed vertically so it reads as a flat strip
         ctx.fillStyle = e.isToday ? accent : textTertiary;
-        ctx.font = e.isToday ? 'bold 10px system-ui, sans-serif' : '9px system-ui, sans-serif';
+        ctx.save();
+        ctx.translate(x + barW / 2, PAD.top + chartH + 5);
+        ctx.scale(1, labelSquash);
+        ctx.font = labelSize + 'px "Bebas Neue", system-ui, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText(e.label, x + barW / 2, PAD.top + chartH + 6);
+        ctx.fillText(e.label, 0, 0);
+        ctx.restore();
       }
 
       // ── quality polyline ──
@@ -1080,13 +1255,29 @@ function init() {
         for (var di = 0; di < qPoints.length; di++) {
           ctx.beginPath();
           ctx.arc(qPoints[di].x, qPoints[di].y, 4, 0, Math.PI * 2);
-          ctx.fillStyle = accent;
+          ctx.fillStyle = qualityColors[qPoints[di].quality] || accent;
           ctx.fill();
           ctx.strokeStyle = bgPrimary;
           ctx.lineWidth = 2;
           ctx.stroke();
         }
       }
+
+      // Duration labels drawn last, with a halo, so the dots sit behind the text
+      ctx.font = 'bold 10px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = cardBg;
+      for (var dl = 0; dl < durLabels.length; dl++) {
+        ctx.strokeText(durLabels[dl].txt, durLabels[dl].x, durLabels[dl].y);
+      }
+      ctx.fillStyle = textPrimary;
+      for (var dl2 = 0; dl2 < durLabels.length; dl2++) {
+        ctx.fillText(durLabels[dl2].txt, durLabels[dl2].x, durLabels[dl2].y);
+      }
+      ctx.lineWidth = 1;
 
       // ── store data for tooltips ──
       canvas._barData = barData;
@@ -1124,8 +1315,10 @@ function init() {
         var qualityLabels = {1:'Poor',2:'Fair',3:'Good',4:'Great',5:'Excellent'};
         tip.innerHTML = '<strong>' + found.label + ' ' + found.dayNum + '</strong><br>' +
           found.bedtime + ' \u2013 ' + found.wakeTime + '<br>' +
-          formatSleepMinutes(found.duration) + ' &middot; ' + (qualityLabels[found.quality] || '');
+          formatSleepMinutes(found.duration) + ' &middot; ' + (qualityLabels[found.quality] || '') +
+          '<br><span style="opacity:0.6">Click to edit</span>';
         tip.style.opacity = '1';
+        canvas.style.cursor = 'pointer';
         var tx = e.clientX + 14;
         var ty = e.clientY - 10;
         if (tx + 140 > window.innerWidth) tx = e.clientX - 150;
@@ -1134,6 +1327,24 @@ function init() {
         tip.style.top = ty + 'px';
       } else {
         tip.style.opacity = '0';
+        canvas.style.cursor = 'default';
+      }
+    });
+
+    // Click a bar to edit that night
+    document.addEventListener('click', function(e) {
+      var canvas = document.getElementById('sleepChart');
+      if (!canvas || !canvas._barData) return;
+      var rect = canvas.getBoundingClientRect();
+      var mx = e.clientX - rect.left;
+      var my = e.clientY - rect.top;
+      for (var cbi = 0; cbi < canvas._barData.length; cbi++) {
+        var bd = canvas._barData[cbi];
+        if (!bd.entry.hasData) continue;
+        if (mx < bd.x || mx > bd.x + bd.w || my < bd.y || my > bd.y + bd.h) continue;
+        var log = getSleepLog(bd.entry.dateStr);
+        if (log && log.id) editSleepLog(log.id);
+        return;
       }
     });
 
@@ -1232,7 +1443,7 @@ function init() {
       if (!container) return;
       if (logs.length === 0) { container.innerHTML = '<div class="sleep-history-empty">No sleep logs yet. Log your first night!</div>'; return; }
       var sorted = [...logs].sort(function(a, b) { return b.date.localeCompare(a.date); });
-      var qualityColors = { 1: '#ef4444', 2: '#f59e0b', 3: '#6366f1', 4: '#10b981', 5: '#059669' };
+      var qualityColors = { 1: '#ef4444', 2: '#f97316', 3: '#eab308', 4: '#10b981', 5: '#10b981' };
       var html = '';
       for (var hi = 0; hi < sorted.length; hi++) {
         var log = sorted[hi];
@@ -1244,7 +1455,7 @@ function init() {
             return '<span class="sleep-history-tag mood-' + m + '">' + escapeHtml(m.charAt(0).toUpperCase() + m.slice(1)) + '</span>';
           }).join('');
         }
-        html += '<div class="sleep-history-item">';
+        html += '<div class="sleep-history-item" data-sleep-id="' + escapeHtml(String(log.id)) + '" role="button" tabindex="0" title="Edit this sleep log">';
         html += '<span class="sleep-history-date">' + dateLabel + '</span>';
         html += '<span class="sleep-history-dur">' + formatSleepMinutes(log.duration) + '</span>';
         html += '<span class="sleep-history-detail">';
@@ -1271,7 +1482,16 @@ function init() {
         var editBtn = e.target.closest('[data-sleep-edit]');
         if (editBtn) { editSleepLog(editBtn.getAttribute('data-sleep-edit')); return; }
         var delBtn = e.target.closest('[data-sleep-del]');
-        if (delBtn) { deleteSleepLogEntry(delBtn.getAttribute('data-sleep-del')); }
+        if (delBtn) { deleteSleepLogEntry(delBtn.getAttribute('data-sleep-del')); return; }
+        var row = e.target.closest('[data-sleep-id]');
+        if (row) editSleepLog(row.getAttribute('data-sleep-id'));
+      });
+      list.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        var row = e.target.closest('[data-sleep-id]');
+        if (!row) return;
+        e.preventDefault();
+        editSleepLog(row.getAttribute('data-sleep-id'));
       });
     })();
 
@@ -1489,6 +1709,9 @@ function init() {
         return;
       }
       closeSleepLogModal();
+      // A brand-new log is for "now", so jump back to the current week to show it.
+      // An edit keeps the week you were browsing.
+      if (!wasEdit) sleepWeekOffset = 0;
       if (typeof renderSleepHub === 'function') renderSleepHub();
       showToast(wasEdit ? 'Sleep updated' : 'Sleep saved for ' + date, 'success', 2000);
     }
