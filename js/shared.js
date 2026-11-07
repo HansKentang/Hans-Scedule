@@ -101,6 +101,11 @@ function fetchWithRetry(url, options, retries = 2) {
 }
 
 const AI_USAGE_KEY = 'haven-schedule-ai-usage';
+const AI_TOKEN_LIMIT_KEY = 'haven-schedule-ai-token-limit';
+// Free-tier daily token ceilings (tokens/day). These are conservative defaults;
+// the real limit depends on provider + model, so the user can override the
+// value from the token bar. Groq's free tier is per-model, so this is a guide.
+const AI_DAILY_TOKEN_DEFAULTS = { groq: 100000, gemini: 1000000, openai: 100000, custom: 100000 };
 
 // ─── SLEEP TRACKING ──────────────────────────────────────────
 const SLEEP_STORAGE_KEY = 'haven-schedule-sleep';
@@ -1690,7 +1695,7 @@ let state = {
   helpModalOpen: false,
   aiChatOpen: false,
   apiKey: '',
-  apiModel: 'llama-3.3-70b-versatile',
+  apiModel: 'openai/gpt-oss-120b',
   apiProvider: 'groq',
   darkMode: null,
   accentColor: null,
@@ -2962,6 +2967,8 @@ function loadState() {
   try {
     const model = localStorage.getItem(API_MODEL_STORAGE);
     if (model) state.apiModel = model;
+    // Deprecated/paid-only model that 404s on free keys — fall back to the free default.
+    if (state.apiModel === 'llama-3.3-70b-versatile') state.apiModel = 'openai/gpt-oss-120b';
   } catch (e) { /* ignore */ }
   try {
     const provider = localStorage.getItem(API_PROVIDER_STORAGE);
@@ -4267,6 +4274,10 @@ function loadAIUsage() {
   } catch (e) {
     aiUsage = createDefaultAIUsage();
   }
+  // Migrate older usage records that predate token tracking.
+  if (!aiUsage || typeof aiUsage !== 'object') aiUsage = createDefaultAIUsage();
+  if (typeof aiUsage.totalTokens !== 'number' || !isFinite(aiUsage.totalTokens)) aiUsage.totalTokens = 0;
+  if (!aiUsage.dailyUsage || typeof aiUsage.dailyUsage !== 'object') aiUsage.dailyUsage = {};
 }
 
 function createDefaultAIUsage() {
@@ -4276,6 +4287,7 @@ function createDefaultAIUsage() {
     filesUploaded: 0,
     tasksCreatedByAI: 0,
     totalAPICalls: 0,
+    totalTokens: 0,
     firstUsed: null,
     lastUsed: null,
     dailyUsage: {},
@@ -4305,9 +4317,10 @@ function trackAIUsage(event) {
   aiUsage.lastUsed = today;
   
   if (!aiUsage.dailyUsage[today]) {
-    aiUsage.dailyUsage[today] = { chat: 0, api: 0, files: 0, tasks: 0 };
+    aiUsage.dailyUsage[today] = { chat: 0, api: 0, files: 0, tasks: 0, tokens: 0 };
   }
-  
+  if (typeof aiUsage.dailyUsage[today].tokens !== 'number') aiUsage.dailyUsage[today].tokens = 0;
+
   switch (event) {
     case 'chat':
       aiUsage.chatMessagesSent++;
@@ -4328,6 +4341,103 @@ function trackAIUsage(event) {
   }
   
   saveAIUsage();
+}
+
+// ─── TOKEN USAGE (free-tier quota bar) ─────────────────────
+function formatTokenCount(n) {
+  n = Number(n) || 0;
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(Math.round(n));
+}
+
+function getDailyTokenLimit() {
+  try {
+    const saved = parseInt(localStorage.getItem(AI_TOKEN_LIMIT_KEY), 10);
+    if (isFinite(saved) && saved > 0) return saved;
+  } catch (e) { /* ignore */ }
+  const p = state.apiProvider || 'groq';
+  return AI_DAILY_TOKEN_DEFAULTS[p] || AI_DAILY_TOKEN_DEFAULTS.custom;
+}
+
+function setDailyTokenLimit(value) {
+  const n = parseInt(value, 10);
+  if (!isFinite(n) || n <= 0) return;
+  try { localStorage.setItem(AI_TOKEN_LIMIT_KEY, String(n)); } catch (e) { /* ignore */ }
+  renderTokenBar();
+}
+
+function getTodayTokens() {
+  if (!aiUsage) loadAIUsage();
+  const today = formatDate(new Date());
+  const d = aiUsage.dailyUsage && aiUsage.dailyUsage[today];
+  return d && typeof d.tokens === 'number' ? d.tokens : 0;
+}
+
+// Accepts a Groq `usage` object or a Gemini `usageMetadata` object.
+function trackTokenUsage(usage) {
+  if (!usage || typeof usage !== 'object') return;
+  const total = Number(
+    usage.total_tokens ?? usage.totalTokenCount ??
+    ((usage.prompt_tokens || usage.promptTokenCount || 0) +
+     (usage.completion_tokens || usage.candidatesTokenCount || 0))
+  );
+  if (!isFinite(total) || total <= 0) return;
+  if (!aiUsage) loadAIUsage();
+  const today = formatDate(new Date());
+  if (!aiUsage.firstUsed) aiUsage.firstUsed = today;
+  aiUsage.lastUsed = today;
+  aiUsage.totalTokens = (aiUsage.totalTokens || 0) + total;
+  if (!aiUsage.dailyUsage[today]) {
+    aiUsage.dailyUsage[today] = { chat: 0, api: 0, files: 0, tasks: 0, tokens: 0 };
+  }
+  if (typeof aiUsage.dailyUsage[today].tokens !== 'number') aiUsage.dailyUsage[today].tokens = 0;
+  aiUsage.dailyUsage[today].tokens += total;
+  saveAIUsage();
+  renderTokenBar();
+}
+
+function renderTokenBar() {
+  const bar = document.getElementById('aiTokenBar');
+  if (!bar) return;
+  const used = getTodayTokens();
+  const limit = getDailyTokenLimit();
+  const pctRaw = limit > 0 ? (used / limit) * 100 : 0;
+  const pct = Math.max(0, Math.min(100, pctRaw));
+  const pctLabel = pctRaw <= 0 ? '0%'
+    : (pctRaw >= 100 ? '100%' : (pctRaw < 10 ? pctRaw.toFixed(1) : Math.round(pctRaw)) + '%');
+
+  bar.classList.remove('is-warn', 'is-danger', 'is-full');
+  if (pctRaw >= 100) bar.classList.add('is-full');
+  else if (pctRaw >= 90) bar.classList.add('is-danger');
+  else if (pctRaw >= 70) bar.classList.add('is-warn');
+
+  const fill = bar.querySelector('.ai-token-fill');
+  if (fill) fill.style.width = pct + '%';
+
+  const countEl = bar.querySelector('.ai-token-count');
+  if (countEl) {
+    countEl.innerHTML = `<strong>${formatTokenCount(used)}</strong> / ${formatTokenCount(limit)} tokens · ${pctLabel}`;
+  }
+
+  const statusEl = bar.querySelector('.ai-token-status');
+  if (statusEl) {
+    statusEl.textContent = pctRaw >= 100
+      ? 'Daily limit reached — resets tomorrow'
+      : (pctRaw >= 90 ? 'Almost at today\'s free limit' : 'Today\'s free usage');
+  }
+
+  bar.title = `Today: ${used.toLocaleString()} of ${limit.toLocaleString()} tokens used. Click the limit to change it.`;
+}
+
+function promptTokenLimit() {
+  const current = getDailyTokenLimit();
+  const answer = window.prompt(
+    'Daily token limit for your free AI API (tokens/day).\nGroq free tier is around 100,000 per model per day; Gemini free tier is much higher.',
+    String(current)
+  );
+  if (answer === null) return;
+  setDailyTokenLimit(answer);
 }
 
 function renderAIUsage() {
@@ -4610,6 +4720,10 @@ function updateModelOptions() {
   const provider = dom.settingsProvider.value;
   const models = PROVIDER_MODELS[provider] || PROVIDER_MODELS.groq;
   dom.settingsModel.innerHTML = models.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
+  // Deprecated/paid-only model that 404s on free keys — migrate to the free default.
+  if (state.apiModel === 'llama-3.3-70b-versatile') {
+    state.apiModel = 'openai/gpt-oss-120b';
+  }
   if (!models.find(m => m.value === state.apiModel)) {
     state.apiModel = models[0].value;
   }
@@ -5061,7 +5175,7 @@ function handleSettingsSubmit(e) {
 function handleSettingsClear() {
   state.apiKey = '';
   state.apiProvider = 'groq';
-  state.apiModel = 'llama-3.3-70b-versatile';
+  state.apiModel = 'openai/gpt-oss-120b';
   try { localStorage.removeItem(API_KEY_STORAGE); } catch (e) { /* ignore */ }
   try { localStorage.removeItem('haven-schedule-provider'); } catch (e) { /* ignore */ }
   try { localStorage.removeItem('haven-schedule-model'); } catch (e) { /* ignore */ }
@@ -6221,9 +6335,15 @@ function showAIChat() {
         if (msg.role === 'user') appendAIMessage('user', msg.text);
         else if (msg.role === 'assistant') appendAIMessage('assistant', msg.text);
       });
-    } else if (!getChickBotProfile()) {
-      startOnboarding();
     } else {
+      const prof = getChickBotProfile();
+      // One-time intro: only run onboarding if there is no saved profile AND
+      // the user hasn't already completed/skipped the intro. Once done, we
+      // never ask again — even on a fresh device where only the chat history
+      // is missing.
+      if (!prof || (!prof.name && !prof.introDone)) {
+        startOnboarding();
+      } else {
       dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
         <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
         <div class="ai-bubble">
@@ -6245,6 +6365,7 @@ function showAIChat() {
           sendAIMessage();
         });
       });
+    }
     }
     dom.aiChatInputWrapper.classList.remove('disabled');
     dom.aiChatInput.disabled = false;
@@ -6314,6 +6435,12 @@ function showAIChat() {
     dom.aiChatPanel.classList.add('open');
   });
   state.aiChatOpen = true;
+  renderTokenBar();
+  const _tokenLimitBtn = document.getElementById('aiTokenLimitBtn');
+  if (_tokenLimitBtn && !_tokenLimitBtn.hasAttribute('data-bound')) {
+    _tokenLimitBtn.setAttribute('data-bound', 'true');
+    _tokenLimitBtn.addEventListener('click', promptTokenLimit);
+  }
   dom.aiChatInput?.focus();
 
   // Toggle send button visibility based on input
@@ -6657,6 +6784,7 @@ function showAIPermissions() {
       '<br><span style="color:var(--text-tertiary)">' + r.desc + '</span></span></label>';
   });
   html += '<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="aiPermRestore" class="btn btn-outline" style="font-size:0.72rem;padding:4px 10px">Restore last AI backup</button><span style="color:var(--text-tertiary)">Reverts all AI changes at once.</span></div>';
+  html += '<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button id="aiPermEditProfile" class="btn btn-outline" style="font-size:0.72rem;padding:4px 10px">Edit my profile</button><span style="color:var(--text-tertiary)">Name &amp; details ChickBot remembers.</span></div>';
   panel.innerHTML = html;
   var body = dom.aiChatPanel.querySelector('.ai-panel-body');
   if (body) dom.aiChatPanel.insertBefore(panel, body);
@@ -6672,6 +6800,24 @@ function showAIPermissions() {
     var restored = undoAIChanges();
     if (typeof showToast === 'function') showToast(restored.length ? 'Restored: ' + restored.join(' + ') : 'No AI backup to restore', restored.length ? 'success' : 'info', 2500);
   });
+  document.getElementById('aiPermEditProfile')?.addEventListener('click', editChickBotProfile);
+}
+
+// Quick profile editor — lets the user set/correct the name the bot remembers
+// without ever being forced through the onboarding flow again.
+function editChickBotProfile() {
+  var p = getChickBotProfile() || {};
+  var name = window.prompt('What should ChickBot call you? (leave blank to clear)', p.name || '');
+  if (name === null) return; // cancelled
+  p.name = name.trim();
+  if (!p.pronouns) p.pronouns = '';
+  if (!p.occupation) p.occupation = '';
+  if (!p.goals) p.goals = '';
+  if (!p.routines) p.routines = '';
+  if (!p.preferences) p.preferences = '';
+  p.introDone = true;
+  saveChickBotProfile(p);
+  if (typeof showToast === 'function') showToast(p.name ? 'Saved — I\'ll call you ' + p.name + ' from now on.' : 'Profile cleared', 'success', 2200);
 }
 
 function executeActions(actions, responseText) {
@@ -7121,8 +7267,18 @@ function startOnboarding() {
   onboardingState = { step: 0, profile: {} };
   dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
     <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
-    <div class="ai-bubble"><p>Hi! I'm <strong>ChickBot</strong>, your personal schedule assistant!</p><p>Let's get to know each other first.</p><p><strong>${ONBOARDING_STEPS[0].question}</strong></p></div>
+    <div class="ai-bubble"><p>Hi! I'm <strong>ChickBot</strong>, your personal schedule assistant!</p><p>Let's get to know each other first — this only happens once.</p><p><strong>${ONBOARDING_STEPS[0].question}</strong></p>
+    <div class="ai-suggestions"><button class="ai-chip ai-onboard-skip">Skip for now</button></div></div>
   </div>`;
+  dom.aiChatMessages.querySelector('.ai-onboard-skip')?.addEventListener('click', function () {
+    // Skip still marks the intro as done so we never nag again.
+    saveChickBotProfile({ name: '', pronouns: '', occupation: '', goals: '', routines: '', preferences: '', introDone: true });
+    onboardingState = null;
+    dom.aiChatMessages.innerHTML = `<div class="ai-message ai-message-assistant">
+      <div class="ai-avatar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg></div>
+      <div class="ai-bubble"><p>No problem — we can do that later. Just ask me anything about your schedule.</p></div>
+    </div>`;
+  });
 }
 
 function processOnboardingStep(userText, typingEl) {
@@ -7148,7 +7304,8 @@ function processOnboardingStep(userText, typingEl) {
       occupation: onboardingState.profile.situation || '',
       goals: onboardingState.profile.priorities || '',
       routines: [onboardingState.profile.hours, onboardingState.profile.commitments, onboardingState.profile.break].filter(Boolean).join('; '),
-      preferences: ''
+      preferences: '',
+      introDone: true
     };
     saveChickBotProfile(profile);
     onboardingState = null;
@@ -7511,6 +7668,7 @@ SAFETY RULES (hard rules; the app enforces them again, so breaking them just was
 7. Only use widget types from WIDGET CATALOG, designs from WIDGET DESIGNS, and fields from CONTENT-EDITABLE WIDGETS. If arrange/content permission is false, explain instead of emitting those actions.
 8. Never invent an action type. Unsupported or malformed actions are silently blocked.
 9. You may answer questions about the canvas (what is on it, what a widget holds, suggestions) with actions:[] — this is often the best answer.
+10. IDENTITY: You already know the user from the ABOUT YOU section above. NEVER ask them to introduce themselves, spell out or repeat their name, or re-run onboarding. If ABOUT YOU is empty, greet neutrally and you may offer (once) to learn their name, but never require it. Never say "let's get to know each other" more than once.
 
 EXAMPLES: "Clear schedule" -> clearAllTasks (only if allowBulkDelete). "Add a pomodoro timer" -> addWidget{type:"pomodoro"}. "Add buy milk to my todos" -> addWidgetItem{widget:"todos",text:"buy milk"}. "Tick off buy milk" -> completeWidgetItem{widget:"todos",match:"buy milk"}. "Make my clock analog" -> changeWidgetStyle{type:"clock",style:"analog"}. "Move clock to top left" -> moveWidget{type:"clock",x:24,y:24}. "What widgets do I have?" -> answer from CANVAS context, actions:[]. "Chapter 1 – Cells\n1.1 Cell structure\n... for bio" -> addStudySyllabus{subject:"<exact subject name from STUDY SUBJECTS>",chapters:[{name:"Chapter 1 – Cells",items:["1.1 Cell structure"]}]}.
 
@@ -7560,31 +7718,38 @@ function callGroqChat(systemPrompt, userText, attachedImage) {
     ];
   }
 
-  // Vision models on Groq may not support response_format, so omit when sending images
-  const body = {
-    model: state.apiModel,
-    messages,
-    temperature: 0.2,
-    max_tokens: 2000,
+  // Vision models on Groq may not support response_format, so omit when sending images.
+  // Some free-tier models also reject json_object — if so, retry once without it.
+  const buildBody = (useJson) => {
+    const b = { model: state.apiModel, messages, temperature: 0.2, max_tokens: 2000 };
+    if (useJson && !hasVision) b.response_format = { type: 'json_object' };
+    return b;
   };
-  if (!hasVision) {
-    body.response_format = { type: 'json_object' };
-  }
 
-  return fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
+  const doRequest = (useJson) => fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${state.apiKey}`
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(buildBody(useJson))
   }).then(async res => {
+    const txt = res.ok ? '' : (await res.text().catch(() => ''));
     if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`API error: ${res.status}${body ? ' — ' + body.slice(0, 200) : ''}`);
+      const e = new Error(`API error: ${res.status}${txt ? ' — ' + txt.slice(0, 200) : ''}`);
+      e.status = res.status;
+      e.triedJson = useJson;
+      throw e;
     }
     return res.json();
-  }).then(data => {
+  });
+
+  const run = (useJson) => doRequest(useJson).catch(err => {
+    if (useJson && err.status === 400 && err.triedJson) return doRequest(false);
+    throw err;
+  });
+
+  return run(!hasVision).then(data => {
     const raw = data?.choices?.[0]?.message?.content;
     if (!raw) throw new Error('Empty response from AI');
     let parsed;
@@ -7594,7 +7759,8 @@ function callGroqChat(systemPrompt, userText, attachedImage) {
       else throw new Error('Invalid response format from AI');
     }
     if (!parsed.text) throw new Error('AI returned incomplete response');
-    return { text: parsed.text, actions: parsed.actions || [] };
+    trackTokenUsage(data.usage);
+    return { text: parsed.text, actions: parsed.actions || [], usage: data.usage || null };
   });
 }
 
@@ -7657,7 +7823,8 @@ function callGeminiChat(systemPrompt, userText, attachedImage) {
       }
     }
     if (!parsed.text) throw new Error('AI returned incomplete response');
-    return { text: parsed.text, actions: parsed.actions || [] };
+    trackTokenUsage(data.usageMetadata);
+    return { text: parsed.text, actions: parsed.actions || [], usage: data.usageMetadata || null };
   });
 }
 

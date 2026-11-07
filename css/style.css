@@ -5097,6 +5097,50 @@ html.light .hub-bottom-nav {
   opacity: 0.7;
 }
 
+/* ─── Free-tier token quota bar ─── */
+.ai-token-bar {
+  margin-bottom: var(--space-2);
+  padding: 0 2px;
+}
+.ai-token-bar-top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-2); margin-bottom: 4px;
+}
+.ai-token-status {
+  font-size: 0.6rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.ai-token-count {
+  border: none; background: transparent; padding: 0;
+  font-size: 0.62rem; font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer; font-family: var(--font-family);
+  border-radius: var(--radius-sm);
+  line-height: 1.2;
+}
+.ai-token-count:hover { color: var(--text-primary); text-decoration: underline; }
+.ai-token-count strong { color: var(--text-primary); font-weight: 700; }
+.ai-token-track {
+  height: 5px; border-radius: var(--radius-full);
+  background: var(--surface-container-high);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+.ai-token-fill {
+  height: 100%; width: 0%;
+  border-radius: inherit;
+  /* text-primary stays legible on the track in both themes, even when the
+     user's accent is near-white (dark) or near-black (light). */
+  background: var(--text-primary);
+  transition: width 320ms ease, background 200ms ease;
+}
+.ai-token-bar.is-warn .ai-token-fill { background: #e8a33d; }
+.ai-token-bar.is-danger .ai-token-fill { background: #e26565; }
+.ai-token-bar.is-full .ai-token-fill { background: #e26565; }
+.ai-token-bar.is-full .ai-token-status { color: #e26565; }
+
 /* ─── Suggestion Chips ─── */
 .ai-suggestions {
   display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2);
