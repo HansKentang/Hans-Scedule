@@ -48,13 +48,23 @@
       list: function () { return hc.todos || (hc.todos = []); },
       make: function (d) { return { text: trim(d.text || d.title || d.name), done: false }; },
       text: function (it) { return str(it.text); },
-      done: function (it, v) { it.done = !!v; }
+      done: function (it, v) { it.done = !!v; },
+      update: function (it, d) {
+        if (d.text != null || d.title != null) it.text = trim(d.text != null ? d.text : d.title);
+        if (d.done != null) it.done = !!d.done;
+        return '';
+      }
     };
     if (widget === 'today') return {
       list: function () { return _todayTodosItems(); },
       make: function (d) { return { text: trim(d.text || d.title || d.name), done: false }; },
       text: function (it) { return str(it.text); },
-      done: function (it, v) { it.done = !!v; }
+      done: function (it, v) { it.done = !!v; },
+      update: function (it, d) {
+        if (d.text != null || d.title != null) it.text = trim(d.text != null ? d.text : d.title);
+        if (d.done != null) it.done = !!d.done;
+        return '';
+      }
     };
     if (widget === 'goals' || widget === 'priorities' || widget === 'habits') return {
       list: function () { return hc[widget] || (hc[widget] = []); },
@@ -71,19 +81,41 @@
         };
       },
       text: function (it) { return str(it.title); },
-      done: null
+      done: null,
+      update: function (it, d) {
+        if (d.title != null || d.text != null) it.title = trim(d.title != null ? d.title : d.text);
+        if (d.body != null) it.body = str(d.body).slice(0, 5000);
+        if (d.pinned != null) it.pinned = !!d.pinned;
+        it.updated = Date.now();
+        return '';
+      }
     };
     if (widget === 'links') return {
       list: function () { return hc.links || (hc.links = []); },
       make: function (d) { return { label: trim(d.label || d.title || d.name), url: trim(d.url) }; },
       text: function (it) { return str(it.label); },
-      done: null
+      done: null,
+      update: function (it, d) {
+        if (d.label != null || d.text != null) it.label = trim(d.label != null ? d.label : d.text);
+        if (d.url != null) {
+          var u = trim(d.url);
+          if (!/^https?:\/\//i.test(u)) return 'Links need a real http:// or https:// URL.';
+          it.url = u;
+        }
+        return '';
+      }
     };
     if (widget === 'reading') return {
       list: function () { return hc.reading || (hc.reading = []); },
       make: function (d) { return { title: trim(d.title || d.text || d.name), author: trim(d.author), done: false }; },
       text: function (it) { return str(it.title); },
-      done: function (it, v) { it.done = !!v; }
+      done: function (it, v) { it.done = !!v; },
+      update: function (it, d) {
+        if (d.title != null || d.text != null) it.title = trim(d.title != null ? d.title : d.text);
+        if (d.author != null) it.author = trim(d.author);
+        if (d.done != null) it.done = !!d.done;
+        return '';
+      }
     };
     if (widget === 'homework') return {
       list: function () { return hc.homework || (hc.homework = []); },
@@ -94,13 +126,30 @@
         };
       },
       text: function (it) { return str(it.text); },
-      done: function (it, v) { it.done = !!v; }
+      done: function (it, v) { it.done = !!v; },
+      update: function (it, d) {
+        if (d.text != null || d.title != null) it.text = trim(d.text != null ? d.text : d.title);
+        if (d.subject != null) it.subject = trim(d.subject);
+        if (d.due != null) it.due = trim(d.due);
+        if (d.priority != null) it.priority = trim(d.priority) || 'medium';
+        if (d.done != null) it.done = !!d.done;
+        return '';
+      }
     };
     if (widget === 'countdown') return {
       list: function () { return hc.countdown || (hc.countdown = []); },
       make: function (d) { return { label: trim(d.label || d.title || d.name), date: trim(d.date) }; },
       text: function (it) { return str(it.label); },
-      done: null
+      done: null,
+      update: function (it, d) {
+        if (d.label != null || d.text != null) it.label = trim(d.label != null ? d.label : d.text);
+        if (d.date != null) {
+          var dt = trim(d.date);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(dt)) return 'Countdown dates must be YYYY-MM-DD.';
+          it.date = dt;
+        }
+        return '';
+      }
     };
     return null;
   }
@@ -304,16 +353,21 @@
         saveHubContent(); renderHubBento();
         return ok('Ticked off "' + F.text(r.list[idx]) + '" in ' + widget + '.');
       }
-      var nt = trim(d.text || d.title || d.label || d.name);
-      if (!nt) return no('A replacement text is required.');
       var old = F.text(r.list[idx]);
-      if (typeof r.list[idx] === 'string') r.list[idx] = nt;
-      else if ('text' in r.list[idx]) r.list[idx].text = nt;
-      else if ('title' in r.list[idx]) r.list[idx].title = nt;
-      else if ('label' in r.list[idx]) r.list[idx].label = nt;
-      else return no('Items in ' + widget + ' cannot be edited.');
+      if (F.update) {
+        var err = F.update(r.list[idx], d);
+        if (err) return no(err);
+      } else {
+        var nt = trim(d.text || d.title || d.label || d.name);
+        if (!nt) return no('A replacement text is required.');
+        if (typeof r.list[idx] === 'string') r.list[idx] = nt;
+        else if ('text' in r.list[idx]) r.list[idx].text = nt;
+        else if ('title' in r.list[idx]) r.list[idx].title = nt;
+        else if ('label' in r.list[idx]) r.list[idx].label = nt;
+        else return no('Items in ' + widget + ' cannot be edited.');
+      }
       saveHubContent(); renderHubBento();
-      return ok('Changed "' + old + '" to "' + nt + '" in ' + widget + '.');
+      return ok('Updated "' + old + '" in ' + widget + '.');
     }
 
     return no('"' + str(type) + '" is not supported by the Hub canvas.');

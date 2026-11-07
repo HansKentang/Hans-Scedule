@@ -719,7 +719,9 @@ function makeUniqueCategoryLabel(label, existing) {
 }
 
 function addCustomCategory(label, color, options) {
-  if (typeof hasAccess === 'function' && !hasAccess('unlimited_tags')) {
+  // When the premium system is disabled/suspended there is no limit to enforce.
+  const premiumOff = typeof premiumSuspended === 'function' && premiumSuspended();
+  if (!premiumOff && typeof hasAccess === 'function' && !hasAccess('unlimited_tags')) {
     const catLimit = typeof premiumLimit === 'function' ? premiumLimit('customCategories') : 0;
     if (loadCustomCategories().length >= catLimit) {
       requirePremium('unlimited_tags', { reason: catLimit > 0 ? 'The Free plan includes ' + catLimit + ' custom categories' : 'Custom categories are a Premium feature' });
@@ -861,6 +863,85 @@ function updateCustomCategory(id, name, color) {
   cardColors[id] = { light: color, dark: lightenColor(color, 0.45) };
   saveCardColors(cardColors);
   injectCustomTagStyles();
+}
+
+// ─── AI-FACING CATEGORY HELPERS ─────────────────────────────
+// TAG_ORDER is populated per-page and can be empty on the Hub, so the AI reads
+// a stable union instead: built-ins, then any page order, then custom records.
+function getAllCategoryIds() {
+  const seen = {};
+  const out = [];
+  const add = (t) => {
+    if (!t || seen[t] || TAG_LABELS[t] === undefined) return;
+    seen[t] = 1; out.push(t);
+  };
+  if (typeof BUILTIN_TAGS !== 'undefined') BUILTIN_TAGS.forEach(add);
+  TAG_ORDER.forEach(add);
+  loadCustomCategories().forEach(c => add(c.id));
+  Object.keys(TAG_LABELS).forEach(add);
+  return out;
+}
+
+// Resolve a category by exact id or exact (case-insensitive) label. Never
+// guesses: a wrong match would retag real tasks, so one clear match or nothing.
+function findCategoryRef(ref) {
+  const raw = String(ref == null ? '' : ref).trim();
+  if (!raw) return { id: '', label: '', reason: 'No category name was given.' };
+  const cats = loadCustomCategories();
+  const hit = cats.find(c => c.id === raw) ||
+    cats.find(c => String(c.label || '').toLowerCase() === raw.toLowerCase());
+  if (hit) return { id: hit.id, label: hit.label, custom: true, reason: '' };
+  const ids = getAllCategoryIds();
+  const builtin = ids.find(t => t === raw) ||
+    ids.find(t => String(TAG_LABELS[t] || '').toLowerCase() === raw.toLowerCase());
+  if (builtin) return { id: builtin, label: TAG_LABELS[builtin] || builtin, custom: false, reason: '' };
+  const names = ids.map(t => '"' + (TAG_LABELS[t] || t) + '"').join(', ');
+  return { id: '', label: '', reason: 'No category matches "' + raw + '". Your categories: ' + names + '.' };
+}
+
+// Update label / colour / default start / duration. Built-in categories are
+// upgraded into editable records on first edit, keeping the same id so no task
+// loses its tag.
+function updateCategoryFull(id, changes) {
+  const cats = loadCustomCategories();
+  let cat = cats.find(c => c.id === id);
+  if (!cat) {
+    if (!TAG_LABELS[id]) return false;
+    const d = getCategoryDefaults(id);
+    cat = { id, label: TAG_LABELS[id], color: getCategoryColor(id), defaultStart: d.defaultStart, duration: d.duration };
+    cats.push(cat);
+  }
+  if (typeof changes.label === 'string' && changes.label.trim()) cat.label = changes.label.trim().slice(0, 40);
+  if (typeof changes.color === 'string' && /^#[0-9a-f]{6}$/i.test(changes.color)) cat.color = changes.color;
+  if (typeof changes.startTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(changes.startTime)) cat.defaultStart = changes.startTime;
+  if (changes.duration != null && isFinite(Number(changes.duration))) {
+    cat.duration = Math.min(480, Math.max(5, Math.round(Number(changes.duration) / 5) * 5));
+  }
+  saveCustomCategories(cats);
+  const customTags = loadCustomTags();
+  const ct = customTags.find(t => t.id === id);
+  if (ct) { ct.name = cat.label; ct.color = cat.color; } else customTags.push({ id, name: cat.label, color: cat.color });
+  saveCustomTags(customTags);
+  TAG_LABELS[id] = cat.label;
+  TAG_COLORS[id] = { text: cat.color, bg: lightenColor(cat.color, 0.85) };
+  cardColors[id] = { light: cat.color, dark: lightenColor(cat.color, 0.45) };
+  saveCardColors(cardColors);
+  injectCustomTagStyles();
+  return true;
+}
+
+function isBuiltinCategory(id) {
+  return ['daily', 'math', 'physics', 'bio', 'chem', 'eng', 'mandarin'].indexOf(id) !== -1;
+}
+
+// A compact, exact-name listing for the system prompt. Subcategories are keyed
+// by category id, so the model gets both and can copy them verbatim.
+function getCategoryContext() {
+  const subs = loadSubcategories();
+  return getAllCategoryIds().map(t => {
+    const list = (subs[t] || []).filter(Boolean);
+    return '  - "' + (TAG_LABELS[t] || t) + '" (id=' + t + ')' + (list.length ? ' · subcategories: ' + list.join(', ') : '');
+  }).join('\n');
 }
 
 // ─── CATEGORY EDIT POPUP ────────────────────────────────
@@ -6590,6 +6671,7 @@ function flashTaskOnGrid(taskId) {
 var AI_PERMS_KEY = 'haven-ai-permissions';
 var AI_PERMS_DEFAULT = { arrange:true, content:true, schedule:true, bulkDelete:false };
 var AI_TASKS_BACKUP_KEY = 'haven-ai-tasks-backup';
+var AI_META_BACKUP_KEY = 'haven-ai-meta-backup';
 
 function getAIPermissions() {
   try {
@@ -6622,6 +6704,12 @@ var AI_ACTION_META = {
   clearCompletedTasks:{ risk:'high',    group:'schedule' },
   deleteTasksByTag:  { risk:'high',     group:'schedule' },
   deleteTasksByQuery:{ risk:'high',     group:'schedule' },
+  createCategory:    { risk:'safe',     group:'schedule' },
+  updateCategory:    { risk:'safe',     group:'schedule' },
+  deleteCategory:    { risk:'moderate', group:'schedule' },
+  createSubcategory: { risk:'safe',     group:'schedule' },
+  renameSubcategory: { risk:'safe',     group:'schedule' },
+  deleteSubcategory: { risk:'moderate', group:'schedule' },
   addWidget:         { risk:'safe',     group:'arrange' },
   moveWidget:        { risk:'safe',     group:'arrange' },
   resizeWidget:      { risk:'safe',     group:'arrange' },
@@ -6663,12 +6751,60 @@ function guardAIAction(action, perms) {
     if (!rs.name) return { allowed:false, reason:rs.reason + ' Name the subject so I can file it correctly.' };
     sd.subject = rs.name;
   }
+
+  /* ---- categories & subcategories ---- */
+  if (action.type === 'createCategory') {
+    var cd = action.data || (action.data = {});
+    var cl = String(cd.label || cd.name || '').trim();
+    if (!cl) return { allowed:false, reason:'A new category needs a name.' };
+    cd.label = cl.slice(0, 40);
+    var dupe = findCategoryRef(cd.label);
+    if (dupe.id) return { allowed:false, reason:'A category called "' + dupe.label + '" already exists. I can add to it or rename it instead.' };
+    if (cd.color && !/^#[0-9a-f]{6}$/i.test(cd.color)) delete cd.color;
+  }
+  if (['updateCategory', 'deleteCategory', 'createSubcategory', 'renameSubcategory', 'deleteSubcategory'].indexOf(action.type) !== -1) {
+    var d = action.data || (action.data = {});
+    var ref = findCategoryRef(d.category || d.id || d.label);
+    if (!ref.id) return { allowed:false, reason:ref.reason };
+    if (action.type === 'deleteCategory' && isBuiltinCategory(ref.id))
+      return { allowed:false, reason:'"' + ref.label + '" is a built-in category and cannot be deleted. I can rename it or change its colour instead.' };
+    d.category = ref.id;
+    d.categoryLabel = ref.label;
+  }
+  if (['createSubcategory', 'renameSubcategory', 'deleteSubcategory'].indexOf(action.type) !== -1) {
+    var dd = action.data;
+    var nm = String((action.type === 'renameSubcategory' ? dd.from : dd.name) || '').trim();
+    if (!nm) return { allowed:false, reason:'A subcategory name is required.' };
+    var existing = loadSubcategories()[dd.category] || [];
+    if (action.type === 'renameSubcategory') {
+      if (existing.indexOf(nm) === -1) return { allowed:false, reason:'"' + nm + '" is not a subcategory of "' + dd.categoryLabel + '".' };
+      var to = String(dd.to || '').trim();
+      if (!to) return { allowed:false, reason:'The new subcategory name is empty.' };
+      dd.to = to.slice(0, 40);
+    } else if (action.type === 'deleteSubcategory') {
+      if (existing.indexOf(nm) === -1) return { allowed:false, reason:'"' + nm + '" is not a subcategory of "' + dd.categoryLabel + '".' };
+    } else {
+      dd.name = nm.slice(0, 40);
+    }
+  }
   return { allowed:true, risk:meta.risk, group:meta.group };
 }
 
 function aiBackupState() {
   var did = false;
   try { localStorage.setItem(AI_TASKS_BACKUP_KEY, JSON.stringify(state.tasks || [])); did = true; } catch (e) {}
+  try {
+    localStorage.setItem(AI_META_BACKUP_KEY, JSON.stringify({
+      categories: loadCustomCategories(),
+      subcategories: loadSubcategories(),
+      customTags: loadCustomTags(),
+      cardColors: cardColors,
+      tagOrder: TAG_ORDER.slice(),
+      tagLabels: Object.assign({}, TAG_LABELS),
+      tagColors: JSON.parse(JSON.stringify(TAG_COLORS || {}))
+    }));
+    did = true;
+  } catch (e) {}
   if (window.HubAI && window.HubAI.available()) {
     try { if (window.HubAI.backup()) did = true; } catch (e) {}
   }
@@ -6677,6 +6813,7 @@ function aiBackupState() {
 
 function hasAIBackup() {
   try { if (localStorage.getItem(AI_TASKS_BACKUP_KEY)) return true; } catch (e) {}
+  try { if (localStorage.getItem(AI_META_BACKUP_KEY)) return true; } catch (e) {}
   return !!(window.HubAI && window.HubAI.hasBackup && window.HubAI.hasBackup());
 }
 
@@ -6692,10 +6829,36 @@ function undoAIChanges() {
       restored.push('schedule');
     }
   } catch (e) {}
+  try {
+    var rawMeta = localStorage.getItem(AI_META_BACKUP_KEY);
+    if (rawMeta) {
+      var meta = JSON.parse(rawMeta);
+      if (meta.categories) saveCustomCategories(meta.categories);
+      if (meta.subcategories) saveSubcategories(meta.subcategories);
+      if (meta.customTags) saveCustomTags(meta.customTags);
+      if (meta.cardColors) { cardColors = meta.cardColors; saveCardColors(cardColors); }
+      if (Array.isArray(meta.tagOrder)) {
+        TAG_ORDER.length = 0;
+        meta.tagOrder.forEach(function (t) { TAG_ORDER.push(t); });
+      }
+      if (meta.tagLabels) {
+        Object.keys(TAG_LABELS).forEach(function (k) { delete TAG_LABELS[k]; });
+        Object.assign(TAG_LABELS, meta.tagLabels);
+      }
+      if (meta.tagColors) {
+        Object.keys(TAG_COLORS).forEach(function (k) { delete TAG_COLORS[k]; });
+        Object.assign(TAG_COLORS, meta.tagColors);
+      }
+      injectCustomTagStyles();
+      localStorage.removeItem(AI_META_BACKUP_KEY);
+      restored.push('categories');
+    }
+  } catch (e) {}
   if (window.HubAI && window.HubAI.hasBackup && window.HubAI.hasBackup()) {
     var r = window.HubAI.restore();
     if (r.ok) restored.push('hub');
   }
+  if (typeof pageAfterTaskSave === 'function') pageAfterTaskSave();
   return restored;
 }
 
@@ -6721,6 +6884,12 @@ function describeAIAction(a) {
     case 'clearCompletedTasks': return 'Remove all completed tasks';
     case 'deleteTasksByTag': return 'Delete all ' + e(d.tag) + ' tasks';
     case 'deleteTasksByQuery': return 'Delete tasks matching "' + e(d.query) + '"';
+    case 'createCategory': return 'Create category <strong>' + e(d.label || d.name) + '</strong>' + (d.color ? ' in ' + e(d.color) : '');
+    case 'updateCategory': return 'Edit category <strong>' + e(d.categoryLabel || d.category || d.label) + '</strong>';
+    case 'deleteCategory': return 'Delete category <strong>' + e(d.categoryLabel || d.category) + '</strong> (its tasks move to another category, nothing is deleted)';
+    case 'createSubcategory': return 'Add subcategory <strong>' + e(d.name) + '</strong> under ' + e(d.categoryLabel || d.category);
+    case 'renameSubcategory': return 'Rename subcategory <strong>' + e(d.from) + '</strong> to <strong>' + e(d.to) + '</strong>';
+    case 'deleteSubcategory': return 'Remove subcategory <strong>' + e(d.name) + '</strong> from ' + e(d.categoryLabel || d.category) + ' (tasks keep their text)';
     case 'rememberFact': return 'Remember ' + e(d.key) + ': ' + e(d.fact);
     case 'addWidget': return 'Add a <strong>' + e(d.type) + '</strong> widget';
     case 'removeWidget': return 'Remove the <strong>' + e(d.type || d.widget) + '</strong> tile (its data is kept)';
@@ -6770,7 +6939,7 @@ function showAIPermissions() {
   var rows = [
     { key:'arrange', label:'Arrange widgets', desc:'Add, move, resize or remove tiles; change widget designs and the canvas theme.' },
     { key:'content', label:'Edit widget content', desc:'Add items, tick them off, and change simple settings inside widgets.' },
-    { key:'schedule', label:'Manage my schedule', desc:'Create, move and update tasks on the calendar.' },
+    { key:'schedule', label:'Manage my schedule', desc:'Create, move and update tasks; create, rename and recolour categories and subcategories. Deleting a category moves its tasks instead of deleting them.' },
     { key:'bulkDelete', label:'Allow deleting my data', desc:'Clear lists, empty the canvas, bulk-delete tasks. OFF by default. Even when on, deletions show a warning and can be undone.', danger:true }
   ];
   var panel = document.createElement('div');
@@ -6842,9 +7011,45 @@ function executeActions(actions, responseText) {
       if (hubResult.ok) actionsModified = true;
       continue;
     }
-    if (action.type === 'createTask') {
+    if (action.type === 'createCategory') {
+      var newCatId = null;
+      try {
+        newCatId = addCustomCategory(action.data.label, action.data.color || '#6366f1', {
+          defaultStart: action.data.startTime, duration: action.data.duration, subcategories: []
+        });
+      } catch (e) { newCatId = null; }
+      if (!newCatId) {
+        actionSummary.push('✕ Could not create <strong>' + escapeHtml(action.data.label) + '</strong> — the free plan\'s category limit was reached.');
+      } else {
+        actionSummary.push('● Created category <strong>' + escapeHtml(action.data.label) + '</strong>');
+        actionsModified = true;
+      }
+    } else if (action.type === 'updateCategory') {
+      var catChanged = updateCategoryFull(action.data.category, action.data);
+      actionSummary.push(catChanged
+        ? '✎ Updated category <strong>' + escapeHtml(action.data.categoryLabel) + '</strong>'
+        : '✕ Could not update that category.');
+      if (catChanged) actionsModified = true;
+    } else if (action.type === 'deleteCategory') {
+      removeCustomCategory(action.data.category);
+      actionSummary.push('⊘ Deleted category <strong>' + escapeHtml(action.data.categoryLabel) + '</strong> — its tasks were moved to another category, none were deleted.');
+      actionsModified = true;
+    } else if (action.type === 'createSubcategory') {
+      addSubcategory(action.data.category, action.data.name);
+      actionSummary.push('● Added subcategory <strong>' + escapeHtml(action.data.name) + '</strong> under ' + escapeHtml(action.data.categoryLabel));
+      actionsModified = true;
+    } else if (action.type === 'renameSubcategory') {
+      renameSubcategory(action.data.category, action.data.from, action.data.to);
+      actionSummary.push('✎ Renamed subcategory "' + escapeHtml(action.data.from) + '" to <strong>' + escapeHtml(action.data.to) + '</strong>');
+      actionsModified = true;
+    } else if (action.type === 'deleteSubcategory') {
+      removeSubcategory(action.data.category, action.data.name);
+      actionSummary.push('⊘ Removed subcategory <strong>' + escapeHtml(action.data.name) + '</strong> (tasks keep their text)');
+      actionsModified = true;
+    } else     if (action.type === 'createTask') {
       trackAIUsage('task');
       const data = action.data;
+      if (data.tag) { var _tr = findCategoryRef(data.tag); if (_tr.id) data.tag = _tr.id; }
       const startM = parseTime(data.startTime);
       const endM = parseTime(data.endTime) || startM + 60;
       const conflict = findConflict(data.date, startM, endM);
@@ -6862,6 +7067,10 @@ function executeActions(actions, responseText) {
       const meta = getTagMeta(data.tag || 'daily');
       actionSummary.push(`● <strong>${escapeHtml(data.title)}</strong> <span style="color:${meta.text}">${data.startTime}–${data.endTime}</span> on ${data.date}`);
     } else if (action.type === 'updateTask' && action.data.id) {
+      if (action.data.changes && action.data.changes.tag) {
+        var _ur = findCategoryRef(action.data.changes.tag);
+        if (_ur.id) action.data.changes.tag = _ur.id;
+      }
       updateTask(action.data.id, action.data.changes);
       actionSummary.push(`✎ Updated: <strong>${escapeHtml(action.data.changes.title || 'task')}</strong>`);
       actionsModified = true;
@@ -6934,6 +7143,7 @@ function executeActions(actions, responseText) {
     } else if (action.type === 'batchCreate' && Array.isArray(action.data.tasks)) {
       for (const data of action.data.tasks) {
         if (!data.title || !data.date) continue;
+        if (data.tag) { var _br = findCategoryRef(data.tag); if (_br.id) data.tag = _br.id; }
         const startM = parseTime(data.startTime);
         const endM = parseTime(data.endTime) || startM + 60;
         const conflict = findConflict(data.date, startM, endM);
@@ -7607,7 +7817,8 @@ ${['todos','clock','goals','priorities','today','upcoming','homework','habits','
 CANVAS STYLES (setHubSkin): ${window.HubAI.skinOptions().join(', ')}
 
 CONTENT-EDITABLE WIDGETS and the fields each accepts:
-- todos / today: {text}. goals / priorities / habits: {text}. notes: {title,body}. links: {label,url} (real http or https URL). reading: {title,author}. homework: {text,subject,due,priority}. countdown: {label,date} (YYYY-MM-DD). study: {name}.
+- addWidgetItem fields — todos / today: {text}. goals / priorities / habits: {text}. notes: {title,body}. links: {label,url} (real http or https URL). reading: {title,author}. homework: {text,subject,due,priority}. countdown: {label,date} (YYYY-MM-DD). study: {name}.
+- updateWidgetItem can change: todos/today {text,done}; notes {title,body,pinned}; links {label,url}; reading {title,author,done}; homework {text,subject,due,priority,done}; countdown {label,date}.
 - Item edits need {widget, match} where "match" is the exact visible text of ONE existing item. Never guess, abbreviate, or use a wildcard.
 - setWidgetSetting allowed pairs: budget.monthly, savings.name, savings.target, savings.saved, currency.from, currency.to, currency.amount, github.username, pomodoro.sessionMinutes, upcoming.days.
 
@@ -7636,14 +7847,23 @@ TASK RULES:
 - "Schedule my week" → batchCreate ALL 5-7 days, balanced mix per day (1 daily, 1 math, optional physics/bio/chem/eng/mandarin)
 - Use rememberFact to store user preferences/facts. Process images to extract schedule info.
 
-TAGS: ${TAG_ORDER.map(t => `"${t}"=${TAG_LABELS[t]}`).join(', ')}
+TAGS: ${getAllCategoryIds().map(t => `"${t}"=${TAG_LABELS[t]}`).join(', ')}
 ${(() => { const subcatMap = loadSubcategories(); const p = []; for (const t of TAG_ORDER) { const s = subcatMap[t] || []; if (s.length) p.push(`${t}:${s.join(',')}`); } return p.length ? 'SUBCATS:\n' + p.join('\n') : ''; })()}
+CATEGORIES (exact names — use the id for createTask.tag; never invent a category):
+${getCategoryContext()}
 Default: 60min, 09:00. Tomorrow=next day. Day names=next occurrence.
 
 RESPOND with ONLY valid JSON (no markdown fences, no extra text):
 {"text":"response","actions":[{"type":"ACTION","data":{...}}]}
 
-SCHEDULE ACTIONS: createTask{title,date,startTime,endTime,tag,subcategory?} | updateTask{id,changes:{title?,date?,startTime?,endTime?,tag?,completed?}} | deleteTask{id} | clearAllTasks{} | clearDate{date} | clearCompletedTasks{} | deleteTasksByTag{tag} | deleteTasksByQuery{query} | rememberFact{key,fact} | moveTask{id,startTime,endTime} | batchCreate{tasks:[{title,date,startTime,endTime,tag,subcategory?}]}
+SCHEDULE ACTIONS: createTask{title,date,startTime,endTime,tag,subcategory?} | updateTask{id,changes:{title?,date?,startTime?,endTime?,tag?,subcategory?,completed?,notes?,priority?}} | deleteTask{id} | clearAllTasks{} | clearDate{date} | clearCompletedTasks{} | deleteTasksByTag{tag} | deleteTasksByQuery{query} | rememberFact{key,fact} | moveTask{id,startTime,endTime} | batchCreate{tasks:[{title,date,startTime,endTime,tag,subcategory?}]}
+
+CATEGORY ACTIONS (change the schedule's structure, not just tasks):
+- createCategory{label,color?,startTime?,duration?} — new category. color is #rrggbb. startTime is HH:MM. duration is minutes (5–480).
+- updateCategory{category,label?,color?,startTime?,duration?} — "category" is an exact label or id from CATEGORIES.
+- deleteCategory{category} — tasks are MOVED to another category, never deleted. Built-in categories (daily, math, physics, bio, chem, eng, mandarin) cannot be deleted.
+- createSubcategory{category,name} | renameSubcategory{category,from,to} | deleteSubcategory{category,name}
+- To put a task in a category, set createTask.tag to that category's id (or exact label). To set a subcategory, use the exact subcategory text.
 
 WIDGET ACTIONS (only work on the Hub page):
 - addWidget{type,x?,y?} | removeWidget{type} | moveWidget{type,x,y} | resizeWidget{type,w,h}
@@ -7669,8 +7889,11 @@ SAFETY RULES (hard rules; the app enforces them again, so breaking them just was
 8. Never invent an action type. Unsupported or malformed actions are silently blocked.
 9. You may answer questions about the canvas (what is on it, what a widget holds, suggestions) with actions:[] — this is often the best answer.
 10. IDENTITY: You already know the user from the ABOUT YOU section above. NEVER ask them to introduce themselves, spell out or repeat their name, or re-run onboarding. If ABOUT YOU is empty, greet neutrally and you may offer (once) to learn their name, but never require it. Never say "let's get to know each other" more than once.
+11. CATEGORIES: create and rename freely when asked. Delete a category ONLY when the user names it explicitly. Deleting moves its tasks to another category — it never deletes tasks. Built-in categories cannot be deleted.
+12. SUBCATEGORIES: for rename/delete, copy an exact existing subcategory name from CATEGORIES. If it is not listed, say so and return actions:[] instead of guessing.
+13. Use the category ID (e.g. "cat-abc123") as createTask.tag. The label is for talking to the user.
 
-EXAMPLES: "Clear schedule" -> clearAllTasks (only if allowBulkDelete). "Add a pomodoro timer" -> addWidget{type:"pomodoro"}. "Add buy milk to my todos" -> addWidgetItem{widget:"todos",text:"buy milk"}. "Tick off buy milk" -> completeWidgetItem{widget:"todos",match:"buy milk"}. "Make my clock analog" -> changeWidgetStyle{type:"clock",style:"analog"}. "Move clock to top left" -> moveWidget{type:"clock",x:24,y:24}. "What widgets do I have?" -> answer from CANVAS context, actions:[]. "Chapter 1 – Cells\n1.1 Cell structure\n... for bio" -> addStudySyllabus{subject:"<exact subject name from STUDY SUBJECTS>",chapters:[{name:"Chapter 1 – Cells",items:["1.1 Cell structure"]}]}.
+EXAMPLES: "Clear schedule" -> clearAllTasks (only if allowBulkDelete). "Add a pomodoro timer" -> addWidget{type:"pomodoro"}. "Add buy milk to my todos" -> addWidgetItem{widget:"todos",text:"buy milk"}. "Tick off buy milk" -> completeWidgetItem{widget:"todos",match:"buy milk"}. "Make my clock analog" -> changeWidgetStyle{type:"clock",style:"analog"}. "Move clock to top left" -> moveWidget{type:"clock",x:24,y:24}. "What widgets do I have?" -> answer from CANVAS context, actions:[]. "Chapter 1 – Cells\n1.1 Cell structure\n... for bio" -> addStudySyllabus{subject:"<exact subject name from STUDY SUBJECTS>",chapters:[{name:"Chapter 1 – Cells",items:["1.1 Cell structure"]}]}. "Make a category called Coding" -> createCategory{label:"Coding"}. "Add Algorithms under Coding" -> createSubcategory{category:"Coding",name:"Algorithms"}. "Delete my Coding category" -> deleteCategory{category:"Coding"} (tasks move, none deleted). "Rename Coding to Programming" -> updateCategory{category:"Coding",label:"Programming"}.
 
 ${(() => { try { const extra = localStorage.getItem('haven-ai-extra-instructions') || ''; return extra ? `EXTRA:\n${extra}\n` : ''; } catch (e) { return ''; } })()}
 IMPORTANT: Only valid JSON.`;
