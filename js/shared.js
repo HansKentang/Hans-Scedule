@@ -40,6 +40,12 @@ function shortcutDisplay(key) {
 const API_PROVIDER_STORAGE = 'haven-schedule-provider';
 
 const PROVIDER_MODELS = {
+  nvidia: [
+    { value: 'meta/llama-3.3-70b-instruct', label: 'Llama 3.3 70B — balanced (recommended)' },
+    { value: 'nvidia/llama-3.3-nemotron-super-49b-v1.5', label: 'Nemotron Super 49B — NVIDIA tuned' },
+    { value: 'nvidia/nemotron-3-super-120b-a12b', label: 'Nemotron 3 Super 120B — most capable' },
+    { value: 'qwen/qwen3-next-80b-a3b-instruct', label: 'Qwen3 Next 80B — fast' },
+  ],
   groq: [
     { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B — works on the free plan' },
     { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — paid plan only' },
@@ -53,9 +59,11 @@ const PROVIDER_MODELS = {
   ],
 };
 const GROQ_VISION_MODELS = ['meta-llama/llama-4-scout-17b-16e-instruct'];
+const NVIDIA_VISION_MODELS = [];
 
-const PROVIDER_LABELS = { groq: 'Groq', gemini: 'Gemini' };
+const PROVIDER_LABELS = { nvidia: 'NVIDIA NIM', groq: 'Groq', gemini: 'Gemini' };
 const PROVIDER_LINKS = {
+  nvidia: { url: 'https://build.nvidia.com/', text: 'build.nvidia.com' },
   groq: { url: 'https://console.groq.com/keys', text: 'console.groq.com/keys' },
   gemini: { url: 'https://aistudio.google.com/apikey', text: 'aistudio.google.com/apikey' },
 };
@@ -105,7 +113,7 @@ const AI_TOKEN_LIMIT_KEY = 'haven-schedule-ai-token-limit';
 // Free-tier daily token ceilings (tokens/day). These are conservative defaults;
 // the real limit depends on provider + model, so the user can override the
 // value from the token bar. Groq's free tier is per-model, so this is a guide.
-const AI_DAILY_TOKEN_DEFAULTS = { groq: 100000, gemini: 1000000, openai: 100000, custom: 100000 };
+const AI_DAILY_TOKEN_DEFAULTS = { nvidia: 100000, groq: 100000, gemini: 1000000, openai: 100000, custom: 100000 };
 
 // ─── SLEEP TRACKING ──────────────────────────────────────────
 const SLEEP_STORAGE_KEY = 'haven-schedule-sleep';
@@ -1776,8 +1784,8 @@ let state = {
   helpModalOpen: false,
   aiChatOpen: false,
   apiKey: '',
-  apiModel: 'openai/gpt-oss-120b',
-  apiProvider: 'groq',
+  apiModel: 'meta/llama-3.3-70b-instruct',
+  apiProvider: 'nvidia',
   darkMode: null,
   accentColor: null,
   accentCustomColors: [],
@@ -3054,6 +3062,22 @@ function loadState() {
   try {
     const provider = localStorage.getItem(API_PROVIDER_STORAGE);
     if (provider) state.apiProvider = provider;
+  } catch (e) { /* ignore */ }
+
+  // NVIDIA NIM keys start with "nvapi-". If one is stored while the provider is
+  // still the old Groq default, switch automatically so the key is actually used.
+  // Then make sure the saved model is valid for that provider (a Groq model id
+  // sent to NVIDIA returns 404).
+  try {
+    if (/^nvapi-/i.test(state.apiKey || '') && state.apiProvider !== 'nvidia') {
+      state.apiProvider = 'nvidia';
+      localStorage.setItem(API_PROVIDER_STORAGE, 'nvidia');
+    }
+    const models = PROVIDER_MODELS[state.apiProvider] || [];
+    if (models.length && !models.some(m => m.value === state.apiModel)) {
+      state.apiModel = models[0].value;
+      localStorage.setItem(API_MODEL_STORAGE, state.apiModel);
+    }
   } catch (e) { /* ignore */ }
 
   // Dependent inits — each wrapped so one failure doesn't cascade
@@ -4799,7 +4823,7 @@ function populateShortcuts() {
 function updateModelOptions() {
   if (!dom.settingsModel || !dom.settingsProvider) return;
   const provider = dom.settingsProvider.value;
-  const models = PROVIDER_MODELS[provider] || PROVIDER_MODELS.groq;
+  const models = PROVIDER_MODELS[provider] || PROVIDER_MODELS.nvidia;
   dom.settingsModel.innerHTML = models.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
   // Deprecated/paid-only model that 404s on free keys — migrate to the free default.
   if (state.apiModel === 'llama-3.3-70b-versatile') {
@@ -4809,13 +4833,15 @@ function updateModelOptions() {
     state.apiModel = models[0].value;
   }
   dom.settingsModel.value = state.apiModel;
-  const link = PROVIDER_LINKS[provider] || PROVIDER_LINKS.groq;
+  const link = PROVIDER_LINKS[provider] || PROVIDER_LINKS.nvidia;
   const helpEl = dom.settingsApiKey?.closest('.form-group')?.querySelector('.form-help');
   if (helpEl) {
     helpEl.innerHTML = `Get a free key at <a href="${link.url}" target="_blank" class="form-link">${link.text}</a>.`;
   }
   if (dom.settingsApiKey) {
-    dom.settingsApiKey.placeholder = provider === 'gemini' ? 'Enter your Gemini API key (AIza...)' : 'Enter your Groq API key';
+    dom.settingsApiKey.placeholder = provider === 'gemini'
+      ? 'Enter your Gemini API key (AIza...)'
+      : (provider === 'nvidia' ? 'Enter your NVIDIA key (nvapi-...)' : 'Enter your Groq API key (gsk_...)');
   }
   const label = PROVIDER_LABELS[provider] || 'API';
   const statusText = dom.settingsKeyStatusText;
@@ -5206,7 +5232,7 @@ function filterSettingsSections(query) {
 function handleSettingsSubmit(e) {
   e.preventDefault();
   const key = dom.settingsApiKey?.value?.trim() || '';
-  const provider = dom.settingsProvider?.value || 'groq';
+  const provider = dom.settingsProvider?.value || state.apiProvider || 'nvidia';
   const model = dom.settingsModel?.value || PROVIDER_MODELS[provider]?.[0]?.value || '';
   state.apiKey = key;
   state.apiProvider = provider;
@@ -6387,9 +6413,9 @@ function showAIChat() {
   const premiumGateActive = !(typeof premiumSuspended === 'function' && premiumSuspended());
   if (premiumGateActive && typeof requirePremium === 'function' && !requirePremium('ai')) return;
   if (!dom.aiChatPanel) return;
-  const provider = state.apiProvider || 'groq';
-  const pLabel = PROVIDER_LABELS[provider] || 'Groq';
-  const pLink = PROVIDER_LINKS[provider] || PROVIDER_LINKS.groq;
+  const provider = state.apiProvider || 'nvidia';
+  const pLabel = PROVIDER_LABELS[provider] || 'NVIDIA NIM';
+  const pLink = PROVIDER_LINKS[provider] || PROVIDER_LINKS.nvidia;
   // Show API key welcome if not configured
   if (!state.apiKey) {
     dom.aiChatMessages.innerHTML = `<div class="ai-welcome">
@@ -7350,7 +7376,7 @@ function sendAIMessage() {
   }).catch(err => {
     typingEl.remove();
     const msg = err.message || 'Something went wrong';
-    const pLabel = PROVIDER_LABELS[state.apiProvider] || 'Groq';
+    const pLabel = PROVIDER_LABELS[state.apiProvider] || 'NVIDIA NIM';
     const isRateLimit = msg.includes('429') || msg.includes('Rate limited');
     const displayMsg = isRateLimit
       ? `✕ Rate limited. ${pLabel} API is temporarily overloaded.`
@@ -7729,7 +7755,7 @@ function callAIAgent(userText) {
   const completedTasks = allTasks.filter(t => t.completed);
 
   const tagSummary = {};
-  for (const tag of TAG_ORDER) {
+  for (const tag of getAllCategoryIds()) {
     const tasks = allTasks.filter(t => t.tag === tag && !isWhiteboardTask(t));
     const totalMin = tasks.reduce((sum, t) => sum + getDurationMinutes(t), 0);
     tagSummary[tag] = { count: tasks.length, totalMinutes: totalMin, label: TAG_LABELS[tag] };
@@ -7779,7 +7805,7 @@ SCHEDULE (next 2 weeks):
 ${taskListStr || '(none)'}
 
 TAG BREAKDOWN:
-${TAG_ORDER.map(t => `- ${TAG_LABELS[t]}: ${tagSummary[t].count} tasks, ${formatDuration(tagSummary[t].totalMinutes)}`).join('\n')}`;
+${getAllCategoryIds().map(t => `- ${TAG_LABELS[t]}: ${tagSummary[t].count} tasks, ${formatDuration(tagSummary[t].totalMinutes)}`).join('\n')}`;
 
   const recentHistory = aiChatHistory.slice(-6).map(m => `${m.role}: ${m.text}`).join('\n');
 
@@ -7902,8 +7928,58 @@ IMPORTANT: Only valid JSON.`;
 }
 
 function callAIChat(systemPrompt, userText, attachedImage) {
-  if (state.apiProvider === 'gemini') return callGeminiChat(systemPrompt, userText, attachedImage);
-  return callGroqChat(systemPrompt, userText, attachedImage);
+  const provider = state.apiProvider || 'nvidia';
+  if (provider === 'gemini') return callGeminiChat(systemPrompt, userText, attachedImage);
+  if (provider === 'groq') return callGroqChat(systemPrompt, userText, attachedImage);
+  return callNvidiaChat(systemPrompt, userText, attachedImage);
+}
+
+// NVIDIA NIM — OpenAI-compatible chat completions at integrate.api.nvidia.com.
+// It does NOT reliably support response_format:json_object, so we rely on the
+// prompt ("ONLY valid JSON") and parse defensively like the Gemini path.
+function callNvidiaChat(systemPrompt, userText, attachedImage) {
+  if (attachedImage && attachedImage.isImage) {
+    return Promise.reject(new Error('The NVIDIA NIM models here do not accept images. Switch the provider to Gemini to analyse a picture.'));
+  }
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userText }
+  ];
+  return fetchWithRetry('https://integrate.api.nvidia.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${state.apiKey}`,
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      model: state.apiModel,
+      messages,
+      temperature: 0.2,
+      max_tokens: 2000,
+      top_p: 0.9
+    })
+  }).then(async res => {
+    const txt = res.ok ? '' : (await res.text().catch(() => ''));
+    if (!res.ok) throw new Error(`API error: ${res.status}${txt ? ' — ' + txt.slice(0, 200) : ''}`);
+    return res.json();
+  }).then(data => {
+    const raw = data?.choices?.[0]?.message?.content;
+    if (!raw) throw new Error('Empty response from AI');
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch (e) {
+      const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (fenced) { try { parsed = JSON.parse(fenced[1]); } catch (e2) {} }
+      if (!parsed) {
+        const m = raw.match(/\{[\s\S]*\}/);
+        if (m) { try { parsed = JSON.parse(m[0]); } catch (e3) {} }
+      }
+      if (!parsed) throw new Error('Invalid response format from AI');
+    }
+    if (!parsed.text) throw new Error('AI returned incomplete response');
+    trackTokenUsage(data.usage);
+    return { text: parsed.text, actions: parsed.actions || [], usage: data.usage || null };
+  });
 }
 
 function callGroqChat(systemPrompt, userText, attachedImage) {
