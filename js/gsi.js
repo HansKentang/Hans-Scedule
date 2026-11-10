@@ -1831,6 +1831,7 @@ function renderAISettings(el) {
   var savedProvider = 'nvidia'; try { savedProvider = localStorage.getItem('haven-schedule-provider') || 'nvidia'; } catch(e) {}
   var savedKey = ''; try { savedKey = localStorage.getItem('haven-schedule-apikey') || ''; } catch(e) {}
   var savedModel = ''; try { savedModel = localStorage.getItem('haven-schedule-model') || ''; } catch(e) {}
+  var savedProxy = ''; try { savedProxy = localStorage.getItem('haven-schedule-ai-proxy') || ''; } catch(e) {}
   var profile = typeof getChickBotProfile === 'function' ? (getChickBotProfile() || {}) : {};
   var routine = typeof loadRoutine === 'function' ? loadRoutine() : '';
 
@@ -1876,6 +1877,10 @@ function renderAISettings(el) {
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">API Key</div><div class="set-row-desc">Your API key for the selected provider</div></div>' +
         '<div class="set-row-control"><div class="set-api-row"><input class="set-input" type="password" id="setApiKey" placeholder="Enter key" spellcheck="false"><button class="set-btn" id="setApiToggle">Show</button></div></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Proxy URL</div><div class="set-row-desc">Only for NVIDIA NIM — paste your free Worker URL</div></div>' +
+        '<div class="set-row-control"><input class="set-input" id="setAiProxy" placeholder="https://....workers.dev" spellcheck="false"></div>' +
       '</div>' +
     '</div>' +
     '<div class="set-divider"></div>' +
@@ -1973,6 +1978,16 @@ function renderAISettings(el) {
     if (input.type === 'password') { input.type = 'text'; this.textContent = 'Hide'; }
     else { input.type = 'password'; this.textContent = 'Show'; }
   });
+
+  var proxyInput = document.getElementById('setAiProxy');
+  if (proxyInput) {
+    proxyInput.value = savedProxy;
+    proxyInput.addEventListener('input', function() {
+      var v = this.value.trim();
+      try { localStorage.setItem('haven-schedule-ai-proxy', v); } catch (e) {}
+      if (typeof state !== 'undefined') state.apiProxyUrl = v;
+    });
+  }
 
   document.getElementById('aiProfileSave').addEventListener('click', function() {
     if (typeof saveChickBotProfile !== 'function') return;

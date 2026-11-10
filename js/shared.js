@@ -38,13 +38,14 @@ function shortcutDisplay(key) {
 }
 
 const API_PROVIDER_STORAGE = 'haven-schedule-provider';
+const API_PROXY_STORAGE = 'haven-schedule-ai-proxy';
 
 const PROVIDER_MODELS = {
   nvidia: [
-    { value: 'meta/llama-3.3-70b-instruct', label: 'Llama 3.3 70B — balanced (recommended)' },
-    { value: 'nvidia/llama-3.3-nemotron-super-49b-v1.5', label: 'Nemotron Super 49B — NVIDIA tuned' },
-    { value: 'nvidia/nemotron-3-super-120b-a12b', label: 'Nemotron 3 Super 120B — most capable' },
-    { value: 'qwen/qwen3-next-80b-a3b-instruct', label: 'Qwen3 Next 80B — fast' },
+    { value: 'nvidia/nemotron-3-super-120b-a12b', label: 'Nemotron 3 Super 120B — balanced (recommended)' },
+    { value: 'nvidia/nemotron-3.5-lightning-30b-a3b', label: 'Nemotron 3.5 Lightning 30B — fast' },
+    { value: 'nvidia/nemotron-3-ultra-550b-a55b', label: 'Nemotron 3 Ultra 550B — most capable' },
+    { value: 'deepseek-ai/deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash — quick' },
   ],
   groq: [
     { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B — works on the free plan' },
@@ -67,6 +68,20 @@ const PROVIDER_LINKS = {
   groq: { url: 'https://console.groq.com/keys', text: 'console.groq.com/keys' },
   gemini: { url: 'https://aistudio.google.com/apikey', text: 'aistudio.google.com/apikey' },
 };
+
+// When an updated service worker takes control, the page is still running the
+// old JS/CSS. Reload once so the new version actually appears (otherwise users
+// keep seeing a stale UI until they close every tab). Skipped on first install
+// because there is no previous controller.
+if (typeof navigator !== 'undefined' && navigator.serviceWorker && navigator.serviceWorker.controller) {
+  try {
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (sessionStorage.getItem('haven-sw-auto-reloaded') === '1') return;
+      try { sessionStorage.setItem('haven-sw-auto-reloaded', '1'); } catch (e) {}
+      location.reload();
+    });
+  } catch (e) { /* ignore */ }
+}
 
 const HOUR_HEIGHT = 60;
 let SNAP_MINUTES = 15;
@@ -1784,8 +1799,9 @@ let state = {
   helpModalOpen: false,
   aiChatOpen: false,
   apiKey: '',
-  apiModel: 'meta/llama-3.3-70b-instruct',
+  apiModel: 'nvidia/nemotron-3-super-120b-a12b',
   apiProvider: 'nvidia',
+  apiProxyUrl: '',
   darkMode: null,
   accentColor: null,
   accentCustomColors: [],
@@ -3062,6 +3078,10 @@ function loadState() {
   try {
     const provider = localStorage.getItem(API_PROVIDER_STORAGE);
     if (provider) state.apiProvider = provider;
+  } catch (e) { /* ignore */ }
+  try {
+    const proxy = localStorage.getItem(API_PROXY_STORAGE);
+    if (proxy) state.apiProxyUrl = proxy;
   } catch (e) { /* ignore */ }
 
   // NVIDIA NIM keys start with "nvapi-". If one is stored while the provider is
@@ -7941,11 +7961,18 @@ function callNvidiaChat(systemPrompt, userText, attachedImage) {
   if (attachedImage && attachedImage.isImage) {
     return Promise.reject(new Error('The NVIDIA NIM models here do not accept images. Switch the provider to Gemini to analyse a picture.'));
   }
+  // NVIDIA only sends CORS headers to build.nvidia.com, so a browser cannot call
+  // integrate.api.nvidia.com directly. A small proxy (Cloudflare Worker) forwards
+  // the request and adds CORS headers. The user's key still travels per-request.
+  const endpoint = String(state.apiProxyUrl || '').trim();
+  if (!endpoint) {
+    return Promise.reject(new Error('NVIDIA needs a proxy before it can work from the browser. Add your free Worker URL in Settings → AI Assistant → Proxy URL.'));
+  }
   const messages = [
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userText }
   ];
-  return fetchWithRetry('https://integrate.api.nvidia.com/v1/chat/completions', {
+  return fetchWithRetry(endpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -4,7 +4,7 @@
      - Static assets    : stale-while-revalidate (instant repeat loads, refreshed in background)
      - Supabase API     : never intercepted
    Only a tiny shell is precached so install never competes with the first page load. */
-const CACHE = 'haven-schedule-v64';
+const CACHE = 'haven-schedule-v65';
 const OFFLINE_FALLBACK = './';
 
 const SHELL = [
@@ -30,8 +30,16 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
+    // An older cache means this is an update, not a first install. The open
+    // pages are still running the previous JS/CSS, so reload them once the new
+    // worker takes control — otherwise a deploy looks like it never shipped.
+    const isUpdate = keys.some((k) => k !== CACHE);
     await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
     await self.clients.claim();
+    if (isUpdate) {
+      const pages = await self.clients.matchAll({ type: 'window' });
+      pages.forEach((c) => { try { if (c.navigate) c.navigate(c.url).catch(() => {}); } catch (err) {} });
+    }
   })());
 });
 
