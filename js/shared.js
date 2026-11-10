@@ -7962,23 +7962,32 @@ function callNvidiaChat(systemPrompt, userText, attachedImage) {
     return Promise.reject(new Error('The NVIDIA NIM models here do not accept images. Switch the provider to Gemini to analyse a picture.'));
   }
   // NVIDIA only sends CORS headers to build.nvidia.com, so a browser cannot call
-  // integrate.api.nvidia.com directly. A small proxy (Cloudflare Worker) forwards
-  // the request and adds CORS headers. The user's key still travels per-request.
-  const endpoint = String(state.apiProxyUrl || '').trim();
+  // integrate.api.nvidia.com directly. Route through a proxy: either the app's
+  // Supabase Edge Function "nvidia" (auto-detected) or a custom URL the user set.
+  let endpoint = String(state.apiProxyUrl || '').trim();
+  const supaBase = (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG && SUPABASE_CONFIG.url)
+    ? String(SUPABASE_CONFIG.url).replace(/\/+$/, '') : '';
+  if (!endpoint && supaBase) endpoint = supaBase + '/functions/v1/nvidia';
   if (!endpoint) {
-    return Promise.reject(new Error('NVIDIA needs a proxy before it can work from the browser. Add your free Worker URL in Settings → AI Assistant → Proxy URL.'));
+    return Promise.reject(new Error('NVIDIA needs a proxy. Deploy the Supabase "nvidia" function, or paste a proxy URL in Settings → AI Assistant.'));
   }
   const messages = [
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userText }
   ];
+  const nvHeaders = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${state.apiKey}`,
+    'x-nvidia-key': state.apiKey,
+    'Accept': 'application/json'
+  };
+  if (supaBase && endpoint.indexOf(supaBase + '/functions/') === 0 &&
+      typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.anonKey) {
+    nvHeaders['apikey'] = SUPABASE_CONFIG.anonKey;
+  }
   return fetchWithRetry(endpoint, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${state.apiKey}`,
-      'Accept': 'application/json'
-    },
+    headers: nvHeaders,
     body: JSON.stringify({
       model: state.apiModel,
       messages,
