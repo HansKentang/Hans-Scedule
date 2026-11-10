@@ -1829,8 +1829,8 @@ function renderAppearanceSettings(el) {
 }
 function renderAISettings(el) {
   var savedProvider = 'nvidia'; try { savedProvider = localStorage.getItem('haven-schedule-provider') || 'nvidia'; } catch(e) {}
-  var savedKey = ''; try { savedKey = localStorage.getItem('haven-schedule-apikey') || ''; } catch(e) {}
-  var savedModel = ''; try { savedModel = localStorage.getItem('haven-schedule-model') || ''; } catch(e) {}
+  var savedKey = ''; try { savedKey = (typeof getProviderKey === 'function' ? getProviderKey(savedProvider) : localStorage.getItem('haven-schedule-apikey')) || ''; } catch(e) {}
+  var savedModel = ''; try { savedModel = (typeof getProviderModel === 'function' ? getProviderModel(savedProvider) : localStorage.getItem('haven-schedule-model')) || ''; } catch(e) {}
   var savedProxy = ''; try { savedProxy = localStorage.getItem('haven-schedule-ai-proxy') || ''; } catch(e) {}
   var profile = typeof getChickBotProfile === 'function' ? (getChickBotProfile() || {}) : {};
   var routine = typeof loadRoutine === 'function' ? loadRoutine() : '';
@@ -1926,6 +1926,7 @@ function renderAISettings(el) {
 
   var providerSel = document.getElementById('setAiProvider');
   var modelSel = document.getElementById('setAiModel');
+  var keyInput = document.getElementById('setApiKey');
 
   function fillModels(provider, wanted) {
     var list = (typeof PROVIDER_MODELS !== 'undefined' && PROVIDER_MODELS[provider]) || [];
@@ -1939,40 +1940,52 @@ function renderAISettings(el) {
 
   function saveModel(model) {
     if (!model) return;
-    try { localStorage.setItem('haven-schedule-model', model); } catch (e) {}
+    if (typeof saveProviderModel === 'function') saveProviderModel(providerSel.value, model);
+    else { try { localStorage.setItem('haven-schedule-model', model); } catch (e) {} }
     if (typeof state !== 'undefined') state.apiModel = model;
   }
 
   function updateKeyHint(provider) {
-    var input = document.getElementById('setApiKey');
-    if (!input) return;
-    input.placeholder = provider === 'nvidia' ? 'nvapi-...' : (provider === 'groq' ? 'gsk_...' : 'AIza...');
+    if (!keyInput) return;
+    keyInput.placeholder = provider === 'nvidia' ? 'nvapi-...' : (provider === 'groq' ? 'gsk_...' : 'AIza...');
+  }
+
+  function loadProvider(provider) {
+    if (keyInput && typeof getProviderKey === 'function') {
+      keyInput.value = getProviderKey(provider);
+      if (typeof state !== 'undefined') state.apiKey = keyInput.value;
+    }
+    var m = fillModels(provider, typeof getProviderModel === 'function' ? getProviderModel(provider) : '');
+    saveModel(m);
   }
 
   providerSel.value = savedProvider;
-  var activeModel = fillModels(savedProvider, savedModel);
-  saveModel(activeModel);
+  fillModels(savedProvider, savedModel);
+  saveModel(modelSel.value);
   updateKeyHint(savedProvider);
 
   providerSel.addEventListener('change', function() {
     var p = this.value;
     try { localStorage.setItem('haven-schedule-provider', p); } catch (e) {}
     if (typeof state !== 'undefined') state.apiProvider = p;
-    saveModel(fillModels(p, ''));
+    loadProvider(p);
     updateKeyHint(p);
   });
 
   modelSel.addEventListener('change', function() { saveModel(this.value); });
 
-  document.getElementById('setApiKey').value = savedKey;
-  document.getElementById('setApiKey').addEventListener('input', function() {
-    localStorage.setItem('haven-schedule-apikey', this.value);
-    if (typeof state !== 'undefined') state.apiKey = this.value;
-    if (/^nvapi-/i.test(this.value.trim()) && providerSel.value !== 'nvidia') {
-      providerSel.value = 'nvidia';
-      providerSel.dispatchEvent(new Event('change'));
-    }
-  });
+  if (keyInput) {
+    keyInput.value = savedKey;
+    keyInput.addEventListener('input', function() {
+      if (typeof saveProviderKey === 'function') saveProviderKey(providerSel.value, this.value);
+      else { try { localStorage.setItem('haven-schedule-apikey', this.value); } catch (e) {} }
+      if (typeof state !== 'undefined') state.apiKey = this.value;
+      if (/^nvapi-/i.test(this.value.trim()) && providerSel.value !== 'nvidia') {
+        providerSel.value = 'nvidia';
+        providerSel.dispatchEvent(new Event('change'));
+      }
+    });
+  }
   document.getElementById('setApiToggle').addEventListener('click', function() {
     var input = document.getElementById('setApiKey');
     if (input.type === 'password') { input.type = 'text'; this.textContent = 'Hide'; }

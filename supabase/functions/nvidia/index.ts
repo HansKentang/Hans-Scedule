@@ -44,9 +44,13 @@ Deno.serve(async (req) => {
     body
   });
 
-  const text = await upstream.text();
-  return new Response(text, {
+  // Pass the body through unchanged (including SSE) and keep the upstream
+  // content type, otherwise streaming replies arrive as one buffered blob.
+  return new Response(upstream.body, {
     status: upstream.status,
-    headers: { ...CORS, 'Content-Type': 'application/json' }
+    headers: {
+      ...CORS,
+      'Content-Type': upstream.headers.get('content-type') || 'application/json'
+    }
   });
 });
