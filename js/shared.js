@@ -43,6 +43,7 @@ const API_PROXY_STORAGE = 'haven-schedule-ai-proxy';
 const PROVIDER_MODELS = {
   nvidia: [
     { value: 'nvidia/nemotron-3-super-120b-a12b', label: 'Nemotron 3 Super 120B — balanced (recommended)' },
+    { value: 'nvidia/nemotron-3.5-super-vl-120b-a12b', label: 'Nemotron 3.5 Super VL 120B — images + strongest' },
     { value: 'nvidia/nemotron-3.5-lightning-30b-a3b', label: 'Nemotron 3.5 Lightning 30B — fast' },
     { value: 'nvidia/nemotron-3-ultra-550b-a55b', label: 'Nemotron 3 Ultra 550B — most capable' },
     { value: 'deepseek-ai/deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash — quick' },
@@ -60,7 +61,7 @@ const PROVIDER_MODELS = {
   ],
 };
 const GROQ_VISION_MODELS = ['meta-llama/llama-4-scout-17b-16e-instruct'];
-const NVIDIA_VISION_MODELS = [];
+const NVIDIA_VISION_MODELS = ['nvidia/nemotron-3.5-super-vl-120b-a12b'];
 
 const PROVIDER_LABELS = { nvidia: 'NVIDIA NIM', groq: 'Groq', gemini: 'Gemini' };
 const PROVIDER_LINKS = {
@@ -7958,8 +7959,9 @@ function callAIChat(systemPrompt, userText, attachedImage) {
 // It does NOT reliably support response_format:json_object, so we rely on the
 // prompt ("ONLY valid JSON") and parse defensively like the Gemini path.
 function callNvidiaChat(systemPrompt, userText, attachedImage) {
-  if (attachedImage && attachedImage.isImage) {
-    return Promise.reject(new Error('The NVIDIA NIM models here do not accept images. Switch the provider to Gemini to analyse a picture.'));
+  const hasVision = !!(attachedImage && attachedImage.isImage);
+  if (hasVision && NVIDIA_VISION_MODELS.indexOf(state.apiModel) === -1) {
+    return Promise.reject(new Error('This NVIDIA model does not accept images. Switch to "Nemotron 3.5 Super VL 120B" in Settings to analyse a picture.'));
   }
   // NVIDIA only sends CORS headers to build.nvidia.com, so a browser cannot call
   // integrate.api.nvidia.com directly. Route through a proxy: either the app's
@@ -7971,10 +7973,24 @@ function callNvidiaChat(systemPrompt, userText, attachedImage) {
   if (!endpoint) {
     return Promise.reject(new Error('NVIDIA needs a proxy. Deploy the Supabase "nvidia" function, or paste a proxy URL in Settings → AI Assistant.'));
   }
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userText }
-  ];
+  let messages;
+  if (hasVision) {
+    messages = [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: userText },
+          { type: 'image_url', image_url: { url: attachedImage.data } }
+        ]
+      }
+    ];
+  } else {
+    messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userText }
+    ];
+  }
   const nvHeaders = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${state.apiKey}`,
