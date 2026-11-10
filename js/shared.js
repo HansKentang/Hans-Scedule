@@ -42,24 +42,34 @@ const API_PROXY_STORAGE = 'haven-schedule-ai-proxy';
 
 const PROVIDER_MODELS = {
   nvidia: [
-    { value: 'nvidia/nemotron-3-super-120b-a12b', label: 'Nemotron 3 Super 120B — balanced (recommended)' },
-    { value: 'nvidia/nemotron-3.5-super-vl-120b-a12b', label: 'Nemotron 3.5 Super VL 120B — images + strongest' },
-    { value: 'nvidia/nemotron-3.5-lightning-30b-a3b', label: 'Nemotron 3.5 Lightning 30B — fast' },
-    { value: 'nvidia/nemotron-3-ultra-550b-a55b', label: 'Nemotron 3 Ultra 550B — most capable' },
-    { value: 'deepseek-ai/deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash — quick' },
+    { value: 'nvidia/nemotron-3-super-120b-a12b', label: 'Nemotron 3 Super 120B', free: true, heavy: true },
+    { value: 'nvidia/nemotron-3.5-super-vl-120b-a12b', label: 'Nemotron 3.5 Super VL 120B (images)', free: true, heavy: true },
+    { value: 'nvidia/nemotron-3.5-lightning-30b-a3b', label: 'Nemotron 3.5 Lightning 30B (fast)', free: true },
+    { value: 'nvidia/nemotron-3-ultra-550b-a55b', label: 'Nemotron 3 Ultra 550B', free: true, heavy: true },
+    { value: 'deepseek-ai/deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash (fast)', free: true },
   ],
   groq: [
-    { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B — works on the free plan' },
-    { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — paid plan only' },
-    { value: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B (vision) — paid plan only' },
-    { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (fast) — paid plan only' },
+    { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B', free: true },
+    { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', paid: true },
+    { value: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B (vision)', paid: true },
+    { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (fast)', paid: true },
   ],
   gemini: [
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (balanced)' },
-    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (most capable)' },
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (fast)' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', free: true },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', paid: true },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (fast)', free: true },
   ],
 };
+
+// Native <option> cannot hold a chip, so the plan is appended to the text.
+function formatModelLabel(m) {
+  if (!m) return '';
+  var s = m.label;
+  if (m.paid) s += ' — Paid';
+  else if (m.free) s += ' — Free';
+  if (m.heavy) s += ' · heavy';
+  return s;
+}
 const GROQ_VISION_MODELS = ['meta-llama/llama-4-scout-17b-16e-instruct'];
 const NVIDIA_VISION_MODELS = ['nvidia/nemotron-3.5-super-vl-120b-a12b'];
 
@@ -4902,7 +4912,7 @@ function updateModelOptions() {
   if (!dom.settingsModel || !dom.settingsProvider) return;
   const provider = dom.settingsProvider.value;
   const models = PROVIDER_MODELS[provider] || PROVIDER_MODELS.nvidia;
-  dom.settingsModel.innerHTML = models.map(m => `<option value="${m.value}">${m.label}</option>`).join('');
+  dom.settingsModel.innerHTML = models.map(m => `<option value="${m.value}">${formatModelLabel(m)}</option>`).join('');
   // Deprecated/paid-only model that 404s on free keys — migrate to the free default.
   if (state.apiModel === 'llama-3.3-70b-versatile') {
     state.apiModel = 'openai/gpt-oss-120b';
@@ -7481,14 +7491,10 @@ function sendAIMessage(opts) {
     streamBubble = null;
     typingEl.remove();
     const msg = err.message || 'Something went wrong';
-    const isRateLimit = msg.indexOf('429') !== -1 || /rate limit/i.test(msg);
     const noKey = /No AI key|API key saved/i.test(msg);
-    const needsProxy = /proxy/i.test(msg);
     let displayMsg;
     if (noKey) displayMsg = '✕ No API key saved. Open Settings → AI Assistant and add one.';
-    else if (needsProxy) displayMsg = '✕ ' + escapeHtml(msg);
-    else if (isRateLimit) displayMsg = '✕ All AI providers are busy right now (rate limit). Try again in a minute.';
-    else displayMsg = '✕ Could not reach the AI. ' + escapeHtml(msg);
+    else displayMsg = '✕ ' + escapeHtml(friendlyAIError(msg));
     appendAIMessage('system', displayMsg + `<br><br><button class="btn btn-outline ai-retry-btn" style="font-size:0.74rem;padding:3px 12px">Retry</button>`);
     // Wire up retry button
     const msgs = dom.aiChatMessages;
@@ -8123,6 +8129,19 @@ async function callProviderOnce(p, systemPrompt, userText, attachedImage) {
   }
 }
 
+function friendlyAIError(msg) {
+  var s = String(msg || '');
+  if (/Failed to fetch|NetworkError|Load failed/i.test(s)) {
+    return 'Could not reach the AI relay. Is the Supabase "nvidia" function deployed?';
+  }
+  if (/\b404\b/.test(s)) return 'Relay not found (404). Deploy the Supabase "nvidia" function.';
+  if (/\b401\b/.test(s)) return 'Unauthorized (401). Turn off "Verify JWT" on the Supabase function.';
+  if (/\b403\b/.test(s)) return 'NVIDIA rejected the request (403). The key may be invalid, or the account may be out of free credits.';
+  if (/\b410\b/.test(s)) return 'That model was retired (410). Pick a newer model.';
+  if (/\b429\b/.test(s)) return 'Rate limit (429). Wait a minute, or switch to a lighter model.';
+  return s;
+}
+
 async function testAIConnection(btn) {
   var p = state.apiProvider || 'nvidia';
   if (!getProviderKey(p)) {
@@ -8137,7 +8156,7 @@ async function testAIConnection(btn) {
     if (typeof showToast === 'function') showToast('Connected to ' + (PROVIDER_LABELS[p] || p), 'success', 2600);
   } catch (e) {
     if (btn) btn.textContent = 'Failed';
-    if (typeof showToast === 'function') showToast('Failed: ' + String(e.message || e).slice(0, 90), 'error', 4500);
+    if (typeof showToast === 'function') showToast('Failed: ' + friendlyAIError(e.message || e).slice(0, 110), 'error', 5200);
   } finally {
     setTimeout(function () { if (btn) { btn.disabled = false; btn.textContent = label; } }, 2600);
   }

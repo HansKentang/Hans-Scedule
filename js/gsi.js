@@ -1871,7 +1871,7 @@ function renderAISettings(el) {
         '<div class="set-row-control"><select class="set-select" id="setAiProvider"><option value="nvidia">NVIDIA NIM</option><option value="groq">Groq</option><option value="gemini">Gemini</option></select></div>' +
       '</div>' +
       '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">Model</div><div class="set-row-desc">Which model the assistant uses</div></div>' +
+        '<div class="set-row-left"><div class="set-row-label">Model</div><div class="set-row-desc">Free uses the free allowance; Paid needs billing</div></div>' +
         '<div class="set-row-control"><select class="set-select" id="setAiModel"></select></div>' +
       '</div>' +
       '<div class="set-row">' +
@@ -1935,7 +1935,7 @@ function renderAISettings(el) {
   function fillModels(provider, wanted) {
     var list = (typeof PROVIDER_MODELS !== 'undefined' && PROVIDER_MODELS[provider]) || [];
     modelSel.innerHTML = list.map(function(m) {
-      return '<option value="' + m.value + '">' + m.label + '</option>';
+      return '<option value="' + m.value + '">' + (typeof formatModelLabel === 'function' ? formatModelLabel(m) : m.label) + '</option>';
     }).join('');
     var pick = (wanted && list.some(function(m) { return m.value === wanted; })) ? wanted : (list[0] ? list[0].value : '');
     if (pick) modelSel.value = pick;
