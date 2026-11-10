@@ -1879,8 +1879,12 @@ function renderAISettings(el) {
         '<div class="set-row-control"><div class="set-api-row"><input class="set-input" type="password" id="setApiKey" placeholder="Enter key" spellcheck="false"><button class="set-btn" id="setApiToggle">Show</button></div></div>' +
       '</div>' +
       '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">Proxy URL</div><div class="set-row-desc">Only for NVIDIA NIM — paste your free Worker URL</div></div>' +
+        '<div class="set-row-left"><div class="set-row-label">Proxy URL</div><div class="set-row-desc">Optional — leave blank to use your Supabase relay</div></div>' +
         '<div class="set-row-control"><input class="set-input" id="setAiProxy" placeholder="https://....workers.dev" spellcheck="false"></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+        '<div class="set-row-left"><div class="set-row-label">Connection</div><div class="set-row-desc">Send a small test request</div></div>' +
+        '<div class="set-row-control"><button type="button" class="set-btn" id="aiTestBtn">Test connection</button></div>' +
       '</div>' +
     '</div>' +
     '<div class="set-divider"></div>' +
@@ -1943,6 +1947,7 @@ function renderAISettings(el) {
     if (typeof saveProviderModel === 'function') saveProviderModel(providerSel.value, model);
     else { try { localStorage.setItem('haven-schedule-model', model); } catch (e) {} }
     if (typeof state !== 'undefined') state.apiModel = model;
+    if (typeof updateAIChatHeader === 'function') updateAIChatHeader();
   }
 
   function updateKeyHint(provider) {
@@ -2001,6 +2006,9 @@ function renderAISettings(el) {
       if (typeof state !== 'undefined') state.apiProxyUrl = v;
     });
   }
+
+  var testBtn = document.getElementById('aiTestBtn');
+  if (testBtn) testBtn.addEventListener('click', function() { testAIConnection(this); });
 
   document.getElementById('aiProfileSave').addEventListener('click', function() {
     if (typeof saveChickBotProfile !== 'function') return;

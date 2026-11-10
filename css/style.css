@@ -4920,9 +4920,20 @@ html.light .hub-bottom-nav {
   font-size: 0.82rem; font-weight: 600; color: var(--text-primary);
   line-height: 1.2; letter-spacing: -0.01em;
 }
+.ai-status-dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: #4ade80; margin-left: 6px; vertical-align: middle;
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.15);
+}
+.ai-status-dot.off {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.15);
+}
 .ai-panel-subtitle {
   font-size: 0.62rem; color: var(--text-tertiary);
   letter-spacing: 0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: min(230px, 52vw);
 }
 .ai-panel-header-actions {
   display: flex; gap: var(--space-1);
