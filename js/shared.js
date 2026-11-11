@@ -41,11 +41,11 @@ const API_PROVIDER_STORAGE = 'haven-schedule-provider';
 
 const PROVIDER_MODELS = {
   nvidia: [
-    { value: 'nvidia/nemotron-3-super-120b-a12b', label: 'Nemotron 3 Super 120B', free: true, heavy: true },
-    { value: 'nvidia/nemotron-3.5-super-vl-120b-a12b', label: 'Nemotron 3.5 Super VL 120B (images)', free: true, heavy: true },
-    { value: 'nvidia/nemotron-3.5-lightning-30b-a3b', label: 'Nemotron 3.5 Lightning 30B (fast)', free: true },
-    { value: 'nvidia/nemotron-3-ultra-550b-a55b', label: 'Nemotron 3 Ultra 550B', free: true, heavy: true },
-    { value: 'deepseek-ai/deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash (fast)', free: true },
+    { value: 'nvidia/nemotron-3.5-lightning-30b-a3b', label: 'Nemotron 3.5 Lightning 30B (fast, recommended)', free: true },
+    { value: 'deepseek-ai/deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash (slow)', free: true },
+    { value: 'nvidia/nemotron-3-super-120b-a12b', label: 'Nemotron 3 Super 120B', heavy: true, restricted: true },
+    { value: 'nvidia/nemotron-3.5-super-vl-120b-a12b', label: 'Nemotron 3.5 Super VL 120B (images)', heavy: true, restricted: true },
+    { value: 'nvidia/nemotron-3-ultra-550b-a55b', label: 'Nemotron 3 Ultra 550B', heavy: true, restricted: true },
   ],
   groq: [
     { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B', free: true },
@@ -64,13 +64,18 @@ const PROVIDER_MODELS = {
 function formatModelLabel(m) {
   if (!m) return '';
   var s = m.label;
-  if (m.paid) s += ' — Paid';
+  if (m.restricted) s += ' — may need paid credits';
+  else if (m.paid) s += ' — Paid';
   else if (m.free) s += ' — Free';
-  if (m.heavy) s += ' · heavy';
   return s;
 }
 const GROQ_VISION_MODELS = ['meta-llama/llama-4-scout-17b-16e-instruct'];
 const NVIDIA_VISION_MODELS = ['nvidia/nemotron-3.5-super-vl-120b-a12b'];
+const NVIDIA_RESTRICTED_MODELS = [
+  'nvidia/nemotron-3-super-120b-a12b',
+  'nvidia/nemotron-3.5-super-vl-120b-a12b',
+  'nvidia/nemotron-3-ultra-550b-a55b'
+];
 
 const PROVIDER_LABELS = { nvidia: 'NVIDIA NIM', groq: 'Groq', gemini: 'Gemini' };
 const PROVIDER_LINKS = {
@@ -1854,7 +1859,7 @@ let state = {
   helpModalOpen: false,
   aiChatOpen: false,
   apiKey: '',
-  apiModel: 'nvidia/nemotron-3-super-120b-a12b',
+  apiModel: 'nvidia/nemotron-3.5-lightning-30b-a3b',
   apiProvider: 'nvidia',
   darkMode: null,
   accentColor: null,
@@ -3147,6 +3152,14 @@ function loadState() {
     if (models.length && !models.some(m => m.value === state.apiModel)) {
       state.apiModel = models[0].value;
       localStorage.setItem(API_MODEL_STORAGE, state.apiModel);
+    }
+    // The old default (120B) is not available on the free tier and returns 404,
+    // which used to look like a missing function. Move existing users to the
+    // model that actually works.
+    if (state.apiProvider === 'nvidia' && state.apiModel === 'nvidia/nemotron-3-super-120b-a12b') {
+      state.apiModel = 'nvidia/nemotron-3.5-lightning-30b-a3b';
+      localStorage.setItem(API_MODEL_STORAGE, state.apiModel);
+      try { localStorage.setItem(providerModelStorage('nvidia'), state.apiModel); } catch (e2) { /* ignore */ }
     }
   } catch (e) { /* ignore */ }
 
@@ -8238,6 +8251,15 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
         }
       } catch (e) { /* body already consumed */ }
     }
+    // A 404 for one of the large models means the model is not on this plan,
+    // not that the Supabase function is missing.
+    if (status === 404 && NVIDIA_RESTRICTED_MODELS.indexOf(model || state.apiModel) !== -1) {
+      const e = new Error('That model is not available on your NVIDIA plan. Pick Nemotron 3.5 Lightning 30B.');
+      e.status = 404;
+      e.fatal = true;
+      _lastAIError = { message: e.message, status: 404, body: detail };
+      throw e;
+    }
     // A 401 is either a missing Supabase session or a rejected NVIDIA key.
     if (status === 401) {
       let hasSession = false;
@@ -8307,7 +8329,13 @@ function friendlyAIError(msg) {
     return 'Your NVIDIA key was rejected, please check it.';
   }
   if (/\b429\b/.test(s)) return 'Rate limit reached. Please try again shortly.';
-  if (/\b404\b/.test(s)) return 'The AI function was not found. Check that the Supabase "nvidia" function is deployed.';
+  if (/\b404\b/.test(s)) {
+    if (/model/i.test(s)) return 'That model is not available on your NVIDIA plan. Pick Nemotron 3.5 Lightning 30B.';
+    return 'The AI function was not found. Check that the Supabase "nvidia" function is deployed.';
+  }
+  if (/\b400\b/.test(s) && /model/i.test(s)) {
+    return 'That model is not available. Pick Nemotron 3.5 Lightning 30B.';
+  }
   if (/\b410\b/.test(s)) return 'That model was retired. Pick a newer model in Settings.';
   return s;
 }
