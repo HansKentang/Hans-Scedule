@@ -6491,6 +6491,42 @@ function resetAIChat() {
   setTimeout(showAIChat, 100);
 }
 
+var _lastAIError = null;
+
+async function buildAIDiagnostics() {
+  var p = state.apiProvider || 'nvidia';
+  var key = getProviderKey(p);
+  var session = 'unknown';
+  try {
+    var sb = (typeof getSupabaseDb === 'function') ? getSupabaseDb() : null;
+    if (sb) {
+      var s = await sb.auth.getSession();
+      session = (s && s.data && s.data.session) ? 'signed in' : 'no session';
+    } else {
+      session = 'no Supabase client';
+    }
+  } catch (e) { session = 'session check failed'; }
+  var lines = [
+    'Haven AI diagnostics',
+    'build: v73',
+    'provider: ' + p,
+    'model: ' + getProviderModel(p),
+    'key: ' + (key ? key.slice(0, 6) + '... (' + key.length + ' chars)' : 'MISSING'),
+    'session: ' + session,
+    'last error: ' + (_lastAIError ? _lastAIError.message : 'none'),
+    'status: ' + (_lastAIError && _lastAIError.status ? _lastAIError.status : '-'),
+    'body: ' + (_lastAIError && _lastAIError.body ? String(_lastAIError.body).slice(0, 240) : '-'),
+    'page: ' + location.hostname
+  ];
+  return lines.join('\n');
+}
+
+async function copyAIDiagnostics() {
+  var text = await buildAIDiagnostics();
+  await copyTextToClipboard(text);
+  if (typeof showToast === 'function') showToast('Diagnostics copied — paste them to Kai', 'success', 2600);
+}
+
 function updateAIChatHeader() {
   if (!dom.aiChatPanel) return;
   var sub = dom.aiChatPanel.querySelector('.ai-panel-subtitle');
@@ -7496,11 +7532,12 @@ function sendAIMessage(opts) {
     streamBubble = null;
     typingEl.remove();
     const msg = err.message || 'Something went wrong';
+    _lastAIError = { message: msg, status: err.status || 0, body: err.body || '' };
     const noKey = /No AI key|API key saved/i.test(msg);
     let displayMsg;
     if (noKey) displayMsg = '✕ No API key saved. Open Settings → AI Assistant and add one.';
     else displayMsg = '✕ ' + escapeHtml(friendlyAIError(msg));
-    appendAIMessage('system', displayMsg + `<br><br><button class="btn btn-outline ai-retry-btn" style="font-size:0.74rem;padding:3px 12px">Retry</button>`);
+    appendAIMessage('system', displayMsg + `<br><br><button class="btn btn-outline ai-retry-btn" style="font-size:0.74rem;padding:3px 12px">Retry</button> <button class="btn btn-outline ai-diag-btn" style="font-size:0.74rem;padding:3px 12px">Copy diagnostics</button>`);
     // Wire up retry button
     const msgs = dom.aiChatMessages;
     if (msgs) {
@@ -7516,6 +7553,7 @@ function sendAIMessage(opts) {
           }
         }
       });
+      last.querySelector('.ai-diag-btn')?.addEventListener('click', copyAIDiagnostics);
     }
   });
 }
@@ -8117,6 +8155,7 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
     const e = new Error('Please add your NVIDIA API key in Settings.');
     e.code = 'NO_KEY';
     e.fatal = true;
+    _lastAIError = { message: e.message, status: 0, body: 'no key in localStorage' };
     throw e;
   }
   const sb = (typeof getSupabaseDb === 'function') ? getSupabaseDb() : null;
@@ -8164,6 +8203,7 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
     });
   } catch (err) {
     const e = new Error(err && err.message ? err.message : 'Could not reach the AI service.');
+    _lastAIError = { message: e.message, status: 0, body: 'invoke threw before a response' };
     throw e;
   }
 
@@ -8194,12 +8234,14 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
         const e = new Error('Sign in to your Havën account to use NVIDIA NIM.');
         e.code = 'NO_SESSION';
         e.fatal = true;
+        _lastAIError = { message: e.message, status: 401, body: 'no Supabase session' };
         throw e;
       }
     }
     const e = new Error((status ? 'API error: ' + status + ' — ' : '') + detail);
     e.status = status;
     if (status === 401 || status === 403 || status === 429) e.fatal = true;
+    _lastAIError = { message: e.message, status: status, body: detail };
     throw e;
   }
 
@@ -8257,19 +8299,30 @@ function friendlyAIError(msg) {
 
 async function testAIConnection(btn) {
   var p = state.apiProvider || 'nvidia';
+  var resultEl = document.getElementById('aiTestResult');
+  function showResult(text, cls) {
+    if (!resultEl) return;
+    resultEl.className = 'set-test-result' + (cls ? ' ' + cls : '');
+    resultEl.textContent = text;
+  }
   if (!getProviderKey(p)) {
+    showResult('No key saved for ' + (PROVIDER_LABELS[p] || p) + '.', 'err');
     if (typeof showToast === 'function') showToast('Add an API key first', 'info', 2200);
     return;
   }
   var label = btn ? btn.textContent : 'Test connection';
   if (btn) { btn.disabled = true; btn.textContent = 'Testing...'; }
+  showResult('Testing...', '');
   try {
     await callProviderOnce(p, 'Return ONLY this JSON, nothing else: {"text":"OK","actions":[]}', 'ping');
     if (btn) btn.textContent = 'Connected';
+    showResult('Connected to ' + (PROVIDER_LABELS[p] || p) + '.', 'ok');
     if (typeof showToast === 'function') showToast('Connected to ' + (PROVIDER_LABELS[p] || p), 'success', 2600);
   } catch (e) {
+    const friendly = friendlyAIError(e.message || e);
     if (btn) btn.textContent = 'Failed';
-    if (typeof showToast === 'function') showToast('Failed: ' + friendlyAIError(e.message || e).slice(0, 110), 'error', 5200);
+    showResult('Failed: ' + friendly, 'err');
+    if (typeof showToast === 'function') showToast('Failed: ' + friendly.slice(0, 110), 'error', 5200);
   } finally {
     setTimeout(function () { if (btn) { btn.disabled = false; btn.textContent = label; } }, 2600);
   }

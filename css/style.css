@@ -9414,6 +9414,12 @@ html.light .hub-section-header:hover {
 .set-row-stack .set-api-row .set-input { width: auto; flex: 1; min-width: 0; }
 .set-api-actions { display: flex; gap: 6px; margin-top: 6px; }
 .set-api-actions .set-btn { flex: 1; }
+.set-test-result {
+  margin-top: 6px; font-size: 0.66rem; line-height: 1.4;
+  color: var(--text-tertiary); white-space: pre-wrap; word-break: break-word;
+}
+.set-test-result.ok { color: #4ade80; }
+.set-test-result.err { color: var(--error); }
 .set-label { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px; }
 
 /* Swatch row */

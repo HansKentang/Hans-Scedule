@@ -1880,9 +1880,12 @@ function renderAISettings(el) {
           '<div class="set-api-actions"><button class="set-btn set-btn-primary" type="button" id="setApiKeySave">Save</button><button class="set-btn" type="button" id="setApiKeyRemove">Remove key</button></div>' +
         '</div>' +
       '</div>' +
-      '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">Connection</div><div class="set-row-desc">Send a small test request</div></div>' +
-        '<div class="set-row-control"><button type="button" class="set-btn" id="aiTestBtn">Test connection</button></div>' +
+      '<div class="set-row set-row-stack">' +
+        '<div class="set-row-left"><div class="set-row-label">Connection</div><div class="set-row-desc">Test the key, or copy a report if it fails</div></div>' +
+        '<div class="set-row-control">' +
+          '<div class="set-api-actions"><button type="button" class="set-btn" id="aiTestBtn">Test connection</button><button type="button" class="set-btn" id="aiDiagBtn">Copy diagnostics</button></div>' +
+          '<div id="aiTestResult" class="set-test-result"></div>' +
+        '</div>' +
       '</div>' +
     '</div>' +
     '<div class="set-divider"></div>' +
@@ -1997,13 +2000,8 @@ function renderAISettings(el) {
       if (typeof state !== 'undefined') state.apiKey = this.value.trim();
     });
 
-    var keySaveBtn = document.getElementById('setApiKeySave');
-    if (keySaveBtn) keySaveBtn.addEventListener('click', function() {
-      var v = keyInput.value.trim();
-      if (!v) {
-        if (typeof showToast === 'function') showToast('Enter a key first', 'info', 2200);
-        return;
-      }
+    function persistKey(v, silent) {
+      if (!v) return;
       if (/^nvapi-/i.test(v) && providerSel.value !== 'nvidia') {
         providerSel.value = 'nvidia';
         providerSel.dispatchEvent(new Event('change'));
@@ -2013,7 +2011,22 @@ function renderAISettings(el) {
       if (typeof state !== 'undefined') state.apiKey = v;
       keyInput.value = v;
       if (typeof updateAIChatHeader === 'function') updateAIChatHeader();
-      if (typeof showToast === 'function') showToast('API key saved', 'success', 2200);
+      if (!silent && typeof showToast === 'function') showToast('API key saved', 'success', 2200);
+    }
+
+    var keySaveBtn = document.getElementById('setApiKeySave');
+    if (keySaveBtn) keySaveBtn.addEventListener('click', function() {
+      var v = keyInput.value.trim();
+      if (!v) {
+        if (typeof showToast === 'function') showToast('Enter a key first', 'info', 2200);
+        return;
+      }
+      persistKey(v, false);
+    });
+
+    keyInput.addEventListener('blur', function() {
+      var v = this.value.trim();
+      if (v.length >= 20 && v !== getProviderKey(providerSel.value)) persistKey(v, true);
     });
 
     var keyRemoveBtn = document.getElementById('setApiKeyRemove');
@@ -2035,6 +2048,9 @@ function renderAISettings(el) {
 
   var testBtn = document.getElementById('aiTestBtn');
   if (testBtn) testBtn.addEventListener('click', function() { testAIConnection(this); });
+
+  var diagBtn = document.getElementById('aiDiagBtn');
+  if (diagBtn) diagBtn.addEventListener('click', function() { copyAIDiagnostics(); });
 
   document.getElementById('aiProfileSave').addEventListener('click', function() {
     if (typeof saveChickBotProfile !== 'function') return;
