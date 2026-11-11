@@ -8125,18 +8125,6 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
     e.fatal = true;
     throw e;
   }
-  try {
-    const sess = await sb.auth.getSession();
-    if (!sess || !sess.data || !sess.data.session) {
-      const e = new Error('Sign in to your Havën account to use NVIDIA NIM.');
-      e.code = 'NO_SESSION';
-      e.fatal = true;
-      throw e;
-    }
-  } catch (e) {
-    if (e && e.code === 'NO_SESSION') throw e;
-  }
-
   const hasVision = !!(attachedImage && attachedImage.isImage);
   if (hasVision && NVIDIA_VISION_MODELS.indexOf(model || state.apiModel) === -1) {
     const e = new Error('This NVIDIA model does not accept images. Switch to "Nemotron 3.5 Super VL 120B" in Settings.');
@@ -8181,7 +8169,34 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
 
   if (res && res.error) {
     const status = (res.error.context && res.error.context.status) || res.error.status || 0;
-    const detail = res.error.message || 'The AI request failed.';
+    // The Supabase client only says "non-2xx". The function's body has the
+    // real reason, so read it when possible.
+    let detail = res.error.message || 'The AI request failed.';
+    if (res.error.context) {
+      try {
+        const bodyText = await res.error.context.text();
+        if (bodyText) {
+          try {
+            const body = JSON.parse(bodyText);
+            if (body && body.error) detail = body.error;
+          } catch (e) { /* not JSON */ }
+        }
+      } catch (e) { /* body already consumed */ }
+    }
+    // A 401 is either a missing Supabase session or a rejected NVIDIA key.
+    if (status === 401) {
+      let hasSession = false;
+      try {
+        const s = await sb.auth.getSession();
+        hasSession = !!(s && s.data && s.data.session);
+      } catch (err) { /* treat as no session */ }
+      if (!hasSession) {
+        const e = new Error('Sign in to your Havën account to use NVIDIA NIM.');
+        e.code = 'NO_SESSION';
+        e.fatal = true;
+        throw e;
+      }
+    }
     const e = new Error((status ? 'API error: ' + status + ' — ' : '') + detail);
     e.status = status;
     if (status === 401 || status === 403 || status === 429) e.fatal = true;
@@ -8193,11 +8208,20 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
   if (typeof data.text === 'string' && data.text) raw = data.text;
   else if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) raw = data.choices[0].message.content;
   else if (typeof data === 'string') raw = data;
-  if (!raw) throw new Error('The NVIDIA function returned an empty response.');
+  if (!raw) {
+    const keys = Object.keys(data).join(', ') || 'none';
+    throw new Error('The NVIDIA function returned an empty response (keys: ' + keys + ').');
+  }
 
   const parsed = parseAIJson(raw);
-  const actions = Array.isArray(data.actions) ? data.actions : parsed.actions;
-  return { text: parsed.text, actions: actions, usage: data.usage || null };
+  let actions = Array.isArray(data.actions) ? data.actions : parsed.actions;
+  if ((!actions || !actions.length) && typeof data.actions === 'string') {
+    try {
+      const parsedActions = JSON.parse(data.actions);
+      if (Array.isArray(parsedActions)) actions = parsedActions;
+    } catch (e) { /* leave empty */ }
+  }
+  return { text: parsed.text, actions: actions || [], usage: data.usage || null };
 }
 
 async function callProviderOnce(p, systemPrompt, userText, attachedImage) {
