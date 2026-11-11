@@ -6508,7 +6508,7 @@ async function buildAIDiagnostics() {
   } catch (e) { session = 'session check failed'; }
   var lines = [
     'Haven AI diagnostics',
-    'build: v73',
+    'build: v75',
     'provider: ' + p,
     'model: ' + getProviderModel(p),
     'key: ' + (key ? key.slice(0, 6) + '... (' + key.length + ' chars)' : 'MISSING'),
@@ -6519,6 +6519,20 @@ async function buildAIDiagnostics() {
     'page: ' + location.hostname
   ];
   return lines.join('\n');
+}
+
+async function forceAppUpdate() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(function (r) { return r.unregister(); }));
+    }
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+    }
+  } catch (e) { /* reload anyway */ }
+  location.reload();
 }
 
 async function copyAIDiagnostics() {
@@ -7537,7 +7551,7 @@ function sendAIMessage(opts) {
     let displayMsg;
     if (noKey) displayMsg = '✕ No API key saved. Open Settings → AI Assistant and add one.';
     else displayMsg = '✕ ' + escapeHtml(friendlyAIError(msg));
-    appendAIMessage('system', displayMsg + `<br><br><button class="btn btn-outline ai-retry-btn" style="font-size:0.74rem;padding:3px 12px">Retry</button> <button class="btn btn-outline ai-diag-btn" style="font-size:0.74rem;padding:3px 12px">Copy diagnostics</button>`);
+    appendAIMessage('system', displayMsg + `<br><br><button class="btn btn-outline ai-retry-btn" style="font-size:0.74rem;padding:3px 12px">Retry</button> <button class="btn btn-outline ai-diag-btn" style="font-size:0.74rem;padding:3px 12px">Copy diagnostics</button> <button class="btn btn-outline ai-force-btn" style="font-size:0.74rem;padding:3px 12px">Force update</button>`);
     // Wire up retry button
     const msgs = dom.aiChatMessages;
     if (msgs) {
@@ -7554,6 +7568,7 @@ function sendAIMessage(opts) {
         }
       });
       last.querySelector('.ai-diag-btn')?.addEventListener('click', copyAIDiagnostics);
+      last.querySelector('.ai-force-btn')?.addEventListener('click', forceAppUpdate);
     }
   });
 }
