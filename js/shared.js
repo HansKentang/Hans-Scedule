@@ -9444,3 +9444,13 @@ if (document.readyState === 'loading') {
   initLogoLoginRedirect();
 }
 
+// Force a service-worker update check on boot. update() bypasses the HTTP cache
+// for the worker script, so a stale cache cannot pin an old build.
+try {
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+    navigator.serviceWorker.getRegistration().then(function (reg) {
+      if (reg) reg.update().catch(function () {});
+    }).catch(function () {});
+  }
+} catch (e) { /* ignore */ }
+
