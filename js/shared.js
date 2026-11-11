@@ -6497,6 +6497,37 @@ function resetAIChat() {
   setTimeout(showAIChat, 100);
 }
 
+function openSupabaseFunctions() {
+  var base = (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG && SUPABASE_CONFIG.url) ? String(SUPABASE_CONFIG.url) : '';
+  var ref = base.replace(/^https?:\/\//, '').split('.')[0];
+  var url = ref ? 'https://supabase.com/dashboard/project/' + ref + '/functions' : 'https://supabase.com/dashboard';
+  window.open(url, '_blank', 'noopener');
+}
+
+var _relayChecked = false;
+async function ensureNvidiaRelayBanner() {
+  if (_relayChecked) return;
+  _relayChecked = true;
+  if ((state.apiProvider || 'nvidia') !== 'nvidia') return;
+  if (String(state.apiProxyUrl || '').trim()) return;
+  if (!getProviderKey('nvidia')) return;
+  var nv = nvidiaEndpoint();
+  if (!nv.endpoint) return;
+  var ok = false;
+  try {
+    var res = await fetch(nv.endpoint, { method: 'OPTIONS', headers: { 'Access-Control-Request-Method': 'POST' } });
+    ok = res.ok;
+  } catch (e) { ok = false; }
+  if (ok || !dom.aiChatMessages) return;
+  if (dom.aiChatMessages.querySelector('.ai-relay-banner')) return;
+  var div = document.createElement('div');
+  div.className = 'ai-message ai-message-system ai-relay-banner';
+  div.innerHTML = '<div class="ai-bubble"><strong>NVIDIA relay not reachable.</strong><br>The Supabase <strong>nvidia</strong> function may not be deployed. Deploy it once, then reopen this chat.<br><br><button class="btn btn-primary" id="aiOpenSupabaseBtn" style="font-size:0.72rem;padding:3px 10px">Open Supabase</button></div>';
+  dom.aiChatMessages.prepend(div);
+  var btn = document.getElementById('aiOpenSupabaseBtn');
+  if (btn) btn.addEventListener('click', openSupabaseFunctions);
+}
+
 function updateAIChatHeader() {
   if (!dom.aiChatPanel) return;
   var sub = dom.aiChatPanel.querySelector('.ai-panel-subtitle');
@@ -6684,6 +6715,7 @@ function showAIChat() {
     dom.aiChatInput?.addEventListener('input', toggleAISendBtn);
   }
   toggleAISendBtn();
+  ensureNvidiaRelayBanner();
 }
 
 // ─── FILE ATTACHMENT HELPERS ────────────────────────────────
