@@ -43,9 +43,6 @@ const PROVIDER_MODELS = {
   nvidia: [
     { value: 'nvidia/nemotron-3.5-lightning-30b-a3b', label: 'Nemotron 3.5 Lightning 30B (fast, recommended)', free: true },
     { value: 'deepseek-ai/deepseek-v4.1-flash', label: 'DeepSeek V4.1 Flash (slow)', free: true },
-    { value: 'nvidia/nemotron-3-super-120b-a12b', label: 'Nemotron 3 Super 120B', heavy: true, restricted: true },
-    { value: 'nvidia/nemotron-3.5-super-vl-120b-a12b', label: 'Nemotron 3.5 Super VL 120B (images)', heavy: true, restricted: true },
-    { value: 'nvidia/nemotron-3-ultra-550b-a55b', label: 'Nemotron 3 Ultra 550B', heavy: true, restricted: true },
   ],
   groq: [
     { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B', free: true },
@@ -64,18 +61,12 @@ const PROVIDER_MODELS = {
 function formatModelLabel(m) {
   if (!m) return '';
   var s = m.label;
-  if (m.restricted) s += ' — may need paid credits';
-  else if (m.paid) s += ' — Paid';
+  if (m.paid) s += ' — Paid';
   else if (m.free) s += ' — Free';
   return s;
 }
 const GROQ_VISION_MODELS = ['meta-llama/llama-4-scout-17b-16e-instruct'];
-const NVIDIA_VISION_MODELS = ['nvidia/nemotron-3.5-super-vl-120b-a12b'];
-const NVIDIA_RESTRICTED_MODELS = [
-  'nvidia/nemotron-3-super-120b-a12b',
-  'nvidia/nemotron-3.5-super-vl-120b-a12b',
-  'nvidia/nemotron-3-ultra-550b-a55b'
-];
+const NVIDIA_VISION_MODELS = [];
 
 const PROVIDER_LABELS = { nvidia: 'NVIDIA NIM', groq: 'Groq', gemini: 'Gemini' };
 const PROVIDER_LINKS = {
@@ -3153,14 +3144,6 @@ function loadState() {
       state.apiModel = models[0].value;
       localStorage.setItem(API_MODEL_STORAGE, state.apiModel);
     }
-    // The old default (120B) is not available on the free tier and returns 404,
-    // which used to look like a missing function. Move existing users to the
-    // model that actually works.
-    if (state.apiProvider === 'nvidia' && state.apiModel === 'nvidia/nemotron-3-super-120b-a12b') {
-      state.apiModel = 'nvidia/nemotron-3.5-lightning-30b-a3b';
-      localStorage.setItem(API_MODEL_STORAGE, state.apiModel);
-      try { localStorage.setItem(providerModelStorage('nvidia'), state.apiModel); } catch (e2) { /* ignore */ }
-    }
   } catch (e) { /* ignore */ }
 
   // Move the legacy single key/model into the active provider's slot, then
@@ -3170,9 +3153,15 @@ function loadState() {
     const ownKey = localStorage.getItem(providerKeyStorage(state.apiProvider)) || '';
     if (!ownKey && legacyKey) localStorage.setItem(providerKeyStorage(state.apiProvider), legacyKey);
     state.apiKey = ownKey || legacyKey;
+    // Only restore a saved per-provider model if it still exists. Otherwise a
+    // removed model would come back here and override the corrected default.
     const ownModel = localStorage.getItem(providerModelStorage(state.apiProvider)) || '';
-    if (ownModel) state.apiModel = ownModel;
-    else localStorage.setItem(providerModelStorage(state.apiProvider), state.apiModel);
+    const providerModels = PROVIDER_MODELS[state.apiProvider] || [];
+    if (ownModel && providerModels.some(m => m.value === ownModel)) {
+      state.apiModel = ownModel;
+    } else {
+      localStorage.setItem(providerModelStorage(state.apiProvider), state.apiModel);
+    }
   } catch (e) { /* ignore */ }
 
   // Dependent inits — each wrapped so one failure doesn't cascade
@@ -8194,7 +8183,7 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
   }
   const hasVision = !!(attachedImage && attachedImage.isImage);
   if (hasVision && NVIDIA_VISION_MODELS.indexOf(model || state.apiModel) === -1) {
-    const e = new Error('This NVIDIA model does not accept images. Switch to "Nemotron 3.5 Super VL 120B" in Settings.');
+    const e = new Error('NVIDIA models here do not accept images. Switch to Gemini to analyse a picture.');
     e.fatal = true;
     throw e;
   }
@@ -8250,15 +8239,6 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
           } catch (e) { /* not JSON */ }
         }
       } catch (e) { /* body already consumed */ }
-    }
-    // A 404 for one of the large models means the model is not on this plan,
-    // not that the Supabase function is missing.
-    if (status === 404 && NVIDIA_RESTRICTED_MODELS.indexOf(model || state.apiModel) !== -1) {
-      const e = new Error('That model is not available on your NVIDIA plan. Pick Nemotron 3.5 Lightning 30B.');
-      e.status = 404;
-      e.fatal = true;
-      _lastAIError = { message: e.message, status: 404, body: detail };
-      throw e;
     }
     // A 401 is either a missing Supabase session or a rejected NVIDIA key.
     if (status === 401) {
@@ -8592,7 +8572,7 @@ async function streamProvider(p, systemPrompt, userText, attachedImage, onDelta)
   const messages = [{ role: 'system', content: systemPrompt }];
   if (attachedImage && attachedImage.isImage) {
     if (p === 'groq' && GROQ_VISION_MODELS.indexOf(model) === -1) throw new Error('This Groq model does not accept images.');
-    if (p === 'nvidia' && NVIDIA_VISION_MODELS.indexOf(model) === -1) throw new Error('This NVIDIA model does not accept images.');
+    if (p === 'nvidia' && NVIDIA_VISION_MODELS.indexOf(model) === -1) throw new Error('NVIDIA models here do not accept images. Switch to Gemini to analyse a picture.');
     messages.push({
       role: 'user',
       content: [

@@ -4,7 +4,7 @@
      - Static assets    : stale-while-revalidate (instant repeat loads, refreshed in background)
      - Supabase API     : never intercepted
    Only a tiny shell is precached so install never competes with the first page load. */
-const CACHE = 'haven-schedule-v77';
+const CACHE = 'haven-schedule-v78';
 const OFFLINE_FALLBACK = './';
 
 const SHELL = [
