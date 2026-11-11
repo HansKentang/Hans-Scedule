@@ -38,7 +38,6 @@ function shortcutDisplay(key) {
 }
 
 const API_PROVIDER_STORAGE = 'haven-schedule-provider';
-const API_PROXY_STORAGE = 'haven-schedule-ai-proxy';
 
 const PROVIDER_MODELS = {
   nvidia: [
@@ -1857,7 +1856,6 @@ let state = {
   apiKey: '',
   apiModel: 'nvidia/nemotron-3-super-120b-a12b',
   apiProvider: 'nvidia',
-  apiProxyUrl: '',
   darkMode: null,
   accentColor: null,
   accentCustomColors: [],
@@ -3134,10 +3132,6 @@ function loadState() {
   try {
     const provider = localStorage.getItem(API_PROVIDER_STORAGE);
     if (provider) state.apiProvider = provider;
-  } catch (e) { /* ignore */ }
-  try {
-    const proxy = localStorage.getItem(API_PROXY_STORAGE);
-    if (proxy) state.apiProxyUrl = proxy;
   } catch (e) { /* ignore */ }
 
   // NVIDIA NIM keys start with "nvapi-". If one is stored while the provider is
@@ -6497,37 +6491,6 @@ function resetAIChat() {
   setTimeout(showAIChat, 100);
 }
 
-function openSupabaseFunctions() {
-  var base = (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG && SUPABASE_CONFIG.url) ? String(SUPABASE_CONFIG.url) : '';
-  var ref = base.replace(/^https?:\/\//, '').split('.')[0];
-  var url = ref ? 'https://supabase.com/dashboard/project/' + ref + '/functions' : 'https://supabase.com/dashboard';
-  window.open(url, '_blank', 'noopener');
-}
-
-var _relayChecked = false;
-async function ensureNvidiaRelayBanner() {
-  if (_relayChecked) return;
-  _relayChecked = true;
-  if ((state.apiProvider || 'nvidia') !== 'nvidia') return;
-  if (String(state.apiProxyUrl || '').trim()) return;
-  if (!getProviderKey('nvidia')) return;
-  var nv = nvidiaEndpoint();
-  if (!nv.endpoint) return;
-  var ok = false;
-  try {
-    var res = await fetch(nv.endpoint, { method: 'OPTIONS', headers: { 'Access-Control-Request-Method': 'POST' } });
-    ok = res.ok;
-  } catch (e) { ok = false; }
-  if (ok || !dom.aiChatMessages) return;
-  if (dom.aiChatMessages.querySelector('.ai-relay-banner')) return;
-  var div = document.createElement('div');
-  div.className = 'ai-message ai-message-system ai-relay-banner';
-  div.innerHTML = '<div class="ai-bubble"><strong>NVIDIA relay not reachable.</strong><br>The Supabase <strong>nvidia</strong> function may not be deployed. Deploy it once, then reopen this chat.<br><br><button class="btn btn-primary" id="aiOpenSupabaseBtn" style="font-size:0.72rem;padding:3px 10px">Open Supabase</button></div>';
-  dom.aiChatMessages.prepend(div);
-  var btn = document.getElementById('aiOpenSupabaseBtn');
-  if (btn) btn.addEventListener('click', openSupabaseFunctions);
-}
-
 function updateAIChatHeader() {
   if (!dom.aiChatPanel) return;
   var sub = dom.aiChatPanel.querySelector('.ai-panel-subtitle');
@@ -6547,6 +6510,13 @@ function updateAIChatHeader() {
       title.appendChild(dot);
     }
     dot.classList.toggle('off', !getProviderOrder().some(function (x) { return getProviderKey(x); }));
+  }
+}
+
+function openAISettingsPanel() {
+  if (typeof openSettingsBubble === 'function') {
+    openSettingsBubble();
+    if (typeof switchSettingsCategory === 'function') switchSettingsCategory('ai');
   }
 }
 
@@ -6715,7 +6685,6 @@ function showAIChat() {
     dom.aiChatInput?.addEventListener('input', toggleAISendBtn);
   }
   toggleAISendBtn();
-  ensureNvidiaRelayBanner();
 }
 
 // ─── FILE ATTACHMENT HELPERS ────────────────────────────────
@@ -7400,16 +7369,20 @@ function sendAIMessage(opts) {
     return;
   }
 
+  if ((state.apiProvider || 'nvidia') === 'nvidia' && !getProviderKey('nvidia')) {
+    typingEl.remove();
+    appendAIMessage('assistant', 'Please add your NVIDIA API key in Settings.<br><br><button class="btn btn-primary" id="aiSetupInlineBtn" style="font-size:0.74rem;padding:4px 12px">Open settings</button>');
+    var _setupBtn = document.getElementById('aiSetupInlineBtn');
+    if (_setupBtn) _setupBtn.addEventListener('click', openAISettingsPanel);
+    setTimeout(openAISettingsPanel, 250);
+    return;
+  }
+
   if (!getProviderOrder().some(function (p) { return getProviderKey(p); })) {
     typingEl.remove();
-    appendAIMessage('assistant', 'I need an API key before I can reply.<br><br><button class="btn btn-primary" id="aiSetupInlineBtn" style="font-size:0.74rem;padding:4px 12px">Open AI settings</button>');
-    var _setupBtn = document.getElementById('aiSetupInlineBtn');
-    if (_setupBtn) _setupBtn.addEventListener('click', function () {
-      if (typeof openSettingsBubble === 'function') {
-        openSettingsBubble();
-        if (typeof switchSettingsCategory === 'function') switchSettingsCategory('ai');
-      }
-    });
+    appendAIMessage('assistant', 'Please add an API key in Settings.<br><br><button class="btn btn-primary" id="aiSetupInlineBtn" style="font-size:0.74rem;padding:4px 12px">Open settings</button>');
+    var _setupBtn2 = document.getElementById('aiSetupInlineBtn');
+    if (_setupBtn2) _setupBtn2.addEventListener('click', openAISettingsPanel);
     return;
   }
   trackAIUsage('chat');
@@ -8138,12 +8111,93 @@ IMPORTANT: Only valid JSON.`;
   return callAIChat(systemPrompt, fileAwareUserText, hasImageAttachment ? attachedFile : null);
 }
 
-function nvidiaEndpoint() {
-  let endpoint = String(state.apiProxyUrl || '').trim();
-  const supaBase = (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG && SUPABASE_CONFIG.url)
-    ? String(SUPABASE_CONFIG.url).replace(/\/+$/, '') : '';
-  if (!endpoint && supaBase) endpoint = supaBase + '/functions/v1/nvidia';
-  return { endpoint: endpoint, supaBase: supaBase };
+async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model) {
+  const key = getProviderKey('nvidia');
+  if (!key) {
+    const e = new Error('Please add your NVIDIA API key in Settings.');
+    e.code = 'NO_KEY';
+    e.fatal = true;
+    throw e;
+  }
+  const sb = (typeof getSupabaseDb === 'function') ? getSupabaseDb() : null;
+  if (!sb || !sb.functions || typeof sb.functions.invoke !== 'function') {
+    const e = new Error('Supabase is not configured, so the NVIDIA relay cannot be called.');
+    e.fatal = true;
+    throw e;
+  }
+  try {
+    const sess = await sb.auth.getSession();
+    if (!sess || !sess.data || !sess.data.session) {
+      const e = new Error('Sign in to your Havën account to use NVIDIA NIM.');
+      e.code = 'NO_SESSION';
+      e.fatal = true;
+      throw e;
+    }
+  } catch (e) {
+    if (e && e.code === 'NO_SESSION') throw e;
+  }
+
+  const hasVision = !!(attachedImage && attachedImage.isImage);
+  if (hasVision && NVIDIA_VISION_MODELS.indexOf(model || state.apiModel) === -1) {
+    const e = new Error('This NVIDIA model does not accept images. Switch to "Nemotron 3.5 Super VL 120B" in Settings.');
+    e.fatal = true;
+    throw e;
+  }
+  let messages;
+  if (hasVision) {
+    messages = [
+      { role: 'system', content: systemPrompt },
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: userText },
+          { type: 'image_url', image_url: { url: attachedImage.data } }
+        ]
+      }
+    ];
+  } else {
+    messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userText }
+    ];
+  }
+
+  let res;
+  try {
+    res = await sb.functions.invoke('nvidia', {
+      body: {
+        model: model || state.apiModel,
+        messages: messages,
+        prompt: userText,
+        temperature: 0.2,
+        max_tokens: 2000
+      },
+      headers: { 'x-nvidia-key': key }
+    });
+  } catch (err) {
+    const e = new Error(err && err.message ? err.message : 'Could not reach the AI service.');
+    throw e;
+  }
+
+  if (res && res.error) {
+    const status = (res.error.context && res.error.context.status) || res.error.status || 0;
+    const detail = res.error.message || 'The AI request failed.';
+    const e = new Error((status ? 'API error: ' + status + ' — ' : '') + detail);
+    e.status = status;
+    if (status === 401 || status === 403 || status === 429) e.fatal = true;
+    throw e;
+  }
+
+  const data = (res && res.data) || {};
+  let raw = '';
+  if (typeof data.text === 'string' && data.text) raw = data.text;
+  else if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) raw = data.choices[0].message.content;
+  else if (typeof data === 'string') raw = data;
+  if (!raw) throw new Error('The NVIDIA function returned an empty response.');
+
+  const parsed = parseAIJson(raw);
+  const actions = Array.isArray(data.actions) ? data.actions : parsed.actions;
+  return { text: parsed.text, actions: actions, usage: data.usage || null };
 }
 
 async function callProviderOnce(p, systemPrompt, userText, attachedImage) {
@@ -8163,14 +8217,17 @@ async function callProviderOnce(p, systemPrompt, userText, attachedImage) {
 
 function friendlyAIError(msg) {
   var s = String(msg || '');
+  if (/Please add your NVIDIA API key/i.test(s)) return s;
+  if (/Sign in to your Havën account/i.test(s)) return s;
   if (/Failed to fetch|NetworkError|Load failed/i.test(s)) {
-    return 'Could not reach the AI relay. Is the Supabase "nvidia" function deployed?';
+    return 'Could not reach the AI service. Check your connection and try again.';
   }
-  if (/\b404\b/.test(s)) return 'Relay not found (404). Deploy the Supabase "nvidia" function.';
-  if (/\b401\b/.test(s)) return 'Unauthorized (401). Turn off "Verify JWT" on the Supabase function.';
-  if (/\b403\b/.test(s)) return 'NVIDIA rejected the request (403). The key may be invalid, or the account may be out of free credits.';
-  if (/\b410\b/.test(s)) return 'That model was retired (410). Pick a newer model.';
-  if (/\b429\b/.test(s)) return 'Rate limit (429). Wait a minute, or switch to a lighter model.';
+  if (/\b401\b/.test(s) || /\b403\b/.test(s)) {
+    return 'Your NVIDIA key was rejected, please check it.';
+  }
+  if (/\b429\b/.test(s)) return 'Rate limit reached. Please try again shortly.';
+  if (/\b404\b/.test(s)) return 'The AI function was not found. Check that the Supabase "nvidia" function is deployed.';
+  if (/\b410\b/.test(s)) return 'That model was retired. Pick a newer model in Settings.';
   return s;
 }
 
@@ -8204,6 +8261,7 @@ async function callAIChat(systemPrompt, userText, attachedImage) {
       return await callProviderOnce(p, systemPrompt, userText, attachedImage);
     } catch (e) {
       lastErr = e;
+      if (e && e.fatal) throw e;
     }
   }
   if (lastErr) throw lastErr;
@@ -8429,14 +8487,12 @@ async function streamProvider(p, systemPrompt, userText, attachedImage, onDelta)
   if (p === 'groq') {
     return streamOpenAICompatible('https://api.groq.com/openai/v1/chat/completions', key, model, messages, onDelta);
   }
-  const nv = nvidiaEndpoint();
-  if (!nv.endpoint) throw new Error('NVIDIA needs a proxy. Deploy the Supabase "nvidia" function, or set a proxy URL in Settings.');
-  const extra = { 'x-nvidia-key': key };
-  if (nv.supaBase && nv.endpoint.indexOf(nv.supaBase + '/functions/') === 0 &&
-      typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.anonKey) {
-    extra['apikey'] = SUPABASE_CONFIG.anonKey;
+  if (p === 'nvidia') {
+    const r = await invokeNvidiaFunction(systemPrompt, userText, attachedImage, model);
+    if (onDelta) onDelta(r.text);
+    return { text: r.text, actions: r.actions || [], usage: r.usage || null, streamed: false };
   }
-  return streamOpenAICompatible(nv.endpoint, key, model, messages, onDelta, extra);
+  throw new Error('Unsupported AI provider: ' + p);
 }
 
 async function callAIChatStream(systemPrompt, userText, attachedImage, onDelta) {
@@ -8451,88 +8507,21 @@ async function callAIChatStream(systemPrompt, userText, attachedImage, onDelta) 
       return res;
     } catch (e) {
       lastErr = e;
-      if (e && e.streamStarted) throw e;
+      if (e && (e.fatal || e.streamStarted)) throw e;
     }
   }
   if (lastErr) throw lastErr;
   throw new Error('No AI key configured. Add one in Settings → AI Assistant.');
 }
 
-// NVIDIA NIM — OpenAI-compatible chat completions at integrate.api.nvidia.com.
-// It does NOT reliably support response_format:json_object, so we rely on the
-// prompt ("ONLY valid JSON") and parse defensively like the Gemini path.
+// NVIDIA NIM — every call goes through the deployed Supabase Edge Function
+// "nvidia". The browser never calls integrate.api.nvidia.com directly; the
+// user's key travels in the x-nvidia-key header and stays in localStorage.
 function callNvidiaChat(systemPrompt, userText, attachedImage) {
-  const hasVision = !!(attachedImage && attachedImage.isImage);
-  if (hasVision && NVIDIA_VISION_MODELS.indexOf(state.apiModel) === -1) {
-    return Promise.reject(new Error('This NVIDIA model does not accept images. Switch to "Nemotron 3.5 Super VL 120B" in Settings to analyse a picture.'));
-  }
-  // NVIDIA only sends CORS headers to build.nvidia.com, so a browser cannot call
-  // integrate.api.nvidia.com directly. Route through a proxy: either the app's
-  // Supabase Edge Function "nvidia" (auto-detected) or a custom URL the user set.
-  const nv = nvidiaEndpoint();
-  const endpoint = nv.endpoint;
-  const supaBase = nv.supaBase;
-  if (!endpoint) {
-    return Promise.reject(new Error('NVIDIA needs a proxy. Deploy the Supabase "nvidia" function, or paste a proxy URL in Settings → AI Assistant.'));
-  }
-  let messages;
-  if (hasVision) {
-    messages = [
-      { role: 'system', content: systemPrompt },
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: userText },
-          { type: 'image_url', image_url: { url: attachedImage.data } }
-        ]
-      }
-    ];
-  } else {
-    messages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userText }
-    ];
-  }
-  const nvHeaders = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${state.apiKey}`,
-    'x-nvidia-key': state.apiKey,
-    'Accept': 'application/json'
-  };
-  if (supaBase && endpoint.indexOf(supaBase + '/functions/') === 0 &&
-      typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.anonKey) {
-    nvHeaders['apikey'] = SUPABASE_CONFIG.anonKey;
-  }
-  return fetchWithRetry(endpoint, {
-    method: 'POST',
-    headers: nvHeaders,
-    body: JSON.stringify({
-      model: state.apiModel,
-      messages,
-      temperature: 0.2,
-      max_tokens: 2000,
-      top_p: 0.9
-    })
-  }).then(async res => {
-    const txt = res.ok ? '' : (await res.text().catch(() => ''));
-    if (!res.ok) throw new Error(`API error: ${res.status}${txt ? ' — ' + txt.slice(0, 200) : ''}`);
-    return res.json();
-  }).then(data => {
-    const raw = data?.choices?.[0]?.message?.content;
-    if (!raw) throw new Error('Empty response from AI');
-    let parsed;
-    try { parsed = JSON.parse(raw); } catch (e) {
-      const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (fenced) { try { parsed = JSON.parse(fenced[1]); } catch (e2) {} }
-      if (!parsed) {
-        const m = raw.match(/\{[\s\S]*\}/);
-        if (m) { try { parsed = JSON.parse(m[0]); } catch (e3) {} }
-      }
-      if (!parsed) throw new Error('Invalid response format from AI');
-    }
-    if (!parsed.text) throw new Error('AI returned incomplete response');
-    trackTokenUsage(data.usage);
-    return { text: parsed.text, actions: parsed.actions || [], usage: data.usage || null };
+  return invokeNvidiaFunction(systemPrompt, userText, attachedImage, state.apiModel).then(function (r) {
+    const approx = Math.ceil(((systemPrompt || '').length + (userText || '').length + (r.text || '').length) / 4);
+    trackTokenUsage({ total_tokens: approx });
+    return { text: r.text, actions: r.actions || [], usage: r.usage || null };
   });
 }
 

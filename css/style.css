@@ -9409,6 +9409,11 @@ html.light .hub-section-header:hover {
 .set-input:focus, .set-select:focus { border-color: var(--primary); }
 .set-api-row { display: flex; gap: 4px; }
 .set-api-row .set-input { width: 140px; }
+.set-row-stack { flex-direction: column; align-items: stretch; gap: 6px; }
+.set-row-stack .set-row-control { width: 100%; }
+.set-row-stack .set-api-row .set-input { width: auto; flex: 1; min-width: 0; }
+.set-api-actions { display: flex; gap: 6px; margin-top: 6px; }
+.set-api-actions .set-btn { flex: 1; }
 .set-label { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 4px; }
 
 /* Swatch row */

@@ -1831,7 +1831,6 @@ function renderAISettings(el) {
   var savedProvider = 'nvidia'; try { savedProvider = localStorage.getItem('haven-schedule-provider') || 'nvidia'; } catch(e) {}
   var savedKey = ''; try { savedKey = (typeof getProviderKey === 'function' ? getProviderKey(savedProvider) : localStorage.getItem('haven-schedule-apikey')) || ''; } catch(e) {}
   var savedModel = ''; try { savedModel = (typeof getProviderModel === 'function' ? getProviderModel(savedProvider) : localStorage.getItem('haven-schedule-model')) || ''; } catch(e) {}
-  var savedProxy = ''; try { savedProxy = localStorage.getItem('haven-schedule-ai-proxy') || ''; } catch(e) {}
   var profile = typeof getChickBotProfile === 'function' ? (getChickBotProfile() || {}) : {};
   var routine = typeof loadRoutine === 'function' ? loadRoutine() : '';
 
@@ -1874,13 +1873,12 @@ function renderAISettings(el) {
         '<div class="set-row-left"><div class="set-row-label">Model</div><div class="set-row-desc">Free uses the free allowance; Paid needs billing</div></div>' +
         '<div class="set-row-control"><select class="set-select" id="setAiModel"></select></div>' +
       '</div>' +
-      '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">API Key</div><div class="set-row-desc">Your API key for the selected provider</div></div>' +
-        '<div class="set-row-control"><div class="set-api-row"><input class="set-input" type="password" id="setApiKey" placeholder="Enter key" spellcheck="false"><button class="set-btn" id="setApiToggle">Show</button></div></div>' +
-      '</div>' +
-      '<div class="set-row">' +
-        '<div class="set-row-left"><div class="set-row-label">Proxy URL</div><div class="set-row-desc">Optional — leave blank to use your Supabase relay</div></div>' +
-        '<div class="set-row-control"><input class="set-input" id="setAiProxy" placeholder="https://....workers.dev" spellcheck="false"></div>' +
+      '<div class="set-row set-row-stack">' +
+        '<div class="set-row-left"><div class="set-row-label" id="setApiKeyLabel">NVIDIA API Key</div><div class="set-row-desc" id="setApiKeyDesc">Free key at build.nvidia.com — starts with nvapi-</div></div>' +
+        '<div class="set-row-control">' +
+          '<div class="set-api-row"><input class="set-input" type="password" id="setApiKey" placeholder="nvapi-..." spellcheck="false" autocomplete="new-password"><button class="set-btn" type="button" id="setApiToggle">Show</button></div>' +
+          '<div class="set-api-actions"><button class="set-btn set-btn-primary" type="button" id="setApiKeySave">Save</button><button class="set-btn" type="button" id="setApiKeyRemove">Remove key</button></div>' +
+        '</div>' +
       '</div>' +
       '<div class="set-row">' +
         '<div class="set-row-left"><div class="set-row-label">Connection</div><div class="set-row-desc">Send a small test request</div></div>' +
@@ -1952,7 +1950,21 @@ function renderAISettings(el) {
 
   function updateKeyHint(provider) {
     if (!keyInput) return;
-    keyInput.placeholder = provider === 'nvidia' ? 'nvapi-...' : (provider === 'groq' ? 'gsk_...' : 'AIza...');
+    var labelEl = document.getElementById('setApiKeyLabel');
+    var descEl = document.getElementById('setApiKeyDesc');
+    if (provider === 'nvidia') {
+      keyInput.placeholder = 'nvapi-...';
+      if (labelEl) labelEl.textContent = 'NVIDIA API Key';
+      if (descEl) descEl.innerHTML = 'Free key at <a href="https://build.nvidia.com/" target="_blank" class="form-link">build.nvidia.com</a> — starts with nvapi-';
+    } else if (provider === 'groq') {
+      keyInput.placeholder = 'gsk_...';
+      if (labelEl) labelEl.textContent = 'Groq API Key';
+      if (descEl) descEl.innerHTML = 'Free key at <a href="https://console.groq.com/keys" target="_blank" class="form-link">console.groq.com/keys</a>';
+    } else {
+      keyInput.placeholder = 'AIza...';
+      if (labelEl) labelEl.textContent = 'Gemini API Key';
+      if (descEl) descEl.innerHTML = 'Free key at <a href="https://aistudio.google.com/apikey" target="_blank" class="form-link">aistudio.google.com/apikey</a>';
+    }
   }
 
   function loadProvider(provider) {
@@ -1982,13 +1994,37 @@ function renderAISettings(el) {
   if (keyInput) {
     keyInput.value = savedKey;
     keyInput.addEventListener('input', function() {
-      if (typeof saveProviderKey === 'function') saveProviderKey(providerSel.value, this.value);
-      else { try { localStorage.setItem('haven-schedule-apikey', this.value); } catch (e) {} }
-      if (typeof state !== 'undefined') state.apiKey = this.value;
-      if (/^nvapi-/i.test(this.value.trim()) && providerSel.value !== 'nvidia') {
+      if (typeof state !== 'undefined') state.apiKey = this.value.trim();
+    });
+
+    var keySaveBtn = document.getElementById('setApiKeySave');
+    if (keySaveBtn) keySaveBtn.addEventListener('click', function() {
+      var v = keyInput.value.trim();
+      if (!v) {
+        if (typeof showToast === 'function') showToast('Enter a key first', 'info', 2200);
+        return;
+      }
+      if (/^nvapi-/i.test(v) && providerSel.value !== 'nvidia') {
         providerSel.value = 'nvidia';
         providerSel.dispatchEvent(new Event('change'));
       }
+      if (typeof saveProviderKey === 'function') saveProviderKey(providerSel.value, v);
+      else { try { localStorage.setItem('haven-schedule-apikey', v); } catch (e) {} }
+      if (typeof state !== 'undefined') state.apiKey = v;
+      keyInput.value = v;
+      if (typeof updateAIChatHeader === 'function') updateAIChatHeader();
+      if (typeof showToast === 'function') showToast('API key saved', 'success', 2200);
+    });
+
+    var keyRemoveBtn = document.getElementById('setApiKeyRemove');
+    if (keyRemoveBtn) keyRemoveBtn.addEventListener('click', function() {
+      var p = providerSel.value;
+      try { localStorage.removeItem('haven-schedule-apikey-' + p); } catch (e) {}
+      try { localStorage.removeItem('haven-schedule-apikey'); } catch (e) {}
+      if (typeof state !== 'undefined') state.apiKey = '';
+      keyInput.value = '';
+      if (typeof updateAIChatHeader === 'function') updateAIChatHeader();
+      if (typeof showToast === 'function') showToast('API key removed', 'info', 2200);
     });
   }
   document.getElementById('setApiToggle').addEventListener('click', function() {
@@ -1996,16 +2032,6 @@ function renderAISettings(el) {
     if (input.type === 'password') { input.type = 'text'; this.textContent = 'Hide'; }
     else { input.type = 'password'; this.textContent = 'Show'; }
   });
-
-  var proxyInput = document.getElementById('setAiProxy');
-  if (proxyInput) {
-    proxyInput.value = savedProxy;
-    proxyInput.addEventListener('input', function() {
-      var v = this.value.trim();
-      try { localStorage.setItem('haven-schedule-ai-proxy', v); } catch (e) {}
-      if (typeof state !== 'undefined') state.apiProxyUrl = v;
-    });
-  }
 
   var testBtn = document.getElementById('aiTestBtn');
   if (testBtn) testBtn.addEventListener('click', function() { testAIConnection(this); });

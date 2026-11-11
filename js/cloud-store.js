@@ -30,6 +30,9 @@ var CLOUD_DEVICE_KEYS = [
   'haven-admin-password',
   'haven-admin-presets',
   'haven-schedule-apikey',
+  'haven-schedule-apikey-nvidia',
+  'haven-schedule-apikey-groq',
+  'haven-schedule-apikey-gemini',
   'haven-schedule-chat',
   'haven-guest-default-template',
   'haven-gsi-migrated',
@@ -59,6 +62,7 @@ function cloudIsAppKey(key) {
   if (key.indexOf('haven-') !== 0) return false;
   if (key.indexOf('haven-gsi-') === 0) return false;
   if (key.indexOf('haven-device-') === 0) return false;
+  if (key.indexOf('haven-schedule-apikey-') === 0) return false;
   if (key.indexOf('haven-image-') === 0) return false;
   if (key.indexOf('hub-image-') === 0) return false;
   if (key.indexOf('haven-fr24-key-') === 0) return false;

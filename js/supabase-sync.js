@@ -18,6 +18,9 @@ var SYNC_STATS_DIRTY = false;
    anyone able to read the row. */
 var CLOUD_EXCLUDED_KEYS = [
   'haven-schedule-apikey',
+  'haven-schedule-apikey-nvidia',
+  'haven-schedule-apikey-groq',
+  'haven-schedule-apikey-gemini',
   'haven-schedule-chat',
   'haven-admin-password',
   'haven-admin-presets',

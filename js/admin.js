@@ -15,8 +15,8 @@
   var AUTH_ACTIVE_KEY = 'haven-gsi-active';
 
   var DEVICE_KEY_PREFIXES = ['haven-gsi-', 'haven-device-', 'haven-admin-', 'haven-cloud-', 'sb-'];
-  var DEVICE_KEY_EXACT = ['haven-guest-default-template', 'haven-synced-at', 'haven-schedule-apikey'];
-  var PRESERVE_ON_CLEAR = ['haven-admin-password', 'haven-admin-presets', 'haven-guest-default-template', 'haven-synced-at', 'haven-schedule-apikey'];
+  var DEVICE_KEY_EXACT = ['haven-guest-default-template', 'haven-synced-at', 'haven-schedule-apikey', 'haven-schedule-apikey-nvidia', 'haven-schedule-apikey-groq', 'haven-schedule-apikey-gemini'];
+  var PRESERVE_ON_CLEAR = ['haven-admin-password', 'haven-admin-presets', 'haven-guest-default-template', 'haven-synced-at', 'haven-schedule-apikey', 'haven-schedule-apikey-nvidia', 'haven-schedule-apikey-groq', 'haven-schedule-apikey-gemini'];
   var IMAGE_KEY_PREFIXES = ['haven-image-', 'hub-image-'];
 
   var DATA_SECTIONS = [
