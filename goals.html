@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=75">
   <link rel="stylesheet" href="css/progress-desert.css">
   <link rel="stylesheet" href="css/progress-mono.css">
     <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
@@ -1275,7 +1275,7 @@
     <div class="ai-panel-body"><div class="ai-messages" id="aiChatMessages"></div></div>
     <div class="ai-panel-footer">
       <div class="ai-input-wrapper" id="aiChatInputWrapper">
-        <input type="text" id="aiChatInput" class="ai-input" placeholder="Ask about your goals..." autocomplete="off">
+        <textarea id="aiChatInput" class="ai-input" rows="1" placeholder="Ask about your goals..." autocomplete="off"></textarea>
         <button id="aiChatSend" class="ai-send-btn show" aria-label="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
       </div>
       <div class="ai-panel-footer-hint"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="4"/><path d="M12 5V3"/><circle cx="12" cy="3" r="1.5"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/><path d="M8 14a4 4 0 007 0"/></svg><span>Natural language scheduling</span></div>
@@ -1288,6 +1288,7 @@
     }
   </script>
   <script src="js/shared.js"></script>
+  <script src="js/ai-chat-polish.js?v=1"></script>
   <script src="js/settings.js"></script>
   <script src="js/vendor/supabase-js.min.js"></script>
   <script src="js/supabase.js"></script>
