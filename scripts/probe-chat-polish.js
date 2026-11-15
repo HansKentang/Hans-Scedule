@@ -155,14 +155,14 @@ const URL = "http://127.0.0.1:8321/index.html?dev=true";
   // 8. Brand: every bot avatar in the panel is the chick, not the old robot
   out.brand = await page.evaluate(() => {
     const panel = document.getElementById("aiChatPanel");
-    const all = panel.querySelectorAll("svg");
-    const chick = panel.querySelectorAll("svg[data-chick='1']");
-    const header = panel.querySelector(".ai-panel-avatar svg");
+    const chicks = [...panel.querySelectorAll(".ai-chick")];
+    const header = panel.querySelector(".ai-panel-avatar .ai-chick");
     return {
-      svgsInPanel: all.length,
-      chickSvgs: chick.length,
-      headerIsFilled: header ? header.getAttribute("fill") : null,
-      headerPaths: header ? header.children.length : 0,
+      chickImages: chicks.length,
+      allLoaded: chicks.every((i) => i.complete && i.naturalWidth > 0),
+      headerSrc: header ? header.getAttribute("src") : null,
+      headerAnimation: header ? getComputedStyle(header).animationName : null,
+      robotSvgsLeft: panel.querySelectorAll(".ai-avatar svg, .ai-panel-avatar svg").length,
     };
   });
 

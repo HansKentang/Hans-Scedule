@@ -16109,3 +16109,100 @@ html.light .ai-message-assistant .ai-bubble {
   background: var(--surface-container-high);
   border-color: rgba(0,0,0,0.06);
 }
+/* ═══════════════════════════════════════════════════════════════════
+   CHICKBOT PANEL — v5 (portrait + motion)
+   The avatar is now the 3D chick portrait (assets/chickbot.png, background
+   knocked out and squared to 192px). The containers lose their gradient disc
+   so the chick sits on the panel like a sticker, and it gets three behaviours:
+   it floats while idle, pecks while a reply is in flight, and pops in when a
+   message lands.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ai-chick {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+  transform-origin: 50% 85%;   /* pivot near the base of the egg, not the centre */
+  will-change: transform;
+}
+
+/* the disc was there to give the robot something to sit on; the portrait
+   brings its own silhouette, so drop it */
+.ai-avatar,
+.ai-panel-avatar {
+  background: none;
+  box-shadow: none;
+}
+.ai-panel-avatar { width: 34px; height: 34px; }
+.ai-avatar { width: 30px; height: 30px; }
+
+/* the tiny footer hint icon cannot survive at 11px — the text carries it */
+.ai-panel-footer-hint > svg { display: none; }
+
+/* ── idle: a slow float, half a pixel of travel so it never feels bouncy ── */
+.ai-panel-avatar .ai-chick {
+  animation: chickFloat 5s ease-in-out infinite;
+}
+@keyframes chickFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-1.5px) rotate(-1.5deg); }
+}
+
+/* ── busy: short pecks, as if it is thinking hard ── */
+#aiChatPanel[data-ai-busy="true"] .ai-panel-avatar .ai-chick {
+  animation: chickPeck 900ms ease-in-out infinite;
+}
+@keyframes chickPeck {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  20%      { transform: translateY(-2px) rotate(-8deg) scale(1.04); }
+  45%      { transform: translateY(1px) rotate(4deg) scale(0.98); }
+  70%      { transform: translateY(-1px) rotate(-3deg) scale(1.02); }
+}
+
+/* ── new message: pop in once, then rest ── */
+.ai-avatar .ai-chick {
+  animation: chickPop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes chickPop {
+  0%   { opacity: 0; transform: scale(0.55) translateY(5px); }
+  60%  { opacity: 1; transform: scale(1.06) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── hero card: bigger, slower, with a hover wiggle ── */
+.ai-welcome-icon {
+  width: 62px; height: 62px;
+  background: none;
+  border: none;
+  box-shadow: none;
+  margin-bottom: var(--space-3);
+}
+.ai-welcome-icon .ai-chick {
+  filter: drop-shadow(0 6px 14px rgba(0,0,0,0.35));
+  animation: chickHero 6s ease-in-out infinite;
+}
+.ai-welcome:hover .ai-welcome-icon .ai-chick { animation-play-state: paused; }
+.ai-welcome-icon:hover .ai-chick { animation: chickWiggle 700ms ease-in-out; }
+@keyframes chickHero {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-4px) rotate(1.5deg); }
+}
+@keyframes chickWiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25%      { transform: rotate(-9deg) scale(1.05); }
+  55%      { transform: rotate(7deg) scale(1.03); }
+  80%      { transform: rotate(-3deg) scale(1.01); }
+}
+
+/* ── light theme: softer shadow, the render is bright ── */
+html.light .ai-chick { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.16)); }
+html.light .ai-welcome-icon .ai-chick { filter: drop-shadow(0 8px 18px rgba(0,0,0,0.14)); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-chick,
+  #aiChatPanel[data-ai-busy="true"] .ai-panel-avatar .ai-chick,
+  .ai-welcome-icon .ai-chick { animation: none; }
+}

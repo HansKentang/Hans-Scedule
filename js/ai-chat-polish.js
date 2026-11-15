@@ -281,37 +281,37 @@
     closeMenu();
   });
 
-  /* ─── Chick mark ─────────────────────────────────────────────
-     Every bot avatar in the app is the same inline robot SVG, generated in a
-     dozen places (panel header, message avatars, welcome card, footer hint).
-     Rather than chase each generator, swap the paths inside the existing <svg>
-     elements: same viewBox, same currentColor, so it scales and themes for free.
-     Filled silhouette with the eyes punched out as holes — an outline version
-     turned to mush at the 14px avatar size. */
+  /* ─── Chick portrait ────────────────────────────────
+     Every bot avatar in the app is the same inline robot <svg>, generated in a
+     dozen places. Rather than chase each generator, swap the node inside the
+     avatar containers for an <img> of the chick portrait. Same element count, so
+     nothing that targets .ai-avatar / .ai-panel-avatar breaks.
+     The footer hint icon is skipped on purpose: at 11px a 3D render is mud. */
 
-  var CHICK =
-    '<path fill-rule="evenodd" d="M11.2 20.8c-4.1 0-7.4-3.3-7.4-7.3s3.3-7.3 7.4-7.3 7.4 3.3 7.4 7.3-3.3 7.3-7.4 7.3z' +
-    'M8.8 11.9a1.15 1.15 0 100 2.3 1.15 1.15 0 000-2.3z' +
-    'M13 11.9a1.15 1.15 0 100 2.3 1.15 1.15 0 000-2.3z"/>' +
-    '<path d="M17.6 13.2l3.6 1.9-3.6 1.9z"/>' +
-    '<path d="M9.9 6.1C8.9 5 9 3.4 10.1 2.6c.7 1 .8 2.4.1 3.4z"/>' +
-    '<path d="M12.5 6.1c1-1.1.9-2.7-.2-3.5-.7 1-.8 2.4-.1 3.4z"/>';
+  var CHICK_SRC = 'assets/chickbot.png';
+
+  function makeChick() {
+    var img = document.createElement('img');
+    img.className = 'ai-chick';
+    img.src = CHICK_SRC;
+    img.alt = '';
+    img.setAttribute('draggable', 'false');
+    img.setAttribute('aria-hidden', 'true');
+    return img;
+  }
 
   function applyChick() {
-    var svgs = document.querySelectorAll(
-      '#' + PANEL_ID + ' .ai-panel-avatar svg,' +
-      '#' + PANEL_ID + ' .ai-avatar svg,' +
-      '#' + PANEL_ID + ' .ai-welcome-icon svg,' +
-      '#' + PANEL_ID + ' .ai-panel-footer-hint svg'
+    var holders = document.querySelectorAll(
+      '#' + PANEL_ID + ' .ai-panel-avatar,' +
+      '#' + PANEL_ID + ' .ai-avatar,' +
+      '#' + PANEL_ID + ' .ai-welcome-icon'
     );
-    for (var i = 0; i < svgs.length; i += 1) {
-      var svg = svgs[i];
-      if (svg.dataset.chick === '1') continue;
-      svg.dataset.chick = '1';
-      /* the originals are stroke-only; the mark is a fill, so both have to flip */
-      svg.setAttribute('fill', 'currentColor');
-      svg.setAttribute('stroke', 'none');
-      svg.innerHTML = CHICK;
+    for (var i = 0; i < holders.length; i += 1) {
+      var holder = holders[i];
+      if (holder.querySelector('.ai-chick')) continue;
+      var svg = holder.querySelector('svg');
+      holder.insertBefore(makeChick(), svg || null);
+      if (svg) svg.remove();
     }
   }
 
