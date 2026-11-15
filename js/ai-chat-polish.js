@@ -60,6 +60,12 @@
       return;
     }
     if (event.key !== 'Escape') return;
+    if (menuOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeMenu();
+      return;
+    }
     var el = input();
     if (!el || document.activeElement !== el) return;
     event.preventDefault();
@@ -182,6 +188,98 @@
     slot.appendChild(badge);
   }
 
+  /* ─── Header overflow menu ───────────────────────────────────
+     shared.js adds a reset button and a permissions button of its own, which
+     made five icons in a 400px header — the close button was the smallest thing
+     in a row of equals, and "clear all history" sat one stray click from the
+     gear. Fold the two secondary actions into a menu; the originals stay in the
+     DOM (hidden by CSS) so their existing click handlers keep working and the
+     menu items just forward the click. */
+
+  var menuOpen = false;
+
+  function closeMenu() {
+    var menu = document.querySelector('#' + PANEL_ID + ' .ai-menu');
+    var btn = document.querySelector('#' + PANEL_ID + ' .ai-more');
+    if (!menu || !menuOpen) return;
+    menuOpen = false;
+    menu.classList.remove('open');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleMenu(event) {
+    var menu = document.querySelector('#' + PANEL_ID + ' .ai-menu');
+    var btn = event.currentTarget;
+    if (!menu) return;
+    menuOpen = !menuOpen;
+    menu.classList.toggle('open', menuOpen);
+    btn.setAttribute('aria-expanded', menuOpen ? 'true' : 'false');
+  }
+
+  function forward(id) {
+    var target = document.getElementById(id);
+    closeMenu();
+    if (target) target.click();
+  }
+
+  function buildMenu(actions) {
+    var wrap = document.createElement('div');
+    wrap.className = 'ai-menu-wrap';
+
+    var more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'ai-panel-icon-btn ai-more';
+    more.title = 'More';
+    more.setAttribute('aria-label', 'More actions');
+    more.setAttribute('aria-haspopup', 'true');
+    more.setAttribute('aria-expanded', 'false');
+    more.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>';
+    more.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(e); });
+
+    var menu = document.createElement('div');
+    menu.className = 'ai-menu';
+    menu.setAttribute('role', 'menu');
+
+    [
+      { id: 'aiChatResetBtn', label: 'Clear chat history' },
+      { id: 'aiPermBtn', label: 'What ChickBot can do' },
+    ].forEach(function (item) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'ai-menu-item';
+      row.setAttribute('role', 'menuitem');
+      row.textContent = item.label;
+      row.addEventListener('click', function () { forward(item.id); });
+      menu.appendChild(row);
+    });
+
+    wrap.appendChild(more);
+    wrap.appendChild(menu);
+    actions.insertBefore(wrap, actions.querySelector('#aiChatClose'));
+  }
+
+  function wireOverflow() {
+    var p = panel();
+    if (!p) return;
+    var actions = p.querySelector('.ai-panel-header-actions');
+    if (!actions) return;
+    if (!actions.querySelector('.ai-more')) buildMenu(actions);
+    /* shared.js creates the reset/permissions buttons on the first open, which
+       can land after this runs — re-check whenever the action row changes. */
+    if (!actions.dataset.aiMenuObserved) {
+      actions.dataset.aiMenuObserved = '1';
+      new MutationObserver(function () {
+        if (!actions.querySelector('.ai-more')) buildMenu(actions);
+      }).observe(actions, { childList: true });
+    }
+  }
+
+  document.addEventListener('click', function (event) {
+    if (!menuOpen) return;
+    if (event.target.closest('#' + PANEL_ID + ' .ai-menu-wrap')) return;
+    closeMenu();
+  });
+
   /* ─── Header subtitle ────────────────────────────────────────
      shared.js writes "Nemotron 3.5 Lightning 30B (fast, recommended) · NVIDIA
      NIM", which cannot fit a 400px header and used to cut mid-word. Keep the
@@ -210,6 +308,7 @@
     wireBusy();
     wireHint();
     wireLive();
+    wireOverflow();
     wireSubtitle();
     syncBusy();
   }

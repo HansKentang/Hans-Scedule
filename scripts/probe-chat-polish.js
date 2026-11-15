@@ -133,7 +133,26 @@ const URL = "http://127.0.0.1:8321/index.html?dev=true";
     };
   });
 
-  // 7. Clear the draft so the probe leaves nothing behind
+  // 7. Chrome: header folded into 3 buttons, quota reduced to one line
+  out.chrome = await page.evaluate(() => {
+    const header = document.querySelector("#aiChatPanel .ai-panel-header-actions");
+    const visible = [...header.querySelectorAll("button")]
+      .filter((b) => !b.closest(".ai-menu") && getComputedStyle(b).display !== "none").length;
+    const bar = document.getElementById("aiTokenBar");
+    const more = header.querySelector(".ai-more");
+    if (more) more.click();
+    const menuOpen = !!header.querySelector(".ai-menu.open");
+    const items = [...header.querySelectorAll(".ai-menu-item")].map((b) => b.textContent);
+    if (more) more.click();
+    return {
+      visibleHeaderButtons: visible,
+      tokenBarHeight: Math.round(bar.getBoundingClientRect().height),
+      menuOpens: menuOpen,
+      menuItems: items,
+    };
+  });
+
+  // 8. Clear the draft so the probe leaves nothing behind
   await page.evaluate(() => {
     const el = document.getElementById("aiChatInput");
     if (el) { el.value = ""; el.dispatchEvent(new Event("input", { bubbles: true })); }
