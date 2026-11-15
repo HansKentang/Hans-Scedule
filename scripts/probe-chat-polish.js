@@ -106,7 +106,34 @@ const URL = "http://127.0.0.1:8321/index.html?dev=true";
     return res;
   });
 
-  // 6. Clear the draft so the probe leaves nothing behind
+  // 6. Layout: user turns hug the right edge, assistant turns the left.
+  //    Two rules (justify-content: flex-end + flex-direction: row-reverse) used
+  //    to cancel out and left every message hard against the left edge.
+  out.layout = await page.evaluate(() => {
+    const list = document.getElementById("aiChatMessages");
+    list.innerHTML =
+      '<div class="ai-message ai-message-user"><div class="ai-bubble">hi</div></div>' +
+      '<div class="ai-message ai-message-assistant"><div class="ai-avatar"></div><div class="ai-bubble">hello</div></div>';
+    const rows = list.querySelectorAll(".ai-message");
+    const measure = (row) => {
+      const bubble = row.querySelector(".ai-bubble");
+      const r = row.getBoundingClientRect();
+      const b = bubble.getBoundingClientRect();
+      return { left: Math.round(b.left - r.left), right: Math.round(r.right - b.right) };
+    };
+    const user = measure(rows[0]);
+    const bot = measure(rows[1]);
+    list.innerHTML = "";
+    return {
+      userRightGap: user.right,
+      userLeftGap: user.left,
+      assistantLeftGap: bot.left,
+      rightAligned: user.right === 0 && user.left > 0,
+      leftAligned: bot.left > 0,
+    };
+  });
+
+  // 7. Clear the draft so the probe leaves nothing behind
   await page.evaluate(() => {
     const el = document.getElementById("aiChatInput");
     if (el) { el.value = ""; el.dispatchEvent(new Event("input", { bubbles: true })); }

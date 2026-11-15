@@ -15949,3 +15949,56 @@ html.light .ai-welcome-icon {
   .ai-messages .ai-chip:hover,
   .ai-welcome .btn:hover { transform: none; }
 }
+/* ═══════════════════════════════════════════════════════════════════
+   CHICKBOT PANEL — v3 (message layout)
+   Two rules were fighting over the user row: `.ai-message-user` carried
+   `justify-content: flex-end` (3978) and `flex-direction: row-reverse`
+   (4964) at the same time, and the pair cancel out — every message sat
+   hard against the left edge, so the panel read as a document rather
+   than a conversation. Fix the row, then give the two speakers their
+   own silhouette.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ai-message-user {
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+.ai-message-user .ai-bubble {
+  max-width: 78%;
+  border-radius: 18px 18px 6px 18px;
+  padding: 9px 13px;
+}
+.ai-message-assistant .ai-bubble {
+  border-radius: 18px 18px 18px 6px;
+}
+
+/* Consecutive turns from the same speaker group together, so three
+   prompts in a row stop looking like three unrelated blocks. */
+.ai-messages > .ai-message-user + .ai-message-user,
+.ai-messages > .ai-message-assistant + .ai-message-assistant {
+  margin-top: -6px;
+}
+
+/* Light theme: the accent is near-black there, so a filled bubble reads
+   as a slab. Use a tinted surface with dark ink and let the alignment
+   carry "this is mine". */
+html.light .ai-message-user .ai-bubble {
+  background: color-mix(in srgb, var(--text-primary) 7%, var(--surface));
+  color: var(--text-primary);
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: none;
+}
+html.light .ai-message-assistant .ai-bubble {
+  background: var(--surface-container-high);
+  border-color: rgba(0,0,0,0.05);
+}
+html.light .ai-avatar {
+  background: linear-gradient(135deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02));
+  color: var(--text-secondary);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
+}
+
+@media (max-width: 640px) {
+  .ai-message-user .ai-bubble { max-width: 84%; }
+}
