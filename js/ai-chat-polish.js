@@ -182,11 +182,35 @@
     slot.appendChild(badge);
   }
 
+  /* ─── Header subtitle ────────────────────────────────────────
+     shared.js writes "Nemotron 3.5 Lightning 30B (fast, recommended) · NVIDIA
+     NIM", which cannot fit a 400px header and used to cut mid-word. Keep the
+     model name, drop the parenthetical and the provider suffix (both are in the
+     AI settings panel, and the full string stays in the title tooltip).
+     Observing rather than rewriting once, because the provider can change. */
+
+  function tidySubtitle() {
+    var sub = document.querySelector('#' + PANEL_ID + ' .ai-panel-subtitle');
+    if (!sub) return;
+    var raw = sub.textContent;
+    var short = raw.replace(/\s*\([^)]*\)/g, '').split(' \u00b7 ')[0].trim();
+    if (short && short !== raw) sub.textContent = short;
+  }
+
+  function wireSubtitle() {
+    var sub = document.querySelector('#' + PANEL_ID + ' .ai-panel-subtitle');
+    if (!sub || sub.dataset.aiTidy === '1') return;
+    sub.dataset.aiTidy = '1';
+    tidySubtitle();
+    new MutationObserver(tidySubtitle).observe(sub, { childList: true, characterData: true, subtree: true });
+  }
+
   function boot() {
     wireComposer();
     wireBusy();
     wireHint();
     wireLive();
+    wireSubtitle();
     syncBusy();
   }
 
