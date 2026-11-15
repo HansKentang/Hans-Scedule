@@ -86,11 +86,13 @@ const URL = "http://127.0.0.1:8321/index.html?dev=true";
     el.innerHTML = '<div class="ai-avatar"></div><div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
     list.appendChild(el);
     await new Promise((r) => setTimeout(r, 120));
-    const dot = getComputedStyle(document.querySelector("#aiChatPanel .ai-panel-avatar"), "::after");
+    const badge = document.querySelector("#aiChatPanel .ai-live");
+    const sub = document.querySelector("#aiChatPanel .ai-panel-subtitle");
     const res = {
       dotsAttr: panel.getAttribute("data-ai-busy"),
-      dotBg: dot.backgroundColor,
-      dotAnim: dot.animationName,
+      badge: badge ? getComputedStyle(badge).display : null,
+      badgeText: badge ? badge.textContent : null,
+      subtitleHidden: sub ? getComputedStyle(sub).visibility : null,
       dotsFlaggedStreaming: list.querySelectorAll(".ai-bubble.is-streaming").length,
     };
     // shared.js swaps the dots for text + .ai-cursor in the same bubble

@@ -163,10 +163,30 @@
     footer.appendChild(hint);
   }
 
+  /* ─── Live badge ─────────────────────────────────────────────
+     "Thinking" only exists while a reply is in flight, so it lives in the
+     header actions and is revealed purely by the data-ai-busy attribute the
+     observer already maintains. No JS in the send path. */
+
+  function wireLive() {
+    var p = panel();
+    if (!p) return;
+    /* Anchored to the title/subtitle block, not the action row: it replaces the
+       model name while a reply is in flight, so the header keeps its width. */
+    var slot = p.querySelector('.ai-panel-header-left > div:last-child');
+    if (!slot || slot.querySelector('.ai-live')) return;
+    var badge = document.createElement('span');
+    badge.className = 'ai-live';
+    badge.textContent = 'Thinking';
+    badge.setAttribute('aria-hidden', 'true');
+    slot.appendChild(badge);
+  }
+
   function boot() {
     wireComposer();
     wireBusy();
     wireHint();
+    wireLive();
     syncBusy();
   }
 
