@@ -152,7 +152,21 @@ const URL = "http://127.0.0.1:8321/index.html?dev=true";
     };
   });
 
-  // 8. Clear the draft so the probe leaves nothing behind
+  // 8. Brand: every bot avatar in the panel is the chick, not the old robot
+  out.brand = await page.evaluate(() => {
+    const panel = document.getElementById("aiChatPanel");
+    const all = panel.querySelectorAll("svg");
+    const chick = panel.querySelectorAll("svg[data-chick='1']");
+    const header = panel.querySelector(".ai-panel-avatar svg");
+    return {
+      svgsInPanel: all.length,
+      chickSvgs: chick.length,
+      headerIsFilled: header ? header.getAttribute("fill") : null,
+      headerPaths: header ? header.children.length : 0,
+    };
+  });
+
+  // 9. Clear the draft so the probe leaves nothing behind
   await page.evaluate(() => {
     const el = document.getElementById("aiChatInput");
     if (el) { el.value = ""; el.dispatchEvent(new Event("input", { bubbles: true })); }
