@@ -6711,6 +6711,7 @@ function showStylePanel() {
         '</div>' +
         '<input type="range" id="hubBright" class="skin-range" min="-100" max="100" step="5" value="' + _hubBright + '"' +
           ' aria-label="Widget brightness">' +
+        '<div class="skin-range-ends"><span>Dim</span><span>Bright</span></div>' +
       '</div>' +
     '</div>';
   document.body.appendChild(panel);

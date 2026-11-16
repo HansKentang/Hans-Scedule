@@ -13402,62 +13402,95 @@ html.edit-mode .gal-canvas .gal-item:hover {
 
 .skin-tune {
   flex: 0 0 auto;
-  margin: 14px -18px -18px;
-  padding: 12px 18px 18px;
+  margin: 16px -18px -18px;
+  padding: 14px 18px 18px;
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-primary);
-  box-shadow: 0 -12px 16px -12px color-mix(in srgb, var(--text-primary) 22%, transparent);
+  box-shadow: 0 -14px 18px -14px color-mix(in srgb, var(--text-primary) 26%, transparent);
 }
 .skin-tune-head {
   display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 9px;
+  margin-bottom: 11px;
 }
 .skin-tune-head span:first-child {
-  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.13em;
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.15em;
   text-transform: uppercase; color: var(--text-tertiary);
 }
 .skin-tune-val {
-  font-size: 0.66rem; color: var(--text-secondary);
+  font-size: 0.6rem; font-weight: 600; color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
-}
-.skin-swatches { display: flex; gap: 7px; flex-wrap: wrap; }
-.skin-swatch {
-  --sw: var(--text-tertiary);
-  width: 26px; height: 26px; padding: 0; margin: 0;
-  border-radius: 50%; cursor: pointer;
-  border: 1px solid color-mix(in srgb, var(--text-primary) 20%, transparent);
-  background: var(--sw);
-  transition: transform var(--t-fast), box-shadow var(--t-fast);
-}
-.skin-swatch:hover { transform: scale(1.09); }
-.skin-swatch.is-active {
-  box-shadow: 0 0 0 2px var(--surface-container), 0 0 0 4px var(--text-primary);
-}
-.skin-swatch[data-palette="neutral"] {
-  background: linear-gradient(135deg, #ffffff 0 50%, #161616 50% 100%);
+  padding: 2px 9px; border-radius: 999px;
+  background: var(--surface-container);
+  border: 1px solid var(--border-subtle);
+  min-width: 34px; text-align: center;
 }
 
+/* Seven swatches across 344px of panel: spread them instead of letting them
+   bunch on the left. `space-between` needs a no-wrap row to stay even. */
+.skin-swatches {
+  display: flex; flex-wrap: nowrap; align-items: center;
+  justify-content: space-between; gap: 6px;
+}
+.skin-swatch {
+  --sw: var(--text-tertiary);
+  width: 30px; height: 30px; padding: 0; margin: 0;
+  flex: 0 0 auto;
+  border-radius: 50%; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--text-primary) 28%, transparent);
+  background: var(--sw);
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.22),
+    inset 0 -1px 2px rgba(0,0,0,0.16),
+    0 1px 2px rgba(0,0,0,0.12);
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+.skin-swatch:hover { transform: scale(1.1); }
+.skin-swatch.is-active {
+  transform: scale(1.06);
+  box-shadow:
+    inset 0 1px 2px rgba(255,255,255,0.22),
+    0 0 0 2px var(--bg-primary),
+    0 0 0 4px var(--text-primary);
+}
+.skin-swatch:focus-visible {
+  outline: 2px solid var(--text-primary); outline-offset: 4px;
+}
+/* Neutral is plain white — a split white/black disc read as "half on, half off"
+   rather than "no colour". */
+.skin-swatch[data-palette="neutral"] { background: #ffffff; }
+
 .skin-range {
-  width: 100%; height: 22px; margin: 0;
+  width: 100%; height: 20px; margin: 0;
   -webkit-appearance: none; appearance: none;
   background: transparent; cursor: pointer;
 }
 .skin-range::-webkit-slider-runnable-track {
-  height: 4px; border-radius: 2px;
-  background: linear-gradient(90deg, #000000, var(--border-color) 50%, #ffffff);
+  height: 6px; border-radius: 999px;
+  background: linear-gradient(90deg, #000000 0%, #6b6b6b 50%, #ffffff 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.18);
 }
 .skin-range::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px;
+  -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6px;
   border-radius: 50%; background: var(--text-primary);
-  border: 2px solid var(--surface-container);
+  border: 3px solid var(--bg-primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
 }
+.skin-range:focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
 .skin-range::-moz-range-track {
-  height: 4px; border-radius: 2px;
-  background: linear-gradient(90deg, #000000, var(--border-color) 50%, #ffffff);
+  height: 6px; border-radius: 999px;
+  background: linear-gradient(90deg, #000000 0%, #6b6b6b 50%, #ffffff 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.18);
 }
 .skin-range::-moz-range-thumb {
-  width: 14px; height: 14px; border-radius: 50%;
-  background: var(--text-primary); border: 2px solid var(--surface-container);
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--text-primary); border: 3px solid var(--bg-primary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+}
+.skin-range-ends {
+  display: flex; justify-content: space-between;
+  margin-top: 3px;
+  font-size: 0.53rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-tertiary);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
