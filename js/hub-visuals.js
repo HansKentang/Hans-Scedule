@@ -340,7 +340,7 @@ function _setNotesStyle(uid, style) { _notesStyles[uid] = style; try { localStor
 const NOTES_PREFS_KEY = 'haven-notes-prefs';
 const NOTES_SIZE_LIST = ['sm','md','lg'];
 const NOTES_FONT_LIST = ['sans','serif','mono'];
-const NOTES_COLOR_LIST = ['','blue','teal','amber','rose','violet'];
+const NOTES_COLOR_LIST = ['','blue','teal','amber','rose','violet','green','orange','pink','grey','indigo'];
 /* 'recent' groups pinned notes at the top, which is right for a glanceable tile
    but useless when you are hunting for one specific note — hence the other
    three, which sort the whole list and ignore the pin. */
@@ -1865,7 +1865,7 @@ function _notesToolsHtml() {
       + ' title="' + b.title + '" aria-label="' + b.label + '">' + b.icon + '</button>';
   }).join('');
 }
-var NOTES_TINT_HEX = { blue:'#3b82f6', teal:'#0d9488', amber:'#d97706', rose:'#e11d48', violet:'#7c3aed' };
+var NOTES_TINT_HEX = { blue:'#3b82f6', teal:'#0d9488', amber:'#d97706', rose:'#e11d48', violet:'#7c3aed', green:'#16a34a', orange:'#ea580c', pink:'#db2777', grey:'#64748b', indigo:'#4f46e5' };
 /* how many units are emitted before the fitter takes over. The fitter
    (_notesFit) hides the overflow at real layout time, so this is only a
    bound on DOM size, not a display cap — a taller tile reveals more. */
@@ -6308,12 +6308,43 @@ function _notesPaintOptions(panel, uid) {
     chip.classList.toggle('on', on);
     chip.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
+
+  var noteSel = panel.querySelector('[data-notes-colour-note]');
+  if (noteSel) {
+    var nid = panel.dataset.notesColourNote || '';
+    if (nid && !_notesFind(nid)) { nid = ''; panel.dataset.notesColourNote = ''; }
+    if (noteSel.value !== nid) noteSel.value = nid;
+    var picked = nid ? _notesFind(nid) : null;
+    Array.prototype.forEach.call(panel.querySelectorAll('[data-notes-colour-opt]'), function(btn) {
+      var on = !!picked && (btn.dataset.notesColourOpt || '') === (picked.color || '');
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.disabled = !picked;
+    });
+  }
 }
 
 function _notesWireOptions(panel, uid) {
   var close = panel.querySelector('#notesOptsClose');
   if (close) close.addEventListener('click', function() { closeNotesOptions(); });
+  var noteSel = panel.querySelector('[data-notes-colour-note]');
+  if (noteSel) noteSel.addEventListener('change', function() {
+    panel.dataset.notesColourNote = noteSel.value || '';
+    _notesPaintOptions(panel, uid);
+  });
   panel.addEventListener('click', function(ev) {
+    var swatch = ev.target.closest('[data-notes-colour-opt]');
+    if (swatch) {
+      ev.stopPropagation();
+      var picked = panel.dataset.notesColourNote ? _notesFind(panel.dataset.notesColourNote) : null;
+      if (!picked || swatch.disabled) return;
+      picked.color = swatch.dataset.notesColourOpt || '';
+      picked.updated = Date.now();
+      _notesSave();
+      _notesPaintOptions(panel, uid);
+      if (typeof renderHubBento === 'function') renderHubBento();
+      return;
+    }
     var chip = ev.target.closest('[data-notes-opt]');
     if (!chip) return;
     ev.stopPropagation();
@@ -6355,6 +6386,19 @@ function openNotesOptions(uid) {
     return '<div class="notes-opts-row"><span class="notes-opts-label">' + escapeHtml(g.label) + '</span>'
       + '<div class="notes-opts-chips">' + chips + '</div></div>';
   }).join('');
+
+  var noteOpts = _notesSorted(uid).map(function(n) {
+    return '<option value="' + escapeHtml(n.id) + '">' + escapeHtml(_notesLabel(n)) + '</option>';
+  }).join('');
+  var colourSwatches = NOTES_COLOR_LIST.map(function(c) {
+    var label = c ? c.charAt(0).toUpperCase() + c.slice(1) : 'No colour';
+    return '<button type="button" class="notes-swatch' + (c ? ' notes-swatch-' + c : ' notes-swatch-none')
+      + '" data-notes-colour-opt="' + c + '" title="' + label + '" aria-label="' + label + '" aria-pressed="false" disabled></button>';
+  }).join('');
+  rows += '<div class="notes-opts-row notes-colour-row"><span class="notes-opts-label">Note colour</span>'
+    + '<select class="notes-opts-note-select" data-notes-colour-note aria-label="Choose a note">'
+    + '<option value="">Choose a note\u2026</option>' + noteOpts + '</select>'
+    + '<div class="notes-opts-chips notes-colour-swatches">' + colourSwatches + '</div></div>';
 
   /* transparent catcher — the canvas must stay visible and judgeable */
   var catcher = document.createElement('div');
