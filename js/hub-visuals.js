@@ -6496,12 +6496,114 @@ function _readHubSkin() {
   return id;
 }
 
+/* ─── Canvas look: palette + brightness ────────────────────────────────
+   Two dials that sit on top of whichever skin is picked. The skin decides
+   the SHAPE (radius, border, header rule); this decides the PAINT (surface
+   tint and accent hue). Both are whole-canvas, not per widget.
+
+   tint  = how much of the hue goes into the surface tokens
+   accent = how much of the hue replaces the theme accent
+   Neutral is 0/0, so an untouched canvas renders exactly as before. */
+var HUB_PALETTE_KEY = 'haven-hub-palette';
+var HUB_BRIGHT_KEY = 'haven-hub-bright';
+var _hubPaletteId = null;
+var _hubBright = null;
+
+var HUB_PALETTES = [
+  { id: 'neutral', name: 'Neutral', hue: '#ffffff', tint: 0,  accent: 0  },
+  { id: 'blue',    name: 'Blue',    hue: '#4f8cff', tint: 9,  accent: 62 },
+  { id: 'teal',    name: 'Teal',    hue: '#2fb3a3', tint: 9,  accent: 62 },
+  { id: 'green',   name: 'Green',   hue: '#4caf6d', tint: 9,  accent: 62 },
+  { id: 'amber',   name: 'Amber',   hue: '#e0a032', tint: 10, accent: 58 },
+  { id: 'rose',    name: 'Rose',    hue: '#e05a7a', tint: 9,  accent: 60 },
+  { id: 'violet',  name: 'Violet',  hue: '#8b6cf0', tint: 9,  accent: 62 }
+];
+
+function _hubPaletteById(id) {
+  for (var i = 0; i < HUB_PALETTES.length; i++) {
+    if (HUB_PALETTES[i].id === id) return HUB_PALETTES[i];
+  }
+  return HUB_PALETTES[0];
+}
+
+function _readHubLook() {
+  if (_hubPaletteId === null) {
+    _hubPaletteId = HUB_PALETTES[0].id;
+    try {
+      var p = localStorage.getItem(HUB_PALETTE_KEY);
+      if (p) _hubPaletteId = _hubPaletteById(p).id;
+    } catch (e) {}
+  }
+  if (_hubBright === null) {
+    _hubBright = 0;
+    try {
+      var b = parseInt(localStorage.getItem(HUB_BRIGHT_KEY), 10);
+      if (!isNaN(b)) _hubBright = Math.max(-100, Math.min(100, b));
+    } catch (e) {}
+  }
+}
+
+/* Applied to .bento-grid AND to each .skin-mini-wrap, so the picker previews
+   the palette you are choosing instead of always showing the theme default. */
+function _applyHubLook() {
+  _readHubLook();
+  var pal = _hubPaletteById(_hubPaletteId);
+  var liftAmt = (Math.abs(_hubBright) / 100) * 18;
+  var liftCol = _hubBright >= 0 ? '#ffffff' : '#000000';
+
+  var targets = [];
+  var grid = document.querySelector('.bento-grid');
+  if (grid) targets.push(grid);
+  var minis = document.querySelectorAll('.skin-mini-wrap');
+  for (var i = 0; i < minis.length; i++) targets.push(minis[i]);
+
+  for (var j = 0; j < targets.length; j++) {
+    var el = targets[j];
+    el.style.setProperty('--hub-tint', pal.hue);
+    el.style.setProperty('--hub-tint-amt', pal.tint + '%');
+    el.style.setProperty('--hub-accent-amt', pal.accent + '%');
+    el.style.setProperty('--hub-lift-amt', liftAmt.toFixed(2) + '%');
+    el.style.setProperty('--hub-lift-col', liftCol);
+  }
+}
+
+function applyHubPalette(id, silent) {
+  var pal = _hubPaletteById(id);
+  _hubPaletteId = pal.id;
+  _applyHubLook();
+  _markActivePalette(pal.id);
+  if (!silent) {
+    try { safeSetItem(HUB_PALETTE_KEY, pal.id); } catch (e) {}
+  }
+}
+
+function applyHubBright(val, silent) {
+  _hubBright = Math.max(-100, Math.min(100, parseInt(val, 10) || 0));
+  _applyHubLook();
+  var out = document.getElementById('hubBrightVal');
+  if (out) out.textContent = (_hubBright > 0 ? '+' : '') + _hubBright;
+  if (!silent) {
+    try { safeSetItem(HUB_BRIGHT_KEY, String(_hubBright)); } catch (e) {}
+  }
+}
+
+function _markActivePalette(id) {
+  var sw = document.querySelectorAll('.skin-swatch');
+  for (var i = 0; i < sw.length; i++) {
+    if (sw[i].getAttribute('data-palette') === id) sw[i].classList.add('is-active');
+    else sw[i].classList.remove('is-active');
+  }
+  var nm = document.getElementById('hubPaletteName');
+  if (nm) nm.textContent = _hubPaletteById(id).name;
+}
+
 function _paintHubSkin(grid) {
   if (_hubSkinId === null) _hubSkinId = _readHubSkin();
   var g = grid || document.querySelector('.bento-grid');
   if (!g) return;
   if (_hubSkinId === 'default') g.removeAttribute('data-hub-skin');
   else g.setAttribute('data-hub-skin', _hubSkinId);
+  _applyHubLook();
 }
 
 function _markActiveSkin(id) {
@@ -6579,6 +6681,14 @@ function showStylePanel() {
   var cards = '';
   for (var i = 0; i < HUB_SKINS.length; i++) cards += _skinPreviewHtml(HUB_SKINS[i].id);
 
+  _readHubLook();
+  var swatches = '';
+  for (var p = 0; p < HUB_PALETTES.length; p++) {
+    var pal = HUB_PALETTES[p];
+    swatches += '<button type="button" class="skin-swatch" data-palette="' + pal.id + '"' +
+      ' title="' + escapeHtml(pal.name) + '" style="--sw:' + pal.hue + '"></button>';
+  }
+
   var panel = document.createElement('div');
   panel.className = 'canvas-guide-panel skin-panel';
   panel.id = 'hubStylePanel';
@@ -6589,6 +6699,19 @@ function showStylePanel() {
     '</div>' +
     '<div class="canvas-guide-body">' +
       '<div class="skin-grid">' + cards + '</div>' +
+      '<div class="skin-tune">' +
+        '<div class="skin-tune-head">' +
+          '<span>Colour</span>' +
+          '<span class="skin-tune-val" id="hubPaletteName">' + escapeHtml(_hubPaletteById(_hubPaletteId).name) + '</span>' +
+        '</div>' +
+        '<div class="skin-swatches">' + swatches + '</div>' +
+        '<div class="skin-tune-head" style="margin-top:14px">' +
+          '<span>Brightness</span>' +
+          '<span class="skin-tune-val" id="hubBrightVal">' + (_hubBright > 0 ? '+' : '') + _hubBright + '</span>' +
+        '</div>' +
+        '<input type="range" id="hubBright" class="skin-range" min="-100" max="100" step="5" value="' + _hubBright + '"' +
+          ' aria-label="Widget brightness">' +
+      '</div>' +
     '</div>';
   document.body.appendChild(panel);
 
@@ -6597,13 +6720,26 @@ function showStylePanel() {
   document.getElementById('hubStyleClose').addEventListener('click', close);
 
   panel.addEventListener('click', function(ev) {
+    var swatch = ev.target && ev.target.closest ? ev.target.closest('.skin-swatch') : null;
+    if (swatch) {
+      applyHubPalette(swatch.getAttribute('data-palette'));
+      return;
+    }
     var card = ev.target && ev.target.closest ? ev.target.closest('.skin-preview') : null;
     if (!card) return;
     applyHubSkin(card.getAttribute('data-skin-id'));
   });
 
+  var brightInput = document.getElementById('hubBright');
+  if (brightInput) {
+    brightInput.addEventListener('input', function() {
+      applyHubBright(this.value);
+    });
+  }
+
   _paintHubSkin();
   _markActiveSkin(_hubSkinId);
+  _markActivePalette(_hubPaletteId);
 }
 
 /* ─── Helper: keep add button below lowest widget ── */
