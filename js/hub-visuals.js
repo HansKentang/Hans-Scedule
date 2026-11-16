@@ -2191,8 +2191,6 @@ function _notesCardsHtml(list, prefs, uid, interactive, modifier) {
     var n = list[i];
     var lines = _notesLines(n.body);
     var rows = '';
-    var used = 0;
-    var hidden = 0;
     for (var j = 0; j < lines.length; j++) {
       var L = lines[j];
       if (L.kind === 'gap') continue;
@@ -2200,12 +2198,9 @@ function _notesCardsHtml(list, prefs, uid, interactive, modifier) {
          toward the preview cap either, or hiding them would show less content
          instead of different content. */
       if (!prefs.done && L.kind === 'check' && L.checked) continue;
-      if (used >= prefs.lines) { hidden++; continue; }
-      used++;
       rows += _notesLineHtml(L, uid, n.id, interactive);
     }
     if (!rows) rows = '<div class="w-note-line w-note-line-empty"><span class="w-note-txt">Empty note</span></div>';
-    else if (hidden) rows += '<div class="w-note-line w-note-line-more"><span class="w-note-txt">+' + hidden + ' more</span></div>';
     /* _notesPlain, not the raw title: a title is a one-line label, so a bolded
        one must read "Physics", never "**Physics**". Only body lines render
        emphasis. */
@@ -2336,46 +2331,90 @@ function _notesApplyPreviewPref() {
    - it re-runs once with room reserved for the footnote, so a tile that fits
      everything pays nothing for the footnote line.
    Runs after the bubbles are in the document, like _applyEmptyState. */
+var _notesAutoBusy = false;
 function _notesFit(grid) {
   if (!grid) return;
   Array.prototype.forEach.call(grid.querySelectorAll('.bento-bubble'), function(bub) {
     var wrap = bub.querySelector('.w-notes-wrap');
     if (!wrap) return;
     var scroll = bub.querySelector('.bento-scroll');
-    if (!scroll || !scroll.clientHeight) return;
-
-    /* Two fit modes: 'row' trims whole rows (compact), 'card' trims lines off a
-       card before dropping it (everything else). The old 'line' mode existed
-       only for the checklist layout, which was removed on 2026-10-08. */
-    var mode = wrap.classList.contains('w-notes-compact') ? 'row' : 'card';
-    var sel = mode === 'row' ? '.w-note-row' : '.w-note-card';
-    var units = Array.prototype.slice.call(wrap.querySelectorAll(sel));
-    if (!units.length) return;
-
+    if (!scroll) return;
+    var units = Array.prototype.slice.call(wrap.querySelectorAll('.w-note-card, .w-note-row'));
     var foot = wrap.querySelector('.w-note-footnote');
-    _notesFitReset(wrap, foot);
-
-    var hidden = _notesFitPass(scroll, units, mode, 0);
-    if (hidden) {
-      _notesFitReset(wrap, foot);
-      hidden = _notesFitPass(scroll, units, mode, NOTES_FOOT_RESERVE);
-    }
     var extra = parseInt(wrap.dataset.notesExtra, 10) || 0;
-    if (foot && (hidden || extra)) {
-      foot.textContent = '+' + (hidden + extra) + ' more';
-      foot.classList.remove('hidden');
-      /* Those notes have no card in the DOM, so this line is the only thing that
-         knows they exist — which makes it the only way in. Turn it into a button
-         rather than a dead label. */
-      if (bub.dataset.bubble) {
-        foot.setAttribute('data-notes-all', bub.dataset.bubble);
-        foot.setAttribute('role', 'button');
-        foot.setAttribute('tabindex', '0');
-        foot.classList.add('is-btn');
+    if (foot) {
+      if (extra) {
+        foot.textContent = '+' + extra + ' more';
+        foot.classList.remove('hidden');
+        /* Those notes have no card in the DOM, so this line is the only thing
+           that knows they exist  keep it as the way in. */
+        if (bub.dataset.bubble) {
+          foot.setAttribute('data-notes-all', bub.dataset.bubble);
+          foot.setAttribute('role', 'button');
+          foot.setAttribute('tabindex', '0');
+          foot.classList.add('is-btn');
+        }
+      } else {
+        foot.textContent = '';
+        foot.classList.add('hidden');
+        foot.removeAttribute('data-notes-all');
+        foot.removeAttribute('role');
+        foot.removeAttribute('tabindex');
+        foot.classList.remove('is-btn');
       }
     }
     _notesRoominess(wrap, scroll, units);
   });
+  _notesAutoSize(grid);
+}
+
+/* The notes bubble is the only widget that grows to fit its own content: every
+   line of every rendered note stays visible, so a longer note makes a taller
+   tile and pushes whatever is below it down. Measurement happens with the
+   inline height lifted off for one frame, then the snapped height is written
+   back to the layout and collisions are resolved once. The busy flag stops the
+   recursive render from resizing a second time. */
+function _notesAutoSize(grid) {
+  if (_notesAutoBusy || !grid || !hubContent || !Array.isArray(hubContent.bentoLayout)) return;
+  var changed = false;
+  Array.prototype.forEach.call(grid.querySelectorAll('.bento-bubble'), function(bub) {
+    var uid = bub.dataset.bubble;
+    if (!uid || !bub.querySelector('.w-notes-wrap')) return;
+    var scroll = bub.querySelector('.bento-scroll');
+    if (!scroll) return;
+    var item = hubContent.bentoLayout.find(function(i) { return i && i.uid === uid; });
+    if (!item || item.t !== 'notes') return;
+    var oldH = bub.style.height;
+    var oldOv = bub.style.overflow;
+    var oldScrollH = scroll.style.height;
+    var oldScrollOv = scroll.style.overflow;
+    var measured = 0;
+    try {
+      bub.style.height = 'auto';
+      bub.style.overflow = 'visible';
+      scroll.style.height = 'auto';
+      scroll.style.overflow = 'visible';
+      measured = bub.getBoundingClientRect().height;
+    } catch (e) { measured = 0; }
+    finally {
+      bub.style.height = oldH;
+      bub.style.overflow = oldOv;
+      scroll.style.height = oldScrollH;
+      scroll.style.overflow = oldScrollOv;
+    }
+    if (!measured) return;
+    var want = Math.max(160, snap(Math.ceil(measured) + 12));
+    if (want > MAX_CANVAS_HEIGHT) want = MAX_CANVAS_HEIGHT;
+    if (Math.abs(want - item.h) >= 12) { item.h = want; changed = true; }
+  });
+  if (changed) {
+    _notesAutoBusy = true;
+    try {
+      resolveBubbleCollisions(hubContent.bentoLayout);
+      try { saveHubContent(); } catch (e) {}
+      renderHubBento();
+    } finally { _notesAutoBusy = false; }
+  }
 }
 
 /* The tile is resizable, so it is routinely much taller than its content. Left
@@ -6291,7 +6330,6 @@ var _NOTES_OPT_GROUPS = [
   { key:'style', label:'Layout',   vals: NOTES_STYLE_LIST, names: ['Cards','Compact','Lined','Sticky','Minimal'] },
   { key:'size',  label:'Text size', vals: NOTES_SIZE_LIST, names: ['S','M','L'] },
   { key:'font',  label:'Font',      vals: NOTES_FONT_LIST, names: ['Sans','Serif','Mono'] },
-  { key:'lines', label:'Lines each',vals: [1,2,3,4,5,6], names: ['1','2','3','4','5','6'] },
   { key:'time',  label:'Timestamps',vals: [1,0], names: ['On','Off'] },
   { key:'sort',  label:'Order',     vals: NOTES_SORT_LIST, names: ['Recent','Oldest','A–Z','Created'] },
   { key:'done',  label:'Done tasks',vals: [1,0], names: ['Show','Hide'] }
