@@ -320,6 +320,43 @@
       saveHubContent(); renderHubBento();
       return ok('Added subject "' + sname + '".');
     }
+    if (widget === 'study' && type === 'removeWidgetItem') {
+      var rmMatch = trim(d.match || d.name || d.text || d.subject);
+      if (!rmMatch) return no('Which subject should I remove? Use the exact subject name.');
+      var rmSubs = _ensureStudy();
+      var rmIdx = -1;
+      for (var si = 0; si < rmSubs.length; si++) {
+        if (str(rmSubs[si].name).trim().toLowerCase() === rmMatch.toLowerCase()) { rmIdx = si; break; }
+      }
+      if (rmIdx === -1) {
+        var fuzzy = [];
+        for (var sj = 0; sj < rmSubs.length; sj++) {
+          var low = str(rmSubs[sj].name).trim().toLowerCase();
+          if (low.indexOf(rmMatch.toLowerCase()) !== -1 || rmMatch.toLowerCase().indexOf(low) !== -1) fuzzy.push(sj);
+        }
+        if (fuzzy.length === 1) rmIdx = fuzzy[0];
+        if (rmIdx === -1) {
+          var names = rmSubs.map(function (s) { return '"' + str(s.name) + '"'; }).join(', ');
+          return no('No subject exactly matches "' + rmMatch + '". Your subjects: ' + names + '.');
+        }
+      }
+      var removed = rmSubs[rmIdx];
+      var chCount = (removed.chapters || []).length;
+      var itemCount = 0;
+      (removed.chapters || []).forEach(function (c) { itemCount += (c.items || []).length; });
+      rmSubs.splice(rmIdx, 1);
+      saveHubContent(); renderHubBento();
+      return ok('Removed subject "' + str(removed.name) + '"' +
+        (chCount ? ' (' + chCount + ' chapter' + (chCount === 1 ? '' : 's') + ' / ' + itemCount + ' subtopic' + (itemCount === 1 ? '' : 's') + ')' : '') +
+        '.');
+    }
+    if (widget === 'study' && type === 'clearWidgetContent') {
+      var clrSubs = _ensureStudy();
+      var clrCount = clrSubs.length;
+      clrSubs.length = 0;
+      saveHubContent(); renderHubBento();
+      return ok('Cleared all ' + clrCount + ' subject' + (clrCount === 1 ? '' : 's') + ' from the study widget.');
+    }
 
     var F = field(widget);
     if (!F) return no('The ' + widget + ' widget has no editable items.');
