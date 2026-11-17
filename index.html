@@ -1,4 +1,4 @@
-﻿ <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en" class="pg-loading">
 <head>
   <meta charset="UTF-8">
@@ -7,12 +7,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Havën">
+  <meta name="apple-mobile-web-app-title" content="Hav�n">
   <script>if (location.protocol !== 'file:') document.write('<link rel="manifest" href="manifest.json">');</script>
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
   <link rel="apple-touch-icon" href="assets/icon-192.png">
-  <title>Havën Schedule — Hub</title>
+  <title>Hav�n Schedule � Hub</title>
    <script>// Redirect new visitors to landing page (skip in dev mode)
    (function(){
      var hasUser = !!localStorage.getItem('haven-gsi-active');
@@ -31,7 +31,7 @@
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" media="print" onload="this.media='all'">
-  <link rel="stylesheet" href="css/style.css?v=87">
+  <link rel="stylesheet" href="css/style.css?v=88">
   <style>
     /* All page CSS consolidated in style.css */
   </style>
@@ -44,9 +44,9 @@
   </div>
 
   <div class="hub-layout">
-    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────────── -->
+    <!-- --- SIDEBAR OVERLAY (mobile) --------------------- -->
     <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
-    <!-- ─── HAMBURGER SIDE PANEL ─────────────────────── -->
+    <!-- --- HAMBURGER SIDE PANEL ----------------------- -->
     <div class="hub-menu-overlay" id="hubMenuOverlay"></div>
     <div class="hub-menu-panel hidden" id="hubMenuPanel">
       <div class="hub-menu-panel-header">
@@ -79,11 +79,11 @@
         <button class="hub-menu-panel-item" id="menuHelp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</button>
       </div>
     </div>
-    <!-- ─── SIDEBAR (Notion workspace) ──────────────────── -->
+    <!-- --- SIDEBAR (Notion workspace) -------------------- -->
     <aside class="hub-sidebar" role="navigation" aria-label="Sidebar" id="hubSidebar">
       <div class="hub-workspace">
-        <a href="login.html" class="hub-workspace-link"><div class="hub-workspace-icon"><img src="assets/icon-192.png" alt="Havën"></div>
-        <span class="hub-workspace-name">Havën</span></a>
+        <a href="login.html" class="hub-workspace-link"><div class="hub-workspace-icon"><img src="assets/icon-192.png" alt="Hav�n"></div>
+        <span class="hub-workspace-name">Hav�n</span></a>
         <button class="hub-sidebar-edit-btn" id="hubSidebarEditBtn" title="Edit sidebar nav"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
         <button class="hub-hamburger" id="hubHamburger" aria-label="Menu">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -188,26 +188,26 @@
             </svg>
             <span>Settings</span>
           </button>
-          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode — tap any image to change">
+          <button id="bcVisualsBtn" class="btn btn-ghost" title="Edit Mode � tap any image to change">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             <span>Visuals</span>
           </button>
           <span id="syncStatusDot" class="sync-dot" title="Sync status"></span>
         </div>
         <div class="sidebar-legal">
-          <a href="privacy.html">Privacy</a><span>·</span><a href="terms.html">Terms</a><span>·</span><a href="support.html">Support</a>
+          <a href="privacy.html">Privacy</a><span>�</span><a href="terms.html">Terms</a><span>�</span><a href="support.html">Support</a>
         </div>
       </div>
     </aside>
 
-    <!-- ─── MAIN ─────────────────────────────────────────── -->
+    <!-- --- MAIN ------------------------------------------- -->
     <div class="hub-main" role="main">
       <div class="hub-mobile-coming-soon" id="hubMobilePlaceholder">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px;opacity:0.3;margin-bottom:8px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         <div style="font-size:1rem;font-weight:600;color:var(--text-primary);margin-bottom:4px">Hub</div>
         <div style="font-size:0.78rem;color:var(--text-tertiary)">Coming soon on mobile</div>
       </div>
-      <!-- ─── HUB HERO ────────────────────────────────── -->
+      <!-- --- HUB HERO ---------------------------------- -->
       <section class="page-hero" style="position:relative;height:220px;overflow:hidden">
           <img data-image-id="hub-hero" src="" alt="Hero" style="width:100%;height:100%;object-fit:cover;opacity:0.85">
           <div style="position:absolute;inset:0;background:linear-gradient(to right, var(--bg-primary) 0%, transparent 55%)"></div>
@@ -271,7 +271,7 @@
 
         <div class="hub-section-wrap" data-hub-section="bento">
           <div class="hub-section-header">
-            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-drag-handle" draggable="true">?</span>
             <span class="hub-section-label" data-i18n="hub.sectionGoals">Goals &amp; Priorities</span>
           </div>
           <div class="bento-grid fade-in" style="margin-bottom:var(--section-gap)">
@@ -281,7 +281,7 @@
 
         <div class="hub-section-wrap" data-hub-section="sleep">
           <div class="hub-section-header">
-            <span class="hub-section-drag-handle" draggable="true">⠿</span>
+            <span class="hub-section-drag-handle" draggable="true">?</span>
             <span class="hub-section-label" data-i18n="hub.sectionSleep">Sleep</span>
           </div>
           <section class="fade-in sleep-section" style="margin-bottom:var(--section-gap)">
@@ -315,17 +315,17 @@
                         <circle class="bg" cx="18" cy="18" r="15.5"></circle>
                         <circle class="fill" cx="18" cy="18" r="15.5" stroke-dasharray="97.4" stroke-dashoffset="97.4" id="sleepScoreCircle"></circle>
                       </svg>
-                      <div class="sleep-score-value" id="sleepScoreValue">—</div>
+                      <div class="sleep-score-value" id="sleepScoreValue">�</div>
                       <div class="sleep-score-label" data-i18n="sleep.score">Score</div>
                     </div>
                     <div class="s-score-delta" id="sleepScoreDelta" hidden></div>
                   </div>
                   <div class="s-last-card" id="sLastCard">
                     <div class="s-last-main">
-                      <span class="s-last-dur" id="sleepEnhLastDur">—</span>
+                      <span class="s-last-dur" id="sleepEnhLastDur">�</span>
                       <span class="s-last-label" data-i18n="sleep.lastNight">last night</span>
                     </div>
-                    <div class="s-last-sub" id="sleepEnhLastTime">—</div>
+                    <div class="s-last-sub" id="sleepEnhLastTime">�</div>
                     <div class="s-last-quality" id="sLastQuality"></div>
                   </div>
                 </div>
@@ -333,17 +333,17 @@
                 <!-- Metrics row -->
                 <div class="s-metrics">
                   <div class="s-metric">
-                    <span class="s-metric-val" id="sleepEnhAvgDur">—</span>
+                    <span class="s-metric-val" id="sleepEnhAvgDur">�</span>
                     <span class="s-metric-lbl" data-i18n="sleep.avg7">7-Day Avg</span>
                     <span class="s-metric-sub" id="sleepEnhOnTrack"></span>
                   </div>
                   <div class="s-metric">
-                    <span class="s-metric-val" id="sleepEnhQuality">—</span>
+                    <span class="s-metric-val" id="sleepEnhQuality">�</span>
                     <span class="s-metric-lbl" data-i18n="sleep.avgQuality">Avg Quality</span>
-                    <span class="s-metric-sub" id="sleepEnhQualityLabel">—</span>
+                    <span class="s-metric-sub" id="sleepEnhQualityLabel">�</span>
                   </div>
                   <div class="s-metric">
-                    <span class="s-metric-val" id="sleepGaugeScore">—</span>
+                    <span class="s-metric-val" id="sleepGaugeScore">�</span>
                     <span class="s-metric-lbl" data-i18n="sleep.consistency">Consistency</span>
                     <span class="s-metric-sub" id="sleepGaugeDetail">Log 3+ nights</span>
                   </div>
@@ -447,7 +447,7 @@
 
       <!-- Minimal footer -->
       <footer class="hub-minifooter hub-anim-in hub-anim-in-8">
-        <span data-i18n="hub.footer">Havën Schedule v1.0</span>
+        <span data-i18n="hub.footer">Hav�n Schedule v1.0</span>
         <div class="hub-minifooter-actions">
           <button id="focusToggleBtn" class="btn btn-ghost" title="Focus mode">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
@@ -460,7 +460,7 @@
 
 
 
-  <!-- ─── AI CHAT PANEL (right-side drawer) ──────────────── -->
+  <!-- --- AI CHAT PANEL (right-side drawer) ---------------- -->
   <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
   <div id="aiChatPanel" class="ai-panel hidden" role="dialog" aria-label="AI Assistant">
     <div class="ai-panel-header">
@@ -493,7 +493,7 @@
       <div class="ai-token-bar" id="aiTokenBar" title="Today's free API token usage">
         <div class="ai-token-bar-top">
           <span class="ai-token-status">Today's free usage</span>
-          <button type="button" class="ai-token-count" id="aiTokenLimitBtn" title="Click to change the daily token limit">0 / 100K tokens · 0%</button>
+          <button type="button" class="ai-token-count" id="aiTokenLimitBtn" title="Click to change the daily token limit">0 / 100K tokens � 0%</button>
         </div>
         <div class="ai-token-track"><div class="ai-token-fill"></div></div>
       </div>
@@ -520,7 +520,7 @@
   </script>
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="js/page-loader.js"></script>
-  <script src="js/shared.js?v=78"></script>
+  <script src="js/shared.js?v=86"></script>
   <script src="js/ai-chat-polish.js?v=6"></script>
   <script src="js/settings.js"></script>
   <script src="js/vendor/supabase-js.min.js"></script>
@@ -531,21 +531,21 @@
   <script src="js/premium-config.js"></script>
   <script src="js/premium.js"></script>
 
-  <script src="js/hub-visuals.js?v=73"></script>
+  <script src="js/hub-visuals.js?v=74"></script>
   <script src="js/hub-ai.js?v=63"></script>
   <script src="js/curriculum.js?v=86"></script>
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
   <script>
-    // ════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------
     // HUB: PAGE-SPECIFIC CODE
-    // ════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------
 
     pageAfterImport = () => { updateHub(); };
 
-    // ─── GREETING & DATE ─────────────────────────────────
+    // --- GREETING & DATE ---------------------------------
     document.getElementById('hubDateLine').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
-    // ─── UPDATE HUB ──────────────────────────────────────
+    // --- UPDATE HUB --------------------------------------
 
      function updateHub() {
        const all = state.tasks.filter(t => !isWhiteboardTask(t));
@@ -568,9 +568,9 @@
 
 
 
-    // ════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------
     // INIT
-    // ════════════════════════════════════════════════════════════
+    // ------------------------------------------------------------
 
 function init() {
       const hubDisabledOnThisDevice = typeof HUB_MOBILE_DISABLED !== 'undefined' && HUB_MOBILE_DISABLED && window.innerWidth < 768;
@@ -625,7 +625,7 @@ function init() {
       observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
       // The bento canvas is hidden below 768px. Don't start its renderers or
-      // fetchers — otherwise they keep running invisibly, draining battery and data.
+      // fetchers � otherwise they keep running invisibly, draining battery and data.
       if (!hubDisabledOnThisDevice) {
         initHubLayout();
         initHubEditMode();
@@ -750,7 +750,7 @@ function init() {
   </script>
 
   <script>
-    // ─── SLEEP TRACKING (Hub) ───────────────────────────
+    // --- SLEEP TRACKING (Hub) ---------------------------
 
     function getWeekLogs(now) {
       var logs = [];
@@ -769,7 +769,7 @@ function init() {
       const targets = loadSleepTargets();
       const weekLogs = getWeekLogs(now);
 
-      // ── Last night ──
+      // -- Last night --
       const lastLog = logs.length > 0 ? logs.reduce((a, b) => a.date > b.date ? a : b) : null;
       var lastDurEl = document.getElementById('sleepEnhLastDur');
       var lastTimeEl = document.getElementById('sleepEnhLastTime');
@@ -786,7 +786,7 @@ function init() {
         if (lastQualityEl) lastQualityEl.innerHTML = '';
       }
 
-      // ── 7-day avg ──
+      // -- 7-day avg --
       var avgDurEl = document.getElementById('sleepEnhAvgDur');
       var onTrackEl = document.getElementById('sleepEnhOnTrack');
       if (weekLogs.length > 0) {
@@ -803,7 +803,7 @@ function init() {
         if (onTrackEl) onTrackEl.textContent = '';
       }
 
-      // ── Avg quality ──
+      // -- Avg quality --
       var qualityEl = document.getElementById('sleepEnhQuality');
       var qLabelEl = document.getElementById('sleepEnhQualityLabel');
       if (weekLogs.length > 0) {
@@ -815,7 +815,7 @@ function init() {
         if (qLabelEl) qLabelEl.textContent = '\u2014';
       }
 
-      // ── Score + Consistency + Routine + History + Insights ──
+      // -- Score + Consistency + Routine + History + Insights --
       renderSleepScore(logs, targets);
       renderSleepConsistency(logs);
       renderSleepRoutine();
@@ -825,7 +825,7 @@ function init() {
       renderSleepChart(logs);
     }
 
-    // ── Score ──
+    // -- Score --
     // One Mon-Sun week of sleep, anchored to `base` plus `weekOffset` whole weeks.
     function sleepWeekLogs(base, weekOffset) {
       var monday = addDays(base, -(((base.getDay() + 6) % 7)) + (weekOffset || 0) * 7);
@@ -960,7 +960,7 @@ function init() {
       el.hidden = false;
     }
 
-    // ── Consistency (compact) ──
+    // -- Consistency (compact) --
     function renderSleepConsistency(logs) {
       var consistency = getSleepConsistencyScore(logs);
       var scoreEl = document.getElementById('sleepGaugeScore');
@@ -976,11 +976,11 @@ function init() {
       detailEl.textContent = msg;
     }
 
-    // ── Weekly sleep chart (canvas: duration bars + quality line) ──
+    // -- Weekly sleep chart (canvas: duration bars + quality line) --
     var sleepChartTooltipEl = null;
 
     // Canvas falls back to sans-serif if the webfont hasn't loaded yet, and never
-    // repaints on its own — so redraw once Bebas Neue is actually available.
+    // repaints on its own � so redraw once Bebas Neue is actually available.
     var sleepChartFontReady = false;
 
     // Which Mon-Sun week the chart shows: 0 = this week, -1 = last week. Never the future.
@@ -1008,7 +1008,7 @@ function init() {
       if (nextBtn) nextBtn.addEventListener('click', function () { sleepWeekShift(1); });
     })();
 
-    // Canvas colours are baked in at draw time, so redraw when the theme flips —
+    // Canvas colours are baked in at draw time, so redraw when the theme flips �
     // otherwise the bar weight and label colour stay wrong until the next render.
     (function watchSleepTheme() {
       var wasLight = document.documentElement.classList.contains('light');
@@ -1067,7 +1067,7 @@ function init() {
 
       var rect = container.getBoundingClientRect();
       var W = rect.width;
-      if (W < 50) return; // not laid out yet (hidden tab / section) — re-rendered on tab show + resize
+      if (W < 50) return; // not laid out yet (hidden tab / section) � re-rendered on tab show + resize
       // Weekday labels scale with the column, capped so seven never overlap, and are
       // squashed vertically so they sit as a flat strip rather than tall caps.
       var labelSize = Math.max(16, Math.min(85, ((W - 80) / 7) * 0.60));
@@ -1108,7 +1108,7 @@ function init() {
       var barGap = 6;
       var barW = (chartW / 7) - barGap;
 
-      // ── empty state ── keep the fixed Mon-Sun columns visible
+      // -- empty state -- keep the fixed Mon-Sun columns visible
       if (!hasAny) {
         ctx.fillStyle = textTertiary;
         ctx.font = '13px system-ui, sans-serif';
@@ -1130,10 +1130,10 @@ function init() {
         return;
       }
 
-      // ── background ──
+      // -- background --
       ctx.clearRect(0, 0, W, H);
 
-      // ── Y axis ──
+      // -- Y axis --
       ctx.fillStyle = textSecondary;
       ctx.font = '14px system-ui, sans-serif';
       ctx.textAlign = 'right';
@@ -1152,7 +1152,7 @@ function init() {
         ctx.stroke();
       }
 
-      // ── quality axis (right) ──
+      // -- quality axis (right) --
       ctx.textAlign = 'left';
       var qSteps = [1, 2, 3, 4, 5];
       ctx.fillStyle = textTertiary;
@@ -1163,7 +1163,7 @@ function init() {
         ctx.fillText(qVal, W - PAD.right + 4, qyPx);
       }
 
-      // ── quality label ──
+      // -- quality label --
       ctx.save();
       ctx.translate(W - PAD.right + 14, PAD.top + chartH / 2);
       ctx.rotate(-Math.PI / 2);
@@ -1174,7 +1174,7 @@ function init() {
       ctx.fillText('Quality', 0, 0);
       ctx.restore();
 
-      // ── target line ──
+      // -- target line --
       var targetY = PAD.top + chartH - (targetDur / maxDur) * chartH;
       ctx.strokeStyle = accent;
       ctx.lineWidth = 1.5;
@@ -1189,7 +1189,7 @@ function init() {
       ctx.textAlign = 'left';
       ctx.fillText('Target ' + formatSleepMinutes(targetDur), PAD.left + 6, targetY + 10);
 
-      // ── bars ──
+      // -- bars --
       var qualityColors = {1:'#ef4444',2:'#f97316',3:'#eab308',4:'#10b981',5:'#10b981'};
       var barData = [];
       var durLabels = [];
@@ -1214,20 +1214,20 @@ function init() {
           ctx.lineTo(x, y + r);
           ctx.quadraticCurveTo(x, y, x + r, y);
           ctx.closePath();
-          // Neutral fill — the bar carries duration only; quality lives on the dots.
+          // Neutral fill � the bar carries duration only; quality lives on the dots.
           ctx.globalAlpha = barAlpha;
           ctx.fillStyle = accent;
           ctx.fill();
           ctx.globalAlpha = 1;
 
-          // Duration label — collected and drawn after the dots so it can sit on top
+          // Duration label � collected and drawn after the dots so it can sit on top
           durLabels.push({ x: x + barW / 2, y: y - 2, txt: formatSleepMinutes(e.duration) });
 
         }
 
         barData.push({ x: x, w: barW, y: y, h: barH, entry: e });
 
-        // X-axis label — Bebas Neue, squashed vertically so it reads as a flat strip
+        // X-axis label � Bebas Neue, squashed vertically so it reads as a flat strip
         ctx.fillStyle = e.isToday ? accent : textTertiary;
         ctx.save();
         ctx.translate(x + barW / 2, PAD.top + chartH + 5);
@@ -1239,7 +1239,7 @@ function init() {
         ctx.restore();
       }
 
-      // ── quality polyline ──
+      // -- quality polyline --
       var qPoints = [];
       for (var pi = 0; pi < entries.length; pi++) {
         if (entries[pi].hasData) {
@@ -1288,12 +1288,12 @@ function init() {
       }
       ctx.lineWidth = 1;
 
-      // ── store data for tooltips ──
+      // -- store data for tooltips --
       canvas._barData = barData;
       canvas._qPoints = qPoints || [];
     }
 
-    // ── Sleep chart tooltip ──
+    // -- Sleep chart tooltip --
     function createSleepTooltip() {
       var el = document.getElementById('sleepChartTooltip');
       if (!el) {
@@ -1357,7 +1357,7 @@ function init() {
       }
     });
 
-    // ── Resize handler ──
+    // -- Resize handler --
     var sleepChartResizeTimer = null;
     window.addEventListener('resize', function() {
       clearTimeout(sleepChartResizeTimer);
@@ -1367,7 +1367,7 @@ function init() {
       }, 200);
     });
 
-    // ── Routine ──
+    // -- Routine --
     var ROUTINE_LIST_KEY = (typeof SLEEP_ROUTINE_KEY !== 'undefined') ? SLEEP_ROUTINE_KEY : 'haven-schedule-sleep-routine';
     function loadSleepRoutine() {
       try {
@@ -1390,7 +1390,7 @@ function init() {
       checks.forEach(function(c) { c.checked = !!state[c.dataset.routine]; });
     }
 
-    // ── Tab switching ──
+    // -- Tab switching --
     document.addEventListener('click', function(e) {
       const tab = e.target.closest('.sleep-tab');
       if (!tab) return;
@@ -1406,7 +1406,7 @@ function init() {
       if (tabName === 'overview') renderSleepChart(loadSleepLogs());
     });
 
-    // ── Targets editor ──
+    // -- Targets editor --
     function renderTargetEditor(targets) {
       var btEl = document.getElementById('sleepTargetBedtime');
       var wtEl = document.getElementById('sleepTargetWake');
@@ -1446,7 +1446,7 @@ function init() {
       showToast('Sleep targets saved', 'success', 1500);
     }
 
-    // ── History ──
+    // -- History --
     function renderSleepHistory(logs) {
       var container = document.getElementById('sleepHistoryList');
       if (!container) return;
@@ -1511,7 +1511,7 @@ function init() {
       showToast('Sleep log deleted', 'info', 1500);
     }
 
-    // ── Insights ──
+    // -- Insights --
     function renderSleepInsights(logs) {
       var container = document.getElementById('sleepInsightsGrid');
       if (!container) return;
@@ -1524,7 +1524,7 @@ function init() {
       container.innerHTML = html;
     }
 
-    // ── Sleep Log Modal ──
+    // -- Sleep Log Modal --
     var sleepSelectedQuality = 3;
     var sleepLogEditId = null;
     var _slLastFocus = null;
@@ -1914,8 +1914,10 @@ function init() {
             <div class="form-group">
               <label for="drawerProvider">Provider</label>
               <select id="drawerProvider" class="form-input">
-                <option value="groq">Groq (Gemma2-9B)</option>
-                <option value="gemini">Gemini (1.5 Flash)</option>
+                <option value="nvidia">NVIDIA NIM</option>
+                <option value="groq">Groq</option>
+                <option value="gemini">Gemini</option>
+                <option value="vercel">Vercel AI</option>
               </select>
             </div>
             <div class="form-group">
@@ -1983,7 +1985,7 @@ function init() {
       </div>
     </div>
   </div>
-<!-- ─── HELP MODAL ──────────────────────────────────────── -->
+<!-- --- HELP MODAL ---------------------------------------- -->
   <div id="helpOverlay" class="hidden"></div>
   <div id="helpModal" class="hidden" role="dialog" aria-label="Help and Shortcuts">
     <div class="modal-header">
@@ -2015,7 +2017,7 @@ function init() {
         <div class="help-tips">
           <div class="help-tip">
             <span class="help-tip-icon"></span>
-            <div class="help-tip-text">Press <kbd>F</kbd> to toggle Focus Mode — hides sidebar and reduces clutter</div>
+            <div class="help-tip-text">Press <kbd>F</kbd> to toggle Focus Mode � hides sidebar and reduces clutter</div>
           </div>
           <div class="help-tip">
             <span class="help-tip-icon"></span>
@@ -2033,7 +2035,7 @@ function init() {
       </div>
     </div>
   </div>
-  <!-- ─── Spotify Settings Modal ──────────────── -->
+  <!-- --- Spotify Settings Modal ---------------- -->
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
     <div class="sp-modal">
       <div class="sp-modal-header">
@@ -2063,7 +2065,7 @@ function init() {
 
 
 
-  <!-- ─── BOTTOM NAV (mobile) ──────────────────────────────── -->
+  <!-- --- BOTTOM NAV (mobile) -------------------------------- -->
   <nav class="hub-bottom-nav" aria-label="Main navigation">
     <div class="hub-bottom-nav-inner">
       <a href="index.html" class="hub-bottom-nav-item active" data-nav="hub" aria-current="page">
