@@ -7276,9 +7276,15 @@ function guardAIAction(action, perms) {
     var sd = action.data || {};
     if (!Array.isArray(sd.chapters) || !sd.chapters.length)
       return { allowed:false, reason:'The syllabus had no chapters to add.' };
-    var rs = window.HubAI.resolveSubject ? window.HubAI.resolveSubject(sd.subject) : { name:'', reason:'Subject list unavailable.' };
-    if (!rs.name) return { allowed:false, reason:rs.reason + ' Name the subject so I can file it correctly.' };
-    sd.subject = rs.name;
+    var rs = window.HubAI.resolveSubject ? window.HubAI.resolveSubject(sd.subject) : { name:'', state:'unavailable', reason:'Subject list unavailable.' };
+    if (rs.state === 'unavailable')
+      return { allowed:false, reason:rs.reason + ' Open the Hub chat to add study subjects.' };
+    if (rs.state === 'empty')
+      return { allowed:false, reason:'Give the subject a name so I know where to put these chapters.' };
+    if (rs.state === 'ambiguous')
+      return { allowed:false, reason:rs.reason + ' Name the exact subject so I file it correctly.' };
+    if (rs.name) sd.subject = rs.name;
+    /* state 'none' = new subject; HubAI.applySyllabus creates it. */
   }
 
   /* ---- categories & subcategories ---- */
@@ -7440,8 +7446,10 @@ function describeAIAction(a) {
     case 'addStudySyllabus': {
       var sc = Array.isArray(d.chapters) ? d.chapters : [];
       var sn = sc.reduce(function (n, c) { return n + (c && Array.isArray(c.items) ? c.items.length : 0); }, 0);
-      return 'Add <strong>' + sc.length + ' chapter' + (sc.length === 1 ? '' : 's') + ' / ' + sn + ' subtopic' + (sn === 1 ? '' : 's') +
-        '</strong> to subject <strong>' + e(d.subject) + '</strong> (existing chapters are skipped)';
+      var known = (window.HubAI && window.HubAI.subjectNames) ? window.HubAI.subjectNames() : [];
+      var exists = known.some(function (x) { return String(x).trim().toLowerCase() === String(d.subject || '').trim().toLowerCase(); });
+      return (exists ? 'Add ' : 'Create subject <strong>' + e(d.subject) + '</strong> with ') + '<strong>' + sc.length + ' chapter' + (sc.length === 1 ? '' : 's') + ' / ' + sn + ' subtopic' + (sn === 1 ? '' : 's') +
+        '</strong>' + (exists ? ' to subject <strong>' + e(d.subject) + '</strong>' : '') + ' (existing chapters are skipped)';
     }
     default: return e(a.type);
   }
@@ -8457,20 +8465,22 @@ WIDGET ACTIONS (only work on the Hub page):
 - addWidgetItem{widget,text|title|label|name,...} | updateWidgetItem{widget,match,text?} | completeWidgetItem{widget,match,done?} | removeWidgetItem{widget,match} | setWidgetSetting{widget,field,value}
 - removeWidgetItem works on study subjects too: removeWidgetItem{widget:"study",match:"<exact subject name>"} removes that subject and all its chapters. Always confirm the subject name from STUDY SUBJECTS in the CANVAS context.
 - clearWidgetContent{widget} | clearCanvas{}  [BULK — only when the user explicitly asks to delete everything]
-- addStudySyllabus{subject,chapters:[{name,items:[...]}]} — ONE action files a whole pasted syllabus into an EXISTING Study subject. "name" is the chapter line verbatim, "items" are its numbered subtopics verbatim. Never split a syllabus into many addWidgetItem actions.
+- addStudySyllabus{subject,chapters:[{name,items:[...]}]} — ONE action: creates the subject if missing, then files a whole syllabus into it. "name" is the chapter line verbatim, "items" are its numbered subtopics verbatim. Use this for BOTH new and existing subjects. Never split a syllabus into many addWidgetItem actions.
 
-STUDY SYLLABUS RULES:
-- "subject" MUST be the exact name of an existing subject from STUDY SUBJECTS in the CANVAS context. If the user says "for bio"/"for chemistry" and that clearly matches ONE subject, use that exact name.
-- If the user does NOT name a subject, or the name is ambiguous, do NOT emit any action. Reply with a short question listing the subject names and actions:[].
+STUDY SUBJECTS & CHAPTERS (the fix for "add subjects and chapters"):
+- addStudySyllabus{subject,chapters:[{name,items:[...]}]} — ONE action creates the subject if it does NOT exist, then adds all its chapters/subtopics. You do NOT need a separate addWidgetItem to make the subject first. This is the preferred way to add subjects and chapters together.
+- To add a subject with NO chapters yet, use addWidgetItem{widget:'study', name:'<name>'}.
+- "subject" should match an existing subject from STUDY SUBJECTS when the user clearly means one of them (exact name, or an unambiguous partial like "bio" for "Biology"). If the name matches nothing, that's fine — addStudySyllabus will CREATE it. Only ask a question if the name is genuinely ambiguous (matches 2+ subjects) or completely missing.
 - Copy chapter names and numbered subtopics EXACTLY as pasted. Do not renumber, reword, summarise, or drop any.
 - This is additive: it never deletes or replaces existing chapters.
+- NEVER reply "I'll add it" with actions:[]. If the user asks you to add a subject or chapters, EMIT THE ACTION — that is how it actually happens. Text alone does nothing.
 
 SAFETY RULES (hard rules; the app enforces them again, so breaking them just wastes the turn):
 1. NEVER delete or clear anything unless the user explicitly names exactly what to remove. "Tidy up", "clean my hub", "fix things", "reset", "start fresh", "make it nicer" are NOT permission to delete.
 2. Prefer ADDITIVE actions. To change a list, add or edit ONE item with addWidgetItem / updateWidgetItem. Never replace a whole list.
 3. Removing a widget TILE keeps all its data — always say so. Never remove a widget the CANVAS context says holds saved data unless the user names that exact widget.
 4. Widgets listed under "WIDGETS HOLDING YOUR DATA" contain the user's real work. Never emit clearWidgetContent for them on a vague request.
-5. CLARIFY BEFORE ACTING. If it is unclear WHICH item or widget the user means, or if a request is vague ("clean up my canvas", "fix my widgets", "make it nicer"), ALWAYS ask a short clarifying question and return actions:[]. Never guess — a wrong match is blocked anyway. One question, then wait for the answer.
+5. CLARIFY ONLY WHEN GENUINELY UNSURE. If a request is vague about WHAT to do ("clean up my canvas", "fix things", "make it nicer"), ask one short question and return actions:[]. But if the intent and target are clear — including "add subject X with these chapters", "remove subject Y", "add Z to my todos" — DO NOT ask. Just emit the action. Asking when you already know is failing the user.
 6. CANVAS FREEDOM. You CAN add, remove, move, resize, and restyle any widget on the Hub canvas, and add/edit/remove/tick items inside editable widgets (todos, goals, priorities, habits, notes, links, reading, homework, countdown, study). Be proactive — when the user asks for something on the canvas, do it. The app confirms every action with the user before applying it, so you do not need to ask for permission yourself — just emit the action.
 7. If allowBulkDelete=false, do NOT emit clearAllTasks, clearDate, clearCompletedTasks, deleteTasksByTag, deleteTasksByQuery, clearWidgetContent, or clearCanvas. Explain that the permission is off and tell them they can enable it with the shield button in the chat header.
 8. Only use widget types from WIDGET CATALOG, designs from WIDGET DESIGNS, and fields from CONTENT-EDITABLE WIDGETS. If arrange/content permission is false, explain instead of emitting those actions, and tell the user they can toggle it with the shield button.

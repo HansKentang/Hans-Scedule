@@ -162,11 +162,13 @@
     return { list: list, hits: hits };
   }
 
-  /* Resolve a subject name strictly. Never guess: exactly one match or refuse. */
+  /* Resolve a subject name strictly. Never guess: exactly one match or refuse.
+     state: 'empty' | 'none' | 'ambiguous' | 'matched'. 'none' means the name is
+     well-formed but no subject exists yet — safe to create one. */
   function findSubject(name) {
     var subs = _ensureStudy();
     var want = trim(name).toLowerCase();
-    if (!want) return { subs: subs, match: null, reason: 'No subject name given.' };
+    if (!want) return { subs: subs, match: null, state:'empty', reason: 'No subject name given.' };
     var exact = [], partial = [];
     for (var i = 0; i < subs.length; i++) {
       var n = str(subs[i].name), low = n.trim().toLowerCase();
@@ -174,17 +176,26 @@
       else if (low.indexOf(want) !== -1 || want.indexOf(low) !== -1) partial.push(i);
     }
     var use = exact.length ? exact : partial;
-    if (use.length === 1) return { subs: subs, match: subs[use[0]], reason: '' };
+    if (use.length === 1) return { subs: subs, match: subs[use[0]], state:'matched', reason: '' };
     var names = subs.map(function (s) { return '"' + str(s.name) + '"'; }).join(', ');
-    if (!use.length) return { subs: subs, match: null, reason: 'No subject matches "' + trim(name) + '". Your subjects: ' + names + '.' };
-    return { subs: subs, match: null, reason: '"' + trim(name) + '" is ambiguous. Your subjects: ' + names + '.' };
+    if (!use.length) return { subs: subs, match: null, state:'none', reason: 'No subject matches "' + trim(name) + '".' };
+    return { subs: subs, match: null, state:'ambiguous', reason: '"' + trim(name) + '" is ambiguous. Your subjects: ' + names + '.' };
   }
 
   function applySyllabus(d) {
     if (!ready()) return no('Hub data is not ready yet.');
     var r = findSubject(d.subject);
-    if (!r.match) return no(r.reason);
+    if (r.state === 'empty') return no('A subject name is required.');
+    if (r.state === 'ambiguous') return no(r.reason);
     var subj = r.match;
+    var created = false;
+    if (!subj) {
+      var newName = trim(d.subject).slice(0, 60);
+      if (!newName) return no('A subject name is required.');
+      subj = { id: _studyUid('sj'), name: newName, color: '', collapsed: false, chapters: [] };
+      r.subs.push(subj);
+      created = true;
+    }
     var chapters = Array.isArray(d.chapters) ? d.chapters : [];
     if (!chapters.length) return no('No chapters were provided.');
     if (chapters.length > 40) return no('Too many chapters in one go (limit 40).');
@@ -214,8 +225,8 @@
     subj.collapsed = false;
     saveHubContent();
     renderHubBento();
-    return ok('Added ' + addedCh + ' chapter' + (addedCh === 1 ? '' : 's') + ' / ' + addedItems +
-      ' subtopic' + (addedItems === 1 ? '' : 's') + ' to "' + str(subj.name) + '"' +
+    return ok((created ? 'Created subject "' + str(subj.name) + '" and added ' : 'Added ') + addedCh + ' chapter' + (addedCh === 1 ? '' : 's') + ' / ' + addedItems +
+      ' subtopic' + (addedItems === 1 ? '' : 's') + (created ? '' : ' to "' + str(subj.name) + '"') +
       (skipped ? ' (' + skipped + ' already existed and were skipped)' : '') + '.');
   }
 
@@ -487,9 +498,9 @@
     restore: restore,
     subjectNames: function () { return ready() ? _ensureStudy().map(function (s) { return str(s.name); }) : []; },
     resolveSubject: function (name) {
-      if (!ready()) return { name: '', reason: 'Hub data is not ready yet.' };
+      if (!ready()) return { name: '', state:'unavailable', reason: 'Hub data is not ready yet.' };
       var r = findSubject(name);
-      return r.match ? { name: str(r.match.name), reason: '' } : { name: '', reason: r.reason };
+      return { name: r.match ? str(r.match.name) : '', state: r.state, reason: r.reason };
     }
   };
 })();
