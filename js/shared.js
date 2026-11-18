@@ -7040,9 +7040,22 @@ function showAIChat() {
 
   dom.aiChatPanel.classList.remove('hidden');
   dom.aiChatOverlay.classList.remove('hidden');
+  // Focus the composer as soon as the panel opens so typing works immediately.
+  // A focus() fired while the panel is still translated off-screen is dropped by
+  // browsers, so do it inside the frame that adds .open and again once settled.
+  const focusComposer = () => {
+    const el = dom.aiChatInput;
+    if (!el || el.disabled) return;
+    try { el.focus({ preventScroll: true }); } catch (e) { try { el.focus(); } catch (e2) {} }
+    if (el === document.activeElement) {
+      const end = el.value.length;
+      try { el.setSelectionRange(end, end); } catch (e) {}
+    }
+  };
   requestAnimationFrame(() => {
     dom.aiChatOverlay.classList.add('active');
     dom.aiChatPanel.classList.add('open');
+    focusComposer();
   });
   state.aiChatOpen = true;
   renderTokenBar();
@@ -7051,7 +7064,12 @@ function showAIChat() {
     _tokenLimitBtn.setAttribute('data-bound', 'true');
     _tokenLimitBtn.addEventListener('click', promptTokenLimit);
   }
-  dom.aiChatInput?.focus();
+  setTimeout(function () {
+    if (!state.aiChatOpen) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== dom.aiChatInput && active !== dom.aiChatPanel) return;
+    focusComposer();
+  }, 140);
 
   // Toggle send button visibility based on input
   if (!dom.aiChatInput?.hasAttribute('data-ai-listener')) {
@@ -8222,7 +8240,7 @@ function localCommandParser(text) {
   if (/^(hi|hello|hey|sup|yo|howdy|greetings|good\s*(morning|afternoon|evening))/i.test(t)) {
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
-    return { text: `${greeting}! I'm **ChickBot**. I can manage your schedule, find free time, create tasks, and more. Try:\n- "What's on today?"\n- "Find me time for deep work"\n- "Schedule my week"` };
+    return { text: `${greeting}! It's lovely to see you — I'm **ChickBot**, and I'm here to make your day a little easier. I can sort out your schedule, find free time, set up tasks, and plenty more. Whenever you're ready, try asking:\n- "What's on today?"\n- "Find me time for deep work"\n- "Schedule my week"` };
   }
 
   // Help
@@ -8421,7 +8439,9 @@ PERMISSIONS RIGHT NOW: arrange=${aiPerms.arrange}, content=${aiPerms.content}, s
 HUB CANVAS: not available on this page. If asked to change widgets, reply: "Open the Hub page and tap the AI button inside the + menu, then I can do that."
 `;
 
-  const systemPrompt = `You are ChickBot, Havën Schedule's smart assistant. ${getHolidayMode() ? 'HOLIDAY mode — lighter workloads, flexible timing.' : 'SCHOOL mode — prioritize study/deep work on weekdays.'} ${learningContext}${profileSection}
+  const systemPrompt = `You are ChickBot, Havën Schedule's warm and friendly assistant — a kind, genuinely helpful companion who is easy and nice to talk to. ${getHolidayMode() ? 'HOLIDAY mode — lighter workloads, flexible timing.' : 'SCHOOL mode — prioritize study/deep work on weekdays.'} ${learningContext}${profileSection}
+
+TONE: Be warm, encouraging and human. Use a gentle, upbeat style, light warmth and natural phrasing — never cold, robotic, terse or scolding. Greet and sign off kindly, celebrate wins, and be reassuring when something goes wrong. Keep it concise but never blunt. Match the user's language and mood: brief and breezy when they are casual, a little fuller when they need help. A little friendly personality is welcome, but never overdo it, never be sugary, and never pad answers with filler. Stay clear and honest: warmth never means hiding a problem or pretending an action succeeded when it did not.
 
 TODAY: ${today} | TIME: ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} | TZ: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
 GRID: ${toTimeStr(START_HOUR * 60)}–${toTimeStr((START_HOUR + VISIBLE_HOURS) * 60)}, 30-min snap, wraps to 4am
@@ -8692,19 +8712,21 @@ async function testAIConnection(btn) {
 }
 
 // Try the selected provider first, then any other provider that has a key.
+// When every provider fails, report each one by name — otherwise the last
+// fallback's error masks the real failure of the provider the user selected.
 async function callAIChat(systemPrompt, userText, attachedImage) {
   const order = getProviderOrder();
-  let lastErr = null;
+  const failures = [];
   for (const p of order) {
     if (!getProviderKey(p)) continue;
     try {
       return await callProviderOnce(p, systemPrompt, userText, attachedImage);
     } catch (e) {
-      lastErr = e;
+      failures.push((PROVIDER_LABELS[p] || p) + ': ' + (e.message || 'failed'));
       if (e && e.fatal) throw e;
     }
   }
-  if (lastErr) throw lastErr;
+  if (failures.length) throw new Error(failures.join(' | '));
   throw new Error('No AI key configured. Add one in Settings → AI Assistant.');
 }
 
@@ -8857,6 +8879,8 @@ async function streamGemini(key, model, systemPrompt, userText, attachedImage, o
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), 60000);
   let started = false;
+  const genConfig = { temperature: 0.2, maxOutputTokens: 8192 };
+  if (/2\.5/.test(String(model))) genConfig.thinkingConfig = { thinkingBudget: 2048 };
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -8864,7 +8888,7 @@ async function streamGemini(key, model, systemPrompt, userText, attachedImage, o
       body: JSON.stringify({
         system_instruction: { parts: [{ text: systemPrompt }] },
         contents: contents,
-        generationConfig: { temperature: 0.2, maxOutputTokens: 2000 }
+        generationConfig: genConfig
       }),
       signal: ac.signal
     });
@@ -8876,22 +8900,24 @@ async function streamGemini(key, model, systemPrompt, userText, attachedImage, o
     const ct = res.headers.get('content-type') || '';
     if (ct.indexOf('text/event-stream') === -1) {
       const data = await res.json();
-      const p0 = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
-        data.candidates[0].content.parts && data.candidates[0].content.parts[0];
-      raw = (p0 && p0.text) || '';
+      const parts = (data && data.candidates && data.candidates[0] && data.candidates[0].content &&
+        data.candidates[0].content.parts) || [];
+      raw = parts.filter(function (p) { return p && !p.thought && typeof p.text === 'string'; })
+        .map(function (p) { return p.text; }).join('');
       const parsed = parseAIJson(raw);
       if (parsed.text && onDelta) onDelta(parsed.text);
       return { text: parsed.text, actions: parsed.actions, usage: (data && data.usageMetadata) || null, streamed: false };
     }
     await readSSE(res, (obj) => {
-      const p0 = obj && obj.candidates && obj.candidates[0] && obj.candidates[0].content &&
-        obj.candidates[0].content.parts && obj.candidates[0].content.parts[0];
-      const piece = p0 && p0.text;
-      if (piece) {
-        raw += piece;
+      const parts = obj && obj.candidates && obj.candidates[0] && obj.candidates[0].content &&
+        obj.candidates[0].content.parts;
+      if (!Array.isArray(parts)) return;
+      parts.forEach(function (p) {
+        if (!p || p.thought || typeof p.text !== 'string' || !p.text) return;
+        raw += p.text;
         started = true;
         if (onDelta) onDelta(extractPartialText(raw));
-      }
+      });
     });
     const parsed = parseAIJson(raw);
     return { text: parsed.text, actions: parsed.actions, usage: null, streamed: started };
@@ -8941,7 +8967,7 @@ async function streamProvider(p, systemPrompt, userText, attachedImage, onDelta)
 
 async function callAIChatStream(systemPrompt, userText, attachedImage, onDelta) {
   const order = getProviderOrder();
-  let lastErr = null;
+  const failures = [];
   for (const p of order) {
     if (!getProviderKey(p)) continue;
     try {
@@ -8950,11 +8976,11 @@ async function callAIChatStream(systemPrompt, userText, attachedImage, onDelta) 
       trackTokenUsage({ total_tokens: approx });
       return res;
     } catch (e) {
-      lastErr = e;
+      failures.push((PROVIDER_LABELS[p] || p) + ': ' + (e.message || 'failed'));
       if (e && (e.fatal || e.streamStarted)) throw e;
     }
   }
-  if (lastErr) throw lastErr;
+  if (failures.length) throw new Error(failures.join(' | '));
   throw new Error('No AI key configured. Add one in Settings → AI Assistant.');
 }
 
@@ -9150,6 +9176,8 @@ function callGeminiChat(systemPrompt, userText, attachedImage) {
     userParts = [{ text: userText }];
   }
 
+  const genConfig = { temperature: 0.2, maxOutputTokens: 8192 };
+  if (/2\.5/.test(String(state.apiModel))) genConfig.thinkingConfig = { thinkingBudget: 2048 };
   return fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${state.apiModel}:generateContent?key=${state.apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -9159,7 +9187,7 @@ function callGeminiChat(systemPrompt, userText, attachedImage) {
         ...historyMessages,
         { role: 'user', parts: userParts }
       ],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 2000 }
+      generationConfig: genConfig
     })
   }).then(async res => {
     if (!res.ok) {
@@ -9168,7 +9196,9 @@ function callGeminiChat(systemPrompt, userText, attachedImage) {
     }
     return res.json();
   }).then(data => {
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const raw = parts.filter(function (p) { return p && !p.thought && typeof p.text === 'string' && p.text; })
+      .map(function (p) { return p.text; }).join('');
     if (!raw) throw new Error('Empty response from AI');
     let parsed;
     try { parsed = JSON.parse(raw); } catch (e) {
