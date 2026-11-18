@@ -5606,41 +5606,18 @@ html.light .hub-db-header .hub-db-count strong {
   display: flex;
   align-items: center;
   gap: 8px;
-  /* Full-bleed title bar. The header lives inside .bento-scroll, which sits in
-     the bubble's padding, so it only reaches the card edge by cancelling that
-     padding with negative margins. width must be auto — with width:100% the
-     negative margins would shift the bar left instead of widening it.
-     Padding is read per-axis: one skin sets --skin-pad to a two-value
-     shorthand, which calc() cannot multiply, so -x/-y are kept separate. */
-  margin-top: calc(-1 * var(--skin-pad-y, var(--gutter)));
-  margin-left: calc(-1 * var(--skin-pad-x, var(--gutter)));
-  margin-right: calc(-1 * var(--skin-pad-x, var(--gutter)));
+  /* Plain title row — no bar. Hans, 2026-11-18: the header sits inside the
+     bubble's padding (no negative margins), is not sticky, and carries the same
+     R6 horizontal gutter as the body so the title lines up with the content.
+     Transparent shows each skin's own bubble colour through; a translucent skin
+     must not stack a second tint on top of itself. */
   margin-bottom: 12px;
   width: auto;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  padding: 11px var(--skin-pad-x, var(--gutter)) 9px;
-  background: var(--surface-container-high);
+  padding: 11px var(--w-pad-x, 0px) 9px;
+  background: transparent;
   border-bottom: 0;
-  border-radius: 0 0 12px 12px;
+  border-radius: 0;
   user-select: none;
-}
-/* The bar is sticky and its surface is rounded, so the two bottom corners are
-   see-through — anything scrolling underneath shows in the notches. This square
-   patch sits behind the bar, matches the card, and covers exactly those corners.
-   It can paint over the scrolled content because the bar owns a stacking context
-   (z-index 10), so a negative z-index child never escapes it. */
-.w-head::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -12px;
-  height: 24px;
-  background: var(--surface-container);
-  z-index: -1;
-  pointer-events: none;
 }
 .w-head span {
   flex: 1;
