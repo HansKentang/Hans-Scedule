@@ -8419,7 +8419,7 @@ function localCommandParser(text) {
 }
 
 
-function callAIAgent(userText, onDelta) {
+async function callAIAgent(userText, onDelta) {
   const today = formatDate(new Date());
   const weekStart = getMonday(new Date());
   const weekEnd = addDays(weekStart, 14);
@@ -8599,6 +8599,7 @@ STUDY SUBJECTS & CHAPTERS (the "study" widget — subjects and their content):
 - Copy chapter names and numbered subtopics EXACTLY as pasted. Do not renumber, reword, summarise, or drop any.
 - This is additive: it never deletes or replaces existing chapters.
 - NEVER reply "I'll add it" with actions:[]. If the user asks you to add a subject or chapters, EMIT THE ACTION — that is how it actually happens. Text alone does nothing.
+- A study request with pasted chapters/subtopics must produce ONE addStudySyllabus action. If you find yourself writing "Sure, I'll add that", stop and put the content in the action instead.
 
 SAFETY RULES (hard rules; the app enforces them again, so breaking them just wastes the turn):
 1. NEVER delete or clear anything unless the user explicitly names exactly what to remove. "Tidy up", "clean my hub", "fix things", "reset", "start fresh", "make it nicer" are NOT permission to delete.
@@ -8623,10 +8624,10 @@ EXAMPLES: "Clear schedule" -> clearAllTasks (only if allowBulkDelete). "Add a po
 ${(() => { try { const extra = localStorage.getItem('haven-ai-extra-instructions') || ''; return extra ? `EXTRA:\n${extra}\n` : ''; } catch (e) { return ''; } })()}
 IMPORTANT: Only valid JSON.`;
 
-  if (typeof onDelta === 'function') {
-    return callAIChatStream(systemPrompt, fileAwareUserText, hasImageAttachment ? attachedFile : null, onDelta);
-  }
-  return callAIChat(systemPrompt, fileAwareUserText, hasImageAttachment ? attachedFile : null);
+  const response = (typeof onDelta === 'function')
+    ? await callAIChatStream(systemPrompt, fileAwareUserText, hasImageAttachment ? attachedFile : null, onDelta)
+    : await callAIChat(systemPrompt, fileAwareUserText, hasImageAttachment ? attachedFile : null);
+  return applyStudyActionFallback(userText, response);
 }
 
 async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model) {
@@ -8677,7 +8678,7 @@ async function invokeNvidiaFunction(systemPrompt, userText, attachedImage, model
         messages: messages,
         prompt: userText,
         temperature: 0.2,
-        max_tokens: 2000
+        max_tokens: 8192
       },
       headers: { 'x-nvidia-key': key }
     });
@@ -8887,6 +8888,108 @@ function extractPartialText(raw) {
   return out;
 }
 
+/* When a model answers "I'll add it" with an empty actions array, the chat
+   never shows the confirmation card. Structured study pastes can be rebuilt
+   locally, so the user still gets the exact plan and a real Apply button. */
+function cleanStudySubject(value) {
+  var s = String(value == null ? '' : value)
+    .replace(/^[\s"'“”‘’]+|[\s"'“”‘’.,!?]+$/g, '')
+    .replace(/\s+(?:study|subject|widget|syllabus|chapter|topics?|content|stuff|notes?|please|for me)\b.*$/i, '')
+    .trim();
+  if (!s || /^(my|the|a|an|some|this|that|it|these|those)$/i.test(s)) return '';
+  return s.slice(0, 60);
+}
+
+function studySubjectFromText(text) {
+  var raw = String(text || '');
+  var low = raw.toLowerCase();
+  var known = [];
+  try { known = (window.HubAI && window.HubAI.subjectNames) ? window.HubAI.subjectNames() : []; } catch (e) {}
+  var best = '';
+  known.forEach(function (name) {
+    var n = String(name || '').trim();
+    if (n && low.indexOf(n.toLowerCase()) >= 0 && n.length > best.length) best = n;
+  });
+  if (best) return best.slice(0, 60);
+
+  var patterns = [
+    /\b(?:called|named|subject)\s+([A-Za-z0-9][^\n,.;:]{1,50})/i,
+    /\b(?:for|to|in|into)\s+([A-Z][\w&.'-]*(?:\s+[A-Z0-9][\w&.'-]*){0,4}|\bFTE\s*\d+\b)/,
+    /\b(?:add|create|put)\s+(?:a\s+)?([A-Z][\w&.'-]*(?:\s+[A-Z0-9][\w&.'-]*){0,4})/
+  ];
+  for (var i = 0; i < patterns.length; i++) {
+    var m = raw.match(patterns[i]);
+    if (m) {
+      var candidate = cleanStudySubject(m[1]);
+      if (candidate) return candidate;
+    }
+  }
+
+  var lines = raw.split(/\r?\n/);
+  for (var j = 0; j < lines.length; j++) {
+    var line = lines[j].trim();
+    if (!line) continue;
+    if (/^(?:\d+(?:\.\d+)*[\.\)]?\s|[-•*]\s|chapter\b)/i.test(line)) break;
+    if (line.length <= 60 && !/\b(?:study|subject|chapter|syllabus|topic|here|please|add|put|for)\b/i.test(line)) {
+      return cleanStudySubject(line);
+    }
+  }
+  return '';
+}
+
+function parseStudySyllabusText(text) {
+  var lines = String(text || '').split(/\r?\n/);
+  var chapters = [];
+  var current = null;
+  var items = 0;
+  lines.forEach(function (source) {
+    var line = source.trim();
+    if (!line) return;
+    if (/^\d+(?:\.\d+)+[\.\)]?\s+/.test(line) || /^[-•*]\s+/.test(line)) {
+      if (!current) { current = { name: 'Study notes', items: [] }; chapters.push(current); }
+      current.items.push(line);
+      items++;
+      return;
+    }
+    if (/^(?:chapter\s*)?\d{1,2}[\.\)]\s+/.test(line) || /^chapter\b/i.test(line)) {
+      current = { name: line, items: [] };
+      chapters.push(current);
+    }
+  });
+  return items > 0 ? chapters : null;
+}
+
+function studyActionFallback(userText, aiText) {
+  try {
+    if (!(window.HubAI && typeof HubAI.available === 'function' && HubAI.available())) return null;
+    if (getAIPermissions().content === false) return null;
+  } catch (e) { return null; }
+
+  var source = String(userText || '');
+  try {
+    if (attachedFile && !attachedFile.isImage && attachedFile.data) source += '\n' + attachedFile.data;
+  } catch (e) {}
+  if (!/\b(?:study|subject|chapter|syllabus|topic|course|revision|module)\b/i.test(source + ' ' + String(aiText || ''))) return null;
+
+  var chapters = parseStudySyllabusText(source);
+  if (!chapters || !chapters.length) return null;
+  var subject = studySubjectFromText(source);
+  if (!subject) subject = 'Study notes';
+  return {
+    text: 'Got it — I found ' + chapters.length + ' chapter' + (chapters.length === 1 ? '' : 's') +
+      ' of study content in your message. Confirm below and I will add it exactly as pasted.',
+    actions: [{ type: 'addStudySyllabus', data: { subject: subject, chapters: chapters } }]
+  };
+}
+
+function applyStudyActionFallback(userText, response) {
+  if (!response) return response;
+  if (Array.isArray(response.actions) && response.actions.length) return response;
+  var fb = studyActionFallback(userText, response.text);
+  if (!fb) return response;
+  return { text: fb.text, actions: fb.actions, usage: response.usage || null, streamed: !!response.streamed };
+}
+
 function parseAIJson(raw) {
   const pick = (obj) => ({ text: (obj && obj.text) || '', actions: Array.isArray(obj && obj.actions) ? obj.actions : [] });
   if (!raw || typeof raw !== 'string') return { text: '', actions: [] };
@@ -8930,7 +9033,7 @@ async function streamOpenAICompatible(endpoint, key, model, messages, onDelta, e
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({ model: model, messages: messages, temperature: 0.2, max_tokens: 2000, top_p: 0.9, stream: true }),
+      body: JSON.stringify({ model: model, messages: messages, temperature: 0.2, max_tokens: 8192, top_p: 0.9, stream: true }),
       signal: ac.signal
     });
     if (!res.ok) {
@@ -9138,7 +9241,7 @@ function callGroqChat(systemPrompt, userText, attachedImage) {
   // Vision models on Groq may not support response_format, so omit when sending images.
   // Some free-tier models also reject json_object — if so, retry once without it.
   const buildBody = (useJson) => {
-    const b = { model: state.apiModel, messages, temperature: 0.2, max_tokens: 2000 };
+    const b = { model: state.apiModel, messages, temperature: 0.2, max_tokens: 8192 };
     if (useJson && !hasVision) b.response_format = { type: 'json_object' };
     return b;
   };
@@ -9208,7 +9311,7 @@ function callVercelChat(systemPrompt, userText, attachedImage) {
   }
 
   const buildBody = (useJson) => {
-    const b = { model: state.apiModel, messages, temperature: 0.2, max_tokens: 2000 };
+    const b = { model: state.apiModel, messages, temperature: 0.2, max_tokens: 8192 };
     if (useJson && !hasVision) b.response_format = { type: 'json_object' };
     return b;
   };
