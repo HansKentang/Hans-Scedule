@@ -1049,11 +1049,6 @@ function bindWeekKeys() {
     const tag = (e.target.tagName || '').toUpperCase();
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
     if (currentView !== 'week' || state.taskModalOpen) return;
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'd' && weekFocusedId) {
-      e.preventDefault();
-      duplicateTask(weekFocusedId);
-      return;
-    }
     if (!weekFocusedId) return;
     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();

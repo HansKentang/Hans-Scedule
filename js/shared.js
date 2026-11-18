@@ -9235,11 +9235,6 @@ function callGeminiChat(systemPrompt, userText, attachedImage) {
 
 // ─── KEYBOARD SHORTCUTS ────────────────────────────────────
 document.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'i') {
-    e.preventDefault();
-    if (!state.taskModalOpen && !state.helpModalOpen) toggleAIChat();
-  }
-
   if (e.key === 'Escape') {
     if (state.aiChatOpen) hideAIChat();
     else if (state.taskModalOpen) hideTaskModal();

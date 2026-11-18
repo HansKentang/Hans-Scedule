@@ -5756,19 +5756,8 @@ function renderHubBento() {
     grid._editKeysWired = true;
     document.addEventListener('keydown', function(e) {
       if (!hubEditMode) return;
-      // Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y: undo/redo layout changes
+      // Ctrl+Z / Ctrl+Shift+Z: undo/redo layout changes
       if (e.ctrlKey && e.key === 'z') { e.preventDefault(); if (e.shiftKey) redoCanvas(); else undoCanvas(); return; }
-      if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redoCanvas(); return; }
-      // Ctrl+D: duplicate selected bubble
-      if (e.ctrlKey && e.key === 'd') {
-        e.preventDefault();
-        var sel = grid.querySelector('.bento-bubble.selected');
-        if (!sel) return;
-        var uid = sel.dataset.bubble;
-        var dupBtn = grid.querySelector('[data-duplicate-bubble="' + uid + '"]');
-        if (dupBtn) dupBtn.click();
-        return;
-      }
       // Escape: deselect + close shortcuts panel
       if (e.key === 'Escape') {
         grid.querySelectorAll('.bento-bubble.selected').forEach(function(b) { b.classList.remove('selected'); });
@@ -5840,9 +5829,11 @@ function showCanvasGuide() {
     '<div class="canvas-guide-body">' +
       '<div class="canvas-guide-section">' +
         '<div class="canvas-guide-section-title">Keyboard Shortcuts</div>' +
+        '<div class="bento-shortcut-row"><kbd>Ctrl+Shift+C</kbd><span>Toggle canvas customize mode</span></div>' +
+        '<div class="bento-shortcut-row"><kbd>Ctrl+Shift+S</kbd><span>Open widget skins &amp; canvas colours</span></div>' +
+        '<div class="bento-shortcut-row"><kbd>Ctrl+I</kbd><span>Open AI chat &amp; focus composer</span></div>' +
         '<div class="bento-shortcut-row"><kbd>Ctrl+Z</kbd><span>Undo layout change</span></div>' +
         '<div class="bento-shortcut-row"><kbd>Ctrl+Shift+Z</kbd><span>Redo layout change</span></div>' +
-        '<div class="bento-shortcut-row"><kbd>Ctrl+D</kbd><span>Duplicate selected bubble</span></div>' +
         '<div class="bento-shortcut-row"><kbd>↑ ↓ ← →</kbd><span>Nudge by 20px</span></div>' +
         '<div class="bento-shortcut-row"><kbd>Shift+↑ ↓ ← →</kbd><span>Nudge by 1px</span></div>' +
         '<div class="bento-shortcut-row"><kbd>Escape</kbd><span>Deselect / Cancel drag</span></div>' +
@@ -5850,7 +5841,7 @@ function showCanvasGuide() {
       '</div>' +
       '<div class="canvas-guide-section">' +
         '<div class="canvas-guide-section-title">Edit Mode</div>' +
-        '<div class="canvas-guide-item"><span class="canvas-guide-bullet">1.</span> Click the <strong>Edit</strong> button (✎) in the FAB to toggle edit mode</div>' +
+        '<div class="canvas-guide-item"><span class="canvas-guide-bullet">1.</span> Press <kbd>Ctrl+Shift+C</kbd> or click the <strong>Edit</strong> button (✎) in the FAB to toggle edit mode</div>' +
         '<div class="canvas-guide-item"><span class="canvas-guide-bullet">2.</span> <strong>Drag</strong> any widget by its <kbd>⠿</kbd> handle to reposition</div>' +
         '<div class="canvas-guide-item"><span class="canvas-guide-bullet">3.</span> <strong>Resize</strong> by dragging the bottom or corner edges of a widget</div>' +
         '<div class="canvas-guide-item"><span class="canvas-guide-bullet">4.</span> <strong>Edit content</strong> — click text directly in edit mode to type</div>' +
@@ -6124,7 +6115,7 @@ function _notesOnNotesKeydown(e) {
   if (!_notesModalOpen()) return;
   if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeNotesEditor(); return; }
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); _notesCommit(); closeNotesEditor(); return; }
-  if ((e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'S')) { e.preventDefault(); e.stopPropagation(); _notesCommit(); _notesPaintStat(); }
+  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === 's' || e.key === 'S')) { e.preventDefault(); e.stopPropagation(); _notesCommit(); _notesPaintStat(); }
 }
 
 function openNotesEditor(uid, noteId) {
@@ -13393,7 +13384,25 @@ function initHubEditMode() {
   // (No longer syncing hubEditMode from state.editMode — they are independent)
 }
 
-/* ─── Admin: Ctrl+Shift+D to save preset, Ctrl+Shift+A to open admin panel ─── */
+/* ─── Hub shortcuts ───
+   Ctrl+Shift+C toggles canvas customize mode; Ctrl+Shift+S opens widget skins.
+   Ctrl+Shift+D saves a preset and Ctrl+Shift+A opens admin (below). */
+document.addEventListener('keydown', function(e) {
+  if (!e.ctrlKey || !e.shiftKey || e.altKey) return;
+  var tag = (e.target && e.target.tagName || '').toUpperCase();
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable)) return;
+  var k = (e.key || '').toLowerCase();
+  if (k === 'c') {
+    e.preventDefault();
+    if (typeof toggleHubEdit !== 'function') return;
+    toggleHubEdit();
+  } else if (k === 's') {
+    e.preventDefault();
+    if (typeof showStylePanel !== 'function') return;
+    showStylePanel();
+  }
+});
+
 document.addEventListener('keydown', function(e) {
   if (e.ctrlKey && e.shiftKey) {
     if (e.key === 'D' || e.key === 'd') {

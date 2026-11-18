@@ -22,7 +22,7 @@
   }
 
   /* ─── Keyboard ───────────────────────────────────────────────
-     Cmd/Ctrl+K opens the panel and drops the caret in the composer.
+     Cmd/Ctrl+I opens the panel and drops the caret in the composer.
      Esc releases the composer first, and only closes the panel when the
      composer is not focused — so a long draft is never lost to one keypress. */
 
@@ -54,7 +54,7 @@
      untouched, so the existing close behaviour is unchanged. */
   document.addEventListener('keydown', function (event) {
     var key = (event.key || '').toLowerCase();
-    if ((event.metaKey || event.ctrlKey) && !event.altKey && key === 'k') {
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && key === 'i') {
       event.preventDefault();
       openAndFocus();
       return;

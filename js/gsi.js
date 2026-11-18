@@ -2389,18 +2389,18 @@ function renderSoundSettings(el) {
 function renderShortcutsSettings(el) {
   var mk = function(k, d) { return '<div class="shortcut-row"><kbd class="shortcut-key">' + k + '</kbd><span class="shortcut-desc">' + d + '</span></div>'; };
   var items = [
-    mk(shortcutDisplay('I'), 'Open AI Assistant'),
+    mk(shortcutDisplay('I'), 'Open AI assistant'),
     mk('?', 'Toggle help panel'),
-    mk(shortcutDisplay('K'), 'Open AI chat'),
     mk('Q', 'Quick new task'),
     mk('T', 'Toggle dark/light theme'),
     mk('F', 'Toggle focus mode'),
-    mk('Ctrl+K', 'Open command palette'),
+    mk('Ctrl+Shift+C', 'Toggle canvas customize (hub)'),
+    mk('Ctrl+Shift+S', 'Widget skins &amp; colours (hub)'),
     mk('Ctrl+Z / Ctrl+Shift+Z', 'Undo / Redo (hub)'),
     mk('Esc', 'Close any open modal')
   ];
   if (typeof state !== 'undefined' && state.editMode) {
-    items.push(mk('Ctrl+D', 'Duplicate selected bubble'), mk('\u2191 \u2193 \u2190 \u2192', 'Nudge bubble'));
+    items.push(mk('\u2191 \u2193 \u2190 \u2192', 'Nudge bubble'));
   }
   el.innerHTML =
     '<h3>Shortcuts</h3>' +
