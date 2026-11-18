@@ -6953,6 +6953,9 @@ function setupBubbleDragDrop() {
   setupBubbleHoldToDrag(grid);
 
   grid.addEventListener('mousedown', function(e) {
+    // Listeners are installed once on first entry to edit mode and stay on the
+    // grid node, so every entry point must re-check the current mode.
+    if (!hubEditMode) return;
     // Drag can only be initiated from the 6-dots handle
     if (isTouchEvent(e)) return;
     var dragZone = e.target.closest('.bento-tool-move');
@@ -7028,6 +7031,7 @@ function setupBubbleDragDrop() {
 
   // Touch drag start on handle
   grid.addEventListener('touchstart', function(e) {
+    if (!hubEditMode) return;
     var dragZone = e.target.closest('.bento-tool-move');
     if (!dragZone) return;
     // Only block drag from other interactive elements, not the move button itself
@@ -7357,6 +7361,7 @@ function setupBubbleResize() {
   document.body.appendChild(resizeTip);
 
   grid.addEventListener('mousedown', function(e) {
+    if (!hubEditMode) return;
     if (isTouchEvent(e)) return;
     const handle = e.target.closest('[data-resize-bubble]');
     if (!handle) return;
