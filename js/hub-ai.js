@@ -182,6 +182,31 @@
     return { subs: subs, match: null, state:'ambiguous', reason: '"' + trim(name) + '" is ambiguous. Your subjects: ' + names + '.' };
   }
 
+  /* The Study Plan widget stores subjects by their Study-widget subject ID,
+     not by name, and keeps empty boxes as real positions. These helpers turn
+     the AI's day/name fields into that representation without shifting slots. */
+  function weekplanDay(v) {
+    var raw = trim(v).toLowerCase();
+    var map = { mon:'mon', monday:'mon', tue:'tue', tues:'tue', tuesday:'tue',
+      wed:'wed', weds:'wed', wednesday:'wed', thu:'thu', thur:'thu', thurs:'thu', thursday:'thu',
+      fri:'fri', friday:'fri', sat:'sat', saturday:'sat', sun:'sun', sunday:'sun' };
+    if (map[raw]) return map[raw];
+    if (raw === 'today' && typeof _weekplanTodayId === 'function') return _weekplanTodayId();
+    return '';
+  }
+
+  function weekplanSubject(name, allowCreate) {
+    var r = findSubject(name);
+    if (r.state === 'empty') return { error: 'Which study subject? Give its exact name.' };
+    if (r.state === 'ambiguous') return { error: r.reason };
+    if (r.match) return { subject: r.match };
+    if (!allowCreate) return { error: 'No study subject matches "' + trim(name) + '". Your subjects: ' +
+      r.subs.map(function (s) { return '"' + str(s.name) + '"'; }).join(', ') + '.' };
+    var fresh = { id: _studyUid('sj'), name: trim(name).slice(0, 60), color: '', collapsed: false, chapters: [] };
+    r.subs.push(fresh);
+    return { subject: fresh, created: true };
+  }
+
   function applySyllabus(d) {
     if (!ready()) return no('Hub data is not ready yet.');
     var r = findSubject(d.subject);
@@ -369,6 +394,50 @@
       return ok('Cleared all ' + clrCount + ' subject' + (clrCount === 1 ? '' : 's') + ' from the study widget.');
     }
 
+    if (widget === 'weekplan' || type === 'addWeekplanItem' || type === 'completeWeekplanItem' ||
+        type === 'removeWeekplanItem' || type === 'clearWeekplanDay') {
+      var dayId = weekplanDay(d.day || d.date || d.when);
+      if (!dayId) return no('Which day? Use Monday, Tuesday, Wednesday, Thursday, Friday, Saturday or Sunday.');
+      var wp = _weekplanEnsure();
+      var wlist = wp.days[dayId];
+      if (type === 'clearWeekplanDay') {
+        var wBefore = _weekplanCount(wlist);
+        if (!wBefore) return ok('Nothing was planned for ' + _weekplanDayFull(dayId) + '.');
+        wp.days[dayId] = [];
+        saveHubContent(); renderHubBento();
+        return ok('Cleared ' + wBefore + ' subject slot' + (wBefore === 1 ? '' : 's') + ' from ' + _weekplanDayFull(dayId) + '.');
+      }
+      var wname = d.subject || d.match || d.name || d.text;
+      var wr = weekplanSubject(wname, type === 'addWeekplanItem');
+      if (wr.error) return no(wr.error);
+      var tag = str(wr.subject.id);
+      var widx = -1;
+      for (var wi = 0; wi < wlist.length; wi++) {
+        if (wlist[wi] && wlist[wi].tag === tag) { widx = wi; break; }
+      }
+      var subName = str(wr.subject.name);
+      if (type === 'addWeekplanItem') {
+        if (widx !== -1) return ok(subName + ' was already planned for ' + _weekplanDayFull(dayId) + '.');
+        _weekplanAdd(dayId, tag);
+        saveHubContent(); renderHubBento();
+        return ok((wr.created ? 'Added subject "' + subName + '" and planned it' : 'Planned "' + subName + '"') +
+          ' for ' + _weekplanDayFull(dayId) + '.');
+      }
+      if (widx === -1) return no(subName + ' is not planned for ' + _weekplanDayFull(dayId) + '.');
+      if (type === 'removeWeekplanItem') {
+        wlist[widx] = { tag: '', done: false };
+        _weekplanTrim(wlist);
+        saveHubContent(); renderHubBento();
+        return ok('Removed "' + subName + '" from ' + _weekplanDayFull(dayId) + '.');
+      }
+      if (type === 'completeWeekplanItem') {
+        wlist[widx].done = d.done === undefined ? true : !!d.done;
+        saveHubContent(); renderHubBento();
+        return ok((wlist[widx].done ? 'Ticked off ' : 'Un-ticked ') + '"' + subName + '" for ' + _weekplanDayFull(dayId) + '.');
+      }
+      return no('"' + str(type) + '" is not supported by the Study Plan widget.');
+    }
+
     var F = field(widget);
     if (!F) return no('The ' + widget + ' widget has no editable items.');
 
@@ -442,13 +511,31 @@
       if (Array.isArray(p[1]) && p[1].length) holders.push('  - ' + p[0] + ': ' + p[1].length + ' item' + (p[1].length === 1 ? '' : 's'));
     });
     lines.push.apply(lines, holders.length ? holders : ['  (none yet)']);
+    lines.push('STUDY WIDGET vs STUDY PLAN WIDGET (two DIFFERENT widgets — do not mix them up):');
+    lines.push('  - study = the list of SUBJECTS and their chapters/syllabus content (what you are learning).');
+    lines.push('  - weekplan = the weekly grid of which day you plan to study each subject, with a done tick.');
     var subs = _ensureStudy();
-    lines.push('STUDY SUBJECTS (exact names — use one verbatim for addStudySyllabus.subject):');
+    lines.push('STUDY SUBJECTS (exact names — use one verbatim for addStudySyllabus.subject and as the subject for Study Plan actions):');
     if (!subs.length) lines.push('  (no subjects yet)');
     subs.forEach(function (s) {
       var n = 0; (s.chapters || []).forEach(function (c) { n += (c.items || []).length; });
       lines.push('  - "' + str(s.name) + '": ' + (s.chapters || []).length + ' chapters / ' + n + ' subtopics');
     });
+    if (typeof _weekplanEnsure === 'function') {
+      var wp = _weekplanEnsure();
+      lines.push('STUDY PLAN (weekplan) — current week, subject names and tick state:');
+      ['mon','tue','wed','thu','fri','sat','sun'].forEach(function (id) {
+        var list = wp.days[id] || [];
+        var entries = [];
+        list.forEach(function (it) {
+          if (!it || !it.tag) return;
+          var match = null;
+          for (var k = 0; k < subs.length; k++) if (str(subs[k].id) === str(it.tag)) { match = subs[k]; break; }
+          entries.push(str(match ? match.name : it.tag) + (it.done ? ' [done]' : ''));
+        });
+        lines.push('  - ' + id + ': ' + (entries.length ? entries.join(', ') : '(empty)'));
+      });
+    }
     return lines.join('\n');
   }
 
