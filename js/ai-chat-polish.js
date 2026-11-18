@@ -12,6 +12,10 @@
   var PANEL_ID = 'aiChatPanel';
   var INPUT_ID = 'aiChatInput';
   var MESSAGES_ID = 'aiChatMessages';
+  var SIZE_KEY = 'haven-device-ai-panel-size'; // device-only: exempt from the app's prefixed/cloud-mirrored storage
+  var SIZES = ['compact', 'normal', 'large'];
+  var SIZE_SHORT = { compact: 'S', normal: 'M', large: 'L' };
+  var SIZE_LABELS = { compact: 'Small chat', normal: 'Normal chat', large: 'Large chat' };
 
   function panel() { return document.getElementById(PANEL_ID); }
   function input() { return document.getElementById(INPUT_ID); }
@@ -72,6 +76,59 @@
     event.stopPropagation();
     el.blur();
   }, true);
+
+  /* ─── Panel size ──────────────────────────────────────────────
+     The header is already crowded (settings, more, close), so the three size
+     buttons live at the right end of the footer hint row — easy to reach with
+     a thumb on mobile, and never in the way of the title or the model badge. */
+
+  function savedSize() {
+    try {
+      var s = localStorage.getItem(SIZE_KEY);
+      return SIZES.indexOf(s) >= 0 ? s : 'normal';
+    } catch (e) { return 'normal'; }
+  }
+
+  function applySize(size) {
+    var p = panel();
+    if (!p) return;
+    if (SIZES.indexOf(size) < 0) size = 'normal';
+    p.setAttribute('data-size', size);
+    try { localStorage.setItem(SIZE_KEY, size); } catch (e) {}
+    var buttons = p.querySelectorAll('.ai-size-btn');
+    for (var i = 0; i < buttons.length; i += 1) {
+      var on = buttons[i].getAttribute('data-size') === size;
+      buttons[i].classList.toggle('active', on);
+      buttons[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+  }
+
+  function wireSizeControl() {
+    var p = panel();
+    if (!p) return;
+    var footer = p.querySelector('.ai-panel-footer-hint');
+    if (!footer || footer.querySelector('.ai-panel-size')) {
+      applySize(savedSize());
+      return;
+    }
+    var group = document.createElement('div');
+    group.className = 'ai-panel-size';
+    group.setAttribute('role', 'group');
+    group.setAttribute('aria-label', 'Chat size');
+    SIZES.forEach(function (size) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ai-size-btn';
+      btn.setAttribute('data-size', size);
+      btn.textContent = SIZE_SHORT[size];
+      btn.title = SIZE_LABELS[size];
+      btn.setAttribute('aria-label', SIZE_LABELS[size]);
+      btn.addEventListener('click', function () { applySize(size); });
+      group.appendChild(btn);
+    });
+    footer.appendChild(group);
+    applySize(savedSize());
+  }
 
   /* ─── Composer growth ────────────────────────────────────────
      Grow to the content, cap at ~6 lines, then scroll. Same 132px ceiling the
@@ -339,6 +396,7 @@
   }
 
   function boot() {
+    wireSizeControl();
     wireComposer();
     wireBusy();
     wireHint();
