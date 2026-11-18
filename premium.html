@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -16,9 +16,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Hanken+Grotesk:wght@300;400;500;600&family=Space+Grotesk:wght@400;500;600&family=Bebas+Neue&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=84">
+  <link rel="stylesheet" href="css/style.css?v=87">
     <style>
-    /* ─── PREMIUM HEADER ───────────────────────────────── */
+    /* --- PREMIUM HEADER --------------------------------- */
     .prc-header {
       position: relative;
       display: flex;
@@ -97,7 +97,7 @@
     }
     .prc-account .gsi-avatar { width: 26px; height: 26px; }
 
-    /* ─── PREMIUM PAGE POLISH ──────────────────────────── */
+    /* --- PREMIUM PAGE POLISH ---------------------------- */
     .premium-page { margin-top: var(--space-4); }
     .premium-status {
       background:
@@ -152,7 +152,7 @@
       .premium-page-plan:hover, .premium-benefit-card:hover { transform: none; }
     }
 
-    /* ─── GALLERY VISION BOARD ───────────────────────── */
+    /* --- GALLERY VISION BOARD ------------------------- */
     .gal-top-actions {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-2);
@@ -516,9 +516,9 @@
   </div>
 
   <div class="hub-layout">
-    <!-- ─── SIDEBAR OVERLAY (mobile) ───────────────── -->
+    <!-- --- SIDEBAR OVERLAY (mobile) ----------------- -->
     <div class="hub-sidebar-overlay" id="hubSidebarOverlay"></div>
-    <!-- ─── HAMBURGER SIDE PANEL ─────────────────────── -->
+    <!-- --- HAMBURGER SIDE PANEL ----------------------- -->
     <div class="hub-menu-overlay" id="hubMenuOverlay"></div>
     <div class="hub-menu-panel hidden" id="hubMenuPanel">
       <div class="hub-menu-panel-header">
@@ -543,7 +543,7 @@
         <button class="hub-menu-panel-item" id="menuHelp"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Help</button>
       </div>
     </div>
-    <!-- ─── SIDEBAR ───────────────────────────────── -->
+    <!-- --- SIDEBAR --------------------------------- -->
     <aside class="hub-sidebar" role="navigation" aria-label="Sidebar" id="hubSidebar">
       <div class="hub-workspace">
         <a href="login.html" class="hub-workspace-link"><div class="hub-workspace-icon"><img src="assets/icon-192.png" alt="Havën"></div>
@@ -567,7 +567,7 @@
       </nav>
       <div class="hub-sidebar-body">
       <div class="hub-sidebar-images"></div>
-      <!-- ─── SPOTIFY EMBED ───────────────────────── -->
+      <!-- --- SPOTIFY EMBED ------------------------- -->
       <div class="sp-sidebar" id="spSidebar">
         <div class="sp-header" onclick="spToggleSection()">
           <button class="sp-toggle-btn" onclick="event.stopPropagation();spToggleSection()" title="Toggle player">
@@ -616,13 +616,13 @@
       </div>
     </aside>
 
-    <!-- ─── MAIN ───────────────────────────────────────── -->
+    <!-- --- MAIN ----------------------------------------- -->
     <div class="hub-main hub-main-pad" role="main">
-      <!-- ─── HEADER ───────────────────────────────────── -->
+      <!-- --- HEADER ------------------------------------- -->
       <div class="hub-content hub-page-transition">
 
         <header class="prc-header hub-anim-in">
-          <span class="premium-crown prc-crown" aria-hidden="true">✦</span>
+          <span class="premium-crown prc-crown" aria-hidden="true">?</span>
           <div class="prc-text">
             <div class="prc-title-row">
               <h1 class="prc-title">Premium</h1>
@@ -634,12 +634,12 @@
         </header>
 
 
-        <!-- ─── PREMIUM PLANS ─────────────────────── -->
+        <!-- --- PREMIUM PLANS ----------------------- -->
         <div class="premium-page hub-anim-in hub-anim-in-2" id="premiumPageRoot"></div>
 
       </div>
 
-      <!-- ─── FOOTER ───────────────────────────────── -->
+      <!-- --- FOOTER --------------------------------- -->
       <footer class="hub-minifooter hub-anim-in hub-anim-in-5">
         <span>Havën Schedule v1.0</span>
         <div class="hub-minifooter-actions">
@@ -649,7 +649,7 @@
     </div>
   </div>
 
-  <!-- ─── ACCESS HUB (white floating FAB, like hub & schedule) ── -->
+  <!-- --- ACCESS HUB (white floating FAB, like hub & schedule) -- -->
   <div class="access-hub hub-anim-in hub-anim-in-5" id="accessHub">
     <div class="access-items" id="accessItems">
       <button class="access-item" id="galFabEdit" data-action="edit" title="Edit canvas">
@@ -666,7 +666,7 @@
     </button>
   </div>
 
-  <!-- ─── LIGHTBOX ────────────────────────────── -->
+  <!-- --- LIGHTBOX ------------------------------ -->
   <div class="gal-lightbox" id="galLightbox">
     <button class="gal-lightbox-close" id="lbClose" aria-label="Close">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -683,7 +683,7 @@
     </div>
   </div>
 
-  <!-- ─── IMAGE PICKER ───────────────────────── -->
+  <!-- --- IMAGE PICKER ------------------------- -->
   <div id="imagePickerOverlay" class="image-picker-overlay hidden">
     <div class="image-picker-card" onclick="event.stopPropagation()">
       <h3>
@@ -743,7 +743,7 @@
     </div>
   </div>
 
-  <!-- ─── SETTINGS DRAWER ─────────────────────── -->
+  <!-- --- SETTINGS DRAWER ----------------------- -->
   <div id="settingsDrawerOverlay" class="settings-drawer-overlay hidden" onclick="closeSettingsDrawer()"></div>
   <div id="settingsDrawer" class="settings-drawer hidden">
     <div class="settings-drawer-header">
@@ -767,8 +767,10 @@
             <div class="form-group">
               <label for="drawerProvider">Provider</label>
               <select id="drawerProvider" class="form-input">
-                <option value="groq">Groq (Gemma2-9B)</option>
-                <option value="gemini">Gemini (1.5 Flash)</option>
+                <option value="nvidia">NVIDIA NIM</option>
+                <option value="groq">Groq</option>
+                <option value="gemini">Gemini</option>
+                <option value="vercel">Vercel AI</option>
               </select>
             </div>
             <div class="form-group">
@@ -822,7 +824,7 @@
     </div>
   </div>
 
-  <!-- ─── HELP MODAL ───────────────────────────── -->
+  <!-- --- HELP MODAL ----------------------------- -->
   <div id="helpOverlay" class="hidden"></div>
   <div id="helpModal" class="hidden" role="dialog" aria-label="Help and Shortcuts">
     <div class="modal-header">
@@ -854,7 +856,7 @@
     </div>
   </div>
 
-  <!-- ─── AI CHAT PANEL ────────────────────────── -->
+  <!-- --- AI CHAT PANEL -------------------------- -->
   <div id="aiChatOverlay" class="ai-panel-overlay hidden"></div>
   <div id="aiChatPanel" class="ai-panel hidden" role="dialog" aria-label="AI Assistant">
     <div class="ai-panel-header">
@@ -885,7 +887,7 @@
       navigator.serviceWorker.register('service-worker.js').catch(() => {});
     }
   </script>
-  <script src="js/shared.js"></script>
+  <script src="js/shared.js?v=86"></script>
   <script src="js/ai-chat-polish.js?v=6"></script>
   <script src="js/settings.js"></script>
   <script src="js/vendor/supabase-js.min.js"></script>
@@ -897,7 +899,7 @@
   <script>document.addEventListener('DOMContentLoaded', initGSI);</script>
   <script src="js/premium.js"></script>
 
-  <!-- ─── Spotify Settings Modal ──────────────── -->
+  <!-- --- Spotify Settings Modal ---------------- -->
   <div class="sp-overlay hidden" id="spOverlay" onclick="if(event.target===this)spCloseSettings()">
     <div class="sp-modal">
       <div class="sp-modal-header">
