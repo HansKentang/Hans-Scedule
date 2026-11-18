@@ -5095,6 +5095,32 @@ html.light .hub-bottom-nav {
 .ai-bubble p:last-child { margin-bottom: 0; }
 .ai-bubble strong { font-weight: 600; }
 .ai-bubble em { color: var(--text-tertiary); font-style: italic; }
+/* Long pasted user messages: compact card, full text one tap away. */
+.ai-message-user .ai-bubble.ai-long-paste {
+  padding: 8px 10px;
+  max-width: min(85%, 280px);
+}
+.ai-paste-card { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ai-paste-title { font-size: 0.78rem; font-weight: 650; line-height: 1.3; }
+.ai-paste-meta { font-size: 0.62rem; opacity: 0.72; line-height: 1.3; }
+.ai-paste-preview {
+  font-size: 0.68rem; opacity: 0.85; line-height: 1.35;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ai-paste-toggle {
+  align-self: flex-start; margin-top: 5px; padding: 1px 9px;
+  border: 1px solid currentColor; border-radius: 999px;
+  background: transparent; color: inherit; font-family: inherit;
+  font-size: 0.61rem; font-weight: 600; line-height: 1.5;
+  cursor: pointer; opacity: 0.9;
+}
+.ai-paste-toggle:hover { opacity: 1; }
+.ai-message-user .ai-bubble.ai-long-paste-expanded { max-width: 85%; padding: 8px 12px; }
+.ai-paste-full {
+  white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow: auto;
+  font-size: 0.72rem; line-height: 1.45; padding-right: 4px;
+}
+
 .ai-bubble code {
   font-family: var(--font-mono); font-size: 0.72rem;
   background: rgba(255,255,255,0.06); padding: 1px 5px;

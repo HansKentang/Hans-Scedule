@@ -8033,6 +8033,41 @@ function regenerateLastAssistant(msgEl) {
   sendAIMessage({ echoUser: false });
 }
 
+/* Long pastes still go to the AI in full, but the chat bubble shows a small
+   "a lot of lines" card instead of burying the whole conversation under one
+   message. Tap Show all to read/expand the original text. */
+const AI_LONG_PASTE_CHARS = 700;
+const AI_LONG_PASTE_LINES = 12;
+
+function isLongUserPaste(text) {
+  if (typeof text !== 'string') return false;
+  return text.split(/\r?\n/).length >= AI_LONG_PASTE_LINES || text.length >= AI_LONG_PASTE_CHARS;
+}
+
+function longPasteCard(text) {
+  if (!isLongUserPaste(text)) return null;
+  var lines = text.split(/\r?\n/).length;
+  var chars = text.length;
+  var count = chars >= 1000 ? (chars / 1000).toFixed(1) + 'k' : String(chars);
+  var preview = '';
+  var parts = text.split(/\r?\n/);
+  for (var i = 0; i < parts.length; i++) {
+    preview = parts[i].trim();
+    if (preview) break;
+  }
+  if (preview.length > 88) preview = preview.slice(0, 85).trim() + '…';
+  return {
+    lines: lines,
+    chars: chars,
+    html: '<div class="ai-paste-card">' +
+      '<div class="ai-paste-title">A lot of lines pasted</div>' +
+      '<div class="ai-paste-meta">' + lines + ' lines · ' + count + ' characters</div>' +
+      (preview ? '<div class="ai-paste-preview">' + escapeHtml(preview) + '</div>' : '') +
+      '<button type="button" class="ai-paste-toggle" aria-expanded="false">Show all</button>' +
+      '</div>'
+  };
+}
+
 function appendAIMessage(role, html, opts) {
   if (!dom.aiChatMessages) return null;
   opts = opts || {};
@@ -8041,7 +8076,27 @@ function appendAIMessage(role, html, opts) {
   const time = new Date(at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   if (role === 'user') {
     div.className = 'ai-message ai-message-user';
-    div.innerHTML = `<div class="ai-bubble">${escapeHtml(html)}</div>`;
+    const fullText = String(html == null ? '' : html);
+    const paste = longPasteCard(fullText);
+    if (paste) {
+      const bubble = document.createElement('div');
+      bubble.className = 'ai-bubble ai-long-paste';
+      bubble.innerHTML = paste.html;
+      div.appendChild(bubble);
+      const renderPaste = (expanded) => {
+        bubble.classList.toggle('ai-long-paste', !expanded);
+        bubble.classList.toggle('ai-long-paste-expanded', expanded);
+        bubble.innerHTML = expanded
+          ? '<div class="ai-paste-full">' + escapeHtml(fullText) + '</div><button type="button" class="ai-paste-toggle" aria-expanded="true">Show less</button>'
+          : paste.html;
+        const next = bubble.querySelector('.ai-paste-toggle');
+        if (next) next.addEventListener('click', () => renderPaste(!expanded));
+      };
+      const toggle = bubble.querySelector('.ai-paste-toggle');
+      if (toggle) toggle.addEventListener('click', () => renderPaste(true));
+    } else {
+      div.innerHTML = `<div class="ai-bubble">${escapeHtml(fullText)}</div>`;
+    }
   } else if (role === 'assistant') {
     var content = html;
     // Only render markdown if no HTML tags present (plain text responses)
@@ -8434,6 +8489,7 @@ TAG BREAKDOWN:
 ${getAllCategoryIds().map(t => `- ${TAG_LABELS[t]}: ${tagSummary[t].count} tasks, ${formatDuration(tagSummary[t].totalMinutes)}`).join('\n')}`;
 
   const recentHistory = aiChatHistory.slice(-6).map(m => `${m.role}: ${m.text}`).join('\n');
+  const pastedALot = isLongUserPaste(userText);
 
   const learningContext = getLearningContext();
 
@@ -8490,6 +8546,7 @@ HUB CANVAS: not available on this page. If asked to change widgets, reply: "Open
   const systemPrompt = `You are ChickBot, Havën Schedule's warm and friendly assistant — a kind, genuinely helpful companion who is easy and nice to talk to. ${getHolidayMode() ? 'HOLIDAY mode — lighter workloads, flexible timing.' : 'SCHOOL mode — prioritize study/deep work on weekdays.'} ${learningContext}${profileSection}
 
 TONE: Be warm, encouraging and human. Use a gentle, upbeat style, light warmth and natural phrasing — never cold, robotic, terse or scolding. Greet and sign off kindly, celebrate wins, and be reassuring when something goes wrong. Keep it concise but never blunt. Match the user's language and mood: brief and breezy when they are casual, a little fuller when they need help. A little friendly personality is welcome, but never overdo it, never be sugary, and never pad answers with filler. Stay clear and honest: warmth never means hiding a problem or pretending an action succeeded when it did not.
+${pastedALot ? 'LONG PASTE: The user just pasted a large block. Start with one warm, brief acknowledgement such as "Got it — that\'s a lot of lines, thanks!", add a one-sentence gist of what the paste contains, then do exactly what they asked. Never complain about the length or refuse; if they asked to add study content, still emit the action with the original wording.\n' : ''}
 
 TODAY: ${today} | TIME: ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} | TZ: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
 GRID: ${toTimeStr(START_HOUR * 60)}–${toTimeStr((START_HOUR + VISIBLE_HOURS) * 60)}, 30-min snap, wraps to 4am
