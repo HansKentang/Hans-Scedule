@@ -6888,6 +6888,26 @@ function openAISettingsPanel() {
   }
 }
 
+var AI_SCROLL_KEY = 'haven-ai-chat-scroll';
+function aiChatScroller() {
+  if (!dom.aiChatMessages) return null;
+  return dom.aiChatMessages.closest('.ai-panel-body') || dom.aiChatMessages.parentElement;
+}
+function saveAIChatScroll() {
+  var sc = aiChatScroller();
+  if (!sc) return;
+  var atBottom = sc.scrollHeight - sc.scrollTop - sc.clientHeight <= 24;
+  try { sessionStorage.setItem(AI_SCROLL_KEY, JSON.stringify({ top: Math.round(sc.scrollTop), atBottom: atBottom })); } catch (e) {}
+}
+function restoreAIChatScroll() {
+  var sc = aiChatScroller();
+  if (!sc) return;
+  var saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem(AI_SCROLL_KEY) || 'null'); } catch (e) {}
+  if (!saved || typeof saved.top !== 'number') return;
+  sc.scrollTop = saved.atBottom ? sc.scrollHeight : Math.max(0, saved.top);
+}
+
 function showAIChat() {
   const premiumGateActive = !(typeof premiumSuspended === 'function' && premiumSuspended());
   if (premiumGateActive && typeof requirePremium === 'function' && !requirePremium('ai')) return;
@@ -7055,6 +7075,7 @@ function showAIChat() {
   requestAnimationFrame(() => {
     dom.aiChatOverlay.classList.add('active');
     dom.aiChatPanel.classList.add('open');
+    restoreAIChatScroll();
     focusComposer();
   });
   state.aiChatOpen = true;
@@ -7077,6 +7098,17 @@ function showAIChat() {
     dom.aiChatInput?.addEventListener('input', toggleAISendBtn);
   }
   toggleAISendBtn();
+
+  // Remember where the user was reading, so the next open resumes there.
+  var _sc = aiChatScroller();
+  if (_sc && !_sc.hasAttribute('data-ai-scroll-listener')) {
+    _sc.setAttribute('data-ai-scroll-listener', 'true');
+    var _scrollTimer = null;
+    _sc.addEventListener('scroll', function () {
+      if (_scrollTimer) clearTimeout(_scrollTimer);
+      _scrollTimer = setTimeout(function () { _scrollTimer = null; saveAIChatScroll(); }, 120);
+    }, { passive: true });
+  }
 }
 
 // ─── FILE ATTACHMENT HELPERS ────────────────────────────────
@@ -7147,6 +7179,7 @@ function formatFileSize(bytes) {
 
 function hideAIChat() {
   if (!dom.aiChatPanel) return;
+  saveAIChatScroll();
   saveChatHistory();
   dom.aiChatOverlay.classList.remove('active');
   dom.aiChatPanel.classList.remove('open');
