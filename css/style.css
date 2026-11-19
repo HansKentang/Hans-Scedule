@@ -14210,6 +14210,174 @@ html.edit-mode .gal-canvas .gal-item:hover {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── icon layouts — app grid / icon rail / split launcher ─────────────── */
+.w-note-ico {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--surface-container-highest);
+  color: var(--text-primary);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.w-note-ico[class*="w-note-tint-"] {
+  background: color-mix(in srgb, var(--note-hue) 26%, var(--surface-container-high));
+}
+.w-note-ico svg { width: 62%; height: 62%; }
+.w-note-ico-app { width: 34px; height: 34px; border-radius: 10px; margin-bottom: 3px; }
+.w-note-ico-rail { width: 26px; height: 26px; border-radius: 7px; }
+.w-note-ico-split { width: 24px; height: 24px; border-radius: 7px; }
+.w-note-ico-split-lg { width: 32px; height: 32px; border-radius: 9px; }
+
+.w-notes-appgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+  padding-inline: var(--w-pad-x, 12px);
+  padding-bottom: 2px;
+}
+.w-note-app {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.w-note-app:hover { background: var(--surface-container-high); border-color: var(--border-color); }
+.w-note-app-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-note-app-prev {
+  font-size: 0.62rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+}
+.w-note-app-empty { color: var(--text-tertiary); }
+
+.w-notes-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-inline: var(--w-pad-x, 12px);
+}
+.w-note-rail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 5px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.w-note-rail-row:hover { background: var(--surface-container-high); }
+.w-note-rail-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.w-note-rail-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-note-rail-prev {
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-note-rail-time { flex: 0 0 auto; font-size: 0.58rem; color: var(--text-tertiary); }
+
+.w-notes-split {
+  display: grid;
+  grid-template-columns: minmax(0, 168px) minmax(0, 1fr);
+  gap: 10px;
+  min-height: 0;
+  padding-inline: var(--w-pad-x, 12px);
+}
+.w-notes-split-icons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  align-content: start;
+  padding-right: 9px;
+  border-right: 1px solid var(--border-subtle);
+}
+.w-note-split-ico {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 5px 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.w-note-split-ico:hover { background: var(--surface-container-high); }
+.w-note-split-ico.on {
+  border-color: var(--border-color);
+  background: var(--surface-container-high);
+}
+.w-note-split-cap {
+  display: block;
+  max-width: 100%;
+  font-size: 0.58rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-notes-split-read { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.w-notes-split-head { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.w-note-split-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-note-split-time { flex: 0 0 auto; font-size: 0.58rem; color: var(--text-tertiary); }
+.w-note-split-edit {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.58rem;
+  cursor: pointer;
+}
+.w-note-split-edit:hover { color: var(--text-primary); border-color: var(--border-color); }
+.w-notes-split-body { min-width: 0; font-size: 0.68rem; color: var(--text-primary); line-height: 1.55; }
+
 /* ── roominess — a tall tile with little content ───────────────────────── */
 /* A bento tile is resizable, so it is routinely taller than its notes. Left as
    dead space the five layouts all read alike, because there is nothing for them
@@ -14226,6 +14394,10 @@ html.edit-mode .gal-canvas .gal-item:hover {
 .w-notes-wrap.w-notes-roomy { flex: 1 1 auto; }
 .w-notes-roomy .w-note-card,
 .w-notes-roomy .w-note-row,
+.w-notes-roomy .w-note-app,
+.w-notes-roomy .w-note-rail-row,
+.w-notes-roomy .w-notes-split,
+.w-notes-roomy .w-notes-appgrid,
 .w-notes-roomy .w-note-body { flex: 1 1 auto; }
 
 /* lined, default and minimal are chrome-less, so growing them is invisible — and
@@ -14479,6 +14651,30 @@ html.edit-mode .gal-canvas .gal-item:hover {
 .notes-swatch-grey { background: #64748b; }
 .notes-swatch-indigo { background: #4f46e5; }
 .notes-swatch.on { border-color: var(--text-primary); }
+.notes-modal-icons { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.notes-modal-icons-label {
+  margin-right: 2px;
+  font-size: 0.62rem;
+  color: var(--text-tertiary);
+}
+.notes-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: var(--surface-container-high);
+  color: var(--text-secondary);
+  font-size: 0.62rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.notes-icon-btn svg { width: 13px; height: 13px; }
+.notes-icon-btn:hover { color: var(--text-primary); }
+.notes-icon-btn.on { border-color: var(--text-primary); color: var(--text-primary); }
 .notes-modal-stat {
   flex: 1 1 auto;
   min-width: 0;

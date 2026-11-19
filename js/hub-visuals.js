@@ -319,7 +319,19 @@ const NOTES_STYLES_KEY = 'haven-notes-styles';
    notes, not tasks, so a layout whose whole job was to flatten every note into one
    tick list was the wrong shape. Ticking still works on any note whose body has
    '- [ ]' lines, so nothing was lost except a sixth button to cycle past. */
-const NOTES_STYLE_LIST = ['default','compact','lined','sticky','minimal'];
+const NOTES_STYLE_LIST = ['default','compact','lined','sticky','minimal','appgrid','rail','split'];
+/* The three icon shapes added on 2026-11-18 are layouts, not densities: a
+   phone-style app grid, an icon-and-preview rail, and a launcher beside a
+   reading pane. They keep the original five intact for saved canvases. */
+const NOTES_ICON_LIST = ['','book','star','grid','target','wave'];
+const NOTES_GLYPH_SVG = {
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.7 6.3 6.8.6-5.2 4.4 1.6 6.7L12 16.8 5.1 20l1.6-6.7L1.5 8.9l6.8-.6z"/></svg>',
+  grid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="6" cy="6" r="1.6"/><circle cx="12" cy="6" r="1.6"/><circle cx="18" cy="6" r="1.6"/><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/><circle cx="6" cy="18" r="1.6"/><circle cx="12" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/></svg>',
+  target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg>',
+  wave: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2.5-6 5-6 7.5 0s5 6 7.5 0 4-4 5-2"/></svg>'
+};
+var _notesSplitSel = {};
 /* A saved map in the wild can still hold 'checklist' (or the pre-rework
    'default'/'lined'/'minimal' trio, which all meant the same thing). Map the
    removed id onto the nearest surviving design instead of letting it fall
@@ -333,7 +345,11 @@ function _getNotesStyle(uid) {
   if (NOTES_LEGACY_STYLES[s]) s = NOTES_LEGACY_STYLES[s];
   return NOTES_STYLE_LIST.indexOf(s) !== -1 ? s : 'default';
 }
-function _setNotesStyle(uid, style) { _notesStyles[uid] = style; try { localStorage.setItem(NOTES_STYLES_KEY, JSON.stringify(_notesStyles)); } catch(e) {} }
+function _setNotesStyle(uid, style) {
+  _notesStyles[uid] = style;
+  delete _notesSplitSel[uid];
+  try { localStorage.setItem(NOTES_STYLES_KEY, JSON.stringify(_notesStyles)); } catch(e) {}
+}
 
 /* Notes display preferences — per widget, not per note, so one tile can be a
    compact list and another a roomy reading pane. */
@@ -856,7 +872,13 @@ var WIDGET_STYLES = {
   progress:   { list: PROG_STYLE_LIST,     get: _getProgStyle,     set: _setProgStyle },
   exams:      { list: EXAMS_STYLE_LIST,    get: _getExamsStyle,    set: _setExamsStyle },
   timer:      { list: TIMER_STYLE_LIST,    get: _getTimerStyle,    set: _setTimerStyle },
-  pomodoro:   { list: POMO_STYLE_LIST,     get: _getPomoStyle,     set: _setPomoStyle }
+  pomodoro:   { list: POMO_STYLE_LIST,     get: _getPomoStyle,     set: _setPomoStyle },
+  weekplan:   { list: WEEKPLAN_STYLE_LIST, get: _getWeekplanStyle, set: _setWeekplanStyle },
+  study:      { list: STUDY_STYLE_LIST,    get: _getStudyStyle,    set: _setStudyStyle },
+  grades:     { list: GRADES_STYLE_LIST,   get: _getGradesStyle,   set: _setGradesStyle },
+  attendance: { list: ATTENDANCE_STYLE_LIST, get: _getAttendanceStyle, set: _setAttendanceStyle },
+  flashcards: { list: FLASHCARDS_STYLE_LIST, get: _getFlashcardsStyle, set: _setFlashcardsStyle },
+  notes:      { list: NOTES_STYLE_LIST,      get: _getNotesStyle,      set: _setNotesStyle }
 };
 
 /* Most ids are lowercase single words and title-case fine. Override only where
@@ -869,11 +891,20 @@ var STYLE_LABELS = {
   priorities: { list: 'Dots', rank: 'Ranked', split: 'Split', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
   today:      { list: 'Checklist', split: 'Open / done', meter: 'Progress ring', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
   upcoming:   { list: 'List', agenda: 'Agenda', split: 'Split', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
-  homework:   { list: 'List', split: 'Pending / done', meter: 'Progress ring', timeline: 'Timeline', chips: 'Chips', board: 'Board' },
+  homework:   { list: 'Checklist', split: 'Pending / done', board: 'Board' },
+  timer:      { ring: 'Ring', digits: 'Big digits', bar: 'Bar', dial: 'Dial', adhd: 'ADHD disc', minimal: 'Minimal' },
+  pomodoro:   { ring: 'Ring', cycle: 'Cycle', digits: 'Big digits', adhd: 'ADHD disc', bar: 'Bar', calm: 'Calm' },
   habits:     { today: 'Today', week: 'This week', heatmap: 'Heat grid', ring: 'Progress ring', board: 'Tiles', compact: 'One line' },
   streak:     { hero: 'Big number', ring: 'Ring', heatmap: 'Heatmap', bars: 'Bar chart', stats: 'Stats', compact: 'One line' },
   focuslog:   { hero: 'Big number', ring: 'Ring', bars: 'Bar chart', heatmap: 'Heat grid', stats: 'Stats', compact: 'One line' },
-  progress:   { hero: 'Big number', ring: 'Ring', bars: 'Bar chart', stats: 'Stats', heatmap: 'Heat grid', compact: 'One line' }
+  progress:   { hero: 'Big number', ring: 'Ring', bars: 'Bar chart', stats: 'Stats', heatmap: 'Heat grid', compact: 'One line' },
+  study:      { tree: 'Tree', columns: 'Columns', board: 'Subject cards' },
+  weekplan:   { rows: 'Week rows', grid: 'Grid', today: 'Today' },
+  grades:     { bars: 'Bars', table: 'Table', cards: 'Subject cards' },
+  attendance: { list: 'List', split: 'On track / at risk', heat: 'Dot grid' },
+  exams:      { countdown: 'Countdown', list: 'List', board: 'Board' },
+  flashcards: { card: 'Study card', list: 'Deck list', board: 'Deck cards' },
+  notes:      { default: 'Cards', compact: 'Compact', lined: 'Lined', sticky: 'Sticky', minimal: 'Minimal', appgrid: 'App grid', rail: 'Icon rail', split: 'Split view' }
 };
 function _styleLabel(type, id) {
   var m = STYLE_LABELS[type];
@@ -1883,7 +1914,7 @@ function _notesNewId() {
 
 function _notesBlank() {
   var t = Date.now();
-  return { id: _notesNewId(), title: '', body: '', color: '', pinned: false, created: t, updated: t };
+  return { id: _notesNewId(), title: '', body: '', color: '', icon: '', pinned: false, created: t, updated: t };
 }
 
 /* Normalises hubContent.notesList in place and returns it. Safe to call on
@@ -1911,6 +1942,7 @@ function _notesData() {
       title: typeof n.title === 'string' ? n.title : '',
       body: typeof n.body === 'string' ? n.body : '',
       color: NOTES_COLOR_LIST.indexOf(n.color) !== -1 ? n.color : '',
+      icon: NOTES_ICON_LIST.indexOf(n.icon) !== -1 ? n.icon : '',
       pinned: !!n.pinned,
       created: typeof n.created === 'number' ? n.created : Date.now(),
       updated: typeof n.updated === 'number' ? n.updated : Date.now()
@@ -2183,6 +2215,102 @@ function _notesLineHtml(L, uid, noteId, interactive, compact) {
   return '<div class="w-note-line"><span class="w-note-txt">' + _notesInline(escapeHtml(L.text)) + '</span></div>';
 }
 
+/* Per-note icon. An empty icon means "derive a monogram from the title"; the
+   stored overrides are the small glyph set above. The note colour, not a
+   separate icon colour, drives the tile so there is only one colour to set. */
+function _notesMonogram(note) {
+  var label = _notesPlain(String((note && note.title) || '').trim()) || _notesPlain(_notesFirstLine(note));
+  var m = label.replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
+  return m || 'N';
+}
+function _notesIconHtml(note, extra) {
+  var glyph = note && note.icon && NOTES_GLYPH_SVG[note.icon] ? NOTES_GLYPH_SVG[note.icon] : '';
+  var cls = 'w-note-ico' + (extra ? ' ' + extra : '') + (note && note.color ? ' w-note-tint-' + note.color : '');
+  return '<span class="' + cls + '" aria-hidden="true">' + (glyph || escapeHtml(_notesMonogram(note))) + '</span>';
+}
+function _notesPreviewLines(note, prefs, max) {
+  var lines = _notesLines(note && note.body);
+  var out = [];
+  for (var i = 0; i < lines.length && out.length < max; i++) {
+    var L = lines[i];
+    if (L.kind === 'gap' || L.kind === 'rule') continue;
+    if (!prefs.done && L.kind === 'check' && L.checked) continue;
+    var txt = _notesPlain(L.text).trim();
+    if (txt) out.push(escapeHtml(txt));
+  }
+  return out;
+}
+function _notesTitleHtml(note) {
+  var title = String((note && note.title) || '').trim();
+  return escapeHtml(_notesPlain(title) || _notesLabel(note));
+}
+
+/* App grid — one app-style icon tile per note, like a phone launcher. */
+function _notesAppGridHtml(list, prefs, uid) {
+  var out = '<div class="w-notes-appgrid">';
+  for (var i = 0; i < list.length && i < NOTES_RENDER_CAP; i++) {
+    var n = list[i];
+    var prev = _notesPreviewLines(n, prefs, Math.max(1, Math.min(3, prefs.lines)));
+    out += '<div class="w-note-app" data-notes-open="' + escapeHtml(uid) + '" data-notes-id="' + escapeHtml(n.id) + '" title="' + escapeHtml(_notesLabel(n)) + '">'
+      + _notesIconHtml(n, 'w-note-ico-app')
+      + '<span class="w-note-app-title">' + _notesTitleHtml(n) + '</span>'
+      + '<span class="w-note-app-prev">' + (prev.length ? prev.join('<br>') : '<span class="w-note-app-empty">Empty note</span>') + '</span>'
+      + '</div>';
+  }
+  return out + '</div>';
+}
+
+/* Icon rail — a small icon and one preview line per note. */
+function _notesRailHtml(list, prefs, uid) {
+  var out = '<div class="w-notes-rail">';
+  for (var i = 0; i < list.length && i < NOTES_RENDER_CAP; i++) {
+    var n = list[i];
+    var prev = _notesPreviewLines(n, prefs, 1);
+    out += '<div class="w-note-rail-row" data-notes-open="' + escapeHtml(uid) + '" data-notes-id="' + escapeHtml(n.id) + '" title="' + escapeHtml(_notesLabel(n)) + '">'
+      + _notesIconHtml(n, 'w-note-ico-rail')
+      + '<span class="w-note-rail-text"><span class="w-note-rail-title">' + _notesTitleHtml(n) + '</span>'
+      + '<span class="w-note-rail-prev">' + (prev.length ? prev[0] : 'Empty note') + '</span></span>'
+      + (prefs.time ? '<span class="w-note-rail-time">' + escapeHtml(_notesRelTime(n.updated)) + '</span>' : '')
+      + '</div>';
+  }
+  return out + '</div>';
+}
+
+/* Split launcher — tap an icon to change the reading pane in place. */
+function _notesSplitHtml(list, prefs, uid, interactive) {
+  var sel = _notesSplitSel[uid] || '';
+  var chosen = null;
+  for (var s = 0; s < list.length; s++) { if (list[s].id === sel) chosen = list[s]; }
+  if (!chosen) chosen = list[0];
+  var out = '<div class="w-notes-split"><div class="w-notes-split-icons">';
+  for (var i = 0; i < list.length && i < NOTES_RENDER_CAP; i++) {
+    var n = list[i];
+    var on = n.id === chosen.id;
+    out += '<button type="button" class="w-note-split-ico' + (on ? ' on' : '') + '"'
+      + ' data-notes-select="' + escapeHtml(uid) + '" data-notes-id="' + escapeHtml(n.id) + '"'
+      + ' title="' + escapeHtml(_notesLabel(n)) + '" aria-pressed="' + (on ? 'true' : 'false') + '">'
+      + _notesIconHtml(n, 'w-note-ico-split')
+      + '<span class="w-note-split-cap">' + escapeHtml(_notesLabel(n)) + '</span></button>';
+  }
+  out += '</div><div class="w-notes-split-read">'
+    + '<div class="w-notes-split-head">' + _notesIconHtml(chosen, 'w-note-ico-split-lg')
+    + '<span class="w-note-split-title">' + _notesTitleHtml(chosen) + '</span>'
+    + (prefs.time ? '<span class="w-note-split-time">' + escapeHtml(_notesRelTime(chosen.updated)) + '</span>' : '')
+    + '<button type="button" class="w-note-split-edit" data-notes-open="' + escapeHtml(uid) + '" data-notes-id="' + escapeHtml(chosen.id) + '" title="Edit note">Edit</button></div>'
+    + '<div class="w-notes-split-body">';
+  var lines = _notesLines(chosen.body);
+  var shown = 0;
+  for (var j = 0; j < lines.length && shown < 40; j++) {
+    var L = lines[j];
+    if (L.kind === 'gap') continue;
+    if (!prefs.done && L.kind === 'check' && L.checked) continue;
+    out += _notesLineHtml(L, uid, chosen.id, interactive);
+    shown++;
+  }
+  if (!shown) out += '<div class="w-note-line w-note-line-empty"><span class="w-note-txt">Empty note</span></div>';
+  return out + '</div></div></div>';
+}
+
 /* Card layout — shared by default / lined / sticky / minimal, which the
    stylesheet then differentiates. */
 function _notesCardsHtml(list, prefs, uid, interactive, modifier) {
@@ -2247,6 +2375,9 @@ function _notesBodyHtml(list, style, prefs, uid, isEdit) {
   if (!list.length) return '';
   var interactive = !isEdit;
   if (style === 'compact') return _notesCompactHtml(list, prefs, uid, interactive);
+  if (style === 'appgrid') return _notesAppGridHtml(list, prefs, uid);
+  if (style === 'rail') return _notesRailHtml(list, prefs, uid);
+  if (style === 'split') return _notesSplitHtml(list, prefs, uid, interactive);
   return _notesCardsHtml(list, prefs, uid, interactive, style);
 }
 
@@ -2339,7 +2470,7 @@ function _notesFit(grid) {
     if (!wrap) return;
     var scroll = bub.querySelector('.bento-scroll');
     if (!scroll) return;
-    var units = Array.prototype.slice.call(wrap.querySelectorAll('.w-note-card, .w-note-row'));
+    var units = Array.prototype.slice.call(wrap.querySelectorAll('.w-note-card, .w-note-row, .w-note-app, .w-note-rail-row, .w-notes-split'));
     var foot = wrap.querySelector('.w-note-footnote');
     var extra = parseInt(wrap.dataset.notesExtra, 10) || 0;
     if (foot) {
@@ -2924,7 +3055,7 @@ function renderHubBento() {
         var _nWrapCls = 'w-notes-wrap w-notes-' + _nStyle + ' w-notes-sz-' + _nPrefs.size + ' w-notes-ff-' + _nPrefs.font;
         return `<div class="bento-bubble" data-bubble="${uid}" style="${dimStyle};background:var(--surface-container);padding:var(--gutter);border:1px solid var(--border-color)">
           ${editUI}
-          <div class="w-head">${NOTES_ICON}<span>Notes</span>${_nList.length > 1 ? '<span class="w-notes-count" title="' + _nList.length + ' notes">' + _nList.length + '</span>' : ''}${_nCounts.open ? '<span class="w-notes-todo" title="' + _nCounts.open + ' open task' + (_nCounts.open === 1 ? '' : 's') + '">' + _nCounts.open + '</span>' : ''}${_nList.length > 1 ? '<button type="button" class="w-notes-browse" data-notes-all="' + uid + '" title="All notes" aria-label="All notes">' + NOTES_LIST_SVG + '</button>' : ''}<button type="button" class="w-notes-new" data-notes-new="${uid}" title="New note" aria-label="New note">${NOTES_PLUS_SVG}</button></div>
+          <div class="w-head">${NOTES_ICON}<span>Notes</span>${_nList.length > 1 ? '<span class="w-notes-count" title="' + _nList.length + ' notes">' + _nList.length + '</span>' : ''}${_nCounts.open ? '<span class="w-notes-todo" title="' + _nCounts.open + ' open task' + (_nCounts.open === 1 ? '' : 's') + '">' + _nCounts.open + '</span>' : ''}${_nList.length > 1 ? '<button type="button" class="w-notes-browse" data-notes-all="' + uid + '" title="All notes" aria-label="All notes">' + NOTES_LIST_SVG + '</button>' : ''}<button type="button" class="w-notes-browse" data-notes-opts="${uid}" title="Notes options" aria-label="Notes options">${NOTES_GEAR_SVG}</button><button type="button" class="w-notes-new" data-notes-new="${uid}" title="New note" aria-label="New note">${NOTES_PLUS_SVG}</button></div>
           <div class="${_nWrapCls}" data-notes-extra="${_nExtra}">${_notesBodyHtml(_nList, _nStyle, _nPrefs, uid, isEdit)}<div class="w-note-footnote hidden"></div></div>
         </div>`;
       }
@@ -5946,6 +6077,14 @@ function _notesPaintModal() {
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
   }
+  var iconsWrap = document.getElementById('notesModalIcons');
+  if (iconsWrap) {
+    Array.prototype.forEach.call(iconsWrap.querySelectorAll('[data-notes-icon]'), function(btn) {
+      var on = (btn.dataset.notesIcon || '') === (n.icon || '');
+      btn.classList.toggle('on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
   _notesPaintStat();
 }
 
@@ -6053,6 +6192,19 @@ function _notesWireModal(m) {
     _notesEdit.dirty = true;
     _notesPaintModal();
   });
+
+  var icons = m.querySelector('#notesModalIcons');
+  if (icons) icons.addEventListener('click', function(ev) {
+    var btn = ev.target.closest('[data-notes-icon]');
+    if (!btn) return;
+    var n3 = _notesFind(_notesEdit.id);
+    if (!n3) return;
+    n3.icon = btn.dataset.notesIcon || '';
+    n3.updated = Date.now();
+    _notesSave();
+    _notesEdit.dirty = true;
+    _notesPaintModal();
+  });
 }
 
 function _notesBuildModal() {
@@ -6069,6 +6221,12 @@ function _notesBuildModal() {
     var label = c ? c.charAt(0).toUpperCase() + c.slice(1) : 'No colour';
     return '<button type="button" class="notes-swatch' + (c ? ' notes-swatch-' + c : ' notes-swatch-none')
       + '" data-notes-color="' + c + '" title="' + label + '" aria-label="' + label + '" aria-pressed="false"></button>';
+  }).join('');
+
+  var icons = NOTES_ICON_LIST.map(function(ic) {
+    var label = ic ? ic.charAt(0).toUpperCase() + ic.slice(1) : 'Auto monogram';
+    var face = ic ? NOTES_GLYPH_SVG[ic] : 'Aa';
+    return '<button type="button" class="notes-icon-btn" data-notes-icon="' + ic + '" title="' + label + '" aria-label="' + label + '" aria-pressed="false">' + face + '</button>';
   }).join('');
 
   m = document.createElement('div');
@@ -6100,6 +6258,7 @@ function _notesBuildModal() {
     + '</div>'
     + '<div class="notes-modal-tools">' + _notesToolsHtml() + '</div>'
     + '<div class="notes-modal-foot">'
+    +   '<div class="notes-modal-icons" id="notesModalIcons"><span class="notes-modal-icons-label">Icon</span>' + icons + '</div>'
     +   '<div class="notes-modal-colors" id="notesModalColors">' + swatches + '</div>'
     +   '<span class="notes-modal-stat" id="notesModalStat"></span>'
     +   '<button type="button" class="notes-modal-act" id="notesModalPin" aria-pressed="false">Pin</button>'
@@ -6318,7 +6477,7 @@ function closeNotesAll() {
 /* ── display options ── */
 
 var _NOTES_OPT_GROUPS = [
-  { key:'style', label:'Layout',   vals: NOTES_STYLE_LIST, names: ['Cards','Compact','Lined','Sticky','Minimal'] },
+  { key:'style', label:'Layout',   vals: NOTES_STYLE_LIST, names: ['Cards','Compact','Lined','Sticky','Minimal','App grid','Icon rail','Split view'] },
   { key:'size',  label:'Text size', vals: NOTES_SIZE_LIST, names: ['S','M','L'] },
   { key:'font',  label:'Font',      vals: NOTES_FONT_LIST, names: ['Sans','Serif','Mono'] },
   { key:'time',  label:'Timestamps',vals: [1,0], names: ['On','Off'] },
@@ -12366,6 +12525,13 @@ function setupHubEditEvents() {
         _notesSave();
         renderHubBento();
       }
+      return;
+    }
+    /* Notes: split-view launcher — change the reading pane, not the editor. */
+    const notesSelect = e.target.closest('[data-notes-select]');
+    if (notesSelect) {
+      _notesSplitSel[notesSelect.dataset.notesSelect] = notesSelect.dataset.notesId;
+      renderHubBento();
       return;
     }
     /* Notes: open the editor for a note row / card. */
